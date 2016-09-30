@@ -1098,17 +1098,18 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         FFtables.update(FFtable)
         BLtables.update(BLtable)
         phaseDict[pfx+'isMag'] = False
+        SGData = General['SGData']
+        SGtext,SGtable = G2spc.SGPrint(SGData)
         if General['Type'] == 'magnetic':
             MFtable = G2el.GetMFtable(General['AtomTypes'],General['Lande g'])
             MFtables.update(MFtable)
             phaseDict[pfx+'isMag'] = True
+            SpnFlp = SGData['SpnFlp']
         Atoms = PhaseData[name]['Atoms']
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
             AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)
         PawleyRef = PhaseData[name].get('Pawley ref',[])
-        SGData = General['SGData']
-        SGtext,SGtable = G2spc.SGPrint(SGData)
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],
@@ -1207,7 +1208,24 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                     eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,equiv[1:])
                 if 'M' in at[ct+1]:
-                    pass    #magnetic moment vary here
+                    SytSym,Mul,Nop = G2spc.SytSym(at[cx:cx+3],SGData)
+                    if SpnFlp[Nop] > 0.:    #black use p
+                        mId,mCoef = G2spc.GetCSpqinel(SytSym)[0]
+                    else:                   #red use q
+                        mId,mCoef = G2spc.GetCSpqinel(SytSym)[1]
+                    names = [pfx+'AMx:'+str(i),pfx+'AMy:'+str(i),pfx+'AMz:'+str(i)]
+                    equivs = [[],[],[]]
+                    for j in range(3):
+                        if mId[j] > 0:
+                            phaseVary.append(names[j])
+                            equivs[mId[j]-1].append([names[j],mCoef[j]])
+                    for equiv in equivs:
+                        if len(equiv) > 1:
+                            name = equiv[0][0]
+                            coef = equiv[0][1]
+                            for eqv in equiv[1:]:
+                                eqv[1] /= coef
+                                G2mv.StoreEquivalence(name,(eqv,))
                 if General.get('Modulated',False):
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
@@ -1968,7 +1986,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for i,at in enumerate(Atoms):
                 names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
                     cia+1:pfx+'AUiso:'+str(i),cia+2:pfx+'AU11:'+str(i),cia+3:pfx+'AU22:'+str(i),cia+4:pfx+'AU33:'+str(i),
-                    cia+5:pfx+'AU12:'+str(i),cia+6:pfx+'AU13:'+str(i),cia+7:pfx+'AU23:'+str(i)}
+                    cia+5:pfx+'AU12:'+str(i),cia+6:pfx+'AU13:'+str(i),cia+7:pfx+'AU23:'+str(i),
+                    cx+4:pfx+'AMx:'+str(i),cx+5:pfx+'AMy:'+str(i),cx+6:pfx+'AMz:'+str(i)}
                 for ind in range(cx,cx+4):
                     at[ind] = parmDict[names[ind]]
                     if ind in range(cx,cx+3):
@@ -1983,6 +2002,11 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         atomsSig['%d:%d'%(i,cia+1)] = sigDict[names[cia+1]]
                 else:
                     for ind in range(cia+2,cia+8):
+                        at[ind] = parmDict[names[ind]]
+                        if names[ind] in sigDict:
+                            atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
+                if General['Type'] == 'magnetic':
+                    for ind in range(cx+4,cx+7):
                         at[ind] = parmDict[names[ind]]
                         if names[ind] in sigDict:
                             atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]

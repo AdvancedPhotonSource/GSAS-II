@@ -38,6 +38,7 @@ import numpy.linalg as nl
 import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
+import GSASIIElem as G2elem
 GSASIIpath.SetVersionNumber("$Revision$")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -237,7 +238,8 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
             atoms are from oldPhase & will be transformed
     :param Trans: array transformation matrix
     :param Vec: array transformation vector
-    :param ifMag: bool True if convert to magnetic phase
+    :param ifMag: bool True if convert to magnetic phase; 
+        if True all nonmagnetic atoms will be removed
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
@@ -258,8 +260,10 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
         newPhase['General']['Type'] = 'magnetic'
         newPhase['General']['AtomPtrs'] = [cx,ct,cs,cia]
         magAtoms = []
+        Landeg = 2.0
         for atom in newAtoms:
-            magAtoms.append(atom[:cx+4]+[0.,0.,0.]+atom[cx+4:])
+            if len(G2elem.GetMFtable([atom[ct],],[Landeg,])):
+                magAtoms.append(atom[:cx+4]+[0.,0.,0.]+atom[cx+4:])
         newAtoms = magAtoms
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:

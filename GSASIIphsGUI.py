@@ -1382,6 +1382,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             dlg.Destroy()
         phaseName = newPhase['General']['Name']
+        if ifMag:
+            phaseName += ' mag'
         newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
         newPhase['General']['Map'] = mapDefault.copy()
         sub = G2frame.PatternTree.AppendItem(parent=

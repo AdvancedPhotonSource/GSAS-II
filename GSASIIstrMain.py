@@ -199,6 +199,7 @@ def Refine(GPXfile,dlg):
     print >>printFile,'\n Refinement results:'
     print >>printFile,135*'-'
     try:
+        covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
         sigDict = dict(zip(varyList,sig))

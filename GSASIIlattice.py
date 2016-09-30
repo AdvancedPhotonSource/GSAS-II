@@ -240,6 +240,8 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     :param Vec: array transformation vector
     :param ifMag: bool True if convert to magnetic phase; 
         if True all nonmagnetic atoms will be removed
+        
+    This needs to properly transform magnetic moments for mag - mag transforms
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']

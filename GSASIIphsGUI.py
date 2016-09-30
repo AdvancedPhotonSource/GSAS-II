@@ -1389,6 +1389,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
+        # if nuc - mag transformtion: make constraints here? Needed for Type 4 magnetics
         
 ################################################################################
 #####  Atom routines

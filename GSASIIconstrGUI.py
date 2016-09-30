@@ -839,17 +839,20 @@ def UpdateConstraints(G2frame,data):
                     constr = [[1.0,G2obj.G2VarObj(name)]]
             else:
                 constr = [[1.0,G2obj.G2VarObj(name)]]
-            pref = name.rsplit(':',1)[0]
+            pref = ':'+name.rsplit(':',1)[0].split(':',1)[1]    #get stuff between phase id & atom id
             for sel in Selections:
-                id = Atoms[AtNames[sel]][0].rsplit(':',1)[-1]
+                name2 = Atoms[AtNames[sel]][0]
+                pid = name2.split(':',1)[0]                     #get phase id for 2nd atom
+                id = name2.rsplit(':',1)[-1]                    #get atom no. for 2nd atom
                 if 'riding' in constType:
+                    pref = pid+pref
                     if 'AUiso' in pref:
                         parts = pref.split('AUiso')
                         constr += [[1.2,G2obj.G2VarObj('%s:%s'%(parts[0]+'AUiso',id))]]
                     elif 'AU' not in pref:
                         constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
                 else:
-                    constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
+                    constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pid+pref,id))]]
             if not constr:
                 continue
             if 'frac' in pref and 'riding' not in constType:

@@ -677,9 +677,11 @@ class TransformDialog(wx.Dialog):
         sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
-            mag = wx.CheckBox(self.panel,label=' Make magnetic phase?')
+            mag = wx.CheckBox(self.panel,label=' Make new phase magnetic?')
             mag.Bind(wx.EVT_CHECKBOX,OnMag)
             mainSizer.Add(mag,0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel, \
+                label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
 
         TestBtn = wx.Button(self.panel,-1,"Test")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)

@@ -1860,6 +1860,22 @@ OprPtrName = {
     '969'  :[  84,'-3--+1',61],'-6584':[ 113,' -3z2 ',62],'2169' :[  84,'-3--+2',63],
     '-2151':[  74,'-3+--2',64],'0':[0,' ????',0]
     }
+    
+OprName = {
+    '-6643':'   -1   ','6479' :'    2(z)','-6479':'    m(z)',
+    '6481' :'    m(y)','-6481':'    2(y)','6641' :'    m(x)',
+    '-6641':'    2(x)','6591' :'  m(+-0)','-6591':'  2(+-0)',
+    '6531' :' m(110) ','-6531':' 2(110) ','6537' :'  4(001)',
+    '-6537':' -4(001)','975'  :'  3(111)','6456' :'    3   ',
+    '-489' :'  3(+--)','483'  :'  3(-+-)','-969' :'  3(--+)',
+    '819'  :'  m(+0-)','-819' :'  2(+0-)','2431' :'  m(0+-)',
+    '-2431':'  2(0+-)','-657' :'   m(xz)','657'  :'   2(xz)',
+    '1943' :' -4(100)','-1943':'  4(100)','-2429':'   m(yz)',
+    '2429' :'   2(yz)','639'  :' -4(010)','-639' :'  4(010)',
+    '-6484':' 2(010) ','6484' :' m(010) ','-6668':' 2(100) ',
+    '6668' :' m(100) ','-6454':' 2(120) ','6454' :' m(120) ',
+    '-6638':' 2(210) ','6638' :' m(210) '}              #search ends here
+    
                                   
 KNsym = {
     '0'         :'    1   ','1'         :'   -1   ','64'        :'    2(x)','32'        :'    m(x)',
@@ -2014,6 +2030,10 @@ def GetOprPtrName(key):
     'Needs a doc string'
     return OprPtrName[key]
 
+def GetOprName(key):
+    'Needs a doc string'
+    return OprName[key]
+
 def GetKNsym(key):
     'Needs a doc string'
     return KNsym[key]        
@@ -2034,10 +2054,31 @@ def GetCSuinel(siteSym):
     indx = GetNXUPQsym(siteSym)
     return CSuinel[indx[1]]
     
-def GetCSpqinel(siteSym):  
+def GetCSpqinel(siteSym,SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
-    indx = GetNXUPQsym(siteSym)
-    return CSxinel[indx[2]],CSxinel[indx[3]]
+    CSI = [[1,2,3],[1.0,1.0,1.0]]
+    for opr in dupDir:
+        indx = GetNXUPQsym(opr)
+        if SpnFlp[dupDir[opr]] > 0.:
+            csi = CSxinel[indx[2]]  #P
+        else:
+            csi = CSxinel[indx[3]]  #Q
+        for kcs in [0,1,2]:
+            if csi[0][kcs] == 0 and CSI[0][kcs] != 0:
+                jcs = CSI[0][kcs]
+                for ics in [0,1,2]:
+                    if CSI[0][ics] == jcs:
+                        CSI[0][ics] = 0
+                        CSI[1][ics] = 0.
+                    elif CSI[0][ics] > jcs:
+                        CSI[0][ics] = CSI[0][jcs]-1
+            elif CSI[0][kcs] == csi[0][kcs] and CSI[1][kcs] != csi[1][kcs]:
+                CSI[1][kcs] = csi[1][kcs]
+            elif CSI[0][kcs] > csi[0][kcs]:
+                CSI[0][kcs] = min(CSI[0][kcs],csi[0][kcs])
+                if CSI[1][kcs] == 1.:
+                    CSI[1][kcs] = csi[1][kcs]
+    return CSI
     
 def getTauT(tau,sop,ssop,XYZ):
     ssopinv = nl.inv(ssop[0])
@@ -2645,6 +2686,7 @@ def SytSym(XYZ,SGData):
         Isym = 1073741824
     Jdup = 0
     Ndup = 0
+    dupDir = {}
     Xeqv = GenAtom(XYZ,SGData,True)
     IRT = PackRot(SGData['SGOps'])
     L = -1
@@ -2656,13 +2698,16 @@ def SytSym(XYZ,SGData):
                 if not Xeqv[L][1]:
                     Ndup = io
                     Jdup += 1
-                    jx = GetOprPtrName(str(irtx))
+                    jx = GetOprPtrName(str(irtx))   #[KN table no,op name,KNsym ptr]
                     if jx[2] < 39:
+                        px = GetOprName(str(irtx))
+                        if px != '6643':    #skip Iden
+                            dupDir[px] = io
                         Isym += 2**(jx[2]-1)
     if Isym == 1073741824: Isym = 0
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)/Jdup
           
-    return GetKNsym(str(Isym)),Mult,Ndup
+    return GetKNsym(str(Isym)),Mult,Ndup,dupDir
     
 def ElemPosition(SGData):
     ''' Under development. 
@@ -3797,9 +3842,9 @@ def test3():
         (E,S) = SpcGroup(spc)
         assert not E, msg
         for t in crdlist:
-            symb, m, n = SytSym(t[0],S)
+            symb, m, n, od = SytSym(t[0],S)
             if symb.strip() != t[2].strip() or m != t[1]:
-                print spc,t[0],m,n,symb,t[2]
+                print spc,t[0],m,n,symb,t[2],od
             assert m == t[1]
             #assert symb.strip() == t[2].strip()
 

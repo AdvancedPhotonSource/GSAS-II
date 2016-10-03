@@ -1746,11 +1746,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if colM:
-                    SytSym,Mul,Nop = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
-                    if SpnFlp[Nop] > 0.:    #black
-                        CSI = G2spc.GetCSpqinel(SytSym)[0]
-                    else:                   #red
-                        CSI = G2spc.GetCSpqinel(SytSym)[1]
+                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
+                    CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+#                    print SytSym,Nop,SpnFlp[Nop],CSI,dupDir
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
@@ -1771,6 +1769,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
         OprNames = generalData['SGData'].get('OprNames',[])
+#        print OprNames
+#        print SpnFlp
+#        print generalData['SGData'].get('MagMom',[])
         atomData = data['Atoms']
         DData = data['Drawing']
         resRBData = data['RBModels'].get('Residue',[])
@@ -1831,19 +1832,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Paint()
 
     def OnAtomAdd(event):
-        AtomAdd(0,0,0)
+        Elem = 'H'
+        if data['General']['Type'] == 'magnetic':
+            Elem = 'Fe'
+        AtomAdd(0,0,0,El=Elem)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
         if data['Drawing']:
             G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewAdd(event):
+        Elem = 'H'
+        if data['General']['Type'] == 'magnetic':
+            Elem = 'Fe'
         try:
             drawData = data['Drawing']
             x,y,z = drawData['viewPoint'][0]
-            AtomAdd(x,y,z)
+            AtomAdd(x,y,z,El=Elem)
         except:
-            AtomAdd(0,0,0)
+            AtomAdd(0,0,0,El=Elem)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
         data['Drawing']['Atoms'] = []

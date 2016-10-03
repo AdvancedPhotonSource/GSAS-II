@@ -1045,8 +1045,11 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
+    Ncen = len(SGData['SGCen'])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
+    MFtables = calcControls['MFtables']
+    Amat,Bmat = G2lat.Gmat2AB(G)
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
@@ -1127,7 +1130,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         else:
             fotp = FPP*Tcorr     
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
-            MF = np.repeat(refDict['FF']['MF'][iBeg:iFin].T[Tindx].T,len(TwinLaw),axis=0)   #Nref,Natm
+            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.5*0.539*Tcorr[:,0,:]*MF*len(SGMT)/Mdata                                  #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))

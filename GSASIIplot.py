@@ -5297,7 +5297,10 @@ def PlotStructure(G2frame,data,firstCall=False):
     def RenderUnitVectors(x,y,z):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
+        glLineWidth(2)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_LINE_SMOOTH)
         glPushMatrix()
         glTranslate(x,y,z)
         glScalef(1/cell[0],1/cell[1],1/cell[2])
@@ -5309,6 +5312,8 @@ def PlotStructure(G2frame,data,firstCall=False):
         glEnd()
         glPopMatrix()
         glColor4ubv([0,0,0,0])
+        glDisable(GL_LINE_SMOOTH)
+        glDisable(GL_BLEND)
         glDisable(GL_COLOR_MATERIAL)
         
     def RenderPlane(plane,color):

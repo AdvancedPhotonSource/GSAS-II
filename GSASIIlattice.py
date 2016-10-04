@@ -245,6 +245,11 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
+    cm = 0
+    if oldPhase['General']['Type'] == 'magnetic':
+        cm = cx+4
+    oAmat,oBmat = cell2AB(oldPhase['General']['Cell'][1:7])
+    nAmat,nBmat = cell2AB(newPhase['General']['Cell'][1:7])
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms = FillUnitCell(oldPhase)
@@ -274,6 +279,13 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
         atom[cia+8] = ran.randint(0,sys.maxint)
+        if cm:
+            mag = np.sqrt(np.sum(np.array(atom[cm:cm+3])**2))
+            mom = np.inner(np.array(atom[cm:cm+3]),oBmat)
+            mom = np.inner(mom,invTrans.T)
+            mom = np.inner(mom,nAmat)
+            mom /= np.sqrt(np.sum(mom**2))
+            atom[cm:cm+3] = mom*mag
     newPhase['Atoms'] = newAtoms
     newPhase['Atoms'] = GetUnique(newPhase)
     newPhase['Drawing']['Atoms'] = []
@@ -283,7 +295,12 @@ def FillUnitCell(Phase):
     Atoms = Phase['Atoms']
     atomData = []
     SGData = Phase['General']['SGData']
+    SpnFlp = SGData.get('SpnFlp',[])
+    Amat,Bmat = cell2AB(Phase['General']['Cell'][1:7])
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    cm = 0
+    if Phase['General']['Type'] == 'magnetic':
+        cm = cx+4
     unit = np.zeros(3)
     for atom in Atoms:
         XYZ = np.array(atom[cx:cx+3])
@@ -296,13 +313,27 @@ def FillUnitCell(Phase):
                 if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]
                 atom[cia+2:cia+8] = item[1]
+                if cm:
+                    Opr = abs(item[2])%100
+                    M = SGData['SGOps'][Opr-1][0]
+                    opNum = G2spc.GetOpNum(item[2],SGData)
+                    mom = np.inner(np.array(atom[cm:cm+3]),Bmat)
+                    atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                 atomData.append(atom[:cia+9])  #not SS stuff
         else:
             result = G2spc.GenAtom(xyz,SGData,False,Move=True)
             for item in result:
                 if item[0][2] >= .95: item[0][2] -= 1.
                 atom[cx:cx+3] = item[0]
+                if cm:
+                    Opr = abs(item[1])%100
+                    M = SGData['SGOps'][Opr-1][0]
+                    opNum = G2spc.GetOpNum(item[1],SGData)
+                    mom = np.inner(np.array(atom[cm:cm+3]),Bmat)
+                    atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+#                GSASIIpath.IPyBreak()
                 atomData.append(atom[:cia+9])  #not SS stuff
+            
     return atomData
        
 def GetUnique(Phase):

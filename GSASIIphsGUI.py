@@ -2432,6 +2432,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print "select one atom"
             G2frame.ErrorDialog('Select one atom',"select one atom to begin molecule build then redo")
 
+    def OnDensity(event):
+        'show the density for the current phase'
+        density,mattCoeff = G2mth.getDensity(data['General'])
+        msg = 'Density of phase {:s} = {:.3f} g/cc'.format(data['General']['Name'],density)
+        print(msg)
+        G2G.G2MessageBox(G2frame.dataFrame,msg,'Density')
+          
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
         fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
@@ -7894,6 +7901,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDensity, id=G2gd.wxID_ATOMSDENSITY)
         if 'HydIds' in data['General']:
             G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
         else:

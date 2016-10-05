@@ -68,8 +68,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
-    wxID_WAVEVARY,wxID_ATOMSROTATE,
-] = [wx.NewId() for item in range(19)]
+    wxID_WAVEVARY,wxID_ATOMSROTATE, wxID_ATOMSDENSITY,
+] = [wx.NewId() for item in range(20)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -2182,8 +2182,11 @@ class DataFrame(wx.Frame):
             help='Compute distances & angles for selected atoms')
         self.AtomCompute.ISOcalc = self.AtomCompute.Append(
             id=wxID_ISODISP, kind=wx.ITEM_NORMAL,
-            text='Compute ISODISTORT mode values',
+            text='ISODISTORT mode values',
             help='Compute values of ISODISTORT modes from atom parameters')
+        self.AtomCompute.Append(id=wxID_ATOMSDENSITY, kind=wx.ITEM_NORMAL,
+            text='Density',
+            help='Compute density for current phase')
         self.PostfillDataMenu()
         
         # Phase / Imcommensurate "waves" tab 

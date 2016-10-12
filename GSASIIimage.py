@@ -256,7 +256,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
-        if I and J and I/J > reject:
+        if I and J and float(I)/J > reject:
             X += .5                             #set to center of pixel
             Y += .5
             X /= scalex                         #convert back to mm

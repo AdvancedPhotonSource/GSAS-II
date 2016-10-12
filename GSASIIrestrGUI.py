@@ -242,7 +242,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bond = dlg.GetValue()
             dlg.Destroy()
         Factor = bondRestData['Range']
-        indices = (-1,0,1)
+        indices = (-2,-1,0,1,2)
         Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
         origAtoms = Lists['origin']
         targAtoms = Lists['target']
@@ -353,7 +353,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
 
         Factor = angleRestData['Range']
-        indices = (-1,0,1)
+        indices = (-2,-1,0,1,2)
         Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
         VectA = []
         for Oid,Otype,Ocoord in Lists['B-atom']:

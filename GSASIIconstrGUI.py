@@ -305,8 +305,10 @@ def UpdateConstraints(G2frame,data):
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
         elif 'AM' in name:
             namelist = ['AMx','AMy','AMz']
-        elif name.rsplit(':')[-1] in ['A0','A1','A2','A3','A4','A5']:
+        elif items[-1] in ['A0','A1','A2','A3','A4','A5']:
             namelist = ['A0','A1','A2','A3','A4','A5']
+        elif items[-1] in ['D11','D22','D33','D12','D13','D23']:
+            namelist = ['D11','D22','D33','D12','D13','D23']
         elif 'Tm' in name:
             namelist = ['Tmin','Tmax']
         elif 'RB' in name:

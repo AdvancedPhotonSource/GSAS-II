@@ -183,13 +183,16 @@ def FixValence(El):
         El = El.split('-0')[0]
     return El
     
-def GetAtomInfo(El):
+def GetAtomInfo(El,ifMag=False):
     'reads element information from atmdata.py'
     import ElementTable as ET
-    Elements = [elem[0][0] for elem in ET.ElTable]
+    Elem = ET.ElTable
+    if ifMag:
+        Elem = ET.MagElTable
+    Elements = [elem[0][0] for elem in Elem]
     AtomInfo = {}
     ElS = getElSym(El)
-    if El not in atmdata.XrayFF:
+    if El not in atmdata.XrayFF and El not in atmdata.MagFF:
         if ElS not in atmdata.XrayFF:
             print('Atom type '+El+' not found, using UNK')
             return # not sure what this element should be!
@@ -198,7 +201,7 @@ def GetAtomInfo(El):
     AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS])))
     AtomInfo['Symbol'] = El
     AtomInfo['Color'] = ET.ElTable[Elements.index(ElS)][6]
-    AtomInfo['Z'] = atmdata.XrayFF[El]['Z']
+    AtomInfo['Z'] = atmdata.XrayFF[ElS]['Z']
     isotopes = [ky for ky in atmdata.AtmBlens.keys() if ElS == ky.split('_')[0]]
     isotopes.sort()
     AtomInfo['Mass'] = atmdata.AtmBlens[isotopes[0]]['Mass']    #default to nat. abund.

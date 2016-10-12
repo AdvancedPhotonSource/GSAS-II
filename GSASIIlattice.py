@@ -281,11 +281,12 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
         atom[cia+8] = ran.randint(0,sys.maxint)
         if cm:
             mag = np.sqrt(np.sum(np.array(atom[cm:cm+3])**2))
-            mom = np.inner(np.array(atom[cm:cm+3]),oBmat)
-            mom = np.inner(mom,invTrans.T)
-            mom = np.inner(mom,nAmat)
-            mom /= np.sqrt(np.sum(mom**2))
-            atom[cm:cm+3] = mom*mag
+            if mag:
+                mom = np.inner(np.array(atom[cm:cm+3]),oBmat)
+                mom = np.inner(mom,invTrans.T)
+                mom = np.inner(mom,nAmat)
+                mom /= np.sqrt(np.sum(mom**2))
+                atom[cm:cm+3] = mom*mag
     newPhase['Atoms'] = newAtoms
     newPhase['Atoms'] = GetUnique(newPhase)
     newPhase['Drawing']['Atoms'] = []

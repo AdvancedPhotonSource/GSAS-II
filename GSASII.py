@@ -1533,12 +1533,13 @@ class GSASII(wx.Frame):
                     rd.powderdata[2] = 1./var
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
-                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                  
+                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
+            Ymax = np.max(rd.powderdata[1])                 
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
-                'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+                'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False
                 }
             # apply user-supplied corrections to powder data
@@ -1728,11 +1729,12 @@ class GSASII(wx.Frame):
         HistName = 'PWDR '+HistName
         HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)  # make new histogram names unique
         Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+        Ymax = np.max(rd.powderdata[1])
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':True,
             'ranId':ran.randint(0,sys.maxint),
-            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+            'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False
             }
         self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
@@ -2814,11 +2816,12 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
+                        Ymax = np.max(Ysum)
                         valuesdict = {
                             'wtFactor':1.0,
                             'Dummy':False,
                             'ranId':ran.randint(0,sys.maxint),
-                            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+                            'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
                             'qPlot':False,'dPlot':False,'sqrtPlot':False
                             }
                         self.PatternTree.SetItemPyData(Id,[valuesdict,[np.array(Xsum),np.array(Ysum),np.array(Wsum),

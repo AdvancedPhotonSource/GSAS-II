@@ -238,8 +238,9 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         if NPhas[result] == '1':
             Ptype = 'nuclear'
         elif NPhas[result] in ['2','3']:
-            Ptype = 'magnetic'
-            MagDmin = 1.0
+            Ptype = 'nuclear'
+#            Ptype = 'magnetic'
+#            MagDmin = 1.0
         elif NPhas[result] == '4':
             Ptype = 'macromolecular'
         elif NPhas[result] == '10':
@@ -260,13 +261,13 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                     SGData = G2IO.SGData # P 1 -- unlikely to need this!
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
-            elif 'SPNFLP' in key:
-                SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
-                SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
-                if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
-                    SpnFlp += [1,1,1,1]
-            elif 'MXDSTR' in key:
-                MagDmin = float(EXPphase[key][:10])               
+#            elif 'SPNFLP' in key:
+#                SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
+#                SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
+#                if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
+#                    SpnFlp += [1,1,1,1]
+#            elif 'MXDSTR' in key:
+#                MagDmin = float(EXPphase[key][:10])               
             elif 'OD    ' in key:
                 SHdata = EXPphase[key].split() # may not have all 9 values
                 SHvals = 9*[0]
@@ -301,8 +302,8 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                                 float(S[108:118]),float(S[118:128])]
                         XYZ = Atom[3:6]
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)[:2]
-                        if Ptype == 'magnetic':
-                            Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
+#                        if Ptype == 'magnetic':
+#                            Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
                         Atom.append(ran.randint(0,sys.maxint))
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':

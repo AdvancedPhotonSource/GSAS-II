@@ -983,13 +983,14 @@ def GenMagOps(SGData):
     return OprNames,SpnFlp
     
 def GetOpNum(Opr,SGData):
-    Inv = SGData['SGInv']
     Nops = len(SGData['SGOps'])
     opNum = abs(Opr)%100
+    cent = abs(Opr)/100
     if Opr < 0:
         opNum += Nops
-    cent = abs(Opr)/100
-    opNum += cent*Nops*Inv
+    if SGData['SGInv']:
+        Nops *= 2
+    opNum += cent*Nops
     return opNum
         
 ################################################################################
@@ -2058,11 +2059,15 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
     for opr in dupDir:
+        if '-1' in siteSym and SpnFlp[len(SpnFlp)/2] < 0:
+            return [[0,0,0],[0.,0.,0.]]
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
+        if not len(csi):
+            return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
             if csi[0][kcs] == 0 and CSI[0][kcs] != 0:
                 jcs = CSI[0][kcs]

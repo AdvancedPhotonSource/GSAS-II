@@ -468,6 +468,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                     atom[cs] = Sytsym
                     atom[cs+1] = Mult
+                NShkl = len(G2spc.MustrainNames(SGData))
+                NDij = len(G2spc.HStrainNames(SGData))
+                UseList = data['Histograms']
+                for hist in UseList:
+                    UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                    UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):
@@ -1385,10 +1391,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if ifMag:
             phaseName += ' mag'
         newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
+
+        generalData = newPhase['General']
+        SGData = generalData['SGData']
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        UseList = newPhase['Histograms']
+        for hist in UseList:
+            UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+            UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
         newPhase['General']['Map'] = mapDefault.copy()
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
+        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
         # if nuc - mag transformtion: make constraints here? Needed for Type 4 magnetics
         
 ################################################################################
@@ -1602,7 +1618,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
             if Atoms.GetColLabelValue(c) == 'Type':
-                PE = G2elemGUI.PickElement(G2frame)
+                PE = G2elemGUI.PickElement(G2frame,ifMag=ifMag)
                 if PE.ShowModal() == wx.ID_OK:
                     if PE.Elem != 'None':                        
                         atomData[r][c] = PE.Elem.strip()
@@ -1809,12 +1825,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
         Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
         colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
+        ifMag = False
         if generalData['Type'] == 'macromolecular':
             colLabels = ['res no','residue','chain'] + colLabels
             Types = [wg.GRID_VALUE_STRING,
                 wg.GRID_VALUE_CHOICE+AAchoice,
                 wg.GRID_VALUE_STRING] + Types
         elif generalData['Type'] == 'magnetic':
+            ifMag = True
             colLabels = colLabels[:7]+['Mx','My','Mz']+colLabels[7:]
             Types = Types[:7]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[7:]
         SGData = data['General']['SGData']
@@ -2973,7 +2991,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     PE = G2elemGUI.PickElement(G2frame)
                     if PE.ShowModal() == wx.ID_OK:
                         if PE.Elem != 'None':
-                            atType =                  PE.Elem.strip()       
+                            atType = PE.Elem.strip()       
                             Layer['Atoms'][r][c] = atType
                             name = Layer['Atoms'][r][c]
                             if len(name) in [2,4]:
@@ -4319,7 +4337,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if cmx:
                                 opNum = G2spc.GetOpNum(OprNum,SGData)
                                 mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                print OprNum,newOp,opNum,SpnFlp
+                                if Inv:
+                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                else:
+                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                             if atom[cui] == 'A':
                                 Uij = atom[cuij:cuij+6]
                                 Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
@@ -4369,7 +4391,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
                                 mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                if item[2] < 0:
+                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                else:
+                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                             atom[cs-1] = str(item[2])+'+'
                             atom[cuij:cuij+6] = item[1]
                             for xyz in cellArray+np.array(atom[cx:cx+3]):
@@ -4425,7 +4450,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if cmx:
                             opNum = G2spc.GetOpNum(OprNum,SGData)
                             mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            if Inv:
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            else:
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                         atomOp = atom[cs-1]
                         newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
                             str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
@@ -4461,9 +4489,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             numAtoms = len(atomData)
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
             cij = ci+2
-            cmx = 0
-            if 'Mx' in colLabels:
-                cmx = colLabels.index('Mx')
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             cellArray = G2lat.CellBlock(1)
@@ -4487,13 +4512,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     newAtom = atomB[:]
                                     newAtom[cx:cx+3] = xyz
                                     newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                                    OpN = int(newAtom[cs-1].split('+')[0])
-                                    Opr = abs(OpN)%100
-                                    M = SGData['SGOps'][Opr-1][0]
-                                    if cmx:
-                                        opNum = G2spc.GetOpNum(OpN,SGData)
-                                        mom = np.inner(np.array(newAtom[cmx:cmx+3]),Bmat)
-                                        newAtom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                                     atomData.append(newAtom[:cij+9])  #not SS stuff
             finally:
                 wx.EndBusyCursor()
@@ -4508,11 +4526,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if indx:
             atomData = data['Drawing']['Atoms']
             colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
-            cx,ct,cs,cui = data['Drawing']['atomPtrs']
+            cx,ct,cs,ci = data['Drawing']['atomPtrs']
             cmx = 0
             if 'Mx' in colLabels:
                 cmx = colLabels.index('Mx')
-            cuij = cui+2
+            cuij = cs+5
             generalData = data['General']
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
@@ -4522,51 +4540,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for ind in indx:
                     atom = atomData[ind]
                     XYZ = np.array(atom[cx:cx+3])
-                    if atom[cui] == 'A':
-                        Uij = atom[cuij:cuij+6]
-                        result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
-                        for item in result:
-                            atom = copy.copy(atomData[ind])
-                            atom[cx:cx+3] = item[0]
+                    Uij = atom[cuij:cuij+6]
+                    result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
+                    for item in result:
+                        atom = copy.copy(atomData[ind])
+                        atom[cx:cx+3] = item[0]
+                        if cmx:
                             Opr = abs(item[2])%100
                             M = SGData['SGOps'][Opr-1][0]
-                            if cmx:
-                                opNum = G2spc.GetOpNum(item[2],SGData)
-                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                            opNum = G2spc.GetOpNum(item[2],SGData)
+                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                            if item[2] < 0:
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            else:
                                 atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                            atom[cs-1] = str(item[2])+'+' \
-                                +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
-                            atom[cuij:cuij+6] = item[1]
-                            Opp = G2spc.Opposite(item[0])
-                            for key in Opp:
-                                if noDuplicate(Opp[key],atomData):
-                                    unit = np.array(eval(key))*1.-item[3]
-                                    cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
-                                    atom[cx:cx+3] = Opp[key]
-                                    atom[cs-1] = cell
-                                    atomData.append(atom[:cuij+9])  #not SS stuff
-                    else:
-                        result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
+                        atom[cs-1] = str(item[2])+'+' \
+                            +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
+                        atom[cuij:cuij+6] = item[1]
+                        Opp = G2spc.Opposite(item[0])
+                        for key in Opp:
+                            if noDuplicate(Opp[key],atomData):
+                                unit = np.array(eval(key))*1.-item[3]
+                                cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
+                                atom[cx:cx+3] = Opp[key]
+                                atom[cs-1] = cell
+                                atomData.append(atom[:cuij+9])  #not SS stuff
  #                       GSASIIpath.IPyBreak()
-                        for item in result:
-                            atom = copy.copy(atomData[ind])
-                            Opr = abs(item[1])%100
-                            M = SGData['SGOps'][Opr-1][0]
-                            atom[cx:cx+3] = item[0]
-                            if cmx:
-                                opNum = G2spc.GetOpNum(item[1],SGData)
-                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                            atom[cs-1] = str(item[1])+'+' \
-                                +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
-                            Opp = G2spc.Opposite(item[0])
-                            for key in Opp:
-                                if noDuplicate(Opp[key],atomData):
-                                    unit = np.array(eval(key))*1.-item[2]
-                                    cell = '%d+%d,%d,%d'%(item[1],unit[0],unit[1],unit[2])
-                                    atom[cx:cx+3] = Opp[key]
-                                    atom[cs-1] = cell
-                                    atomData.append(atom[:cuij+9])  #not SS stuff
                     data['Drawing']['Atoms'] = atomData
             finally:
                 wx.EndBusyCursor()

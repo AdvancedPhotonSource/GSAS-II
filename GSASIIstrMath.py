@@ -668,6 +668,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
+    Nops = len(SGMT)
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
@@ -692,7 +693,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-        Gdata = np.repeat(Gdata,Ncen,axis=1)    #dup over cell centering
+            Nops *= 2
+        Gdata = np.repeat(Gdata,Ncen,axis=1)        #dup over cell centering
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
         Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
@@ -765,8 +767,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
-            MF = refDict['FF']['MF'][iBeg:iFin]   #Nref,Natm
-            TMcorr = 0.5*0.539*Tcorr[:,0,:]*MF*len(SGMT)/Mdata                              #Nref,Natm
+            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
+#            TMcorr = 0.5*0.539*Tcorr[:,0,:]*MF*len(SGMT)/Mdata     #Nref,Natm
+            TMcorr = 0.539*Tcorr[:,0,:]*MF/Nops     #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
             else:
@@ -779,8 +782,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
             eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
             Q = -HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]+Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
-            fam = Q*TMcorr[nxs,:,nxs,:]*SGData['MagMom'][nxs,nxs,:,nxs]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-            fbm = Q*TMcorr[nxs,:,nxs,:]*SGData['MagMom'][nxs,nxs,:,nxs]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
             fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
 #            GSASIIpath.IPyBreak()

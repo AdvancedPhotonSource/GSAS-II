@@ -25,7 +25,7 @@ import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     "Makes periodic table widget for picking element - caller maintains element list"
     Elem=None
-    def _init_ctrls(self, prnt):
+    def _init_ctrls(self,prnt,ifMag=False):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
               parent=prnt, pos=wx.DefaultPosition, 
               style=wx.DEFAULT_DIALOG_STYLE, title='Pick Element')
@@ -36,7 +36,10 @@ class PickElement(wx.Dialog):
         self.SetClientSize(wx.Size(50+18*self.butWid, 250))
         
         i=0
-        for E in ET.ElTable:
+        Elems = ET.ElTable
+        if ifMag:
+            Elems = ET.MagElTable
+        for E in Elems:
             if E[1] < 0: continue
             if self.oneOnly:
                 color=E[4]
@@ -47,11 +50,11 @@ class PickElement(wx.Dialog):
                tip=E[3],color=color)
             i+=1
 
-    def __init__(self, parent,oneOnly=False,ifNone=False):
+    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False):
         'Needs a doc string'
         self.oneOnly = oneOnly
         self.ifNone = ifNone
-        self._init_ctrls(parent)
+        self._init_ctrls(parent,ifMag=ifMag)
         
     def ElButton(self, name, pos, tip, color):
         'Creates an element button widget'

@@ -911,6 +911,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
         Y = G2frame.Integrate[0][i]
+        Ymax = np.max(Y)
         W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
         Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=Aname)
         G2frame.IntgOutList.append(Id)
@@ -937,7 +938,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             'wtFactor':1.0,
             'Dummy':False,
             'ranId':ran.randint(0,sys.maxint),
-            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+            'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False
             }
         G2frame.PatternTree.SetItemPyData(

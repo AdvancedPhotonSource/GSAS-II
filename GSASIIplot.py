@@ -1271,9 +1271,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
                 Ymax = max(Pattern[1][1])
                 if G2frame.plotStyle['sqrtPlot']:
-                    Pattern[0]['delOffset'] = .002*Ymax
-                    Pattern[0]['refOffset'] = -0.1*Ymax
-                    Pattern[0]['refDelt'] = .1*Ymax
+                    Pattern[0]['delOffset'] = .002*np.sqrt(Ymax)
+                    Pattern[0]['refOffset'] = -0.1*np.sqrt(Ymax)
+                    Pattern[0]['refDelt'] = .1*np.sqrt(Ymax)
                 else:
                     Pattern[0]['delOffset'] = .02*Ymax
                     Pattern[0]['refOffset'] = -0.1*Ymax
@@ -1665,7 +1665,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
                     num = Phases.keys().index(pick)
                     if num:
-                        data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)
+                        data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/num
                     else:       #1st row of refl ticks
                         data[0]['refOffset'] = event.ydata
         PlotPatterns(G2frame,plotType=plottype)
@@ -1767,6 +1767,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
                 if 'Offset' not in Pattern[0]:     #plot offset data
+                    print 'no Offset?'
                     Ymax = max(Pattern[1][1])
                     Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
                 PlotList.append(Pattern)
@@ -1916,10 +1917,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
-                        D = np.where(xye[5],(Y-Z),0.)-Ymax*Pattern[0]['delOffset']
+                        D = np.where(xye[5],(Y-Z),0.)-Pattern[0]['delOffset']
                     else:
                         W = xye[4]+offsetY*N*Ymax/100.0
-                        D = xye[5]-Ymax*Pattern[0]['delOffset']  #powder background
+                        D = xye[5]-Pattern[0]['delOffset']  #powder background
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
                         W = xye[4]*X**4
@@ -2065,7 +2066,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = Pattern[0]['refOffset']-pId*Ymax*Pattern[0]['refDelt']*np.ones_like(peak)
+                pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
                 if G2frame.plotStyle['qPlot']:
                     Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 elif G2frame.plotStyle['dPlot']:
@@ -3614,6 +3615,30 @@ def PlotCovariance(G2frame,Data):
             else:
                 G2frame.VcovColor = 'RdYlGn'
             dlg.Destroy()
+        elif event.key == 'p':
+            covFile = open(os.path.splitext(G2frame.GSASprojectfile)[0]+'.cov','w')
+            covFile.write(128*'*' + '\n')
+            covFile.write('*' + 126*' ' + '*\n')
+            covFile.write('*{:^126}*\n'.format('Covariance Matrix'))
+            covFile.write('*' + 126*' ' + '*\n')
+            covFile.write(128*'*' + '\n\n\n\n')
+            llen = len(varyList)
+            for start in xrange(0, llen, 8):  # split matrix into batches of 7 columns
+                if llen >= start + 8:
+                    stop = start + 8
+                else:
+                    stop = llen
+                covFile.write(12*' ' + '\t')
+                for idx in xrange(start, stop):
+                    covFile.write('{:^12}\t'.format(varyList[idx]))
+                covFile.write('\n\n')
+                for line in xrange(llen):
+                    covFile.write('{:>12}\t'.format(varyList[line]))
+                    for idx in xrange(start, stop):
+                        covFile.write('{: 12.6f}\t'.format(covArray[line][idx]))
+                    covFile.write('\n')
+                covFile.write('\n\n\n')
+            covFile.close()
         PlotCovariance(G2frame,Data)
 
     def OnMotion(event):
@@ -3644,7 +3669,7 @@ def PlotCovariance(G2frame,Data):
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-    Page.Choice = ['s: to change colors']
+    Page.Choice = ['s: to change colors','p: to save covariance as text file']
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.status.SetFields(['',''])
     G2frame.G2plotNB.status.SetStatusWidths([150,-1])   #need to reset field widths here    

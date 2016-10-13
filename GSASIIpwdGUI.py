@@ -3395,6 +3395,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if phaseName not in ['Unknown',]:
             pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
             phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+            if not phaseId:         #phase deleted 
+                return None
             General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
             Super = General.get('Super',0)
             SuperVec = General.get('SuperVec',[])
@@ -3489,6 +3491,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
             PeakTable = MakeReflectionTable(phaseName)
+            if PeakTable == None:
+                return
             G2frame.refTable[phaseName].SetTable(PeakTable, True)
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)

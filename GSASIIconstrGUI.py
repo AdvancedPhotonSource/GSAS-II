@@ -1167,6 +1167,13 @@ def UpdateConstraints(G2frame,data):
             parent=G2frame.dataFrame)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
+
+################################################################################
+#### Make nuclear-magnetic phase constraints - called by OnTransform in G2phsGUI
+################################################################################        
+        
+def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec):
+    print 'make nuclear-magnetic phase constraints here'
         
 ################################################################################
 #### Rigid bodies

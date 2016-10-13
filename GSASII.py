@@ -3007,11 +3007,11 @@ class GSASII(wx.Frame):
                                 for i,item in DelList:
                                     if item in refList:
                                         del(refList[item])
-                            self.PatternTree.SetItemPyData(Id,refList)
+#                            self.PatternTree.SetItemPyData(Id,refList)
                         elif 'HKLF' in name:
                             data = self.PatternTree.GetItemPyData(item)
                             data[0] = {}
-                            self.PatternTree.SetItemPyData(item,data)
+#                            self.PatternTree.SetItemPyData(item,data)
                             
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             finally:

@@ -49,6 +49,7 @@ import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIctrls as G2G
+import GSASIIconstrGUI as G2cnstG
 import atmdata
 import numpy as np
 import numpy.linalg as nl
@@ -1382,7 +1383,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg = G2gd.TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Vec,ifMag = dlg.GetSelection()
+                newPhase,Trans,Vec,ifMag,ifConstr = dlg.GetSelection()
             else:
                 return
         finally:
@@ -1404,6 +1405,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
+        if ifMag and ifConstr:
+            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec)     #data is old phase
         G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
         # if nuc - mag transformtion: make constraints here? Needed for Type 4 magnetics
         

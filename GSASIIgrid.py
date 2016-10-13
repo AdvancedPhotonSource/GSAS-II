@@ -530,6 +530,7 @@ class TransformDialog(wx.Dialog):
         self.newCell = self.Phase['General']['Cell'][1:8]
         self.Common = 'abc'
         self.ifMag = False
+        self.ifConstr = True
         self.Draw()
 
     def Draw(self):
@@ -622,6 +623,9 @@ class TransformDialog(wx.Dialog):
             
         def OnMag(event):
             self.ifMag = mag.GetValue()
+            
+        def OnConstr(event):
+            self.ifConstr = constr.GetValue()
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -685,6 +689,10 @@ class TransformDialog(wx.Dialog):
             mainSizer.Add(mag,0,WACV)
             mainSizer.Add(wx.StaticText(self.panel, \
                 label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
+            constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
+            constr.SetValue(self.ifConstr)
+            constr.Bind(wx.EVT_CHECKBOX,OnConstr)
+            mainSizer.Add(constr,0,WACV)
 
         TestBtn = wx.Button(self.panel,-1,"Test")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)
@@ -709,7 +717,7 @@ class TransformDialog(wx.Dialog):
     def GetSelection(self):
         self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-        return self.Phase,self.Trans,self.Vec,self.ifMag
+        return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr
 
     def OnOk(self,event):
         parent = self.GetParent()

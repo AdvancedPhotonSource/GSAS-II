@@ -693,7 +693,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-            Nops *= 2
         Gdata = np.repeat(Gdata,Ncen,axis=1)        #dup over cell centering
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
@@ -768,10 +767,10 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-#            TMcorr = 0.5*0.539*Tcorr[:,0,:]*MF*len(SGMT)/Mdata     #Nref,Natm
-            TMcorr = 0.539*Tcorr[:,0,:]*MF/Nops     #Nref,Natm
+            TMcorr = 0.5*0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(Nops*Ncen)     #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
+                TMcorr = TMcorr/2.
             else:
                 mphase = phase 
             mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])

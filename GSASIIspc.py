@@ -721,13 +721,15 @@ def MagSGSym(SGData):
         SGLaue['MagPtGp'] = SGLaue
         return SGData['SpGrp']
     magSym = SGData['SpGrp'].split()
-    if len(SpnFlp) == 1:    #ok
+    if SGLaue in ['-1',]:
         SGData['MagPtGp'] = SGLaue
-        if SpnFlp[-1] == -1:
+        if SpnFlp[0] == -1:
             magSym[1] += "'"
             SGData['MagPtGp'] += "'"
-        return ' '.join(magSym)
-    if SGLaue in ['mmm',]:
+        if magSym[0] in ['A','B','C','I'] and SGData['SpGrp'] != 'I 41/a':
+            if SpnFlp[1] < 0:
+                magSym[0] += '(P)'
+    elif SGLaue in ['mmm',]:
         SGData['MagPtGp'] = ''
         for i in [0,1,2]:
             SGData['MagPtGp'] += 'm'
@@ -829,7 +831,7 @@ def MagSGSym(SGData):
                         sym[i] += "'"
                         Ptsym[i] += "'"
         else:
-            for i in [0,1]:
+            for i in range(len(GenSym)):
                 if SpnFlp[i] < 0:                      
                     if i and magSym[0] in ['A','B','C','I'] and SGData['SpGrp'] != 'I 41/a':
                         magSym[0] += '(P)'
@@ -974,6 +976,8 @@ def GenMagOps(SGData):
     for incv in range(Ncv):
         if incv:
             SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
+    if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
+        detM[1] = 1.
     MagMom = SpnFlp*np.array(Ncv*detM)
     SGData['MagMom'] = MagMom
 #    print 'SgOps:',OprNames

@@ -248,7 +248,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['Color'] = []
         if generalData['Type'] == 'magnetic' and not 'Lande g' in generalData:
             generalData['MagDmin'] = 1.0
-            generalData['Lande g'] = len(atomData)*[None,]
+            generalData['Lande g'] = []
         generalData['Mydir'] = G2frame.dirname
         badList = {}
         for iat,atom in enumerate(atomData):
@@ -285,11 +285,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['Color'].append(Info['Color'])
                 if generalData['Type'] == 'magnetic':
                     generalData['MagDmin'] = generalData.get('MagDmin',1.0)
-                    try:
-                        if atom[ct] in atmdata.MagFF and not generalData['Lande g'][iat]:
-                            generalData['Lande g'][iat] = 2.0
-                    except IndexError:
-                        generalData['Lande g'].append(2.0)
+                    if not atom[ct] in generalData['AtomTypes']:
+                        generalData['Lande g'].append(2.0)                        
         if badList:
             msg = 'Warning: element symbol(s) not found:'
             for key in badList:
@@ -739,7 +736,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 elemSizer.Add(colorTxt,0,WACV)
             if generalData['Type'] == 'magnetic':
                 elemSizer.Add(wx.StaticText(General,label=' Lande g factor: '),0,WACV)
-                for ig,gfac in enumerate(generalData['Lande g']):
+                for ig,elem in enumerate(generalData['AtomTypes']):
+                    gfac = generalData['Lande g'][ig]
                     if gfac == None:
                         elemSizer.Add((5,0),)
                     else:

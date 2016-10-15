@@ -3475,6 +3475,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,8+im,wx.RED)
                         
                                                   
+        if not len(data[phaseName]):
+            return          #deleted phase?
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
         if HKLF:
@@ -3491,8 +3493,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
             PeakTable = MakeReflectionTable(phaseName)
-            if PeakTable == None:
-                return
             G2frame.refTable[phaseName].SetTable(PeakTable, True)
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)
@@ -3563,13 +3563,23 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.refTable = {}
     for tabnum,phase in enumerate(phases):
-        G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+        if len(data[phase]):
+            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
+            G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+        else:       #cleanup deleted phase reflection lists
+            del data[phase]
+            if len(data):
+                G2frame.RefList = data.keys()[0]
+                phaseName = G2frame.RefList
+            else:
+                G2frame.RefList = ''
+                phaseName = ''
 #    if phaseName not in G2frame.refTable:
 #        print phaseName
 #        print phases
 #        raise Exception("how did we get a invalid phase name?")    
-    ShowReflTable(phaseName)
+    if phaseName:
+        ShowReflTable(phaseName)
 #    G2frame.refTable[phaseName].Fit()   #slow!!
 #    size = G2frame.refTable[phaseName].GetSize()
 #    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])

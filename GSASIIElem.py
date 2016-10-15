@@ -212,6 +212,7 @@ def GetAtomInfo(El,ifMag=False):
             AtomInfo['Isotopes']['Nat. Abund.'] = data
         else:
             AtomInfo['Isotopes'][isotope.split('_')[1]] = data
+    AtomInfo['Lande g'] = 2.0
     return AtomInfo
         
 def GetXsectionCoeff(El):

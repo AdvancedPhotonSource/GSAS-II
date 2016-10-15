@@ -693,14 +693,14 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-        Gdata = np.repeat(Gdata,Ncen,axis=1)        #dup over cell centering
-        Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
+        Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
+#        GSASIIpath.IPyBreak()
+        Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
         Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
-#        GSASIIpath.IPyBreak()
         Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
         if SGData['SGInv']:
-            Mag = np.repeat(Mag,2,axis=0)                  #Mag same length as Gdata
+            Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     elif 'X' in calcControls[hfx+'histType']:
@@ -767,20 +767,21 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.5*0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(Nops*Ncen)     #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2*Nops*Ncen)     #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
                 TMcorr = TMcorr/2.
             else:
                 mphase = phase 
-            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
+#            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
+            mphase = np.array([mphase for cen in SGData['SGCen']])
             mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto
             HM = np.inner(Bmat.T,H)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
             eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
-            Q = -HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]+Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
             fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
@@ -1063,14 +1064,14 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-        Gdata = np.repeat(Gdata,Ncen,axis=1)    #dup over cell centering
+        Gdata = np.repeat(Gdata,Ncen,axis=1)        #dup over cell centering
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
         Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
 #        GSASIIpath.IPyBreak()
-        Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
+        Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #Mag same length as Gdata
         if SGData['SGInv']:
-            Mag = np.repeat(Mag,2,axis=0)                  #Mag same length as Gdata
+            Mag = np.repeat(Mag,2,axis=0)
         dFdMx = np.zeros((nRef,mSize,3))
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1139,6 +1140,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             else:
                 mphase = phase 
             mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
+#            GSASIIpath.IPyBreak()
             mphase = np.concatenate(mphase,axis=1)              #Nref,Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto
@@ -1151,7 +1153,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
             fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
             Hij = np.hstack((Hij,Hij))
-#            GSASIIpath.IPyBreak()
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([fot*cosp,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([fot*sinp,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])

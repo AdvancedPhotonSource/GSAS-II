@@ -773,8 +773,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 TMcorr = TMcorr/2.
             else:
                 mphase = phase 
-#            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
-            mphase = np.array([mphase for cen in SGData['SGCen']])
+            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
             mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto
@@ -1049,6 +1048,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
+    Nops = len(SGMT)
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
@@ -1064,7 +1064,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-        Gdata = np.repeat(Gdata,Ncen,axis=1)        #dup over cell centering
+        Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
         Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
@@ -1084,6 +1084,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
     dFdx = np.zeros((nRef,mSize,3))
+    dFdmx = np.zeros((nRef,mSize,3))
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
     dFdbab = np.zeros((nRef,2))
@@ -1134,25 +1135,26 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fotp = FPP*Tcorr     
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.5*0.539*Tcorr[:,0,:]*MF*len(SGMT)/Mdata                                  #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2*Nops*Ncen)     #Nref,Natm                                  #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
+                TMcorr = TMcorr/2.
             else:
                 mphase = phase 
             mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
-#            GSASIIpath.IPyBreak()
             mphase = np.concatenate(mphase,axis=1)              #Nref,Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto
             HM = np.inner(Bmat.T,H)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
             eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
-            Q = -HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]+Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
-            fam = Q*TMcorr[nxs,:,nxs,:]*SGData['MagMom'][nxs,nxs,:,nxs]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-            fbm = Q*TMcorr[nxs,:,nxs,:]*SGData['MagMom'][nxs,nxs,:,nxs]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
             fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
             Hij = np.hstack((Hij,Hij))
+#            GSASIIpath.IPyBreak()
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([fot*cosp,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([fot*sinp,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])
@@ -1165,11 +1167,11 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
-            dfadfr = np.sum(fam/occ,axis=-2)        #array(refBlk,nAtom) Fdata != 0 avoids /0. problem 
+            dfadfr = np.sum(fams/occ,axis=-2)        #array(refBlk,nAtom) Fdata != 0 avoids /0. problem 
             dfadba = np.sum(-cosm*TMcorr[:,nxs,:],axis=-2)    #array(refBlk,nAtom)
             dfadx = np.sum(twopi*Uniq[:,nxs,:,:]*np.swapaxes(fax[0],-2,-1)[:,:,:,nxs],axis=-2)
-            dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=-2) #array(Ops,refBlk,nAtoms)
-            dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=-3)
+            dfadui = np.sum(-SQfactor[:,nxs,nxs]*fams,axis=-2) #array(Ops,refBlk,nAtoms)
+            dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fams[:,:,:,:,nxs],axis=-3)
         else:
             dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem 
             dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)

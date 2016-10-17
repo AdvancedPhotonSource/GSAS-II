@@ -150,6 +150,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
         scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
         scaleSizer.Add(scaleVal,0,WACV)
+        if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
+            wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)
+            weightFr = UseList[G2frame.hist]['Scale'][0]*generalData['Mass']/wtSum
+            scaleSizer.Add(wx.StaticText(DData,label=' Wt. fraction: %.3f'%(weightFr)),0,WACV)
         return scaleSizer
         
     def OnLGmixRef(event):

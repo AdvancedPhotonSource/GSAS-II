@@ -61,8 +61,32 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
 ateln2 = 8.0*math.log(2.0)
+
+################################################################################
+#### Powder utilities
+################################################################################
+
+def PhaseWtSum(G2frame,histo):
+    '''
+    Calculate sum of phase mass*shase fraction for PWDR data (exclude magnetic phases)
     
+    :param G2frame: GSASII main frame structure
+    :param str histo: histogram name
+    :returns sum(scale*mass) for phases in histo
+    '''
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    wtSum = 0.0
+    for phase in Phases:
+        if Phases[phase]['General']['Type'] != 'magnetic':
+            if histo in Phases[phase]['Histograms']:
+                mass = Phases[phase]['General']['Mass']
+                phFr = Phases[phase]['Histograms'][histo]['Scale'][0]
+                wtSum += mass*phFr
+    return wtSum
+    
+################################################################################
 #GSASII pdf calculation routines
+################################################################################
         
 def Transmission(Geometry,Abs,Diam):
     '''

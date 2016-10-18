@@ -1292,7 +1292,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 
             if Print:
                 print >>pFile,'\n Phase name: ',General['Name']
-                print >>pFile,135*'-'
+                print >>pFile,135*'='
                 PrintFFtable(FFtable)
                 PrintBLtable(BLtable)
                 if General['Type'] == 'magnetic':
@@ -1336,7 +1336,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         elif PawleyRef:
             if Print:
                 print >>pFile,'\n Phase name: ',General['Name']
-                print >>pFile,135*'-'
+                print >>pFile,135*'='
                 print >>pFile,''
                 if len(SSGtext):    #if superstructure
                     for line in SSGtext: print >>pFile,line
@@ -1883,6 +1883,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     print >>pFile,'\n Phases:'
     for phase in Phases:
         print >>pFile,' Result for phase: ',phase
+        print >>pFile,135*'='
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
@@ -2273,14 +2274,15 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             hapDict[pfx+item+sfx] = hapData[item][4][i]
                             if hapData[item][5][i]:
                                 hapVary.append(pfx+item+sfx)
-                for bab in ['BabA','BabU']:
-                    hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                    if hapData['Babinet'][bab][1]:
-                        hapVary.append(pfx+bab)
+                if Phases[phase]['General']['Type'] != 'magnetic':
+                    for bab in ['BabA','BabU']:
+                        hapDict[pfx+bab] = hapData['Babinet'][bab][0]
+                        if hapData['Babinet'][bab][1]:
+                            hapVary.append(pfx+bab)
                                 
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                    print >>pFile,135*'-'
+                    print >>pFile,135*'='
                     print >>pFile,' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
                     print >>pFile,' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
                     if hapData['Pref.Ori.'][0] == 'MD':
@@ -2293,8 +2295,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
-                    if hapData['Babinet']['BabA'][0]:
-                        PrintBabinet(hapData['Babinet'])                        
+                    if Phases[phase]['General']['Type'] != 'magnetic':
+                        if hapData['Babinet']['BabA'][0]:
+                            PrintBabinet(hapData['Babinet'])                        
                 if resetRefList:
                     refList = []
                     Uniq = []
@@ -2416,7 +2419,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+'TwinFr:0'] = 1.-sumTwFr
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                    print >>pFile,135*'-'
+                    print >>pFile,135*'='
                     print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
                     if extType != 'None':
                         print >>pFile,' Extinction  Type: %15s'%(extType),' approx: %10s'%(extApprox)
@@ -2679,10 +2682,11 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
                     if pfx+name in sigDict:
                         SizeMuStrSig[pfx+'HStrain'][name] = sigDict[pfx+name]
-                for name in ['BabA','BabU']:
-                    hapData['Babinet'][name][0] = parmDict[pfx+name]
-                    if pfx+name in sigDict:
-                        BabSig[pfx+name] = sigDict[pfx+name]                
+                if Phases[phase]['General']['Type'] != 'magnetic':
+                    for name in ['BabA','BabU']:
+                        hapData['Babinet'][name][0] = parmDict[pfx+name]
+                        if pfx+name in sigDict:
+                            BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:
                 for item in ['Scale','Flack']:
@@ -2729,7 +2733,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     #skip if histogram not included e.g. in a sequential refinement
                     continue
                 print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                print >>pFile,130*'-'
+                print >>pFile,135*'='
                 hapData = HistoPhase[histogram]
                 hId = Histogram['hId']
                 Histogram['Residuals'][str(pId)+'::Name'] = phase
@@ -2755,8 +2759,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
-                    if len(BabSig):
-                        PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
+                    if Phases[phase]['General']['Type'] != 'magnetic':
+                        if len(BabSig):
+                            PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
                     Inst = Histogram['Instrument Parameters'][0]
@@ -2989,7 +2994,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
     
             if Print: 
                 print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
-                print >>pFile,135*'-'
+                print >>pFile,135*'='
                 Units = {'C':' deg','T':' msec'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
@@ -3209,7 +3214,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
             print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
-            print >>pFile,135*'-'
+            print >>pFile,135*'='
             print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
             print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
             print >>pFile,' Other residuals: R = %.2f%%, Rb = %.2f%%, wRb = %.2f%% wRmin = %.2f%%'% \

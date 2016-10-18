@@ -418,7 +418,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Axis = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
         Axis.Bind(wx.EVT_TEXT_ENTER,OnAxis)
         Axis.Bind(wx.EVT_KILL_FOCUS,OnAxis)
-        uniSizer.Add(Axis,0,WACV)
+        uniSizer.Add(Axis,0,WACV|wx.LEFT,5)
         return uniSizer
         
     def UniDataSizer(parmName,parm,fmt,OnVal,OnRef):
@@ -431,7 +431,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             sizeRef.SetValue(ref)
             Indx[sizeRef.GetId()] = [G2frame.hist,id]
             sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
-            dataSizer.Add(sizeRef,0,WACV)
+            dataSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
             sizeVal = wx.TextCtrl(DData,wx.ID_ANY,fmt%(val),style=wx.TE_PROCESS_ENTER)
             Indx[sizeVal.GetId()] = [G2frame.hist,id]
             sizeVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
@@ -523,7 +523,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         poRef = wx.CheckBox(DData,wx.ID_ANY,label=' March-Dollase ratio: ')
         poRef.SetValue(POData[2])
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
-        poSizer.Add(poRef,0,WACV)
+        poSizer.Add(poRef,0,WACV|wx.LEFT,5)
         poVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
         poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
@@ -594,7 +594,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         shPenalty = wx.BoxSizer(wx.HORIZONTAL)
         shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
         shPenalty.Add(wx.ComboBox(DData,value=POData[6][0],choices=POData[6],
-            style=wx.CB_DROPDOWN),0,WACV)
+            style=wx.CB_DROPDOWN),0,WACV|wx.LEFT,5)
         hklList = wx.Button(DData,label='Select penalty hkls')
         hklList.Bind(wx.EVT_BUTTON,OnHKLList)
         shPenalty.Add(hklList,0,WACV)
@@ -667,8 +667,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 pass
             Obj.SetValue("%.2f"%(UseList[G2frame.hist]['Extinction'][0]))
 
-        extSizer = wx.BoxSizer(wx.VERTICAL)
         if Type == 'HKLF':
+            extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
             typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
             Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
@@ -726,6 +726,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     val2Sizer.Add(Eval,0,WACV)
                 extSizer.Add(val2Sizer,0,WACV)
         else:   #PWDR
+            extSizer = wx.BoxSizer(wx.HORIZONTAL)
             extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
             extRef.SetValue(UseList[G2frame.hist]['Extinction'][1])
             extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
@@ -875,7 +876,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
 #        if nTwin == 1 or 'bool' not in str(type(UseList[G2frame.hist]['Twins'][1][0])):
         addtwin = wx.CheckBox(DData,wx.ID_ANY,label=' Add Twin Law')
         addtwin.Bind(wx.EVT_CHECKBOX, OnAddTwin)
-        topsizer.Add(addtwin,0,WACV)
+        topsizer.Add(addtwin,0,WACV|wx.LEFT,5)
         twinsizer.Add(topsizer)
         Indx = {}
         if nTwin > 1:
@@ -889,7 +890,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Style = wx.TE_READONLY
                     TwVal = Twin[1][0]
                 if 'bool' not in str(type(Twin[0])):
-                    matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
+                    matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV|wx.LEFT,5)
                     for im,Mat in enumerate(twinMat):
                         mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
                             style=Style)
@@ -901,7 +902,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                             mat.SetBackgroundColour(VERY_LIGHT_GREY)
                         matSizer.Add(mat,0,WACV|wx.LEFT,5)
                 else:
-                    matSizer.Add(wx.StaticText(DData,-1,' Nonmerohedral twin component %d: '%(it)),0,WACV)
+                    matSizer.Add(wx.StaticText(DData,-1,' Nonmerohedral twin component %d: '%(it)),0,WACV|wx.LEFT,5)
                     if not SGData['SGInv']:
                         twinv = wx.CheckBox(DData,wx.ID_ANY,label=' Use enantiomorph?')
                         twinv.SetValue(Twin[0])
@@ -1086,7 +1087,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     
             bottomSizer.Add(poSizer,0,WACV|wx.TOP|wx.BOTTOM,5)
             bottomSizer.Add(ExtSizer('PWDR'),0,WACV|wx.TOP|wx.BOTTOM,5)
-            bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
+            if generalData['Type'] != 'magnetic': 
+                bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
         elif G2frame.hist[:4] == 'HKLF':
 #patch
             if 'Flack' not in UseList[G2frame.hist]:
@@ -1108,7 +1110,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if name in UseList:
             useList.append(name)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV)
+    mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)
     if G2frame.hist != '':
         topSizer = wx.FlexGridSizer(1,2,5,5)
         select = wx.ListBox(DData,choices=useList,style=wx.LB_SINGLE,size=(-1,120))

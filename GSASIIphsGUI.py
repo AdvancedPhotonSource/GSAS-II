@@ -799,7 +799,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             MagSym = generalData['SGData']['SpGrp'].split()
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
-            magSizer.Add(wx.StaticText(General,label='  NB: UNDER CONSTRUCTION - LS NOT AVAILABLE'),0,WACV)
+            magSizer.Add(wx.StaticText(General,label='  NB: UNDER CONSTRUCTION - LS NOT FINISHED'),0,WACV)
             if not len(GenSym):
                 magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                 return magSizer

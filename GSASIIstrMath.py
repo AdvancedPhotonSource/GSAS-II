@@ -1239,7 +1239,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
     dFdx = np.zeros((nRef,mSize,3))
-    dFdmx = np.zeros((nRef,mSize,3))
+    dFdMx = np.zeros((nRef,mSize,3))
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
     time0 = time.time()
@@ -1283,40 +1283,35 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HM = np.inner(Bmat.T,H)                             #put into cartesian space
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
-        Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+        Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+        dqdm = (HM*HM-1)[:,:,nxs,nxs]/Mag[nxs,nxs,:,:]
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
+        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #Mxyz,Nref
         fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
         famx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
         fbmx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*cosm[nxs,:,:,:]
         #sum below is over Uniq
-        dfadfr = np.sum(fam/occ,axis=-2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
-#        GSASIIpath.IPyBreak()
-#        dfadx = np.sum(twopi*Uniq.T[:,:,:,nxs]*famx,axis=2)
-#        dfadmx = twopi*Uniq.T[:,:,:,nxs]*famx) #?
+        dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
+        dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)
+        dfadmx = np.sum(TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*(Mag[nxs,nxs,:,:]*dqdm+Q),axis=2)
+        dfadmx = np.reshape(dfadmx,(iFin-iBeg,-1,3))
         dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)
-        # array(2,refBlk,nAtom,3) & array(2,refBlk,nAtom,6)
-        if not SGData['SGInv']:
-            dfbdfr = np.sum(fbm/occ,axis=-2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
-#            dfbdx = np.sum(twopi*Uniq.T[:,:,:,nxs]*fbmx,axis=2)
-#            dfbdmx = twopi*Uniq[:,nxs,:,:]*np.transpose(fbmx,(1,2,3,0))
-            dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
-            dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
-        else:
-            dfbdfr = np.zeros_like(dfadfr)
-#            dfbdx = np.zeros_like(dfadx)
-#            dfbdmx = np.zeros_like(dfadmx)
-            dfbdui = np.zeros_like(dfadui)
-            dfbdua = np.zeros_like(dfadua)
+        # array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
+        dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
+        dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
+        dfbdmx = np.sum(TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*(Mag[nxs,nxs,:,:]*dqdm+Q),axis=2)
+        dfbdmx = np.reshape(dfbdmx,(iFin-iBeg,-1,3))
+        dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
+        dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         dFdfr[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
-#        dFdx[iBeg:iFin] = 2.*(fams[:,:,nxs]*dfadx+fbms[:,:,nxs]*dfbdx)
-#        dFdMx[iBeg:iFin] = np.sum(2.*(fams[:,nxs,nxs]*dfadmx+fbms[:,nxs,nxs]*dfbdmx),axis=0)
-        dFdui[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui),axis=0)
-        dFdua[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua),axis=0)
-#        GSASIIpath.IPyBreak()
+        dFdx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx),axis=0)
+        dFdMx[iBeg:iFin] = 2.*(fams.T[:,nxs,:]*dfadmx+fbms.T[:,nxs,:]*dfbdmx)
+        dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
+        dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
         iBeg += blkSize
+#        GSASIIpath.IPyBreak()
     print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):
@@ -1324,9 +1319,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
         dFdvDict[pfx+'dAy:'+str(i)] = dFdx.T[1][i]
         dFdvDict[pfx+'dAz:'+str(i)] = dFdx.T[2][i]
-        dFdvDict[pfx+'dAMx:'+str(i)] = dFdMx.T[0][i]
-        dFdvDict[pfx+'dAMy:'+str(i)] = dFdMx.T[1][i]
-        dFdvDict[pfx+'dAMz:'+str(i)] = dFdMx.T[2][i]
+        dFdvDict[pfx+'AMx:'+str(i)] = dFdMx.T[0][i]
+        dFdvDict[pfx+'AMy:'+str(i)] = dFdMx.T[1][i]
+        dFdvDict[pfx+'AMz:'+str(i)] = dFdMx.T[2][i]
         dFdvDict[pfx+'AUiso:'+str(i)] = dFdui.T[i]
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
@@ -3859,7 +3854,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     else:
                         try:
                             aname = name.split(pfx)[1][:2]
-                            if aname not in ['Af','dA','AU','RB','Xs','Xc','Ys','Yc','Zs','Zc','Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
+                            if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
+                                'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
                         except IndexError:
                             continue
                     if name in varylist:

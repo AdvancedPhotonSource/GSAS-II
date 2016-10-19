@@ -1099,8 +1099,11 @@ def UpdateConstraints(G2frame,data):
             G2frame.Page = [page,'phs']
             G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,True)
 #            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,True)
-            if not 'DELETED' in str(PhaseConstr):
-                UpdateConstraintPanel(PhaseConstr,'Phase')
+            if 'DELETED' in str(PhaseConstr):   #seems to be no other way to do this (wx bug)
+                if GSASIIpath.GetConfigValue('debug'):
+                    print 'wx error: PhaseConstr not cleanly deleted after Refine'
+                return
+            UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global constraints':
             G2frame.Page = [page,'glb']
             UpdateConstraintPanel(GlobalConstr,'Global')
@@ -1477,7 +1480,9 @@ def UpdateRigidBodies(G2frame,data):
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
         refChoice = {}
-        if 'DELETED' in str(Status):
+        if 'DELETED' in str(Status):   #seems to be no other way to do this (wx bug)
+            if GSASIIpath.GetConfigValue('debug'):
+                print 'wx error: Rigid Body/Status not cleanly deleted after Refine'
             return
         SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
         def rbNameSizer(rbId,rbData):

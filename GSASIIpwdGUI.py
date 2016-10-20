@@ -3425,7 +3425,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 refs = np.vstack((refList.T[:15+Super],I100)).T
             elif 'T' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:18+Super],I100)).T
-            G2frame.HKL = np.vstack((refList.T[:6+Super])).T    #build for plots
         rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
@@ -3498,6 +3497,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
             setBackgroundColors(im,itof)
+#        GSASIIpath.IPyBreak()
+        refList = np.array([refl[:6+im] for refl in data[phaseName]['RefList']])
+        G2frame.HKL = np.vstack((refList.T)).T    #build for plots
         # raise the tab (needed for 1st use and from OnSelectPhase)
         for PageNum in range(G2frame.dataDisplay.GetPageCount()):
             if phaseName == G2frame.dataDisplay.GetPageText(PageNum):

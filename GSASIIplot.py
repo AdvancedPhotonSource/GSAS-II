@@ -1209,7 +1209,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     Note that plotting information will be found in:
        G2frame.PatternId (contains the tree item for the current histogram)
        G2frame.PickId (contains the actual selected tree item (can be child of histogram)
-       G2frame.HKL (contains a reflection list -- when used unclear)
+       G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
     global exclLines
     global DifLine

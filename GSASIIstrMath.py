@@ -1284,7 +1284,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
-        dqdm = (HM*HM-1)[:,:,nxs,nxs]/Mag[nxs,nxs,:,:]
+        dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #Mxyz,Nref
@@ -1294,24 +1294,24 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #sum below is over Uniq
         dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)
-        dfadmx = np.sum(TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*(Mag[nxs,nxs,:,:]*dqdm+Q),axis=2)
-        dfadmx = np.reshape(dfadmx,(iFin-iBeg,-1,3))
+        dfadmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:]*(dqdm[:,:,:,nxs,nxs]+Q[nxs,:,:,:,:]),axis=-2)
+        dfadmx = np.reshape(dfadmx,(3,iFin-iBeg,-1,3))
         dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)
         # array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
-        dfbdmx = np.sum(TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*(Mag[nxs,nxs,:,:]*dqdm+Q),axis=2)
-        dfbdmx = np.reshape(dfbdmx,(iFin-iBeg,-1,3))
+        dfbdmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*sinm[nxs,nxs,:,:,:]*(dqdm[:,:,:,nxs,nxs]+Q[nxs,:,:,:,:]),axis=-2)
+        dfbdmx = np.reshape(dfbdmx,(3,iFin-iBeg,-1,3))
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         dFdfr[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
         dFdx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx),axis=0)
-        dFdMx[iBeg:iFin] = 2.*(fams.T[:,nxs,:]*dfadmx+fbms.T[:,nxs,:]*dfbdmx)
+#        GSASIIpath.IPyBreak()
+        dFdMx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadmx+fbms[:,:,nxs,nxs]*dfbdmx),axis=0)
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
         iBeg += blkSize
-#        GSASIIpath.IPyBreak()
     print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):

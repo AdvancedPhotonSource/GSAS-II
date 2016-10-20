@@ -764,6 +764,7 @@ class GSASII(wx.Frame):
                 else:
                     raise Exception('Unexpected histogram '+str(histoName))
         wx.EndBusyCursor()
+        self.EnableRefineCommand()
         return # success
         
     def _Add_ImportMenu_Image(self,parent):
@@ -951,7 +952,7 @@ class GSASII(wx.Frame):
                         else:
                             ref[3] = 0
         wx.EndBusyCursor()
-        
+        self.EnableRefineCommand()        
         return # success
 
     def _Add_ImportMenu_powder(self,parent):
@@ -1443,6 +1444,24 @@ class GSASII(wx.Frame):
                 else:
                     self.ErrorDialog('Read Error',
                                      'Error opening/reading file '+str(instfile))
+    def EnableRefineCommand(self):
+        haveData = False
+        # check for phases connected to histograms
+        sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        if not sub: return
+        item, cookie = self.PatternTree.GetFirstChild(sub)
+        while item: # loop over phases
+            data = self.PatternTree.GetItemPyData(item)
+            item, cookie = self.PatternTree.GetNextChild(sub, cookie)
+            UseList = data['Histograms']
+            if UseList: haveData = True
+        if haveData:
+            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+            for item in self.Refine: item.Enable(True)
+        else:
+            self.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
+            for item in self.Refine: item.Enable(False)
+
         
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item
@@ -1636,6 +1655,7 @@ class GSASII(wx.Frame):
                 refList = self.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
                 refList[generalData['Name']] = []
+        self.EnableRefineCommand()
         return # success
 
     def OnDummyPowder(self,event):
@@ -1801,6 +1821,7 @@ class GSASII(wx.Frame):
             refList = self.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
             refList[generalData['Name']] = []
+        self.EnableRefineCommand()
         return # success
         
     def OnPreferences(self,event):

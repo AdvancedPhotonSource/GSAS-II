@@ -4020,7 +4020,9 @@ class OpenTutorial(wx.Dialog):
         indices = [j for j,i in enumerate(tutorialCatalog)
             if os.path.exists(os.path.join(self.tutorialPath,i[0],i[1]))]
         if not indices:
-            G2MessageBox(self,'There are no downloaded tutorials','None downloaded')
+            G2MessageBox(self,
+                         'There are no downloaded tutorials in '+self.tutorialPath,
+                         'None downloaded')
             return
         choices = [tutorialCatalog[i][2] for i in indices]
         selected = self.ChooseTutorial(choices)

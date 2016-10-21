@@ -947,7 +947,8 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
             topM20 = 0
             cycle = 0
             while cycle < 5:
-                dlg.Update(0,newmsg=tries[cycle]+" cell search for "+bravaisNames[ibrav])
+                if dlg:
+                    dlg.Update(0,newmsg=tries[cycle]+" cell search for "+bravaisNames[ibrav])
                 try:
                     GoOn = True
                     while GoOn:                                                 #Loop over increment of volume

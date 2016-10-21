@@ -1294,20 +1294,20 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #sum below is over Uniq
         dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)
-        dfadmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:]*(dqdm[:,:,:,nxs,nxs]+Q[nxs,:,:,:,:]),axis=-2)
+        dmx = dqdm[:,:,:,nxs,nxs]*Mag[nxs,nxs,nxs,:,:]+Q[nxs,:,:,:,:]*Gdata[:,nxs,nxs,:,:]
+        dfadmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:]*dmx,axis=-2)
         dfadmx = np.reshape(dfadmx,(3,iFin-iBeg,-1,3))
         dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)
         # array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
-        dfbdmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*sinm[nxs,nxs,:,:,:]*(dqdm[:,:,:,nxs,nxs]+Q[nxs,:,:,:,:]),axis=-2)
+        dfbdmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*sinm[nxs,nxs,:,:,:]*dmx,axis=-2)
         dfbdmx = np.reshape(dfbdmx,(3,iFin-iBeg,-1,3))
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         dFdfr[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
         dFdx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx),axis=0)
-#        GSASIIpath.IPyBreak()
         dFdMx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadmx+fbms[:,:,nxs,nxs]*dfbdmx),axis=0)
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
@@ -1329,6 +1329,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+#    GSASIIpath.IPyBreak()
     return dFdvDict
     
 #def StructureFactorDervTw(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -3844,10 +3845,13 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
             if not Phase['General'].get('doPawley'):
-                #do atom derivatives -  for RB,F,X & U so far              
-                corr = dervDict['int']/refl[9+im]
-                if Ka2 and iFin2-iBeg2:
-                    corr2 = dervDict2['int']/refl[9+im]
+                #do atom derivatives -  for RB,F,X & U so far
+                corr = 0.
+                corr2 = 0.
+                if refl[9+im]:             
+                    corr = dervDict['int']/refl[9+im]
+                    if Ka2 and iFin2-iBeg2:
+                        corr2 = dervDict2['int']/refl[9+im]
                 for name in varylist+dependentVars:
                     if '::RBV;' in name:
                         pass

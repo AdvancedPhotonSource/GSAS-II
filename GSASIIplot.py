@@ -2012,7 +2012,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.canvas.SetToolTipString(tip)
-                        data = G2frame.LimitsTable.GetData()
+                        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))
                         
             else:   #not picked
                 if G2frame.logPlot:

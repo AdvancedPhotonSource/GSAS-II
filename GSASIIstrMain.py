@@ -232,7 +232,7 @@ def Refine(GPXfile,dlg):
         fl = open('testDeriv.dat','wb')
         cPickle.dump(result[0],fl,1)
         cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
-        cPickle.dump([constrDict,fixedList],fl,1)
+        cPickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)
         cPickle.dump(parmDict,fl,1)
         cPickle.dump(varyList,fl,1)
         cPickle.dump(calcControls,fl,1)

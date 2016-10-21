@@ -94,18 +94,19 @@ class testDeriv(wx.Frame):
                 file = open(testFile,'rb')
                 self.values = cPickle.load(file)
                 self.HistoPhases = cPickle.load(file)
-                (self.constrDict,self.fixedList) = cPickle.load(file)
+                (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
                 self.parmDict = cPickle.load(file)
                 self.varylist = cPickle.load(file)
                 self.calcControls = cPickle.load(file)
                 self.pawleyLookup = cPickle.load(file)
-                self.use = [False for i in range(len(self.varylist))]
-                self.delt = [max(abs(self.parmDict[name])*0.001,1e-6) for name in self.varylist]
+                self.use = [False for i in range(len(self.varylist+self.depVarList))]
+                self.delt = [max(abs(self.parmDict[name])*0.001,1e-6) for name in self.varylist+self.depVarList]
                 file.close()
                 groups,parmlist = G2mv.GroupConstraints(self.constrDict)
                 G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
                 self.UpdateControls(event)
                 print G2mv.VarRemapShow(self.varylist)
+                print 'Dependent Vary List:',self.depVarList
         finally:
             dlg.Destroy()
             
@@ -117,6 +118,7 @@ class testDeriv(wx.Frame):
             self.use[item] = Obj.GetValue()
             
         def OnDelValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item = ObjInd[Obj.GetId()]
             try:
@@ -129,10 +131,11 @@ class testDeriv(wx.Frame):
         self.testDerivPanel.DestroyChildren()
         ObjInd = {}
         varylist = self.varylist
+        depVarList = self.depVarList
         use = self.use
         delt = self.delt
         mainSizer = wx.FlexGridSizer(0,8,5,5)
-        for id,[ck,name,d] in enumerate(zip(use,varylist,delt)):
+        for id,[ck,name,d] in enumerate(zip(use,varylist+depVarList,delt)):
             useVal = wx.CheckBox(self.testDerivPanel,label=name)
             useVal.SetValue(ck)
             ObjInd[useVal.GetId()] = id
@@ -163,28 +166,40 @@ class testDeriv(wx.Frame):
         def test2(name,delt):
             
             Title = 'derivatives test for '+name
+            varyList = self.varylist+self.depVarList
             hplot = self.plotNB.add(Title).gca()
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
-                self.varylist,self.calcControls,self.pawleyLookup,None)
-            hplot.plot(dMdV[self.varylist.index(name)],'b',label='analytic deriv')
-            if name in self.varylist:
-                print 'parameter:',name,self.values[self.varylist.index(name)],delt
-                self.values[self.varylist.index(name)] -= delt
+                varyList,self.calcControls,self.pawleyLookup,None)
+            hplot.plot(dMdV[varyList.index(name)],'b',label='analytic deriv')
+            if name in varyList:
+                mmin = np.min(dMdV[varyList.index(name)])
+                mmax = np.max(dMdV[varyList.index(name)])
+                print 'parameter:',name,self.parmDict[name],delt,mmin,mmax
+                if name in self.varylist:
+                    self.values[self.varylist.index(name)] -= delt
+                else:
+                    self.parmDict[name] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    self.varylist,self.calcControls,self.pawleyLookup,None)
-                self.values[self.varylist.index(name)] += 2.*delt
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                if name in self.varylist:
+                    self.values[self.varylist.index(name)] += 2.*delt
+                else:
+                    self.parmDict[name] += 2.*delt
                 M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    self.varylist,self.calcControls,self.pawleyLookup,None)
-                self.values[self.varylist.index(name)] -= delt    
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                if name in self.varylist:
+                    self.values[self.varylist.index(name)] -= delt
+                else:
+                    self.parmDict[name] -= delt    
                 Mn = (M1-M0)/(2.*delt)
                 hplot.plot(Mn,'r',label='numeric deriv')
-                hplot.plot(dMdV[self.varylist.index(name)]-Mn,'g',label='diff')
+                hplot.plot(dMdV[varyList.index(name)]-Mn,'g',label='diff')
+#            GSASIIpath.IPyBreak()
             hplot.legend(loc='best')            
             
         while self.plotNB.nb.GetPageCount():
             self.plotNB.nb.DeletePage(0)
-        test1()
-        for use,name,delt in zip(self.use,self.varylist,self.delt):
+        for use,name,delt in zip(self.use,self.varylist+self.depVarList,self.delt):
             if use:
                 test2(name,delt)
         
@@ -203,4 +218,5 @@ def main():
     application.MainLoop()
     
 if __name__ == '__main__':
+    GSASIIpath.InvokeDebugOpts()
     main()

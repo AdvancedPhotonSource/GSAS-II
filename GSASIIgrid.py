@@ -4081,6 +4081,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
            
     data = G2frame.PatternTree.GetItemPyData(item)
 #patches
+    if not data:
+        return
     if 'wtFactor' not in data[0]:
         data[0] = {'wtFactor':1.0}
 #    if kind == 'PWDR' and 'Compression' not in data[0]:

@@ -1253,7 +1253,6 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         H = refl.T[:3].T
         SQ = 1./(2.*refl.T[4])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
-#        GSASIIpath.IPyBreak()
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
@@ -1262,6 +1261,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT),axis=1).T
         HbH = -np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
+#        GSASIIpath.IPyBreak()
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])
         Hij = np.reshape(np.array([G2lat.UijtoU6(Uij) for Uij in Hij]),(-1,len(SGT),6))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
@@ -1292,13 +1292,13 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         famx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
         fbmx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*cosm[nxs,:,:,:]
         #sum below is over Uniq
-        dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
-        dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)
+        dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem deriv OK
+        dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)          #deriv OK
         dmx = dqdm[:,:,:,nxs,nxs]*Mag[nxs,nxs,nxs,:,:]+Q[nxs,:,:,:,:]*Gdata[:,nxs,nxs,:,:]
         dfadmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:]*dmx,axis=-2)
         dfadmx = np.reshape(dfadmx,(3,iFin-iBeg,-1,3))
-        dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)
-        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)
+        dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)  OK
+        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)    #OK? not U12 & U23 in sarc
         # array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
@@ -1306,9 +1306,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfbdmx = np.reshape(dfbdmx,(3,iFin-iBeg,-1,3))
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
-        dFdfr[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
-        dFdx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx),axis=0)
-        dFdMx[iBeg:iFin] = np.sum(2.*(fams[:,:,nxs,nxs]*dfadmx+fbms[:,:,nxs,nxs]*dfbdmx),axis=0)
+        dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
+        dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)
+        dFdMx[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadmx+fbms[:,:,nxs,nxs]*dfbdmx,axis=0)
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
         iBeg += blkSize

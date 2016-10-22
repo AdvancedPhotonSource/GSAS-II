@@ -2316,7 +2316,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cmx = colLabels.index('Mx')
             atomData = data['Atoms']
             SGData = generalData['SGData']
-            SpnFlp = SGData.get('SpnFlp',[])
             dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
             New = False
             try:
@@ -4338,11 +4337,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if cmx:
                                 opNum = G2spc.GetOpNum(OprNum,SGData)
                                 mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                print OprNum,newOp,opNum,SpnFlp
-                                if Inv:
-                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                                else:
-                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+#                                print OprNum,newOp,opNum,SpnFlp
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                             if atom[cui] == 'A':
                                 Uij = atom[cuij:cuij+6]
                                 Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
@@ -4392,10 +4388,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
                                 mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                if item[2] < 0:
-                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                                else:
-                                    atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                             atom[cs-1] = str(item[2])+'+'
                             atom[cuij:cuij+6] = item[1]
                             for xyz in cellArray+np.array(atom[cx:cx+3]):
@@ -4451,10 +4444,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if cmx:
                             opNum = G2spc.GetOpNum(OprNum,SGData)
                             mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            if Inv:
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                            else:
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                         atomOp = atom[cs-1]
                         newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
                             str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
@@ -4536,6 +4526,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
+            MagMom = SGData.get('MagMom',[])
             wx.BeginBusyCursor()
             try:
                 for ind in indx:
@@ -4551,10 +4542,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             M = SGData['SGOps'][Opr-1][0]
                             opNum = G2spc.GetOpNum(item[2],SGData)
                             mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            if item[2] < 0:
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,-M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                            else:
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                         atom[cs-1] = str(item[2])+'+' \
                             +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                         atom[cuij:cuij+6] = item[1]

@@ -177,19 +177,19 @@ class testDeriv(wx.Frame):
                 print 'parameter:',name,self.parmDict[name],delt,mmin,mmax
                 if name in self.varylist:
                     self.values[self.varylist.index(name)] -= delt
-                else:
-                    self.parmDict[name] -= delt
-                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
-                if name in self.varylist:
+                    M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                        varyList,self.calcControls,self.pawleyLookup,None)
                     self.values[self.varylist.index(name)] += 2.*delt
-                else:
-                    self.parmDict[name] += 2.*delt
-                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
-                if name in self.varylist:
+                    M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                        varyList,self.calcControls,self.pawleyLookup,None)
                     self.values[self.varylist.index(name)] -= delt
-                else:
+                else:   #in depVarList
+                    self.parmDict[name] -= delt
+                    M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                        varyList,self.calcControls,self.pawleyLookup,None)
+                    self.parmDict[name] += 2.*delt
+                    M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                        varyList,self.calcControls,self.pawleyLookup,None)
                     self.parmDict[name] -= delt    
                 Mn = (M1-M0)/(2.*delt)
                 hplot.plot(Mn,'r',label='numeric deriv')
@@ -199,6 +199,7 @@ class testDeriv(wx.Frame):
             
         while self.plotNB.nb.GetPageCount():
             self.plotNB.nb.DeletePage(0)
+        test1()
         for use,name,delt in zip(self.use,self.varylist+self.depVarList,self.delt):
             if use:
                 test2(name,delt)

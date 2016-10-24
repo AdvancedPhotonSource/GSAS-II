@@ -4066,8 +4066,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     elif 'line1' in  str(item) or 'line2' in str(item):
                         Page.canvas.SetToolTipString('%8.3f deg'%(tth))                           
             else:
+                xcent,ycent = Data['center']
                 xpos = event.xdata
                 ypos = event.ydata
+                radius = np.sqrt((xpos-xcent)**2+(ypos-ycent)**2)
                 xpix = int(xpos*scalex)
                 ypix = int(ypos*scaley)
                 Int = 0
@@ -4081,7 +4083,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2frame.G2plotNB.status.SetStatusText('Polygon/frame mask pick - LB next point, RB close polygon',1)
                 else:
                      G2frame.G2plotNB.status.SetStatusText( \
-                        'Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int),1)
+                        'Detector radius=%.3fmm, 2-th =%.3fdeg, dsp=%.3fA, Q=%.5fA-1, azm %.2fdeg, I=%6d'%(radius,tth,dsp,Q,azm,Int),1)
 
     def OnImPlotKeyPress(event):
         try:

@@ -2412,6 +2412,7 @@ class GSASII(wx.Frame):
         self.LastGPXdir = None    # directory where a GPX file was last read
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplayPhaseText = ''
+        self.lastTreeSetting = []
         
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
@@ -3813,19 +3814,6 @@ class GSASII(wx.Frame):
         #self.lastTreeSetting = oldPath,tabId
         #GSASIIpath.IPyBreak()
         
-    def ReloadTreeSetting(self):
-        'Reload the last tree setting, triggering the routine to redraw the data window and possibly a plot'
-        #oldPath,tabId = self.lastTreeSetting
-        oldPath = self.lastTreeSetting
-        Id = self.root
-        for txt in oldPath:
-            Id = G2gd.GetPatternTreeItemId(self, Id, txt)
-        self.PickIdText = None  #force reload of page
-        if Id:
-            self.PickId = Id
-            self.PatternTree.SelectItem(Id)
-            G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item
-            
     def TestResetPlot(self,event):
         '''Debug code to test cleaning up plots after a refinement'''
         #for i in range(self.G2plotNB.nb.GetPageCount()):
@@ -3846,9 +3834,17 @@ class GSASII(wx.Frame):
         # mark displayed plots as invalid
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             frame.plotInvalid = True
-        # reload current tree item
-        self.ReloadTreeSetting()
-        treeItemPlot = self.G2plotNB.lastRaisedPlotTab
+        # reload current tree item, triggering the routine to redraw the data window and possibly a plot
+        #oldPath,tabId = self.lastTreeSetting
+        oldPath = self.lastTreeSetting
+        Id = self.root
+        for txt in oldPath:
+            Id = G2gd.GetPatternTreeItemId(self, Id, txt)
+        self.PickIdText = None  #force reload of page
+        if Id:
+            self.PickId = Id
+            self.PatternTree.SelectItem(Id)
+            #G2gd.MovePatternTreeToGrid(self,Id) # fails on Mac -- SelectItem already calls MovePatternTreeToGrid; double call fails to complete properly
         # update other self-updating plots
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if frame.plotInvalid and frame.replotFunction:
@@ -3857,12 +3853,9 @@ class GSASII(wx.Frame):
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if frame.plotInvalid and frame.plotRequiresRedraw:
                 self.G2plotNB.Delete(lbl)
-            #     print('deleting '+lbl) # debug code
-            # elif not frame.plotInvalid: # debug code
-            #     print(lbl+ ' was redrawn') # debug code
         # put the previously last-raised tab on top, if present. If not, use the one corresponding to
         # the last tree item to be selected
-        wx.CallAfter(self.G2plotNB.RaiseLastPage,lastRaisedPlotTab,treeItemPlot)
+        wx.CallAfter(self.G2plotNB.RaiseLastPage,lastRaisedPlotTab,self.G2plotNB.lastRaisedPlotTab)
         
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
@@ -3913,7 +3906,7 @@ class GSASII(wx.Frame):
                     self.ResetPlots()
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)
-                    G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
+                    #G2gd.MovePatternTreeToGrid(self,Id) # fails on Mac -- SelectItem already calls MovePatternTreeToGrid; double call fails to complete properly
             finally:
                 dlg.Destroy()
         else:

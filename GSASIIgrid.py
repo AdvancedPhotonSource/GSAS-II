@@ -4247,7 +4247,11 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
     return 0                
 
 def MovePatternTreeToGrid(G2frame,item):
-    '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
+    '''Called from :meth:`GSASII.GSASII.OnPatternTreeSelChanged` when a item is selected on the tree.
+    Also called from GSASII.OnPatternTreeEndDrag, OnAddPhase -- might be better to select item, triggering
+    the the bind to MovePatternTreeToGrid
+
+    Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
     pickName = G2frame.PatternTree.GetItemText(item)
     if G2frame.PickIdText == pickName:

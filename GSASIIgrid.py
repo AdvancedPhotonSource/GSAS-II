@@ -1562,7 +1562,7 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.DataCommentsMenu,helpType='Comments',empty=True)
         self.PostfillDataMenu(empty=True)
         
-        # Constraints - something amiss here - get weird wx C++ error after refine!
+        # Constraints
         self.ConstraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ConstraintMenu,helpType='Constraints')
         self.ConstraintTab = wx.Menu(title='')

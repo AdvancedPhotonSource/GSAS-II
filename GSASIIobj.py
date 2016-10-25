@@ -1595,7 +1595,7 @@ class G2VarObj(object):
             s += "Phase: rId=" + str(self.phase) + " (#"+ ph + "); "
             if self.atom == '*':
                 s += "Atoms: all; "
-            elif ":" in self(self.atom):
+            elif ":" in str(self.atom):
                 s += "Rigid body" + str(self.atom) + "; "
             elif self.atom is not None:
                 s += "Atom rId=" + str(self.atom)

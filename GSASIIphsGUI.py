@@ -1390,6 +1390,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if ifMag:
             phaseName += ' mag'
         newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
+        detTrans = np.abs(nl.det(Trans))
 
         generalData = newPhase['General']
         SGData = generalData['SGData']
@@ -1397,6 +1398,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         NDij = len(G2spc.HStrainNames(SGData))
         UseList = newPhase['Histograms']
         for hist in UseList:
+            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
             UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
             UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
         newPhase['General']['Map'] = mapDefault.copy()
@@ -1404,9 +1406,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
         if ifMag and ifConstr:
-            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec)     #data is old phase
-        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
-        # if nuc - mag transformtion: make constraints here? Needed for Type 4 magnetics
+            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,)     #data is old phase
+        G2frame.PatternTree.SelectItem(sub)
+#        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
         
 ################################################################################
 #####  Atom routines

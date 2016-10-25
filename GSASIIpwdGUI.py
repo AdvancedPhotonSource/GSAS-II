@@ -562,6 +562,7 @@ def UpdatePeakGrid(G2frame, data):
         if Reverse:
             names.reverse()
         try:
+            wx.BeginBusyCursor()
             for i,name in enumerate(names):
                 print ' Sequential fit for ',name
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
@@ -576,7 +577,6 @@ def UpdatePeakGrid(G2frame, data):
                 limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
                 inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
                 data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-                wx.BeginBusyCursor()
                 dlg2 = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
                 screenSize = wx.ClientDisplayRect()
@@ -650,11 +650,12 @@ def UpdatePeakGrid(G2frame, data):
         try:
             peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
         finally:
-            wx.EndBusyCursor()    
+            print 'finished'
+            wx.EndBusyCursor()
+            dlg.Destroy()    
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
         UpdatePeakGrid(G2frame,copy.copy(peaks))
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
-        print 'finished'
         return
         
     def OnResetSigGam(event):

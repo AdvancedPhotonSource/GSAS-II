@@ -752,7 +752,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
             FP = np.repeat(FP.T,len(SGT)*len(TwinLaw),axis=0)
             FPP = np.repeat(FPP.T,len(SGT)*len(TwinLaw),axis=0)
-        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         Uniq = np.inner(H,SGMT)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
@@ -763,6 +762,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HbH = -np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
+        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
@@ -1221,6 +1221,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
+    dGdM = np.copy(Gdata)
     Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv']:
@@ -1228,11 +1229,12 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
-    Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
+    Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
 #    GSASIIpath.IPyBreak()
-    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #Mag same length as Gdata
+    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #make Mag same length as Gdata
     if SGData['SGInv']:
         Mag = np.repeat(Mag,2,axis=0)
+    dGdm = (1.-Gdata**2)    #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1281,34 +1283,35 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
         HM = np.inner(Bmat.T,H)                             #put into cartesian space
-        HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
+        HM = HM/np.sqrt(np.sum(HM**2,axis=0))               
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
-        dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref
+        dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
+        dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:],axis=0)   #matrix * vector = vector
+        dmx = Q*Gdata[:,nxs,:,:]+dqmx      #*Mag canceled out of dqmx term
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #Mxyz,Nref
         fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
         famx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
         fbmx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*cosm[nxs,:,:,:]
-        #sum below is over Uniq
+        #sums below are over Nops - real part
         dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem deriv OK
-        dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)          #deriv OK
-        dmx = dqdm[:,:,:,nxs,nxs]*Mag[nxs,nxs,nxs,:,:]+Q[nxs,:,:,:,:]*Gdata[:,nxs,nxs,:,:]
-        dfadmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:]*dmx,axis=-2)
-        dfadmx = np.reshape(dfadmx,(3,iFin-iBeg,-1,3))
+        dfadx = np.sum(-twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)          #deriv OK
+        dfadmx = np.sum(TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*dmx,axis=2)
         dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)  OK
         dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)    #OK? not U12 & U23 in sarc
-        # array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
+        # imaginary part; array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
-        dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
-        dfbdmx = np.sum(TMcorr[nxs,nxs,:,nxs,:]*sinm[nxs,nxs,:,:,:]*dmx,axis=-2)
-        dfbdmx = np.reshape(dfbdmx,(3,iFin-iBeg,-1,3))
+        dfbdx = np.sum(-twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
+        dfbdmx = np.sum(TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*dmx,axis=2)
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
+        #accumulate derivatives    
         dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
         dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)
-        dFdMx[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadmx+fbms[:,:,nxs,nxs]*dfbdmx,axis=0)
+#        GSASIIpath.IPyBreak()
+        dFdMx[iBeg:iFin] = np.reshape(2.*fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx,(iFin-iBeg,-1,3))
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
         iBeg += blkSize
@@ -3789,7 +3792,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     dMdv[varylist.index(name)][iBeg:iFin] += dpdA*dervDict['pos']
                     if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += dpdA*dervDict2['pos']
-                elif name in dependentVars:
+                elif name in dependentVars: #need to scale for mixed phase constraints?
                     depDerivDict[name][iBeg:iFin] += dpdA*dervDict['pos']
                     if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dpdA*dervDict2['pos']
@@ -3845,7 +3848,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
             if not Phase['General'].get('doPawley'):
-                #do atom derivatives -  for RB,F,X & U so far
+                #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.
                 if refl[9+im]:             

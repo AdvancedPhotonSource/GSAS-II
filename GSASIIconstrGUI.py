@@ -22,6 +22,7 @@ import time
 import random as ran
 import numpy as np
 import numpy.ma as ma
+import numpy.linalg as nl
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1177,6 +1178,21 @@ def UpdateConstraints(G2frame,data):
 ################################################################################        
         
 def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec):
+    '''Add constraints for new magnetic phase created via transformation of old
+    nuclear one
+    '''
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    UseList = newPhase['Histograms']
+    detTrans = np.abs(nl.det(Trans))
+    opId = oldPhase['pId']
+    npId = newPhase['pId']
+    item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
+    constraints = G2frame.PatternTree.GetItemPyData(item)
+    GSASIIpath.IPyBreak()
+    for hist in UseList:    #HAP
+        UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+        UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+        UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
     print 'make nuclear-magnetic phase constraints here'
         
 ################################################################################

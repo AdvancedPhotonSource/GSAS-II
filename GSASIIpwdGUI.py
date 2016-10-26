@@ -598,9 +598,9 @@ def UpdatePeakGrid(G2frame, data):
                     SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                         'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
                         'fullVary':fullvaryList,'badVary':badVary}
-            dlg.Destroy()
             print ' ***** Sequential peak fit successful *****'
         finally:
+            dlg.Destroy()
             wx.EndBusyCursor()
         if Reverse:
             Names.reverse()
@@ -3000,8 +3000,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         dlg = wx.ProgressDialog("Generated reflections",'0 '+" cell search for "+bravaisNames[ibrav],101, 
 #            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT) #desn't work in 32 bit versions
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
-        dlg.Destroy()
+        try:
+            OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
+        finally:
+            dlg.Destroy()
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
         if OK:

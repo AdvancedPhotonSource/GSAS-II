@@ -84,7 +84,8 @@ class testDeriv(wx.Frame):
         self.Close()
 
     def OnTestRead(self,event):
-        dlg = wx.FileDialog(self, 'Open testDeriv.dat file', '.', 'testDeriv.dat')
+        dlg = wx.FileDialog(self, 'Open testDeriv.dat file',defaultFile='testDeriv.dat',
+            wildcard='testDeriv.dat')
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:
@@ -164,13 +165,13 @@ class testDeriv(wx.Frame):
             fplot.legend(loc='best')
             
         def test2(name,delt):
-            
             Title = 'derivatives test for '+name
             varyList = self.varylist+self.depVarList
             hplot = self.plotNB.add(Title).gca()
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
                 varyList,self.calcControls,self.pawleyLookup,None)
-            hplot.plot(dMdV[varyList.index(name)],'b',label='analytic deriv')
+            M2 = dMdV[varyList.index(name)]
+            hplot.plot(M2,'b',label='analytic deriv')
             if name in varyList:
                 mmin = np.min(dMdV[varyList.index(name)])
                 mmax = np.max(dMdV[varyList.index(name)])
@@ -183,7 +184,10 @@ class testDeriv(wx.Frame):
                     M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                         varyList,self.calcControls,self.pawleyLookup,None)
                     self.values[self.varylist.index(name)] -= delt
-                else:   #in depVarList
+                elif name in self.depVarList:   #in depVarList
+                    if 'dA' in name:
+                        name = name.replace('dA','A')
+                        delt *= -1
                     self.parmDict[name] -= delt
                     M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                         varyList,self.calcControls,self.pawleyLookup,None)
@@ -191,9 +195,9 @@ class testDeriv(wx.Frame):
                     M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                         varyList,self.calcControls,self.pawleyLookup,None)
                     self.parmDict[name] -= delt    
-                Mn = (M1-M0)/(2.*delt)
+                Mn = (M1-M0)/(2.*abs(delt))
                 hplot.plot(Mn,'r',label='numeric deriv')
-                hplot.plot(dMdV[varyList.index(name)]-Mn,'g',label='diff')
+                hplot.plot(M2-Mn,'g',label='diff')
 #            GSASIIpath.IPyBreak()
             hplot.legend(loc='best')            
             

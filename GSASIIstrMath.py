@@ -1221,7 +1221,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
-    dGdM = np.copy(Gdata)
+    dGdM = np.repeat(Gdata[:,nxs,:],Nops*Ncen*(1+SGData['SGInv']),axis=1)
     Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv']:
@@ -1234,7 +1234,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #make Mag same length as Gdata
     if SGData['SGInv']:
         Mag = np.repeat(Mag,2,axis=0)
-    dGdm = (1.-Gdata**2)    #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
+    dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1283,16 +1283,16 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
         HM = np.inner(Bmat.T,H)                             #put into cartesian space
-        HM = HM/np.sqrt(np.sum(HM**2,axis=0))               
+        HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #unit vector for H
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:],axis=0)   #matrix * vector = vector
-        dmx = Q*Gdata[:,nxs,:,:]+dqmx      #*Mag canceled out of dqmx term
-        fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-        fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #Mxyz,Nref
-        fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
+        dmx = Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
+        fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
+        fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]
+        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                      #Mxyz,Nref
+        fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)
         famx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
         fbmx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*cosm[nxs,:,:,:]
         #sums below are over Nops - real part

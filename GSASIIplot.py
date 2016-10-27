@@ -1595,7 +1595,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if str(DifLine[0]) == str(G2frame.itemPicked):
             data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
-            Pattern[0]['delOffset'] = -ypos/Ymax
+            Pattern[0]['delOffset'] = -ypos
             G2frame.itemPicked = None
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             return

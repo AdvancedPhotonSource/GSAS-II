@@ -2213,7 +2213,7 @@ class GSASII(wx.Frame):
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportPDF, id=item.GetId())
 
-    def FillMainMenu(self,menubar):
+    def FillMainMenu(self,menubar,addhelp=True):
         '''Define contents of the main GSAS-II menu for the (main) data tree window.
         For the mac, this is also called for the data item windows as well so that
         the main menu items are data menu as well.
@@ -2278,9 +2278,10 @@ class GSASII(wx.Frame):
             self.MacroMenu = wx.Menu(title='')
             menubar.Append(menu=self.MacroMenu, title='Macro')
             self._init_Macro()
-        HelpMenu=G2G.MyHelp(self,helpType='Data tree',
-            morehelpitems=[('&Tutorials','Tutorials'),])
-        menubar.Append(menu=HelpMenu,title='&Help')
+        if addhelp:
+            HelpMenu=G2G.MyHelp(self,includeTree=True,
+                morehelpitems=[('&Tutorials','Tutorials'),])
+            menubar.Append(menu=HelpMenu,title='&Help')
             
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,

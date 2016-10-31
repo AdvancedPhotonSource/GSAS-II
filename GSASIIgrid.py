@@ -1520,14 +1520,16 @@ class DataFrame(wx.Frame):
         self.helpType = helpType
         self.helpLbl = helpLbl
         if sys.platform == "darwin": # mac                         
-            self.G2frame.FillMainMenu(menu) # add the data tree menu items
+            self.G2frame.FillMainMenu(menu,addhelp=False) # add the data tree menu items
             if not empty:
                 menu.Append(wx.Menu(title=''),title='|') # add a separator
         
     def PostfillDataMenu(self,empty=False):
-        '''Create the "standard" part of data frame menus. Note that on Linux and
-        Windows, this is the standard help Menu. On Mac, this menu duplicates the
-        tree menu, but adds an extra help command for the data item and a separator. 
+        '''Add the help menu to the data frame menus. Note that on Linux and
+        Windows, this is the standard help Menu but without the update commands but adds an extra help
+        command for the data item. 
+        On Mac, this is the entire help menu including the update commands, a separator and the
+        extra help command for the data item. 
         '''
         menu = self.datamenu
         helpType = self.helpType
@@ -1535,8 +1537,9 @@ class DataFrame(wx.Frame):
         if sys.platform == "darwin": # mac
             if not empty:
                 menu.Append(wx.Menu(title=''),title='|') # add another separator
-            menu.Append(G2G.AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
-                        title='&Help')
+            HelpMenu=G2G.MyHelp(self,helpType=helpType,includeTree=True,
+                morehelpitems=[('&Tutorials','Tutorials'),])
+            menu.Append(menu=HelpMenu,title='&Help')
         else: # other
             menu.Append(menu=G2G.MyHelp(self,helpType=helpType, helpLbl=helpLbl),
                         title='&Help')

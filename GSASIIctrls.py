@@ -3019,8 +3019,8 @@ class MyHelp(wx.Menu):
        menu.Append(menu=MyHelp(self,...),title="&Help")
 
     '''
-    def __init__(self,frame,helpType=None,helpLbl=None,morehelpitems=[],title=''):
-        wx.Menu.__init__(self,title)
+    def __init__(self,frame,helpType=None,helpLbl=None,includeTree=False,morehelpitems=[]):
+        wx.Menu.__init__(self,'')
         self.HelpById = {}
         self.frame = frame
         self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
@@ -3040,13 +3040,20 @@ class MyHelp(wx.Menu):
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
-        # add a help item only when helpType is specified
-        if helpType is not None:
+        # add help lookup(s) in gsasii.html
+        if helpType is not None or includeTree:
             self.AppendSeparator()
+        if includeTree:
+            if helpLbl is None: helpLbl = helpType
+            helpobj = self.Append(text='Help on Data tree',
+                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
+            self.HelpById[helpobj.GetId()] = 'Data tree'
+        if helpType is not None:
             if helpLbl is None: helpLbl = helpType
             helpobj = self.Append(text='Help on '+helpLbl,
                                   id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
+            frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
             self.HelpById[helpobj.GetId()] = helpType
        
     def OnHelpById(self,event):
@@ -3085,14 +3092,13 @@ Operator of Argonne National Laboratory.''')
 Robert B. Von Dreele and Brian H. Toby
 
 Please cite as:
-B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) 
+  B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) 
 For small angle use cite: 
-R.B. Von Dreele, J. Appl. Cryst. 47, 1748-9 (2014)
+  R.B. Von Dreele, J. Appl. Cryst. 47, 1748-9 (2014)
 For DIFFaX use cite: 
-M.M.J. Treacy, J.M. Newsam & M.W. Deem, 
-       Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
+  M.M.J. Treacy, J.M. Newsam & M.W. Deem, 
+  Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
 '''
-
         info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
         wx.AboutBox(info)
 
@@ -3244,31 +3250,6 @@ M.M.J. Treacy, J.M. Newsam & M.W. Deem,
             )
         self.frame.OnFileSave(event)
         return
-
-################################################################################
-class AddHelp(wx.Menu):
-    '''For the Mac: creates an entry to the help menu of type 
-    'Help on <helpType>': where helpType is a reference to an HTML page to
-    be opened.
-
-    NOTE: when appending this menu (menu.Append) be sure to set the title to
-    '&Help' so that wx handles it correctly.
-    '''
-    def __init__(self,frame,helpType,helpLbl=None,title=''):
-        wx.Menu.__init__(self,title)
-        self.frame = frame
-        if helpLbl is None: helpLbl = helpType
-        # add a help item only when helpType is specified
-        helpobj = self.Append(text='Help on '+helpLbl,
-                              id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-        frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-        self.HelpById = helpType
-       
-    def OnHelpById(self,event):
-        '''Called when Help on... is pressed in a menu. Brings up
-        a web page for documentation.
-        '''
-        ShowHelp(self.HelpById,self.frame)
 
 ################################################################################
 class HelpButton(wx.Button):
@@ -3774,23 +3755,24 @@ class downdate(wx.Dialog):
 htmlPanel = None
 htmlFrame = None
 htmlFirstUse = True
-helpLocDict = {}
+#helpLocDict = {}  # to be implemented if we ever split gsasii.html over multiple files
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
 def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse
     # look up a definition for help info from dict
-    helplink = helpLocDict.get(helpType)
-    if helplink is None:
+    #helplink = helpLocDict.get(helpType)
+    #if helplink is None:
+    if True:
         # no defined link to use, create a default based on key
         helplink = 'gsasII.html#'+helpType.replace(' ','_')
-    helplink = os.path.join(path2GSAS2,'help',helplink)
     # determine if a web browser or the internal viewer should be used for help info
     if GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
     else:
         helpMode = 'browser'
     if helpMode == 'internal':
+        helplink = os.path.join(path2GSAS2,'help',helplink)
         try:
             htmlPanel.LoadFile(helplink)
             htmlFrame.Raise()
@@ -3801,14 +3783,20 @@ def ShowHelp(helpType,frame):
             htmlPanel = MyHtmlPanel(htmlFrame,-1)
             htmlPanel.LoadFile(helplink)
     else:
+        if sys.platform == "darwin": # for Mac, force use of safari to preserve anchors on file URLs
+            wb = webbrowser.MacOSXOSAScript('safari')
+        else:
+            wb = webbrowser
+        helplink = os.path.join(path2GSAS2,'help',helplink)
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
             pfx = ''
+        #if GSASIIpath.GetConfigValue('debug'): print 'Help link=',pfx+helplink
         if htmlFirstUse:
-            webbrowser.open_new(pfx+helplink)
+            wb.open_new(pfx+helplink)
             htmlFirstUse = False
         else:
-            webbrowser.open(pfx+helplink, new=0, autoraise=True)
+            wb.open(pfx+helplink, new=0, autoraise=True)
 
 def ShowWebPage(URL,frame):
     '''Called to show a tutorial web page.

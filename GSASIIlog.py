@@ -390,7 +390,7 @@ def _getmenuinfo(id,G2frame,handler):
             #print 'getmenuinfo found',id,menuitem
             break
     else:
-        print '****** getmenuinfo failed for id=',id,'binding to=',handler
+        #print '****** getmenuinfo failed for id=',id,'binding to=',handler
         #raise Exception('debug: getmenuinfo failed')
         return
     menuLabelList = [menuitem.GetItemLabel()]

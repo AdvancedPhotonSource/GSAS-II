@@ -443,10 +443,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
-        event.Skip()
+        if event: event.Skip()
                     
     def _onStringKey(self,event):
-        event.Skip()
+        if event: event.Skip()
         if self.invalid: # check for validity after processing the keystroke
             wx.CallAfter(self.ShowStringValidity,True) # was invalid
         else:
@@ -496,7 +496,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def _GetStringValue(self,event):
         '''Get string input and store.
         '''
-        event.Skip() # process keystroke
+        if event: event.Skip() # process keystroke
         wx.CallAfter(self._SaveStringValue)
         
     def _SaveStringValue(self):
@@ -528,7 +528,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         '''Enter has been pressed or focus transferred to another control,
         Evaluate and update the current control contents
         '''
-        event.Skip()
+        if event: event.Skip()
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 if event: event.Skip()
@@ -720,17 +720,17 @@ class NumberValidator(wx.PyValidator):
                 self.CheckInput(True) 
             else:
                 self.CheckInput(False) 
-            event.Skip()
+            if event: event.Skip()
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
-            event.Skip()
+            if event: event.Skip()
             if tc.invalid:
                 wx.CallAfter(self.CheckInput,True) 
             else:
                 wx.CallAfter(self.CheckInput,False) 
             return
         elif chr(key) in self.validchars: # valid char pressed?
-            event.Skip()
+            if event: event.Skip()
             if tc.invalid:
                 wx.CallAfter(self.CheckInput,True) 
             else:
@@ -793,14 +793,14 @@ class ASCIIValidator(wx.PyValidator):
         tc = self.GetWindow()
         if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self.TestValid(tc)
-            event.Skip()
+            if event: event.Skip()
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
-            event.Skip()
+            if event: event.Skip()
             self.TestValid(tc)
             return
         elif chr(key) in self.validchars: # valid char pressed?
-            event.Skip()
+            if event: event.Skip()
             self.TestValid(tc)
             return
         if not wx.Validator_IsSilent():
@@ -1392,7 +1392,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
-        event.Skip()
+        if event: event.Skip()
         
     def OnCheck(self,event):
         '''for CheckListBox events; if Set Range is in use, this sets/clears all
@@ -1705,7 +1705,7 @@ class G2SingleChoiceDialog(wx.Dialog):
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
-        event.Skip()
+        if event: event.Skip()
     def Filter(self,event):
         if self.timer.IsRunning():
             self.timer.Stop()
@@ -1888,7 +1888,7 @@ class SingleFloatDialog(wx.Dialog):
     def Draw(self):
         
         def OnValItem(event):
-            event.Skip()
+            if event: event.Skip()
             try:
                 val = float(valItem.GetValue())
                 if val < self.limits[0] or val > self.limits[1]:
@@ -1949,7 +1949,7 @@ class MultiFloatDialog(wx.Dialog):
     def Draw(self):
         
         def OnValItem(event):
-            event.Skip()
+            if event: event.Skip()
             Obj = event.GetEventObject()
             id,limits,format = Indx[Obj]
             try:
@@ -2152,7 +2152,7 @@ class G2ColumnIDDialog(wx.Dialog):
             self.EndModal(wx.ID_OK)
             
         def OnModify(event):
-            event.Skip()
+            if event: event.Skip()
             Obj = event.GetEventObject()
             icol,colData = Indx[Obj.GetId()]
             modify = Obj.GetValue()
@@ -2677,7 +2677,7 @@ class GSGrid(wg.Grid):
             hinttext = ''
             win = event.GetEventObject()
             if [row,col,win] == prev_rowcol: # no change from last position
-                event.Skip()
+                if event: event.Skip()
                 return
             if win == self.GetGridWindow() and row >= 0 and col >= 0:
                 hinttext = rowcolhintcallback(row, col)
@@ -2686,12 +2686,12 @@ class GSGrid(wg.Grid):
             elif win == self.GetGridRowLabelWindow() and row >= 0:
                 if rowLblCallback: hinttext = rowLblCallback(row)
             else: # this should be the upper left corner, which is empty
-                event.Skip()
+                if event: event.Skip()
                 return
             if hinttext is None: hinttext = ''
             win.SetToolTipString(hinttext)
             prev_rowcol[:] = [row,col,win]
-            event.Skip()
+            if event: event.Skip()
 
         wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
         if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
@@ -3316,7 +3316,7 @@ class MyHtmlPanel(wx.Panel):
         if anchor:            
             self.htmlwin.ScrollToAnchor(anchor)
             wx.CallAfter(self.htmlwin.ScrollToAnchor,anchor)
-            event.Skip()
+            if event: event.Skip()
     def OnBack(self, event):
         self.htmlwin.HistoryBack()
     def LoadFile(self,file):
@@ -3733,7 +3733,7 @@ class downdate(wx.Dialog):
 
     def _onSpin(self,event):
         'Called to load info about the selected version in the dialog'
-        event.Skip()
+        if event: event.Skip()
         ver = self.spin.GetValue()
         d = GSASIIpath.svnGetLog(version=ver)
         date = d.get('date','?').split('T')[0]

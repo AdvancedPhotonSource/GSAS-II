@@ -1387,13 +1387,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             dlg.Destroy()
         phaseName = newPhase['General']['Name']
-        if ifMag:
-            phaseName += ' mag'
-        newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
+        newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
         detTrans = np.abs(nl.det(Trans))
 
         generalData = newPhase['General']
         SGData = generalData['SGData']
+        Atoms = newPhase['Atoms']
+        if ifMag:
+            dlg = G2gd.UseMagAtomDialog(G2frame,Atoms,atCodes)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    newPhase['Atoms'],atCodes = dlg.GetSelection()
+            finally:
+                dlg.Destroy()
+            SGData['GenSym'],SGData['GenFlg'] = G2spc.GetGenSym(SGData)
+            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+            SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
+            generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
+            
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
         UseList = newPhase['Histograms']
@@ -1406,9 +1417,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
         if ifMag and ifConstr:
-            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,)     #data is old phase
+            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
         G2frame.PatternTree.SelectItem(sub)
-#        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
         
 ################################################################################
 #####  Atom routines

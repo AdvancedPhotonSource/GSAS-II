@@ -1677,7 +1677,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs-1))
                     mulfrac = mul*frac
                     calcs = mul*frac*factors
-                    chisq += chiralRestData['wtFactor']*((obs-np.sum(calcs))/esd)**2
+                    chisq += chemcompRestData['wtFactor']*((obs-np.sum(calcs))/esd)**2
                     for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
                         table.append([atom,mf,fr,clc,'',''])
                         rowLabels.append('term:'+str(i)+':'+str(iatm))
@@ -1815,38 +1815,38 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change value')
-        if text == 'Bond restraints':
+        if text == 'Bond':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
             bondRestData = restrData['Bond']
             UpdateBondRestr(bondRestData)
-        elif text == 'Angle restraints':
+        elif text == 'Angle':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
             angleRestData = restrData['Angle']
             UpdateAngleRestr(angleRestData)
-        elif text == 'Plane restraints':
+        elif text == 'Plane':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,False)
             planeRestData = restrData['Plane']
             UpdatePlaneRestr(planeRestData)
-        elif text == 'Chiral restraints':
+        elif text == 'Chiral':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,False)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
             chiralRestData = restrData['Chiral']
             UpdateChiralRestr(chiralRestData)
-        elif text == 'Torsion restraints':
+        elif text == 'Torsion':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,False)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,False)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_AARESTRAINTPLOT,True)
             torsionRestData = restrData['Torsion']
             UpdateTorsionRestr(torsionRestData)
-        elif text == 'Ramachandran restraints':
+        elif text == 'Ramachandran':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,False)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,False)
@@ -1854,7 +1854,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             ramaRestData = restrData['Rama']
             UpdateRamaRestr(ramaRestData)
             wx.CallAfter(G2plt.PlotRama,G2frame,phaseName,rama,ramaName)
-        elif text == 'Chem. comp. restraints':
+        elif text == 'Chem. comp.':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
             G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change factor')
@@ -1862,7 +1862,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTCHANGEESD,False)
             chemcompRestData = restrData['ChemComp']
             UpdateChemcompRestr(chemcompRestData)
-        elif text == 'Texture restraints':
+        elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESRCHANGEVAL,True)
@@ -1907,7 +1907,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     for i in G2frame.dataFrame.RestraintTab.GetMenuItems():
         G2frame.dataFrame.RestraintTab.DestroyItem(i)        
 
-    txt = 'Bond restraints'
+    txt = 'Bond'
     BondRestr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(BondRestr,txt)
     item = G2frame.dataFrame.RestraintTab.Append(
@@ -1917,7 +1917,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     tabcount += 1
     tabIndex[item.GetId()] = tabcount
 
-    txt = 'Angle restraints'
+    txt = 'Angle'
     AngleRestr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(AngleRestr,txt) 
     item = G2frame.dataFrame.RestraintTab.Append(
@@ -1927,7 +1927,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     tabcount += 1
     tabIndex[item.GetId()] = tabcount
    
-    txt = 'Plane restraints'
+    txt = 'Plane'
     PlaneRestr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(PlaneRestr,txt)
     item = G2frame.dataFrame.RestraintTab.Append(
@@ -1937,7 +1937,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     tabcount += 1
     tabIndex[item.GetId()] = tabcount
 
-    txt = 'Chiral restraints'
+    txt = 'Chiral'
     ChiralRestr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(ChiralRestr,txt)
     item = G2frame.dataFrame.RestraintTab.Append(
@@ -1948,7 +1948,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     tabIndex[item.GetId()] = tabcount
 
     if 'macro' in General['Type']:
-        txt = 'Torsion restraints'
+        txt = 'Torsion'
         TorsionRestr = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(TorsionRestr,txt)
         item = G2frame.dataFrame.RestraintTab.Append(
@@ -1958,7 +1958,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         tabcount += 1
         tabIndex[item.GetId()] = tabcount
 
-        txt = 'Ramachandran restraints'
+        txt = 'Ramachandran'
         RamaRestr = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(RamaRestr,txt)
         item = G2frame.dataFrame.RestraintTab.Append(
@@ -1968,7 +1968,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         tabcount += 1
         tabIndex[item.GetId()] = tabcount
 
-    txt = 'Chem. comp. restraints'
+    txt = 'Chem. comp.'
     ChemCompRestr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(ChemCompRestr,txt)
     item = G2frame.dataFrame.RestraintTab.Append(
@@ -1979,7 +1979,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     tabIndex[item.GetId()] = tabcount
     
     if General['SH Texture']['Order']:
-        txt = 'Texture restraints'
+        txt = 'Texture'
         TextureRestr = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(TextureRestr,txt)
         item = G2frame.dataFrame.RestraintTab.Append(

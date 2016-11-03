@@ -207,6 +207,7 @@ class SGMessageBox(wx.Dialog):
         mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.Bind(wx.EVT_BUTTON, self.OnOk)
         OKbtn.SetDefault()
         btnsizer.AddButton(OKbtn)
         btnsizer.Realize()
@@ -223,6 +224,11 @@ class SGMessageBox(wx.Dialog):
         '''
         self.ShowModal()
         return
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
 
 class SGMagSpinBox(wx.Dialog):
     ''' Special version of MessageBox that displays magnetic spin text
@@ -583,6 +589,7 @@ class TransformDialog(wx.Dialog):
         def OnSpaceGroup(event):
             event.Skip()
             Flds = SGTxt.GetValue().split()
+            Flds[0] = Flds[0].upper()
             #get rid of extra spaces between fields first
             for fld in Flds: fld = fld.strip()
             SpcGp = ' '.join(Flds)
@@ -715,7 +722,10 @@ class TransformDialog(wx.Dialog):
         self.Fit()
         
     def GetSelection(self):
-        self.Phase['General']['Name'] += ' %s'%(self.Common)
+        if self.ifMag:
+            self.Phase['General']['Name'] += ' mag'
+        else:
+            self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
         return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr
 
@@ -728,7 +738,80 @@ class TransformDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+################################################################################
+class UseMagAtomDialog(wx.Dialog):
+    '''Get user selected magnetic atoms after cell transformation
+    '''
+    def __init__(self,parent,Atoms,atCodes):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Atoms = Atoms
+        self.atCodes = atCodes
+        self.Use = len(self.Atoms)*[True,]
+        self.Draw()
         
+    def Draw(self):
+        
+        def OnUseChk(event):
+            Obj = event.GetEventObject()
+            iuse = Indx[Obj.GetId()]
+            self.Use[iuse] = not self.Use[iuse]
+            Obj.SetValue(self.Use[iuse])
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Indx = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        mainSizer.Add(wx.StaticText(self.panel,label=' Name, x, y, z:'),0,WACV)
+        atmSizer = wx.FlexGridSizer(0,2,5,5)
+        for iuse,[use,atom] in enumerate(zip(self.Use,self.Atoms)):
+            useChk = wx.CheckBox(self.panel,label='Use?')
+            Indx[useChk.GetId()] = iuse
+            useChk.SetValue(use)
+            useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
+            atmSizer.Add(useChk,0,WACV)
+            text = ' %s %10.5f %10.5f %10.5f'%(atom[0],atom[3],atom[4],atom[5])
+            atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
+        mainSizer.Add(atmSizer)
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Use All")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        useAtoms = []
+        useatCodes = []
+        for use,atom,code in zip(self.Use,self.Atoms,self.atCodes):
+            if use:
+                useAtoms.append(atom)
+                useatCodes.append(code)
+        return useAtoms,useatCodes
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+            
+                
 ################################################################################
 class RotationDialog(wx.Dialog):
     ''' Get Rotate & translate matrix & vector - currently not used

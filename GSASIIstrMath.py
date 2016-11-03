@@ -319,6 +319,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         cx,ct,cs,cia = General['AtomPtrs']
         textureData = General['SH Texture']
         SGData = General['SGData']
+        Atoms = Phases[phase]['Atoms']
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
@@ -367,8 +368,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                 elif name == 'ChemComp':
                     for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
-                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
-                        frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs-1))
+                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
+                        frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
                         calc = np.sum(mul*frac*factors)
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)                    
@@ -454,6 +455,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         General = Phases[phase]['General']
         cx,ct,cs,cia = General['AtomPtrs']
         SGData = General['SGData']
+        Atoms = Phases[phase]['Atoms']
         AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
@@ -510,7 +512,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     dNames = []
                     for ind in indx:
                         dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
-                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,cs+1))
+                        mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
                         deriv = mul*factors
                 elif 'Texture' in name:
                     deriv = []
@@ -1286,9 +1288,11 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #unit vector for H
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+#there is still something wrong with the next three lines = dF/dmag not corect yet
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:],axis=0)   #matrix * vector = vector
         dmx = Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
+#
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]
         fams = np.sum(np.sum(fam,axis=-1),axis=-1)                      #Mxyz,Nref
@@ -1299,8 +1303,8 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem deriv OK
         dfadx = np.sum(-twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)          #deriv OK
         dfadmx = np.sum(TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*dmx,axis=2)
-        dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)  OK
-        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)    #OK? not U12 & U23 in sarc
+        dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)  deriv OK
+        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)    #deriv OK? not U12 & U23 in sarc
         # imaginary part; array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfbdx = np.sum(-twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)

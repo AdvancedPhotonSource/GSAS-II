@@ -231,7 +231,6 @@ def TransformU6(U6,Trans):
     
 def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     '''Transform atoms from oldPhase to newPhase by Trans & Vec
-    NB: doesnt transform moments correctly - TBD
     
     :param oldPhase: dict G2 phase info for old phase
     :param newPhase: dict G2 phase info for new phase; with new cell & space group
@@ -241,7 +240,6 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     :param ifMag: bool True if convert to magnetic phase; 
         if True all nonmagnetic atoms will be removed
         
-    This needs to properly transform magnetic moments for mag - mag transforms
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
@@ -252,26 +250,40 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     nAmat,nBmat = cell2AB(newPhase['General']['Cell'][1:7])
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
-    newAtoms = FillUnitCell(oldPhase)
+    newAtoms,atCodes = FillUnitCell(oldPhase)
+#    GSASIIpath.IPyBreak()
     Unit =[abs(int(max(unit))-1) for unit in Trans]
     for i,unit in enumerate(Unit):
         if unit > 0:
             for j in range(unit):
                 moreAtoms = copy.deepcopy(newAtoms)
-                for atom in moreAtoms:
+                moreCodes = []
+                for atom,code in zip(moreAtoms,atCodes):
                     atom[cx+i] += 1.
+                    if '+' in code:
+                        cell = list(eval(code.split('+')[1]))
+                        ops = code.split('+')[0]
+                    else:
+                        cell = [0,0,0]
+                        ops = code
+                    cell[i] += 1
+                    moreCodes.append('%s+%d,%d,%d'%(ops,cell[0],cell[1],cell[2])) 
                 newAtoms += moreAtoms
+                atCodes += moreCodes
     if ifMag:
         cia += 3
         cs += 3
         newPhase['General']['Type'] = 'magnetic'
         newPhase['General']['AtomPtrs'] = [cx,ct,cs,cia]
         magAtoms = []
+        magatCodes = []
         Landeg = 2.0
-        for atom in newAtoms:
+        for iat,atom in enumerate(newAtoms):
             if len(G2elem.GetMFtable([atom[ct],],[Landeg,])):
                 magAtoms.append(atom[:cx+4]+[0.,0.,0.]+atom[cx+4:])
+                magatCodes.append(atCodes[iat])
         newAtoms = magAtoms
+        atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
         atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)%1.
@@ -288,13 +300,15 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
                 mom /= np.sqrt(np.sum(mom**2))
                 atom[cm:cm+3] = mom*mag
     newPhase['Atoms'] = newAtoms
-    newPhase['Atoms'] = GetUnique(newPhase)
+    newPhase['Atoms'],atCodes = GetUnique(newPhase,atCodes)
     newPhase['Drawing']['Atoms'] = []
-    return newPhase
+    newPhase['ranId'] = ran.randint(0,sys.maxint)
+    return newPhase,atCodes
     
 def FillUnitCell(Phase):
     Atoms = Phase['Atoms']
     atomData = []
+    atCodes = []
     SGData = Phase['General']['SGData']
     SpnFlp = SGData.get('SpnFlp',[])
     Amat,Bmat = cell2AB(Phase['General']['Cell'][1:7])
@@ -303,10 +317,9 @@ def FillUnitCell(Phase):
     if Phase['General']['Type'] == 'magnetic':
         cm = cx+4
     unit = np.zeros(3)
-    for atom in Atoms:
+    for iat,atom in enumerate(Atoms):
         XYZ = np.array(atom[cx:cx+3])
         xyz = XYZ%1.
-        unit = XYZ-xyz
         if atom[cia] == 'A':
             Uij = atom[cia+2:cia+8]
             result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
@@ -320,6 +333,7 @@ def FillUnitCell(Phase):
                     opNum = G2spc.GetOpNum(item[2],SGData)
                     mom = np.inner(np.array(atom[cm:cm+3]),Bmat)
                     atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                atCodes.append('%d:%s'%(iat,str(item[2])))
                 atomData.append(atom[:cia+9])  #not SS stuff
         else:
             result = G2spc.GenAtom(xyz,SGData,False,Move=True)
@@ -333,11 +347,12 @@ def FillUnitCell(Phase):
                     mom = np.inner(np.array(atom[cm:cm+3]),Bmat)
                     atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
 #                GSASIIpath.IPyBreak()
+                atCodes.append('%d:%s'%(iat,str(item[1])))
                 atomData.append(atom[:cia+9])  #not SS stuff
             
-    return atomData
+    return atomData,atCodes
        
-def GetUnique(Phase):
+def GetUnique(Phase,atCodes):
     
     def noDuplicate(xyzA,XYZ,Amat):
         if True in [np.allclose(np.inner(Amat,xyzA),np.inner(Amat,xyzB),atol=0.05) for xyzB in XYZ]:
@@ -351,6 +366,7 @@ def GetUnique(Phase):
     Atoms = Phase['Atoms']
     Ind = len(Atoms)
     newAtoms = []
+    newAtCodes = []
     Indx = {}
     XYZ = {}
     for ind in range(Ind):
@@ -368,7 +384,8 @@ def GetUnique(Phase):
     for ind in Indx:
         if Indx[ind]:
             newAtoms.append(Atoms[ind])
-    return newAtoms
+            newAtCodes.append(atCodes[ind])
+    return newAtoms,newAtCodes
             
 def calc_rVsq(A):
     """Compute the square of the reciprocal lattice volume (1/V**2) from A'

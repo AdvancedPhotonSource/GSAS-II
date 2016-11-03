@@ -36,6 +36,7 @@ import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
+import GSASIIspc as G2spc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class MultiIntegerDialog(wx.Dialog):
@@ -228,7 +229,7 @@ def UpdateConstraints(G2frame,data):
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol',]
+    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
     globalList = rbDict.keys()
     globalList.sort()
     try:
@@ -1090,13 +1091,13 @@ def UpdateConstraints(G2frame,data):
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,False)
 #        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,False)
-        if text == 'Histogram/Phase constraints':
+        if text == 'Histogram/Phase':
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
-        elif text == 'Histogram constraints':
+        elif text == 'Histogram':
             G2frame.Page = [page,'hst']
             UpdateConstraintPanel(HistConstr,'Hist')
-        elif text == 'Phase constraints':
+        elif text == 'Phase':
             G2frame.Page = [page,'phs']
             G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,True)
 #            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,True)
@@ -1105,7 +1106,7 @@ def UpdateConstraints(G2frame,data):
                     print 'wx error: PhaseConstr not cleanly deleted after Refine'
                 return
             UpdateConstraintPanel(PhaseConstr,'Phase')
-        elif text == 'Global constraints':
+        elif text == 'Global':
             G2frame.Page = [page,'glb']
             UpdateConstraintPanel(GlobalConstr,'Global')
 
@@ -1149,13 +1150,13 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame)
     # note that order of pages is hard-coded in RaisePage
     PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
+    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase')
     HAPConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
+    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase')
     HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
+    G2frame.dataDisplay.AddPage(HistConstr,'Histogram')
     GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')
+    G2frame.dataDisplay.AddPage(GlobalConstr,'Global')
     wx.CallAfter(OnPageChanged,None)
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
@@ -1177,23 +1178,105 @@ def UpdateConstraints(G2frame,data):
 #### Make nuclear-magnetic phase constraints - called by OnTransform in G2phsGUI
 ################################################################################        
         
-def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec):
+def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     '''Add constraints for new magnetic phase created via transformation of old
     nuclear one
+    NB: A = [G11,G22,G33,2*G12,2*G13,2*G23]
     '''
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
+    invTrans = nl.inv(Trans)
+    oCell = oldPhase['General']['Cell'][1:7]
+    nCell = newPhase['General']['Cell'][1:7]
+    oGmat = G2lat.cell2Gmat(oldPhase['General']['Cell'][1:7])[0]
+    nGmat = G2lat.cell2Gmat(newPhase['General']['Cell'][1:7])[0]
+    Gtrans = np.inner(nGmat,nl.inv(oGmat))
+    print 'oA',G2lat.cell2A(oldPhase['General']['Cell'][1:7])
+    print 'nA',G2lat.cell2A(newPhase['General']['Cell'][1:7])
+    print 'oGmat',oGmat
+    print 'nGmat',nGmat
+    print 'Gtrans',Gtrans
+    nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
+    
     opId = oldPhase['pId']
     npId = newPhase['pId']
+    oph = '%d::'%(opId)
+    nph = '%d::'%(npId)
+    cx,ct,cs,cia = newPhase['General']['AtomPtrs']
+    nAtoms = newPhase['Atoms']
+    oSGData = oldPhase['General']['SGData']
+    nSGData = newPhase['General']['SGData']
     item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
     constraints = G2frame.PatternTree.GetItemPyData(item)
-    GSASIIpath.IPyBreak()
-    for hist in UseList:    #HAP
-        UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
-        UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-        UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-    print 'make nuclear-magnetic phase constraints here'
+#    GSASIIpath.IPyBreak()
+    for ia,code in enumerate(atCodes):
+        atom = nAtoms[ia]
+        siteSym = G2spc.SytSym(atom[cx:cx+3],nSGData)[0]
+        CSX = G2spc.GetCSxinel(siteSym)
+        item = code.split('+')[0]
+        iat,opr = item.split(':')
+        Nop = abs(int(opr))%100-1
+        if '-' in opr:
+            Nop *= -1
+        Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
+        if Nop < 0:         #inversion
+            Opr *= -1
+        XOpr = np.inner(Opr,Trans.T)
+        names = ['dAx','dAy','dAz']
+        for ix,name in enumerate(names):
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
+            DepCons = []
+            for iop,opval in enumerate(XOpr[ix]):
+                if opval and CSX[0][ix]:    #-opval from defn of dAx, etc.
+                    DepCons.append([-opval,G2obj.G2VarObj('%d::%s:%d'%(npId,names[iop],ia))])
+            if len(DepCons) == 1:
+                constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+            elif len(DepCons) > 1:
+                for Dep in DepCons:
+                    Dep[0] *= -1
+                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+        for name in ['Afrac','AUiso']:
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
+            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
+            constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
+        #how do I do Uij's for most Trans?
+    Anames = [['A0','A3','A4'],['A3','A1','A5'],['A4','A5','A2']]
+    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
+    Axes = ['a','b','c']
+    Holds = []
+    #how do I invoke Laue symmetry matches for Laue symm change?
+    for iA,Aid in enumerate(Aids):        
+        IndpCon = [1.0,G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))]
+        DepCons = []
+        for iat in range(3):
+            if nSGData['SGLaue'] in ['-1','2/m']:
+                if (abs(nAcof[iA]) < 1.e-8) and (abs(Gtrans[iat][Aid[0]]) < 1.e-8):
+                    if Axes[iat] != oSGData['SGUniq'] and oSGData['SGLaue'] != nSGData['SGLaue']:
+                        HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
+                        if not HoldObj in Holds: 
+                            constraints['Phase'].append([[0.0,HoldObj],None,None,'h'])
+                            Holds.append(HoldObj)
+                            print constraints['Phase'][-1]
+            if abs(Gtrans[iat][Aid[0]]) > 1.e-8 and abs(nAcof[iA]) > 1.e-8:
+                print iat,Aid,Gtrans[iat][Aid[1]],'%d::%s'%(opId,Anames[iat][Aid[1]])
+                DepCons.append([Gtrans[iat][Aid[1]],G2obj.G2VarObj('%d::%s'%(opId,Anames[iat][Aid[1]]))])
+        if len(DepCons) == 1:
+            constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+        elif len(DepCons) > 1:        
+            for Dep in DepCons:
+                Dep[0] *= -1
+            constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+    for hId,hist in enumerate(UseList):    #HAP - seems OK
+        ohapkey = '%d:%d:'%(opId,hId)
+        nhapkey = '%d:%d:'%(npId,hId)
+        IndpCon = [1.0,G2obj.G2VarObj(ohapkey+'Scale')]
+        DepCons = [detTrans,G2obj.G2VarObj(nhapkey+'Scale')]
+        constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
+        for name in ['Size;i','Mustrain;i']:
+            IndpCon = [1.0,G2obj.G2VarObj(ohapkey+name)]
+            DepCons = [1.0,G2obj.G2VarObj(nhapkey+name)]
+            constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
         
 ################################################################################
 #### Rigid bodies

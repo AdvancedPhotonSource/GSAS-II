@@ -1641,6 +1641,8 @@ def UpdateInstrumentGrid(G2frame,data):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         instSizer = wx.FlexGridSizer(0,6,5,5)
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        if insVal['Bank'] == None:      #patch
+            insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
         subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,text),0,WACV)
         mainSizer.Add(subSizer)

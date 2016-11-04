@@ -1581,7 +1581,7 @@ class ImportPowderData(ImportBaseclass):
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
-        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
+        self.powderentry = ['',None,1] #  (filename,Pos,Bank)
         self.powderdata = [] # Powder dataset
         '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
                 np.array(x), # x-axis values
@@ -1623,7 +1623,7 @@ class ImportSmallAngleData(ImportBaseclass):
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
-        self.smallangleentry = ['',None,None] #  (filename,Pos,Bank)
+        self.smallangleentry = ['',None,1] #  (filename,Pos,Bank)
         self.smallangledata = [] # SASD dataset
         '''A small angle data set is a list with items [x,y,w,yc,yd]:
                 np.array(x), # x-axis values

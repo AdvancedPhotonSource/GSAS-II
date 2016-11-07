@@ -1006,6 +1006,17 @@ class GSASII(wx.Frame):
         newVals = []
         Found = False
         il = 0
+        if bank is None: # no bank was specified in the input file, is more than one present in file?
+            banklist = set([])
+            for S in instLines:
+                if S[0] == '#' and 'Bank' in S:
+                    banklist.add(int(S.split(':')[0].split()[1]))
+            if len(banklist) > 1: # yes, the user must make a selection
+                choices = [str(i) for i in banklist]
+                bank = int(G2G.ItemSelector(choices,self.G2frame,multiple=False))
+            else:
+                bank = 1
+            rd.powderentry[2] = bank
         while il < len(instLines):
             S = instLines[il]
             if S[0] == '#':
@@ -1097,16 +1108,18 @@ class GSASII(wx.Frame):
         hType = Iparm['INS   HTYPE '].strip()
         if ibanks == 1: # there is only one bank here, return it
             rd.instbank = 1
+            rd.powderentry[2] = 1
             return Iparm
-        if 'PNT' in hType:
-            rd.instbank = bank
-        elif ibanks != databanks:
+#        if 'PNT' in hType:  # not sure what this is about
+#            rd.instbank = bank
+#        elif ibanks != databanks or bank is None:
+        if (ibanks != databanks and databanks != 1) or bank is None:
             # number of banks in data and prm file not not agree, need a
             # choice from a human here
             choices = []
             for i in range(1,1+ibanks):
                 choices.append('Bank '+str(i))
-            bank = rd.BlockSelector(
+            bank = 1 + rd.BlockSelector(
                 choices, self,
                 title='Select an instrument parameter bank for '+
                 os.path.split(rd.powderentry[0])[1]+' BANK '+str(bank)+
@@ -1138,7 +1151,7 @@ class GSASII(wx.Frame):
         :param str lastdatafile: Name of last data file that was read.
 
         :returns: a list of two dicts, the first containing instrument parameters
-          and the second used for TOf lookup tables for profile coeff.
+          and the second used for TOF lookup tables for profile coeff.
 
         '''
         def SetPowderInstParms(Iparm, rd):

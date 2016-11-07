@@ -145,7 +145,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                 ]
             self.powderentry[0] = filename
             #self.powderentry[1] = pos # bank offset (N/A here)
-            self.powderentry[2] = 1 # xye file only has one bank
+            #self.powderentry[2] = 1 # xye file only has one bank
             self.idstring = ospath.basename(filename)
             # scan comments for temperature
             Temperature = 300

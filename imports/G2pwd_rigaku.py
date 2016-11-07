@@ -121,6 +121,6 @@ class Rigaku_ReaderClass(G2IO.ImportPowderData):
             np.zeros(N), # obs-calc profiles
             ]
         self.powderentry[0] = filename
-        self.powderentry[2] = 1 # xye file only has one bank
+        #self.powderentry[2] = 1 # xye file only has one bank
         self.idstring = os.path.basename(filename)
         return True

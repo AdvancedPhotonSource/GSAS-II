@@ -1,3 +1,4 @@
+        #indx = Atoms.GetSelectedRows()
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################
@@ -855,7 +856,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         generalData['Pawley neg wt'] = wt
                 except ValueError:
                     pass
-                pawlNegWt.SetValue("%.4f"%(generalData['Pawley neg wt']))          #reset in case of error                
+                pawlNegWt.SetValue("%.4f"%(generalData['Pawley neg wt']))          #reset in case of error
 
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
@@ -1813,7 +1814,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for id in rbObj['Ids']:
                     rbAtmDict[id] += 'U'            
         # exclList will be 'x' or 'xu' if TLS used in RB
-        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
+        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE, 
             G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_MAKEMOLECULE,
             G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE,G2gd.wxID_ADDHATOM]
         if atomData:
@@ -1918,14 +1919,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #            DrawAtomAdd(data['Drawing'],atomData[-1])
 
     def OnAtomInsert(event):
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            AtomInsert(indx[0],0,0,0)
-            FillAtomsGrid(Atoms)
-            event.StopPropagation()
-            data['Drawing']['Atoms'] = []
-            UpdateDrawAtoms()
-            G2plt.PlotStructure(G2frame,data)
+        '''Inserts a new atom into list immediately before every selected atom
+        '''
+        indx = GetSelectedAtoms()
+        for a in reversed(sorted(indx)):
+            AtomInsert(a,0,0,0)
+        event.StopPropagation()
+        FillAtomsGrid(Atoms)
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewInsert(event):
         if 'Drawing' in data:
@@ -1936,99 +1939,101 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.StopPropagation()
         
     def OnHydAtomAdd(event):
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            DisAglCtls = {}
-            generalData = data['General']
-            if 'DisAglCtls' in generalData:
-                DisAglCtls = generalData['DisAglCtls']
-                if 'H' not in DisAglCtls['AtomTypes']:
-                    DisAglCtls['AtomTypes'].append('H')
-                    DisAglCtls['AngleRadii'].append(0.5)
-                    DisAglCtls['BondRadii'].append(0.5)
-            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
-            if dlg.ShowModal() == wx.ID_OK:
-                DisAglCtls = dlg.GetData()
-            else:
-                dlg.Destroy()
-                return
+        '''Adds H atoms to fill out coordination sphere for selected atoms
+        '''
+        indx = GetSelectedAtoms()
+        if not indx: return
+        DisAglCtls = {}
+        generalData = data['General']
+        if 'DisAglCtls' in generalData:
+            DisAglCtls = generalData['DisAglCtls']
+            if 'H' not in DisAglCtls['AtomTypes']:
+                DisAglCtls['AtomTypes'].append('H')
+                DisAglCtls['AngleRadii'].append(0.5)
+                DisAglCtls['BondRadii'].append(0.5)
+        dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            DisAglCtls = dlg.GetData()
+        else:
             dlg.Destroy()
-            generalData['DisAglCtls'] = DisAglCtls
-            cx,ct,cs,cia = generalData['AtomPtrs']
-            atomData = data['Atoms']
-            AtNames = [atom[ct-1] for atom in atomData]
-            AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
-            Neigh = []
-            AddHydIds = []
-            for ind in indx:
-                atom = atomData[ind]
-                if atom[ct] not in ['C','N','O']:
-                    continue
-                neigh = [atom[ct-1],G2mth.FindNeighbors(data,atom[ct-1],AtNames),0]
-                if len(neigh[1][0]) > 3 or (atom[ct] == 'O' and len(neigh[1][0]) > 1):
-                    continue
-                nH = 1      #for O atom
-                if atom[ct] in ['C','N']:
-                    nH = 4-len(neigh[1][0])
-                bonds = {item[0]:item[1:] for item in neigh[1][0]}
-                nextName = ''
-                if len(bonds) == 1:
-                    nextName = bonds.keys()[0]
-                for bond in bonds:
-                    if 'C' in atom[ct]:
-                        if 'C' in bond and bonds[bond][0] < 1.42:
-                            nH -= 1
-                            break
-                        elif 'O' in bond and bonds[bond][0] < 1.3:
-                            nH -= 1
-                            break
-                    elif 'O' in atom[ct] and 'C' in bonds and bonds[bond][0] < 1.3:
+            return
+        dlg.Destroy()
+        generalData['DisAglCtls'] = DisAglCtls
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        atomData = data['Atoms']
+        AtNames = [atom[ct-1] for atom in atomData]
+        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+        Neigh = []
+        AddHydIds = []
+        for ind in indx:
+            atom = atomData[ind]
+            if atom[ct] not in ['C','N','O']:
+                continue
+            neigh = [atom[ct-1],G2mth.FindNeighbors(data,atom[ct-1],AtNames),0]
+            if len(neigh[1][0]) > 3 or (atom[ct] == 'O' and len(neigh[1][0]) > 1):
+                continue
+            nH = 1      #for O atom
+            if atom[ct] in ['C','N']:
+                nH = 4-len(neigh[1][0])
+            bonds = {item[0]:item[1:] for item in neigh[1][0]}
+            nextName = ''
+            if len(bonds) == 1:
+                nextName = bonds.keys()[0]
+            for bond in bonds:
+                if 'C' in atom[ct]:
+                    if 'C' in bond and bonds[bond][0] < 1.42:
                         nH -= 1
                         break
-                nextneigh = []
-                if nextName:
-                    nextneigh = G2mth.FindNeighbors(data,nextName,AtNames,notName=neigh[0])
-                    if nextneigh[0]:
-                        neigh[1][1].append(nextneigh[1][1][0])
-                neigh[2] = max(0,nH)  #set expected no. H's needed
-                if len(neigh[1][0]):
-                    AddHydIds.append(neigh[1][1])
-                    Neigh.append(neigh)
-            if Neigh:
-                letters = ['A','B','C']
-                HydIds = {}
-                mapError = False
-                dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
-                if dlg.ShowModal() == wx.ID_OK:
-                    Nat = len(atomData)
-                    Neigh = dlg.GetData()
-                    mapData = generalData['Map']
-                    for ineigh,neigh in enumerate(Neigh):
-                        AddHydIds[ineigh].append(neigh[2])
-                        loc = AtLookUp[AddHydIds[ineigh][0]]+1
-                        if 'O' in neigh[0] and (not len(mapData['rho']) or not 'delt-F' in mapData['MapType']):
-                            mapError = True
-                            continue                            
-                        Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
-                        for iX,X in enumerate(Hxyz):
-                            AtomInsert(loc+iX,X[0],X[1],X[2],'H','H%s'%(neigh[0][1:]+letters[iX]))
-                            data['Atoms'][loc+iX][cia+1] = HU[iX]
-                            Id = data['Atoms'][loc+iX][cia+8]
-                            HydIds[Id] = [iX,AddHydIds[ineigh]]
-                            Nat += 1
-                            AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
-                if mapError:
-                    G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
-                SetupGeneral()
-                data['General']['HydIds'].update(HydIds)
-                G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
-                data['Drawing']['Atoms'] = []
-                UpdateDrawAtoms()
-                FillAtomsGrid(Atoms)
-                dlg.Destroy()
-                G2plt.PlotStructure(G2frame,data)
-            else:
-                wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
+                    elif 'O' in bond and bonds[bond][0] < 1.3:
+                        nH -= 1
+                        break
+                elif 'O' in atom[ct] and 'C' in bonds and bonds[bond][0] < 1.3:
+                    nH -= 1
+                    break
+            nextneigh = []
+            if nextName:
+                nextneigh = G2mth.FindNeighbors(data,nextName,AtNames,notName=neigh[0])
+                if nextneigh[0]:
+                    neigh[1][1].append(nextneigh[1][1][0])
+            neigh[2] = max(0,nH)  #set expected no. H's needed
+            if len(neigh[1][0]):
+                AddHydIds.append(neigh[1][1])
+                Neigh.append(neigh)
+        if Neigh:
+            letters = ['A','B','C']
+            HydIds = {}
+            mapError = False
+            dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
+            if dlg.ShowModal() == wx.ID_OK:
+                Nat = len(atomData)
+                Neigh = dlg.GetData()
+                mapData = generalData['Map']
+                for ineigh,neigh in enumerate(Neigh):
+                    AddHydIds[ineigh].append(neigh[2])
+                    loc = AtLookUp[AddHydIds[ineigh][0]]+1
+                    if 'O' in neigh[0] and (not len(mapData['rho']) or not 'delt-F' in mapData['MapType']):
+                        mapError = True
+                        continue                            
+                    Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
+                    for iX,X in enumerate(Hxyz):
+                        AtomInsert(loc+iX,X[0],X[1],X[2],'H','H%s'%(neigh[0][1:]+letters[iX]))
+                        data['Atoms'][loc+iX][cia+1] = HU[iX]
+                        Id = data['Atoms'][loc+iX][cia+8]
+                        HydIds[Id] = [iX,AddHydIds[ineigh]]
+                        Nat += 1
+                        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+            if mapError:
+                G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
+            SetupGeneral()
+            data['General']['HydIds'].update(HydIds)
+            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms()
+            FillAtomsGrid(Atoms)
+            dlg.Destroy()
+            G2plt.PlotStructure(G2frame,data)
+        else:
+            wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
                 
     def OnHydAtomUpdate(event):
         Error = ''
@@ -2066,7 +2071,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         cx = colLabels.index('x')
         ci = colLabels.index('I/A')
-        indx = Atoms.GetSelectedRows()
+        indx = GetSelectedAtoms()
         if len(indx) != 1:
             G2frame.ErrorDialog('Atom move error','Only one atom can be moved')
         elif atomData[indx[0]][ci+8] in rbAtmDict:
@@ -2154,240 +2159,246 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         HydIds = data['General']['HydIds']
         ci = colLabels.index('I/A')
-        indx = Atoms.GetSelectedRows()
+        indx = GetSelectedAtoms()
         IDs = []
-        if indx:
-            atomData = data['Atoms']
-            indx.reverse()
-            for ind in indx:
-                atom = atomData[ind]
-                if atom[ci+8] in rbAtmDict:
-                    G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
-                else:
-                    if atom[ci+8] in HydIds:    #remove Hs from Hatom update dict
-                        del HydIds[atom[ci+8]]
-                    IDs.append(atom[ci+8])
-                    del atomData[ind]
-            if 'Atoms' in data['Drawing']:
-                Atoms.ClearSelection()
-                DrawAtomsDeleteByIDs(IDs)
-                data['Drawing']['Atoms'] = []
-                UpdateDrawAtoms()
-                wx.CallAfter(FillAtomsGrid,Atoms)
-                G2plt.PlotStructure(G2frame,data)
-            SetupGeneral()
-            if not len(HydIds):
-                G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
+        if not indx: return
+        atomData = data['Atoms']
+        indx.reverse()
+        for ind in indx:
+            atom = atomData[ind]
+            if atom[ci+8] in rbAtmDict:
+                G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
+            else:
+                if atom[ci+8] in HydIds:    #remove Hs from Hatom update dict
+                    del HydIds[atom[ci+8]]
+                IDs.append(atom[ci+8])
+                del atomData[ind]
+        if 'Atoms' in data['Drawing']:
+            Atoms.ClearSelection()
+            DrawAtomsDeleteByIDs(IDs)
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms()
+            wx.CallAfter(FillAtomsGrid,Atoms)
+            G2plt.PlotStructure(G2frame,data)
+        SetupGeneral()
+        if not len(HydIds):
+            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
         event.StopPropagation()
 
+    def GetSelectedAtoms():
+        '''Get all atoms that are selected by row or by having any cell selected.
+        produce an error message if no atoms are selected.
+        '''
+        indx = list(set([row for row,col in Atoms.GetSelectedCells()]+Atoms.GetSelectedRows()))
+        if indx:
+            return indx
+        else:
+            G2G.G2MessageBox(G2frame,'Warning: no atoms were selected','Nothing selected')
+        
     def AtomRefine(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         c = colLabels.index('refine')
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            atomData = data['Atoms']
-            generalData = data['General']
-            Type = generalData['Type']
+        indx = GetSelectedAtoms()
+        if not indx: return
+        atomData = data['Atoms']
+        generalData = data['General']
+        Type = generalData['Type']
+        if Type in ['nuclear','macromolecular','faulted',]:
             choice = ['F - site fraction','X - coordinates','U - thermal parameters']
-            dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelections()
-                parms = ''
-                for x in sel:
-                    parms += choice[x][0]
-                for r in indx:
-                    if not Atoms.IsReadOnly(r,c):
-                        atomData[r][c] = parms
-                Atoms.ForceRefresh()
-            dlg.Destroy()
+        elif Type in ['magnetic',]:
+            choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
+        dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelections()
+            parms = ''
+            for x in sel:
+                parms += choice[x][0]
+            for r in indx:
+                if not Atoms.IsReadOnly(r,c):
+                    atomData[r][c] = parms
+            Atoms.ForceRefresh()
+        dlg.Destroy()
 
     def AtomModify(event):
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            atomData = data['Atoms']
-            generalData = data['General']
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            ci = colLabels.index('I/A')
-            choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
-            if generalData['Type'] == 'magnetic':
-                choices += ['Mx','My','Mz',]
-            dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
-            parm = ''
+        indx = GetSelectedAtoms()
+        if not indx: return
+        atomData = data['Atoms']
+        generalData = data['General']
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        ci = colLabels.index('I/A')
+        choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
+        if generalData['Type'] == 'magnetic':
+            choices += ['Mx','My','Mz',]
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
+        parm = ''
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            parm = choices[sel]
+            cid = colLabels.index(parm)
+        dlg.Destroy()
+        if parm in ['Type']:
+            dlg = G2elemGUI.PickElement(G2frame)
             if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                parm = choices[sel]
-                cid = colLabels.index(parm)
-            dlg.Destroy()
-            if parm in ['Type']:
-                dlg = G2elemGUI.PickElement(G2frame)
-                if dlg.ShowModal() == wx.ID_OK:
-                    if dlg.Elem not in ['None']:
-                        El = dlg.Elem.strip()
-                        for r in indx:                        
-                            if not Atoms.IsReadOnly(r,cid):
-                                atomData[r][cid] = El
-                                if len(El) in [2,4]:
-                                    atomData[r][cid-1] = El[:2]+'%d'%(r+1)
-                                else:
-                                    atomData[r][cid-1] = El[:1]+'%d'%(r+1)
-                        SetupGeneral()
-                        if 'Atoms' in data['Drawing']:
-                            for r in indx:
-                                ID = atomData[r][ci+8]
-                                DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
-                    FillAtomsGrid(Atoms)
-                dlg.Destroy()
-            elif parm in ['Name',]:
-                dlg = wx.MessageDialog(G2frame,'Do you really want to rename the selected atoms?','Rename', 
-                    wx.YES_NO | wx.ICON_QUESTION)
-                try:
-                    result = dlg.ShowModal()
-                    if result == wx.ID_YES:
+                if dlg.Elem not in ['None']:
+                    El = dlg.Elem.strip()
+                    for r in indx:                        
+                        if not Atoms.IsReadOnly(r,cid):
+                            atomData[r][cid] = El
+                            if len(El) in [2,4]:
+                                atomData[r][cid-1] = El[:2]+'%d'%(r+1)
+                            else:
+                                atomData[r][cid-1] = El[:1]+'%d'%(r+1)
+                    SetupGeneral()
+                    if 'Atoms' in data['Drawing']:
                         for r in indx:
-                            if not Atoms.IsReadOnly(r,cid+1):
-                                El = atomData[r][cid+1]
-                                if len(El) in [2,4]:
-                                    atomData[r][cid] = El[:2]+'%d'%(r+1)
-                                else:
-                                    atomData[r][cid] = El[:1]+'%d'%(r+1)
-                    FillAtomsGrid(Atoms)
-                finally:
-                    dlg.Destroy()
-                    
-            elif parm in ['I/A']:
-                choices = ['Isotropic','Anisotropic']
-                dlg = wx.SingleChoiceDialog(G2frame,'Select','Thermal parameter model',choices)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    parm = choices[sel][0]
-                    for r in indx:                        
-                        if not Atoms.IsReadOnly(r,cid):
-                            atomData[r][cid] = parm
-                    FillAtomsGrid(Atoms)
-                dlg.Destroy()
-            elif parm in ['frac','Uiso']:
-                limits = [0.,1.]
-                val = 1.0
-                if  parm in ['Uiso']:
-                    limits = [0.,0.25]
-                    val = 0.01
-                dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
-                if dlg.ShowModal() == wx.ID_OK:
-                    parm = dlg.GetValue()
-                    for r in indx:                        
-                        if not Atoms.IsReadOnly(r,cid):
-                            atomData[r][cid] = parm
-                    SetupGeneral()
-                    FillAtomsGrid(Atoms)
-                dlg.Destroy()
-            elif parm in ['x','y','z']:
-                limits = [-1.,1.]
-                val = 0.
-                dlg = G2G.SingleFloatDialog(G2frame,'Atom shift','Enter shift for '+parm,val,limits)
-                if dlg.ShowModal() == wx.ID_OK:
-                    parm = dlg.GetValue()
-                    for r in indx:                        
-                        if not Atoms.IsReadOnly(r,cid):
-                            atomData[r][cid] += parm
-                    SetupGeneral()
-                    FillAtomsGrid(Atoms)
-                dlg.Destroy()
-            elif parm in ['Mx','My','Mz',]:
-                limits = [-10.,10.]
-                val = 0.
-                dlg = G2G.SingleFloatDialog(G2frame,'Atom moment','Enter new value for '+parm,val,limits)
-                if dlg.ShowModal() == wx.ID_OK:
-                    parm = dlg.GetValue()
-                    for r in indx:                        
-                        if not Atoms.IsReadOnly(r,cid):
-                            atomData[r][cid] = parm
-                    SetupGeneral()
-                    FillAtomsGrid(Atoms)
-                dlg.Destroy()
-                
-            data['Drawing']['Atoms'] = []
-            UpdateDrawAtoms()
-            G2plt.PlotStructure(G2frame,data)
-        else:
-            print "select one or more rows of atoms"
-            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
-
-    def AtomTransform(event):
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            generalData = data['General']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-            SpnFlp = generalData['SGData'].get('SpnFlp',[])
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            cx = colLabels.index('x')
-            cuia = colLabels.index('I/A')
-            cuij = colLabels.index('U11')
-            css = colLabels.index('site sym')
-            cmx = 0
-            if 'Mx' in colLabels:
-                cmx = colLabels.index('Mx')
-            atomData = data['Atoms']
-            SGData = generalData['SGData']
-            dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
-            New = False
+                            ID = atomData[r][ci+8]
+                            DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                FillAtomsGrid(Atoms)
+            dlg.Destroy()
+        elif parm in ['Name',]:
+            dlg = wx.MessageDialog(G2frame,'Do you really want to rename the selected atoms?','Rename', 
+                wx.YES_NO | wx.ICON_QUESTION)
             try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
-                    Cell = np.array(Cell)
-                    cent = SGData['SGCen'][Cent]
-                    M,T = SGData['SGOps'][Opr]
-                    for ind in indx:
-                        XYZ = np.array(atomData[ind][cx:cx+3])
-                        XYZ = np.inner(M,XYZ)+T
-                        if Inv:
-                            XYZ = -XYZ
-                        XYZ = XYZ+cent+Cell
-                        if Force:
-                            XYZ,cell = G2spc.MoveToUnitCell(XYZ)
-                            Cell += cell
-                        if New:
-                            atom = copy.copy(atomData[ind])
-                        else:
-                            atom = atomData[ind]
-                        atom[cx:cx+3] = XYZ
-                        atom[css:css+2] = G2spc.SytSym(XYZ,SGData)[:2]
-                        OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
-                        if atom[cuia] == 'A':
-                            Uij = atom[cuij:cuij+6]
-                            U = G2spc.Uij2U(Uij)
-                            U = np.inner(np.inner(M,U),M)
-                            Uij = G2spc.U2Uij(U)
-                            atom[cuij:cuij+6] = Uij
-                        if cmx:
-                            opNum = G2spc.GetOpNum(OprNum,SGData)
-                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-                        if New:
-                            atomData.append(atom)
+                result = dlg.ShowModal()
+                if result == wx.ID_YES:
+                    for r in indx:
+                        if not Atoms.IsReadOnly(r,cid+1):
+                            El = atomData[r][cid+1]
+                            if len(El) in [2,4]:
+                                atomData[r][cid] = El[:2]+'%d'%(r+1)
+                            else:
+                                atomData[r][cid] = El[:1]+'%d'%(r+1)
+                FillAtomsGrid(Atoms)
             finally:
                 dlg.Destroy()
-            Atoms.ClearSelection()
-            if New:
+
+        elif parm in ['I/A']:
+            choices = ['Isotropic','Anisotropic']
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Thermal parameter model',choices)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                parm = choices[sel][0]
+                for r in indx:                        
+                    if not Atoms.IsReadOnly(r,cid):
+                        atomData[r][cid] = parm
                 FillAtomsGrid(Atoms)
-            else:
-                Atoms.ForceRefresh()
-            data['Drawing']['Atoms'] = []
-            UpdateDrawAtoms()
-            G2plt.PlotStructure(G2frame,data)
+            dlg.Destroy()
+        elif parm in ['frac','Uiso']:
+            limits = [0.,1.]
+            val = 1.0
+            if  parm in ['Uiso']:
+                limits = [0.,0.25]
+                val = 0.01
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in indx:                        
+                    if not Atoms.IsReadOnly(r,cid):
+                        atomData[r][cid] = parm
+                SetupGeneral()
+                FillAtomsGrid(Atoms)
+            dlg.Destroy()
+        elif parm in ['x','y','z']:
+            limits = [-1.,1.]
+            val = 0.
+            dlg = G2G.SingleFloatDialog(G2frame,'Atom shift','Enter shift for '+parm,val,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in indx:                        
+                    if not Atoms.IsReadOnly(r,cid):
+                        atomData[r][cid] += parm
+                SetupGeneral()
+                FillAtomsGrid(Atoms)
+            dlg.Destroy()
+        elif parm in ['Mx','My','Mz',]:
+            limits = [-10.,10.]
+            val = 0.
+            dlg = G2G.SingleFloatDialog(G2frame,'Atom moment','Enter new value for '+parm,val,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+                for r in indx:                        
+                    if not Atoms.IsReadOnly(r,cid):
+                        atomData[r][cid] = parm
+                SetupGeneral()
+                FillAtomsGrid(Atoms)
+            dlg.Destroy()
+
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(G2frame,data)
+
+    def AtomTransform(event):
+        indx = GetSelectedAtoms()
+        if not indx: return
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        SpnFlp = generalData['SGData'].get('SpnFlp',[])
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        cx = colLabels.index('x')
+        cuia = colLabels.index('I/A')
+        cuij = colLabels.index('U11')
+        css = colLabels.index('site sym')
+        cmx = 0
+        if 'Mx' in colLabels:
+            cmx = colLabels.index('Mx')
+        atomData = data['Atoms']
+        SGData = generalData['SGData']
+        dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
+        New = False
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
+                Cell = np.array(Cell)
+                cent = SGData['SGCen'][Cent]
+                M,T = SGData['SGOps'][Opr]
+                for ind in indx:
+                    XYZ = np.array(atomData[ind][cx:cx+3])
+                    XYZ = np.inner(M,XYZ)+T
+                    if Inv:
+                        XYZ = -XYZ
+                    XYZ = XYZ+cent+Cell
+                    if Force:
+                        XYZ,cell = G2spc.MoveToUnitCell(XYZ)
+                        Cell += cell
+                    if New:
+                        atom = copy.copy(atomData[ind])
+                    else:
+                        atom = atomData[ind]
+                    atom[cx:cx+3] = XYZ
+                    atom[css:css+2] = G2spc.SytSym(XYZ,SGData)[:2]
+                    OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
+                    if atom[cuia] == 'A':
+                        Uij = atom[cuij:cuij+6]
+                        U = G2spc.Uij2U(Uij)
+                        U = np.inner(np.inner(M,U),M)
+                        Uij = G2spc.U2Uij(U)
+                        atom[cuij:cuij+6] = Uij
+                    if cmx:
+                        opNum = G2spc.GetOpNum(OprNum,SGData)
+                        mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                        atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                    if New:
+                        atomData.append(atom)
+        finally:
+            dlg.Destroy()
+        Atoms.ClearSelection()
+        if New:
+            FillAtomsGrid(Atoms)
         else:
-            print "select one or more rows of atoms"
-            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
+            Atoms.ForceRefresh()
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(G2frame,data)
             
     def AtomRotate(event):
-        ''' 
-        Currently not used - Bind commented out below
+        '''Currently not used - Bind commented out below
         '''
         Units = {'':np.zeros(3),
             'xy':np.array([[i,j,0] for i in range(3) for j in range(3)])-np.array([1,1,0]),
             'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
             'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
             'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
-        indx = Atoms.GetSelectedRows()
+        indx = GetSelectedAtoms()
         if indx:
             generalData = data['General']
             A,B = G2lat.cell2AB(generalData['Cell'][1:7])
@@ -2431,7 +2442,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
                 
     def MakeMolecule(event):      
-        indx = Atoms.GetSelectedRows()
+        indx = GetSelectedAtoms()
         Oxyz = []
         xyz = []
         DisAglCtls = {}
@@ -2468,7 +2479,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         msg = 'Density of phase {:s} = {:.3f} g/cc'.format(data['General']['Name'],density)
         print(msg)
         G2G.G2MessageBox(G2frame.dataFrame,msg,'Density')
-          
+
+    def OnSetAll(event):
+        'set refinement flags for all atoms in table'
+        for row in range(Atoms.GetNumberRows()):
+            Atoms.SelectRow(row,True)
+    
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
         fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
@@ -2477,7 +2493,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     def OnDistAngle(event,fp=None):
         'Compute distances and angles'    
-        indx = Atoms.GetSelectedRows()
+        indx = GetSelectedAtoms()
         Oxyz = []
         xyz = []
         DisAglData = {}
@@ -7362,6 +7378,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             wx.EndBusyCursor()
         wx.CallAfter(FillPawleyReflectionsGrid)
+    def OnPawleySelAll(event):
+        refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
+        for r in range(G2frame.PawleyRefl.GetNumberRows()):
+            G2frame.PawleyRefl.GetTable().SetValue(r,refcol,True)
+        G2frame.PawleyRefl.ForceRefresh()
+    def OnPawleySelNone(event):
+        refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
+        for r in range(G2frame.PawleyRefl.GetNumberRows()):
+            G2frame.PawleyRefl.GetTable().SetValue(r,refcol,False)
+        G2frame.PawleyRefl.ForceRefresh()
+    def OnPawleyToggle(event):
+        raise Exception        
+
+        refcol = [G2frame.PawleyRefl.GetColLabelValue(c) for c in range(G2frame.PawleyRefl.GetNumberCols())].index('refine')
+        for r in range(G2frame.PawleyRefl.GetNumberRows()):
+            G2frame.PawleyRefl.GetTable().SetValue(
+                r,refcol,
+                not G2frame.PawleyRefl.GetTable().GetValueAsBool(r,refcol))
+        G2frame.PawleyRefl.ForceRefresh()
                             
 ################################################################################
 ##### Fourier routines
@@ -7884,18 +7919,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
         # Atoms
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.AtomsMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2gd.wxID_ADDHATOM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2gd.wxID_UPDATEHATOM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSetAll, id=G2gd.wxID_ATOMSSETALL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSSETSEL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2gd.wxID_ADDHATOM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRotate, id=G2gd.wxID_ATOMSROTATE)
+        
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2gd.wxID_UPDATEHATOM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, MakeMolecule, id=G2gd.wxID_MAKEMOLECULE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
@@ -7976,6 +8013,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySelAll, id=G2gd.wxID_PAWLEYSELALL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySelNone, id=G2gd.wxID_PAWLEYSELNONE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyToggle, id=G2gd.wxID_PAWLEYSELTOGGLE)
         
     # UpdatePhaseData execution starts here
 #patch

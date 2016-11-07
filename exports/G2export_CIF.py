@@ -33,7 +33,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
-import GSASIIctrls as G2ctrls
+import GSASIIctrls as G2G
 import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
@@ -55,6 +55,19 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.author = ''
         self.CIFname = ''
 
+    def ValidateAscii(self,checklist):
+        '''Validate items as ASCII'''
+        msg = ''
+        for lbl,val in checklist:
+            if not all(ord(c) < 128 for c in val):
+                if msg: msg += '\n'
+                msg += lbl + " contains unicode characters: " + val
+        if msg:
+            G2G.G2MessageBox(self.G2frame,
+                             'Error: CIFs can contain only ASCII characters. Please change item(s) below:\n\n'+msg,
+                             'Unicode not valid for CIF')
+            return True
+                      
     def _Exporter(self,event=None,phaseOnly=None,histOnly=None):
         '''Basic code to export a CIF. Export can be full or simple, as set by
         phaseOnly and histOnly which skips distances & angles, etc.
@@ -64,7 +77,27 @@ class ExportCIF(G2IO.ExportBaseclass):
         def WriteCIFitem(name,value=''):
             '''Write CIF data items to the file. Formats values as needed.
             Also used without a value for loops, comments, loop headers, etc.
-            '''            
+            '''
+            if all(ord(c) < 128 for c in value) and all(ord(c) < 128 for c in name):
+                pass
+            else:
+                print('Warning: unicode stripped from CIF item with name='+name+' value='+value)
+                s = ''
+                for c in name:
+                    if ord(c) < 128:
+                        s += c
+                    else:
+                        s += '.'
+                name = s
+                s = ''
+                for c in value:
+                    if ord(c) < 128:
+                        s += c
+                    else:
+                        s += '.'
+                value = s
+                print('...changed to name='+name+' value='+value)
+                
             if value:
                 if "\n" in value or len(value)> 70:
                     if name.strip(): self.fp.write(name+'\n')
@@ -1302,13 +1335,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                 instrname = d.get('InstrName')
                 if instrname is None:
                     d['InstrName'] = ''
-            return G2ctrls.CallScrolledMultiEditor(
+            return G2G.CallScrolledMultiEditor(
                 self.G2frame,dictlist,keylist,
                 prelbl=range(1,len(dictlist)+1),
                 postlbl=lbllist,
                 title='Instrument names',
                 header="Edit instrument names. Note that a non-blank\nname is required for all histograms",
-                CopyButton=True)
+                CopyButton=True,ASCIIonly=True)
             
         def EditRanges(event):
             '''Edit the bond distance/angle search range; phase is determined from
@@ -1590,7 +1623,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 #=================================================================================
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
-        if not self.CIFname: # Get a name for the CIF. If not defined, use the GPX name (save if that is needed). 
+        if not self.CIFname: # Get a name for the CIF. If not defined, use the GPX name (save, if that is needed). 
             if not self.G2frame.GSASprojectfile:
                 self.G2frame.OnFileSaveas(None)
             if not self.G2frame.GSASprojectfile: return
@@ -1598,17 +1631,27 @@ class ExportCIF(G2IO.ExportBaseclass):
                 os.path.split(self.G2frame.GSASprojectfile)[1]
                 )[0]
             self.CIFname = self.CIFname.replace(' ','')
-        # get CIF author name -- required for full CIFs
+        # replace non-ASCII characters in CIFname with dots
+        s = ''
+        for c in self.CIFname:
+            if ord(c) < 128:
+                s += c
+            else:
+                s += '.'
+        self.CIFname = s
+        # load saved CIF author name
         try:
             self.author = self.OverallParms['Controls'].get("Author",'').strip()
         except KeyError:
             pass
-        if phaseOnly:
+        #=================================================================
+        # write quick CIFs 
+        #=================================================================
+        if phaseOnly: #====Phase only CIF ================================
             print('Writing CIF output to file '+str(self.filename))
             self.OpenFile()
             oneblock = True
             self.quickmode = True
-            #====Phase only CIF ====================================================
             self.Write(' ')
             self.Write(70*'#')
             WriteCIFitem('data_'+self.CIFname)
@@ -1617,7 +1660,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WritePhaseInfo(phaseOnly)
             self.CloseFile()
             return
-        elif histOnly:
+        elif histOnly: #====Histogram only CIF ================================
             print('Writing CIF output to file '+str(self.filename))
             self.OpenFile()
             hist = histOnly
@@ -1661,12 +1704,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.CloseFile()
             return
         #===============================================================================
-        # the normal export process starts here
+        # the export process for a full CIF starts here
         #===============================================================================
-        # get the project file name
-        self.CIFname = os.path.splitext(
-            os.path.split(self.G2frame.GSASprojectfile)[1]
-            )[0]
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
@@ -1687,12 +1726,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                'Empty project',
                'Project does not contain any data or phases. Are they interconnected?')
            return
-        if not self.author:
-            if not EditAuthor(): return
-        # test for quick CIF mode or no data
-        self.quickmode = False
+        self.quickmode = False # full CIF
         phasenam = None # include all phases
-        # Project export: will this require a multiblock CIF?
+        # Will this require a multiblock CIF?
         if len(self.Phases) > 1:
             oneblock = False
         elif len(self.powderDict) + len(self.xtalDict) > 1:
@@ -1780,21 +1816,32 @@ class ExportCIF(G2IO.ExportBaseclass):
                 elif hist.startswith("HKLF"): 
                     instnam = histblk["Instrument Parameters"][0]['InstrName']
                     break # ignore all but 1st data histogram
-        # give the user a chance to edit all defaults
+        # give the user a window to edit CIF contents
+        if not self.author:
+            if not EditAuthor(): return
+        self.ValidateAscii([('Author name',self.author),]) # check for ASCII strings where needed, warn on problems
         self.cifdefs = wx.Dialog(
             self.G2frame,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         EditCIFDefaults()
         self.cifdefs.CenterOnParent()
-        val = self.cifdefs.ShowModal()
-        self.cifdefs.Destroy()
-        if val != wx.ID_OK:
+        if self.cifdefs.ShowModal() != wx.ID_OK:
+            self.cifdefs.Destroy()
             return
+        while self.ValidateAscii([('Author name',self.author),
+                                  ]): # validate a few things as ASCII
+            if self.cifdefs.ShowModal() != wx.ID_OK:
+                self.cifdefs.Destroy()
+                return
+        self.cifdefs.Destroy()
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
         print('Writing CIF output to file '+str(self.filename)+"...")
         self.OpenFile()
+        # test code ***************************************************************************************************
+        WriteCIFitem('data_'+'\xc3\x81vila')
+        # test code ***************************************************************************************************
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======Data only CIF (powder/xtal) ====================================
             hist = self.histnam[0]
@@ -2570,17 +2617,17 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     if '.' in rng[0] or '.' in rng[1]: hint = float
                     if rng[0]: mn = hint(rng[0])
                     if rng[1]: mx = hint(rng[1])
-                    ent = G2ctrls.ValidatedTxtCtrl(
+                    ent = G2G.ValidatedTxtCtrl(
                         self,dct,item,typeHint=hint,min=mn,max=mx,
-                        CIFinput=True,
+                        CIFinput=True,ASCIIonly=True,
                         OKcontrol=self.ControlOKButton)
                     self.ValidatedControlsList.append(ent)
                     return ent
         rw1 = rw.ResizeWidget(self)
-        ent = G2ctrls.ValidatedTxtCtrl(
+        ent = G2G.ValidatedTxtCtrl(
             rw1,dct,item,size=(100, 20),
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER,
-            CIFinput=True,
+            CIFinput=True,ASCIIonly=True,
             OKcontrol=self.ControlOKButton)
         self.ValidatedControlsList.append(ent)
         return rw1

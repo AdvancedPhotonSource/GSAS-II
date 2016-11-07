@@ -337,9 +337,11 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     Banks,
                     ParentFrame=ParentFrame,
                     title='Select Bank(s) to read from the list below',
-                    size=(600,100),
+                    size=(600,300),
                     header='Dataset Selector')
-            if len(self.selections) == 0: return False
+            if len(self.selections) == 0:
+                self.errors = 'No banks selected'
+                return False
             selblk = self.selections[0] # select first in list
             if len(self.selections) > 1: # prepare to loop through again
                 self.repeat = True

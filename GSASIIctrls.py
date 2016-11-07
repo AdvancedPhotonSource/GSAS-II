@@ -304,13 +304,16 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     :param dict OnLeaveArgs: a dict with keyword args that are passed to
       the :attr:`OnLeave` function. Defaults to ``{}``
 
+    :param bool ASCIIonly: if set as True will remove unicode characters from
+      strings
+
     :param (other): other optional keyword parameters for the
       wx.TextCtrl widget such as size or style may be specified.
 
     '''
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
                  OKcontrol=None,OnLeave=None,typeHint=None,
-                 CIFinput=False, OnLeaveArgs={}, **kw):
+                 CIFinput=False, OnLeaveArgs={}, ASCIIonly=False, **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
@@ -320,6 +323,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.OnLeaveArgs = OnLeaveArgs
         self.CIFinput = CIFinput
         self.notBlank = notBlank
+        self.ASCIIonly = ASCIIonly
         self.type = str
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
@@ -428,7 +432,18 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             elif show:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)).rstrip('0'))
         else:
-            if show: wx.TextCtrl.SetValue(self,str(val))
+            if self.ASCIIonly:
+                s = ''
+                for c in val:
+                    if ord(c) < 128: s += c
+                if val != s:
+                    val = s
+                    show = True
+            if show:
+                try:
+                    wx.TextCtrl.SetValue(self,str(val))
+                except:
+                    wx.TextCtrl.SetValue(self,val)
             self.ShowStringValidity() # test if valid input
             return
         
@@ -1000,7 +1015,7 @@ class G2CheckBox(wx.CheckBox):
 ################################################################################
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
-                             CopyButton=False, **kw):
+                             CopyButton=False, ASCIIonly=False, **kw):
     '''Shell routine to call a ScrolledMultiEditor dialog. See
     :class:`ScrolledMultiEditor` for parameter definitions.
 
@@ -1010,7 +1025,7 @@ def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
     '''
     dlg = ScrolledMultiEditor(parent,dictlst,elemlst,prelbl,postlbl,
                               title,header,size,
-                              CopyButton, **kw)
+                              CopyButton, ASCIIonly, **kw)
     if dlg.ShowModal() == wx.ID_OK:
         dlg.Destroy()
         return True
@@ -1059,6 +1074,9 @@ class ScrolledMultiEditor(wx.Dialog):
     :param bool CopyButton: if True adds a small button that copies the
       value for the current row to all fields below (default is False)
       
+    :param bool ASCIIonly: if set as True will remove unicode characters from
+      strings
+      
     :param list minvals: optional list of minimum values for validation
       of float or int values. Ignored if value is None.
     :param list maxvals: optional list of maximum values for validation
@@ -1100,7 +1118,7 @@ class ScrolledMultiEditor(wx.Dialog):
     
     def __init__(self,parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
-                 CopyButton=False,
+                 CopyButton=False, ASCIIonly=False,
                  minvals=[],maxvals=[],sizevals=[],
                  checkdictlst=[], checkelemlst=[], checklabel=""):
         if len(dictlst) != len(elemlst):
@@ -1160,7 +1178,7 @@ class ScrolledMultiEditor(wx.Dialog):
                 self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
-            ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton,
+            ctrl = ValidatedTxtCtrl(panel,d,k,OKcontrol=self.ControlOKButton,ASCIIonly=ASCIIonly,
                                     **kargs)
             self.ValidatedControlsList.append(ctrl)
             subSizer.Add(ctrl)

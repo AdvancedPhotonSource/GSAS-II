@@ -62,6 +62,7 @@ class raw_ReaderClass(G2IO.ImportPowderData):
         'Read a Bruker RAW file'
         self.comments = []
         self.repeat = True
+        self.powderentry[0] = filename
         File = open(filename,'rb')
         if 'ver. 1' in self.formatName:
             raise Exception    #for now

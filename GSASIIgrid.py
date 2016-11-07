@@ -64,12 +64,13 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_DATADELETE,wxID_DATACOPY,wxID_DATACOPYFLAGS,wxID_DATASELCOPY,wxID_DATAUSE,
 ] = [wx.NewId() for item in range(10)]
 
-[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
+[ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
     wxID_WAVEVARY,wxID_ATOMSROTATE, wxID_ATOMSDENSITY,
-] = [wx.NewId() for item in range(20)]
+    wxID_ATOMSSETALL, wxID_ATOMSSETSEL,
+] = [wx.NewId() for item in range(21)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -89,8 +90,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,wxID_SEQUENCESIMULATE, wxID_COPYPHASE,
 ] = [wx.NewId() for item in range(4)]
 
-[ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
-] = [wx.NewId() for item in range(3)]
+[ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE, wxID_PAWLEYSELALL, wxID_PAWLEYSELNONE,
+  wxID_PAWLEYSELTOGGLE,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
@@ -2228,32 +2230,42 @@ class DataFrame(wx.Frame):
         self.AtomCompute = wx.Menu(title='')
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit Atoms')
         self.AtomsMenu.Append(menu=self.AtomCompute, title='Compute')
+        submenu = wx.Menu()
+        self.AtomEdit.AppendMenu(wx.ID_ANY, 'Atoms selection...', submenu, 
+            help='Set/Act on selected atoms')
+        submenu.Append(wxID_ATOMSSETSEL,
+            help='Set refinement flags for selected atoms',
+            kind=wx.ITEM_NORMAL,
+            text='Refine selected')
+        submenu.Append(id=wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify parameters',
+            help='Modify parameters values for all selected atoms')
+        submenu.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
+            help='Inserts an H atom before all selected atoms')
+        submenu.Append(id=wxID_ADDHATOM, kind=wx.ITEM_NORMAL,text='Calc H atoms',
+            help='Insert H atoms in expected bonding positions for selected atoms')
+        submenu.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
+            help='Delete selected atoms')
+        submenu.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+            help='Symmetry transform selected atoms')
+#        self.AtomEdit.Append(id=wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
+#            help='Select atoms to rotate first')
+        submenu.Append(wxID_ATOMSSETALL,
+            help='Set refinement flags for all atoms',
+            kind=wx.ITEM_NORMAL,
+            text='Select All')
+        
         self.AtomEdit.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
             help='Appended as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMSVIEWADD, kind=wx.ITEM_NORMAL,text='Append view point',
             help='Appended as an H atom')
-        self.AtomEdit.Append(id=wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
-            help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
-        self.AtomEdit.Append(id=wxID_ADDHATOM, kind=wx.ITEM_NORMAL,text='Insert H atoms',
-            help='Insert H atoms in standard positions bonded to selected atoms')
         self.AtomEdit.Append(id=wxID_UPDATEHATOM, kind=wx.ITEM_NORMAL,text='Update H atoms',
             help='Update H atoms in standard positions')
-        self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
-            help='Select single atom to move')
-        self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
-            help='Select atoms to delete first')
-        self.AtomEdit.Append(id=wxID_ATOMSREFINE, kind=wx.ITEM_NORMAL,text='Set atom refinement flags',
-            help='Select atoms to refine first')
-        self.AtomEdit.Append(id=wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify atom parameters',
-            help='Select atoms to modify first')
-        self.AtomEdit.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
-            help='Select atoms to transform first')
-#        self.AtomEdit.Append(id=wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
-#            help='Select atoms to rotate first')
+        self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move selected atom to view point',
+            help='Select a single atom to be moved to view point in plot')
         self.AtomEdit.Append(id=wxID_MAKEMOLECULE, kind=wx.ITEM_NORMAL,text='Assemble molecule',
-            help='Assemble molecule from scatterd atom positions')
+            help='Select a single atom to assemble as a molecule from scattered atom positions')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
         submenu = wx.Menu()
@@ -2411,7 +2423,13 @@ class DataFrame(wx.Frame):
         self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
             help='Estimate initial Pawley intensities')
         self.PawleyEdit.Append(id=wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
-            help='Update negative Pawley intensities with -0.5*Fobs and turn off refinemnt')
+            help='Update negative Pawley intensities with -0.5*Fobs and turn off refinement')
+        self.PawleyEdit.Append(id=wxID_PAWLEYSELALL, kind=wx.ITEM_NORMAL,text='Select all',
+            help='Select all reflections to be refined')
+        self.PawleyEdit.Append(id=wxID_PAWLEYSELNONE, kind=wx.ITEM_NORMAL,text='Select none',
+            help='Set flag for all reflections for no refinement')
+        self.PawleyEdit.Append(id=wxID_PAWLEYSELTOGGLE, kind=wx.ITEM_NORMAL,text='Toggle Selection',
+            help='Toggle Selection flag for all reflections to opposite setting')
         self.PostfillDataMenu()
             
         # Phase / Map peaks tab

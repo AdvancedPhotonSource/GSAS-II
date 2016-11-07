@@ -1590,6 +1590,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if CSI[2][i]:
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
                     SetupGeneral()
+                elif Atoms.GetColLabelValue(c) == 'Type':
+                    AtomTypeSelect(event)
                 elif Atoms.GetColLabelValue(c) == 'I/A':            #note use of text color to make it vanish!
                     if atomData[r][c] == 'I':
                         Uij = atomData[r][c+2:c+8]

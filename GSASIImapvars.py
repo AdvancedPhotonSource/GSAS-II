@@ -1045,9 +1045,7 @@ def Dict2Map(parmDict,varyList):
             valuelist = [parmDict[var] for var in mapvars]
         except KeyError:
             continue
-        parmDict.update(zip(varlist,
-                            np.dot(invmultarr,np.array(valuelist)))
-                        )
+        parmDict.update(zip(varlist,np.dot(invmultarr,np.array(valuelist))))
 
 #======================================================================
 # internal routines follow (these routines are unlikely to be called

@@ -288,7 +288,7 @@ def CalcPDF(data,inst,limits,xydata):
     import copy
     import scipy.fftpack as ft
     Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
-    Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])
+    Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
 #    GSASIIpath.IPyBreak()
     xydata['IofQ'] = copy.deepcopy(xydata['Sample'])
@@ -301,7 +301,7 @@ def CalcPDF(data,inst,limits,xydata):
         if data['Container Bkg.']['Name']:
             xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
                 data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
-        xydata['IofQ'][1][1] += xycontainer
+        xydata['IofQ'][1][1] += xycontainer[Ibeg:Ifin]
     #get element data & absorption coeff.
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
@@ -365,8 +365,10 @@ def CalcPDF(data,inst,limits,xydata):
         xydata['FofQ'][1][1] *= LorchWeight(Q)    
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
-    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],4*nR)[:nR])
-    xydata['GofR'][1][0] = 0.5*np.pi*np.linspace(0,nR,nR)/qLimits[1]
+    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],8*nR)[:nR])
+    xydata['GofR'][1][0] = 0.25*np.pi*np.linspace(0,nR,nR)/qLimits[1]
+    if data.get('noRing',True):
+        xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
     return auxPlot
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):

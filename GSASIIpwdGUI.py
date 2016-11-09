@@ -4646,6 +4646,8 @@ def UpdatePDFGrid(G2frame,data):
     #patch
     if 'BackRatio' not in data:
         data['BackRatio'] = 0.
+    if 'noRing' not in data:
+        data['noRing'] = False
     
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
@@ -4905,7 +4907,13 @@ def UpdatePDFGrid(G2frame,data):
         data['QScaleLim'][0] = 0.9*qLimits[1]
         SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)        
+        G2plt.PlotISFG(G2frame,newPlot=True)
+        
+    def OnNoRing(event):
+        data['noRing'] = not data['noRing']
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(G2frame,newPlot=True)
+                
 
     def GetFileList(fileType):
         fileList = []
@@ -5166,20 +5174,24 @@ def UpdatePDFGrid(G2frame,data):
     lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
     sqBox.Add(lorch,0,WACV)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
-    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]))
+    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]),size=wx.Size(50,20))
     SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
     SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
     sqBox.Add(SQmin,0)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to '),0,WACV)
-    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]))
+    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]),size=wx.Size(50,20))
     SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
     SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)
     sqBox.Add(SQmax,0)
     resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
     sqBox.Add(resetQ,0)
     resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
-    
+    noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
+    noRing.SetValue(data['noRing'])
+    noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
+    sqBox.Add(noRing,0)
     mainSizer.Add(sqBox,0)
+    #Rmax
 
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

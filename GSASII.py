@@ -239,17 +239,17 @@ class GSASII(wx.Frame):
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
             text='Sequential refine')
+        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
         if len(self.SeqRefine): # extend state for new menus to match main (on mac)
             state = self.SeqRefine[0].IsEnabled()
         else:
             state = False
         item.Enable(state)
         self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
-        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
-            self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
-            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-                text='Debug graphics refresh')
-            self.Bind(wx.EVT_MENU, self.TestResetPlot, id=item.GetId())
+#        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
+#            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+#                text='Debug graphics refresh')
+#            self.Bind(wx.EVT_MENU, self.TestResetPlot, id=item.GetId())
 
     def _init_Imports(self):
         '''import all the G2phase*.py & G2sfact*.py & G2pwd*.py files that 
@@ -3874,12 +3874,15 @@ class GSASII(wx.Frame):
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
         Called from the Calculate/Sequential refine menu.
-        '''        
+        '''
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequential results')
             self.PatternTree.SetItemPyData(Id,{})            
         Controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+        if not Controls.get('Seq Data'):
+            print('Error: a sequential refinement has not been set up')
+            return
         Controls['ShowCell'] = True
         self.OnFileSave(event)
         # check that constraints are OK here

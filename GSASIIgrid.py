@@ -699,6 +699,8 @@ class TransformDialog(wx.Dialog):
             mainSizer.Add(wx.StaticText(self.panel, \
                 label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
             constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
+            mainSizer.Add(wx.StaticText(self.panel, \
+                label=' Constraints not correct for non-diagonal transforms'),0,WACV)
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0,WACV)

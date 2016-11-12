@@ -1555,6 +1555,7 @@ def getCellEsd(pfx,SGData,A,covData):
     srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
+    
     R123 = Ax[0]*Ax[1]*Ax[2]
     dsasdg = np.zeros((3,6))
     dadg = np.zeros((6,6))
@@ -1584,6 +1585,7 @@ def getCellEsd(pfx,SGData,A,covData):
             if ij == i0:
                 dadg[i0][ij] = dadg[i0][ij]-0.5*cell[i0]/Ax[i0]
             dadg[i3][ij] = -dadg[i3][ij]*rsin[2-i0]*dpr
+#    GSASIIpath.IPyBreak()
     sigMat = np.inner(dadg,np.inner(dadg,vcov))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)

@@ -1183,20 +1183,28 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     nuclear one
     NB: A = [G11,G22,G33,2*G12,2*G13,2*G23]
     '''
+    
+    def SetUniqAj(pId,iA,Aname,SGLaue):
+        if SGLaue in ['4/m','4/mmm'] and iA in [0,1]:
+            parm = '%d::%s'%(pId,'A0')
+        elif SGLaue in ['m3','m3m'] and iA in [0,1,2]:
+            parm = '%d::%s'%(pId,'A0')
+        elif SGLaue in ['6/m','6/mmm','3m1', '31m', '3'] and iA in [0,1,3]:
+            parm = '%d::%s'%(pId,'A0')
+        elif SGLaue in ['3R', '3mR']:
+            if ia in [0,1,2]:
+                parm = '%d::%s'%(pId,'A0')
+            else:
+                parm = '%d::%s'%(pId,'A3')
+        else:
+            parm = '%d::%s'%(pId,Aname)
+        return parm
+        
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
     invTrans = nl.inv(Trans)
-    oCell = oldPhase['General']['Cell'][1:7]
-    nCell = newPhase['General']['Cell'][1:7]
-    oGmat = G2lat.cell2Gmat(oldPhase['General']['Cell'][1:7])[0]
-    nGmat = G2lat.cell2Gmat(newPhase['General']['Cell'][1:7])[0]
-    Gtrans = np.inner(nGmat,nl.inv(oGmat))
-    print 'oA',G2lat.cell2A(oldPhase['General']['Cell'][1:7])
-    print 'nA',G2lat.cell2A(newPhase['General']['Cell'][1:7])
-    print 'oGmat',oGmat
-    print 'nGmat',nGmat
-    print 'Gtrans',Gtrans
+#    print 'invTrans',invTrans
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     
     opId = oldPhase['pId']
@@ -1205,11 +1213,18 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     nph = '%d::'%(npId)
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
     nAtoms = newPhase['Atoms']
+    oAtoms = oldPhase['Atoms']
     oSGData = oldPhase['General']['SGData']
     nSGData = newPhase['General']['SGData']
+    oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
+    nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
+    oGmat = G2lat.cell2Gmat(oldPhase['General']['Cell'][1:7])[1]
+    nGmat = G2lat.cell2Gmat(newPhase['General']['Cell'][1:7])[1]
     item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
     constraints = G2frame.PatternTree.GetItemPyData(item)
 #    GSASIIpath.IPyBreak()
+    parmDict = {}
+    varyList = []
     for ia,code in enumerate(atCodes):
         atom = nAtoms[ia]
         siteSym = G2spc.SytSym(atom[cx:cx+3],nSGData)[0]
@@ -1242,31 +1257,44 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
         #how do I do Uij's for most Trans?
     Anames = [['A0','A3','A4'],['A3','A1','A5'],['A4','A5','A2']]
-    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
+    As = ['A0','A1','A2','A3','A4','A5']
+    Aids = [[0,0,'A0',-1],[1,1,'A1',-1],[2,2,'A2',-1],[0,1,'A3',2],[0,2,'A4',1],[1,2,'A5',0]]
     Axes = ['a','b','c']
     Holds = []
-    #how do I invoke Laue symmetry matches for Laue symm change?
-    for iA,Aid in enumerate(Aids):        
-        IndpCon = [1.0,G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))]
+    for iA,Aid in enumerate(Aids):
+        parm = SetUniqAj(opId,iA,Aid[2],oSGData['SGLaue'])
+        parmDict[parm] = oAcof[iA]
+        varyList.append(parm)
+        IndpCon = [1.0,G2obj.G2VarObj(parm)]
         DepCons = []
         for iat in range(3):
-            if nSGData['SGLaue'] in ['-1','2/m']:
-                if (abs(nAcof[iA]) < 1.e-8) and (abs(Gtrans[iat][Aid[0]]) < 1.e-8):
+            if nSGData['SGLaue'] in ['-1','2/m']:       #set holds
+                if (abs(nAcof[iA]) < 1.e-8) and (abs(Trans[Aid[0],Aid[1]]) < 1.e-8):
                     if Axes[iat] != oSGData['SGUniq'] and oSGData['SGLaue'] != nSGData['SGLaue']:
                         HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
                         if not HoldObj in Holds: 
                             constraints['Phase'].append([[0.0,HoldObj],None,None,'h'])
                             Holds.append(HoldObj)
-                            print constraints['Phase'][-1]
-            if abs(Gtrans[iat][Aid[0]]) > 1.e-8 and abs(nAcof[iA]) > 1.e-8:
-                print iat,Aid,Gtrans[iat][Aid[1]],'%d::%s'%(opId,Anames[iat][Aid[1]])
-                DepCons.append([Gtrans[iat][Aid[1]],G2obj.G2VarObj('%d::%s'%(opId,Anames[iat][Aid[1]]))])
+                            continue
+#            print iA,Aid,iat,invTrans[iat][Aid[0]],invTrans[Aid[1]][iat],Anames[Aid[0]][Aid[1]],parm
+            if abs(invTrans[iat,Aid[1]]) > 1.e-8 and abs(nAcof[iA]) > 1.e-8:
+                parm = SetUniqAj(npId,iA,Anames[Aid[0]][Aid[1]],nSGData['SGLaue'])
+                parmDict[parm] = nAcof[As.index(Aid[2])]
+                if not parm in varyList:
+                    varyList.append(parm)
+                DepCons.append([invTrans[Aid[0],Aid[0]]*invTrans[Aid[1],Aid[1]],G2obj.G2VarObj(parm)])
         if len(DepCons) == 1:
             constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
         elif len(DepCons) > 1:        
             for Dep in DepCons:
                 Dep[0] *= -1
             constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+#    constDict,fixedList,ignored = G2stIO.ProcessConstraints(constraints['Phase'])
+#    groups,parmlist = G2mv.GroupConstraints(constDict)
+#    G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,parmDict)
+#    print 'old',parmDict
+#    G2mv.Dict2Map(parmDict,varyList)
+#    print 'new',parmDict
     for hId,hist in enumerate(UseList):    #HAP - seems OK
         ohapkey = '%d:%d:'%(opId,hId)
         nhapkey = '%d:%d:'%(npId,hId)

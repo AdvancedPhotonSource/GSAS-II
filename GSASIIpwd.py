@@ -1199,7 +1199,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 else:
                     if len(Pdabc):
                         alp = np.interp(dsp,Pdabc[0],Pdabc[1])
-                        dad0 = 0
+                        dada0 = 0
                     else:
                         alp = G2mth.getTOFalpha(parmDict,dsp)
                         dada0 = G2mth.getTOFalphaDeriv(dsp)
@@ -1292,7 +1292,7 @@ def Values2Dict(parmdict, varylist, values):
 def SetBackgroundParms(Background):
     'needs a doc string'
     if len(Background) == 1:            # fix up old backgrounds
-        BackGround.append({'nDebye':0,'debyeTerms':[]})
+        Background.append({'nDebye':0,'debyeTerms':[]})
     bakType,bakFlag = Background[0][:2]
     backVals = Background[0][3:]
     backNames = ['Back;'+str(i) for i in range(len(backVals))]

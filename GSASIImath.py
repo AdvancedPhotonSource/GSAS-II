@@ -276,8 +276,8 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
             continue
         while True:
             try:
-                jndb = Indb.index(indb)
-                Indb.remove(jndb)
+                jndb = IndB.index(indb)
+                IndB.remove(jndb)
             except:
                 break
         newAtom = copy.copy(atomData[Indx[indb]])

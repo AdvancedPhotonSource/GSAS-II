@@ -441,11 +441,11 @@ class GSASII(wx.Frame):
                 choices += "|any file (*.*)|*.*"
         # get the file(s)
         if multiple:
-            mode = style=wx.OPEN | wx.MULTIPLE
+            mode = wx.OPEN|wx.MULTIPLE
         else:
-            mode = style=wx.OPEN
+            mode = wx.OPEN
         filelist = G2G.GetImportFile(self,message="Choose "+label+" input file",
-                    defaultFile="",wildcard=choices, style=mode)
+                    defaultFile="",wildcard=choices,style=mode)
         rd_list = []
         filelist1 = []
         for filename in filelist:

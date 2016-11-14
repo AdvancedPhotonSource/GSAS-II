@@ -372,7 +372,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             elif FormatName == rd.formatName:
                 primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
-        print('Error: No matching format for file '+filename)
+        print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     fp = None
     errorReport = ''
@@ -415,7 +415,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             else:
                 return rd.Comments,rd.Data,rd.Npix,rd.Image
     else:
-        print('Error reading file '+filename)
+        print('Error reading file '+imagefile)
         print('Error messages(s)\n'+errorReport)
         raise Exception('No image read')    
 
@@ -438,7 +438,7 @@ def ReadImages(G2frame,imagefile):
         elif flag:
             primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
-        print('Error: No matching format for file '+filename)
+        print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     errorReport = ''
     fp = open(imagefile,'Ur')
@@ -483,7 +483,7 @@ def ReadImages(G2frame,imagefile):
             CreatedIMGitems.append(G2frame.Image)
         if CreatedIMGitems: return CreatedIMGitems
     else:
-        print('Error reading file '+filename)
+        print('Error reading file '+imagefile)
         print('Error messages(s)\n'+errorReport)
         return []
         #raise Exception('No image read')    

@@ -370,7 +370,7 @@ def GetDetectorXY(dsp,azm,data):
 def GetDetXYfromThAzm(Th,Azm,data):
     'Needs a doc string'
     dsp = data['wavelength']/(2.0*npsind(Th))    
-    return GetDetectorXY(dsp,azm,data)
+    return GetDetectorXY(dsp,Azm,data)
                     
 def GetTthAzmDsp(x,y,data): #expensive
     'Needs a doc string - checked OK for ellipses & hyperbola'

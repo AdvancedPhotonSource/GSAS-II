@@ -755,7 +755,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2*Nops*Ncen)     #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops*Ncen)     #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
                 TMcorr = TMcorr/2.
@@ -994,7 +994,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
-    Nops = len(SGMT)
+    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
     MFtables = calcControls['MFtables']
     Amat,Bmat = G2lat.Gmat2AB(G)
     nRef = len(refDict['RefList'])
@@ -1003,14 +1003,14 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
-    dGdM = np.repeat(Gdata[:,nxs,:],Nops*Ncen*(1+SGData['SGInv']),axis=1)
+    dGdM = np.repeat(Gdata[:,nxs,:],Nops,axis=1)
     Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
-    Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
+    Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps
     dGdM = SGData['MagMom'][nxs,:,nxs]*dGdM
     Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
 #    GSASIIpath.IPyBreak()
@@ -1041,7 +1041,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
-        occ = Mdata*Fdata/len(SGT)
+        occ = Mdata*Fdata/Nops
         biso = -SQfactor*Uisodata[:,nxs]
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT),axis=1).T
         HbH = -np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
@@ -1050,7 +1050,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.reshape(np.array([G2lat.UijtoU6(Uij) for Uij in Hij]),(-1,len(SGT),6))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2*Nops*Ncen)     #Nref,Natm                                  #Nref,Natm
+        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/Nops     #Nref,Natm                                  #Nref,Natm
         if SGData['SGInv']:
             mphase = np.hstack((phase,-phase))
             TMcorr = TMcorr/2.
@@ -1092,12 +1092,12 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         #accumulate derivatives    
-        dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/(2*Nops*Ncen),axis=0)
+        dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/Nops,axis=0)
         dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)
         dFdMx[:,iBeg:iFin,:] = 2.*(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx)
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
-        GSASIIpath.IPyBreak()
+#        GSASIIpath.IPyBreak()
         iBeg += blkSize
     print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
         #loop over atoms - each dict entry is list of derivatives for all the reflections

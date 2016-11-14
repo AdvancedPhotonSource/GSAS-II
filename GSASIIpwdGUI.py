@@ -744,6 +744,53 @@ def UpdatePeakGrid(G2frame, data):
                         data['peaks'][row][col]=False
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
+    def SelectVars(rows):
+        '''Set or clear peak refinement variables for peaks listed in rows
+        '''
+        refOpts = {G2frame.dataDisplay.GetColLabelValue(i):i+1 for i in range(G2frame.dataDisplay.GetNumberCols()) if G2frame.dataDisplay.GetColLabelValue(i) != "refine"}
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Select columns to refine',
+            'Refinement Selection', sorted(refOpts.keys()),
+            filterBox=False,toggle=False)
+        sels = []
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                sels = [sorted(refOpts.keys())[i] for i in dlg.GetSelections()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        for r in rows:
+            for lbl,c in refOpts.iteritems():
+                data['peaks'][r][c] = lbl in sels
+        UpdatePeakGrid(G2frame,data)
+        
+    def OnRefineSelected(event):
+        '''set refinement flags for the selected peaks
+        '''
+        rows = list(set([row for row,col in G2frame.dataDisplay.GetSelectedCells()] +
+                        G2frame.dataDisplay.GetSelectedRows()))
+        if not rows:
+            wx.MessageBox('No selected rows. You must select rows or cells before using this command',
+                          caption='No selected peaks')
+            return
+        SelectVars(rows)
+
+    def OnRefineAll(event):
+        '''set refinement flags for all peaks
+        '''
+        SelectVars(range(G2frame.dataDisplay.GetNumberRows()))
+
+    def onSelectedRow(event):
+        '''Called when a peak is selected so that it can be highlighted in the plot
+        '''
+        event.Skip()
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+                           
+    #======================================================================
+    # beginning of UpdatePeakGrid init
+    #======================================================================
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PeakMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
@@ -751,6 +798,8 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2gd.wxID_AUTOSEARCH)
     G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2gd.wxID_PEAKSCOPY)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
+    G2frame.Bind(wx.EVT_MENU, OnRefineSelected, id=G2frame.dataFrame.peaksSel.GetId())
+    G2frame.Bind(wx.EVT_MENU, OnRefineAll, id=G2frame.dataFrame.peaksAll.GetId())
     G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
     G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
     G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2gd.wxID_SEQPEAKFIT)
@@ -806,11 +855,13 @@ def UpdatePeakGrid(G2frame, data):
     setBackgroundColors()                         
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onSelectedRow)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onSelectedRow)
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([535,350])
     G2frame.dataFrame.SendSizeEvent()
-        
+
 ################################################################################
 #####  Background
 ################################################################################           

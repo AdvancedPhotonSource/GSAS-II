@@ -1461,7 +1461,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.plotStyle['sqrtPlot']:
             xy[1] = xy[1]**2
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
-            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):                                    #picked a data point
+            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data['peaks'].append(XY)
@@ -1469,7 +1469,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame,plotType=plottype)
             else:                                                   #picked a peak list line
+                # prepare to animate move of line
                 G2frame.itemPicked = pick
+                pick.set_linestyle(':') # set line as dotted
+                Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+                Plot = Page.figure.gca()
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+                pick.set_linestyle('--') # back to dashed
         elif G2frame.PatternTree.GetItemText(PickId) == 'Limits':
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
@@ -2002,13 +2010,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                         Page.canvas.SetToolTipString(tip)
                         data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
-                        for item in data['peaks']:
-                            if G2frame.plotStyle['qPlot']:
-                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
-                            elif G2frame.plotStyle['dPlot']:
-                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
+                        selectedPeaks = list(set(
+                            [row for row,col in G2frame.dataDisplay.GetSelectedCells()] +
+                            G2frame.dataDisplay.GetSelectedRows()))
+                        for i,item in enumerate(data['peaks']):
+                            if i in selectedPeaks:
+                                Ni = N+1
                             else:
-                                Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
+                                Ni = N
+                            if G2frame.plotStyle['qPlot']:
+                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
+                            elif G2frame.plotStyle['dPlot']:
+                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
+                            else:
+                                Lines.append(Plot.axvline(item[0],color=colors[Ni%6],picker=2.))
                     if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.canvas.SetToolTipString(tip)

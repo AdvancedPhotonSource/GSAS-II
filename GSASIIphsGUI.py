@@ -1,4 +1,3 @@
-        #indx = Atoms.GetSelectedRows()
 # -*- coding: utf-8 -*-
 #GSASII - phase data display routines
 ########### SVN repository information ###################

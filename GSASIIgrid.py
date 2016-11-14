@@ -1955,6 +1955,14 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.PeakMenu,helpType='Peak List')
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
+        self.peaksSel = self.PeakEdit.Append(wx.ID_ANY,
+            help='Set refinement flags for selected peaks',
+            kind=wx.ITEM_NORMAL,
+            text='Set sel. ref flags...')
+        self.peaksAll = self.PeakEdit.Append(wx.ID_ANY,
+            help='Set refinement flags for all peaks',
+            kind=wx.ITEM_NORMAL,
+            text='Set all ref flags...')
         self.AutoSearch = self.PeakEdit.Append(help='Automatic peak search', 
             id=wxID_AUTOSEARCH, kind=wx.ITEM_NORMAL,text='Auto search')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 

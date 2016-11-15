@@ -535,6 +535,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if event: event.Skip()
             return
         self._setValue(self.result[self.key],show=False) # save value quietly
+        print 'leave window'
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
                                       tc=self,
@@ -546,9 +547,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         Evaluate and update the current control contents
         '''
         if event: event.Skip()
+        if not self.IsModified():   #ignore mouse crusing
+            return
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
-                if event: event.Skip()
                 return 
             self.evaluated = False # expression has been recast as value, reset flag
             self._setValue(self.result[self.key])
@@ -559,7 +561,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       value=self.result[self.key],
                                       tc=self,
                                       **self.OnLeaveArgs)
-        if event: event.Skip()
 
 ################################################################################
 class NumberValidator(wx.PyValidator):

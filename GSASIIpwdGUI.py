@@ -1368,7 +1368,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     def AfterChange(invalid,value,tc):
         if invalid: return
         plottype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
-        G2plt.PlotPatterns(G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
+#        print 'new plot'
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
 
     def ExclSizer():
         

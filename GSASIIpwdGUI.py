@@ -1272,37 +1272,128 @@ def UpdateBackground(G2frame,data):
 def UpdateLimitsGrid(G2frame, data,plottype):
     '''respond to selection of PWDR Limits data tree item.
     '''
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    G2frame.ifGetExclude = False
+#    if G2frame.dataDisplay:
+#        G2frame.dataFrame.Clear()
+#    G2frame.ifGetExclude = False
+#        
+#    def KeyEditPeakGrid(event):
+#        '''for deleting excluded regions
+#        '''
+#        if event.GetKeyCode() == wx.WXK_DELETE:
+#            row = G2frame.dataDisplay.GetSelectedRows()[0]
+#            if row > 1: #can't delete limits!
+#                del(data[row])
+#                wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
+#                G2plt.PlotPatterns(G2frame,plotType=plottype)
+#                        
+#    def RefreshLimitsGrid(event):
+#        event.StopPropagation()
+#        data = G2frame.LimitsTable.GetData()
+#        old = data[0]
+#        new = data[1]
+#        new[0] = max(old[0],new[0])
+#        new[1] = max(new[0],min(old[1],new[1]))
+#        excl = []
+#        if len(data) > 2:
+#            excl = data[2:]
+#            for item in excl:
+#                item[0] = max(old[0],item[0])
+#                item[1] = max(item[0],min(old[1],item[1]))
+#        data = [old,new]+excl
+#        G2frame.LimitsTable.SetData(data)
+#        G2plt.PlotPatterns(G2frame,plotType=plottype)
+#        
+#    def OnLimitCopy(event):
+#        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+#        histList = GetHistsLikeSelected(G2frame)
+#        if not histList:
+#            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+#            return
+#        copyList = []
+#        dlg = G2G.G2MultiChoiceDialog(
+#            G2frame.dataFrame, 
+#            'Copy limits from\n'+str(hst[5:])+' to...',
+#            'Copy limits', histList)
+#        try:
+#            if dlg.ShowModal() == wx.ID_OK:
+#                for i in dlg.GetSelections(): 
+#                    item = histList[i]
+#                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+#                    G2frame.PatternTree.SetItemPyData(
+#                        G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),copy.copy(data))
+#        finally:
+#            dlg.Destroy()
+#            
+#    def OnAddExcl(event):
+#        G2frame.ifGetExclude = True
+#        print 'Add excluded region'
+#        
+#    G2frame.LimitsTable = []
+#    colLabels = ['Tmin','Tmax']
+#    rowLabels = ['original','changed']
+#    for i in range(len(data)-2):
+#        rowLabels.append('exclude')
+#    Types = 2*[wg.GRID_VALUE_FLOAT+':12,5',]
+#    G2frame.LimitsTable = G2G.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+#    G2frame.dataFrame.SetLabel('Limits')
+#    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
+#    if not G2frame.dataFrame.GetStatusBar():
+#        Status = G2frame.dataFrame.CreateStatusBar()
+#    if len(data)>2:
+#        Status.SetStatusText('To delete excluded region: select & press Delete key')
+#    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
+#    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
+#    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
+#    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)    
+#    G2frame.dataDisplay.SetCellStyle(0,0,VERY_LIGHT_GREY,True)
+#    G2frame.dataDisplay.SetCellStyle(0,1,VERY_LIGHT_GREY,True)
+#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
+#    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+#    G2frame.dataDisplay.SetMargins(0,0)
+#    G2frame.dataDisplay.AutoSizeColumns(False)
+#    G2frame.dataFrame.setSizePosLeft([230,260])                                
+#    G2frame.dataFrame.SendSizeEvent()
+#    
+#
+    def LimitSizer():
+        limits = wx.FlexGridSizer(2,3,0,5)
+        labels = ['Tmin','Tmax']
+        for i in [0,1]:
+            limits.Add(wx.StaticText(G2frame.dataDisplay,label=' Original %s: %.4f'%(labels[0],data[0][i])),0,WACV)
+            limits.Add(wx.StaticText(G2frame.dataDisplay,label=' New: '),0,WACV)
+            limits.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[1],i,  \
+                min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
+        return limits
         
-    def KeyEditPeakGrid(event):
-        '''for deleting excluded regions
-        '''
-        if event.GetKeyCode() == wx.WXK_DELETE:
-            row = G2frame.dataDisplay.GetSelectedRows()[0]
-            if row > 1: #can't delete limits!
-                del(data[row])
-                wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
-                G2plt.PlotPatterns(G2frame,plotType=plottype)
-                        
-    def RefreshLimitsGrid(event):
-        event.StopPropagation()
-        data = G2frame.LimitsTable.GetData()
-        old = data[0]
-        new = data[1]
-        new[0] = max(old[0],new[0])
-        new[1] = max(new[0],min(old[1],new[1]))
-        excl = []
-        if len(data) > 2:
-            excl = data[2:]
-            for item in excl:
-                item[0] = max(old[0],item[0])
-                item[1] = max(item[0],min(old[1],item[1]))
-        data = [old,new]+excl
-        G2frame.LimitsTable.SetData(data)
-        G2plt.PlotPatterns(G2frame,plotType=plottype)
+    def AfterChange(invalid,value,tc):
+        if invalid: return
+        plottype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
+        G2plt.PlotPatterns(G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
+
+    def ExclSizer():
         
+        def OnDelExcl(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            del(data[item+2])
+            G2plt.PlotPatterns(G2frame,newPlot=False,plotType=plottype)
+            wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
+        
+        Indx = {}
+        excl = wx.FlexGridSizer(0,3,0,5)
+        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' From: '),0,WACV)
+        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' To: '),0,WACV)
+        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' Delete?: '),0,WACV)
+        for id,item in enumerate(data[2:]):
+            for i in [0,1]:
+                excl.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,i,  \
+                    min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
+            delExcl = wx.CheckBox(G2frame.dataDisplay,label='')
+            Indx[delExcl.GetId()] = id
+            delExcl.Bind(wx.EVT_CHECKBOX,OnDelExcl)
+            excl.Add(delExcl,0,WACV)
+        return excl
+               
     def OnLimitCopy(event):
         hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
@@ -1328,31 +1419,33 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         G2frame.ifGetExclude = True
         print 'Add excluded region'
         
-    G2frame.LimitsTable = []
-    colLabels = ['Tmin','Tmax']
-    rowLabels = ['original','changed']
-    for i in range(len(data)-2):
-        rowLabels.append('exclude')
-    Types = 2*[wg.GRID_VALUE_FLOAT+':12,5',]
-    G2frame.LimitsTable = G2G.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.dataFrame.SetLabel('Limits')
+    def Draw():
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(LimitSizer())
+        if len(data)>2:
+            mainSizer.Add((0,5),0)
+            mainSizer.Add(wx.StaticText(G2frame.dataFrame,label=' Excluded regions:'),0,WACV)
+            mainSizer.Add(ExclSizer())
+        mainSizer.Layout()    
+        G2frame.dataDisplay.SetSizer(mainSizer)
+        Size = mainSizer.Fit(G2frame.dataFrame)
+        G2frame.dataDisplay.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
+        
+        
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.DestroyChildren()
+    G2frame.ifGetExclude = False
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
+    G2frame.dataFrame.SetLabel('Limits')
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    if len(data)>2:
-        Status.SetStatusText('To delete excluded region: select & press Delete key')
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
-    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
-    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
-    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)    
-    G2frame.dataDisplay.SetCellStyle(0,0,VERY_LIGHT_GREY,True)
-    G2frame.dataDisplay.SetCellStyle(0,1,VERY_LIGHT_GREY,True)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
-    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-    G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataFrame.setSizePosLeft([230,260])                                
-    G2frame.dataFrame.SendSizeEvent()
+    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)
+    Draw() 
+    
+    
     
 ################################################################################
 #####  Instrument parameters

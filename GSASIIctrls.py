@@ -527,6 +527,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         '''If the mouse leaves the text box, save the result, if valid,
         but (unlike _onLoseFocus) don't update the textbox contents.
         '''
+        if not self.IsModified():   #ignore mouse crusing
+            return
         if self.evaluated and not self.invalid: # deal with computed expressions
             self.evaluated = False # expression has been recast as value, reset flag
         if self.invalid: # don't update an invalid expression

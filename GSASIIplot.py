@@ -234,6 +234,7 @@ class G2PlotNoteBook(wx.Panel):
             if type == 'mpl' or type == '3d':          
                 Plot = Page.figure.gca()          #get previous plot
                 limits = Plot.get_xlim(),Plot.get_ylim() # save previous limits
+#                print 'Plot limits:',limits
                 if newImage:
                     Page.figure.clf()
                     Plot = Page.figure.gca()          #get a fresh plot after clf()

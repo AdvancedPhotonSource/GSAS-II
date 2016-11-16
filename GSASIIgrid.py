@@ -2512,11 +2512,21 @@ class DataFrame(wx.Frame):
         self.selectedRow = 0
         
     def setSizePosLeft(self,Width):
-        clientSize = wx.ClientDisplayRect()
+        Width = list(Width)
+        Pos = self.GetPosition()
+        lastSize = self.G2frame.lastSize
+        clientSize = wx.ClientDisplayRect()     #display window size (e.g. 1304x768)
         Width[1] = min(Width[1],clientSize[2]-300)
         Width[0] = max(Width[0],300)
         self.SetSize(Width)
+        if lastSize[0]:
+            Pos[0] += lastSize[0]-Width[0]
+        offSet = Pos[0]+Width[0]-clientSize[2]
+        if offSet > 0:
+            Pos[0] -= offSet
 #        self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
+        self.SetPosition(wx.Point(Pos[0],Pos[1]))
+        self.G2frame.lastSize = Width
         
     def Clear(self):
         self.ClearBackground()

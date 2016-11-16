@@ -2329,7 +2329,8 @@ class GSASII(wx.Frame):
         #self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE, # replaced for logging
         self.PatternTree = G2G.G2TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
-        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnPatternTreeSelChanged)
+        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,self.OnPatternTreeSelChanged)
+        self.PatternTree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK,self.OnPatternTreeSelChanged)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_COLLAPSED,
             self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
@@ -2427,6 +2428,7 @@ class GSASII(wx.Frame):
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplayPhaseText = ''
         self.lastTreeSetting = []
+        self.lastSize = [0,0]
         
         arg = sys.argv
         if len(arg) > 1 and arg[1]:

@@ -1839,9 +1839,6 @@ class ExportCIF(G2IO.ExportBaseclass):
         #======================================================================
         print('Writing CIF output to file '+str(self.filename)+"...")
         self.OpenFile()
-        # test code ***************************************************************************************************
-        WriteCIFitem('data_'+'\xc3\x81vila')
-        # test code ***************************************************************************************************
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======Data only CIF (powder/xtal) ====================================
             hist = self.histnam[0]
@@ -1896,9 +1893,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             nsteps = 1 + len(self.Phases) + len(self.powderDict) + len(self.xtalDict)
             try:
                 dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
-                Size = dlg.GetSize()
-                Size = (int(Size[0]*3),Size[1]) # increase size along x
-                dlg.SetSize(Size)
+#                Size = dlg.GetSize()
+#                Size = (int(Size[0]*3),Size[1]) # increase size along x
+#                dlg.SetSize(Size)
                 dlg.CenterOnParent()
 
                 # publication info

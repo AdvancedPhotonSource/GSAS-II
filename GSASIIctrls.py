@@ -535,7 +535,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if event: event.Skip()
             return
         self._setValue(self.result[self.key],show=False) # save value quietly
-        print 'leave window'
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
                                       tc=self,
@@ -2179,7 +2178,7 @@ class G2ColumnIDDialog(wx.Dialog):
             modify = Obj.GetValue()
             if not modify:
                 return
-            print 'Modify column',icol,' by', modify
+            #print 'Modify column',icol,' by', modify
             for i,item in enumerate(self.ColumnData[icol]):
                 self.ColumnData[icol][i] = str(eval(item+modify))
             colData.SetValue('\n'.join(self.ColumnData[icol]))

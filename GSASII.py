@@ -3988,7 +3988,7 @@ class GSASIImain(wx.App):
                 self.main.PackageVersions.append([Image.__name__,PILLOW_VERSION])
             except:
                 pass
-        self.main.PackageVersions.append([' Platform',sys.platform+' '+platform.architecture()[0]+' '+platform.machine()])
+        self.main.PackageVersions.append(['Platform',sys.platform+' '+platform.architecture()[0]+' '+platform.machine()])
         
         return True
     # def MacOpenFile(self, filename):
@@ -4018,12 +4018,12 @@ def main():
 if __name__ == '__main__':
     # print versions
     print "Python module versions loaded:"
-    print "python:     ",sys.version.split()[0]
-    print "wxpython:   ",wx.__version__
-    print "matplotlib: ",mpl.__version__
-    print "numpy:      ",np.__version__
-    print "scipy:      ",sp.__version__
-    print "OpenGL:     ",ogl.__version__
+    print "  Python:     ",sys.version.split()[0]
+    print "  wx:         ",wx.__version__
+    print "  matplotlib: ",mpl.__version__
+    print "  numpy:      ",np.__version__
+    print "  scipy:      ",sp.__version__
+    print "  OpenGL:     ",ogl.__version__
     try:
         from PIL import Image
         try:
@@ -4031,21 +4031,21 @@ if __name__ == '__main__':
             version = PILLOW_VERSION
         except:
             version = Image.VERSION
-        print "pillow:     ",version
+        print "  PIL.Image:  ",version
     except ImportError:
         try:
             import Image
             print "Image (PIL):",Image.VERSION
         except ImportError:
             print "Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations"
+    import platform
+    print "  Platform:   ",sys.platform,platform.architecture()[0],platform.machine()
     try:
         import mkl
-        print "Max threads ",mkl.get_max_threads()
+        print "  Max threads:",mkl.get_max_threads()
     except:
         pass
-    import platform
-    print "Platform info:",sys.platform,platform.architecture()[0],platform.machine()
     #print "wxPython description",wx.PlatformInfo
-    print "This is GSAS-II version:     ",__version__,' revision #'+str(GSASIIpath.GetVersionNumber())
+    print "This is GSAS-II revision "+str(GSASIIpath.GetVersionNumber())+'\n'
     GSASIIpath.InvokeDebugOpts()
     main() # start the GUI

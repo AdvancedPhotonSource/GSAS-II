@@ -780,10 +780,10 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     print('Packages used to create .GPX file:')
                     if 'dict' in str(type(datum[1]['PythonVersions'])):  #patch
                         for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
-                            print("  {:>14s}: {:s}".format(p[0],p[1]))
+                            print("  {:<14s}: {:s}".format(p[0],p[1]))
                     else:
                         for p in datum[1]['PythonVersions']:
-                            print("  {:>12s} {:s}".format(p[0]+':',p[1]))
+                            print("  {:<12s} {:s}".format(p[0]+':',p[1]))
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
@@ -802,7 +802,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     G2frame.imageDefault = Data                
         file.close()
         if LastSavedUsing:
-            print('GPX load successful. Last saved with GSAS-II version '+LastSavedUsing)
+            print('GPX load successful. Last saved with GSAS-II revision '+LastSavedUsing)
         else:
             print('project load successful')
         G2frame.NewPlot = True

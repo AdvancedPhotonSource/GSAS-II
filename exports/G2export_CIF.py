@@ -1103,6 +1103,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 scale = self.Phases[phasenam]['Histograms'][histlbl]['Scale'][0]
                 phaseid = self.Phases[phasenam]['pId']
                 refcount += len(histblk['Reflection Lists'][phasenam]['RefList'])
+                refList = np.asarray(histblk['Reflection Lists'][phasenam]['RefList'])
+                I100 = scale*refList.T[8]*refList.T[11]
                 for j,ref in enumerate(histblk['Reflection Lists'][phasenam]['RefList']):
                     if DEBUG:
                         print('DEBUG: skipping reflection list')

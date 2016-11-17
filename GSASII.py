@@ -248,8 +248,8 @@ class GSASII(wx.Frame):
         self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-#                text='Debug graphics refresh')
-#            self.Bind(wx.EVT_MENU, self.TestResetPlot, id=item.GetId())
+#                text='tree test')
+#            self.Bind(wx.EVT_MENU, self.TreeTest, id=item.GetId())
 
     def _init_Imports(self):
         '''import all the G2phase*.py & G2sfact*.py & G2pwd*.py files that 
@@ -3749,7 +3749,7 @@ class GSASII(wx.Frame):
         dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()
-        
+
     def OnRefine(self,event):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
@@ -3788,6 +3788,7 @@ class GSASII(wx.Frame):
         dlg.CenterOnParent()
         Rw = 100.00
         self.SaveTreeSetting()
+        self.PatternTree.SaveExposedItems()        
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)    #Msg is Rvals dict if Ok=True
         finally:
@@ -3808,6 +3809,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.DeleteChildren(self.root)
                     self.HKL = []
                     G2IO.ProjFileOpen(self,False)
+                    self.PatternTree.RestoreExposedItems()        
                     self.ResetPlots()
             finally:
                 dlg2.Destroy()
@@ -3899,6 +3901,7 @@ class GSASII(wx.Frame):
                              'Conflict between refinment flag settings and constraints:\n'+
                              warnmsg+'\nRefinement not possible')
             return
+        self.PatternTree.SaveExposedItems()        
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
             parent=self)            
@@ -3922,6 +3925,7 @@ class GSASII(wx.Frame):
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self,False)
+                    self.PatternTree.RestoreExposedItems()
                     self.ResetPlots()
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)

@@ -220,6 +220,28 @@ class G2TreeCtrl(wx.TreeCtrl):
         else:
             return size,imagefile,None
 
+    def SaveExposedItems(self):
+        '''Traverse the top level tree items and save names of exposed (expanded) tree items.
+        Done before a refinement.
+        '''
+        self.ExposedItems = []
+        item, cookie = self.GetFirstChild(self.root)
+        while item:
+            name = self.GetItemText(item)
+            if self.IsExpanded(item): self.ExposedItems.append(name)
+            item, cookie = self.GetNextChild(self.root, cookie)
+        print 'exposed:',self.ExposedItems
+
+    def RestoreExposedItems(self):
+        '''Traverse the top level tree items and restore exposed (expanded) tree items
+        back to their previous state (done after a reload of the tree after a refinement)
+        '''
+        item, cookie = self.GetFirstChild(self.root)
+        while item:
+            name = self.GetItemText(item)
+            if name in self.ExposedItems: self.Expand(item)
+            item, cookie = self.GetNextChild(self.root, cookie)
+
 ################################################################################
 #### TextCtrl that stores input as entered with optional validation
 ################################################################################

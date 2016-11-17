@@ -2521,10 +2521,11 @@ class DataFrame(wx.Frame):
         self.SetSize(Width)
         if lastSize[0]:
             Pos[0] += lastSize[0]-Width[0]
-        offSet = Pos[0]+Width[0]-clientSize[2]
+        offSet = 0
+        if Pos[0] < clientSize[2]:
+            offSet = Pos[0]+Width[0]-clientSize[2]
         if offSet > 0:
             Pos[0] -= offSet
-#        self.SetPosition(wx.Point(clientSize[2]-Width[0],clientSize[1]+250))
         self.SetPosition(wx.Point(Pos[0],Pos[1]))
         self.G2frame.lastSize = Width
         

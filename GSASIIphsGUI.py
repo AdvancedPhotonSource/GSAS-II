@@ -7004,7 +7004,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SetPhaseWindow(G2frame.dataFrame,G2frame.MCSA,mainSizer)
         Size = G2frame.MCSA.GetSize()
         Size[0] = Xsize+40
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         G2frame.MCSA.Scroll(0,Scroll)
         
     def SetSolution(result,Models):

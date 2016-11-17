@@ -962,7 +962,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         BondRestr.SetSize(Size)
         BondRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateAngleRestr(angleRestData):
         
@@ -1093,7 +1093,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         AngleRestr.SetSize(Size)
         AngleRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdatePlaneRestr(planeRestData):
         
@@ -1220,8 +1220,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         PlaneRestr.SetSize(Size)
         PlaneRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
-#        G2frame.dataFrame.setSizePosLeft(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdateChiralRestr(chiralRestData):
 
@@ -1352,7 +1351,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         ChiralRestr.SetSize(Size)
         ChiralRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
     def UpdateTorsionRestr(torsionRestData):
 
@@ -1473,7 +1472,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         TorsionRestr.SetSize(Size)
         TorsionRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
 
     def UpdateRamaRestr(ramaRestData):
 
@@ -1596,7 +1595,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         RamaRestr.SetSize(Size)
         RamaRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
 
     def UpdateChemcompRestr(chemcompRestData):
         
@@ -1728,7 +1727,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         ChemCompRestr.SetSize(Size)
         ChemCompRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
     
         
     def UpdateTextureRestr(textureRestData):
@@ -1808,7 +1807,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         TextureRestr.SetSize(Size)
         TextureRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        G2frame.dataFrame.SetSize(Size)
+        G2frame.dataFrame.setSizePosLeft(Size)
             
     def OnPageChanged(event):
         #print 'OnPageChanged'

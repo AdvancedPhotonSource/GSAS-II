@@ -813,7 +813,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
         msg.ShowModal()
     finally:
         wx.EndBusyCursor()
-        G2frame.Status.SetStatusText('To reorder tree items, use mouse RB to drag/drop them')
+        G2frame.Status.SetStatusText('Mouse RB click item to refresh/raise; RB drag/drop to reorder')
     
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'

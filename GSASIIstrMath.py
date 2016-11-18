@@ -1011,7 +1011,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps
-    dGdM = SGData['MagMom'][nxs,:,nxs]*dGdM
+#    dGdM = SGData['MagMom'][nxs,:,nxs]*dGdM
     Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
 #    GSASIIpath.IPyBreak()
     Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #make Mag same length as Gdata
@@ -1069,8 +1069,8 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
-        dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:1,:],axis=0)   #matrix * vector = vector
-        dmx = Q*dGdM[:,nxs,:1,:]+dqmx                                    #*Mag canceled out of dqmx term
+        dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]*SGData['SpnFlp'][nxs,nxs,nxs,:,nxs],axis=0)   #matrix * vector = vector
+        dmx = Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
 #        GSASIIpath.IPyBreak()
 #
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
@@ -1092,11 +1092,11 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfbdui = np.sum(-SQfactor[:,nxs,nxs]*fbm,axis=2) #array(Ops,refBlk,nAtoms)
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         #accumulate derivatives    
-        dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/Nops,axis=0)
-        dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)
-        dFdMx[:,iBeg:iFin,:] = 2.*(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx)
-        dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)
-        dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)
+        dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/Nops,axis=0) #ok
+        dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)        #ok
+        dFdMx[:,iBeg:iFin,:] = 2.*(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx)                       #problems
+        dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)              #ok
+        dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)      #problems U12 & U23 in sarc
 #        GSASIIpath.IPyBreak()
         iBeg += blkSize
     print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)

@@ -308,7 +308,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':
                         S = EXPphase[key]
-                        Atoms[-1][7:10] = [float(S[:10]),float(S[10:20]),float(S[20:30])]
+                        Atoms[-1] = Atom[:7]+[float(S[:10]),float(S[10:20]),float(S[20:30])]+Atom[7:]
         elif Ptype == 'macromolecular':
             for key in keyList:
                 if 'AT' in key[6:8]:

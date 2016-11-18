@@ -1441,6 +1441,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
 
+        def OnDragTickmarks(event):
+            '''Respond to dragging of the reflection tick marks
+            '''
+            Page.canvas.restore_region(savedplot)
+            coords = G2frame.itemPicked.get_data()
+            #GSASIIpath.IPyBreak()
+            coords[1][:] = event.ydata
+            G2frame.itemPicked.set_data(coords)
+            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(Page.figure.gca().bbox)
+
+        def OnDragDiffCurve(event):
+            '''Respond to dragging of the difference curve
+            '''
+            Page.canvas.restore_region(savedplot)
+            coords = G2frame.itemPicked.get_data()
+            coords[1][:] += Page.diffOffset + event.ydata
+            Page.diffOffset = - event.ydata
+            G2frame.itemPicked.set_data(coords)
+            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(Page.figure.gca().bbox)
+            
         if G2frame.itemPicked is not None: return
         PatternId = G2frame.PatternId
         try:
@@ -1528,7 +1550,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 'PWDR' in G2frame.PatternTree.GetItemText(PickId)
                 ):
             G2frame.itemPicked = pick
-            pick = str(pick)
+            Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+            Plot = Page.figure.gca()
+            if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
+                #pick.set_linestyle(':') # set line as dotted
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                Page.diffOffset = Pattern[0]['delOffset']
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
+                #pick.set_linestyle('--') # back to dashed
+            else:                                 # pick of plot tick mark (anything else possible?)
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragTickmarks)
+                
+            
         elif G2frame.PatternTree.GetItemText(PickId) == 'Background':
             # selected a fixed background point. Can move it or delete it.
             for mode,id in G2frame.dataFrame.wxID_BackPts.iteritems(): # what menu is selected?
@@ -1564,7 +1600,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if not G2frame.PickId:
             return
         PickId = G2frame.PickId                             # points to item in tree
-#        GSASIIpath.IPyBreak()
         if G2frame.PatternTree.GetItemText(PickId) == 'Background' and event.xdata:
             if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
                 return 
@@ -1601,7 +1636,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 return
         
         if G2frame.itemPicked is None: return
-        if str(DifLine[0]) == str(G2frame.itemPicked):
+        #GSASIIpath.IPyBreak()
+#        if str(DifLine[0]) == str(G2frame.itemPicked):
+        if DifLine[0] is G2frame.itemPicked:
             data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
             Pattern[0]['delOffset'] = -ypos

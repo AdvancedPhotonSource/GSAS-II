@@ -1796,19 +1796,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('button_press_event',OnPress)
     Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
     Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
-    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataFrame.moveTickLoc.GetId())
-    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataFrame.moveTickSpc.GetId())
-    if len(Page.phaseList) == 0:
-        G2frame.dataFrame.moveTickLoc.Enable(False)
-        G2frame.dataFrame.moveTickSpc.Enable(False)
-    elif len(Page.phaseList) == 1:
-        G2frame.dataFrame.moveTickLoc.Enable(True)
-        G2frame.dataFrame.moveTickSpc.Enable(False)
-    else:
-        G2frame.dataFrame.moveTickLoc.Enable(True)
-        G2frame.dataFrame.moveTickSpc.Enable(True)
-    
+    if 'PWDR' in G2frame.PatternTree.GetItemText(G2frame.PickId):
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataFrame.moveTickLoc.GetId())
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataFrame.moveTickSpc.GetId())
+        if len(Page.phaseList) == 0:
+            G2frame.dataFrame.moveTickLoc.Enable(False)
+            G2frame.dataFrame.moveTickSpc.Enable(False)
+        elif len(Page.phaseList) == 1:
+            G2frame.dataFrame.moveTickLoc.Enable(True)
+            G2frame.dataFrame.moveTickSpc.Enable(False)
+        else:
+            G2frame.dataFrame.moveTickLoc.Enable(True)
+            G2frame.dataFrame.moveTickSpc.Enable(True)
     # save information needed to reload from tree and redraw
     kwargs={'PatternName':G2frame.PatternTree.GetItemText(G2frame.PatternId)}
     if G2frame.PickId:

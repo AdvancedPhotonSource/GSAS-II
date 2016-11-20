@@ -1446,6 +1446,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         G2frame.G2plotNB.Parent.Raise()
         OnPick(None)
         
+    def onMovePeak(event):
+        selectedPeaks = list(set([row for row,col in G2frame.dataDisplay.GetSelectedCells()] +
+                                G2frame.dataDisplay.GetSelectedRows()))
+        if len(selectedPeaks) != 1:
+            G2G.G2MessageBox(G2frame,'You must select one peak in the table first. # selected ='+
+                             str(len(selectedPeaks)),'Select one peak')
+            return
+        #GSASIIpath.IPyBreak()
+        G2frame.itemPicked = G2frame.Lines[selectedPeaks[0]+2] # 1st 2 lines are limits
+        G2frame.G2plotNB.Parent.Raise()
+        OnPick(None)
+                        
     def OnPick(event):
         '''Respond to an item being picked. This usually means that the item
         will be dragged with the mouse. 
@@ -1489,7 +1501,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Page.figure.gca().draw_artist(Page.tickDict[phase])
             Page.canvas.blit(Page.figure.gca().bbox)
 
-
         def OnDragDiffCurve(event):
             '''Respond to dragging of the difference curve
             '''
@@ -1505,6 +1516,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if event is None: # called from a menu command rather than by click on mpl artist
             mouse = 1
             pick = G2frame.itemPicked
+            ind = np.array([0])
         else: 
             if G2frame.itemPicked is not None: return
             pick = event.artist
@@ -1527,7 +1539,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             return
         PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
-            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point
+            if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data['peaks'].append(XY)
@@ -1809,6 +1821,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         else:
             G2frame.dataFrame.moveTickLoc.Enable(True)
             G2frame.dataFrame.moveTickSpc.Enable(True)
+    elif G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Peak List':
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataFrame.movePeak.GetId())
     # save information needed to reload from tree and redraw
     kwargs={'PatternName':G2frame.PatternTree.GetItemText(G2frame.PatternId)}
     if G2frame.PickId:
@@ -2128,6 +2142,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         selectedPeaks = list(set(
                             [row for row,col in G2frame.dataDisplay.GetSelectedCells()] +
                             G2frame.dataDisplay.GetSelectedRows()))
+                        G2frame.dataFrame.movePeak.Enable(len(selectedPeaks) == 1) # allow peak move from table when one peak is selected
                         for i,item in enumerate(data['peaks']):
                             if i in selectedPeaks:
                                 Ni = N+1

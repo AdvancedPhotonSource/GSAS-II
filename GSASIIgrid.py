@@ -1984,6 +1984,8 @@ class DataFrame(wx.Frame):
             help='Sequential Peak fitting for all histograms' )
         self.PeakEdit.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the peak list' )
+        self.movePeak = self.PeakEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move selected peak',
+            help='Select a peak in the table, then use this to move it with the mouse.')
         self.PostfillDataMenu()
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)

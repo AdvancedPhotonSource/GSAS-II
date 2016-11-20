@@ -1419,6 +1419,33 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots                  
         olderr = np.seterr(invalid='ignore')
                                                    
+    def onMoveDiffCurve(event):
+        '''Respond to a menu command to move the difference curve. 
+        '''
+        G2frame.itemPicked = DifLine[0]
+        G2frame.G2plotNB.Parent.Raise()
+        OnPick(None)
+
+    def onMoveTopTick(event):
+        '''Respond to a menu command to move the tick locations. 
+        '''
+        if len(Page.phaseList) == 0:
+            print("there are tick marks (no phases)")
+            return
+        G2frame.itemPicked = Page.tickDict[Page.phaseList[0]]
+        G2frame.G2plotNB.Parent.Raise()
+        OnPick(None)
+                
+    def onMoveTickSpace(event):
+        '''Respond to a menu command to move the tick spacing. 
+        '''
+        if len(Page.phaseList) == 0:
+            print("there are tick marks (no phases)")
+            return
+        G2frame.itemPicked = Page.tickDict[Page.phaseList[-1]]
+        G2frame.G2plotNB.Parent.Raise()
+        OnPick(None)
+        
     def OnPick(event):
         '''Respond to an item being picked. This usually means that the item
         will be dragged with the mouse. 
@@ -1426,6 +1453,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         def OnDragMarker(event):
             '''Respond to dragging of a plot Marker
             '''
+            if event.xdata is None or event.ydata is None: return   # ignore if cursor out of window
             Page.canvas.restore_region(savedplot)
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
             Page.figure.gca().draw_artist(G2frame.itemPicked)
@@ -1434,6 +1462,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         def OnDragLine(event):
             '''Respond to dragging of a plot line
             '''
+            if event.xdata is None: return   # ignore if cursor out of window
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
             coords[0][0] = coords[0][1] = event.xdata
@@ -1444,45 +1473,59 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         def OnDragTickmarks(event):
             '''Respond to dragging of the reflection tick marks
             '''
+            if event.ydata is None: return   # ignore if cursor out of window
             Page.canvas.restore_region(savedplot)
-            coords = G2frame.itemPicked.get_data()
-            #GSASIIpath.IPyBreak()
-            coords[1][:] = event.ydata
-            G2frame.itemPicked.set_data(coords)
-            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            if Page.pickTicknum:
+                refDelt = -(event.ydata-Pattern[0]['refOffset'])/Page.pickTicknum
+                refOffset = Pattern[0]['refOffset']
+            else:       #1st row of refl ticks
+                refOffset = event.ydata
+                refDelt = Pattern[0]['refDelt']
+            for pId,phase in enumerate(Page.phaseList):
+                pos = refOffset - pId*refDelt
+                coords = Page.tickDict[phase].get_data()
+                coords[1][:] = pos
+                Page.tickDict[phase].set_data(coords)
+                Page.figure.gca().draw_artist(Page.tickDict[phase])
             Page.canvas.blit(Page.figure.gca().bbox)
+
 
         def OnDragDiffCurve(event):
             '''Respond to dragging of the difference curve
             '''
+            if event.ydata is None: return   # ignore if cursor out of window
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
             coords[1][:] += Page.diffOffset + event.ydata
-            Page.diffOffset = - event.ydata
+            Page.diffOffset = -event.ydata
             G2frame.itemPicked.set_data(coords)
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
-            
-        if G2frame.itemPicked is not None: return
+
+        if event is None: # called from a menu command rather than by click on mpl artist
+            mouse = 1
+            pick = G2frame.itemPicked
+        else: 
+            if G2frame.itemPicked is not None: return
+            pick = event.artist
+            mouse = event.mouseevent
+            xpos = pick.get_xdata()
+            ypos = pick.get_ydata()
+            ind = event.ind
+            xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
+            # convert from plot units
+            if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+                xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+            elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+                xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+            if G2frame.plotStyle['sqrtPlot']:
+                xy[1] = xy[1]**2
         PatternId = G2frame.PatternId
         try:
             Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
             return
         PickId = G2frame.PickId
-        pick = event.artist
-        mouse = event.mouseevent
-        xpos = pick.get_xdata()
-        ypos = pick.get_ydata()
-        ind = event.ind
-        xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
-        # convert from plot units
-        if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
-            xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-        elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
-            xy[0] = G2lat.Dsp2pos(Parms,xy[0])
-        if G2frame.plotStyle['sqrtPlot']:
-            xy[1] = xy[1]**2
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
@@ -1553,17 +1596,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
             Plot = Page.figure.gca()
             if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
-                #pick.set_linestyle(':') # set line as dotted
-                Page.canvas.draw() # refresh without dotted line & save bitmap
+                Page.canvas.draw() # save bitmap
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 Page.diffOffset = Pattern[0]['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
-                #pick.set_linestyle('--') # back to dashed
-            else:                                 # pick of plot tick mark (anything else possible?)
-                Page.canvas.draw() # refresh without dotted line & save bitmap
+            else:                         # pick of plot tick mark (is anything else possible?)
+                pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
+                if pick not in Page.phaseList: # picked something other than a tickmark
+                    return
+                Page.pickTicknum = Page.phaseList.index(pick)
+                resetlist = []
+                for pId,phase in enumerate(Page.phaseList): # set the tickmarks to a lighter color
+                    col = Page.tickDict[phase].get_color()
+                    rgb = mpl.colors.ColorConverter().to_rgb(col)
+                    rgb_light = [(2 + i)/3. for i in rgb]
+                    resetlist.append((Page.tickDict[phase],rgb))
+                    Page.tickDict[phase].set_color(rgb_light)
+                    Page.tickDict[phase].set_zorder(99) # put on top
+                Page.canvas.draw() # refresh with dimmed tickmarks 
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                for f,v in resetlist:  # reset colors back
+                    f.set_zorder(0)
+                    f.set_color(v) # reset colors back to original values
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragTickmarks)
-                
             
         elif G2frame.PatternTree.GetItemText(PickId) == 'Background':
             # selected a fixed background point. Can move it or delete it.
@@ -1591,14 +1646,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
                 return
                 
-    def OnRelease(event): # mouse release from item pick or background pt add/move/del
+    def OnRelease(event):
+        '''This is called when the mouse button is released when a plot object is dragged
+        due to an item pick, or when invoked via a menu item (such as in onMoveDiffCurve),
+        or for background points, which may be added/moved/deleted here.
+        New peaks are also added here.
+        '''
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if G2frame.cid is not None:         # if there is a drag connection, delete it
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
+        if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            return
         if not G2frame.PickId:
             return
+        
         PickId = G2frame.PickId                             # points to item in tree
         if G2frame.PatternTree.GetItemText(PickId) == 'Background' and event.xdata:
             if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
@@ -1636,9 +1700,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 return
         
         if G2frame.itemPicked is None: return
-        #GSASIIpath.IPyBreak()
-#        if str(DifLine[0]) == str(G2frame.itemPicked):
-        if DifLine[0] is G2frame.itemPicked:
+        if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
             Pattern[0]['delOffset'] = -ypos
@@ -1705,11 +1767,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Id = G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists')
 #            GSASIIpath.IPyBreak()
             if Id:     
-                Phases = G2frame.PatternTree.GetItemPyData(Id)
+                #Phases = G2frame.PatternTree.GetItemPyData(Id)
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
                     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
-                    num = Phases.keys().index(pick)
+                    num = Page.phaseList.index(pick)
                     if num:
                         data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/num
                     else:       #1st row of refl ticks
@@ -1732,6 +1794,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
+    Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
+    Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
+    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataFrame.moveTickLoc.GetId())
+    G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataFrame.moveTickSpc.GetId())
+    if len(Page.phaseList) == 0:
+        G2frame.dataFrame.moveTickLoc.Enable(False)
+        G2frame.dataFrame.moveTickSpc.Enable(False)
+    elif len(Page.phaseList) == 1:
+        G2frame.dataFrame.moveTickLoc.Enable(True)
+        G2frame.dataFrame.moveTickSpc.Enable(False)
+    else:
+        G2frame.dataFrame.moveTickLoc.Enable(True)
+        G2frame.dataFrame.moveTickSpc.Enable(True)
+    
     # save information needed to reload from tree and redraw
     kwargs={'PatternName':G2frame.PatternTree.GetItemText(G2frame.PatternId)}
     if G2frame.PickId:
@@ -2109,7 +2186,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            for pId,phase in enumerate(Phases):
+            Page.tickDict = {}
+            for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue
                 peaks = Phases[phase].get('RefList',[])
@@ -2121,11 +2199,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
                 if G2frame.plotStyle['qPlot']:
-                    Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 elif G2frame.plotStyle['dPlot']:
-                    Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 else:
-                    Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
             if len(Phases):
                 handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
                 if handles:

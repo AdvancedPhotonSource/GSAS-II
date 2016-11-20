@@ -1834,7 +1834,12 @@ class DataFrame(wx.Frame):
             help='Copy of PWDR parameters')
         self.ErrorAnal.Append(id=wxID_PLOTCTRLCOPY,kind=wx.ITEM_NORMAL,text='Copy plot controls',
             help='Copy of PWDR plot controls')
-            
+        self.moveDiffCurve = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move diff. curve',
+            help='Click on position where difference curve is placed')
+        self.moveTickLoc = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move ticks',
+            help='Move mouse to where tick marks should be positioned')
+        self.moveTickSpc = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Set tick space',
+            help='Click to set spacing between phase tick marks')
         self.PostfillDataMenu()
             
         # HKLF 

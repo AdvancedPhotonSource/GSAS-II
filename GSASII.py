@@ -1102,7 +1102,6 @@ class GSASII(wx.Frame):
             fp.close()
 
         ibanks = int(Iparm.get('INS   BANK  ','1').strip())
-        hType = Iparm['INS   HTYPE '].strip()
         if ibanks == 1: # there is only one bank here, return it
             rd.instbank = 1
             rd.powderentry[2] = 1
@@ -1650,7 +1649,6 @@ class GSASII(wx.Frame):
         iph = -1
         while item: # loop over (new) phases
             iph += 1
-            phaseName = self.PatternTree.GetItemText(item)
             data = self.PatternTree.GetItemPyData(item)
             item, cookie = self.PatternTree.GetNextChild(sub, cookie)
             if iph not in result: continue
@@ -1817,7 +1815,6 @@ class GSASII(wx.Frame):
         iph = -1
         while item: # loop over (new) phases
             iph += 1
-            phaseName = self.PatternTree.GetItemText(item)
             data = self.PatternTree.GetItemPyData(item)
             item, cookie = self.PatternTree.GetNextChild(sub, cookie)
             if iph not in result: continue
@@ -1887,12 +1884,9 @@ class GSASII(wx.Frame):
             reqrdr,self.ImportSmallAngleReaderlist,'Small Angle Data',multiple=True)
         if len(rdlist) == 0: return
         self.CheckNotebook()
-        Iparm = None
-        lastdatafile = ''
         newHistList = []
         self.EnablePlot = False
         for rd in rdlist:
-            lastdatafile = rd.smallangleentry[0]
             HistName = rd.idstring
             HistName = 'SASD '+HistName
             # make new histogram names unique
@@ -2122,26 +2116,26 @@ class GSASII(wx.Frame):
             for filename in filelist:
                 path,rootname = os.path.split(filename)
                 pkg = os.path.splitext(rootname)[0]
-                try:
-                    fp = None
-                    fp, fppath,desc = imp.find_module(pkg,[path,])
-                    pkg = imp.load_module(pkg,fp,fppath,desc)
-                    for clss in inspect.getmembers(pkg): # find classes defined in package
-                        if clss[0].startswith('_'): continue
-                        if inspect.isclass(clss[1]):
-                            # check if we have the required methods
-                            for m in 'Exporter','loadParmDict':
-                                if not hasattr(clss[1],m): break
-                                if not callable(getattr(clss[1],m)): break
-                            else:
-                                exporter = clss[1](self) # create an export instance
-                                self.exporterlist.append(exporter)
-                except AttributeError:
-                    print 'Import_'+errprefix+': Attribute Error'+str(filename)
-                    pass
-                except ImportError:
-                    print 'Import_'+errprefix+': Error importing file'+str(filename)
-                    pass
+#                try:
+                fp = None
+                fp, fppath,desc = imp.find_module(pkg,[path,])
+                pkg = imp.load_module(pkg,fp,fppath,desc)
+                for clss in inspect.getmembers(pkg): # find classes defined in package
+                    if clss[0].startswith('_'): continue
+                    if inspect.isclass(clss[1]):
+                        # check if we have the required methods
+                        for m in 'Exporter','loadParmDict':
+                            if not hasattr(clss[1],m): break
+                            if not callable(getattr(clss[1],m)): break
+                        else:
+                            exporter = clss[1](self) # create an export instance
+                            self.exporterlist.append(exporter)
+#                except AttributeError:
+#                    print 'Import_'+errprefix+': Attribute Error'+str(filename)
+#                    pass
+#                except ImportError:
+#                    print 'Import_'+errprefix+': Error importing file'+str(filename)
+#                    pass
                 if fp: fp.close()
         # Add submenu item(s) for each Exporter by its self-declared type (can be more than one)
         for obj in self.exporterlist:
@@ -2467,7 +2461,6 @@ class GSASII(wx.Frame):
             pltNum = self.G2plotNB.nb.GetSelection()
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 pltPage = self.G2plotNB.nb.GetPage(pltNum)
-                pltPlot = pltPage.figure
             item = event.GetItem()
             G2gd.MovePatternTreeToGrid(self,item)
             if self.oldFocus:
@@ -2563,7 +2556,6 @@ class GSASII(wx.Frame):
                 
     def OnReadPowderPeaks(self,event):
         'Bound to menu Data/Read Powder Peaks'
-        Cuka = 1.54052
         self.CheckNotebook()
         pth = G2G.GetImportPath(self)
         if not pth: pth = '.'
@@ -2776,10 +2768,8 @@ class GSASII(wx.Frame):
         'Sum together powder data(?)'
         TextList = []
         DataList = []
-        SumList = []
         Names = []
         Inst = None
-        SumItemList = []
         Comments = ['Sum equals: \n']
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -2880,10 +2870,7 @@ class GSASII(wx.Frame):
         'Sum together image data'
         TextList = []
         DataList = []
-        SumList = []
         Names = []
-        Inst = []
-        SumItemList = []
         Comments = ['Sum equals: \n']
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -3100,22 +3087,17 @@ class GSASII(wx.Frame):
         DelList = []
         DelItemList = []
         nItems = {'PWDR':0,'SASD':0,'IMG':0,'HKLF':0,'PDF':0}
-        ifPWDR = False
-        ifSASD = False
-        ifIMG = False
-        ifHKLF = False
-        ifPDF = False
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
                 if name not in ['Notebook','Controls','Covariance','Constraints',
                     'Restraints','Phases','Rigid bodies'] or 'Sequential' not in name:
-                    if 'PWDR' in name: ifPWDR = True; nItems['PWDR'] += 1
-                    if 'SASD' in name: ifSASD = True; nItems['SASD'] += 1
-                    if 'IMG' in name: ifIMG = True; nItems['IMG'] += 1
-                    if 'HKLF' in name: ifHKLF = True; nItems['HKLF'] += 1
-                    if 'PDF' in name: ifPDF = True; nItems['PDF'] += 1
+                    if 'PWDR' in name: nItems['PWDR'] += 1
+                    if 'SASD' in name: nItems['SASD'] += 1
+                    if 'IMG' in name:  nItems['IMG'] += 1
+                    if 'HKLF' in name: nItems['HKLF'] += 1
+                    if 'PDF' in name:  nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
@@ -3448,8 +3430,6 @@ class GSASII(wx.Frame):
     def OnMakePDFs(self,event):
         '''Calculates PDFs
         '''
-        sind = lambda x: math.sin(x*math.pi/180.)
-        tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
         TextList = []
         PDFlist = []
         Names = []
@@ -3965,7 +3945,7 @@ class GSASIImain(wx.App):
                 'GSAS-II requires Python 2.7.x\n Yours is '+sys.version.split()[0],
                 'Python version error',  wx.OK)
             try:
-                result = dlg.ShowModal()
+                dlg.ShowModal()
             finally:
                 dlg.Destroy()
             sys.exit()

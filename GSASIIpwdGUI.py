@@ -42,7 +42,6 @@ import GSASIIctrls as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
-import GSASIIexprGUI as G2exG
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 Pwr10 = unichr(0x0b9)+unichr(0x0b0)
@@ -90,7 +89,6 @@ class RDFDialog(wx.Dialog):
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
-        Ind = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
         useOC = wx.CheckBox(self.panel,label=' Use obs - calc intensities?')
@@ -425,7 +423,6 @@ def UpdatePeakGrid(G2frame, data):
         
     def OnAutoSearch(event):
         PatternId = G2frame.PatternId
-        PickId = G2frame.PickId
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         profile = G2frame.PatternTree.GetItemPyData(PatternId)[1]
@@ -630,7 +627,6 @@ def UpdatePeakGrid(G2frame, data):
             controls = {'deriv type':'analytic','min dM/M':0.0001,}     #fill in defaults if needed
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         PatternId = G2frame.PatternId
-        PickId = G2frame.PickId
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks:
             G2frame.ErrorDialog('No peaks!','Nothing to fit!')
@@ -660,7 +656,6 @@ def UpdatePeakGrid(G2frame, data):
         
     def OnResetSigGam(event):
         PatternId = G2frame.PatternId
-        PickId = G2frame.PickId
         Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks['peaks']:
@@ -673,7 +668,6 @@ def UpdatePeakGrid(G2frame, data):
         UpdatePeakGrid(G2frame,newpeaks)
                 
     def RefreshPeakGrid(event):
-        r,c =  event.GetRow(),event.GetCol()
         
         event.StopPropagation()
         data['peaks'] = G2frame.PeakTable.GetData()
@@ -1038,7 +1032,6 @@ def UpdateBackground(G2frame,data):
             dlg.Destroy()
         PatternId = G2frame.PatternId        
         background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
@@ -1401,7 +1394,6 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        copyList = []
         dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy limits from\n'+str(hst[5:])+' to...',
@@ -1935,7 +1927,6 @@ def UpdateInstrumentGrid(G2frame,data):
                     if 'beta' in item:
                         fmt = '%12.6g'
                         nDig = (12,6)
-                    Fmt = ' %s: ('+fmt+')'
                     instSizer.Add(
                             wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
                             0,WACV)
@@ -2044,7 +2035,6 @@ def UpdateInstrumentGrid(G2frame,data):
         insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
         insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
         insRef = {}
-    ValObj = {}
     RefObj = {}
     waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
         'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
@@ -2629,7 +2619,6 @@ def UpdateIndexPeaksGrid(G2frame, data):
         
     def KeyEditPickGrid(event):
         colList = G2frame.dataDisplay.GetSelectedCols()
-        rowList = G2frame.dataDisplay.GetSelectedRows()
         data = G2frame.PatternTree.GetItemPyData(IndexId)
         if event.GetKeyCode() == wx.WXK_RETURN:
             event.Skip(True)
@@ -2881,7 +2870,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         
     def SetCellValue(Obj,ObjId,value):
-        ibrav = bravaisSymb.index(controls[5])
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[6] = controls[7] = controls[8] = value
             controls[9] = controls[10] = controls[11] = 90.0
@@ -2964,9 +2952,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnHklShow(event):
         PatternId = G2frame.PatternId
-        PickId = G2frame.PickId    
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
@@ -3049,7 +3035,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             print ' %s %10.5f %10.5f %10.5f'%('Modulation vector:',Vec[0],Vec[1],Vec[2])
              
         PatternId = G2frame.PatternId
-        PickId = G2frame.PickId    
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
         if not len(peaks[0]):
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
@@ -3429,7 +3414,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+ \
             [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL]
-        numRows = len(cells)
         table = []
         for cell in cells:
             rowLabels.append('')
@@ -3552,7 +3536,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             SuperVec = General.get('SuperVec',[])
         else:
             Super = 0
-            SuperVec = []       
         rowLabels = []
         if HKLF:
             refList = data[1]['RefList']
@@ -4671,7 +4654,6 @@ def UpdateModelsGrid(G2frame,data):
     def OnBackFile(event):  #multiple backgrounds?
         data['BackFile'] = backFile.GetValue()
         if data['BackFile']:
-            fixBack =  data['Back'][0]
             BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
             BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
             Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
@@ -4786,7 +4768,6 @@ def UpdatePDFGrid(G2frame,data):
         data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
     else:                                #initial setting at 90% of max Q
         data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
-    azimuth = inst['Azimuth'][1]
     itemDict = {}
     #patch
     if 'BackRatio' not in data:
@@ -4914,34 +4895,34 @@ def UpdatePDFGrid(G2frame,data):
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(G2frame,newPlot=False)
         
-    def OnPolaVal(event):
-        event.Skip()
-        try:
-            value = float(polaVal.GetValue())
-            if not (0.0 <= value <= 1.0):
-                raise ValueError
-        except ValueError:
-            value = inst['Polariz.'][1]
-        inst['Polariz.'][1] = value
-        polaVal.SetValue('%.2f'%(inst['Polariz.'][1]))
-        UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
-                
-    def OnAzimVal(event):
-        event.Skip()
-        try:
-            value = float(azimVal.GetValue())
-            if not (0. <= value <= 360.):
-                raise ValueError
-        except ValueError:
-            value = inst['Azimuth'][1]
-        inst['Azimuth'][1] = value
-        azimVal.SetValue('%.1f'%(inst['Azimuth'][1]))
-        UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
-                        
+#    def OnPolaVal(event):
+#        event.Skip()
+#        try:
+#            value = float(polaVal.GetValue())
+#            if not (0.0 <= value <= 1.0):
+#                raise ValueError
+#        except ValueError:
+#            value = inst['Polariz.'][1]
+#        inst['Polariz.'][1] = value
+#        polaVal.SetValue('%.2f'%(inst['Polariz.'][1]))
+#        UpdatePDFGrid(G2frame,data)
+#        auxPlot = ComputePDF(data)
+#        G2plt.PlotISFG(G2frame,newPlot=False)
+#                
+#    def OnAzimVal(event):
+#        event.Skip()
+#        try:
+#            value = float(azimVal.GetValue())
+#            if not (0. <= value <= 360.):
+#                raise ValueError
+#        except ValueError:
+#            value = inst['Azimuth'][1]
+#        inst['Azimuth'][1] = value
+#        azimVal.SetValue('%.1f'%(inst['Azimuth'][1]))
+#        UpdatePDFGrid(G2frame,data)
+#        auxPlot = ComputePDF(data)
+#        G2plt.PlotISFG(G2frame,newPlot=False)
+#                        
     def OnObliqCoeff(event):
         event.Skip()
         try:
@@ -5137,7 +5118,6 @@ def UpdatePDFGrid(G2frame,data):
             name = Data[key]['Name']
             if name:
                 xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
-                PDFname = name
         powName = Data['Sample']['Name']
         powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]

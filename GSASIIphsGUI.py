@@ -23,15 +23,12 @@ that respond to some tabs in the phase GUI in other modules
 import os.path
 import wx
 import wx.grid as wg
-import wx.lib.gridmovers as wgmove
-import wx.wizard as wz
 import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
 import copy
 import time
 import sys
 import random as ran
-import cPickle
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -50,10 +47,8 @@ import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIctrls as G2G
 import GSASIIconstrGUI as G2cnstG
-import atmdata
 import numpy as np
 import numpy.linalg as nl
-import numpy.ma as ma
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
@@ -564,7 +559,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     value = max(1.0,float(Obj.GetValue()))
                 except ValueError:
                     if ObjId < 3:               #bad cell edge - reset
-                        value = controls[6+ObjId]
+                        value = cell[ObjId+1]
                     else:                       #bad angle
                         value = 90.
                 if laue in ['m3','m3m']:
@@ -943,7 +938,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             vecSizer.Add(wx.StaticText(General,label=' Modulation vector: '),0,WACV)
             modS = G2spc.splitSSsym(generalData['SuperSg'])[0]
             generalData['SuperVec'][0],ifShow = G2spc.SSGModCheck(generalData['SuperVec'][0],modS)
-            vec = generalData['SuperVec'][0]
             for i,[val,show] in enumerate(zip(generalData['SuperVec'][0],ifShow)):
                 if show:
                     modVal = wx.TextCtrl(General,value=('%.4f'%(val)),
@@ -1153,7 +1147,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return flipSizer
             
         def MCSASizer():
-            Ind = {}
             
             def OnRefList(event):
                 MCSAdata['Data source'] = refList.GetValue()
@@ -1201,8 +1194,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnRanStart(event):
                 MCSAdata['ranStart'] = ranStart.GetValue()
                 
-            def OnAutoRan(event):
-                MCSAdata['autoRan'] = autoRan.GetValue()
+#            def OnAutoRan(event):
+#                MCSAdata['autoRan'] = autoRan.GetValue()
                 
             def OnRanRange(event):
                 event.Skip()
@@ -1799,12 +1792,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             SetupDrawingData()
         generalData = data['General']
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
-        OprNames = generalData['SGData'].get('OprNames',[])
+#        OprNames = generalData['SGData'].get('OprNames',[])
 #        print OprNames
 #        print SpnFlp
 #        print generalData['SGData'].get('MagMom',[])
         atomData = data['Atoms']
-        DData = data['Drawing']
         resRBData = data['RBModels'].get('Residue',[])
         vecRBData = data['RBModels'].get('Vector',[])
         rbAtmDict = {}
@@ -1893,7 +1885,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def AtomAdd(x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
         generalData = data['General']
-        Ncol = Atoms.GetNumberCols()
         atId = ran.randint(0,sys.maxint)
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
@@ -2037,7 +2028,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
                 
     def OnHydAtomUpdate(event):
-        Error = ''
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
@@ -2133,7 +2123,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def AtomInsert(indx,x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
         generalData = data['General']
-        Ncol = Atoms.GetNumberCols()
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         atId = ran.randint(0,sys.maxint)
@@ -2391,38 +2380,38 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
             
-    def AtomRotate(event):
-        '''Currently not used - Bind commented out below
-        '''
-        Units = {'':np.zeros(3),
-            'xy':np.array([[i,j,0] for i in range(3) for j in range(3)])-np.array([1,1,0]),
-            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
-            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
-            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
-        indx = GetSelectedAtoms()
-        if indx:
-            generalData = data['General']
-            A,B = G2lat.cell2AB(generalData['Cell'][1:7])
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
-            cx = colLabels.index('x')
-            cuia = colLabels.index('I/A')   #need to not do aniso atoms - stop with error? or force isotropic?
-            css = colLabels.index('site sym')
-            atomData = data['Atoms']
-            SGData = generalData['SGData']
-            dlg = G2gd.RotationDialog(G2frame)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    M,T,Expand = dlg.GetSelection()
-                    Unit = Units[Expand]
-                    for ind in indx:
-                        XYZ = np.array(atomData[ind][cx:cx+3])
-                        XYZS = XYZ+Unit
-                        XYZS -= T
-                        XYZS = np.inner(A,XYZS).T   #to Cartesian
-                        XYZS = np.inner(M,XYZS).T   #rotate
-                        XYZS = np.inner(B,XYZS).T+T #back to crystal & translate
-                        GSASIIpath.IPyBreak()
-                        atomData[ind][cx:cx+3] = XYZ
+#    def AtomRotate(event):
+#        '''Currently not used - Bind commented out below
+#        '''
+#        Units = {'':np.zeros(3),
+#            'xy':np.array([[i,j,0] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+#            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+#            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+#            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
+#        indx = GetSelectedAtoms()
+#        if indx:
+#            generalData = data['General']
+#            A,B = G2lat.cell2AB(generalData['Cell'][1:7])
+#            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+#            cx = colLabels.index('x')
+#            cuia = colLabels.index('I/A')   #need to not do aniso atoms - stop with error? or force isotropic?
+#            css = colLabels.index('site sym')
+#            atomData = data['Atoms']
+#            SGData = generalData['SGData']
+#            dlg = G2gd.RotationDialog(G2frame)
+#            try:
+#                if dlg.ShowModal() == wx.ID_OK:
+#                    M,T,Expand = dlg.GetSelection()
+#                    Unit = Units[Expand]
+#                    for ind in indx:
+#                        XYZ = np.array(atomData[ind][cx:cx+3])
+#                        XYZS = XYZ+Unit
+#                        XYZS -= T
+#                        XYZS = np.inner(A,XYZS).T   #to Cartesian
+#                        XYZS = np.inner(M,XYZS).T   #rotate
+#                        XYZS = np.inner(B,XYZS).T+T #back to crystal & translate
+#                        GSASIIpath.IPyBreak()
+#                        atomData[ind][cx:cx+3] = XYZ
 #                        for unit in Unit:
 #                            XYZ = np.copy(np.array(atomData[ind][cx:cx+3]))
 #                            XYZ += unit 
@@ -2434,18 +2423,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #                                atomData[ind][cx:cx+3] = XYZ
 ##                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)[:2]
 #                                break
-            finally:
-                dlg.Destroy()
-            Atoms.ClearSelection()
-            Atoms.ForceRefresh()
-        else:
-            print "select one or more rows of atoms"
-            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
+#            finally:
+#                dlg.Destroy()
+#            Atoms.ClearSelection()
+#            Atoms.ForceRefresh()
+#        else:
+#            print "select one or more rows of atoms"
+#            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
                 
     def MakeMolecule(event):      
         indx = GetSelectedAtoms()
-        Oxyz = []
-        xyz = []
         DisAglCtls = {}
         if len(indx) == 1:
             generalData = data['General']
@@ -2775,31 +2762,31 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'viewPoint':[[0.,0.,0.],[]],}
         Indx = {}
         
-        def SetCell(laue,cell):
-            if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
-                cell[4] = cell[5] = 90.
-                cell[6] = 120.
-                if laue in ['4/m','4/mmm']:
-                    cell[6] = 90.
-                if ObjId == 0:
-                    cell[1] = cell[2] = value
-                    Obj.SetValue("%.5f"%(cell[1]))
-                else:
-                    cell[3] = value
-                    Obj.SetValue("%.5f"%(cell[3]))
-            elif laue in ['mmm']:
-                cell[ObjId+1] = value
-                cell[4] = cell[5] = cell[6] = 90.
-                Obj.SetValue("%.5f"%(cell[ObjId+1]))
-            elif laue in ['2/m','-1']:
-                cell[4] = cell[5] = 90.
-                if ObjId != 3:
-                    cell[ObjId+1] = value
-                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
-                else:
-                    cell[6] = value
-                    Obj.SetValue("%.3f"%(cell[6]))
-            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
+#        def SetCell(laue,cell):
+#            if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
+#                cell[4] = cell[5] = 90.
+#                cell[6] = 120.
+#                if laue in ['4/m','4/mmm']:
+#                    cell[6] = 90.
+#                if ObjId == 0:
+#                    cell[1] = cell[2] = value
+#                    Obj.SetValue("%.5f"%(cell[1]))
+#                else:
+#                    cell[3] = value
+#                    Obj.SetValue("%.5f"%(cell[3]))
+#            elif laue in ['mmm']:
+#                cell[ObjId+1] = value
+#                cell[4] = cell[5] = cell[6] = 90.
+#                Obj.SetValue("%.5f"%(cell[ObjId+1]))
+#            elif laue in ['2/m','-1']:
+#                cell[4] = cell[5] = 90.
+#                if ObjId != 3:
+#                    cell[ObjId+1] = value
+#                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+#                else:
+#                    cell[6] = value
+#                    Obj.SetValue("%.3f"%(cell[6]))
+#            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
 
         def OnLaue(event):
             Obj = event.GetEventObject()
@@ -2853,7 +2840,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     value = max(1.0,float(Obj.GetValue()))
                 except ValueError:
                     if ObjId < 3:               #bad cell edge - reset
-                        value = controls[6+ObjId]
+                        value = cell[ObjId+1]
                     else:                       #bad angle
                         value = 90.
                 if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
@@ -3476,7 +3463,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:
                 return
             dlg.Destroy()
-            PWDR = data['Histograms'][HistName]
             G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
             sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                 G2frame,G2frame.PatternId, 'Sample Parameters'))
@@ -3547,7 +3533,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             return
         dlg.Destroy()
-        PWDR = data['Histograms'][HistName]
         G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
         sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
             G2frame,G2frame.PatternId, 'Sample Parameters'))
@@ -3571,7 +3556,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         BegFin = simCodes[3]
         nSteps = simCodes[4]
         laue = Layers['Laue']
-        dStep = (BegFin[1]-BegFin[0])/nSteps
         vals = np.linspace(BegFin[0],BegFin[1],nSteps+1,True)
         simNames = []
         for val in vals:
@@ -3605,7 +3589,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Layers['Transitions'][Nx-iY][Nx-i][0] = Layers['Transitions'][iY][i][0]
                     print ' Transition matrix:'
                     for trans in Layers['Transitions']:
-                        line = str([' %.3f'%(vals[0]) for vals in trans])
+                        line = str([' %.3f'%(item[0]) for item in trans])
                         print line[1:-2].replace("'",'')
                 else:
                     Trans[iX][transId] = val
@@ -3640,7 +3624,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SSGData = generalData['SSGData']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
-        Map = generalData['Map']
         D4Map = generalData['4DmapData']
         if waveData.GetSizer():
             waveData.GetSizer().Clear(True)
@@ -3665,7 +3648,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.bottomSizer.Clear(True)
             G2frame.bottomSizer = ShowAtomInfo()
             mainSizer.Add(G2frame.bottomSizer)
-            Indx = {}
             mainSizer.Layout()
             G2frame.dataFrame.Refresh()
             waveData.SetVirtualSize(mainSizer.GetMinSize())
@@ -3810,7 +3792,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             iatm = atNames.index(G2frame.atmSel)
             atm = atomData[iatm]
             xyz = atm[cx:cx+3]
-            uij = atm[cia+2:cia+8]
             atomSizer = wx.BoxSizer(wx.VERTICAL)
             G2G.HorizontalLine(atomSizer,waveData)
             atomSizer.Add(AtomSizer(atm))
@@ -3866,10 +3847,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         atomData = data['Atoms']
-        AA3letter = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
-            'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE','HOH','WAT','UNK']
-        AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
-            'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
@@ -3927,7 +3904,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
         cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
-        atNames = []
         atXYZ = []
         atSymOp = []
         atIndx = []
@@ -3942,7 +3918,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 bondData = {'wtFactor':1.0,'Bonds':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Bond'] = bondData
-            dist = G2mth.getRestDist(atXYZ,Amat)
             bondData['Bonds'].append([atIndx,atSymOp,1.54,0.01])
         elif event.GetId() == G2gd.wxID_DRAWRESTRANGLE and len(indx) == 3:
             try:
@@ -3951,7 +3926,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 angleData = {'wtFactor':1.0,'Angles':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Angle'] = angleData
-            angle = G2mth.getRestAngle(atXYZ,Amat)
             angleData['Angles'].append([atIndx,atSymOp,109.5,1.0])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRPLANE and len(indx) > 3:
             try:
@@ -3960,7 +3934,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 planeData = {'wtFactor':1.0,'Planes':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Plane'] = planeData
-            plane = G2mth.getRestPlane(atXYZ,Amat)
             planeData['Planes'].append([atIndx,atSymOp,0.0,0.01])            
         elif event.GetId() == G2gd.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
             try:
@@ -3969,7 +3942,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 chiralData = {'wtFactor':1.0,'Volumes':[],'Use':True}
                 restData[PhaseName] = {}
                 restData[PhaseName]['Chiral'] = chiralData
-            volume = G2mth.getRestChiral(atXYZ,Amat)
             chiralData['Volumes'].append([atIndx,atSymOp,2.5,0.1])            
         else:
             print '**** ERROR wrong number of atoms selected for this restraint'
@@ -4039,7 +4011,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     parms = []
                     for x in sel:
                         parms.append(choice[x])
-                    noSkip = False
                     drawAtoms.ClearSelection()
                     drawingData['selectedAtoms'] = []
                     for row in range(len(atomData)):
@@ -4059,8 +4030,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     drawAtoms.SelectRow(row,True)                    
             elif r < 0:                          #dclick on col label
                 sel = -1
-                Parms = False
-                noSkip = True
                 if drawAtoms.GetColLabelValue(c) == 'Style':
                     dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom drawing style',styleChoice)
                     if dlg.ShowModal() == wx.ID_OK:
@@ -4155,7 +4124,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # UpdateDrawAtoms executable code starts here
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
-        SpnFlp = generalData['SGData'].get('SpnFlp',[])
         SetupDrawingData()
         drawingData = data['Drawing']
         cx,ct,cs,ci = drawingData['atomPtrs']
@@ -4268,7 +4236,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2frame.dataFrame.SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK')
             else:
                 G2frame.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
-            generalData = data['General']
             atomData = data['Drawing']['Atoms']
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
             atmColors = []
@@ -4492,7 +4459,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotStructure(G2frame,data)
             
     def FillCoordSphere(event):
-        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         radii = generalData['BondRadii']
@@ -4510,7 +4476,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
             cij = ci+2
             SGData = generalData['SGData']
-            SpnFlp = SGData.get('SpnFlp',[])
             cellArray = G2lat.CellBlock(1)
             wx.BeginBusyCursor()
             try:
@@ -4718,7 +4683,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ################################################################################
 
     def UpdateDrawOptions():
-        import copy
         import wx.lib.colourselect as wcs
         def SlopSizer():            
             def OnCameraPos(event):
@@ -5095,10 +5059,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
-        if generalData['Type'] in ['nuclear','faulted',]:
-            pickChoice = ['Atoms','Bonds','Torsions','Planes']
-        elif generalData['Type'] == 'macromolecular':
-            pickChoice = ['Atoms','Residues','Chains','Bonds','Torsions','Planes','phi/psi']
 
         G2frame.dataFrame.SetStatusText('')
         if drawOptions.GetSizer():
@@ -5378,17 +5338,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
                 'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
                 'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
-        if 'SHShow' not in textureData:     #another fix
+        if 'SHShow' not in textureData:
             textureData.update({'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
-        try:                        #another fix!
-            x = textureData['PlotType']
-        except KeyError:
+        if 'PlotType' not in textureData:
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         if 'Penalty' not in textureData:
             textureData['Penalty'] = [['',],0.1,False,1.0]
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        shAngles = ['omega','chi','phi']
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5569,7 +5526,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnDataUse(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        useDict = {}
         keyList = G2frame.GetHistogramNames(hist[:4])
         if UseList:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Use histograms', 
@@ -6126,7 +6082,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg = wx.SingleChoiceDialog(G2frame,'Select source','Copy rigid body parameters',Source)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
-            name = Source[sel]
             for item in ['Orig','Orient','ThermalMotion']: 
                 sourceRB.update({item:RBObjs[sel][item],})
         dlg.Destroy()
@@ -6391,8 +6346,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(RefSizer)
                 mainSizer.Add((5,5),0)
                 if Torsions:                    
-                    AtNames = data['testRBObj']['AtNames']
-                    rbAtTypes = data['testRBObj']['rbAtTypes']
                     rbSeq = RBData['Residue'][rbId]['rbSeq']
                     TorSizer = wx.FlexGridSizer(0,4)
                     TorSizer.AddGrowableCol(1,1)
@@ -6963,9 +6916,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return
         RBData = G2frame.PatternTree.GetItemPyData(Id)
         Indx = {}
-        atomStyle = 'balls & sticks'
-        if 'macro' in general['Type']:
-            atomStyle = 'sticks'
+#        atomStyle = 'balls & sticks'
+#        if 'macro' in general['Type']:
+#            atomStyle = 'sticks'
         G2frame.dataFrame.SetStatusText('')
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['MCSA']['Models']:
@@ -7307,7 +7260,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
         Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
         wave = G2mth.getWave(Inst)
-        posCorr = Inst['Zero'][1]
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         gconst = 2.35482 # sqrt(8 ln 2)
         
@@ -7491,7 +7443,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
-            mapPeaks = data['Map Peaks']
             Ind = MapPeaks.GetSelectedRows()
             if Ind:
                 wx.BeginBusyCursor()
@@ -7765,7 +7716,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnTextureRefine(event):
         General = data['General']
         phaseName = General['Name']
-        Histograms = data['Histograms']
         keyList = G2frame.GetHistogramNames('PWDR')
         histNames = []
         refData = {}

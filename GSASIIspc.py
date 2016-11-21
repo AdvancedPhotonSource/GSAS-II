@@ -15,10 +15,8 @@ stored in a :ref:`Space Group (SGData)<SGData_table>` object.
 # $Id$
 ########### SVN repository information ###################
 import numpy as np
-import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
-import math
 import sys
 import copy
 import os.path as ospath
@@ -1086,7 +1084,6 @@ def SSpcGroup(SGData,SSymbol):
             return [-SSGKl[i] if mod[i] in ['a','b','g'] else SSGKl[i] for i in range(3)]
                 
     def extendSSGOps(SSGOps):
-        nOps = len(SSGOps)
         for OpA in SSGOps:
             OpAtxt = SSMT2text(OpA)
             if 't' not in OpAtxt:
@@ -1764,7 +1761,6 @@ def GenHKLf(HKL,SGData):
     Ops = SGData['SGOps']
     OpM = np.array([op[0] for op in Ops],order='F')
     OpT = np.array([op[1] for op in Ops])
-    Inv = SGData['SGInv']
     Cen = np.array([cen for cen in SGData['SGCen']],order='F')
     
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
@@ -1931,7 +1927,7 @@ NXUPQsym = {
     '2/m(0+-)':( 1,24, 0,-1),'   2(xz)':( 8,21, 8,20),'   m(xz)':(20,21, 8,20),' 2/m(xz)':( 1,21, 0,-1),
     '  2(+0-)':( 9,22, 9,19),'  m(+0-)':(19,22, 9,19),'2/m(+0-)':( 1,22, 0,-1),'   2(xy)':( 6,19, 6,18),
     '   m(xy)':(18,19, 6,18),' 2/m(xy)':( 1,19, 0,-1),'  2(+-0)':( 7,20, 7,17),'  m(+-0)':(17,20, 7,17),
-    '2/m(+-0)':( 1,20, 0,-1),'  mm2(x)':(12,10, 0,-1),'  mm2(y)':(13,10, 0,-1),'  mm2(z)':(14,10, 0,-1),
+    '2/m(+-0)':( 1,20, 17,-1),'  mm2(x)':(12,10, 0,-1),'  mm2(y)':(13,10, 0,-1),'  mm2(z)':(14,10, 0,-1),
     ' mm2(yz)':(10,13, 0,-1),'mm2(0+-)':(11,13, 0,-1),' mm2(xz)':( 8,12, 0,-1),'mm2(+0-)':( 9,12, 0,-1),
     ' mm2(xy)':( 6,11, 0,-1),'mm2(+-0)':( 7,11, 0,-1),'  222   ':( 1,10, 0,-1),'  222(x)':( 1,13, 0,-1),
     '  222(y)':( 1,12, 0,-1),'  222(z)':( 1,11, 0,-1),'  mmm   ':( 1,10, 0,-1),'  mmm(x)':( 1,13, 0,-1),
@@ -2165,7 +2161,6 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     def DoFrac():
         delt2 = np.eye(2)*0.001
         FSC = np.ones(2,dtype='i')
-        VFSC = np.ones(2)
         CSI = [np.zeros((2),dtype='i'),np.zeros(2)]
         if 'Crenel' in waveType:
             dF = np.zeros_like(tau)
@@ -2410,7 +2405,6 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         'Smag':[[[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],
             [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]],}
     xyz = np.array(XYZ)%1.
-    xyzt = np.array(XYZ+[0,])%1.
     SGOps = copy.deepcopy(SGData['SGOps'])
     laue = SGData['SGLaue']
     siteSym = SytSym(XYZ,SGData)[0].strip()
@@ -2688,7 +2682,6 @@ def SytSym(XYZ,SGData):
      * The 2nd element is the site multiplicity
 
     '''
-    SymName = ''
     Mult = 1
     Isym = 0
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
@@ -2724,9 +2717,7 @@ def ElemPosition(SGData):
     for say drawing them.
     So far I have the element type... getting all possible locations without lookup may be impossible!
     '''
-    SymElements = []
     Inv = SGData['SGInv']
-    Cen = SGData['SGCen']
     eleSym = {-3:['','-1'],-2:['',-6],-1:['2','-4'],0:['3','-3'],1:['4','m'],2:['6',''],3:['1','']}
     # get operators & expand if centrosymmetric
     Ops = SGData['SGOps']
@@ -3413,7 +3404,7 @@ ssdict = {
     'B m m m':['(0b0)','(0b0)00s','(0b0)s0s','(0b1)','(0b1)00s','(0b1)s0s','(a00)','(a00)0s0','(a00)0ss','(a00)00s','(a1/20)','(a1/20)00s',],
 #66        
     'C c c m':['(00g)','(00g)s00','(10g)','(10g)s00','(0b0)','(0b0)00s','(0b0)s0s','(0b0)s00',],
-    'A m m a':['(a00)','(a00)0s0','(a10)','(a10)0s0','(00g)','(00g)s00','(00g)ss0','(00g)0s0',],
+    'A a m a':['(a00)','(a00)0s0','(a10)','(a10)0s0','(00g)','(00g)s00','(00g)ss0','(00g)0s0',],
     'B b m b':['(0b0)','(0b0)00s','(0b1)','(0b1)00s','(a00)','(a00)0s0','(a00)0ss','(a00)00s',],
 #67        
     'C m m a':['(00g)','(00g)s00','(00g)ss0','(10g)','(10g)s00','(10g)ss0','(a00)','(a00)00s','(a00)0ss','(a00)0s0','(a01/2)','(a01/2)0s0',],
@@ -3773,8 +3764,7 @@ def test1():
         msg0 = "CompareSpcGroup failed on space group %s" % spc
         result = SpcGroup(spc)
         if result[0] == referr and referr > 0: return True
-        keys = result[1].keys()
-        #print result[1]['SpGrp']
+#        #print result[1]['SpGrp']
         #msg = msg0 + " in list lengths"
         #assert len(keys) == len(refdict.keys()), msg
         for key in refdict.keys():

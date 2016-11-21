@@ -2248,7 +2248,7 @@ class DataFrame(wx.Frame):
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit Atoms')
         self.AtomsMenu.Append(menu=self.AtomCompute, title='Compute')
         submenu = wx.Menu()
-        self.AtomEdit.AppendMenu(wx.ID_ANY, 'Atoms selection...', submenu, 
+        self.AtomEdit.AppendMenu(wx.ID_ANY, 'On selected atoms...', submenu, 
             help='Set/Act on selected atoms')
         submenu.Append(wxID_ATOMSSETSEL,
             help='Set refinement flags for selected atoms',

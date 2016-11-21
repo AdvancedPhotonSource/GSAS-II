@@ -13,7 +13,6 @@
 ########### SVN repository information ###################
 import math
 import time
-import copy
 import sys
 import os.path
 import numpy as np
@@ -39,10 +38,9 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrls as G2G
 import pytexture as ptx
-from  OpenGL.GL import *
-from OpenGL.GLU import *
-import OpenGL.GLE as gle
-#from OpenGL.GLE import *
+#from  OpenGL.GL import *
+import OpenGL.GL as GL
+import OpenGL.GLU as GLU
 import gltext
 from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -471,7 +469,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
     '''
-    from matplotlib.patches import Circle,CirclePolygon
+    from matplotlib.patches import Circle
     global HKL,HKLF,HKLref
     HKLref = hklRef
     
@@ -586,7 +584,6 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     Plot.set_title(Data['Type']+' for '+Title)
     HKL = []
     HKLF = []
-    time0 = time.time()
     sumFo = 0.
     sumDF = 0.
 #    GSASIIpath.IPyBreak()
@@ -715,12 +712,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 Fname = (os.path.join(Mydir,'unknown'+'.'+mode)).replace('*','+')
             print Fname+' saved'
             size = Page.canvas.GetSize()
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA,GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGBA", (size[0],size[1]))
             else:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB,GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
@@ -816,17 +813,13 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     SuperVec = []
     if Super:
         SuperVec = np.array(Data['SuperVec'][0])
-    defaultViewPt = copy.copy(drawingData['viewPoint'])
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
-    invcell = G2lat.Gmat2cell(Gmat)
-    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Bmat,[0,0,1]))
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
-    wxGreen = wx.Colour(0,255,0)
     Bl = np.array([0,0,255])
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
@@ -843,7 +836,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         R = np.zeros(len(hklRef))
         C = []
         HKL = []
-        RC = []
         for i,refl in enumerate(hklRef):
             H = refl[:3]
             if 'HKLF' in Name:
@@ -910,15 +902,15 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         return HKL,zip(list(R),C),RF,RF2
 
     def GetTruePosition(xy):
-        View = glGetIntegerv(GL_VIEWPORT)
-        Proj = glGetDoublev(GL_PROJECTION_MATRIX)
-        Model = glGetDoublev(GL_MODELVIEW_MATRIX)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
+        Proj = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
+        Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         Zmax = 1.
         xy = [int(xy[0]),int(View[3]-xy[1])]
         for i,ref in enumerate(hklRef):
             h,k,l = ref[:3]
             try:
-                X,Y,Z = gluProject(h,k,l,Model,Proj,View)
+                X,Y,Z = GLU.gluProject(h,k,l,Model,Proj,View)
                 XY = [int(X),int(Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
                     Zmax = Z
@@ -967,7 +959,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
-        View = glGetIntegerv(GL_VIEWPORT)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
@@ -1002,13 +994,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
-                Q = drawingData['Quaternion']
             elif event.RightIsDown():
                 SetTranslation(newxy)
                 Tx,Ty,Tz = drawingData['viewPoint'][0]
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
-                Q = drawingData['Quaternion']
             Draw('move')
         else:
             hkl = GetTruePosition(newxy)
@@ -1026,75 +1016,73 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
-        glClearColor(R,G,B,A)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        GL.glClearColor(R,G,B,A)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_SMOOTH)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_LIGHT0)
+        GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
         
     def RenderBox(x,y,z):
-        xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glColor4ubv([0,0,0,0])
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glColor4ubv([0,0,0,0])
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors):
-            glColor3ubv(color)
-            glVertex3fv(line[0])
-            glVertex3fv(line[1])
-        glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(line[0])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def RenderUnitVectors(x,y,z,labxyz=['','','']):
-        xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
-            glColor3ubv(color)
-            glVertex3fv([0,0,0])
-#            glVertex3fv(-line[1])
-            glVertex3fv(line[1])
-        glEnd()
-        glRotate(180,1,0,0)             #fix to flip about x-axis
+            GL.glColor3ubv(color)
+            GL.glVertex3fv([0,0,0])
+#            GL.glVertex3fv(-line[1])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         for ix,txt in enumerate(labxyz):
             if txt:
                 pos = uEdges[ix][1]
-                glTranslate(pos[0],-1.5*pos[1],-pos[2])
+                GL.glTranslate(pos[0],-1.5*pos[1],-pos[2])
                 text = gltext.TextElement(text=txt,font=Font)
                 text.draw_text(scale=0.05)
-                glTranslate(-pos[0],1.5*pos[1],pos[2])
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+                GL.glTranslate(-pos[0],1.5*pos[1],pos[2])
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
                 
     def RenderDots(XYZ,RC):
-        glEnable(GL_COLOR_MATERIAL)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
         XYZ = np.array(XYZ)
-        glPushMatrix()
+        GL.glPushMatrix()
         for xyz,rc in zip(XYZ,RC):
             x,y,z = xyz
             r,c = rc
-            glColor3ubv(c)
-            glPointSize(r*50)
-            glBegin(GL_POINTS)
-            glVertex3fv(xyz)
-            glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(c)
+            GL.glPointSize(r*50)
+            GL.glBegin(GL.GL_POINTS)
+            GL.glVertex3fv(xyz)
+            GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def Draw(caller=''):
 #useful debug?        
@@ -1120,23 +1108,23 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%%'%(Data['Type'],Name,RF,super2,RF2),1)
         
         SetBackground()
-        glInitNames()
-        glPushName(0)
+        GL.glInitNames()
+        GL.glPushName(0)
         
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glViewport(0,0,VS[0],VS[1])
-        gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glViewport(0,0,VS[0],VS[1])
+        GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-        glMultMatrixf(matRot.T)
-        glMultMatrixf(B4mat)
-        glTranslate(-Tx,-Ty,-Tz)
+        GL.glMultMatrixf(matRot.T)
+        GL.glMultMatrixf(B4mat)
+        GL.glTranslate(-Tx,-Ty,-Tz)
         x,y,z = drawingData['viewPoint'][0]
         if ifBox:
             RenderBox(x,y,z)
@@ -1144,7 +1132,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             RenderUnitVectors(x,y,z)
         RenderUnitVectors(0,0,0,labxyz=['h','k','l'])
         RenderDots(HKL,RC)
-        time0 = time.time()
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)
         except:
@@ -1155,8 +1142,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('3D Structure Factors','ogl')
     if new:
         Page.views = False
-        view = False
-        altDown = False
     Font = Page.GetFont()
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
@@ -1417,7 +1402,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
                 
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots                  
-        olderr = np.seterr(invalid='ignore')
+        np.seterr(invalid='ignore')
                                                    
     def onMoveDiffCurve(event):
         '''Respond to a menu command to move the difference curve. 
@@ -1516,6 +1501,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
 
+        try:
+            Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+        except TypeError:
+            return
         if event is None: # called from a menu command rather than by click on mpl artist
             mouse = 1
             pick = G2frame.itemPicked
@@ -1536,10 +1525,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if G2frame.plotStyle['sqrtPlot']:
                 xy[1] = xy[1]**2
         PatternId = G2frame.PatternId
-        try:
-            Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
-        except TypeError:
-            return
         PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
@@ -1554,7 +1539,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                Plot = Page.figure.gca()
+                Page.figure.gca()
                 Page.canvas.draw() # refresh without dotted line & save bitmap
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
@@ -1586,7 +1571,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.itemPicked = pick
                 pick.set_linestyle(':') # set line as dotted
                 Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                Plot = Page.figure.gca()
+                Page.figure.gca()
                 Page.canvas.draw() # refresh without dotted line & save bitmap
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
@@ -1609,7 +1594,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 ):
             G2frame.itemPicked = pick
             Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-            Plot = Page.figure.gca()
+            Page.figure.gca()
             if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
                 Page.canvas.draw() # save bitmap
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
@@ -1651,7 +1636,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     G2frame.itemPicked = pick
                     pick.set_marker('|') # change the point appearance
                     Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-                    Plot = Page.figure.gca()
+                    Page.figure.gca()
                     Page.canvas.draw() # refresh with changed point & save bitmap
                     savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                     G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMarker)
@@ -1974,7 +1959,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = ma.array(ma.getdata(Pattern[1]))
-        Zero = Parms.get('Zero',[0.,0.])[1]
         if PickId:
             ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits')
@@ -1983,10 +1967,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             for excl in excls:
                 xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
         if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
         elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = G2lat.Pos2dsp(Parms,xye[0])
         else:
             X = xye[0]
@@ -2289,7 +2271,6 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, PatternName)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Error analysis','mpl')
     if new:
-        newPlot = True
         G2frame.Cmax = 1.0
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
@@ -2321,7 +2302,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
     DS.sort()
     EDS = np.zeros_like(DS)
     DX = np.linspace(0.,1.,num=len(DS),endpoint=True)
-    oldErr = np.seterr(invalid='ignore')    #avoid problem at DX==0
+    np.seterr(invalid='ignore')    #avoid problem at DX==0
     T = np.sqrt(np.log(1.0/DX**2))
     top = 2.515517+0.802853*T+0.010328*T**2
     bot = 1.0+1.432788*T+0.189269*T**2+0.001308*T**3
@@ -2493,7 +2474,6 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         except IndexError:
             return
         Ymax = max(Ymax,max(xye[1]))
-    offset = Pattern[0].get('Offset',[0,0])[0]*Ymax/100.0
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -2929,10 +2909,8 @@ def PlotSASDSizeDist(G2frame):
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 
-    xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Size Distribution','mpl')
     if new:
-        newPlot = True
         G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
@@ -2984,7 +2962,6 @@ def PlotPowderLines(G2frame):
     Page.Choice = None
     Plot.set_title('Powder Pattern Lines')
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
-    PickId = G2frame.PickId
     PatternId = G2frame.PatternId
     peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
     for peak in peaks:
@@ -3053,7 +3030,6 @@ def PlotPeakWidths(G2frame,PatternName=None):
     G2frame.G2plotNB.status.SetStatusText('histogram: '+TreeItemText,1)
     Page.Choice = None
     Page.canvas.SetToolTipString('')
-    colors=['b','g','r','c','m','k']
     X = []
     Y = []
     Z = []
@@ -3093,7 +3069,6 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Y = []
             Z = []
             W = []
-            V = []
             for peak in peaks:
                 X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
                 try:
@@ -3153,7 +3128,6 @@ def PlotPeakWidths(G2frame,PatternName=None):
         G = []
         W = []
         Q = []
-        V = []
         for peak in peaks:
             T.append(peak[0])
             A.append(peak[4])
@@ -3222,13 +3196,11 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
-    SGLaue = SGData['SGLaue']
     if Start:                   #initialize the spherical harmonics qlmn arrays
         ptx.pyqlmninit()
         Start = False
     cell = generalData['Cell'][1:]
     Amat,Bmat = G2lat.cell2AB(cell[:6])
-    Vol = cell[6]
     useList = data['Histograms']
     phase = generalData['Name']
     plotType = generalData['Data plot type']
@@ -3239,7 +3211,6 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         return        
     if hist == '':
         hist = useList.keys()[0]
-    numPlots = len(useList)
 
     if plotType in ['Mustrain','Size']:
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'3d')
@@ -3325,9 +3296,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 Z = Z[:,:,0]
                     
         if np.any(X) and np.any(Y) and np.any(Z):
-            errFlags = np.seterr(all='ignore')
-            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
             np.seterr(all='ignore')
+            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
             xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
             Plot.set_xlim3d(XYZlim)
@@ -3377,7 +3347,6 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             obsRMD = Refs[12+ns]
         else:
             obsRMD = Refs[15+ns]
-        ObsIVP = []
         Phi = []
         Beta = []
         Rmd = []
@@ -3581,7 +3550,7 @@ def PlotTexture(G2frame,data,Start=False):
             h,k,l = SHData['PFhkl']
             
             if np.any(X) and np.any(Y) and np.any(Z):
-                errFlags = np.seterr(all='ignore')
+                np.seterr(all='ignore')
                 Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
                 np.seterr(all='ignore')
                 xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
@@ -3595,8 +3564,6 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.set_ylabel(r'Y, MRD')
                 Plot.set_zlabel(r'Z, MRD')
         else:
-            PFproj = textureData.get('PFproj','XY')
-            PRrev = textureData.get('PFrev',False)
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             if 'equal' in G2frame.Projection:
@@ -3643,7 +3610,6 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     
     def OnPlotKeyPress(event):
         global Off,Atom,Ax
-        newPlot = False
         if event.key == '0':
             Off = 0
         elif event.key in ['+','=']:
@@ -3745,7 +3711,6 @@ def PlotCovariance(G2frame,Data):
         return
     varyList = Data['varyList']
     values = Data['variables']
-    Xmax = len(varyList)
     covMatrix = Data['covMatrix']
     sig = np.sqrt(np.diag(covMatrix))
     xvar = np.outer(sig,np.ones_like(sig))
@@ -3755,7 +3720,6 @@ def PlotCovariance(G2frame,Data):
     G2frame.G2plotNB.status.DestroyChildren()
 
     def OnPlotKeyPress(event):
-        newPlot = False
         if event.key == 's':
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
@@ -3831,7 +3795,7 @@ def PlotCovariance(G2frame,Data):
     ytics = imgAx.get_yticks()
     ylabs = [varyList[int(i)] for i in ytics[:-1]]
     imgAx.set_yticklabels(ylabs)
-    colorBar = Page.figure.colorbar(Img)
+    Page.figure.colorbar(Img)
     Plot.set_title('V-Cov matrix'+title)
     Plot.set_xlabel('Variable number')
     Plot.set_ylabel('Variable name')
@@ -3909,14 +3873,12 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     global names
     names = Names
     rama = np.log(2*Rama+1.)
-    ramaMax = np.max(rama)
     rama = np.reshape(rama,(45,45))
     global Phi,Psi
     Phi = []
     Psi = []
 
     def OnPlotKeyPress(event):
-        newPlot = False
         if event.key == 's':
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
@@ -3994,7 +3956,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
     Plot.set_title('Ramachandran for '+RamaName+' in '+phaseName)
     Plot.set_xlabel(r'$\phi$',fontsize=16)
     Plot.set_ylabel(r'$\psi$',fontsize=16)
-    colorBar = Page.figure.colorbar(Img)
+    Page.figure.colorbar(Img)
     Page.canvas.draw()
 
 
@@ -4174,7 +4136,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     :param event: matplotlib mouse event (or None)
     :param bool newImage: If True, the Figure is cleared and redrawn
     '''
-    from matplotlib.patches import Ellipse,Arc,Circle,Polygon
+    from matplotlib.patches import Ellipse,Circle
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks,StrSta  # RVD: these are needed for multiple image controls/masks 
@@ -4250,7 +4212,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         elif PickName == 'Stress/Strain':
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
-                StrSta = OnStartNewDzero(G2frame)
+                OnStartNewDzero(G2frame)
                 wx.CallAfter(PlotImage,G2frame,newImage=False)
                 
         elif PickName == 'Image Controls':
@@ -4458,7 +4420,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                                 arcs[aN][1][1] = int(G2img.GetAzm(Xpos,Ypos,Data))
                     for poly in G2frame.polyList:   #merging points problem here?
                         if Obj == poly[0]:
-                            ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
+#                            ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
                             oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
                             pN = poly[1]
                             for i,xy in enumerate(polygons[pN]):
@@ -4526,8 +4488,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         imScale = len(G2frame.ImageZ)/1024
     sizexy = Data['size']
     pixelSize = Data['pixelSize']
-    scalex = 1000./pixelSize[0]
-    scaley = 1000./pixelSize[1]
     Xmax = sizexy[0]*pixelSize[0]/1000.
     Ymax = sizexy[1]*pixelSize[1]/1000.
     xlim = (0,Xmax)
@@ -4552,7 +4512,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 A = np.where(A>0,np.log(A),0)
                 AM = np.where(AM>0,np.log(AM),0)
                 Imin,Imax = [np.amin(A),np.amax(A)]
-            ImgM = Plot.imshow(AM,aspect='equal',cmap='Reds',
+            Plot.imshow(AM,aspect='equal',cmap='Reds',
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Img = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
@@ -4678,7 +4638,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.frameList.append([Plot.plot(x,y,'g+',picker=10),0])
             Plot.plot(x,y,'g')            
         if newImage:
-            colorBar = Page.figure.colorbar(Img)
+            Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
         if Data['invert_x']:
@@ -4725,7 +4685,6 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
-        view = False
     Page.Choice = None
         
     Data = G2frame.PatternTree.GetItemPyData(
@@ -4740,7 +4699,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     Plot.set_xlabel('2-theta',fontsize=12)
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
-    colorBar = Page.figure.colorbar(Img)
+    Page.figure.colorbar(Img)
 #    if Data['ellipses']:            
 #        for ellipse in Data['ellipses']:
 #            x,y = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
@@ -4781,7 +4740,6 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
-        view = False
     Page.Choice = None
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -4857,11 +4815,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     SGData = generalData['SGData']
-    if generalData['Modulated']:
-        SSGData = generalData['SSGData']
     SpnFlp = SGData.get('SpnFlp',[1,])
-    Mydir = generalData['Mydir']
-    Super = generalData.get('Super',0)
     atomData = data['Atoms']
     mapPeaks = []
     drawingData = data['Drawing']
@@ -4908,7 +4862,6 @@ def PlotStructure(G2frame,data,firstCall=False):
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
     flipData = {}
-    rhoXYZ = []
     showBonds = False
     if 'Map' in generalData:
         mapData = generalData['Map']
@@ -4934,9 +4887,6 @@ def PlotStructure(G2frame,data,firstCall=False):
     backColor = np.array(list(drawingData['backColor'])+[0,])
     Bc = np.array(list(drawingData['backColor']))
     uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
-    altDown = False
-    shiftDown = False
-    ctrlDown = False
     G2frame.tau = 0.
     
     def OnKeyBox(event):
@@ -4953,12 +4903,12 @@ def PlotStructure(G2frame,data,firstCall=False):
             projFile = G2frame.GSASprojectfile
             Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             size = Page.canvas.GetSize()
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGBA", (size[0],size[1]))
             else:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
@@ -5092,16 +5042,16 @@ def PlotStructure(G2frame,data,firstCall=False):
             Draw('key down',Fade)
             
     def GetTruePosition(xy,Add=False):
-        View = glGetIntegerv(GL_VIEWPORT)
-        Proj = glGetDoublev(GL_PROJECTION_MATRIX)
-        Model = glGetDoublev(GL_MODELVIEW_MATRIX)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
+        Proj = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
+        Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         Zmax = 1.
         if Add:
             Indx = GetSelectedAtoms()
         if G2frame.dataDisplay.GetPageText(getSelection()) == 'Map peaks':
             for i,peak in enumerate(mapPeaks):
                 x,y,z = peak[1:4]
-                X,Y,Z = gluProject(x,y,z,Model,Proj,View)
+                X,Y,Z = GLU.GLU.gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
                     Zmax = Z
@@ -5116,7 +5066,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             cx = drawingData['atomPtrs'][0]
             for i,atom in enumerate(drawAtoms):
                 x,y,z = atom[cx:cx+3]
-                X,Y,Z = gluProject(x,y,z,Model,Proj,View)
+                X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
                     Zmax = Z
@@ -5285,17 +5235,17 @@ def PlotStructure(G2frame,data,firstCall=False):
                                        
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
-        glClearColor(R,G,B,A)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        GL.glClearColor(R,G,B,A)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_SMOOTH)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[.1,.1,.1,1])
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[.8,.8,.8,1])
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_LIGHT0)
+        GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[.1,.1,.1,1])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[.8,.8,.8,1])
 #        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
 #        glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,1])
         
@@ -5386,7 +5336,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
-        View = glGetIntegerv(GL_VIEWPORT)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
@@ -5430,7 +5380,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         
     def SetRBRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
-        View = glGetIntegerv(GL_VIEWPORT)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
@@ -5456,234 +5406,233 @@ def PlotStructure(G2frame,data,firstCall=False):
         SetRBOrienText()
 
     def RenderBox():
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(2)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_LINE_SMOOTH)
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(2)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors):
-            glColor3ubv(color)
-            glVertex3fv(line[0])
-            glVertex3fv(line[1])
-        glEnd()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_LINE_SMOOTH)
-        glDisable(GL_BLEND)
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(line[0])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def RenderUnitVectors(x,y,z):
-        xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(2)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_LINE_SMOOTH)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glScalef(1/cell[0],1/cell[1],1/cell[2])
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(2)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_LINE_SMOOTH)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glScalef(1/cell[0],1/cell[1],1/cell[2])
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
-            glColor3ubv(color)
-            glVertex3fv(-line[1]/2.)
-            glVertex3fv(line[1]/2.)
-        glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_LINE_SMOOTH)
-        glDisable(GL_BLEND)
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(-line[1]/2.)
+            GL.glVertex3fv(line[1]/2.)
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_LINE_SMOOTH)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def RenderPlane(plane,color):
         fade = list(color) + [.25,]
-        glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,fade)
-        glShadeModel(GL_FLAT)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-        glPushMatrix()
-        glShadeModel(GL_SMOOTH)
-        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
-        glFrontFace(GL_CW)
-        glBegin(GL_TRIANGLE_FAN)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_AMBIENT_AND_DIFFUSE,fade)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glPushMatrix()
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
+        GL.glFrontFace(GL.GL_CW)
+        GL.glBegin(GL.GL_TRIANGLE_FAN)
         for vertex in plane:
-            glVertex3fv(vertex)
-        glEnd()
-        glPopMatrix()
-        glDisable(GL_BLEND)
-        glShadeModel(GL_SMOOTH)
+            GL.glVertex3fv(vertex)
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_BLEND)
+        GL.glShadeModel(GL.GL_SMOOTH)
                 
     def RenderSphere(x,y,z,radius,color):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        q = gluNewQuadric()
-        gluSphere(q,radius,20,10)
-        glPopMatrix()
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,20,10)
+        GL.glPopMatrix()
         
     def RenderDots(XYZ,RC):
-        glEnable(GL_COLOR_MATERIAL)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
         XYZ = np.array(XYZ)
-        glPushMatrix()
+        GL.glPushMatrix()
         for xyz,rc in zip(XYZ,RC):
             x,y,z = xyz
             r,c = rc
-            glColor3ubv(c)
-            glPointSize(r*50)
-            glBegin(GL_POINTS)
-            glVertex3fv(xyz)
-            glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(c)
+            GL.glPointSize(r*50)
+            GL.glBegin(GL.GL_POINTS)
+            GL.glVertex3fv(xyz)
+            GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def RenderSmallSphere(x,y,z,radius,color):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        q = gluNewQuadric()
-        gluSphere(q,radius,4,2)
-        glPopMatrix()
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,4,2)
+        GL.glPopMatrix()
                 
     def RenderEllipsoid(x,y,z,ellipseProb,E,R4,color):
         s1,s2,s3 = E
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        glMultMatrixf(R4.T)
-        glEnable(GL_NORMALIZE)
-        glScale(s1,s2,s3)
-        q = gluNewQuadric()
-        gluSphere(q,ellipseProb,20,10)
-        glDisable(GL_NORMALIZE)
-        glPopMatrix()
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        GL.glMultMatrixf(R4.T)
+        GL.glEnable(GL.GL_NORMALIZE)
+        GL.glScale(s1,s2,s3)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,ellipseProb,20,10)
+        GL.glDisable(GL.GL_NORMALIZE)
+        GL.glPopMatrix()
         
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
         for bond in Bonds:
-            glPushMatrix()
+            GL.glPushMatrix()
             Dx = np.inner(Amat,bond)
             Z = np.sqrt(np.sum(Dx**2))
             if Z:
                 azm = atan2d(-Dx[1],-Dx[0])
                 phi = acosd(Dx[2]/Z)
-                glRotate(-azm,0,0,1)
-                glRotate(phi,1,0,0)
-                q = gluNewQuadric()
-                gluCylinder(q,radius,radius,Z,slice,2)
-            glPopMatrix()            
-        glPopMatrix()
+                GL.glRotate(-azm,0,0,1)
+                GL.glRotate(phi,1,0,0)
+                q = GLU.gluNewQuadric()
+                GLU.gluCylinder(q,radius,radius,Z,slice,2)
+            GL.glPopMatrix()            
+        GL.glPopMatrix()
         
     def RenderMoment(x,y,z,Moment,color,slice=20):
         Dx = 0.5*Moment
         Z = np.sqrt(np.sum(Dx**2))
         if Z:
-            glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-            glPushMatrix()
-            glTranslate(x,y,z)
-            glMultMatrixf(B4mat.T)
-            glTranslate(-Dx[0],-Dx[1],-Dx[2])
+            GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+            GL.glPushMatrix()
+            GL.glTranslate(x,y,z)
+            GL.glMultMatrixf(B4mat.T)
+            GL.glTranslate(-Dx[0],-Dx[1],-Dx[2])
             azm = atan2d(-Dx[1],-Dx[0])
             phi = acosd(Dx[2]/Z)
-            glRotate(-azm,0,0,1)
-            glRotate(phi,1,0,0)
-            q = gluNewQuadric()
-            gluQuadricOrientation(q,GLU_INSIDE)
-            gluDisk(q,0.,.1,slice,1)
-            gluQuadricOrientation(q,GLU_OUTSIDE)
-            gluCylinder(q,.1,.1,2.*Z,slice,2)
-            glTranslate(0,0,2*Z)
-            gluQuadricOrientation(q,GLU_INSIDE)
-            gluDisk(q,.1,.2,slice,1)
-            gluQuadricOrientation(q,GLU_OUTSIDE)
-            gluCylinder(q,.2,0.,.4,slice,2)
-            glPopMatrix()            
+            GL.glRotate(-azm,0,0,1)
+            GL.glRotate(phi,1,0,0)
+            q = GLU.gluNewQuadric()
+            GLU.gluQuadricOrientation(q,GLU.GLU_INSIDE)
+            GLU.gluDisk(q,0.,.1,slice,1)
+            GLU.gluQuadricOrientation(q,GLU.GLU_OUTSIDE)
+            GLU.gluCylinder(q,.1,.1,2.*Z,slice,2)
+            GL.glTranslate(0,0,2*Z)
+            GLU.gluQuadricOrientation(q,GLU.GLU_INSIDE)
+            GLU.gluDisk(q,.1,.2,slice,1)
+            GLU.gluQuadricOrientation(q,GLU.GLU_OUTSIDE)
+            GLU.gluCylinder(q,.2,0.,.4,slice,2)
+            GL.glPopMatrix()            
                 
     def RenderLines(x,y,z,Bonds,color):
-        glShadeModel(GL_FLAT)
+        GL.glShadeModel(GL.GL_FLAT)
         xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
-        glColor3fv(color)
-        glPushMatrix()
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glColor3fv(color)
+        GL.glPushMatrix()
+        GL.glBegin(GL.GL_LINES)
         for bond in Bonds:
-            glVertex3fv(xyz)
-            glVertex3fv(xyz+bond)
-        glEnd()
-        glColor4ubv([0,0,0,0])
-        glPopMatrix()
-        glDisable(GL_COLOR_MATERIAL)
-        glShadeModel(GL_SMOOTH)
+            GL.glVertex3fv(xyz)
+            GL.glVertex3fv(xyz+bond)
+        GL.glEnd()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glShadeModel(GL.GL_SMOOTH)
         
     def RenderPolyhedra(x,y,z,Faces,color):
-        glShadeModel(GL_FLAT)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glShadeModel(GL_SMOOTH)
-        glMultMatrixf(B4mat.T)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glMultMatrixf(B4mat.T)
         for face,norm in Faces:
-            glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
-            glFrontFace(GL_CW)
-            glNormal3fv(norm)
-            glBegin(GL_TRIANGLES)
+            GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
+            GL.glFrontFace(GL.GL_CW)
+            GL.glNormal3fv(norm)
+            GL.glBegin(GL.GL_TRIANGLES)
             for vert in face:
-                glVertex3fv(vert)
-            glEnd()
-        glPopMatrix()
-        glShadeModel(GL_SMOOTH)
+                GL.glVertex3fv(vert)
+            GL.glEnd()
+        GL.glPopMatrix()
+        GL.glShadeModel(GL.GL_SMOOTH)
 
     def RenderMapPeak(x,y,z,color,den):
-        glShadeModel(GL_FLAT)
+        GL.glShadeModel(GL.GL_FLAT)
         xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(3)
-        glColor3fv(color*den/255)
-        glPushMatrix()
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(3)
+        GL.glColor3fv(color*den/255)
+        GL.glPushMatrix()
+        GL.glBegin(GL.GL_LINES)
         for vec in mapPeakVecs:
-            glVertex3fv(vec[0]+xyz)
-            glVertex3fv(vec[1]+xyz)
-        glEnd()
-        glColor4ubv([0,0,0,0])
-        glPopMatrix()
-        glDisable(GL_COLOR_MATERIAL)
-        glShadeModel(GL_SMOOTH)
+            GL.glVertex3fv(vec[0]+xyz)
+            GL.glVertex3fv(vec[1]+xyz)
+        GL.glEnd()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+        GL.glShadeModel(GL.GL_SMOOTH)
         
     def RenderBackbone(Backbone,BackboneColor,radius):
-        glPushMatrix()
-        glMultMatrixf(B4mat.T)
-        glEnable(GL_COLOR_MATERIAL)
-        glShadeModel(GL_SMOOTH)
+        GL.glPushMatrix()
+        GL.glMultMatrixf(B4mat.T)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glShadeModel(GL.GL_SMOOTH)
 #        gle.gleSetJoinStyle(TUBE_NORM_EDGE | TUBE_JN_ANGLE | TUBE_JN_CAP)
 #        gle.glePolyCylinder(Backbone,BackboneColor,radius)
-        glPopMatrix()        
-        glDisable(GL_COLOR_MATERIAL)
+        GL.glPopMatrix()        
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
         
     def RenderLabel(x,y,z,label,r,color,matRot):
         '''
         color wx.Colour object
         '''       
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        glDisable(GL_LIGHTING)
-        glRasterPos3f(0,0,0)
-        glMultMatrixf(matRot)
-        glRotate(180,1,0,0)             #fix to flip about x-axis
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        GL.glDisable(GL.GL_LIGHTING)
+        GL.glRasterPos3f(0,0,0)
+        GL.glMultMatrixf(matRot)
+        GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.Text(text=label,font=Font,foreground=color)
         text.draw_text(scale=0.025)
-        glEnable(GL_LIGHTING)
-        glPopMatrix()
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glPopMatrix()
         
     def RenderMap(rho,rhoXYZ,indx,Rok):
-        glShadeModel(GL_FLAT)
+        GL.glShadeModel(GL.GL_FLAT)
         cLevel = drawingData['contourLevel']
         XYZ = []
         RC = []
@@ -5701,7 +5650,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                     XYZ.append(xyz)
                     RC.append([0.1*alpha,Gr])
         RenderDots(XYZ,RC)
-        glShadeModel(GL_SMOOTH)
+        GL.glShadeModel(GL.GL_SMOOTH)
                             
     def Draw(caller='',Fade=[]):
 #useful debug?        
@@ -5756,29 +5705,28 @@ def PlotStructure(G2frame,data,firstCall=False):
         ellipseProb = G2lat.criticalEllipse(drawingData['ellipseProb']/100.)
         
         SetBackground()
-        glInitNames()
-        glPushName(0)
+        GL.glInitNames()
+        GL.glPushName(0)
         
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glViewport(0,0,VS[0],VS[1])
-        gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glViewport(0,0,VS[0],VS[1])
+        GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-        glMultMatrixf(matRot.T)
-        glMultMatrixf(A4mat.T)
-        glTranslate(-Tx,-Ty,-Tz)
+        GL.glMultMatrixf(matRot.T)
+        GL.glMultMatrixf(A4mat.T)
+        GL.glTranslate(-Tx,-Ty,-Tz)
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
         Backbones = {}
         BackboneColor = []
-        time0 = time.time()
 #        glEnable(GL_BLEND)
 #        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
         if not len(Fade):
@@ -5807,7 +5755,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             radius = 0.5
             if atom[cs] != '':
                 try:
-                    glLoadName(atom[-3])
+                    GL.glLoadName(atom[-3])
                 except: #problem with old files - missing code
                     pass
             if 'balls' in atom[cs]:
@@ -5949,8 +5897,6 @@ def PlotStructure(G2frame,data,firstCall=False):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(generalData['Name'],'ogl')
     if new:
         Page.views = False
-        view = False
-        altDown = False
     Font = Page.GetFont()
     Page.Choice = None
     if mapData.get('Flip',False):
@@ -6015,7 +5961,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         return Bonds
                         
     Mydir = G2frame.dirname
-    Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
@@ -6081,17 +6026,17 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
-        glClearColor(R,G,B,A)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        GL.glClearColor(R,G,B,A)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_FLAT)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_LIGHT0)
+        GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
         
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
@@ -6115,7 +6060,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
-        View = glGetIntegerv(GL_VIEWPORT)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
@@ -6138,57 +6083,56 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         defaults['Quaternion'] = Q
 
     def RenderUnitVectors(x,y,z):
-        xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors):
-            glColor3ubv(color)
-            glVertex3fv(-line[1])
-            glVertex3fv(line[1])
-        glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(-line[1])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
                 
     def RenderSphere(x,y,z,radius,color):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        q = gluNewQuadric()
-        gluSphere(q,radius,20,10)
-        glPopMatrix()
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,20,10)
+        GL.glPopMatrix()
         
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
         for Dx in Bonds:
-            glPushMatrix()
+            GL.glPushMatrix()
             Z = np.sqrt(np.sum(Dx**2))
             if Z:
                 azm = atan2d(-Dx[1],-Dx[0])
                 phi = acosd(Dx[2]/Z)
-                glRotate(-azm,0,0,1)
-                glRotate(phi,1,0,0)
-                q = gluNewQuadric()
-                gluCylinder(q,radius,radius,Z,slice,2)
-            glPopMatrix()            
-        glPopMatrix()
+                GL.glRotate(-azm,0,0,1)
+                GL.glRotate(phi,1,0,0)
+                q = GLU.gluNewQuadric()
+                GLU.gluCylinder(q,radius,radius,Z,slice,2)
+            GL.glPopMatrix()            
+        GL.glPopMatrix()
                 
     def RenderLabel(x,y,z,label,matRot):       
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glDisable(GL_LIGHTING)
-        glRasterPos3f(0,0,0)
-        glMultMatrixf(matRot)
-        glRotate(180,1,0,0)             #fix to flip about x-axis
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glDisable(GL.GL_LIGHTING)
+        GL.glRasterPos3f(0,0,0)
+        GL.glMultMatrixf(matRot)
+        GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.TextElement(text=label,font=Font,foreground=wx.WHITE)
         text.draw_text(scale=0.025)
-        glEnable(GL_LIGHTING)
-        glPopMatrix()
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glPopMatrix()
         
     def Draw(caller=''):
 #useful debug?        
@@ -6198,24 +6142,23 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
-        Zclip = 500.0
         Q = defaults['Quaternion']
         SetBackground()
-        glInitNames()
-        glPushName(0)
+        GL.glInitNames()
+        GL.glPushName(0)
         
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glViewport(0,0,VS[0],VS[1])
-        gluPerspective(20.,aspect,1.,500.)
-        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glViewport(0,0,VS[0],VS[1])
+        GLU.gluPerspective(20.,aspect,1.,500.)
+        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-        glMultMatrixf(matRot.T)
+        GL.glMultMatrixf(matRot.T)
         RenderUnitVectors(0.,0.,0.)
         radius = 0.2
         for iat,atom in enumerate(XYZ):
@@ -6249,12 +6192,12 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             Fname = os.path.join(Mydir,Page.name+'.'+mode)
             print Fname+' saved'
             size = Page.canvas.GetSize()
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGBA", (size[0],size[1]))
             else:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
@@ -6269,8 +6212,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Rigid body','ogl')
     if new:
         Page.views = False
-        view = False
-        altDown = False
     Page.name = rbData['RBname']
     Page.Choice = None
     choice = [' save as:','jpeg','tiff','bmp',]
@@ -6346,7 +6287,6 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         XYZ = newXYZ
         na = max(int(8./cell[0]),1)
         nb = max(int(8./cell[1]),1)
-        nunit = [na,nb,0]
         indA = range(-na,na)
         indB = range(-nb,nb)
         Units = np.array([[h,k,0] for h in indA for k in indB])
@@ -6375,12 +6315,12 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             projFile = G2frame.GSASprojectfile
             Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             size = Page.canvas.GetSize()
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGBA", (size[0],size[1]))
             else:
-                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
@@ -6454,13 +6394,11 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         if event.Dragging():
             if event.LeftIsDown():
                 SetRotation(newxy)
-                Q = defaults['Quaternion']
             elif event.RightIsDown():
                 SetTranslation(newxy)
                 Tx,Ty,Tz = defaults['viewPoint'][0]
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
-                Q = defaults['Quaternion']
             Draw('move')
         
     def OnMouseWheel(event):
@@ -6470,17 +6408,17 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         
     def SetBackground():
         R,G,B,A = Page.camera['backColor']
-        glClearColor(R,G,B,A)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        GL.glClearColor(R,G,B,A)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
         
     def SetLights():
-        glEnable(GL_DEPTH_TEST)
-        glShadeModel(GL_FLAT)
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
-        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_LIGHT0)
+        GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
         
     def SetTranslation(newxy):
 #first get translation vector in screen coords.       
@@ -6521,7 +6459,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         
     def SetRotationZ(newxy):                        
 #first get rotation vector (= view vector) in screen coords. & angle increment        
-        View = glGetIntegerv(GL_VIEWPORT)
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
         cent = [View[2]/2,View[3]/2]
         oldxy = defaults['oldxy']
         if not len(oldxy): oldxy = list(newxy)
@@ -6544,60 +6482,59 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         defaults['Quaternion'] = Q
 
     def RenderUnitVectors(x,y,z):
-        xyz = np.array([x,y,z])
-        glEnable(GL_COLOR_MATERIAL)
-        glLineWidth(1)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glBegin(GL_LINES)
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glBegin(GL.GL_LINES)
         for line,color in zip(uEdges,uColors):
-            glColor3ubv(color)
-            glVertex3fv(line[0])
-            glVertex3fv(line[1])
-        glEnd()
-        glPopMatrix()
-        glColor4ubv([0,0,0,0])
-        glDisable(GL_COLOR_MATERIAL)
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(line[0])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
                 
     def RenderSphere(x,y,z,radius,color):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        q = gluNewQuadric()
-        gluSphere(q,radius,20,10)
-        glPopMatrix()
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,20,10)
+        GL.glPopMatrix()
         
     def RenderBonds(x,y,z,Bonds,radius,color,slice=20):
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
         for Dx in Bonds:
-            glPushMatrix()
+            GL.glPushMatrix()
             Z = np.sqrt(np.sum(Dx**2))
             if Z:
                 azm = atan2d(-Dx[1],-Dx[0])
                 phi = acosd(Dx[2]/Z)
-                glRotate(-azm,0,0,1)
-                glRotate(phi,1,0,0)
-                q = gluNewQuadric()
-                gluCylinder(q,radius,radius,Z,slice,2)
-            glPopMatrix()            
-        glPopMatrix()
+                GL.glRotate(-azm,0,0,1)
+                GL.glRotate(phi,1,0,0)
+                q = GLU.gluNewQuadric()
+                GLU.gluCylinder(q,radius,radius,Z,slice,2)
+            GL.glPopMatrix()            
+        GL.glPopMatrix()
                 
     def RenderLabel(x,y,z,label,matRot):       
-        glPushMatrix()
-        glTranslate(x,y,z)
-        glMultMatrixf(B4mat.T)
-        glDisable(GL_LIGHTING)
-        glRasterPos3f(0,0,0)
-        glMultMatrixf(matRot)
-        glRotate(180,1,0,0)             #fix to flip about x-axis
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMultMatrixf(B4mat.T)
+        GL.glDisable(GL.GL_LIGHTING)
+        GL.glRasterPos3f(0,0,0)
+        GL.glMultMatrixf(matRot)
+        GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.TextElement(text=label,font=Font,foreground=wx.WHITE)
         text.draw_text(scale=0.025)
-        glEnable(GL_LIGHTING)
-        glPopMatrix()
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glPopMatrix()
         
     def Draw(caller=''):
 #useful debug?        
@@ -6608,34 +6545,33 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
-        Zclip = 500.0
         Tx,Ty,Tz = defaults['viewPoint'][0]
         Q = defaults['Quaternion']
         SetBackground()
-        glInitNames()
-        glPushName(0)
+        GL.glInitNames()
+        GL.glPushName(0)
         
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glViewport(0,0,VS[0],VS[1])
-        gluPerspective(20.,aspect,1.,500.)
-        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glViewport(0,0,VS[0],VS[1])
+        GLU.gluPerspective(20.,aspect,1.,500.)
+        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
-        glMultMatrixf(matRot.T)
-        glMultMatrixf(A4mat.T)
-        glTranslate(-Tx,-Ty,-Tz)
+        GL.glMultMatrixf(matRot.T)
+        GL.glMultMatrixf(A4mat.T)
+        GL.glTranslate(-Tx,-Ty,-Tz)
         RenderUnitVectors(0.,0.,0.)
         bondRad = 0.1
         atomRad = 0.5
         if Page.labels:
             bondRad = 0.05
             atomRad = 0.2
-        glShadeModel(GL_SMOOTH)
+        GL.glShadeModel(GL.GL_SMOOTH)
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
             CL = AtInfo[AtTypes[iat][0]]['Color']
@@ -6682,8 +6618,6 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Page.views = False
         Page.labels = False
         Page.fade = False
-        view = False
-        altDown = False
     choice = [' save as:','jpeg','tiff','bmp','use keys for:','L - toggle labels']
     if len(laySeq) == 2:
         choice += ['F - toggle fade','X/shift-X move Dx','Y/shift-Y move Dy','Z/shift-Z move Dz']

@@ -457,7 +457,7 @@ def UpdateConstraints(G2frame,data):
                 l1 = max(l1,len(i1))
                 l2 = max(l2,len(i2))
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-            atchoice = [fmt.format(*i) for i in choices]
+            atchoice = [fmt.format(*i1) for i1 in choices]
             dlg = G2G.G2MultiChoiceDialog(
                 G2frame.dataFrame,legend,
                 'Constrain '+str(FrstVarb)+' with...',atchoice,
@@ -687,7 +687,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
+#        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'equivalence')
         
     def OnAddAtomEquiv(event):
@@ -700,7 +700,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
+#        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'equivalence')
         
     def OnAddRiding(event):
@@ -713,7 +713,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
+#        legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'riding')
    
     def OnAddFunction(event):
@@ -726,7 +726,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
+#        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'function')
                         
     def OnAddConstraint(event):
@@ -739,7 +739,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
+#        legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'constraint')
 
     def GetAddVars(page,title1,title2,varList,constrDictEnt,constType):
@@ -1397,7 +1397,6 @@ def UpdateRigidBodies(G2frame,data):
         dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
-            vectorRB = data['Vector']
             rbId = ran.randint(0,sys.maxint)
             vecMag = [1.0 for i in range(nTrans)]
             vecRef = [False for i in range(nTrans)]
@@ -1466,7 +1465,6 @@ def UpdateRigidBodies(G2frame,data):
         rbId = ran.randint(0,sys.maxint)
         rbTypes = []
         rbXYZ = []
-        rbSeq = []
         atNames = []
         txtStr = text.readline()
         if 'xyz' in ext:
@@ -1588,7 +1586,6 @@ def UpdateRigidBodies(G2frame,data):
         dlg = wx.SingleChoiceDialog(G2frame,'Select origin atom for torsion sequence','Origin atom',rbData['atNames'])
         if dlg.ShowModal() == wx.ID_OK:
             Orig = dlg.GetSelection()
-            xyz = XYZ[Orig]
             TargList = neighDict[atNames[Orig]]
         dlg.Destroy()
         if not len(TargList):
@@ -1617,7 +1614,6 @@ def UpdateRigidBodies(G2frame,data):
             def OnRBName(event):
                 event.Skip()
                 Obj = event.GetEventObject()
-                rbId = Indx[Obj.GetId()]
                 rbData['RBname'] = Obj.GetValue()
                 
             def OnDelRB(event):
@@ -1630,7 +1626,6 @@ def UpdateRigidBodies(G2frame,data):
                 
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
-                rbId = Indx[Obj.GetId()]
                 Obj.SetValue(False)
                 G2plt.PlotRigidBody(G2frame,'Vector',AtInfo,rbData,plotDefaults)
             
@@ -1726,7 +1721,6 @@ def UpdateRigidBodies(G2frame,data):
         def rbVectors(rbId,imag,mag,XYZ,rbData):
 
             def TypeSelect(event):
-                Obj = event.GetEventObject()
                 AtInfo = data['Vector']['AtInfo']
                 r,c = event.GetRow(),event.GetCol()
                 if vecGrid.GetColLabelValue(c) == 'Type':
@@ -1743,7 +1737,6 @@ def UpdateRigidBodies(G2frame,data):
                 wx.CallAfter(UpdateVectorRB,VectorRB.GetScrollPos(wx.VERTICAL))
 
             def ChangeCell(event):
-                Obj = event.GetEventObject()
                 r,c =  event.GetRow(),event.GetCol()
                 if r >= 0 and (0 <= c < 3):
                     try:
@@ -1831,7 +1824,6 @@ def UpdateRigidBodies(G2frame,data):
 
             def OnRBName(event):
                 Obj = event.GetEventObject()
-                rbId = Indx[Obj.GetId()]
                 rbData['RBname'] = Obj.GetValue()
                 
             def OnDelRB(event):
@@ -1843,7 +1835,6 @@ def UpdateRigidBodies(G2frame,data):
                 
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
-                rbId = Indx[Obj.GetId()]
                 Obj.SetValue(False)
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
             

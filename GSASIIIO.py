@@ -288,7 +288,6 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
     Imax = np.amax(Image)
-    Imin = max(0.0,np.amin(Image))          #force positive
     if G2frame.imageDefault:
         Data = copy.copy(G2frame.imageDefault)
         Data['showLines'] = True
@@ -386,7 +385,6 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             if rd.errors: 
                 errorReport += ': '+rd.errors
                 continue
-        rdbuffer = {} # create temporary storage for file reader
         if imageOnly:
             ParentFrame = None # prevent GUI access on reread
         else:
@@ -539,8 +537,6 @@ def PutG2Image(filename,Comments,Data,Npix,image):
 # should get moved to importer when ready to test
 def GetEdfData(filename,imageOnly=False):    
     'Read European detector data edf file'
-    import struct as st
-    import array as ar
     if not imageOnly:
         print 'Read European detector data edf file: ',filename
     File = open(filename,'rb')
@@ -599,7 +595,6 @@ def GetEdfData(filename,imageOnly=False):
 # should get moved to importer when ready to test
 def GetRigaku(filename,imageOnly=False):
     'Read Rigaku R-Axis IV image file'
-    import struct as st
     import array as ar
     if not imageOnly:
         print 'Read Rigaku R-Axis IV file: ',filename    
@@ -631,7 +626,6 @@ def GetRigaku(filename,imageOnly=False):
 # should get moved to importer when ready to test        
 def GetImgData(filename,imageOnly=False):
     'Read an ADSC image file'
-    import struct as st
     import array as ar
     if not imageOnly:
         print 'Read ADSC img file: ',filename
@@ -662,11 +656,10 @@ def GetImgData(filename,imageOnly=False):
             head.append(line)
     data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'size':[size,size]}
     image = []
-    row = 0
     pos = 512
     File.seek(pos)
     image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-    image = np.reshape(image,(sizexy[1],sizexy[0]))
+    image = np.reshape(image,(size,size))
 #    image = np.zeros(shape=(size,size),dtype=np.int32)    
 #    while row < size:
 #        File.seek(pos)
@@ -683,8 +676,6 @@ def GetImgData(filename,imageOnly=False):
 # should get moved to importer when ready to test
 def GetMAR345Data(filename,imageOnly=False):
     'Read a MAR-345 image plate image'
-    import array as ar
-    import struct as st
     try:
         import pack_f as pf
     except:
@@ -698,7 +689,6 @@ def GetMAR345Data(filename,imageOnly=False):
         print 'Read Mar345 file: ',filename
     File = open(filename,'rb')
     head = File.read(4095)
-    numbers = st.unpack('<iiiiiiiiii',head[:40])
     lines = head[128:].split('\n')
     head = []
     for line in lines:
@@ -869,7 +859,6 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         codes = [0 for i in range(4)]
         X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
     Xminmax = [X[0],X[-1]]
-    LRazm = data['LRazimuth']
     Azms = []
     dazm = 0.
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
@@ -1018,7 +1007,7 @@ def PeakListSave(G2frame,file,peaks):
     if not peaks:
         dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
         try:
-            result = dlg.ShowModal()
+            dlg.ShowModal()
         finally:
             dlg.Destroy()
         return
@@ -1036,7 +1025,7 @@ def IndexPeakListSave(G2frame,peaks):
         if not peaks:
             dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
             try:
-                result = dlg.ShowModal()
+                dlg.ShowModal()
             finally:
                 dlg.Destroy()
             return
@@ -2575,7 +2564,6 @@ def ReadDIFFaX(DIFFaXfile):
         if 'centro' in Struct[N+1]: Symm = '-1'
         Layer['Layers'].append({'Name':Struct[N],'SameAs':'','Symm':Symm,'Atoms':[]})
         N += 2
-        iatm = 0
         while 'layer' not in Struct[N]:
             atom = Struct[N][4:].split()
             atomType = G2el.FixValence(Struct[N][:4].replace(' ','').strip().capitalize())

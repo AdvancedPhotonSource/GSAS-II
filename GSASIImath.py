@@ -14,14 +14,10 @@
 Routines for least-squares minimization and other stuff
 
 '''
-import sys
-import os
-import os.path as ospath
 import random as rn
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
-import cPickle
 import time
 import math
 import copy
@@ -212,7 +208,6 @@ def getVCov(varyNames,varyList,covMatrix):
 def FindMolecule(ind,generalData,atomData):                    #uses numpy & masks - very fast even for proteins!
 
     def getNeighbors(atom,radius):
-        neighList = []  
         Dx = UAtoms-np.array(atom[cx:cx+3])
         dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of disorder "bonds" < 0.5A
         sumR = Radii+radius
@@ -494,7 +489,6 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
     Uiso = max(Uiso,0.005)                      #set floor!
     Tatoms = GetAtomsById(Atoms,AtLookUp,AddHydId[1])
     TXYZ = np.array([tatom[cx:cx+3] for tatom in Tatoms]) #3 x xyz
-    DX = np.inner(Amat,TXYZ-OXYZ).T
     if nBonds == 4:
         if AddHydId[-1] == 1:
             Vec = TXYZ-OXYZ
@@ -632,7 +626,7 @@ def AtomTLS2UIJ(atomData,atPtrs,Amat,rbObj):    #not used anywhere, but could be
     for atom in atomData:
         XYZ = np.inner(Amat,atom[cx:cx+3])
         Axyz = np.array([ 0,XYZ[2],-XYZ[1], -XYZ[2],0,XYZ[0], XYZ[1],-XYZ[0],0],ndmin=2 )
-        if 'U' in TSLtype:
+        if 'U' in TLStype:
             atom[cia+1] = TLS[0]
             atom[cia] = 'I'
         else:
@@ -1131,8 +1125,6 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     Mast: array orthogonalization matrix for Uij
     '''
     glTau,glWt = pwd.pygauleg(0.,1.,ngl)         #get Gauss-Legendre intervals & weights
-    dT = 2./ngl
-    dX = 0.0001
     waveShapes = [FSSdata.T.shape,XSSdata.T.shape,USSdata.T.shape]
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
@@ -1428,7 +1420,6 @@ def ApplyModulation(data,tau):
 #        for i in range(1,n+1):          #  yes, 1..n                   
 #          area += w[i]*f(x[i])                                    
 
-import math
 def gaulegf(a, b, n):
   x = range(n+1) # x[0] unused
   w = range(n+1) # w[0] unused
@@ -1509,7 +1500,6 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     if not len(parmDict):
         return 0.
     pId = distance_dict['pId']
-    pfx = '%d::'%(pId)
     A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
     Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
@@ -1533,7 +1523,6 @@ def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
     if not len(parmDict):
         return None
     pId = distance_dict['pId']
-    pfx = '%d::'%(pId)
     A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
     Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
@@ -1548,7 +1537,6 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
     if not len(parmDict):
         return 0.
     pId = angle_dict['pId']
-    pfx = '%d::'%(pId)
     A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
     Oxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[0])] for x in ['x','y','z']]
@@ -1580,7 +1568,6 @@ def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
     if not len(parmDict):
         return None
     pId = angle_dict['pId']
-    pfx = '%d::'%(pId)
     A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
     Oxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[0])] for x in ['x','y','z']]
@@ -2033,7 +2020,6 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
         V1 = XYZ[1]-XYZ[0]
         return np.sqrt(np.sum(V1**2))
         
-    Inv = []
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -2047,7 +2033,6 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     sig = -0.001
     if 'covMatrix' in covData:
-        parmNames = []
         dx = .00001
         dadx = np.zeros(6)
         for i in range(6):
@@ -2090,7 +2075,6 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
         cang = min(1.,max((2.-np.sum(V3**2))/2.,-1.))
         return acosd(cang)
 
-    Inv = []
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -2104,7 +2088,6 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     sig = -0.01
     if 'covMatrix' in covData:
-        parmNames = []
         dx = .00001
         dadx = np.zeros(9)
         for i in range(9):
@@ -2148,14 +2131,12 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         V3 /= np.sqrt(np.sum(V3**2))
         M = np.array([V1,V2,V3])
         D = nl.det(M)
-        Ang = 1.0
         P12 = np.dot(V1,V2)
         P13 = np.dot(V1,V3)
         P23 = np.dot(V2,V3)
         Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
         return Tors
             
-    Inv = []
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -2169,7 +2150,6 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     
     sig = -0.01
     if 'covMatrix' in covData:
-        parmNames = []
         dx = .00001
         dadx = np.zeros(12)
         for i in range(12):
@@ -2239,14 +2219,12 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         V3 /= np.sqrt(np.sum(V3**2))
         M = np.array([V1,V2,V3])
         D = nl.det(M)
-        Ang = 1.0
         P12 = np.dot(V1,V2)
         P13 = np.dot(V1,V3)
         P23 = np.dot(V2,V3)
         Tors = acosd((P12*P23-P13)/(np.sqrt(1.-P12**2)*np.sqrt(1.-P23**2)))*D/abs(D)
         return Tors
             
-    Inv = []
     SyOps = []
     names = []
     for i,atom in enumerate(Oatoms):
@@ -2267,7 +2245,6 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
     sigVals = [-0.001,-0.01,-0.01]
     sig = sigVals[M-3]
     if 'covMatrix' in covData:
-        parmNames = []
         dx = .00001
         N = M*3
         dadx = np.zeros(N)
@@ -2599,7 +2576,6 @@ def OmitMap(data,reflDict,pgbar=None):
                 b = sind(ph+dp)
                 phasep = complex(a,b)
                 phasem = complex(a,-b)
-                Fo = np.sqrt(Fosq)
                 if '2Fo-Fc' in mapData['MapType']:
                     F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
                 else:
@@ -2827,8 +2803,6 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Hmax = 2*np.asarray(G2lat.getHKLmax(3.5,SGData,A),dtype='i')
     for F in Flist:
         hkl = np.unravel_index(Fdict[F],hklShape)
@@ -3054,8 +3028,6 @@ def SSChargeFlip(data,reflDict,pgbar):
     dmin = flipData['Resolution']
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     cell = generalData['Cell'][1:8]        
@@ -3239,7 +3211,6 @@ def SearchMap(generalData,drawingData,Neg=False):
         
         return Vec,Hess
         
-    phaseName = generalData['Name']
     SGData = generalData['SGData']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     peaks = []
@@ -3282,7 +3253,6 @@ def SearchMap(generalData,drawingData,Neg=False):
             args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.01,maxcyc=10)
         x1 = result[0]
         if not np.any(x1 < 0):
-            mag = x1[0]
             peak = (np.array(x1[1:4])-ind)/incre
         peak = fixSpecialPos(peak,SGData,Amat)
         rho = rollMap(rho,-ind)
@@ -3329,9 +3299,7 @@ def PeaksEquiv(data,Ind):
         return False
                             
     generalData = data['General']
-    cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-    A = G2lat.cell2A(cell)
     SGData = generalData['SGData']
     mapPeaks = data['Map Peaks']
     XYZ = np.array([xyz[1:4] for xyz in mapPeaks])
@@ -3364,9 +3332,7 @@ def PeaksUnique(data,Ind):
         return True
                             
     generalData = data['General']
-    cell = generalData['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-    A = G2lat.cell2A(cell)
     SGData = generalData['SGData']
     mapPeaks = data['Map Peaks']
     Indx = {}
@@ -3584,8 +3550,8 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
 
 
 import numpy
-from numpy import asarray, tan, exp, ones, squeeze, sign, \
-     all, log, sqrt, pi, shape, array, minimum, where
+from numpy import asarray, tan, exp, squeeze, sign, \
+     all, log, pi, shape, array, where
 from numpy import random
 
 #__all__ = ['anneal']
@@ -4266,7 +4232,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['nfixAt'] = len(fixAtoms)        
     MCSA = generalData['MCSA controls']
     reflName = MCSA['Data source']
-    phaseName = generalData['Name']
     MCSAObjs = data['MCSA']['Models']               #list of MCSA models
     upper = []
     lower = []

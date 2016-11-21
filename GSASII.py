@@ -307,11 +307,11 @@ class GSASII(wx.Frame):
                             if reader.UseReader:
                                 readerlist.append(reader)
             except AttributeError:
-                print 'Import_'+errprefix+': Attribute Error '+str(filename)
+                print 'Import_'+errprefix+': Attribute Error '+ filename
             #except ImportError:
-            #    print 'Import_'+errprefix+': Error importing file '+str(filename)
+            #    print 'Import_'+errprefix+': Error importing file '+ filename
             except Exception,errmsg:
-                print('\nImport_'+errprefix+': Error importing file '+str(filename))
+                print('\nImport_'+errprefix+': Error importing file '+ filename)
                 print('Error message: '+str(errmsg)+'\n')
             if fp: fp.close()
 
@@ -327,13 +327,12 @@ class GSASII(wx.Frame):
 
     def PreviewFile(self,filename,fp):
         'confirm we have the right file'
-        rdmsg = 'File '+repr(filename)+' begins:\n\n'
+        rdmsg = 'File '+ filename +' begins:\n\n'
         for i in range(3):
             rdmsg += fp.readline()
         rdmsg += '\n\nDo you want to read this file?'
         if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
-            rdmsg = 'File '+str(
-                filename)+' is a binary file. Do you want to read this file?'
+            rdmsg = 'File '+ filename +' is a binary file. Do you want to read this file?'
         # it would be better to use something that
         # would resize better, but this will do for now
         dlg = wx.MessageDialog(

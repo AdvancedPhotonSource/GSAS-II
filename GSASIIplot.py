@@ -1213,7 +1213,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
        G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
     global exclLines
-    global DifLine
+    global DifLine # BHT: probably does not need to be global
     global Ymax
     global Pattern
     plottype = plotType
@@ -1422,6 +1422,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     def onMoveDiffCurve(event):
         '''Respond to a menu command to move the difference curve. 
         '''
+        if not DifLine[0]:
+            print('No difference curve!')
+            return
         G2frame.itemPicked = DifLine[0]
         G2frame.G2plotNB.Parent.Raise()
         OnPick(None)
@@ -1812,15 +1815,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataFrame.moveTickLoc.GetId())
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataFrame.moveTickSpc.GetId())
-        if len(Page.phaseList) == 0:
-            G2frame.dataFrame.moveTickLoc.Enable(False)
-            G2frame.dataFrame.moveTickSpc.Enable(False)
-        elif len(Page.phaseList) == 1:
-            G2frame.dataFrame.moveTickLoc.Enable(True)
-            G2frame.dataFrame.moveTickSpc.Enable(False)
-        else:
-            G2frame.dataFrame.moveTickLoc.Enable(True)
-            G2frame.dataFrame.moveTickSpc.Enable(True)
+        G2frame.dataFrame.moveDiffCurve.Enable(False)
+        G2frame.dataFrame.moveTickLoc.Enable(False)
+        G2frame.dataFrame.moveTickSpc.Enable(False)
     elif G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataFrame.movePeak.GetId())
     # save information needed to reload from tree and redraw
@@ -1832,6 +1829,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                            (G2frame,newPlot,plotType),kwargs)
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren()
+    Page.tickDict = {}
+    DifLine = ['']
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
             'i: interpolation method','s: color scheme','c: contour off')
@@ -2041,7 +2040,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 DX = xlim[1]-xlim[0]
                 X += 0.002*offsetX*DX*N
             Xum = ma.getdata(X)
-            DifLine = ['']
             if ifpicked:
                 if G2frame.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -2201,7 +2199,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            Page.tickDict = {}
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue
@@ -2273,6 +2270,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
     # and sqrt(-ve) in np.where usage               
 #    G2frame.Pwdr = True
+    if 'PWDR' in G2frame.PatternTree.GetItemText(G2frame.PickId):
+        if len(Page.tickDict.keys()) == 1:
+            G2frame.dataFrame.moveTickLoc.Enable(True)
+        elif len(Page.tickDict.keys()) > 1:
+            G2frame.dataFrame.moveTickLoc.Enable(True)
+            G2frame.dataFrame.moveTickSpc.Enable(True)
+        if DifLine[0]:
+            G2frame.dataFrame.moveDiffCurve.Enable(True)
     
 ################################################################################
 ##### PlotDeltSig

@@ -1069,7 +1069,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
-        dqmx = np.sum(dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]*SGData['SpnFlp'][nxs,nxs,nxs,:,nxs],axis=0)   #matrix * vector = vector
+        dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
+#        dqmx = np.sum(dqmx*SGData['SpnFlp'][nxs,nxs,nxs,:,nxs],axis=1)   #matrix * vector = vector
+        dqmx = np.sum(dqmx,axis=1)   #matrix * vector = vector
         dmx = Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
 #        GSASIIpath.IPyBreak()
 #

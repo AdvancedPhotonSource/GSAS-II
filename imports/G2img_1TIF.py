@@ -18,9 +18,7 @@ sort to the top of the image formats and thus show up first in the menu.
 
 '''
 
-import sys
 import struct as st
-import os.path as ospath
 import GSASIIIO as G2IO
 import GSASIIpath
 import numpy as np
@@ -135,7 +133,6 @@ def GetTifData(filename):
             Value = st.unpack(byteOrd+'i',File.read(4))
         elif Type == 3:
             Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
-            x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
         elif Type == 4:
             if Tag in [273,279]:
                 nSlice = nVal
@@ -265,7 +262,7 @@ def GetTifData(filename):
             print 'Read MAR CCD tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 512:
-            tiftype = '11-ID-C'
+            tifType = '11-ID-C'
             pixy = [200,200]
             File.seek(512)
             print 'Read 11-ID-C tiff file: ',filename

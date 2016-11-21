@@ -15,7 +15,6 @@ more than a single image.
 
 '''
 
-import sys
 import os
 import numpy as np
 import GSASIIIO as G2IO
@@ -116,7 +115,6 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     with Detector Pool detector. Also sums multiple image files if desired
     '''
     import struct as st
-    import array as ar
     import cPickle
     more = False
     File = open(filename,'rb')

@@ -21,7 +21,6 @@ import math
 import copy
 import random as ran
 import time
-import copy
 import glob
 import imp
 import inspect
@@ -328,7 +327,7 @@ class GSASII(wx.Frame):
 
     def PreviewFile(self,filename,fp):
         'confirm we have the right file'
-        rdmsg = 'File '+str(filename)+' begins:\n\n'
+        rdmsg = 'File '+repr(filename)+' begins:\n\n'
         for i in range(3):
             rdmsg += fp.readline()
         rdmsg += '\n\nDo you want to read this file?'
@@ -909,7 +908,6 @@ class GSASII(wx.Frame):
         iph = -1
         while item: # loop over (new) phases
             iph += 1
-            phaseName = self.PatternTree.GetItemText(item)
             data = self.PatternTree.GetItemPyData(item)
             item, cookie = self.PatternTree.GetNextChild(sub, cookie)
             if iph not in result: continue

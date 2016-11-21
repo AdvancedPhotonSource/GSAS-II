@@ -208,7 +208,6 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         for line,S in enumerate(filepointer):
             self.errors = 'Error reading at line '+str(line+1)
             if 'EXPR NPHAS' in S[:12]:
-                Num = S[12:-1].count('0')
                 NPhas = S[12:-1].split()
             if 'CRS' in S[:3]:
                 N = int(S[3:4])-1
@@ -349,8 +348,8 @@ class EXP_ReaderClass(G2IO.ImportPhase):
             general['AtomPtrs'] = [6,4,10,12]
         elif general['Type'] =='magnetic':
             general['AtomPtrs'] = [3,1,10,12]
-            general['SGData']['SGSpin'] = SpnFlp
-            general['MagDmin'] = MagDmin    
+#            general['SGData']['SGSpin'] = SpnFlp
+#            general['MagDmin'] = MagDmin    
         else:   #nuclear
             general['AtomPtrs'] = [3,1,7,9]    
         general['SH Texture'] = textureData
@@ -400,7 +399,6 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         file = open(filename, 'Ur') #contains only cell & spcgroup
         Phase = {}
         Title = os.path.basename(filename)
-        Compnd = ''
         Type = 'nuclear'
         Atoms = []
         Atypes = []
@@ -453,7 +451,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                         self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
-                SGlines = G2spc.SGPrint(SGData)
+                SGlines = G2spc.SGPrint(SGData) #silent check of space group symbol
             elif 'qi' in S[:2]:
                 if nqi:
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            

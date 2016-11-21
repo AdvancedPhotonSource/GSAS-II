@@ -12,8 +12,6 @@
 
 '''
 
-import sys
-import os
 import time
 import GSASIIIO as G2IO
 import GSASIIpath

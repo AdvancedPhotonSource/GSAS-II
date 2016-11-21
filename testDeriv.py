@@ -19,14 +19,11 @@ and the corresponding analytical ones produced in the least
 squares. They should match.
 '''
 
-import os
-import os.path as ospath
 import sys
 import time
 import cPickle
 import wx
 import numpy as np
-import matplotlib as mpl
 import GSASIIpath
 import GSASIIstrMath as G2stMth
 import GSASIItestplot as plot
@@ -172,32 +169,31 @@ class testDeriv(wx.Frame):
                 varyList,self.calcControls,self.pawleyLookup,None)
             M2 = dMdV[varyList.index(name)]
             hplot.plot(M2,'b',label='analytic deriv')
-            if name in varyList:
-                mmin = np.min(dMdV[varyList.index(name)])
-                mmax = np.max(dMdV[varyList.index(name)])
-                print 'parameter:',name,self.parmDict[name],delt,mmin,mmax
-                if name in self.varylist:
-                    self.values[self.varylist.index(name)] -= delt
-                    M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                        varyList,self.calcControls,self.pawleyLookup,None)
-                    self.values[self.varylist.index(name)] += 2.*delt
-                    M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                        varyList,self.calcControls,self.pawleyLookup,None)
-                    self.values[self.varylist.index(name)] -= delt
-                elif name in self.depVarList:   #in depVarList
-                    if 'dA' in name:
-                        name = name.replace('dA','A')
-                        delt *= -1
-                    self.parmDict[name] -= delt
-                    M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                        varyList,self.calcControls,self.pawleyLookup,None)
-                    self.parmDict[name] += 2.*delt
-                    M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                        varyList,self.calcControls,self.pawleyLookup,None)
-                    self.parmDict[name] -= delt    
-                Mn = (M1-M0)/(2.*abs(delt))
-                hplot.plot(Mn,'r',label='numeric deriv')
-                hplot.plot(M2-Mn,'g',label='diff')
+            mmin = np.min(dMdV[varyList.index(name)])
+            mmax = np.max(dMdV[varyList.index(name)])
+            print 'parameter:',name,self.parmDict[name],delt,mmin,mmax
+            if name in self.varylist:
+                self.values[self.varylist.index(name)] -= delt
+                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                self.values[self.varylist.index(name)] += 2.*delt
+                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                self.values[self.varylist.index(name)] -= delt
+            elif name in self.depVarList:   #in depVarList
+                if 'dA' in name:
+                    name = name.replace('dA','A')
+                    delt *= -1
+                self.parmDict[name] -= delt
+                M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                self.parmDict[name] += 2.*delt
+                M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
+                    varyList,self.calcControls,self.pawleyLookup,None)
+                self.parmDict[name] -= delt    
+            Mn = (M1-M0)/(2.*abs(delt))
+            hplot.plot(Mn,'r',label='numeric deriv')
+            hplot.plot(M2-Mn,'g',label='diff')
 #            GSASIIpath.IPyBreak()
             hplot.legend(loc='best')            
             

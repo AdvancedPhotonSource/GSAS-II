@@ -1368,7 +1368,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.cifdefs.DestroyChildren()
             self.cifdefs.SetTitle('Edit CIF settings')
             vbox = wx.BoxSizer(wx.VERTICAL)
-            vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,'Creating file '+str(self.filename)))
+            vbox.Add(wx.StaticText(self.cifdefs, wx.ID_ANY,'Creating file '+self.filename))
             but = wx.Button(self.cifdefs, wx.ID_ANY,'Edit CIF Author')
             but.Bind(wx.EVT_BUTTON,EditAuthor)
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
@@ -1650,7 +1650,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # write quick CIFs 
         #=================================================================
         if phaseOnly: #====Phase only CIF ================================
-            print('Writing CIF output to file '+str(self.filename))
+            print('Writing CIF output to file '+self.filename)
             self.OpenFile()
             oneblock = True
             self.quickmode = True
@@ -1663,7 +1663,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.CloseFile()
             return
         elif histOnly: #====Histogram only CIF ================================
-            print('Writing CIF output to file '+str(self.filename))
+            print('Writing CIF output to file '+self.filename)
             self.OpenFile()
             hist = histOnly
             histname = histOnly.replace(' ','')
@@ -1839,7 +1839,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
-        print('Writing CIF output to file '+str(self.filename)+"...")
+        print('Writing CIF output to file '+self.filename+"...")
         self.OpenFile()
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======Data only CIF (powder/xtal) ====================================
@@ -2026,7 +2026,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         WriteCIFitem('#--' + 15*'eof--' + '#')
         self.CloseFile()
         print("...export completed")
-        print('file '+str(self.fullpath))
+        print('file '+self.fullpath)
         # end of CIF export
 
 class ExportProjectCIF(ExportCIF):
@@ -2055,7 +2055,7 @@ class ExportProjectCIF(ExportCIF):
         self.OpenFile(mode=mode)
         self._Exporter(histOnly=hist)
         if mode == 'w':
-            print('CIF written to file '+str(self.fullpath))
+            print('CIF written to file '+self.fullpath)
         self.CloseFile()
         
 class ExportPhaseCIF(ExportCIF):

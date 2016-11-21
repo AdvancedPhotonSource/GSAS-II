@@ -3404,6 +3404,23 @@ def StripIndents(msg):
         msg = msg1
         msg1 = msg.replace('\n ','\n')
     return msg.replace('\n\t','\n')
+
+def StripUnicode(string,subs='.'):
+    '''Strip non-ASCII characters from strings
+    
+    :param str string: string to strip Unicode characters from
+    :param str subs: character(s) to place into string in place of each
+      Unicode character. Defaults to '.'
+
+    :returns: a new string with only ASCII characters
+    '''
+    s = ''
+    for c in string:
+        if ord(c) < 128:
+            s += c
+        else:
+            s += subs
+    return s.encode('ascii','replace')
         
 ################################################################################
 # configuration routines (for editing config.py)

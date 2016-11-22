@@ -1951,10 +1951,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         Sample = SampleList[N]
-        if 'C' in Parms['Type'][0]:
-            wave = G2mth.getWave(Parms)
-        else:
-            difC = Parms['difC'][1]
         ifpicked = False
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
@@ -2390,13 +2386,6 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             G2frame.Legend = not G2frame.Legend
         PlotISFG(G2frame,newPlot=newPlot,type=type)
         
-    def OnKeyBox(event):
-        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index(type):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            wx.CallAfter(OnPlotKeyPress,event)
-        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-                        
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2771,13 +2760,6 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title=''):
             dlg.Destroy()
         wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
     
-    def OnKeyBox(event):
-        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index(type):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            wx.CallAfter(OnKeyPress,event)
-        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-
     def OnMotion(event):
         xpos = event.xdata
         if Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
@@ -3038,58 +3020,53 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.set_title('Instrument and sample peak widths')
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
         Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)
-        try:
-            Xmin,Xmax = limits[1]
-            X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
-            Q = 4.*np.pi*npsind(X/2.)/lam
-            Z = np.ones_like(X)
-            data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-            s = np.sqrt(data[4])*np.pi/18000.   #var -> sig(radians)
-            g = data[6]*np.pi/18000.    #centideg -> radians
-            G = G2pwd.getgamFW(g,s)/2.  #delt-theta
-            Y = s/nptand(X/2.)
-            Z = g/nptand(X/2.)
-            W = G/nptand(X/2.)
-            Plot.plot(Q,Y,color='r',label='Gaussian')
-            Plot.plot(Q,Z,color='g',label='Lorentzian')
-            Plot.plot(Q,W,color='b',label='G+L')
-            
-            fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
-            sf = np.sqrt(fit[4])*np.pi/18000.
-            gf = fit[6]*np.pi/18000.
-            Gf = G2pwd.getgamFW(gf,sf)/2.
-            Yf = sf/nptand(X/2.)
-            Zf = gf/nptand(X/2.)
-            Wf = Gf/nptand(X/2.)
-            Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
-            Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
-            Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
-            
-            X = []
-            Y = []
-            Z = []
-            W = []
-            for peak in peaks:
-                X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
-                try:
-                    s = math.sqrt(peak[4])*math.pi/18000.
-                except ValueError:
-                    s = 0.01
-                g = peak[6]*math.pi/18000.
-                G = G2pwd.getgamFW(g,s)/2.
-                Y.append(s/tand(peak[0]/2.))
-                Z.append(g/tand(peak[0]/2.))
-                W.append(G/tand(peak[0]/2.))
-            if len(peaks):
-                Plot.plot(X,Y,'+',color='r',label='G peak')
-                Plot.plot(X,Z,'+',color='g',label='L peak')
-                Plot.plot(X,W,'+',color='b',label='G+L peak')
-            Plot.legend(loc='best')
-            Page.canvas.draw()
-        except ValueError:
-            print '**** ERROR - default U,V,W profile coefficients yield sqrt of negative value at 2theta =', \
-                '%.3f'%(2*theta)
-            G2frame.G2plotNB.Delete('Peak Widths')
+        Xmin,Xmax = limits[1]
+        X = np.linspace(Xmin,Xmax,num=101,endpoint=True)
+        Q = 4.*np.pi*npsind(X/2.)/lam
+        Z = np.ones_like(X)
+        data = G2mth.setPeakparms(Parms,Parms2,X,Z)
+        s = np.sqrt(data[4])*np.pi/18000.   #var -> sig(radians)
+        g = data[6]*np.pi/18000.    #centideg -> radians
+        G = G2pwd.getgamFW(g,s)/2.  #delt-theta
+        Y = s/nptand(X/2.)
+        Z = g/nptand(X/2.)
+        W = G/nptand(X/2.)
+        Plot.plot(Q,Y,color='r',label='Gaussian')
+        Plot.plot(Q,Z,color='g',label='Lorentzian')
+        Plot.plot(Q,W,color='b',label='G+L')
+        
+        fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
+        sf = np.sqrt(fit[4])*np.pi/18000.
+        gf = fit[6]*np.pi/18000.
+        Gf = G2pwd.getgamFW(gf,sf)/2.
+        Yf = sf/nptand(X/2.)
+        Zf = gf/nptand(X/2.)
+        Wf = Gf/nptand(X/2.)
+        Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
+        Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
+        Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
+        
+        X = []
+        Y = []
+        Z = []
+        W = []
+        for peak in peaks:
+            X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+            try:
+                s = math.sqrt(peak[4])*math.pi/18000.
+            except ValueError:
+                s = 0.01
+            g = peak[6]*math.pi/18000.
+            G = G2pwd.getgamFW(g,s)/2.
+            Y.append(s/tand(peak[0]/2.))
+            Z.append(g/tand(peak[0]/2.))
+            W.append(G/tand(peak[0]/2.))
+        if len(peaks):
+            Plot.plot(X,Y,'+',color='r',label='G peak')
+            Plot.plot(X,Z,'+',color='g',label='L peak')
+            Plot.plot(X,W,'+',color='b',label='G+L peak')
+        Plot.legend(loc='best')
+        Page.canvas.draw()
     else:   #'T'OF
         Plot.set_title('Instrument and sample peak coefficients')
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
@@ -3396,7 +3373,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                     break
                 except ValueError:
                     sfac *= 1.05
-            Z = [lut(r*np.pi/180.,p*np.pi/180.) for r,p in zip(list(R),list(P))]
+            Z = [lut(ri*np.pi/180.,p*np.pi/180.) for ri,p in zip(list(R),list(P))]
             print 'IVP for histogramn: %s: interpolate sfactor: %.2f'%(hist,sfac)
         except AttributeError:
             G2frame.G2plotNB.Delete(plotType)
@@ -4240,14 +4217,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Data['invert_y'] = not Data['invert_y']
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
             
-    def OnKeyBox(event):
-        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):
-            event.key = cb.GetValue()[0]
-            cb.SetValue(' key press')
-            if event.key in ['l','s','a','r','p','x','y']:
-                wx.CallAfter(OnImPlotKeyPress,event)
-        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
-                        
     def OnImPick(event):
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
             return
@@ -4861,13 +4830,10 @@ def PlotStructure(G2frame,data,firstCall=False):
         mcsaBonds = FindPeaksBonds(mcsaXYZ)        
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}
-    flipData = {}
     showBonds = False
     if 'Map' in generalData:
         mapData = generalData['Map']
         showBonds = mapData.get('Show bonds',False)
-    if 'Flip' in generalData:
-        flipData = generalData['Flip']                        
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])

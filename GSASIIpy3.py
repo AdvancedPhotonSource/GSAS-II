@@ -110,7 +110,7 @@ def FormatValue(val,maxdigits=None):
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     try:
         return fmt.format(float(val)).strip()
-    except ValueError as err:
+    except ValueError:
         print 'FormatValue Error with val,maxdigits,fmt=',val,maxdigits,fmt
         return str(val)
 
@@ -161,7 +161,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
             fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     try:
         return fmt.format(float(val)).strip()
-    except ValueError as err:
+    except ValueError:
         print 'FormatValue Error with val,maxdigits, sigfigs, fmt=',val, maxdigits,sigfigs, fmt
         return str(val)
 

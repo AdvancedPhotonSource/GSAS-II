@@ -514,19 +514,15 @@ def GetGenSym(SGData):
     if SGData['SGInv']: Nsyms *= 2
     UsymOp = []
     OprFlg = []  
-    if Nsyms in [1,3]: NunqOp = 0       #Triclinic acentric OR trigonal 3
-    elif Nsyms == 2:                    #Centric triclinic or acentric monoclinic
-        NunqOp = 1
+    if Nsyms == 2:                    #Centric triclinic or acentric monoclinic
         UsymOp.append(OprNames[1])
         OprFlg.append(SGData['SGGen'][1])
     elif Nsyms == 4:                    #Point symmetry 2/m, 222, 22m, or 4
         if '4z' in OprNames[1]:          #Point symmetry 4 or -4
-            NunqOp = 1
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
         elif not SGData['SGInv']:       #Acentric Orthorhombic
             if 'm' in OprNames[1:4]:    #22m, 2m2 or m22
-                NunqOp = 2
                 if '2' in OprNames[1]:      #Acentric orthorhombic, 2mm
                     UsymOp.append(OprNames[2])
                     OprFlg.append(SGData['SGGen'][2])
@@ -543,7 +539,6 @@ def GetGenSym(SGData):
                     UsymOp.append(OprNames[2])
                     OprFlg.append(SGData['SGGen'][2])
             else:                           #Acentric orthorhombic, 222
-                NunqOp = -3
                 SGData['SGGen'][1:] = [4,2,1]
                 UsymOp.append(OprNames[1])
                 OprFlg.append(SGData['SGGen'][1])
@@ -552,13 +547,11 @@ def GetGenSym(SGData):
                 UsymOp.append(OprNames[3])
                 OprFlg.append(SGData['SGGen'][3])
         else:                               #Centric Monoclinic
-            NunqOp = 2
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
             UsymOp.append(OprNames[3])
             OprFlg.append(SGData['SGGen'][3])
     elif Nsyms == 6:                    #Point symmetry 32, 3m or 6
-            NunqOp = 1
             if '6' in OprNames[1]:      #Hexagonal 6/m Laue symmetry
                 UsymOp.append(OprNames[1])
                 OprFlg.append(SGData['SGGen'][1])
@@ -568,7 +561,6 @@ def GetGenSym(SGData):
                 if '2110' in OprNames[1]: UsymOp[-1] = ' 2100 '
     elif Nsyms == 8:                    #Point symmetry mmm, 4/m, or 422, etc
         if '4' in OprNames[1]:           #Tetragonal
-            NunqOp = 2
             if SGData['SGInv']:         #4/m
                 UsymOp.append(OprNames[1])
                 OprFlg.append(SGData['SGGen'][1])
@@ -586,7 +578,6 @@ def GetGenSym(SGData):
                     UsymOp.append(OprNames[6])
                     OprFlg.append(19)
         else:                               #Orthorhombic, mmm
-            NunqOp = 3
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
             UsymOp.append(OprNames[2])
@@ -594,13 +585,11 @@ def GetGenSym(SGData):
             UsymOp.append(OprNames[7])
             OprFlg.append(SGData['SGGen'][7])
     elif Nsyms == 12 and '3' in OprNames[1] and SGData['SGSys'] != 'cubic':        #Trigonal
-        NunqOp = 2
         UsymOp.append(OprNames[3])
         OprFlg.append(SGData['SGGen'][3])
         UsymOp.append(OprNames[9])
         OprFlg.append(SGData['SGGen'][9])
     elif Nsyms == 12 and '6' in OprNames[1]:        #Hexagonal
-        NunqOp = 2
         if 'mz' in OprNames[9]:                     #6/m
             UsymOp.append(OprNames[1])
             OprFlg.append(SGData['SGGen'][1])
@@ -614,7 +603,6 @@ def GetGenSym(SGData):
             OprFlg.append(24)
     elif Nsyms in [16,24]:
         if '3' in OprNames[1]:
-            NunqOp = 1
             UsymOp.append('')
             OprFlg.append(SGData['SGGen'][3])
             for i in range(Nsyms):
@@ -626,7 +614,6 @@ def GetGenSym(SGData):
                     UsymOp[-1] = OprNames[i]
                     OprFlg[-1] = 24
         else:                                     #4/mmm or 6/mmm
-            NunqOp = 3
             UsymOp.append('  mz  ')
             OprFlg.append(1)
             if '4' in OprNames[1]:                  #4/mmm
@@ -641,13 +628,10 @@ def GetGenSym(SGData):
                 OprFlg.append(8)
     else:                                           #System is cubic
         if Nsyms == 48:
-            NunqOp = 2
             UsymOp.append('  mx  ')
             OprFlg.append(4)
             UsymOp.append(' m110 ')
             OprFlg.append(24)
-        else:
-            NunqOp = 0
     ncv = len(SGData['SGCen'])
     if ncv > 1:
         for icv in range(ncv):

@@ -14,6 +14,7 @@
 ########### SVN repository information ###################
 
 import math
+import sys
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")

@@ -11,22 +11,17 @@
 -------------------------------------
 
 '''
-import sys
 import os
 import os.path as ospath
 import time
 import math
 import copy
-import random
 import cPickle
 import numpy as np
 import numpy.ma as ma
-import numpy.linalg as nl
-import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
-import GSASIIgrid as G2gd
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIobj as G2obj
@@ -311,8 +306,6 @@ def GetAllPhaseData(GPXfile,PhaseName):
     :return: phase dictionary
     '''        
     fl = open(GPXfile,'rb')
-    General = {}
-    Atoms = []
     while True:
         try:
             data = cPickle.load(fl)
@@ -786,7 +779,6 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
             RBmags = rigidbodyDict['Vector'][item]['VectMag']
             for i,mag in enumerate(RBmags):
                 name = '::RBV;'+str(i)+':'+str(irb)
-                mag = parmDict[name]
                 if name in sigDict:
                     VectSig.append(sigDict[name])
             PrintRBVectandSig(rigidbodyDict['Vector'][item],VectSig)    
@@ -1077,14 +1069,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         print  >>pFile,'\n Phases:'
     phaseVary = []
     phaseDict = {}
-    phaseConstr = {}
     pawleyLookup = {}
     FFtables = {}                   #scattering factors - xrays
     MFtables = {}                   #Mag. form factors
     BLtables = {}                   # neutrons
     Natoms = {}
-    AtMults = {}
-    AtIA = {}
     maxSSwave = {}
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
@@ -1515,7 +1504,6 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
                     print '    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd  '
                     for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
-                        PH = np.array(hkl)
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                         ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
                         R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
@@ -1685,7 +1673,6 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 if len(Waves):
                     print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
                         %(at[ct-1],at[cs],Stype,waveType)
-                    line = ''
                     for iw,wave in enumerate(Waves):
                         stiw = ':'+str(i)+':'+str(iw)
                         namstr = '  names :'
@@ -2175,10 +2162,6 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
     hapDict = {}
     hapVary = []
     controlDict = {}
-    poType = {}
-    poAxes = {}
-    spAxes = {}
-    spType = {}
     
     for phase in Phases:
         HistoPhase = Phases[phase]['Histograms']
@@ -2202,7 +2185,6 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             if 'PWDR' in histogram:
                 limits = Histogram['Limits'][1]
                 inst = Histogram['Instrument Parameters'][0]
-                Zero = inst['Zero'][0]
                 if 'C' in inst['Type'][1]:
                     try:
                         wave = inst['Lam'][1]
@@ -2225,7 +2207,6 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     HSvals.append(hapDict[pfx+name])
                     if hapData['HStrain'][1][i]:
                         hapVary.append(pfx+name)
-                DIJS = G2spc.HStrainVals(HSvals,SGData)
                 controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
@@ -3081,7 +3062,6 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
     def PrintBackgroundSig(Background,backSig):
         Back = Background[0]
         DebyePeaks = Background[1]
-        lenBack = len(Back[3:])
         valstr = ' value : '
         sigstr = ' sig   : '
         refine = False

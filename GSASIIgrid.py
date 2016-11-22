@@ -19,12 +19,10 @@ import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
 import time
 import copy
-import cPickle
 import sys
 import os
 import random as ran
 import numpy as np
-import numpy.ma as ma
 import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -251,10 +249,6 @@ class SGMagSpinBox(wx.Dialog):
             cents = text[-1].split(';')
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
-        try:
-            nops = self.names.index(' 1bar ')
-        except ValueError:
-            nops = len(self.names)
         ncol = self.table[0].count(',')+2
         for ic,cent in enumerate(cents):
             if cent:
@@ -2701,8 +2695,8 @@ def UpdateControls(G2frame,data):
         def OnFsqRef(event):
             data['F**2'] = fsqRef.GetValue()
             
-        def OnHatomFix(event):
-            data['HatomFix'] = Hfix.GetValue()
+#        def OnHatomFix(event):
+#            data['HatomFix'] = Hfix.GetValue()
         
         def OnUsrRej(event):
             event.Skip()
@@ -3378,7 +3372,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             eqObjList = Controls['SeqParFitEqList']
         UseFlags = G2frame.SeqTable.GetColValues(0)         
         for obj in eqObjList:
-            expr = obj.expression
             # assemble refined vars for this equation
             varyValueDict.update({var:val for var,val in obj.GetVariedVarVal()})
             # lookup dependent var position
@@ -3489,7 +3482,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
             if newobj:
-                calcobj = G2obj.ExpressionCalcObj(newobj)
                 Controls['SeqParFitEqList'][selected] = newobj
                 EnableParFitEqMenus()
             if Controls['SeqParFitEqList']: DoParEqFit(event)
@@ -3544,7 +3536,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
             if newobj:
-                calcobj = G2obj.ExpressionCalcObj(newobj)
                 Controls['SeqParFitEqList'].append(newobj)
                 EnableParFitEqMenus()
             if Controls['SeqParFitEqList']: DoParEqFit(event)
@@ -3887,7 +3878,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             sigs = data[name]['sig']
             G2mv.InitVars()
             parmDict = data[name].get('parmDict')
-            badVary = data[name].get('badVary',[])
             constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
             groups,parmlist,constrDict,fixedList,ihst = constraintInfo
             varyList = data[name]['varyList']
@@ -3970,7 +3960,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = G2G.Table(
-        [list(c) for c in zip(*colList)],     # convert from columns to rows
+        [list(cl) for cl in zip(*colList)],     # convert from columns to rows
         colLabels=colLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     #G2frame.dataDisplay.EnableEditing(False)
@@ -4019,8 +4009,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             ]
         inp[2] = (inp[1] - inp[0])/(len(data[1][0])-1.)
         names = ('start angle', 'end angle', 'step size')
-        dictlst = [inp] * len(inp)
-        elemlst = range(len(inp))
         dlg = G2G.ScrolledMultiEditor(
             G2frame,[inp] * len(inp), range(len(inp)), names,
             header='Edit simulation range',
@@ -4115,8 +4103,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             return
         Comments.append(" Transformation M*H = H' applied; M=")
         Comments.append(str(Trans))
-        SG = 'P '+Laue
-        SGData = G2spc.SpcGroup(SG)[1]
         refList = G2lat.LaueUnique(Laue,refList)
         dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -4196,8 +4182,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         data[0]['wtFactor'] = val
         wtval.SetValue('%.3f'%(val))
         
-    def OnCompression(event):
-        data[0] = int(comp.GetValue())
+#    def OnCompression(event):
+#        data[0] = int(comp.GetValue())
         
     def onCopyPlotCtrls(event):
         '''Respond to menu item to copy multiple sections from a histogram.
@@ -4330,9 +4316,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
         if page >= 0:
             tab = G2frame.G2plotNB.nb.GetPageText(page)
         if '3D' in tab:
-            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
-            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
-            Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
             Page = G2frame.G2plotNB.nb.GetPage(page)
             controls = Page.controls
             G2plt.Plot3DSngl(G2frame,newPlot=False,Data=controls,hklRef=refList,Title=phaseName)
@@ -4470,7 +4453,6 @@ def MovePatternTreeToGrid(G2frame,item):
         elif G2frame.PatternTree.GetItemText(item) == 'Restraints':
             data = G2frame.PatternTree.GetItemPyData(item)
             Phases = G2frame.GetPhaseData()
-            phase = ''
             phaseName = ''
             if Phases:
                 phaseName = Phases.keys()[0]

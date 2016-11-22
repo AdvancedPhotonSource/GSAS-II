@@ -23,9 +23,7 @@ Default expressions are read from file DefaultExpressions.txt using
 
 '''
 import re
-import sys
 import wx
-import os.path
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
@@ -399,7 +397,7 @@ class ExpressionDialog(wx.Dialog):
                 val = self.varValue.get(v)
                 try:
                     float(val)
-                except ValueError,TypeError:
+                except (ValueError,TypeError):
                     invalid += 1
                     if msg: msg += "; "
                     if val is None:
@@ -952,8 +950,6 @@ if __name__ == "__main__":
                            fit=True)
     newobj = dlg.Show(True)
     print dlg.GetDepVar()
-    import sys
-    #sys.exit()
 
     #app.MainLoop()
 

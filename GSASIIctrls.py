@@ -34,6 +34,7 @@ import webbrowser     # could postpone this for quicker startup
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
+import GSASIIgrid as G2gd
 # import GSASIImath as G2mth
 # import GSASIIIO as G2IO
 # import GSASIIstrIO as G2stIO
@@ -680,7 +681,7 @@ class NumberValidator(wx.PyValidator):
                 return
         try:
             val = self.typ(tc.GetValue())
-        except (ValueError, SyntaxError) as e:
+        except (ValueError, SyntaxError):
             if self.typ is float: # for float values, see if an expression can be evaluated
                 val = G2py3.FormulaEval(tc.GetValue())
                 if val is None:
@@ -1620,15 +1621,15 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
         refdictlst = [unkey(array,refkeys[:-1])]
     else:
         refdictlst = None
-    Id = GetPatternTreeItemId(G2frame,G2frame.root,hst)
-    hstData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hst)
+    hstData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
     for h in copyList:
-        Id = GetPatternTreeItemId(G2frame,G2frame.root,h)
-        instData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,h)
+        instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
         if len(hstData) != len(instData) or hstData['Type'][0] != instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
             print h+' not copied - instrument parameters not commensurate'
             continue
-        hData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,TreeItemType))
+        hData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,TreeItemType))
         if TreeItemType == 'Instrument Parameters':
             hData = hData[0]
         #copy the value if it is changed or we will not edit in a table
@@ -2470,7 +2471,7 @@ def GetItemOrder(parent,keylist,vallookup,posdict):
     sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 5)
     dlg.SetSizer(sizer)
     sizer.Fit(dlg)
-    val = dlg.ShowModal()
+    dlg.ShowModal()
 
 ################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
@@ -2952,7 +2953,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
         self._tc.SetValue(self.startValue)
         self._tc.SetInsertionPointEnd()
 
-    def Clone(self):
+    def Clone(self,grid):
         return GridFractionEditor(grid)
 
     def StartingKey(self, evt):
@@ -3818,7 +3819,7 @@ htmlFirstUse = True
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
 def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
-    global htmlFirstUse
+    global htmlFirstUse,htmlPanel,htmlFrame
     # look up a definition for help info from dict
     #helplink = helpLocDict.get(helpType)
     #if helplink is None:
@@ -3860,7 +3861,7 @@ def ShowHelp(helpType,frame):
 def ShowWebPage(URL,frame):
     '''Called to show a tutorial web page.
     '''
-    global htmlFirstUse
+    global htmlFirstUse,htmlPanel,htmlFrame
     # determine if a web browser or the internal viewer should be used for help info
     if GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')
@@ -4149,7 +4150,6 @@ class OpenTutorial(wx.Dialog):
                 print('Updating '+i[0])
                 GSASIIpath.svnUpdateDir(os.path.join(self.tutorialPath,i[0]))
             else:
-                fullpath = os.path.join(self.tutorialPath,i[0],i[1])
                 fulldir = os.path.join(self.tutorialPath,i[0])
                 URL = G2BaseURL+'/Tutorials/'+i[0]+'/'
                 if not GSASIIpath.svnInstallDir(URL,fulldir):
@@ -4211,7 +4211,7 @@ if __name__ == '__main__':
     else:
         print "Cancel"
     dlg.Destroy()
-    import sys; sys.exit()
+    sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================

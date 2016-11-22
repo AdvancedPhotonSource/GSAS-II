@@ -375,11 +375,11 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
     
-def TransformAtoms(Atoms,cx,cia,Trans,Vec):
-    for Atom in Atoms:
-        XYZ = Atom[cx:cx+3]
-        if 'A' in Atom[cia]:
-            U6 = Atom[cia+2:cia+8]
+#def TransformAtoms(Atoms,cx,cia,Trans,Vec):
+#    for Atom in Atoms:
+#        XYZ = Atom[cx:cx+3]
+#        if 'A' in Atom[cia]:
+#            U6 = Atom[cia+2:cia+8]
     
 
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
@@ -563,18 +563,18 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             return [Hpos[imax],],[HU,]
     return [],[]
         
-def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
-    '''default doc string
-    
-    :param type name: description
-    
-    :returns: type name: description
-    
-    '''
-    for atom in atomData:
-        XYZ = np.inner(Amat,atom[cx:cx+3])
-        if atom[cia] == 'A':
-            UIJ = atom[cia+2:cia+8]
+#def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
+#    '''default doc string
+#    
+#    :param type name: description
+#    
+#    :returns: type name: description
+#    
+#    '''
+#    for atom in atomData:
+#        XYZ = np.inner(Amat,atom[cx:cx+3])
+#        if atom[cia] == 'A':
+#            UIJ = atom[cia+2:cia+8]
                 
 def TLS2Uij(xyz,g,Amat,rbObj):    #not used anywhere, but could be?
     '''default doc string
@@ -1158,7 +1158,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
             CtauX[iatm] = np.ones_like(Bx)[iatm,:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
 #    GSASIIpath.IPyBreak()
     if nWaves[0]:
-        tauF = np.arange(1.,nWaves[0]+1-nf)[:,nxs]*glTau  #Fwaves x ngl
+        tauF = np.arange(1.,nWaves[0]+1)[:,nxs]*glTau  #Fwaves x ngl
         StauF = np.ones_like(Af)[:,:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
         CtauF = np.ones_like(Bf)[:,:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmod/dBf
     else:
@@ -2897,10 +2897,8 @@ def ChargeFlip(data,reflDict,pgbar):
                 b = sind(ph+dp)
                 phasep = complex(a,b)
                 phasem = complex(a,-b)
-                h,k,l = hkl+Hmax
-                Ehkl[h,k,l] = E*phasep
-                h,k,l = -hkl+Hmax       #Friedel pair refl.
-                Ehkl[h,k,l] = E*phasem
+                Ehkl[hkl+Hmax] = E*phasep
+                Ehkl[-hkl+Hmax] = E*phasem
 #    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
     testHKL = np.array(flipData['testHKL'])+Hmax
     CEhkl = copy.copy(Ehkl)
@@ -3514,7 +3512,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         for x in ['U','V','W','X','Y']:
             ins[x] = Parms[x][ind]
         if ifQ:                              #qplot - convert back to 2-theta
-            pos = 2.0*asind(pos*wave/(4*math.pi))
+            pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
         sig = getCWsig(ins,pos)
         gam = getCWgam(ins,pos)           
         XY = [pos,0, mag,1, sig,0, gam,0]       #default refine intensity 1st
@@ -4343,7 +4341,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
         lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
         ranRange=MCSA.get('ranRange',0.10),autoRan=MCSA.get('autoRan',False),dlg=pgbar)
-    M = mcsaCalc(results[0],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
+    mcsaCalc(results[0],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
 #    for ref in refs.T:
 #        print ' %4d %4d %4d %10.3f %10.3f %10.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[4],ref[5],ref[6])
 #    print np.sqrt((np.sum(refs[6]**2)/np.sum(refs[4]**2)))

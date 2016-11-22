@@ -601,7 +601,7 @@ def GetRigaku(filename,imageOnly=False):
     File = open(filename,'rb')
     fileSize = os.stat(filename).st_size
     Npix = (fileSize-6000)/2
-    Head = File.read(6000)
+    File.read(6000)
     head = ['Rigaku R-Axis IV detector data',]
     image = np.array(ar.array('H',File.read(fileSize-6000)),dtype=np.int32)
     print fileSize,image.shape
@@ -2497,7 +2497,6 @@ def ReadDIFFaX(DIFFaXfile):
     Stack = []
     trans = False
     Trans = []
-    instr = False
     for diff in lines:
         diff = diff[:-1].lower()
         if '!'  in diff:
@@ -2512,10 +2511,8 @@ def ReadDIFFaX(DIFFaXfile):
         if not diff:
             continue
         if diff.strip() == 'instrumental':
-            instr = True
             continue
         if diff.strip() == 'structural':
-            instr = False
             struct = True
             continue
         elif diff.strip() == 'stacking':

@@ -20,8 +20,6 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
-import numpy.fft as fft
-import scipy.signal as signal
 import polymask as pm
 from scipy.optimize import leastsq
 import copy
@@ -31,7 +29,6 @@ import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
-import fellipse as fel
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -90,7 +87,7 @@ def FitEllipse(xy):
     def ellipse_center(p):
         ''' gives ellipse center coordinates
         '''
-        b,c,d,f,g,a = p[1]/2, p[2], p[3]/2, p[4]/2, p[5], p[0]
+        b,c,d,f,a = p[1]/2, p[2], p[3]/2, p[4]/2, p[0]
         num = b*b-a*c
         x0=(c*d-b*f)/num
         y0=(a*f-b*d)/num
@@ -100,7 +97,7 @@ def FitEllipse(xy):
         ''' gives rotation of ellipse major axis from x-axis
         range will be -90 to 90 deg
         '''
-        b,c,d,f,g,a = p[1]/2, p[2], p[3]/2, p[4]/2, p[5], p[0]
+        b,c,a = p[1]/2, p[2], p[0]
         return 0.5*npatand(2*b/(a-c))
     
     def ellipse_axis_length( p ):
@@ -169,13 +166,11 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         tth = 2.0*npasind(parms['wave']/(2.*dsp))
         phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
         dxy = peneCorr(tth,parms['dep'],parms['tilt'],phi0)
-        ttth = nptand(tth)
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])        
         tbm = nptand((tth-parms['tilt'])/2.)
         tbp = nptand((tth+parms['tilt'])/2.)
-        sinb = npsind(parms['tilt'])
         d = parms['dist']+dxy
         fplus = d*tanb*stth/(cosb+stth)
         fminus = d*tanb*stth/(cosb-stth)
@@ -276,9 +271,7 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     
     '''
     radii = [0,0]
-    ttth = tand(tth)
     stth = sind(tth)
-    ctth = cosd(tth)
     cosb = cosd(tilt)
     tanb = tand(tilt)
     tbm = tand((tth-tilt)/2.)
@@ -331,9 +324,7 @@ def GetDetectorXY(dsp,azm,data):
     dist = data['distance']
     cent = data['center']
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
-    ttth = tand(tth)
     stth = sind(tth)
-    ctth = cosd(tth)
     cosb = cosd(tilt)
     if radii[0] > 0.:
         sinb = sind(tilt)
@@ -679,7 +670,6 @@ def ImageCalibrate(G2frame,data):
         data['wavelength'] = wave =  2.0*dsp*sind(tth/2.0)
     Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
     ttth = nptand(tth)
-    stth = npsind(tth)
     ctth = npcosd(tth)
 #1st estimate of tilt; assume ellipse - don't know sign though
     if varyDict['tilt']:
@@ -878,7 +868,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    azmOff = data['azmthOff']
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     if '2-theta' in data.get('binType','2-theta'):
         lutth = LUtth                
@@ -892,7 +881,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
-    imageN = len(image)
     Nx,Ny = data['size']
     nXBlks = (Nx-1)/blkSize+1
     nYBlks = (Ny-1)/blkSize+1

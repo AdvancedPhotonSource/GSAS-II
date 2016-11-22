@@ -316,7 +316,6 @@ def FillUnitCell(Phase):
     cm = 0
     if Phase['General']['Type'] == 'magnetic':
         cm = cx+4
-    unit = np.zeros(3)
     for iat,atom in enumerate(Atoms):
         XYZ = np.array(atom[cx:cx+3])
         xyz = XYZ%1.
@@ -930,7 +929,6 @@ def GenHBravais(dmin,Bravais,A):
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
             
     """
-    import math
     if Bravais in [9,11]:
         Cent = 'C'
     elif Bravais in [1,5,8]:
@@ -1227,19 +1225,13 @@ def LaueUnique(Laue,HKLF):
     matd3 = np.array([[0,1,0],[0,0,1],[1,0,0]])     #hkl -> k,l,h
     matd3q = np.array([[0,0,-1],[-1,0,0],[0,1,0]])  #hkl -> -l,-h,k
     matd3t = np.array([[0,0,-1],[1,0,0],[0,-1,0]])  #hkl -> -l,h,-k
-    matd3p = np.array([[0,1,0],[0,0,-1],[-1,0,0]])  #hkl -> k,-l,-h
     mat6 = np.array([[1,1,0],[-1,0,0],[0,0,1]])     #hkl -> h+k,-h,l really 65
     matdm = np.array([[0,1,0],[1,0,0],[0,0,1]])     #hkl -> k,h,l
-    matdmt = np.array([[0,-1,0],[-1,0,0],[0,0,1]])    #hkl -> -k,-h,l
     matdmp = np.array([[-1,-1,0],[0,1,0],[0,0,1]])  #hkl -> -h-k,k,l
-    matdmq = np.array([[-1,0,0],[1,1,0],[0,0,1]])   #hkl -> -h,h+k,l
     matkm = np.array([[-1,0,0],[1,1,0],[0,0,1]])    #hkl -> -h,h+k,l
-    matkmp = np.array([[1,0,0],[-1,-1,0],[0,0,1]])  #hkl -> h,-h-k,l
     matd2 = np.array([[0,1,0],[1,0,0],[0,0,-1]])    #hkl -> k,h,-l
-    matd2p = np.array([[-1,-1,0],[0,1,0],[0,0,-1]]) #hkl -> -h-k,k,-l
     matdm3 = np.array([[1,0,0],[0,0,1],[0,1,0]])    #hkl -> h,l,k
     mat2d43 = np.array([[0,1,0],[1,0,0],[0,0,1]])   #hkl -> k,-h,l
-    math2 = np.array([[0,-1,0],[-1,0,0],[0,0,-1]])  #hkl -> -k,-h,-l
     matk2 = np.array([[-1,0,0],[1,1,0],[0,0,-1]])   #hkl -> -h,-i,-l
     #triclinic
     if Laue == '1': #ok
@@ -2230,8 +2222,6 @@ def test8():
     for key in sgtbxlattinp.sgtbx8:
         spdict = spc.SpcGroup(key)[1]
         cell = sgtbxlattinp.sgtbx8[key][0]
-        center = spdict['SGLatt']
-        Laue = spdict['SGLaue']
         Axis = spdict['SGUniq']
         system = spdict['SGSys']
 

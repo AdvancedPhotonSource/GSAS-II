@@ -133,6 +133,7 @@ def GetTifData(filename):
             Value = st.unpack(byteOrd+'i',File.read(4))
         elif Type == 3:
             Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+            st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
         elif Type == 4:
             if Tag in [273,279]:
                 nSlice = nVal

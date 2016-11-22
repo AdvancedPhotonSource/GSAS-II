@@ -12,15 +12,11 @@
 # $Id$
 ########### SVN repository information ###################
 import sys
-import os
 import os.path as ospath
 import time
 import math
 import copy
-import random
-import cPickle
 import numpy as np
-import numpy.ma as ma
 import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
@@ -107,7 +103,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
-        except TypeError,FloatingPointError:          #result[1] is None on singular matrix
+        except TypeError:          #result[1] is None on singular matrix
             IfOK = False
             if not len(varyList):
                 covMatrix = []
@@ -315,7 +311,6 @@ def SeqRefine(GPXfile,dlg):
                 item = ':'.join(items)
                 saveVaryList[i] = item
             SeqResult['varyList'] = saveVaryList
-        origvaryList = varyList[:]
         parmDict = {}
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
@@ -492,10 +487,6 @@ def RetDistAngle(DisAglCtls,DisAglData):
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
         pfx = str(DisAglData['pId'])+'::'
-        A = G2lat.cell2A(Cell[:6])
-        cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
-        names = [' a = ',' b = ',' c = ',' alpha = ',' beta = ',' gamma = ',' Volume = ']
-        valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
         
     Factor = DisAglCtls['Factors']
     Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
@@ -578,7 +569,6 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
        Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
     :param file out: file object for output. Defaults to sys.stdout.    
     '''
-    import numpy.ma as ma
     def MyPrint(s):
         out.write(s+'\n')
         # print(s,file=out) # use in Python 3
@@ -607,8 +597,6 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
     covData = {}
     if 'covData' in DisAglData:   
         covData = DisAglData['covData']
-        covMatrix = covData['covMatrix']
-        varyList = covData['varyList']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])
         cellSig = G2stIO.getCellEsd(pfx,SGData,A,covData)
@@ -625,7 +613,6 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
 
     AtomLabels,DistArray,AngArray = RetDistAngle(DisAglCtls,DisAglData)
     origAtoms = DisAglData['OrigAtoms']
-    targAtoms = DisAglData['TargAtoms']
     for Oatom in origAtoms:
         i = Oatom[0]
         Dist = DistArray[i]
@@ -672,8 +659,6 @@ def DisAglTor(DATData):
     pfx = ''
     if 'covData' in DATData:   
         covData = DATData['covData']
-        covMatrix = covData['covMatrix']
-        varyList = covData['varyList']
         pfx = str(DATData['pId'])+'::'
     Datoms = []
     Oatoms = []
@@ -751,7 +736,6 @@ def main():
         if not ospath.exists(GPXfile):
             print 'ERROR - ',GPXfile," doesn't exist!"
             exit()
-        GPXpath = ospath.dirname(arg[1])
         Refine(GPXfile,None)
     else:
         print 'ERROR - missing filename'

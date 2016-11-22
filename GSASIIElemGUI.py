@@ -58,7 +58,6 @@ class PickElement(wx.Dialog):
         
     def ElButton(self, name, pos, tip, color):
         'Creates an element button widget'
-        Black = wx.Colour(0,0,0)
         if not self.ifNone and name[0] == 'None':
             return
         if self.oneOnly:

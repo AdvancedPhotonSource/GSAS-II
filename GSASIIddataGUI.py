@@ -21,12 +21,8 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIIElemGUI as G2elemGUI
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
-import GSASIIIO as G2IO
-import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
 import GSASIIctrls as G2G
@@ -292,7 +288,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         
     def OnHstrainVal(event):
         event.Skip()
-        Snames = G2spc.HStrainNames(SGData)
         Obj = event.GetEventObject()
         hist,pid = Indx[Obj.GetId()]
         try:
@@ -986,10 +981,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Size'][3] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-                        
-        try:
-            histData = UseList[G2frame.hist]
-        except KeyError:
+
+        if G2frame.hist not in UseList:                
             G2frame.ErrorDialog('Missing data error',
                     G2frame.hist+' not in GSAS-II data tree')
             return

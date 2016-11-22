@@ -19,7 +19,6 @@ import os
 import subprocess as subp
 
 import numpy as np
-import scipy as sp
 import numpy.linalg as nl
 import numpy.ma as ma
 import random as rand
@@ -33,8 +32,6 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
-import GSASIIgrid as G2gd
-import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import pypowder as pyd
 try:
@@ -179,7 +176,6 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         return Trns/100.
         
     Sth2 = npsind(Tth/2.0)**2
-    Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
         if 'array' in str(type(MuR)):
             MuRSTh2 = np.concatenate((MuR,Sth2))
@@ -307,7 +303,6 @@ def CalcPDF(data,inst,limits,xydata):
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
     #Apply angle dependent corrections
     Tth = xydata['IofQ'][1][0]
-    dt = (Tth[1]-Tth[0])
     MuR = Abs*data['Diam']/20.0
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)
     if 'X' in inst['Type'][0]:
@@ -317,9 +312,7 @@ def CalcPDF(data,inst,limits,xydata):
     XY = xydata['IofQ'][1]    
     #convert to Q
     if 'C' in inst['Type'][0]:
-        hc = 12.397639
         wave = G2mth.getWave(inst)
-        keV = hc/wave
         minQ = npT2q(Tth[0],wave)
         maxQ = npT2q(Tth[-1],wave)    
         Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
@@ -558,7 +551,6 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     for constant wavelength data. 10 FWHM are used on both sides each 
     extended by exponential coeff.
     '''
-    lnf = 3.3      # =log(0.001/2)
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
     fmin = 10.*fwhm*(1.+1./alp)    
@@ -886,7 +878,6 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
-    sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
 
 def getPsVoigt(pos,sig,gam,xdata):
@@ -900,7 +891,6 @@ def getdPsVoigt(pos,sig,gam,xdata):
     'needs a doc string'
     
     Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
-    sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg
 
 def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
@@ -912,7 +902,6 @@ def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
 def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
     'needs a doc string'
     Df,dFdp,dFda,dFdb,dFds,dFdg = pyd.pydepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)
-    sumDf = np.sum(Df)
     return Df,dFdp,dFda,dFdb,dFds,dFdg   
 
 def ellipseSize(H,Sij,GB):
@@ -1687,10 +1676,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         
     if controls:
         Ftol = controls['min dM/M']
-        derivType = controls['deriv type']
     else:
         Ftol = 0.0001
-        derivType = 'analytic'
     if oneCycle:
         Ftol = 1.0
     x,y,w,yc,yb,yd = data               #these are numpy arrays!
@@ -1824,7 +1811,6 @@ def GetStackParms(Layers):
     
     Parms = []
 #cell parms
-    cell = Layers['Cell'] 
     if Layers['Laue'] in ['-3','-3m','4/m','4/mmm','6/m','6/mmm']:
         Parms.append('cellA')
         Parms.append('cellC')
@@ -1835,7 +1821,6 @@ def GetStackParms(Layers):
         if Layers['Laue'] != 'mmm':
             Parms.append('cellG')
 #Transition parms
-    Trans = Layers['Transitions']
     for iY in range(len(Layers['Layers'])):
         for iX in range(len(Layers['Layers'])):
             Parms.append('TransP;%d;%d'%(iY,iX))
@@ -2043,10 +2028,6 @@ def SetStackingSF(Layers,debug):
         aTypes.append('%4s'%(atype.ljust(4)))
     SFdat = []
     for atType in atTypes:
-        if atType == 'H': 
-            blen = -.3741
-        else:
-            blen = Layers['AtInfo'][atType]['Isotopes']['Nat. Abund.']['SL'][0]
         Adat = atmdata.XrayFF[atType]
         SF = np.zeros(9)
         SF[:8:2] = Adat['fa']
@@ -2205,7 +2186,6 @@ def CalcStackingSADP(Layers,debug):
 # Transitions
     SetStackingTrans(Layers,Nlayers)
 # result as Sadp
-    mirror = laueId in [-1,2,3,7,8,9,10]
     Nspec = 20001       
     spec = np.zeros(Nspec,dtype='double')    
     time0 = time.time()
@@ -2236,7 +2216,6 @@ NeedTestData = True
 def TestData():
     'needs a doc string'
 #    global NeedTestData
-    NeedTestData = False
     global bakType
     bakType = 'chebyschev'
     global xdata
@@ -2274,7 +2253,6 @@ def TestData():
 
 def test0():
     if NeedTestData: TestData()
-    msg = 'test '
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
     gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata)[0])   
     gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
@@ -2286,7 +2264,7 @@ def test1():
     if NeedTestData: TestData()
     time0 = time.time()
     for i in range(100):
-        y = getPeakProfile(parmDict1,xdata,varyList,bakType)
+        getPeakProfile(parmDict1,xdata,varyList,bakType)
     print '100+6*Ka1-2 peaks=1200 peaks',time.time()-time0
     
 def test2(name,delt):

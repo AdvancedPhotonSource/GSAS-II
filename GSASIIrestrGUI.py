@@ -16,7 +16,6 @@ Used to define restraints.
 '''
 import wx
 import wx.grid as wg
-import time
 import numpy as np
 import numpy.ma as ma
 import os.path
@@ -128,8 +127,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     print head
                     print '**** ERROR - wrong restraint macro file selected, try again ****'
                     macro = []
-            else: # cancel was pressed
-                macxro = []
         finally:
             dlg.Destroy()
         return macro        #advanced past 1st line
@@ -279,7 +276,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         UpdateBondRestr(bondRestData)                
 
     def AddAABondRestraint(bondRestData):
-        Radii = dict(zip(General['AtomTypes'],General['BondRadii']))
         macro = getMacroFile('bond')
         if not macro:
             return
@@ -388,7 +384,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     if vecta[3] in Lists['A-atom']:
                         ids = [vecta[4],vecta[0],vectb[4]]
                         ops = [vecta[5],vecta[1],vectb[5]]
-                        XYZ = np.array([vecta[6],vecta[2],vectb[6]])
                         angle = [ids,ops,value,1.0]
                         if angle not in angleRestData['Angles']:
                             angleRestData['Angles'].append(angle)
@@ -550,7 +545,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
     def makeChains(Names,Ids):
         Chains = {}
-        chain = ''
         atoms = zip(Names,Ids)
         for name,id in atoms:
             items = name.split()
@@ -836,7 +830,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = bondRestData['Bonds'][r][c]
             try:
                 new = float(bondTable.GetValue(r,c))
                 if new <= 0.:
@@ -888,7 +881,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #BondRestr.DestroyChildren()
         if BondRestr.GetSizer():
             BondRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(BondRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(BondRestr,bondRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -968,7 +960,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = angleRestData['Angles'][r][c]
             try:
                 new = float(angleTable.GetValue(r,c))
                 if new <= 0. or new > 180.:
@@ -1019,7 +1010,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #AngleRestr.DestroyChildren()
         if AngleRestr.GetSizer():
             AngleRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(AngleRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(AngleRestr,angleRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1104,7 +1094,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = planeRestData['Planes'][r][c]
             try:
                 new = float(planeTable.GetValue(r,c))
                 if new <= 0.:
@@ -1141,7 +1130,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #PlaneRestr.DestroyChildren()
         if PlaneRestr.GetSizer():
             PlaneRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(PlaneRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1226,7 +1214,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = chiralRestData['Volumes'][r][c]
             try:
                 new = float(volumeTable.GetValue(r,c))
                 if new <= 0.:
@@ -1277,7 +1264,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #ChiralRestr.DestroyChildren()
         if ChiralRestr.GetSizer():
             ChiralRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(ChiralRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1357,7 +1343,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = torsionRestData['Torsions'][r][c]
             try:
                 new = float(torsionTable.GetValue(r,c))
                 if new <= 0. or new > 5.:
@@ -1368,7 +1353,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Torsions)
+            rows = GetSelectedRows(TorsionRestr.Torsions)
             if not rows:
                 return
             rows.sort()
@@ -1378,10 +1363,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnChangeEsd(event):
-            rows = GetSelectedRows(Torsions)
+            rows = GetSelectedRows(TorsionRestr.Torsions)
             if not rows:
                 return
-            Torsions.ClearSelection()
+            TorsionRestr.Torsions.ClearSelection()
             val = torsionList[rows[0]][4]
             dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for torsion restraints',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
@@ -1394,7 +1379,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #TorsionRestr.DestroyChildren()
         if TorsionRestr.GetSizer():
             TorsionRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(TorsionRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1478,7 +1462,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
         def OnCellChange(event):
             r,c =  event.GetRow(),event.GetCol()
-            val = ramaRestData['Ramas'][r][c]
             try:
                 new = float(ramaTable.GetValue(r,c))
                 if new <= 0. or new > 5.:
@@ -1489,7 +1472,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateRamaRestr,ramaRestData)                
             
         def OnDeleteRestraint(event):
-            rows = GetSelectedRows(Ramas)
+            rows = GetSelectedRows(RamaRestr.Ramas)
             if not rows:
                 return
             rows.sort()
@@ -1499,10 +1482,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateRamaRestr(ramaRestData)                
             
         def OnChangeEsd(event):
-            rows = GetSelectedRows(Ramas)
+            rows = GetSelectedRows(RamaRestr.Ramas)
             if not rows:
                 return
-            Ramas.ClearSelection()
+            RamaRestr.Ramas.ClearSelection()
             val = ramaList[rows[0]][4]
             dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
@@ -1515,7 +1498,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #RamaRestr.DestroyChildren()
         if RamaRestr.GetSizer():
             RamaRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(RamaRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(RamaRestr,ramaRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1653,7 +1635,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #ChemCompRestr.DestroyChildren()
         if ChemCompRestr.GetSizer():
             ChemCompRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(ChemCompRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1744,12 +1725,11 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             
         def OnCellChange(event):
             r,c = event.GetRow(),event.GetCol()
-            val = textureRestData['HKLs'][r][c]
             try:
                 if c == 1:  #grid size
                     new = int(textureTable.GetValue(r,c))
                     if new < 6 or new > 24:
-                        raise valueError
+                        raise ValueError
                 elif c in [2,4]:   #esds
                     new = float(textureTable.GetValue(r,c))
                     if new < -1. or new > 2.:
@@ -1764,7 +1744,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         #TextureRestr.DestroyChildren()
         if TextureRestr.GetSizer():
             TextureRestr.GetSizer().Clear(True)
-        dataDisplay = wx.Panel(TextureRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         mainSizer.Add(WtBox(TextureRestr,textureRestData),0,wx.ALIGN_CENTER_VERTICAL)
@@ -1774,7 +1753,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         mainSizer.Add((5,5),0)
 
         textureList = textureRestData['HKLs']
-        textureData = General['SH Texture']
         if len(textureList):
             table = []
             rowLabels = []

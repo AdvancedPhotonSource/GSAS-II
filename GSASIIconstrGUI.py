@@ -17,8 +17,6 @@ Used to define constraints and rigid bodies.
 import sys
 import wx
 import wx.grid as wg
-import wx.lib.scrolledpanel as wxscroll
-import time
 import random as ran
 import numpy as np
 import numpy.ma as ma
@@ -1087,7 +1085,7 @@ def UpdateConstraints(G2frame,data):
             page = event.GetSelection()
         else: # called directly, get current page
             page = G2frame.dataDisplay.GetSelection()
-        oldPage = G2frame.dataDisplay.ChangeSelection(page)
+        G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,False)
 #        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,False)
@@ -1209,17 +1207,12 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     
     opId = oldPhase['pId']
     npId = newPhase['pId']
-    oph = '%d::'%(opId)
-    nph = '%d::'%(npId)
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
     nAtoms = newPhase['Atoms']
-    oAtoms = oldPhase['Atoms']
     oSGData = oldPhase['General']['SGData']
     nSGData = newPhase['General']['SGData']
     oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
-    oGmat = G2lat.cell2Gmat(oldPhase['General']['Cell'][1:7])[1]
-    nGmat = G2lat.cell2Gmat(newPhase['General']['Cell'][1:7])[1]
     item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
     constraints = G2frame.PatternTree.GetItemPyData(item)
 #    GSASIIpath.IPyBreak()
@@ -1330,7 +1323,7 @@ def UpdateRigidBodies(G2frame,data):
             page = event.GetSelection()
         else:
             page = G2frame.dataDisplay.GetSelection()
-        oldPage = G2frame.dataDisplay.ChangeSelection(page)
+        G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Vector rigid bodies':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.VectorBodyMenu)
@@ -1366,7 +1359,6 @@ def UpdateRigidBodies(G2frame,data):
         return macro        #advanced past 1st line
         
     def getTextFile():
-        defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
             "Sybyl mol2 file (*.mol2)|*.mol2|PDB file (*.pdb;*.ent)|*.pdb;*.ent",
@@ -1881,7 +1873,7 @@ def UpdateRigidBodies(G2frame,data):
                 if r >= 0 and (0 <= c < 3):
                     try:
                         val = float(vecGrid.GetCellValue(r,c))
-                        rbData['rbVect'][imag][r][c] = val
+                        rbData['rbXYZ'][r][c] = val
                     except ValueError:
                         pass
                         

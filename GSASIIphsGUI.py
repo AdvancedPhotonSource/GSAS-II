@@ -4520,7 +4520,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
-            MagMom = SGData.get('MagMom',[])
+#            MagMom = SGData.get('MagMom',[])
             wx.BeginBusyCursor()
             try:
                 for ind in indx:

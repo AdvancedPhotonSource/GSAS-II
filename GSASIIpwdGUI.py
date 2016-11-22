@@ -23,7 +23,6 @@ import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import numpy.ma as ma
 import math
-import time
 import copy
 import random as ran
 import cPickle
@@ -556,6 +555,8 @@ def UpdatePeakGrid(G2frame, data):
         FitPgm = 'LSQ'
         prevVaryList = []
         Names = []
+        peaks = None
+        varyList = None
         if Reverse:
             names.reverse()
         try:
@@ -1237,7 +1238,7 @@ def UpdateBackground(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.BackMenu)
     G2frame.dataFrame.SetLabel('Background')
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
@@ -1433,7 +1434,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
     G2frame.dataFrame.SetLabel('Limits')
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)
     Draw() 
@@ -1923,9 +1924,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add((5,5),0)
                         continue
                     nDig = (10,3)
-                    fmt = '%10.3f'
                     if 'beta' in item:
-                        fmt = '%12.6g'
                         nDig = (12,6)
                     instSizer.Add(
                             wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
@@ -2043,11 +2042,6 @@ def UpdateInstrumentGrid(G2frame,data):
         'CoKa':1.7902,'MoKa':0.7107,'AgKa':0.5608}
     Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]        
-    try:
-        histoName = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[-1]
-        ifHisto = IsHistogramInAnyPhase(G2frame,histoName)
-    except TypeError:       #PKS data never used in a phase as data
-        ifhisto = False
     G2gd.SetDataMenuBar(G2frame)
     #patch
     if 'P' in insVal['Type']:                   #powder data
@@ -2418,7 +2412,7 @@ def UpdateSampleGrid(G2frame,data):
     if 'SASD' in histName:
         G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
+        G2frame.dataFrame.CreateStatusBar()    
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     Controls = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -2642,7 +2636,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     if 'PWD' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndPeaksMenu)
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
@@ -3533,7 +3527,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 return None
             General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
             Super = General.get('Super',0)
-            SuperVec = General.get('SuperVec',[])
         else:
             Super = 0
         rowLabels = []
@@ -3987,7 +3980,7 @@ def UpdateSubstanceGrid(G2frame,data):
         G2frame.dataFrame.DestroyChildren()  # is this a ScrolledWindow? If so, bad!
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SubstanceMenu)
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.SetLabel('Substances')
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
@@ -4161,6 +4154,7 @@ def UpdateModelsGrid(G2frame,data):
         wx.BeginBusyCursor()
         if Reverse:
             names.reverse()
+        JModel = None
         try:
             for i,name in enumerate(names):
                 print ' Sequential fit for ',name
@@ -4797,8 +4791,7 @@ def UpdatePDFGrid(G2frame,data):
                 value = -1.0
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            auxPlot = ComputePDF(data)
-            G2plt.PlotISFG(G2frame,newPlot=True)
+            OnComputePDF(None)
                         
         item = data[key]
         fileList = GetFileList('PWDR')
@@ -4828,8 +4821,7 @@ def UpdatePDFGrid(G2frame,data):
             Avol = (4.*math.pi/3.)*ElList[El]['Drad']**3
             sumVol += Avol*ElList[El]['FormulaNo']
         return sumVol
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)        
+        OnComputePDF(None)
         
     def FillElemSizer(elemSizer,ElData):
         
@@ -4844,8 +4836,7 @@ def UpdatePDFGrid(G2frame,data):
             data['Form Vol'] = max(10.0,SumElementVolumes())
             formVol.SetValue('%.2f'%(data['Form Vol']))
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
-            auxPlot = ComputePDF(data)
-            G2plt.PlotISFG(G2frame,newPlot=True)        
+            OnComputePDF(None)
         
         elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
@@ -4860,14 +4851,12 @@ def UpdatePDFGrid(G2frame,data):
     def OnGeometry(event):
         data['Geometry'] = geometry.GetValue()
         UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)        
+        OnComputePDF(None)
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
         UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)        
+        OnComputePDF(None)
         
     def OnFormVol(event):
         event.Skip()
@@ -4879,8 +4868,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Form Vol']
         data['Form Vol'] = value
         UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)        
+        OnComputePDF(None)
         
     def OnDiameter(event):
         event.Skip()
@@ -4892,8 +4880,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Diam']
         data['Diam'] = value
         UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
 #    def OnPolaVal(event):
 #        event.Skip()
@@ -4935,8 +4922,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['ObliqCoeff']
         data['ObliqCoeff'] = value
         obliqCoeff.SetValue('%.3f'%(value))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
     def OnBackVal(event):
         event.Skip()
@@ -4947,15 +4933,13 @@ def UpdatePDFGrid(G2frame,data):
             value = data['BackRatio']
         data['BackRatio'] = value
         backVal.SetValue('%.3f'%(value))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
     def OnBackSlider(event):
         value = int(backSldr.GetValue())/100.
         data['BackRatio'] = value
         backVal.SetValue('%.3f'%(data['BackRatio']))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
     def OnRulandWdt(event):
         event.Skip()
@@ -4969,20 +4953,17 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Ruland']
         data['Ruland'] = value
         rulandWdt.SetValue('%.3f'%(value))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
     def OnRulSlider(event):
         value = int(rulandSldr.GetValue())/1000.
         data['Ruland'] = max(0.001,value)
         rulandWdt.SetValue('%.3f'%(data['Ruland']))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)
+        OnComputePDF(None)
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)        
+        OnComputePDF(None)
                         
     def OnPacking(event):
         event.Skip()
@@ -4994,8 +4975,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Pack']
         data['Pack'] = value
         UpdatePDFGrid(G2frame,data)
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)        
+        OnComputePDF(None)
                 
     def OnSQmin(event):
         event.Skip()
@@ -5007,8 +4987,7 @@ def UpdatePDFGrid(G2frame,data):
             value = max(qLimits[0],data['QScaleLim'][0])
         data['QScaleLim'][0] = value
         SQmin.SetValue('%.1f'%(value))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)        
+        OnComputePDF(None)
         
     def OnSQmax(event):
         event.Skip()
@@ -5023,8 +5002,7 @@ def UpdatePDFGrid(G2frame,data):
             data['QScaleLim'][0] = 0.90*value
             SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         SQmax.SetValue('%.1f'%(value))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)
+        OnComputePDF(None)
         
     def OnResetQ(event):
         resetQ.SetValue(False)
@@ -5032,14 +5010,11 @@ def UpdatePDFGrid(G2frame,data):
         SQmax.SetValue('%.1f'%(data['QScaleLim'][1]))
         data['QScaleLim'][0] = 0.9*qLimits[1]
         SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)
+        OnComputePDF(None)
         
     def OnNoRing(event):
         data['noRing'] = not data['noRing']
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=True)
-                
+        OnComputePDF(None)                
 
     def GetFileList(fileType):
         fileList = []
@@ -5131,17 +5106,17 @@ def UpdatePDFGrid(G2frame,data):
         return auxPlot
         
     def OnComputePDF(event):
-        print 'Calculating PDF:'
+#        print 'Calculating PDF:'
         auxPlot = ComputePDF(data)
-        print 'Done calculating PDF:'
+#        print 'Done calculating PDF:'
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
             XY = np.array(plot[:2])
             G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
-        
-        G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
+        if event is not None:
+            G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
         G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
         
     def OnComputeAllPDF(event):
@@ -5152,7 +5127,7 @@ def UpdatePDFGrid(G2frame,data):
                 Name = G2frame.PatternTree.GetItemText(id)
                 if 'PDF' in Name.split()[0]:
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
-                    auxPlot = ComputePDF(Data)                    
+                    ComputePDF(Data)                    
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             Status.SetStatusText('All PDFs computed')
             G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')

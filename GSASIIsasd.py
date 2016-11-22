@@ -563,7 +563,6 @@ def StickyHardSpheresSF(Q,args):
     lam1 = (-1.0*qb-np.sqrt(radic))/(2.0*qa)
     lam2 = (-1.0*qb+np.sqrt(radic))/(2.0*qa)
     lam = min(lam1,lam2)
-    test = 1.0 + 2.0*eta
     mu = lam*eta*etam1
     alp = (1.0 + 2.0*eta - mu)/(etam1*etam1)
     bet = (mu - 3.0*eta)/(2.0*etam1*etam1)
@@ -938,11 +937,6 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
         if report:
             print " MaxEnt trial/max: %3d/%3d" % ((iter+1), IterMax)
             print " Residual: %5.2lf%% Entropy: %8lg" % (100*test, S)
-            if iter > 0:
-                value = 100*( math.sqrt(chisq/chtarg)-1)
-            else:
-                value = 0
-      #      print " %12.5lg %10.4lf" % ( math.sqrt(chtarg/npt), value )
             print " Function sum: %.6lg Change from last: %.2lf%%\n" % (fSum,100*fChange/fSum)
 
         # See if we have finished our task.
@@ -1056,7 +1050,6 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
         'Cylinder diam':[CylinderDFF,CylinderDVol],
         'Spherical shell': [SphericalShellFF, SphericalShellVol]}
     Shape = data['Size']['Shape'][0]
-    SlitLen = Sample.get('SlitLen',0.0)
     Parms = data['Size']['Shape'][1:]
     if data['Size']['logBins']:
         Bins = np.logspace(np.log10(data['Size']['MinDiam']),np.log10(data['Size']['MaxDiam']),
@@ -1091,7 +1084,6 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
     Ib[:] = Back[0]
     Ic[Ibeg:Ifin] += Back[0]
     print ' Final chi^2: %.3f'%(chisq)
-    Vols = shapes[Shape][1](Bins,Parms)
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
         
 ################################################################################
@@ -1268,7 +1260,6 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     if varyList:
         result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
             args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],levelTypes,parmDict,varyList))
-        ncyc = int(result[2]['nfev']/2)
         parmDict.update(zip(varyList,result[0]))
         chisq = np.sum(result[2]['fvec']**2)
         ncalc = result[2]['nfev']
@@ -1322,14 +1313,10 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
 
 #    pdb.set_trace()
     partData = sasdData['Particle']
-    matFrac = partData['Matrix']['VolFrac'] #[value,flag]        
-    Scale = Sample['Scale']     #[value,flag]
-    SlitLen = Sample.get('SlitLen',0.0)
     Back = sasdData['Back']
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
-    wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ib[:] = Back[0]
@@ -1415,34 +1402,15 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
     if 'LogNormal' in DistName:
         distFxn = 'LogNormalDist'
         cumeFxn = 'LogNormalCume'
-        pos = distDict['MinSize']
-        args = [distDict['Mean'],distDict['StdDev']]
-        step = 4.*np.sqrt(np.exp(distDict['StdDev']**2)*(np.exp(distDict['StdDev']**2)-1.))
-        mode = distDict['MinSize']+distDict['Mean']/np.exp(distDict['StdDev']**2)
-        minX = 1. #pos
-        maxX = 1.e4 #np.min([mode+nPoints*step*40,1.e5])
     elif 'Gauss' in DistName:
         distFxn = 'GaussDist'
         cumeFxn = 'GaussCume'
-        pos = distDict['Mean']
-        args = [distDict['StdDev']]
-        step = 0.02*distDict['StdDev']
-        mode = distDict['Mean']
-        minX = np.max([mode-4.*distDict['StdDev'],1.])
-        maxX = np.min([mode+4.*distDict['StdDev'],1.e5])
     elif 'LSW' in DistName:
         distFxn = 'LSWDist'
         cumeFxn = 'LSWCume'
-        pos = distDict['Mean']
-        args = []
-        minX,maxX = [0.,2.*pos]
     elif 'Schulz' in DistName:
         distFxn = 'SchulzZimmDist'
         cumeFxn = 'SchulzZimmCume'
-        pos = distDict['Mean']
-        args = [distDict['StdDev']]
-        minX = np.max([1.,pos-4.*distDict['StdDev']])
-        maxX = np.min([pos+4.*distDict['StdDev'],1.e5])
     nP = 500
     Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')
@@ -1482,7 +1450,6 @@ def test_MaxEnt_SB(report=True):
         if not os.path.exists(filename):
             raise Exception("file not found: " + filename)
         buf = [line.split() for line in open(filename, 'r').readlines()]
-        M = len(buf)
         buf = zip(*buf)         # transpose rows and columns
         q  = np.array(buf[0], dtype=np.float64)
         I  = np.array(buf[1], dtype=np.float64)

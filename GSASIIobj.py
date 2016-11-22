@@ -1876,7 +1876,7 @@ class ExpressionObj(object):
             return varlist,fxnlist
         try:
             exprast = ast.parse(expr)
-        except SyntaxError as err:
+        except SyntaxError:
             s = ''
             import traceback
             for i in traceback.format_exc().splitlines()[-3:-1]:

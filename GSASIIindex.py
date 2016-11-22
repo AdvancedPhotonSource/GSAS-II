@@ -19,7 +19,6 @@ includes cell refinement from peak positions
 import math
 import time
 import numpy as np
-import numpy.linalg as nl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -190,7 +189,6 @@ def calc_M20(peaks,HKL,ifX20=True):
     for N20,hkl in enumerate(HKL):
         if hkl[3] < d20:
             break                
-    eta = diff/Nobs20
     Q20 = 1.0/d20**2
     if diff:
         M20 = Q20/(2.0*diff)
@@ -220,7 +218,6 @@ def calc_M20SS(peaks,HKL):
     for N20,hkl in enumerate(HKL):
         if hkl[4] < d20:
             break                
-    eta = diff/Nobs20
     Q20 = 1.0/d20**2
     if diff:
         M20 = Q20/(2.0*diff)
@@ -1030,7 +1027,6 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
 NeedTestData = True
 def TestData():
     'needs a doc string'
-    array = np.array
     global NeedTestData
     NeedTestData = False
     global TestData
@@ -1098,7 +1094,6 @@ def TestData():
 #
 def test0():
     if NeedTestData: TestData()
-    msg = 'test FitHKL'
     ibrav,cell,bestcell,Pwr,peaks = TestData
     print 'best cell:',bestcell
     print 'old cell:',cell
@@ -1122,7 +1117,6 @@ def test0():
 #
 def test1():
     if NeedTestData: TestData()
-    msg = 'test FitHKL'
     ibrav,A,Pwr,peaks = TestData2
     print 'bad cell:',G2lat.A2cell(A)
     print 'FitHKL'

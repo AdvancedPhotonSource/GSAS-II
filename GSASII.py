@@ -20,7 +20,6 @@ import sys
 import math
 import copy
 import random as ran
-import time
 import glob
 import imp
 import inspect
@@ -78,8 +77,6 @@ import GSASIIctrls as G2G
 import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
-import GSASIIphsGUI as G2phsG
-import GSASIIimgGUI as G2imG
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
@@ -1531,10 +1528,10 @@ class GSASII(wx.Frame):
                 finally:
                     dlg.Destroy()
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
-            print('Read powder data '+str(HistName)+ 
-                ' from file '+str(rd.readfilename) +
+            print('Read powder data '+HistName+ 
+                ' from file '+rd.readfilename +
                 ' (format: '+ rd.formatName + 
-                '). Inst parameters from '+str(rd.instmsg))
+                '). Inst parameters from '+rd.instmsg)
             # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
             if 'T' in Iparm1['Type'][0]:
@@ -2460,7 +2457,7 @@ class GSASII(wx.Frame):
         else:
             pltNum = self.G2plotNB.nb.GetSelection()
             if pltNum >= 0:                         #to avoid the startup with no plot!
-                pltPage = self.G2plotNB.nb.GetPage(pltNum)
+                self.G2plotNB.nb.GetPage(pltNum)
             item = event.GetItem()
             G2gd.MovePatternTreeToGrid(self,item)
             if self.oldFocus:

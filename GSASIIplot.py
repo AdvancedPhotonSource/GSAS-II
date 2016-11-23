@@ -12,7 +12,6 @@
 # $Id$
 ########### SVN repository information ###################
 import math
-import time
 import sys
 import os.path
 import numpy as np

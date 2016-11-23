@@ -17,7 +17,6 @@ Routine to read in powder data from a Bruker versions 1-3 .raw file
 import sys
 import os.path as ospath
 import struct as st
-import array as ar
 import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
@@ -137,7 +136,7 @@ class raw_ReaderClass(G2IO.ImportPowderData):
                         headLen = int(st.unpack('<i',File.read(4))[0])
                         nSteps = int(st.unpack('<i',File.read(4))[0])
                         if iBlock+1 == blockNum:
-                            t = st.unpack('<d',File.read(8))[0]
+                            st.unpack('<d',File.read(8))[0]
                             start2Th = st.unpack('<d',File.read(8))[0]
                             File.seek(pos+176)
                             step = st.unpack('<d',File.read(8))[0]
@@ -182,7 +181,7 @@ class raw_ReaderClass(G2IO.ImportPowderData):
                 File.seek(pos)  #deliberate fail here - pos not known from file contents
                 self.idstring = ospath.basename(filename) + ' Scan '+str(1)
                 nSteps = int(st.unpack('<i',File.read(4))[0])
-                t = st.unpack('<d',File.read(8))[0]
+                st.unpack('<d',File.read(8))[0]
                 start2Th = st.unpack('<d',File.read(8))[0]
                 File.seek(pos+176)
                 step = st.unpack('<d',File.read(8))[0]

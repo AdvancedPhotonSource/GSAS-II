@@ -996,9 +996,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
 #    dGdM = SGData['MagMom'][nxs,:,nxs]*dGdM
     Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
 #    GSASIIpath.IPyBreak()
-    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T  #make Mag same length as Gdata
-    if SGData['SGInv']:
-        Mag = np.repeat(Mag,2,axis=0)
+    Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
     dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))

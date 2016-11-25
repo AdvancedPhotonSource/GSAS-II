@@ -22,6 +22,7 @@ squares. They should match.
 import sys
 import time
 import cPickle
+import cProfile,pstats,StringIO
 import wx
 import numpy as np
 import GSASIIpath
@@ -155,18 +156,38 @@ class testDeriv(wx.Frame):
         
         def test1():
             fplot = self.plotNB.add('function test').gca()
+            pr = cProfile.Profile()
+            pr.enable()
             M = G2stMth.errRefine(self.values,self.HistoPhases,
                 self.parmDict,self.varylist,self.calcControls,
                 self.pawleyLookup,None)
+            pr.disable()
+            s = StringIO.StringIO()
+            sortby = 'tottime'
+            ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
+            print 'Profiler of function calculation; top 50% of routines:'
+            ps.print_stats("GSASII",.5)
+            print s.getvalue()
             fplot.plot(M,'r',label='M')
             fplot.legend(loc='best')
             
-        def test2(name,delt):
+        def test2(name,delt,doProfile):
             Title = 'derivatives test for '+name
             varyList = self.varylist+self.depVarList
             hplot = self.plotNB.add(Title).gca()
+            if doProfile:
+                pr = cProfile.Profile()
+                pr.enable()
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
                 varyList,self.calcControls,self.pawleyLookup,None)
+            if doProfile:
+                pr.disable()
+                s = StringIO.StringIO()
+                sortby = 'tottime'
+                ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
+                ps.print_stats("GSASII",.5)
+                print 'Profiler of '+name+' derivative calculation; top 50% of routines:'
+                print s.getvalue()
             M2 = dMdV[varyList.index(name)]
             hplot.plot(M2,'b',label='analytic deriv')
             mmin = np.min(dMdV[varyList.index(name)])
@@ -199,10 +220,14 @@ class testDeriv(wx.Frame):
             
         while self.plotNB.nb.GetPageCount():
             self.plotNB.nb.DeletePage(0)
+            
         test1()
+
+        doProfile = True
         for use,name,delt in zip(self.use,self.varylist+self.depVarList,self.delt):
             if use:
-                test2(name,delt)
+                test2(name,delt,doProfile)
+                doProfile = False
         
         self.plotNB.Show()
         

@@ -2043,7 +2043,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
     for opr in dupDir:
-        if '-1' in siteSym and SpnFlp[len(SpnFlp)/2] < 0:
+        if '-1' in siteSym and SpnFlp[len(SpnFlp)/2-1] < 0:
             return [[0,0,0],[0.,0.,0.]]
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:

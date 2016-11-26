@@ -20,7 +20,6 @@ squares. They should match.
 '''
 
 import sys
-import time
 import cPickle
 import cProfile,pstats,StringIO
 import wx

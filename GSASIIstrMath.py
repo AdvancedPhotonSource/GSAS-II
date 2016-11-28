@@ -997,7 +997,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
 #    GSASIIpath.IPyBreak()
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
+    dGdm = (1.-Gdata**2)/Mag                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1049,16 +1049,15 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
-#        dqmx = np.sum(dqmx*SGData['SpnFlp'][nxs,nxs,nxs,:,nxs],axis=1)   #matrix * vector = vector
         dqmx = np.sum(dqmx,axis=1)   #matrix * vector = vector
-        dmx = Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
+        dmx = Q*dGdM[:,nxs,:,:]+dqmx*Mag[nxs,nxs,:,:]                                    #*Mag canceled out of dqmx term
 #        GSASIIpath.IPyBreak()
 #
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]
         fams = np.sum(np.sum(fam,axis=-1),axis=-1)                      #Mxyz,Nref
         fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)
-        famx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
+        famx = -Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*sinm[nxs,:,:,:]   #Mxyz,Nref,Nops,Natom
         fbmx = Q*TMcorr[nxs,:,nxs,:]*Mag[nxs,nxs,:,:]*cosm[nxs,:,:,:]
         #sums below are over Nops - real part
         dfadfr = np.sum(fam/occ,axis=2)        #array(Mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem deriv OK

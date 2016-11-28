@@ -241,9 +241,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['vdWRadii'] = []
         generalData['AtomMass'] = []
         generalData['Color'] = []
-        if generalData['Type'] == 'magnetic' and not 'Lande g' in generalData:
-            generalData['MagDmin'] = 1.0
-            generalData['Lande g'] = []
+        if generalData['Type'] == 'magnetic':
+            generalData['MagDmin'] = generalData.get('MagDmin',1.0)
+            landeg = generalData.get('Lande g',[])
         generalData['Mydir'] = G2frame.dirname
         badList = {}
         for iat,atom in enumerate(atomData):
@@ -279,9 +279,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['NoAtoms'][atom[ct]] = atom[cx+3]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
                 if generalData['Type'] == 'magnetic':
-                    generalData['MagDmin'] = generalData.get('MagDmin',1.0)
-                    if not atom[ct] in generalData['AtomTypes']:
-                        generalData['Lande g'].append(2.0)                        
+                    if len(landeg) < len(generalData['AtomTypes']):
+                        landeg.append(2.0)
+        if generalData['Type'] == 'magnetic':
+            generalData['Lande g'] = landeg[:len(generalData['AtomTypes'])]
+                        
         if badList:
             msg = 'Warning: element symbol(s) not found:'
             for key in badList:
@@ -677,7 +679,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ig = Indx[Obj.GetId()]
                 try:
                     val = float(Obj.GetValue())
-                    if val < 1. or val > 2.0:
+                    if val < 0.5 or val > 3.0:
                         raise ValueError
                 except ValueError:
                     val = generalData['Lande g'][ig]

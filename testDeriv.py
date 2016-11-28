@@ -7,8 +7,8 @@
 Use this to check derivatives used in structure least squares
 refinement against numerical values computed in this script.
 
-To use set ``DEBUG=True`` in GSASIIstrMain.py (line 22, as of version
-1110); run the least squares - one cycle is sufficient.  Do the "Save
+To use set ``DEBUG=True`` in GSASIIstrMain.py (line 40, as of version
+2546); run the least squares - zero cycles is sufficient.  Do the "Save
 Results"; this will write the file testDeriv.dat in the local
 directory.
 
@@ -16,7 +16,8 @@ Then run this program to see plots of derivatives for all
 parameters refined in the last least squares.  Shown will be numerical
 derivatives generated over all observations (including penalty terms)
 and the corresponding analytical ones produced in the least
-squares. They should match.
+squares. They should match. Profiling is also done for function 
+calculation & for the 1st selected derivative (rest should be the same).
 '''
 
 import sys

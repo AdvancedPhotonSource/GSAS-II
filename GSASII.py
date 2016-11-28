@@ -325,8 +325,7 @@ class GSASII(wx.Frame):
     def PreviewFile(self,filename,fp):
         'confirm we have the right file'
         rdmsg = 'File '+ filename +' begins:\n\n'
-        for i in range(3):
-            rdmsg += fp.readline()
+        rdmsg += fp.read(80)
         rdmsg += '\n\nDo you want to read this file?'
         if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
             rdmsg = 'File '+ filename +' is a binary file. Do you want to read this file?'

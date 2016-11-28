@@ -93,6 +93,7 @@ class raw_ReaderClass(G2IO.ImportPowderData):
                             File.seek(pos)                                    
                             x = np.array([start2Th+i*step for i in range(nSteps)])
                             y = np.array([max(1.,st.unpack('<f',File.read(4))[0]) for i in range(nSteps)])
+                            y = np.where(y<0.,y,1.)
                             w = 1./y
                             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                             break
@@ -133,7 +134,7 @@ class raw_ReaderClass(G2IO.ImportPowderData):
                 self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
                 if blockNum <= nBlock:
                     for iBlock in range(blockNum):
-                        headLen = int(st.unpack('<i',File.read(4))[0])
+                        headLen = int(st.unpack('<i',File.read(4))[0])+40
                         nSteps = int(st.unpack('<i',File.read(4))[0])
                         if iBlock+1 == blockNum:
                             st.unpack('<d',File.read(8))[0]

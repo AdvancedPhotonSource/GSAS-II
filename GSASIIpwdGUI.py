@@ -5117,7 +5117,9 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
+        else:
+            G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnComputeAllPDF(event):
         print 'Calculating PDFs:'

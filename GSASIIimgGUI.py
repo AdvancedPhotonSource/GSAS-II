@@ -18,9 +18,7 @@ import os
 import copy
 import glob
 import re
-import bisect
 import math
-import time
 import sys
 import wx
 import wx.lib.scrolledpanel as wxscroll
@@ -639,7 +637,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         calibSizer.SetFlexibleDirection(wx.HORIZONTAL)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
         calibSizer.Add((5,0),0)
-        cent = data['center']
         Names = ['det-X','det-Y','wave','dist','tilt','phi']
         if 'PWDR' in data['type']:
             Names.append('dep') 
@@ -1149,7 +1146,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     'Edit data',['Omega','Chi','Phi'],['%.2f','%.2f','%.2f'],Names,Items)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
+                    result = dlg.GetData()      #?? what was this for?
                     id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
                     while id:
                         name = G2frame.PatternTree.GetItemText(id)
@@ -1388,6 +1385,13 @@ def UpdateMasks(G2frame,data):
         finally:
             dlg.Destroy()
             
+    def OnAutoSpotMask(event):
+        'Do auto search for spot masks'
+        Controls = copy.deepcopy(G2frame.PatternTree.GetItemPyData( 
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Image Controls')))
+        G2img.AutoSpotMasks(G2frame.ImageZ,data,Controls)
+        event.Skip()
+            
     def OnNewSpotMask(event):
         'Start a new spot mask'
         G2frame.MaskKey = 's'
@@ -1424,13 +1428,14 @@ def UpdateMasks(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOADNOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoSpotMask, id=G2gd.wxID_FINDSPOTS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewSpotMask, id=G2gd.wxID_NEWMASKSPOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2gd.wxID_NEWMASKARC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRingMask, id=G2gd.wxID_NEWMASKRING)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewPolyMask, id=G2gd.wxID_NEWMASKPOLY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewFrameMask, id=G2gd.wxID_NEWMASKFRAME)
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     if G2frame.MaskKey == 'f':
         G2frame.dataFrame.GetStatusBar().SetStatusText('Frame mask active - LB pick next point, RB close polygon')
     elif G2frame.MaskKey == 'p':
@@ -1666,7 +1671,6 @@ def UpdateStressStrain(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 File = open(filename,'w')
-                save = {}
                 keys = ['Type','Sample phi','Sample z','Sample load']
                 keys2 = ['Dset','Dcalc','pixLimit','cutoff','Emat']
                 File.write('{\n\t')
@@ -1820,9 +1824,11 @@ def UpdateStressStrain(G2frame,data):
                 if not len(StaCtrls['d-zero']):
                     continue
                 goodnames.append(name)
-                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
                 image = GetImageZ(G2frame,Controls)
+                sig = []
+                varyList = []
+                variables = []
                 if i and CopyForward:
                     for j,ring in enumerate(StaCtrls['d-zero']):
                         ring['Emat'] = variables[4*j:4*j+3]
@@ -1831,9 +1837,6 @@ def UpdateStressStrain(G2frame,data):
                 G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                 parmDict = {'Sample load':StaCtrls['Sample load'],}
                 varyNames = ['e11','e12','e22']
-                sig = []
-                varyList = []
-                variables = []
                 for j,item in enumerate(StaCtrls['d-zero']):
                     variables += item['Emat']
                     sig += item['Esig']
@@ -2036,7 +2039,7 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnStrStaSample, id=G2gd.wxID_STRSTSAMPLE)        
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+        G2frame.dataFrame.CreateStatusBar()
     if G2frame.StrainKey == 'a':    #probably doesn't happen
         G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value')
     else:
@@ -2111,7 +2114,6 @@ def Read_imctrl(imctrl_file):
     '''Read an image control file and record control parms into a dict, with some simple
     type conversions
     '''
-    file_opt = options = {}
     save = {'filename':imctrl_file}
     immask_file = os.path.splitext(imctrl_file)[0]+'.immask'
     if os.path.exists(immask_file):
@@ -2308,7 +2310,7 @@ class AutoIntFrame(wx.Frame):
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
         self.imageBase = G2frame.Image
 
-        controlsId = G2frame.PatternTree.GetSelection()
+        G2frame.PatternTree.GetSelection()
         size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(self.imageBase)        
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
@@ -2708,7 +2710,6 @@ def DefineEvaluator(dlg):
         '''            
         x = np.array([float(i) for i in parms[0]])
         closest = abs(x-dist).argmin()
-        closeX = x[closest]
         D = {'distance':dist}
         imctfile = IMfileList[closest]
         if parms[-1][closest].lower() != '(none)':
@@ -2844,7 +2845,7 @@ class IntegParmTable(wx.Dialog):
             for key in self.ParmList:
                 try:
                     float(tmpDict[key][0])
-                    parms.append([str(G2py3.FormatSigFigs(val,sigfigs=5)) for val in tmpDict[key]])
+                    parms.append([str(G2py3.FormatSigFigs(val1,sigfigs=5)) for val1 in tmpDict[key]])
                 except ValueError:
                     parms.append(tmpDict[key])
             return parms,fileList
@@ -2875,7 +2876,6 @@ class IntegParmTable(wx.Dialog):
         cols = self.list.GetColumnCount()
         parms = []
         for c in range(cols):
-            lbl = self.ParmList[c]
             parms.append([])
             for r in range(rows):
                 parms[c].append(self.list.GetItem(r,c).GetText())

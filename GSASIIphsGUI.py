@@ -73,6 +73,7 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
     phasePage.SetSize(Size)
     phasePage.Scroll(0,Scroll)
+    Size[1] = min(500,Size[1])
     mainFrame.setSizePosLeft(Size)
     
 def FindBondsDraw(data):    

@@ -1020,11 +1020,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         
     def SetLights():
         GL.glEnable(GL.GL_DEPTH_TEST)
-        GL.glShadeModel(GL.GL_SMOOTH)
+#        GL.glShadeModel(GL.GL_SMOOTH)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glEnable(GL.GL_LIGHT0)
         GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
-        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,1])
         GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
         
     def RenderBox(x,y,z):

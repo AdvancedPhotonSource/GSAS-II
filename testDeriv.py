@@ -146,10 +146,9 @@ class testDeriv(wx.Frame):
             delVal.Bind(wx.EVT_KILL_FOCUS,OnDelValue)
             mainSizer.Add(delVal,0)
         self.testDerivPanel.SetSizer(mainSizer)    
-        Size = mainSizer.Fit(self.testDerivPanel)
-        Size[0] = 800
-        Size[1] = max(Size[1],290) + 35
+        Size = mainSizer.GetMinSize()
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size[1] = min(200,Size[1])
         self.testDerivPanel.SetSize(Size)
 
     def OnMakePlots(self,event):

@@ -1121,4 +1121,19 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     StrainPrint(ValSig,dset)
     return vals,sig
     
+def AutoSpotMasks(Image,Masks,Controls):
+    rollImage = lambda rho,roll: np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1)
+    print 'auto spot search'
+    spotMask = ma.array(Image,mask=(Image<10.*np.mean(Image)))
+    incre = np.array(Image.shape,dtype=np.float)
+    indices = (-1,0,1)
+    rolls = np.array([[ix,iy] for ix in indices for iy in indices])
+    for roll in rolls:
+        if np.any(roll):        #avoid [0,0]
+            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<=0.))
+    indx = np.transpose(spotMask.nonzero())
+    peaks = indx
+    mags = spotMask[spotMask.nonzero()]
+    print zip(peaks,mags)
+    
         

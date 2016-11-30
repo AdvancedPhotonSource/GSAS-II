@@ -1799,12 +1799,12 @@ def UpdateRigidBodies(G2frame,data):
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],450) + 20
+#        Size[0] += 40
+#        Size[1] = max(Size[1],450) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         VectorRB.Scroll(0,Scroll)
-        Size[1] = min(Size[1],450)
+        Size[1] = min(Size[1],500)
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():
@@ -2084,11 +2084,11 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
         Size = ResidueRBSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],450) + 20
+#        Size[0] += 40
+#        Size[1] = max(Size[1],450) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(600,Size[1])
+        Size[1] = min(500,Size[1])
         G2frame.dataFrame.setSizePosLeft(Size)
         
     def SetStatusLine(text):

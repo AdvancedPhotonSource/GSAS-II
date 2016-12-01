@@ -1600,6 +1600,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 for item in data:
                     File.write(item+':'+str(data[item][1])+'\n')
                 File.close()
+                print 'Instrument parameters saved to: '+filename
         finally:
             dlg.Destroy()
             
@@ -5049,10 +5050,48 @@ def UpdatePDFGrid(G2frame,data):
             dlg.Destroy()
                 
     def OnSavePDFControls(event):
-        print 'save PDF controls? TBD'
-        
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PDF controls file', pth, '', 
+            'PDF controls files (*.pdfprm)|*.pdfprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is .pdfprm
+                filename = os.path.splitext(filename)[0]+'.pdfprm'
+                File = open(filename,'w')
+                File.write("#GSAS-II PDF controls file; do not add/delete items!\n")
+                for item in data:
+                    File.write(item+':'+unicode(data[item])+'\n')
+                File.close()
+                print 'PDF controls saved to: '+filename
+        finally:
+            dlg.Destroy()
+                
     def OnLoadPDFControls(event):
-        print 'Load PDF controls? TBD'
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PDF controls file', pth, '', 
+            'PDF controls files (*.pdfprm)|*.pdfprm',wx.OPEN)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                newdata = {}
+                S = File.readline()
+                while S:
+                    if '#' in S:
+                        S = File.readline()
+                        continue
+                    key,val = S.split(':',1)
+                    try:
+                        newdata[key] = eval(val)
+                    except SyntaxError:
+                        newdata[key] = val
+                    S = File.readline()
+                data.update(newdata)
+        finally:
+            dlg.Destroy()
+        OnComputePDF(event)                
+        UpdatePDFGrid(G2frame,data)
         
     def OnAddElement(event):
         ElList = data['ElList']

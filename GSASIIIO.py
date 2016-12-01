@@ -375,6 +375,8 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
         raise Exception('No image read')
     fp = None
     errorReport = ''
+    if not imagefile:
+        return
     fp = open(imagefile,'Ur')
     for rd in primaryReaders+secondaryReaders:
         rd.ReInitialize() # purge anything from a previous read
@@ -754,7 +756,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             datum = data[0]
             
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=datum[0])
-            if 'PWDR' in datum[0]:                
+            if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
                 G2frame.PatternTree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
@@ -778,7 +780,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
                 if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
-                    if 'PWDR' in datum[0]:
+                    if datum[0].startswith('PWDR'):
                         datus[1] = [dict(zip(datus[1][3],zip(datus[1][0],datus[1][1],datus[1][2]))),{}]
                     else:
                         datus[1] = [dict(zip(datus[1][2],zip(datus[1][0],datus[1][1]))),{}]
@@ -786,7 +788,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                         datus[1][0][item] = list(datus[1][0][item])
 #end patch
                 G2frame.PatternTree.SetItemPyData(sub,datus[1])
-            if 'IMG' in datum[0]:                   #retrieve image default flag & data if set
+            if datum[0].startswith('IMG'):                   #retrieve image default flag & data if set
                 Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                

@@ -5194,36 +5194,14 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
-    mainSizer.Add((5,5),0)
-    if 'C' in inst['Type'][0]:
-        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
-#    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Azimuth'),0,WACV)
-#    azimVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Azimuth']))
-#    azimVal.Bind(wx.EVT_TEXT_ENTER,OnAzimVal)        
-#    azimVal.Bind(wx.EVT_KILL_FOCUS,OnAzimVal)
-#    dataSizer.Add(azimVal,0)    
-#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Polarization'),0,WACV)
-#    polaVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Polariz.']))
-#    polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)        
-#    polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
-#    dataSizer.Add(polaVal,0)    
-#    mainSizer.Add(dataSizer,0)
-    mainSizer.Add((5,5),0)
-    fileSizer = wx.FlexGridSizer(0,6,5,1)
-    select = ['Sample Bkg.','Container']
-    if data['Container']['Name']:
-        select.append('Container Bkg.')
-    for key in select:
-        FillFileSizer(fileSizer,key)
-    mainSizer.Add(fileSizer,0)
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,WACV)
-    mainSizer.Add((5,5),0)    
 
     ElList = data['ElList']
+    mainSizer.Add((5,5),0)
+    if not ElList:
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: fill in this 1st'),0,WACV)
+    else:
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,WACV)
+    mainSizer.Add((5,5),0)    
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
     Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
     elemSizer = wx.FlexGridSizer(0,3,5,1)
@@ -5241,8 +5219,7 @@ def UpdatePDFGrid(G2frame,data):
         label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
         0,WACV)
     mainSizer.Add(midSizer,0)
-    mainSizer.Add((5,5),0)    
-
+    mainSizer.Add((5,5),0)
     geoBox = wx.BoxSizer(wx.HORIZONTAL)
     geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample geometry: '),0,WACV)
     choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
@@ -5267,6 +5244,33 @@ def UpdatePDFGrid(G2frame,data):
     geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
     mainSizer.Add(geoBox,0)
     mainSizer.Add((5,5),0)    
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
+    mainSizer.Add((5,5),0)    
+    if 'C' in inst['Type'][0]:
+        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
+#    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Azimuth'),0,WACV)
+#    azimVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Azimuth']))
+#    azimVal.Bind(wx.EVT_TEXT_ENTER,OnAzimVal)        
+#    azimVal.Bind(wx.EVT_KILL_FOCUS,OnAzimVal)
+#    dataSizer.Add(azimVal,0)    
+#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Polarization'),0,WACV)
+#    polaVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Polariz.']))
+#    polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)        
+#    polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
+#    dataSizer.Add(polaVal,0)    
+#    mainSizer.Add(dataSizer,0)
+    mainSizer.Add((5,5),0)
+    fileSizer = wx.FlexGridSizer(0,6,5,1)
+    select = ['Sample Bkg.','Container']
+    if data['Container']['Name']:
+        select.append('Container Bkg.')
+    for key in select:
+        FillFileSizer(fileSizer,key)
+    mainSizer.Add(fileSizer,0)
+    mainSizer.Add((5,5),0)
+
         
     mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,WACV)
     mainSizer.Add((5,5),0)

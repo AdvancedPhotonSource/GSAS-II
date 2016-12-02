@@ -4140,7 +4140,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = G2frame.itemPicked
             pixelSize = Data['pixelSize']
-            scalex = 1000./pixelSize[0]
+            scalex = 1000./pixelSize[0]         #microns --> 1/mm
             scaley = 1000./pixelSize[1]
             if item and G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Image Controls':
                 if 'Text' in str(item):
@@ -4452,8 +4452,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
 
     imScale = 1
-    if len(G2frame.ImageZ) > 1024:
-        imScale = len(G2frame.ImageZ)/1024
+    maxpix = 2048
+    if len(G2frame.ImageZ) > maxpix:
+        imScale = len(G2frame.ImageZ)/maxpix
     sizexy = Data['size']
     pixelSize = Data['pixelSize']
     Xmax = sizexy[0]*pixelSize[0]/1000.

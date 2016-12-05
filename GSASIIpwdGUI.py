@@ -4791,6 +4791,11 @@ def UpdatePDFGrid(G2frame,data):
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
             wx.CallAfter(OnComputePDF,None)
+            
+        def OnMoveMult(event):
+            data[key]['Mult'] += multSpin.GetValue()*0.01
+            mult.SetValue('%.3f'%(data[key]['Mult']))
+            wx.CallAfter(OnComputePDF,None)
                         
         item = data[key]
         fileList = GetFileList('PWDR')
@@ -4801,11 +4806,18 @@ def UpdatePDFGrid(G2frame,data):
         fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
         fileSizer.Add(fileName,0,)
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
+        mulBox = wx.BoxSizer(wx.HORIZONTAL)
         mult = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(item['Mult']),style=wx.TE_PROCESS_ENTER)
         itemDict[mult.GetId()] = [key,'Mult','%.3f']
         mult.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
         mult.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
-        fileSizer.Add(mult,0,)
+        mulBox.Add(mult,0,)
+        multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+        multSpin.SetValue(0)
+        multSpin.SetRange(-1,1)
+        multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
+        mulBox.Add(multSpin,0,WACV)
+        fileSizer.Add(mulBox,0,WACV)
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Add:'),0,WACV)
         add = wx.TextCtrl(G2frame.dataDisplay,value='%.0f'%(item['Add']),style=wx.TE_PROCESS_ENTER)
         itemDict[add.GetId()] = [key,'Add','%.0f']
@@ -5148,7 +5160,7 @@ def UpdatePDFGrid(G2frame,data):
 #        print 'Done calculating PDF:'
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText('PDF computed')
+            Status.SetStatusText('PDF computed')
         for plot in auxPlot:
             XY = np.array(plot[:2])
             G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
@@ -5172,7 +5184,7 @@ def UpdatePDFGrid(G2frame,data):
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             if not G2frame.dataFrame.GetStatusBar():
                 Status = G2frame.dataFrame.CreateStatusBar()
-            Status.SetStatusText('All PDFs computed')
+                Status.SetStatusText('All PDFs computed')
             G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
@@ -5325,7 +5337,7 @@ def UpdatePDFGrid(G2frame,data):
     SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
     SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
     sqBox.Add(SQmin,0)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to '),0,WACV)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
     SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]),size=wx.Size(50,20))
     SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
     SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)

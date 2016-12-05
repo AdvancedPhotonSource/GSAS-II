@@ -127,11 +127,10 @@ def A2Gmat(A,inverse=True):
     :return: reciprocal (G) & real (g) metric tensors (list of two numpy 3x3 arrays)
 
     """
-    G = np.zeros(shape=(3,3))
-    G = [
+    G = np.array([
         [A[0],  A[3]/2.,  A[4]/2.], 
         [A[3]/2.,A[1],    A[5]/2.], 
-        [A[4]/2.,A[5]/2.,    A[2]]]
+        [A[4]/2.,A[5]/2.,    A[2]]])
     if inverse:
         g = nl.inv(G)
         return G,g

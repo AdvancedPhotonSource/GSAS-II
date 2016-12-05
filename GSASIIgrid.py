@@ -3703,7 +3703,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     vallookup = {}
     posdict = {}
     prevVaryList = []
+    foundNames = []
     for i,name in enumerate(histNames):
+        if name not in data:
+            print("Error: "+name+" not found!")
+            continue
+        foundNames.append(name)
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
             svar = striphist(var,'*') # wild-carded
             if svar not in combinedVaryList:
@@ -3724,6 +3729,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,False)
     #-----------------------------------------------------------------------------------
     # build up the data table by columns -----------------------------------------------
+    histNames = foundNames
     nRows = len(histNames)
     colList = [nRows*[True]]
     colSigs = [None]

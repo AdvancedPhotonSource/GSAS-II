@@ -295,6 +295,9 @@ def SeqRefine(GPXfile,dlg):
         calcControls['BLtables'] = BLtables
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave
+        if histogram not in Histograms:
+            print("Error: not found!")
+            continue
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)

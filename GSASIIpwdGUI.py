@@ -4792,7 +4792,7 @@ def UpdatePDFGrid(G2frame,data):
                 value = -1.0
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            OnComputePDF(None)
+            wx.CallAfter(OnComputePDF,None)
                         
         item = data[key]
         fileList = GetFileList('PWDR')
@@ -4822,7 +4822,7 @@ def UpdatePDFGrid(G2frame,data):
             Avol = (4.*math.pi/3.)*ElList[El]['Drad']**3
             sumVol += Avol*ElList[El]['FormulaNo']
         return sumVol
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def FillElemSizer(elemSizer,ElData):
         
@@ -4837,7 +4837,7 @@ def UpdatePDFGrid(G2frame,data):
             data['Form Vol'] = max(10.0,SumElementVolumes())
             formVol.SetValue('%.2f'%(data['Form Vol']))
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
-            OnComputePDF(None)
+            wx.CallAfter(OnComputePDF,None)
         
         elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
@@ -4852,12 +4852,12 @@ def UpdatePDFGrid(G2frame,data):
     def OnGeometry(event):
         data['Geometry'] = geometry.GetValue()
         UpdatePDFGrid(G2frame,data)
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
         UpdatePDFGrid(G2frame,data)
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnFormVol(event):
         event.Skip()
@@ -4869,7 +4869,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Form Vol']
         data['Form Vol'] = value
         UpdatePDFGrid(G2frame,data)
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnDiameter(event):
         event.Skip()
@@ -4881,7 +4881,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Diam']
         data['Diam'] = value
         UpdatePDFGrid(G2frame,data)
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
 #    def OnPolaVal(event):
 #        event.Skip()
@@ -4923,7 +4923,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['ObliqCoeff']
         data['ObliqCoeff'] = value
         obliqCoeff.SetValue('%.3f'%(value))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnBackVal(event):
         event.Skip()
@@ -4934,13 +4934,13 @@ def UpdatePDFGrid(G2frame,data):
             value = data['BackRatio']
         data['BackRatio'] = value
         backVal.SetValue('%.3f'%(value))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnBackSlider(event):
         value = int(backSldr.GetValue())/100.
         data['BackRatio'] = value
         backVal.SetValue('%.3f'%(data['BackRatio']))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnRulandWdt(event):
         event.Skip()
@@ -4954,17 +4954,17 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Ruland']
         data['Ruland'] = value
         rulandWdt.SetValue('%.3f'%(value))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnRulSlider(event):
         value = int(rulandSldr.GetValue())/1000.
         data['Ruland'] = max(0.001,value)
         rulandWdt.SetValue('%.3f'%(data['Ruland']))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
                         
     def OnPacking(event):
         event.Skip()
@@ -4976,7 +4976,7 @@ def UpdatePDFGrid(G2frame,data):
             value = data['Pack']
         data['Pack'] = value
         UpdatePDFGrid(G2frame,data)
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
                 
     def OnSQmin(event):
         event.Skip()
@@ -4988,7 +4988,7 @@ def UpdatePDFGrid(G2frame,data):
             value = max(qLimits[0],data['QScaleLim'][0])
         data['QScaleLim'][0] = value
         SQmin.SetValue('%.1f'%(value))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnSQmax(event):
         event.Skip()
@@ -5003,7 +5003,7 @@ def UpdatePDFGrid(G2frame,data):
             data['QScaleLim'][0] = 0.90*value
             SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
         SQmax.SetValue('%.1f'%(value))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnResetQ(event):
         resetQ.SetValue(False)
@@ -5011,11 +5011,11 @@ def UpdatePDFGrid(G2frame,data):
         SQmax.SetValue('%.1f'%(data['QScaleLim'][1]))
         data['QScaleLim'][0] = 0.9*qLimits[1]
         SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
-        OnComputePDF(None)
+        wx.CallAfter(OnComputePDF,None)
         
     def OnNoRing(event):
         data['noRing'] = not data['noRing']
-        OnComputePDF(None)                
+        wx.CallAfter(OnComputePDF,None)
 
     def GetFileList(fileType):
         fileList = []

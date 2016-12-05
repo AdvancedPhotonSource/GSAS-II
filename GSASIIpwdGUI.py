@@ -3672,18 +3672,16 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
     else:
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
@@ -5148,6 +5146,8 @@ def UpdatePDFGrid(G2frame,data):
 #        print 'Calculating PDF:'
         auxPlot = ComputePDF(data)
 #        print 'Done calculating PDF:'
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
             XY = np.array(plot[:2])
@@ -5170,6 +5170,8 @@ def UpdatePDFGrid(G2frame,data):
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
                     ComputePDF(Data)                    
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            if not G2frame.dataFrame.GetStatusBar():
+                Status = G2frame.dataFrame.CreateStatusBar()
             Status.SetStatusText('All PDFs computed')
             G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')

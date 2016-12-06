@@ -1531,6 +1531,20 @@ def getCellEsd(pfx,SGData,A,covData):
     varyList = covData['varyList']
     covMatrix = covData['covMatrix']
     vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
+        vcov[1,1] = vcov[3,3] = vcov[1,3] = vcov[3,1] = vcov[0,0]
+        vcov[0,1] = vcov[1,0] = vcov[0,3] = vcov[3,0] = vcov[0,0]
+        vcov[1,2] = vcov[2,1] = vcov[2,3] = vcov[3,2] = vcov[0,2]
+    elif SGData['SGLaue'] in ['m3','m3m']:
+        vcov[0:3,0:3] = vcov[0,0]
+    elif SGData['SGLaue'] in ['4/m', '4/mmm']:
+        vcov[0:2,0:2] = vcov[0,0]
+        vcov[1,2] = vcov[2,1] = vcov[0,2]
+    elif SGData['SGLaue'] in ['3R','3mR']:
+        vcov[0:2,0:2] = vcov[0,0]
+        vcov[4,4] = vcov[5,5] = vcov[3,3]
+        vcov[0:3,3:6] = vcov[0,3]
+        vcov[3:6,0:3] = vcov[3,0]
     Ax = np.array(A)
     Ax[3:] /= 2.
     drVdA = np.array([
@@ -1544,10 +1558,6 @@ def getCellEsd(pfx,SGData,A,covData):
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
     
-    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
-        vcov[1,1] = vcov[3,3] = vcov[0,0]
-        vcov[1,2] = vcov[2,1] = vcov[3,1] = vcov[1,3] = vcov[2,3] = vcov[3,2] = vcov[0,2]
-        vcov[0,1] = vcov[1,0] = vcov[0,3] = vcov[3,0] = 1.0
     R123 = Ax[0]*Ax[1]*Ax[2]
     dsasdg = np.zeros((3,6))
     dadg = np.zeros((6,6))

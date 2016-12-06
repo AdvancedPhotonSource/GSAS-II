@@ -4767,6 +4767,8 @@ def UpdatePDFGrid(G2frame,data):
         data['BackRatio'] = 0.
     if 'noRing' not in data:
         data['noRing'] = False
+    if 'Rmax' not in data:
+        data['Rmax'] = 100.
     
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
@@ -5015,6 +5017,18 @@ def UpdatePDFGrid(G2frame,data):
         SQmax.SetValue('%.1f'%(value))
         wx.CallAfter(OnComputePDF,None)
         
+    def OnRmax(event):
+        event.Skip()
+        try:
+            value = float(rmax.GetValue())
+            if value > 200. or value < 10.:
+                raise ValueError
+        except ValueError:
+            value = data['Rmax']
+        data['Rmax'] = value
+        rmax.SetValue('%.1f'%(value))
+        wx.CallAfter(OnComputePDF,None)
+        
     def OnResetQ(event):
         resetQ.SetValue(False)
         data['QScaleLim'][1] = qLimits[1]
@@ -5156,6 +5170,9 @@ def UpdatePDFGrid(G2frame,data):
         
     def OnComputePDF(event):
 #        print 'Calculating PDF:'
+        if not data['ElList']:
+            G2frame.ErrorDialog('PDF error','Chemical formula not defined')
+            return
         auxPlot = ComputePDF(data)
 #        print 'Done calculating PDF:'
         if not G2frame.dataFrame.GetStatusBar():
@@ -5180,6 +5197,9 @@ def UpdatePDFGrid(G2frame,data):
                 Name = G2frame.PatternTree.GetItemText(id)
                 if 'PDF' in Name.split()[0]:
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
+                    if not Data['ElList']:
+                        G2frame.ErrorDialog('PDF error','Chemical formula not defined for \n'+Name)
+                        return
                     ComputePDF(Data)                    
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             if not G2frame.dataFrame.GetStatusBar():
@@ -5328,23 +5348,28 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
+    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]),size=wx.Size(50,20))
+    SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
+    SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
+    sqBox.Add(SQmin,0,WACV)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
+    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]),size=wx.Size(50,20))
+    SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)
+    SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
+    sqBox.Add(SQmax,0,WACV)
+    resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
+    sqBox.Add(resetQ,0,WACV)
+    resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
+    rmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['Rmax']),size=wx.Size(50,20))
+    rmax.Bind(wx.EVT_KILL_FOCUS,OnRmax)
+    rmax.Bind(wx.EVT_TEXT_ENTER,OnRmax)        
+    sqBox.Add(rmax,0,WACV)
     lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
     lorch.SetValue(data['Lorch'])
     lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
     sqBox.Add(lorch,0,WACV)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
-    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]),size=wx.Size(50,20))
-    SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
-    SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
-    sqBox.Add(SQmin,0)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
-    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]),size=wx.Size(50,20))
-    SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
-    SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)
-    sqBox.Add(SQmax,0)
-    resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
-    sqBox.Add(resetQ,0)
-    resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
     noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
     noRing.SetValue(data['noRing'])
     noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)

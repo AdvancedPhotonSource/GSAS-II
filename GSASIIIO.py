@@ -967,6 +967,7 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
             
 def PDFSave(G2frame,exports):
     'Save a PDF G(r) and F(Q), S(Q) in column formats'
+    import scipy.interpolate as scintp
     for export in exports:
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         SQname = 'S(Q)'+export[4:]
@@ -978,9 +979,12 @@ def PDFSave(G2frame,exports):
         sqId = G2gd.GetPatternTreeItemId(G2frame, PickId, SQname)
         fqId = G2gd.GetPatternTreeItemId(G2frame, PickId, FQname)
         grId = G2gd.GetPatternTreeItemId(G2frame, PickId, GRname)
-        sqdata = np.array(G2frame.PatternTree.GetItemPyData(sqId)[1][:2]).T
-        fqdata = np.array(G2frame.PatternTree.GetItemPyData(fqId)[1][:2]).T
-        grdata = np.array(G2frame.PatternTree.GetItemPyData(grId)[1][:2]).T
+        sqdata = np.array(G2frame.PatternTree.GetItemPyData(sqId)[1][:2])
+        sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
+        fqdata = np.array(G2frame.PatternTree.GetItemPyData(fqId)[1][:2])
+        fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
+        grdata = np.array(G2frame.PatternTree.GetItemPyData(grId)[1][:2])
+        grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
         sqfile = open(sqfilename,'w')
         fqfile = open(sqfilename,'w')
         grfile = open(grfilename,'w')
@@ -988,17 +992,22 @@ def PDFSave(G2frame,exports):
         fqfile.write('#T F(Q) %s\n'%(export))
         grfile.write('#T G(R) %s\n'%(export))
         sqfile.write('#L Q     S(Q)\n')
-        sqfile.write('#L Q     F(Q)\n')
+        fqfile.write('#L Q     F(Q)\n')
         grfile.write('#L R     G(R)\n')
-        for q,sq in sqdata:
+        qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
+        rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+        sqnew = zip(qnew,sqfxn(qnew))
+        for q,sq in sqnew:
             sqfile.write("%15.6g %15.6g\n" % (q,sq))
         sqfile.close()
         print ' S(Q) saved to: ',sqfilename
-        for q,fq in fqdata:
+        fqnew = zip(qnew,fqfxn(qnew))
+        for q,fq in fqnew:
             fqfile.write("%15.6g %15.6g\n" % (q,fq))
         fqfile.close()
         print ' F(Q) saved to: ',fqfilename
-        for r,gr in grdata:
+        grnew = zip(rnew,grfxn(rnew))
+        for r,gr in grnew:
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
         print ' G)R) saved to: ',grfilename

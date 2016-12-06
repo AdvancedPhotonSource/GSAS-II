@@ -287,53 +287,54 @@ def CalcPDF(data,inst,limits,xydata):
     Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
 #    GSASIIpath.IPyBreak()
-    xydata['IofQ'] = copy.deepcopy(xydata['Sample'])
-    xydata['IofQ'][1] = np.array(xydata['IofQ'][1])[:,Ibeg:Ifin]
+    IofQ = copy.deepcopy(xydata['Sample'])
+    IofQ[1] = np.array(IofQ[1])[:,Ibeg:Ifin]
     if data['Sample Bkg.']['Name']:
-        xydata['IofQ'][1][1] += (xydata['Sample Bkg.'][1][1][Ibeg:Ifin]+
+        IofQ[1][1] += (xydata['Sample Bkg.'][1][1][Ibeg:Ifin]+
             data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
     if data['Container']['Name']:
         xycontainer = (xydata['Container'][1][1]+data['Container']['Add'])*data['Container']['Mult']
         if data['Container Bkg.']['Name']:
             xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
                 data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
-        xydata['IofQ'][1][1] += xycontainer[Ibeg:Ifin]
+        IofQ[1][1] += xycontainer[Ibeg:Ifin]
     #get element data & absorption coeff.
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
     #Apply angle dependent corrections
-    Tth = xydata['IofQ'][1][0]
+    Tth = IofQ[1][0]
     MuR = Abs*data['Diam']/20.0
-    xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)
+    IofQ[1][1] /= Absorb(data['Geometry'],MuR,Tth)
     if 'X' in inst['Type'][0]:
-        xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
+        IofQ[1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
     if data['DetType'] == 'Image plate':
-        xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
-    XY = xydata['IofQ'][1]    
+        IofQ[1][1] *= Oblique(data['ObliqCoeff'],Tth)
+    XY = IofQ[1]    
     #convert to Q
+#    nQpoints = len(XY[0])     #points for Q interpolation
+    nQpoints = 5000
     if 'C' in inst['Type'][0]:
         wave = G2mth.getWave(inst)
         minQ = npT2q(Tth[0],wave)
         maxQ = npT2q(Tth[-1],wave)    
-        Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
+        Qpoints = np.linspace(0.,maxQ,nQpoints,endpoint=True)
         dq = Qpoints[1]-Qpoints[0]
         XY[0] = npT2q(XY[0],wave)
     elif 'T' in inst['Type'][0]:
         difC = inst['difC'][1]
         minQ = 2.*np.pi*difC/Tth[-1]
         maxQ = 2.*np.pi*difC/Tth[0]
-        Qpoints = np.linspace(0.,maxQ,len(XY[0]),endpoint=True)
+        Qpoints = np.linspace(0.,maxQ,nQpoints,endpoint=True)
         dq = Qpoints[1]-Qpoints[0]
         XY[0] = 2.*np.pi*difC/XY[0]
-    Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][0])
+    Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][0])    #interpolate I(Q)
     Qdata -= np.min(Qdata)*data['BackRatio']
     
     qLimits = data['QScaleLim']
     minQ = np.searchsorted(Qpoints,qLimits[0])
     maxQ = np.searchsorted(Qpoints,qLimits[1])
     newdata = []
-    xydata['IofQ'][1][0] = Qpoints
-    xydata['IofQ'][1][1] = Qdata
+    xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],IofQ[2]]
     for item in xydata['IofQ'][1]:
         newdata.append(item[:maxQ])
     xydata['IofQ'][1] = newdata
@@ -358,8 +359,10 @@ def CalcPDF(data,inst,limits,xydata):
         xydata['FofQ'][1][1] *= LorchWeight(Q)    
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
-    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],8*nR)[:nR])
-    xydata['GofR'][1][0] = 0.25*np.pi*np.linspace(0,nR,nR)/qLimits[1]
+#    mul = 12
+    mul = int(round(2.*np.pi*nR/(data['Rmax']*qLimits[1])))
+    xydata['GofR'][1][0] = 2.*np.pi*np.linspace(0,nR,nR)/(mul*qLimits[1])
+    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
     if data.get('noRing',True):
         xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
     return auxPlot

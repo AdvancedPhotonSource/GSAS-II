@@ -72,6 +72,7 @@ except ImportError:
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
+import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
 import GSASIIplot as G2plt
@@ -3424,10 +3425,15 @@ class GSASII(wx.Frame):
             G2IO.PDFSave(self,exports)
         
     def OnMakePDFs(self,event):
-        '''Calculates PDFs
+        '''Sets up PDF data structure filled with defaults; if found chemical formula is inserted
+        so a default PDF can be made.
         '''
+        sind = lambda x: math.sin(x*math.pi/180.)
+        tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
+        tof2q = lambda t,C:2.0*math.pi*C/t
         TextList = []
-        PDFlist = []
+        ElLists = []
+        Qlimits = []
         Names = []
         if self.PatternTree.GetCount():
             id, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -3436,6 +3442,27 @@ class GSASII(wx.Frame):
                 Names.append(name)
                 if 'PWDR' in name:
                     TextList.append(name)
+                    Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Comments'))
+                    Parms = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Instrument Parameters'))[0]
+                    fullLimits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Limits'))[0]
+                    if 'C' in Parms['Type'][0]:
+                        wave = G2mth.getWave(Parms)
+                        qMax = tth2q(fullLimits[1],wave)
+                    else:   #'T'of
+                        qMax = tof2q(fullLimits[0],Parms['difC'][1])
+                    Qlimits.append([0.9*qMax,qMax])
+                    ElList = {}
+                    for item in Comments:           #grab chemical formula from Comments
+                        if 'formula' in item:
+                            formula = item.split('=')[1].split()
+                            elems = formula[::2]
+                            nums = formula[1::2]
+                            formula = zip(elems,nums)
+                            for [elem,num] in formula:
+                                ElData = G2elem.GetElInfo(elem,Parms)
+                                ElData['FormulaNo'] = float(num)
+                                ElList[elem] = ElData
+                    ElLists.append(ElList)
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if len(TextList) < 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
@@ -3443,18 +3470,19 @@ class GSASII(wx.Frame):
             dlg = G2G.G2MultiChoiceDialog(self,'Make PDF controls','Make PDF controls for:',TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    PDFlist = [TextList[i] for i in dlg.GetSelections()]
-                    for item in PDFlist:
+                    for i in dlg.GetSelections():
+                        item = TextList[i]
+                        ElList = ElLists[i]
                         PWDRname = item[4:]
                         Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
                         Data = {
                             'Sample':{'Name':item,'Mult':1.0,'Add':0.0},
                             'Sample Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},
                             'Container':{'Name':'','Mult':-1.0,'Add':0.0},
-                            'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
+                            'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
-                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[0,100],
-                            'Lorch':True,'BackRatio':0.0,'Rmax':100.}
+                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits[i],
+                            'Lorch':True,'BackRatio':0.0,'Rmax':100.,'noRing':True}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        

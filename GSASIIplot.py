@@ -2356,7 +2356,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             G2frame.Contour = not G2frame.Contour
             if G2frame.Contour:
                 G2frame.SinglePlot = False
-                Pattern[0]['Offset'] = [0.,0.]
+                Page.Offset = [0.,0.]
         elif event.key == 's':
             if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -2452,8 +2452,6 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                     
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
-    Xb = [0.,10.]
-    Yb = [0.,-40.*np.pi*numbDen]
     Ymax = 0.01
     lenX = 0
     for Pattern in PlotList:
@@ -2487,6 +2485,8 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             else:
                 Plot.plot(X,Y,colors[N%6],picker=False)
             if type == 'G(R)':
+                Xb = [0.,10.]
+                Yb = [0.,-40.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
             elif type == 'F(Q)':
                 Plot.axhline(0.,color=wx.BLACK)

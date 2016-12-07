@@ -896,8 +896,15 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
         Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
+        polariz = 0.99    #set default polarization for synchrotron radiation!
+        for item in Comments:
+            if 'polariz' in item:
+                try:
+                    polariz = float(item.split('=')[1])
+                except:
+                    polariz = 0.99
         if 'PWDR' in Aname:
-            parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
+            parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]

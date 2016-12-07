@@ -4746,11 +4746,8 @@ def UpdatePDFGrid(G2frame,data):
     fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
     inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
     if 'C' in inst['Type'][0]:
-        if 'Lam' in inst:
-            keV = 12.397639/inst['Lam'][1]
-        else:
-            keV = 12.397639/inst['Lam1'][0]
-        wave = 12.397639/keV
+        wave = G2mth.getWave(inst)
+        keV = 12.397639/wave
         qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
         polariz = inst['Polariz.'][1]
     else:   #'T'of
@@ -5123,20 +5120,7 @@ def UpdatePDFGrid(G2frame,data):
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
             if El not in ElList and El != 'None':
-                ElemSym = El.strip().capitalize()
-                if 'X' in inst['Type'][0]:                
-                    FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
-                    ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
-                    ElData['FormulaNo'] = 0.0
-                    ElData.update(G2elem.GetAtomInfo(ElemSym))
-                    ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
-                    ElData.update(G2elem.GetFFC5(El))
-                else: #'N'eutron
-                    ElData = {}
-                    ElData.update(G2elem.GetAtomInfo(ElemSym))
-                    ElData['FormulaNo'] = 0.0
-                    ElData.update({'mu':0.0,'fp':0.0,'fpp':0.0})
-                data['ElList'][El] = ElData
+                data['ElList'][El] = G2elem.GetElInfo(El)
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
         UpdatePDFGrid(G2frame,data)

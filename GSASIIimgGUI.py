@@ -1328,8 +1328,8 @@ def UpdateMasks(G2frame,data):
                     name = Names[item]
                     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     MId = G2gd.GetPatternTreeItemId(G2frame,Id,'Masks')
-                    Mask = copy.deepcopy(G2frame.PatternTree.GetItemPyData(MId))
-                    Mask.update(Data)
+                    Mask = G2frame.PatternTree.GetItemPyData(MId)
+                    Mask.update(copy.deepcopy(Data))
                     Mask['Thresholds'][1][0] = Thresh[1][0]  #copy only lower threshold 
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Masks'),Mask)
         finally:

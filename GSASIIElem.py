@@ -20,6 +20,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 import atmdata
+import GSASIImath as G2mth
 
 getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
 def GetFormFactorCoeff(El):
@@ -215,6 +216,23 @@ def GetAtomInfo(El,ifMag=False):
             AtomInfo['Isotopes'][isotope.split('_')[1]] = data
     AtomInfo['Lande g'] = 2.0
     return AtomInfo
+    
+def GetElInfo(El,inst):
+    ElemSym = El.strip().capitalize()
+    if 'X' in inst['Type'][0]: 
+        keV = 12.397639/G2mth.getWave(inst)               
+        FpMu = FPcalc(GetXsectionCoeff(ElemSym), keV)
+        ElData = GetFormFactorCoeff(ElemSym)[0]
+        ElData['FormulaNo'] = 0.0
+        ElData.update(GetAtomInfo(ElemSym))
+        ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
+        ElData.update(GetFFC5(El))
+    else: #'N'eutron
+        ElData = {}
+        ElData.update(GetAtomInfo(ElemSym))
+        ElData['FormulaNo'] = 0.0
+        ElData.update({'mu':0.0,'fp':0.0,'fpp':0.0})
+    return ElData
         
 def GetXsectionCoeff(El):
     """Read atom orbital scattering cross sections for fprime calculations via Cromer-Lieberman algorithm

@@ -5120,7 +5120,7 @@ def UpdatePDFGrid(G2frame,data):
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
             if El not in ElList and El != 'None':
-                data['ElList'][El] = G2elem.GetElInfo(El)
+                data['ElList'][El] = G2elem.GetElInfo(El,inst)
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
         UpdatePDFGrid(G2frame,data)

@@ -1532,8 +1532,8 @@ def getCellEsd(pfx,SGData,A,covData):
     covMatrix = covData['covMatrix']
     vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
     if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
-        vcov[1,1] = vcov[3,3] = vcov[1,3] = vcov[3,1] = vcov[0,0]
-        vcov[0,1] = vcov[1,0] = vcov[0,3] = vcov[3,0] = vcov[0,0]
+        vcov[1,1] = vcov[3,3] = vcov[0,1] = vcov[1,0] = vcov[0,0]
+        vcov[1,3] = vcov[3,1] = vcov[0,3] = vcov[3,0] = vcov[0,0]
         vcov[1,2] = vcov[2,1] = vcov[2,3] = vcov[3,2] = vcov[0,2]
     elif SGData['SGLaue'] in ['m3','m3m']:
         vcov[0:3,0:3] = vcov[0,0]
@@ -1570,7 +1570,7 @@ def getCellEsd(pfx,SGData,A,covData):
         dsasdg[i0][i1] = 0.5*scot[i0]*scos[i0]/Ax[i1]
         dsasdg[i0][i2] = 0.5*scot[i0]*scos[i0]/Ax[i2]
         dsasdg[i0][i5] = -scot[i0]/np.sqrt(Ax[i1]*Ax[i2])
-        denmsq = Ax[i0]*(R123-Ax[i1]*Ax[i4]**2-Ax[i2]*Ax[i3]**2+(Ax[i4]*Ax[i3])**2)
+        denmsq = Ax[i0]*(R123-Ax[i1]*Ax[i4]**2-Ax[i2]*Ax[i3]**2)+(Ax[i4]*Ax[i3])**2
         denom = np.sqrt(denmsq)
         dadg[i5][i0] = -Ax[i5]/denom-rcos[i0]/denmsq*(R123-0.5*Ax[i1]*Ax[i4]**2-0.5*Ax[i2]*Ax[i3]**2)
         dadg[i5][i1] = -0.5*rcos[i0]/denmsq*(Ax[i0]**2*Ax[i2]-Ax[i0]*Ax[i4]**2)

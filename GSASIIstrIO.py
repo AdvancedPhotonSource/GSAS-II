@@ -1591,6 +1591,8 @@ def getCellEsd(pfx,SGData,A,covData):
     sigMat = np.inner(dadg,np.inner(dadg,vcov))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
+    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:
+        CS[3:6] = 0.0
     return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
     
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):

@@ -74,18 +74,7 @@ class RDFDialog(wx.Dialog):
             
         def OnSmCombo(event):
             self.result['Smooth'] = smCombo.GetValue()
-            
-        def OnMaxR(event):
-            event.Skip()
-            try:
-                val = float(maxR.GetValue())
-                if val <= 0.:
-                    raise ValueError
-            except ValueError:
-                val = self.result['maxR']
-            self.result['maxR'] = val
-            maxR.SetValue('%.1f'%(val))
-        
+                    
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -102,9 +91,8 @@ class RDFDialog(wx.Dialog):
         smCombo.Bind(wx.EVT_COMBOBOX, OnSmCombo)
         dataSizer.Add(smCombo,0,WACV)
         dataSizer.Add(wx.StaticText(self.panel,label=' Maximum radial dist.: '),0,WACV)
-        maxR = wx.TextCtrl(self.panel,value='%.1f'%(self.result['maxR']),style=wx.TE_PROCESS_ENTER)
-        maxR.Bind(wx.EVT_TEXT_ENTER,OnMaxR)        
-        maxR.Bind(wx.EVT_KILL_FOCUS,OnMaxR)
+        maxR = G2G.ValidatedTxtCtrl(self.panel,self.result,'maxR',nDig=(10,1),min=10.,max=50.,
+            typeHint=float)
         dataSizer.Add(maxR,0,WACV)
         mainSizer.Add(dataSizer,0,WACV)
 
@@ -868,7 +856,6 @@ def UpdateBackground(G2frame,data):
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:
         data[1].update({'nPeaks':0,'peaksList':[]})
-    ValObj = {}
     
     def OnBackFlagCopy(event):
         flag = data[0][1]
@@ -1071,17 +1058,6 @@ def UpdateBackground(G2frame,data):
             #wx.CallAfter(UpdateBackground,G2frame,data)
             wx.CallLater(100,UpdateBackground,G2frame,data)
             
-        def OnBakVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            item = ValObj[Obj.GetId()][0]
-            try:
-                value = float(Obj.GetValue())
-            except ValueError:
-                value = data[0][item]
-            data[0][item] = value
-            Obj.SetValue('%10.4f'%(value))
-        
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background function: '),0,WACV)
@@ -1104,11 +1080,8 @@ def UpdateBackground(G2frame,data):
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background coefficients:'),0,WACV)
         bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
-            bakVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4g'%(value),style=wx.TE_PROCESS_ENTER)
+            bakVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[0],i+3,nDig=(10,4),typeHint=float)
             bakSizer.Add(bakVal,0,WACV)
-            ValObj[bakVal.GetId()] = [i+3]
-            bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
-            bakVal.Bind(wx.EVT_KILL_FOCUS,OnBakVal)
         backSizer.Add(bakSizer)
         return backSizer
         
@@ -1266,89 +1239,6 @@ def UpdateBackground(G2frame,data):
 def UpdateLimitsGrid(G2frame, data,plottype):
     '''respond to selection of PWDR Limits data tree item.
     '''
-#    if G2frame.dataDisplay:
-#        G2frame.dataFrame.Clear()
-#    G2frame.ifGetExclude = False
-#        
-#    def KeyEditPeakGrid(event):
-#        '''for deleting excluded regions
-#        '''
-#        if event.GetKeyCode() == wx.WXK_DELETE:
-#            row = G2frame.dataDisplay.GetSelectedRows()[0]
-#            if row > 1: #can't delete limits!
-#                del(data[row])
-#                wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
-#                G2plt.PlotPatterns(G2frame,plotType=plottype)
-#                        
-#    def RefreshLimitsGrid(event):
-#        event.StopPropagation()
-#        data = G2frame.LimitsTable.GetData()
-#        old = data[0]
-#        new = data[1]
-#        new[0] = max(old[0],new[0])
-#        new[1] = max(new[0],min(old[1],new[1]))
-#        excl = []
-#        if len(data) > 2:
-#            excl = data[2:]
-#            for item in excl:
-#                item[0] = max(old[0],item[0])
-#                item[1] = max(item[0],min(old[1],item[1]))
-#        data = [old,new]+excl
-#        G2frame.LimitsTable.SetData(data)
-#        G2plt.PlotPatterns(G2frame,plotType=plottype)
-#        
-#    def OnLimitCopy(event):
-#        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-#        histList = GetHistsLikeSelected(G2frame)
-#        if not histList:
-#            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
-#            return
-#        copyList = []
-#        dlg = G2G.G2MultiChoiceDialog(
-#            G2frame.dataFrame, 
-#            'Copy limits from\n'+str(hst[5:])+' to...',
-#            'Copy limits', histList)
-#        try:
-#            if dlg.ShowModal() == wx.ID_OK:
-#                for i in dlg.GetSelections(): 
-#                    item = histList[i]
-#                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-#                    G2frame.PatternTree.SetItemPyData(
-#                        G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),copy.copy(data))
-#        finally:
-#            dlg.Destroy()
-#            
-#    def OnAddExcl(event):
-#        G2frame.ifGetExclude = True
-#        print 'Add excluded region'
-#        
-#    G2frame.LimitsTable = []
-#    colLabels = ['Tmin','Tmax']
-#    rowLabels = ['original','changed']
-#    for i in range(len(data)-2):
-#        rowLabels.append('exclude')
-#    Types = 2*[wg.GRID_VALUE_FLOAT+':12,5',]
-#    G2frame.LimitsTable = G2G.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-#    G2frame.dataFrame.SetLabel('Limits')
-#    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
-#    if not G2frame.dataFrame.GetStatusBar():
-#        Status = G2frame.dataFrame.CreateStatusBar()
-#    if len(data)>2:
-#        Status.SetStatusText('To delete excluded region: select & press Delete key')
-#    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
-#    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
-#    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
-#    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)    
-#    G2frame.dataDisplay.SetCellStyle(0,0,VERY_LIGHT_GREY,True)
-#    G2frame.dataDisplay.SetCellStyle(0,1,VERY_LIGHT_GREY,True)
-#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
-#    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-#    G2frame.dataDisplay.SetMargins(0,0)
-#    G2frame.dataDisplay.AutoSizeColumns(False)
-#    G2frame.dataFrame.setSizePosLeft([230,260])                                
-#    G2frame.dataFrame.SendSizeEvent()
-#    
-#
     def LimitSizer():
         limits = wx.FlexGridSizer(2,3,0,5)
         labels = ['Tmin','Tmax']
@@ -4778,24 +4668,16 @@ def UpdatePDFGrid(G2frame,data):
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
             UpdatePDFGrid(G2frame,data)
-        
-        def OnValueChange(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            fileKey,itemKey,fmt = itemDict[Obj.GetId()]
-            try:
-                value = float(Obj.GetValue())
-            except ValueError:
-                value = -1.0
-            Obj.SetValue(fmt%(value))
-            data[fileKey][itemKey] = value
-            wx.CallAfter(OnComputePDF,None)
             
         def OnMoveMult(event):
             data[key]['Mult'] += multSpin.GetValue()*0.01
-            mult.SetValue('%.3f'%(data[key]['Mult']))
+            mult.SetValue(data[key]['Mult'])
             wx.CallAfter(OnComputePDF,None)
                         
+        def AfterChange(invalid,value,tc):
+            if invalid: return
+            wx.CallAfter(OnComputePDF,None)
+        
         item = data[key]
         fileList = GetFileList('PWDR')
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
@@ -4806,10 +4688,8 @@ def UpdatePDFGrid(G2frame,data):
         fileSizer.Add(fileName,0,)
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
         mulBox = wx.BoxSizer(wx.HORIZONTAL)
-        mult = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(item['Mult']),style=wx.TE_PROCESS_ENTER)
-        itemDict[mult.GetId()] = [key,'Mult','%.3f']
-        mult.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-        mult.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+        mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
+            typeHint=float,OnLeave=AfterChange)
         mulBox.Add(mult,0,)
         multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
         multSpin.SetValue(0)
@@ -4818,11 +4698,8 @@ def UpdatePDFGrid(G2frame,data):
         mulBox.Add(multSpin,0,WACV)
         fileSizer.Add(mulBox,0,WACV)
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Add:'),0,WACV)
-        add = wx.TextCtrl(G2frame.dataDisplay,value='%.0f'%(item['Add']),style=wx.TE_PROCESS_ENTER)
-        itemDict[add.GetId()] = [key,'Add','%.0f']
-        add.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-        add.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
-        fileSizer.Add(add,0,)
+        fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Add',nDig=(10,0),
+            typeHint=float,OnLeave=AfterChange),0,)
         
     def SumElementVolumes():
         sumVol = 0.
@@ -4835,24 +4712,16 @@ def UpdatePDFGrid(G2frame,data):
         
     def FillElemSizer(elemSizer,ElData):
         
-        def OnFractionChange(event):
-            event.Skip()
-            try:
-                value = max(0.0,float(num.GetValue()))
-            except ValueError:
-                value = 0.0
-            num.SetValue('%.3f'%(value))
-            ElData['FormulaNo'] = value
+        def AfterChange(invalid,value,tc):
+            if invalid: return
             data['Form Vol'] = max(10.0,SumElementVolumes())
-            formVol.SetValue('%.2f'%(data['Form Vol']))
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             wx.CallAfter(OnComputePDF,None)
-        
+                
         elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
-        num = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(ElData['FormulaNo']),style=wx.TE_PROCESS_ENTER)
-        num.Bind(wx.EVT_TEXT_ENTER,OnFractionChange)        
-        num.Bind(wx.EVT_KILL_FOCUS,OnFractionChange)
+        num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ElData,'FormulaNo',nDig=(10,3),min=0.0,
+            typeHint=float,OnLeave=AfterChange)
         elemSizer.Add(num,0,WACV)
         elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
             label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
@@ -4868,170 +4737,43 @@ def UpdatePDFGrid(G2frame,data):
         UpdatePDFGrid(G2frame,data)
         wx.CallAfter(OnComputePDF,None)
         
-    def OnFormVol(event):
-        event.Skip()
-        try:
-            value = float(formVol.GetValue())
-            if value <= 0.0:
-                raise ValueError
-        except ValueError:
-            value = data['Form Vol']
-        data['Form Vol'] = value
-        UpdatePDFGrid(G2frame,data)
+    def AfterChange(invalid,value,tc):
+        if invalid: return
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
         wx.CallAfter(OnComputePDF,None)
         
-    def OnDiameter(event):
-        event.Skip()
-        try:
-            value = float(diam.GetValue())
-            if value <= 0.0:
-                raise ValueError
-        except ValueError:
-            value = data['Diam']
-        data['Diam'] = value
-        UpdatePDFGrid(G2frame,data)
+    def AfterChangeNoRefresh(invalid,value,tc):
+        if invalid: return
         wx.CallAfter(OnComputePDF,None)
         
-#    def OnPolaVal(event):
-#        event.Skip()
-#        try:
-#            value = float(polaVal.GetValue())
-#            if not (0.0 <= value <= 1.0):
-#                raise ValueError
-#        except ValueError:
-#            value = inst['Polariz.'][1]
-#        inst['Polariz.'][1] = value
-#        polaVal.SetValue('%.2f'%(inst['Polariz.'][1]))
-#        UpdatePDFGrid(G2frame,data)
-#        auxPlot = ComputePDF(data)
-#        G2plt.PlotISFG(G2frame,newPlot=False)
-#                
-#    def OnAzimVal(event):
-#        event.Skip()
-#        try:
-#            value = float(azimVal.GetValue())
-#            if not (0. <= value <= 360.):
-#                raise ValueError
-#        except ValueError:
-#            value = inst['Azimuth'][1]
-#        inst['Azimuth'][1] = value
-#        azimVal.SetValue('%.1f'%(inst['Azimuth'][1]))
-#        UpdatePDFGrid(G2frame,data)
-#        auxPlot = ComputePDF(data)
-#        G2plt.PlotISFG(G2frame,newPlot=False)
-#                        
-    def OnObliqCoeff(event):
-        event.Skip()
-        try:
-            value = float(obliqCoeff.GetValue())
-            if value < 0.0:
-                raise ValueError
-            elif value > 1.0:
-                value = 1.0
-        except ValueError:
-            value = data['ObliqCoeff']
-        data['ObliqCoeff'] = value
-        obliqCoeff.SetValue('%.3f'%(value))
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnBackVal(event):
-        event.Skip()
-        try:
-            value = float(backVal.GetValue())
-            value = min(max(0.,value),1.0)
-        except ValueError:
-            value = data['BackRatio']
-        data['BackRatio'] = value
-        backVal.SetValue('%.3f'%(value))
+    def NewQmax(invalid,value,tc):
+        if invalid: return
+        data['QScaleLim'][0] = 0.9*value
+        SQmin.SetValue(data['QScaleLim'][0])
         wx.CallAfter(OnComputePDF,None)
         
     def OnBackSlider(event):
         value = int(backSldr.GetValue())/100.
         data['BackRatio'] = value
-        backVal.SetValue('%.3f'%(data['BackRatio']))
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnRulandWdt(event):
-        event.Skip()
-        try:
-            value = float(rulandWdt.GetValue())
-            if value <= 0.001:
-                raise ValueError
-            elif value > 1.0:
-                value = 1.0
-        except ValueError:
-            value = data['Ruland']
-        data['Ruland'] = value
-        rulandWdt.SetValue('%.3f'%(value))
+        backVal.SetValue(data['BackRatio'])
         wx.CallAfter(OnComputePDF,None)
         
     def OnRulSlider(event):
         value = int(rulandSldr.GetValue())/1000.
         data['Ruland'] = max(0.001,value)
-        rulandWdt.SetValue('%.3f'%(data['Ruland']))
+        rulandWdt.SetValue(data['Ruland'])
         wx.CallAfter(OnComputePDF,None)
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
         wx.CallAfter(OnComputePDF,None)
                         
-    def OnPacking(event):
-        event.Skip()
-        try:
-            value = float(pack.GetValue())
-            if value <= 0.0:
-                raise ValueError
-        except ValueError:
-            value = data['Pack']
-        data['Pack'] = value
-        UpdatePDFGrid(G2frame,data)
-        wx.CallAfter(OnComputePDF,None)
-                
-    def OnSQmin(event):
-        event.Skip()
-        try:
-            value = float(SQmin.GetValue())
-            if value < qLimits[0]:
-                raise ValueError
-        except ValueError:
-            value = max(qLimits[0],data['QScaleLim'][0])
-        data['QScaleLim'][0] = value
-        SQmin.SetValue('%.1f'%(value))
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnSQmax(event):
-        event.Skip()
-        try:
-            value = float(SQmax.GetValue())
-            if value > qLimits[1]:
-                raise ValueError
-        except ValueError:
-            value = min(qLimits[1],data['QScaleLim'][1])
-        data['QScaleLim'][1] = value
-        if value < data['QScaleLim'][0]:
-            data['QScaleLim'][0] = 0.90*value
-            SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
-        SQmax.SetValue('%.1f'%(value))
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnRmax(event):
-        event.Skip()
-        try:
-            value = float(rmax.GetValue())
-            if value > 200. or value < 10.:
-                raise ValueError
-        except ValueError:
-            value = data['Rmax']
-        data['Rmax'] = value
-        rmax.SetValue('%.1f'%(value))
-        wx.CallAfter(OnComputePDF,None)
-        
     def OnResetQ(event):
         resetQ.SetValue(False)
         data['QScaleLim'][1] = qLimits[1]
-        SQmax.SetValue('%.1f'%(data['QScaleLim'][1]))
+        SQmax.SetValue(data['QScaleLim'][1])
         data['QScaleLim'][0] = 0.9*qLimits[1]
-        SQmin.SetValue('%.1f'%(data['QScaleLim'][0]))
+        SQmin.SetValue(data['QScaleLim'][0])
         wx.CallAfter(OnComputePDF,None)
         
     def OnNoRing(event):
@@ -5195,9 +4937,6 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
             print ' Done calculating PDFs:'
         
-    def OnShowTip(G2frame,tip):
-        print tip    
-                
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)
@@ -5214,7 +4953,20 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     ElList = data['ElList']
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
+    mainSizer.Add((5,5),0)    
+    if 'C' in inst['Type'][0]:
+        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
     mainSizer.Add((5,5),0)
+    fileSizer = wx.FlexGridSizer(0,6,5,1)
+    select = ['Sample Bkg.','Container']
+    if data['Container']['Name']:
+        select.append('Container Bkg.')
+    for key in select:
+        FillFileSizer(fileSizer,key)
+    mainSizer.Add(fileSizer,0)
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
     if not ElList:
         mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: fill in this 1st'),0,WACV)
     else:
@@ -5229,9 +4981,8 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add((5,5),0)    
     midSizer = wx.BoxSizer(wx.HORIZONTAL)
     midSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Formula volume: '),0,WACV)
-    formVol = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(data['Form Vol']))
-    formVol.Bind(wx.EVT_TEXT_ENTER,OnFormVol)        
-    formVol.Bind(wx.EVT_KILL_FOCUS,OnFormVol)
+    formVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Form Vol',nDig=(10,3),min=10.0,
+        typeHint=float,OnLeave=AfterChange)
     midSizer.Add(formVol,0)
     midSizer.Add(wx.StaticText(G2frame.dataDisplay,
         label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
@@ -5246,50 +4997,20 @@ def UpdatePDFGrid(G2frame,data):
     geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
     geoBox.Add(geometry,0)
     geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample diameter/thickness, mm: '),0,WACV)
-    diam = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Diam']))
-    diam.Bind(wx.EVT_TEXT_ENTER,OnDiameter)        
-    diam.Bind(wx.EVT_KILL_FOCUS,OnDiameter)
-#    diam.Bind(wx.EVT_SET_FOCUS,OnShowTip(G2frame,'tip')) #this doesn't work - what would????
+    diam = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Diam',nDig=(10,3),min=0.01,
+        typeHint=float,OnLeave=AfterChange)
     geoBox.Add(diam,0)
     mainSizer.Add(geoBox,0)
     mainSizer.Add((5,5),0)    
     geoBox = wx.BoxSizer(wx.HORIZONTAL)
     geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Packing: '),0,WACV)
-    pack = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(data['Pack']))
-    pack.Bind(wx.EVT_TEXT_ENTER,OnPacking)        
-    pack.Bind(wx.EVT_KILL_FOCUS,OnPacking)
+    pack = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Pack',nDig=(10,2),min=0.01,
+        typeHint=float,OnLeave=AfterChange)
     geoBox.Add(pack,0)
     geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
     mainSizer.Add(geoBox,0)
-    mainSizer.Add((5,5),0)    
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
-    mainSizer.Add((5,5),0)    
-    if 'C' in inst['Type'][0]:
-        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
-#    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Azimuth'),0,WACV)
-#    azimVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Azimuth']))
-#    azimVal.Bind(wx.EVT_TEXT_ENTER,OnAzimVal)        
-#    azimVal.Bind(wx.EVT_KILL_FOCUS,OnAzimVal)
-#    dataSizer.Add(azimVal,0)    
-#    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Polarization'),0,WACV)
-#    polaVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Polariz.']))
-#    polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)        
-#    polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
-#    dataSizer.Add(polaVal,0)    
-#    mainSizer.Add(dataSizer,0)
-    mainSizer.Add((5,5),0)
-    fileSizer = wx.FlexGridSizer(0,6,5,1)
-    select = ['Sample Bkg.','Container']
-    if data['Container']['Name']:
-        select.append('Container Bkg.')
-    for key in select:
-        FillFileSizer(fileSizer,key)
-    mainSizer.Add(fileSizer,0)
-    mainSizer.Add((5,5),0)
-
         
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,WACV)
     mainSizer.Add((5,5),0)
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5301,9 +5022,8 @@ def UpdatePDFGrid(G2frame,data):
     sqBox.Add(detType,0)
     if data['DetType'] == 'Image plate':
         sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,WACV)
-        obliqCoeff = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['ObliqCoeff']))
-        obliqCoeff.Bind(wx.EVT_TEXT_ENTER,OnObliqCoeff)        
-        obliqCoeff.Bind(wx.EVT_KILL_FOCUS,OnObliqCoeff)
+        obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(obliqCoeff,0)
     mainSizer.Add(sqBox,0)
         
@@ -5313,9 +5033,8 @@ def UpdatePDFGrid(G2frame,data):
         value=int(100*data['BackRatio']))
     bkBox.Add(backSldr,1,wx.EXPAND)
     backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
-    backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['BackRatio']))
-    backVal.Bind(wx.EVT_TEXT_ENTER,OnBackVal)        
-    backVal.Bind(wx.EVT_KILL_FOCUS,OnBackVal)
+    backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'BackRatio',nDig=(10,3),min=0.0,max=1.0,
+        typeHint=float,OnLeave=AfterChangeNoRefresh)
     bkBox.Add(backVal,0,WACV)    
     mainSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
 
@@ -5325,30 +5044,26 @@ def UpdatePDFGrid(G2frame,data):
         value=int(1000*data['Ruland']))
     sqBox.Add(rulandSldr,1,wx.EXPAND)
     rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
-    rulandWdt = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Ruland']))
-    rulandWdt.Bind(wx.EVT_TEXT_ENTER,OnRulandWdt)        
-    rulandWdt.Bind(wx.EVT_KILL_FOCUS,OnRulandWdt)
+    rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
+        typeHint=float,OnLeave=AfterChangeNoRefresh)
     sqBox.Add(rulandWdt,0,WACV)    
     mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
-    SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]),size=wx.Size(50,20))
-    SQmin.Bind(wx.EVT_KILL_FOCUS,OnSQmin)    
-    SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        
+    SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),min=qLimits[0],max=.95*data['QScaleLim'][1],
+        typeHint=float,OnLeave=AfterChangeNoRefresh)
     sqBox.Add(SQmin,0,WACV)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
-    SQmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][1]),size=wx.Size(50,20))
-    SQmax.Bind(wx.EVT_KILL_FOCUS,OnSQmax)
-    SQmax.Bind(wx.EVT_TEXT_ENTER,OnSQmax)        
+    SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),min=qLimits[0],max=qLimits[1],
+        typeHint=float,OnLeave=NewQmax)
     sqBox.Add(SQmax,0,WACV)
     resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
     sqBox.Add(resetQ,0,WACV)
     resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
-    rmax = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['Rmax']),size=wx.Size(50,20))
-    rmax.Bind(wx.EVT_KILL_FOCUS,OnRmax)
-    rmax.Bind(wx.EVT_TEXT_ENTER,OnRmax)        
+    rmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmax',nDig=(10,1),min=10.,max=200.,
+        typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))
     sqBox.Add(rmax,0,WACV)
     lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
     lorch.SetValue(data['Lorch'])

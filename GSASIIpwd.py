@@ -360,7 +360,7 @@ def CalcPDF(data,inst,limits,xydata):
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
 #    mul = 12
-    mul = int(round(2.*np.pi*nR/(data['Rmax']*qLimits[1])))
+    mul = int(round(2.*np.pi*nR/(data.get('Rmax',100.)*qLimits[1])))
     xydata['GofR'][1][0] = 2.*np.pi*np.linspace(0,nR,nR)/(mul*qLimits[1])
     xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
     if data.get('noRing',True):

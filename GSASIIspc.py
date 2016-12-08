@@ -422,19 +422,20 @@ def AllOps(SGData):
         operations as (M,T) values
         (see ``SGOps`` in the :ref:`Space Group object<SGData_table>`)
       * G2oprList: The GSAS-II operations for each symmetry operation as
-        a tuple with (center,mult,opnum), where center is (0,0,0), (0.5,0,0),
+        a tuple with (center,mult,opnum,opcode), where center is (0,0,0), (0.5,0,0),
         (0.5,0.5,0.5),...; where mult is 1 or -1 for the center of symmetry
-        and opnum is the number for the symmetry operation, in ``SGOps``
-        (starting with 0).
+        where opnum is the number for the symmetry operation, in ``SGOps``
+        (starting with 0) and opcode is mult*(100*icen+j+1).
     '''
     SGTextList = []
     offsetList = []
     symOpList = []
     G2oprList = []
+    G2opcodes = []
     onebar = (1,)
     if SGData['SGInv']:
         onebar += (-1,)
-    for cen in SGData['SGCen']:
+    for icen,cen in enumerate(SGData['SGCen']):
         for mult in onebar:
             for j,(M,T) in enumerate(SGData['SGOps']):
                 offset = [0,0,0]
@@ -452,7 +453,8 @@ def AllOps(SGData):
                 offsetList.append(tuple(offset))
                 symOpList.append((mult*M,Tprime))
                 G2oprList.append((cen,mult,j))
-    return SGTextList,offsetList,symOpList,G2oprList
+                G2opcodes.append(mult*(100*icen+j+1))
+    return SGTextList,offsetList,symOpList,G2oprList,G2opcodes
     
 def MT2text(Opr):
     "From space group matrix/translation operator returns text version"

@@ -34,13 +34,9 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
-import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
-import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
-import GSASIIphsGUI as G2pg
 import GSASIIstrMain as G2stMn
-import GSASIIctrls as G2G
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -750,15 +746,16 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
             DisAglData['OrigAtoms'] = xyz
             DisAglData['TargAtoms'] = xyz
-            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
+            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                 generalData['SGData'])
 
-            xpandSGdata = generalData['SGData'].copy()
-            xpandSGdata.update({'SGOps':symOpList,
-                                'SGInv':False,
-                                'SGLatt':'P',
-                                'SGCen':np.array([[0, 0, 0]]),})
-            DisAglData['SGData'] = xpandSGdata
+#            xpandSGdata = generalData['SGData'].copy()
+#            xpandSGdata.update({'SGOps':symOpList,
+#                                'SGInv':False,
+#                                'SGLatt':'P',
+#                                'SGCen':np.array([[0, 0, 0]]),})
+#            DisAglData['SGData'] = xpandSGdata
+            DisAglData['SGData'] = generalData['SGData'].copy()
 
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in phasedict:
@@ -789,7 +786,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     if sig == 0: sig = -0.00009
                     line += PutInCol(G2mth.ValEsd(D[3],sig,True),10)
                     line += "  1_555 "
-                    line += " {:3d}_".format(D[2])
+                    line += " {:3d}_".format(G2opcodes.index(D[2])+1)
                     for d in D[1]:
                         line += "{:1d}".format(d+5)
                     if DisAngSel.get((i,tuple(D[0:3]))):
@@ -818,11 +815,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                     sig = tup[1]
                     if sig == 0: sig = -0.009
                     line += PutInCol(G2mth.ValEsd(tup[0],sig,True),10)
-                    line += " {:3d}_".format(Dj[2])
+                    line += " {:3d}_".format(G2opcodes.index(Dj[2])+1)
                     for d in Dj[1]:
                         line += "{:1d}".format(d+5)
                     line += "  1_555 "
-                    line += " {:3d}_".format(Dk[2])
+                    line += " {:3d}_".format(G2opcodes.index(Dk[2])+1)
                     for d in Dk[1]:
                         line += "{:1d}".format(d+5)
                     key = (tuple(Dk[0:3]),i,tuple(Dj[0:3]))
@@ -860,7 +857,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem('_symmetry_space_group_name_H-M',spacegroup)
 
             # generate symmetry operations including centering and center of symmetry
-            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
+            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                 phasedict['General']['SGData'])
             WriteCIFitem('loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
             for i,op in enumerate(SymOpList,start=1):
@@ -1243,7 +1240,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                     hklmax[i] = max(hkl,hklmax[i])
                     hklmin[i] = min(hkl,hklmin[i])
                     s += PutInCol(int(hkl),4)
-                import sys
                 if ref[5] == 0.0:
                     s += PutInCol(G2mth.ValEsd(ref[8],0),12)
                     s += PutInCol('.',10)
@@ -1470,7 +1466,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             'Select Distance/Angle use flags for the selected phase'
             phasenam = event.GetEventObject().phase
             phasedict = self.Phases[phasenam]
-            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(phasedict['General']['SGData'])
+            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(phasedict['General']['SGData'])
             generalData = phasedict['General']
             # create a dict for storing Pub flag for bonds/angles, if needed
             if phasedict['General'].get("DisAglHideFlag") is None:
@@ -1514,15 +1510,16 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             DisAglData['OrigAtoms'] = xyz
             DisAglData['TargAtoms'] = xyz
-            SymOpList,offsetList,symOpList,G2oprList = G2spc.AllOps(
+            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                 generalData['SGData'])
 
-            xpandSGdata = generalData['SGData'].copy()
-            xpandSGdata.update({'SGOps':symOpList,
-                                'SGInv':False,
-                                'SGLatt':'P',
-                                'SGCen':np.array([[0, 0, 0]]),})
-            DisAglData['SGData'] = xpandSGdata
+#            xpandSGdata = generalData['SGData'].copy()
+#            xpandSGdata.update({'SGOps':symOpList,
+#                                'SGInv':False,
+#                                'SGLatt':'P',
+#                                'SGCen':np.array([[0, 0, 0]]),})
+#            DisAglData['SGData'] = xpandSGdata
+            DisAglData['SGData'] = generalData['SGData'].copy()
 
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in phasedict:

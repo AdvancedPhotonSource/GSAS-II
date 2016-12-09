@@ -757,33 +757,13 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     def WtBox(wind,restData):
         if 'Range' not in restData: restData['Range'] = 1.1     #patch
         
-        def OnWtFactor(event):
-            event.Skip()
-            try:
-                value = float(wtfactor.GetValue())
-            except ValueError:
-                value = 1.0
-            restData['wtFactor'] = value
-            wtfactor.SetValue('%.2f'%(value))
-            
-        def OnRange(event):
-            event.Skip()
-            try:
-                value = float(sRange.GetValue())
-            except ValueError:
-                value = 1.0
-            restData['Range'] = value
-            sRange.SetValue('%.2f'%(value))
-            
         def OnUseData(event):
             Obj = event.GetEventObject()
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
         wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor:'),0,wx.ALIGN_CENTER_VERTICAL)
-        wtfactor = wx.TextCtrl(wind,-1,value='%.2f'%(restData['wtFactor']),style=wx.TE_PROCESS_ENTER,size=(50,20))
-        wtfactor.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
-        wtfactor.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
+        wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(10,2),typeHint=float)
         wtBox.Add(wtfactor,0,wx.ALIGN_CENTER_VERTICAL)
         useData = wx.CheckBox(wind,-1,label=' Use?')
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
@@ -791,9 +771,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Bonds' in restData or 'Angles' in restData:
             wtBox.Add(wx.StaticText(wind,-1,'  Search range:'),0,wx.ALIGN_CENTER_VERTICAL)
-            sRange = wx.TextCtrl(wind,-1,value='%.2f'%(restData['Range']),style=wx.TE_PROCESS_ENTER,size=(50,20))
-            sRange.Bind(wx.EVT_TEXT_ENTER,OnRange)
-            sRange.Bind(wx.EVT_KILL_FOCUS,OnRange)
+            sRange = G2G.ValidatedTxtCtrl(wind,restData,'Range',nDig=(10,2),typeHint=float)
             wtBox.Add(sRange,0,wx.ALIGN_CENTER_VERTICAL)
             wtBox.Add(wx.StaticText(wind,-1,'(x sum(atom radii)'),0,wx.ALIGN_CENTER_VERTICAL)
         return wtBox

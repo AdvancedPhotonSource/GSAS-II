@@ -108,16 +108,8 @@ def GetImageZ(G2frame,data,newRange=True):
 
 def UpdateImageData(G2frame,data):
     
-    def OnPixVal(event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        id = Indx[Obj.GetId()]
-        try:
-            data['pixelSize'][id] = min(500,max(10,float(Obj.GetValue())))
-        except ValueError:
-            pass
-        Obj.SetValue('%.3f'%(data['pixelSize'][id]))
-        G2plt.PlotExposedImage(G2frame,newPlot=True,event=event)
+    def OnPixVal(invalid,value,tc):
+        G2plt.PlotExposedImage(G2frame,newPlot=True,event=tc.event)
         
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -131,13 +123,10 @@ def UpdateImageData(G2frame,data):
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0,WACV)
     pixSize = wx.FlexGridSizer(0,4,5,5)
     pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
-    Indx = {}
     for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
         pixSize.Add(wx.StaticText(G2frame.dataDisplay,label=pixLabel),0,WACV)
-        pixVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(pix),style=wx.TE_PROCESS_ENTER)
-        Indx[pixVal.GetId()] = i
-        pixVal.Bind(wx.EVT_TEXT_ENTER,OnPixVal)
-        pixVal.Bind(wx.EVT_KILL_FOCUS,OnPixVal)
+        pixVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['pixelSize'],i,nDig=(10,3),
+            typeHint=float,OnLeave=OnPixVal)
         pixSize.Add(pixVal,0,WACV)
     mainSizer.Add(pixSize,0)
     
@@ -218,8 +207,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Imax = np.max(G2frame.ImageZ)
         data['range'] = [(0,Imax),[Imin,Imax]]
         masks['Thresholds'] = [(0,Imax),[Imin,Imax]]
-        MaxSizer.GetChildren()[2].Window.SetValue(str(int(Imax)))   #tricky 
-        MaxSizer.GetChildren()[5].Window.SetValue(str(int(Imin)))   #tricky
+        MaxSizer.GetChildren()[2].Window.SetValue(Imax)   #tricky 
+        MaxSizer.GetChildren()[5].Window.SetValue(Imin)   #tricky
          
     def OnIntegrate(event):
         '''Integrate image in response to a menu event or from the AutoIntegrate
@@ -500,15 +489,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['color'] = colSel.GetValue()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
-        def OnAzmthOff(event):
-            event.Skip()
-            try:
-                azmthoff = float(azmthOff.GetValue())
-                data['azmthOff'] = azmthoff
-            except ValueError:
-                pass
-            azmthOff.SetValue("%.2f"%(data['azmthOff']))          #reset in case of error  
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+        def OnAzmthOff(invalid,value,tc):
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Type of image data: '),0,WACV)
@@ -523,43 +505,23 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
         comboSizer.Add(colSel,0,WACV)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Azimuth offset '),0,WACV)
-        azmthOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (data['azmthOff'])),
-            style=wx.TE_PROCESS_ENTER)
-        azmthOff.Bind(wx.EVT_TEXT_ENTER,OnAzmthOff)
-        azmthOff.Bind(wx.EVT_KILL_FOCUS,OnAzmthOff)
+        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),
+            typeHint=float,OnLeave=OnAzmthOff)
         comboSizer.Add(azmthOff,0,WACV)
         return comboSizer
         
     def MaxSizer():
                 
-        def OnMaxVal(event):
-            event.Skip()
-            try:
-                value = min(data['range'][0][1],int(maxVal.GetValue()))
-                if value < data['range'][1][0]+1:
-                    raise ValueError
-                data['range'][1][1] = value
-            except ValueError:
-                pass
-            maxVal.SetValue('%.0f'%(data['range'][1][1]))
+        def OnMaxVal(invalid,value,tc):
             DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
             sqrtDeltOne = math.sqrt(DeltOne)
             maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
             
-        def OnMinVal(event):
-            event.Skip()
-            try:
-                value = int(minVal.GetValue())
-                if value > data['range'][1][1]-1:
-                    raise ValueError
-                data['range'][1][0] = value
-            except ValueError:
-                pass
-            minVal.SetValue('%.0f'%(data['range'][1][0]))
+        def OnMinVal(invalid,value,tc):
             minSel.SetValue(int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
             
         def OnMaxSlider(event):
             sqrtDeltZero = math.sqrt(data['range'][0][1])
@@ -568,14 +530,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,data['range'][1][0]))
             DeltOne = max(1.0,data['range'][1][1]-data['range'][1][0])
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
-            maxVal.SetValue('%.0f'%(data['range'][1][1]))
+            maxVal.SetValue(int(data['range'][1][1]))
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnMinSlider(event):
             DeltOne = data['range'][1][1]-data['range'][1][0]
             imin = int(minSel.GetValue())*DeltOne/100.
             data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin))
-            minVal.SetValue('%.0f'%(data['range'][1][0]))
+            minVal.SetValue(int(data['range'][1][0]))
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         maxSizer = wx.FlexGridSizer(0,3,0,5)
@@ -589,18 +551,16 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             value=int(100*sqrtDeltOne/sqrtDeltZero))
         maxSizer.Add(maxSel,1,wx.EXPAND)
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
-        maxVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.0f'%(data['range'][1][1]))
-        maxVal.Bind(wx.EVT_TEXT_ENTER,OnMaxVal)    
-        maxVal.Bind(wx.EVT_KILL_FOCUS,OnMaxVal)
+        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],1,min=data['range'][1][0]+1,
+            max=data['range'][1][1]-1,typeHint=int,OnLeave=OnMaxVal)
         maxSizer.Add(maxVal,0,WACV)    
         maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
         minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
         maxSizer.Add(minSel,1,wx.EXPAND)
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
-        minVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.0f'%(data['range'][1][0]))
-        minVal.Bind(wx.EVT_TEXT_ENTER,OnMinVal)    
-        minVal.Bind(wx.EVT_KILL_FOCUS,OnMinVal)
+        minVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],0,
+            max=data['range'][0][1],typeHint=int,OnLeave=OnMinVal)
         maxSizer.Add(minVal,0,WACV)
         return maxSizer
         
@@ -611,33 +571,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             name = Indx[Obj]
             data['varyList'][name] = Obj.GetValue()
             
-        def OnCalVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            name = Indx[Obj]
-            try:
-                value = float(Obj.GetValue())
-                if name == 'wave' and value < 0.01:
-                    raise ValueError
-            except ValueError:
-                value = Parms[name][2]
-            if name == 'dist':
-                data['distance'] = value
-            elif name == 'det-X':
-                data['center'][0] = value
-            elif name == 'det-Y':
-                data['center'][1] = value
-            elif name == 'tilt':
-                data['tilt'] = value
-            elif name == 'phi':
-                data['rotation'] = value
-            elif name == 'wave':
-                data['wavelength'] = value
-            elif name == 'dep':
-                data['DetDepth'] = value                                
-            Parms[name][2] = value
-            Obj.SetValue(Parms[name][1]%(value))
-            
         calibSizer = wx.FlexGridSizer(0,2,5,5)
         calibSizer.SetFlexibleDirection(wx.HORIZONTAL)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
@@ -645,21 +578,22 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Names = ['det-X','det-Y','wave','dist','tilt','phi']
         if 'PWDR' in data['type']:
             Names.append('dep') 
-        Parms = {'dist':['Distance','%.3f',data['distance']],'det-X':['Beam center X','%.3f',data['center'][0]],
-            'det-Y':['Beam center Y','%.3f',data['center'][1]],'tilt':['Tilt angle','%.3f',data['tilt']],
-            'phi':['Tilt rotation','%.2f',data['rotation']],'dep':['Penetration','%.2f',data['DetDepth']],
-            'wave':['Wavelength','%.6f',data['wavelength']]}
-#        Indx = {}
+        Parms = {'dist':['Distance',(10,3),data,'distance'],'det-X':['Beam center X',(10,3),data['center'],0],
+            'det-Y':['Beam center Y',(10,3),data['center'],1],'tilt':['Tilt angle',(10,3),data,'tilt'],
+            'phi':['Tilt rotation',(10,2),data,'rotation'],'dep':['Penetration',(10,2),data,'DetDepth'],
+            'wave':['Wavelength',(10,6),data,'wavelength']}
         for name in Names:
             calSel = wx.CheckBox(parent=G2frame.dataDisplay,label=Parms[name][0])
             calibSizer.Add(calSel,0,WACV)
             calSel.Bind(wx.EVT_CHECKBOX, OnCalRef)
             calSel.SetValue(data['varyList'][name])
             Indx[calSel] = name
-            calVal = wx.TextCtrl(G2frame.dataDisplay,value=(Parms[name][1]%(Parms[name][2])),style=wx.TE_PROCESS_ENTER)
-            calVal.Bind(wx.EVT_TEXT_ENTER,OnCalVal)
-            calVal.Bind(wx.EVT_KILL_FOCUS,OnCalVal)
-            Indx[calVal] = name
+            if name == 'wave':
+                calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
+                    Parms[name][3],min=0.01,max=10.,nDig=Parms[name][1],typeHint=float)
+            else:
+                calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
+                    Parms[name][3],nDig=Parms[name][1],typeHint=float)
             calibSizer.Add(calVal,0,WACV)
         return calibSizer
     
@@ -695,45 +629,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             G2frame.Razim.SetValue("%6.1f" % (Razm))
             data['LRazimuth'] = [Lazm,Razm]
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
-        
-        def OnNumOutChans(event):
-            event.Skip()
-            try:
-                numChans = int(outChan.GetValue())
-                if numChans < 10:
-                    raise ValueError
-                data['outChannels'] = numChans
-            except ValueError:
-                pass
-            outChan.SetValue('%d'%(data['outChannels']))          #reset in case of error        
-        
-        def OnNumOutAzms(event):
-            event.Skip()
-            try:
-                numAzms = int(outAzim.GetValue())
-                if numAzms < 1:
-                    raise ValueError
-                data['outAzimuths'] = numAzms            
-            except ValueError:
-                pass
-            outAzim.SetValue('%d'%(data['outAzimuths']))          #reset in case of error        
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+                
+        def OnNumOutAzms(invalid,value,tc):
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
         def OnOblique(event):
             data['Oblique'][1] = not data['Oblique'][1]
                 
-        def OnObliqVal(event):
-            event.Skip()
-            try:
-                value = float(obliqVal.GetValue())
-                if 0.01 <= value <= 0.99:
-                    data['Oblique'][0] = value
-                else:
-                    raise ValueError
-            except ValueError:
-                pass
-            obliqVal.SetValue('%.3f'%(data['Oblique'][0]))
-            
         def OnSampleShape(event):
             data['SampleShape'] = samShape.GetValue()
             if 'Cylind' in data['SampleShape']:
@@ -745,21 +647,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         def OnSamAbs(event):
             data['SampleAbs'][1] = not data['SampleAbs'][1]
                             
-        def OnSamAbsVal(event):
-            event.Skip()
-            try:
-                value = float(samabsVal.GetValue())
-                minmax = [0.,2.]
-                if 'Fixed' in data['SampleShape']:
-                    minmax = [.05,1.0]
-                if minmax[0] <= value <= minmax[1]:
-                    data['SampleAbs'][0] = value
-                else:
-                    raise ValueError
-            except ValueError:
-                pass
-            samabsVal.SetValue('%.3f'%(data['SampleAbs'][0]))
-                           
         def OnShowLines(event):
             data['showLines'] = not data['showLines']
             G2plt.PlotExposedImage(G2frame,event=event)
@@ -790,18 +677,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         def OnApplyPola(event):
             data['PolaVal'][1] = not data['PolaVal'][1]
                 
-        def OnPolaVal(event):
-            event.Skip()
-            try:
-                value = float(polaVal.GetValue())
-                if 0.001 <= value <= 0.999:
-                    data['PolaVal'][0] = value
-                else:
-                    raise ValueError
-            except ValueError:
-                pass
-            polaVal.SetValue('%.3f'%(data['PolaVal'][0]))
-                           
         dataSizer = wx.FlexGridSizer(0,2,5,3)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,WACV)    
         dataSizer.Add((5,0),0)
@@ -823,11 +698,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wave = data['wavelength']
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
         G2frame.InnerTth = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%8.3f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
         G2frame.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
         G2frame.InnerTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
         littleSizer.Add(G2frame.InnerTth,0,WACV)
+#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
         G2frame.OuterTth = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%8.2f" % (IOtth[1])),style=wx.TE_PROCESS_ENTER)
         G2frame.OuterTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
@@ -837,11 +714,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start/End azimuth'),0,WACV)
         LRazim = data['LRazimuth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
         G2frame.Lazim = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%6.1f" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
         G2frame.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
         G2frame.Lazim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
         littleSizer.Add(G2frame.Lazim,0,WACV)
+#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
         G2frame.Razim = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%6.1f" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
         G2frame.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
@@ -854,13 +733,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        outChan = wx.TextCtrl(parent=G2frame.dataDisplay,value='%d'%(data['outChannels']),style=wx.TE_PROCESS_ENTER)
-        outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
-        outChan.Bind(wx.EVT_KILL_FOCUS,OnNumOutChans)
+        outChan = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'outChannels',typeHint=int,min=10)
         littleSizer.Add(outChan,0,WACV)
-        outAzim = wx.TextCtrl(parent=G2frame.dataDisplay,value='%d'%(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
-        outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
-        outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
+        outAzim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'outAzimuths',nDig=(10,4),min=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         samplechoice = ['Cylinder','Fixed flat plate',]
@@ -875,13 +750,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(samabs,0,WACV)
         samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
         samabs.SetValue(data['SampleAbs'][1])
+        minmax = [0.,2.]
         if 'Cylind' in data['SampleShape']: #cylinder mu*R; flat plate transmission
             littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu*R (0.00-2.0) '),0,WACV)
         elif 'Fixed' in data['SampleShape']:
             littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,WACV) #for flat plate
-        samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)            
-        samabsVal.Bind(wx.EVT_TEXT_ENTER,OnSamAbsVal)
-        samabsVal.Bind(wx.EVT_KILL_FOCUS,OnSamAbsVal)
+            minmax = [.05,1.0]
+        samabsVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['SampleAbs'],0,nDig=(10,3),
+            typeHint=float,min=minmax[0],max=minmax[1])
         littleSizer.Add(samabsVal,0,WACV)
         dataSizer.Add(littleSizer,0,)        
         if 'PWDR' in data['type']:
@@ -891,9 +767,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
             oblique.SetValue(data['Oblique'][1])
             littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,WACV)
-            obliqVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['Oblique'][0]),style=wx.TE_PROCESS_ENTER)
-            obliqVal.Bind(wx.EVT_TEXT_ENTER,OnObliqVal)
-            obliqVal.Bind(wx.EVT_KILL_FOCUS,OnObliqVal)
+            obliqVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Oblique'],0,nDig=(10,3),typeHint=float,min=0.01,max=0.99)
             littleSizer.Add(obliqVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         if 'SASD' in data['type']:
@@ -903,10 +777,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             setPolariz.Bind(wx.EVT_CHECKBOX, OnApplyPola)
             setPolariz.SetValue(data['PolaVal'][1])
             littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.001-0.999)  '),0,WACV)
-            polaVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['PolaVal'][0]),
-                style=wx.TE_PROCESS_ENTER)
-            polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)
-            polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
+            polaVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['PolaVal'],0,nDig=(10,3),typeHint=float,min=0.001,max=0.999)
             littleSizer.Add(polaVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         
@@ -930,6 +801,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
     def BackSizer():
         
+        global oldFlat
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()
             G2frame.ImageZ = GetImageZ(G2frame,data)
@@ -942,44 +814,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
-        def OnFlatBkg(event):
-            event.Skip()
-            oldFlat = data.get('Flat Bkg',0.)
-            try:
-                value = float(flatbkg.GetValue())
-                data['Flat Bkg'] = value
-            except ValueError:
-                pass
-            flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
+        def OnFlatBkg(invalid,value,tc):
+            global oldFlat
             G2frame.ImageZ += int(oldFlat-data['Flat Bkg'])
+            oldFlat = data['Flat Bkg']
             ResetThresholds()
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
 
-        def OnBackMult(event):
-            event.Skip()
-            try:
-                mult = float(backMult.GetValue())
-                data['background image'][1] = mult
-            except ValueError:
-                pass
-            backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error 
+        def OnMult(invalid,value,tc):
             G2frame.ImageZ = GetImageZ(G2frame,data)
             ResetThresholds()
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
-        
-        def OnDarkMult(event):
-            event.Skip()
-            try:
-                mult = float(darkMult.GetValue())
-                data['dark image'][1] = mult
-            except ValueError:
-                pass
-            darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
-            G2frame.ImageZ = GetImageZ(G2frame,data)
-            ResetThresholds()
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
         backSizer = wx.FlexGridSizer(0,6,5,5)
+        oldFlat = data.get('Flat Bkg',0.)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
@@ -990,16 +838,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         darkImage.Bind(wx.EVT_COMBOBOX,OnDarkImage)
         backSizer.Add(darkImage)
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,WACV)
-        darkMult =  wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (data['dark image'][1])),
-            style=wx.TE_PROCESS_ENTER)
-        darkMult.Bind(wx.EVT_TEXT_ENTER,OnDarkMult)
-        darkMult.Bind(wx.EVT_KILL_FOCUS,OnDarkMult)
+        darkMult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['dark image'],1,nDig=(10,3),
+            typeHint=float,OnLeave=OnMult)
         backSizer.Add(darkMult,0,WACV)
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Flat Bkg: '),0,WACV)
-        flatbkg = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.0f" % (data['Flat Bkg'])),
-            style=wx.TE_PROCESS_ENTER)
-        flatbkg.Bind(wx.EVT_TEXT_ENTER,OnFlatBkg)
-        flatbkg.Bind(wx.EVT_KILL_FOCUS,OnFlatBkg)
+        flatbkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
+            typeHint=float,OnLeave=OnFlatBkg)
         backSizer.Add(flatbkg,0,WACV)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,WACV)
@@ -1008,10 +852,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         backImage.Bind(wx.EVT_COMBOBOX,OnBackImage)
         backSizer.Add(backImage)
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,WACV)
-        backMult =  wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (data['background image'][1])),
-            style=wx.TE_PROCESS_ENTER)
-        backMult.Bind(wx.EVT_TEXT_ENTER,OnBackMult)
-        backMult.Bind(wx.EVT_KILL_FOCUS,OnBackMult)
+        backMult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['background image'],1,nDig=(10,3),
+            typeHint=float,OnLeave=OnMult)
         backSizer.Add(backMult,0,WACV)
         return backSizer
                         
@@ -1034,31 +876,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBALL,enable=False)
+                
         def OnCalibSkip(event):
             data['calibskip'] = int(calibSkip.GetValue())
             
-        def OnCalibDmin(event):
-            event.Skip()
-            try:
-                dmin = float(calibDmin.GetValue())
-                if dmin < 0.25:
-                    raise ValueError
-                data['calibdmin'] = dmin
-            except ValueError:
-                pass
-            calibDmin.SetValue("%.2f"%(data['calibdmin']))          #reset in case of error  
-                    
-        def OnCutOff(event):
-            event.Skip()
-            try:
-                cutoff = float(cutOff.GetValue())
-                if cutoff < 0.1:
-                    raise ValueError
-                data['cutoff'] = cutoff
-            except ValueError:
-                pass
-            cutOff.SetValue("%.1f"%(data['cutoff']))          #reset in case of error  
-        
         def OnPixLimit(event):
             data['pixLimit'] = int(pixLimit.GetValue())
             
@@ -1085,19 +906,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min calib d-spacing '),0,WACV)
-        calibDmin = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (data['calibdmin'])),
-            style=wx.TE_PROCESS_ENTER)
-        calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
-        calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)
+        calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'calibdmin',nDig=(10,2),typeHint=float,min=0.25)
         comboSizer.Add(calibDmin,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
-        cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (data['cutoff'])),
-            style=wx.TE_PROCESS_ENTER)
-        cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
-        cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+        cutOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'cutoff',nDig=(10,1),typeHint=float,min=0.1)
         comboSizer.Add(cutOff,0,WACV)
         calibSizer.Add(comboSizer,0)
         
@@ -1119,19 +934,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
     def GonioSizer():
         
-        ValObj = {}
-        
-        def OnGonioAngle(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            item = ValObj[Obj.GetId()]
-            try:
-                value = float(Obj.GetValue())
-            except ValueError:
-                value = data['GonioAngles'][item]
-            data['GonioAngles'][item] = value
-            Obj.SetValue('%8.2f'%(value))
-            
         def OnGlobalEdit(event):
             Names = []
             Items = []
@@ -1170,11 +972,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'Sample goniometer angles: '),0,WACV)
         for i,name in enumerate(names):
             gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,name),0,WACV)
-            angle = wx.TextCtrl(G2frame.dataDisplay,-1,value='%8.2f'%(data['GonioAngles'][i]),
-                style=wx.TE_PROCESS_ENTER)
-            angle.Bind(wx.EVT_TEXT_ENTER,OnGonioAngle)
-            angle.Bind(wx.EVT_KILL_FOCUS,OnGonioAngle)
-            ValObj[angle.GetId()] = i
+            angle = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['GonioAngles'],i,nDig=(8,2),typeHint=float)
             gonioSizer.Add(angle,0,WACV)
         globEdit = wx.Button(G2frame.dataDisplay,-1,'Global edit')
         globEdit.Bind(wx.EVT_BUTTON,OnGlobalEdit)
@@ -1629,7 +1427,6 @@ def UpdateStressStrain(G2frame,data):
             return
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         Names.pop(Names.index(Source))
-#        GSASIIpath.IPyBreak()
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy stress/strain controls','Copy controls from '+Source+' to:',Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1878,33 +1675,6 @@ def UpdateStressStrain(G2frame,data):
         def OnStrainType(event):
             data['Type'] = strType.GetValue()
         
-        def OnSamPhi(event):
-            event.Skip()
-            try:
-                value = float(samPhi.GetValue())
-            except ValueError:
-                value = data['Sample phi']
-            data['Sample phi'] = value
-            samPhi.SetValue("%.3f" % (data['Sample phi']))
-                
-        def OnSamZ(event):
-            event.Skip()
-            try:
-                value = float(samZ.GetValue())
-            except ValueError:
-                value = data['Sample z']
-            data['Sample z'] = value
-            samZ.SetValue("%.3f" % (data['Sample z']))
-                
-        def OnSamLoad(event):
-            event.Skip()
-            try:
-                value = float(samLoad.GetValue())
-            except ValueError:
-                value = data['Sample load']
-            data['Sample load'] = value
-            samLoad.SetValue("%.3f" % (data['Sample load']))
-                
         samSizer = wx.BoxSizer(wx.HORIZONTAL)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Strain type: '),0,WACV)
         strType = wx.ComboBox(G2frame.dataDisplay,value=data['Type'],choices=['True','Conventional'],
@@ -1914,17 +1684,11 @@ def UpdateStressStrain(G2frame,data):
         samSizer.Add(strType,0,WACV)
         
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample phi: '),0,WACV)
-        samPhi = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample phi'])),
-            style=wx.TE_PROCESS_ENTER)
+        samPhi = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample phi',nDig=(10,3),typeHint=float,min=-360.,max=360.)
         samSizer.Add(samPhi,0,WACV)
-        samPhi.Bind(wx.EVT_TEXT_ENTER,OnSamPhi)
-        samPhi.Bind(wx.EVT_KILL_FOCUS,OnSamPhi)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample delta-z(mm): '),0,WACV)
-        samZ = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample z'])),
-            style=wx.TE_PROCESS_ENTER)
+        samZ = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample z',nDig=(10,3),typeHint=float)
         samSizer.Add(samZ,0,WACV)
-        samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
-        samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample load(MPa): '),0,WACV)
         samLoad = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample load',
                 nDig=[8,3],typeHint=float,)
@@ -1986,6 +1750,7 @@ def UpdateStressStrain(G2frame,data):
         dzeroSizer = wx.FlexGridSizer(0,8,5,5)
         for id,dzero in enumerate(data['d-zero']):
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             dZero = wx.TextCtrl(G2frame.dataDisplay,-1,value=('%.5f'%(dzero['Dset'])),
                 style=wx.TE_PROCESS_ENTER)
             dzeroSizer.Add(dZero,0,WACV)
@@ -1995,6 +1760,7 @@ def UpdateStressStrain(G2frame,data):
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),0,WACV)
                 
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (dzero['cutoff'])),
                 style=wx.TE_PROCESS_ENTER)
             cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
@@ -2355,8 +2121,7 @@ class AutoIntFrame(wx.Frame):
         # file filter stuff
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Image filter'))
-        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter',
-                                        OnLeave=self.ShowMatchingFiles)
+        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter',OnLeave=self.ShowMatchingFiles)
         sizer.Add(flterInp)
         mnsizer.Add(sizer,0,wx.ALIGN_RIGHT,1)
         self.ListBox = wx.ListBox(mnpnl,size=(-1,100))
@@ -2367,8 +2132,7 @@ class AutoIntFrame(wx.Frame):
         lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '))
-        fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',
-                                       notBlank=False,size=(300,-1))
+        fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',notBlank=False,size=(300,-1))
         sizer.Add(fInp3)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)

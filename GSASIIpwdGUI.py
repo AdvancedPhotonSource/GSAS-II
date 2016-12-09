@@ -2432,6 +2432,7 @@ def UpdateSampleGrid(G2frame,data):
             matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
             subSizer.Add(matsel,0,WACV)
             subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             volfrac = wx.TextCtrl(G2frame.dataDisplay,value=str('%.3f'%(item['VolFrac'])),style=wx.TE_PROCESS_ENTER)
             Info[volfrac.GetId()] = [id,'VolFrac']
             volfrac.Bind(wx.EVT_TEXT_ENTER,OnMaterial)
@@ -3156,6 +3157,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,WACV)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start Volume '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
     startVol = wx.TextCtrl(G2frame.dataDisplay,value=str('%d'%(controls[3])),style=wx.TE_PROCESS_ENTER)
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
     startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
@@ -3198,6 +3200,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[0] = False
     else:
         littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Zero offset"),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
         zero = wx.TextCtrl(G2frame.dataDisplay,value="%.4f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
         zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
         zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
@@ -3226,6 +3229,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=txt),0,WACV)
         if ifEdit:          #a,b,c,etc.
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             cellVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
             cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
@@ -3264,6 +3268,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.4f'%(val)),
                     size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
                 modVal.Bind(wx.EVT_TEXT_ENTER,OnModVal)        
@@ -3830,6 +3835,7 @@ def UpdateSubstanceGrid(G2frame,data):
                 for El in Elems:    #do elements as pull downs for isotopes for neutrons
                     elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
                         0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     num = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(Elems[El]['Num']),style=wx.TE_PROCESS_ENTER)
                     Indx[num.GetId()] = [name,El,'Num']
                     num.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
@@ -3839,6 +3845,7 @@ def UpdateSubstanceGrid(G2frame,data):
                 vdsSizer = wx.FlexGridSizer(0,4,5,5)
                 vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Volume: '),
                     0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 vol = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Volume']),style=wx.TE_PROCESS_ENTER)
                 Indx[vol.GetId()] = [name,'Volume']
                 vol.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
@@ -3846,6 +3853,7 @@ def UpdateSubstanceGrid(G2frame,data):
                 vdsSizer.Add(vol,0,WACV)                
                 vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Density: '),
                     0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 den = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Density']),style=wx.TE_PROCESS_ENTER)
                 Indx[den.GetId()] = [name,'Density']
                 den.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
@@ -4223,6 +4231,7 @@ def UpdateModelsGrid(G2frame,data):
         partSizer.Add(partsh,0,WACV)
         if data['Size']['Shape'][0] not in ['Unified sphere',]:
             partSizer.Add(wx.StaticText(G2frame.dataDisplay,label=shapes[data['Size']['Shape'][0]]),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             partprm = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Size']['Shape'][1]),
                 style=wx.TE_PROCESS_ENTER)
             partprm.Bind(wx.EVT_TEXT_ENTER,OnPartVal)        
@@ -4414,6 +4423,7 @@ def UpdateModelsGrid(G2frame,data):
                         parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                         parmSizer.Add(parmVar,0,WACV)
                         Indx[parmVar.GetId()] = [Parms[parm],1]
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
                         style=wx.TE_PROCESS_ENTER)
                     parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
@@ -4442,6 +4452,7 @@ def UpdateModelsGrid(G2frame,data):
                             Indx[parmVar.GetId()] = [Args[parm],1]
                             parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                             parmSizer.Add(parmVar,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                             parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Args[parm][0]),
                                 style=wx.TE_PROCESS_ENTER)
                             parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
@@ -4575,6 +4586,7 @@ def UpdateModelsGrid(G2frame,data):
     fitSel.Bind(wx.EVT_COMBOBOX,OnSelectFit)        
     topSizer.Add(fitSel,0,WACV)
     topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Error multiplier: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
     esdScale = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(1./np.sqrt(ProfDict['wtFactor'])),style=wx.TE_PROCESS_ENTER)
     esdScale.Bind(wx.EVT_TEXT_ENTER,OnEsdScale)        
     esdScale.Bind(wx.EVT_KILL_FOCUS,OnEsdScale)
@@ -4592,6 +4604,7 @@ def UpdateModelsGrid(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
     backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)
     Indx[backVal.GetId()] = ['Back',0,'%.3g']
     backVal.Bind(wx.EVT_TEXT_ENTER,OnBackChange)        

@@ -219,9 +219,7 @@ class ExpressionDialog(wx.Dialog):
 
         #self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
         self.exCtrl = wx.ComboBox(self, wx.ID_ANY, "", (90, 50), (160, -1),
-                                  defaultExpressions,
-                                  wx.CB_DROPDOWN| wx.TE_PROCESS_ENTER
-                         )
+            defaultExpressions,wx.CB_DROPDOWN| wx.TE_PROCESS_ENTER)
         self.exCtrl.Bind(wx.EVT_CHAR, self.OnChar)
         self.exCtrl.Bind(wx.EVT_COMBOBOX, self.OnValidate)
         self.exCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnValidate)

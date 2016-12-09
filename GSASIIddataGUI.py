@@ -141,6 +141,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleRef.SetValue(UseList[G2frame.hist]['Scale'][1])
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
         scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.4f'%(UseList[G2frame.hist]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
         scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
@@ -372,6 +373,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Indx[lgmixRef.GetId()] = [G2frame.hist,name]
         lgmixRef.Bind(wx.EVT_CHECKBOX, OnRef)
         lgmixSizer.Add(lgmixRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
         lgmixVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.4f'%(UseList[G2frame.hist][name][1][2]),style=wx.TE_PROCESS_ENTER)
         Indx[lgmixVal.GetId()] = [G2frame.hist,name]
@@ -398,6 +400,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Indx[sizeRef.GetId()] = [G2frame.hist,0]
         sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
         isoSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
         sizeVal = wx.TextCtrl(DData,wx.ID_ANY,
             fmt%(UseList[G2frame.hist][parm][1][0]),style=wx.TE_PROCESS_ENTER)
         Indx[sizeVal.GetId()] = [G2frame.hist,0]
@@ -427,6 +430,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[sizeRef.GetId()] = [G2frame.hist,id]
             sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
             dataSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             sizeVal = wx.TextCtrl(DData,wx.ID_ANY,fmt%(val),style=wx.TE_PROCESS_ENTER)
             Indx[sizeVal.GetId()] = [G2frame.hist,id]
             sizeVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
@@ -445,6 +449,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[sizeRef.GetId()] = [G2frame.hist,id]
             sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
             dataSizer.Add(sizeRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             sizeVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[sizeVal.GetId()] = [G2frame.hist,id]
             sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
@@ -467,6 +472,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[strainRef.GetId()] = [G2frame.hist,id]
             strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
             dataSizer.Add(strainRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             strainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[strainVal.GetId()] = [G2frame.hist,id]
             strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
@@ -485,6 +491,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[hstrainRef.GetId()] = [G2frame.hist,id]
             hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
             hstrainSizer.Add(hstrainRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             hstrainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3g'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[hstrainVal.GetId()] = [G2frame.hist,id]
             hstrainVal.Bind(wx.EVT_TEXT_ENTER,OnHstrainVal)
@@ -519,6 +526,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         poRef.SetValue(POData[2])
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
         poSizer.Add(poRef,0,WACV|wx.LEFT,5)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
         poVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
         poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
@@ -552,6 +560,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         ODFkeys.sort()
         for odf in ODFkeys:
             ODFSizer.Add(wx.StaticText(DData,wx.ID_ANY,odf),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             ODFval = wx.TextCtrl(DData,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
             ODFIndx[ODFval.GetId()] = odf
             ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
@@ -575,15 +584,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 dlg.Destroy()
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
-        def OnshToler(event):
-            event.Skip()
-            try:
-                value = float(shToler.GetValue())
-                POData[7] = value
-            except ValueError:
-                pass
-            shToler.SetValue('%.2f'%(POData[7]))
-        
         A = G2lat.cell2A(generalData['Cell'][1:7])
         hkls = G2lat.GenPfHKLs(10,SGData,A)    
         shPenalty = wx.BoxSizer(wx.HORIZONTAL)
@@ -594,9 +594,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         hklList.Bind(wx.EVT_BUTTON,OnHKLList)
         shPenalty.Add(hklList,0,WACV)
         shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
-        shToler = wx.TextCtrl(DData,wx.ID_ANY,'%.2f'%(POData[7]),style=wx.TE_PROCESS_ENTER)
-        shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
-        shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
+        shToler = G2G.ValidatedTxtCtrl(DData,POData,7,nDig=(10,2),typeHint=float)
         shPenalty.Add(shToler,0,WACV)
         return shPenalty    
         
@@ -608,40 +606,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
                 
-        def OnTbarVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                tbar = float(Obj.GetValue())
-                if tbar > 0:
-                    UseList[G2frame.hist]['Extinction'][2]['Tbar'] = tbar
-            except ValueError:
-                pass
-            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Tbar']))
-    
-        def OnCos2TM(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                val = float(Obj.GetValue())
-                if 0. < val <= 1.:
-                    UseList[G2frame.hist]['Extinction'][2]['Cos2TM'] = val
-            except ValueError:
-                pass
-            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']))
-        
-        def OnEval(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            item = Indx[Obj.GetId()]
-            try:
-                val = float(Obj.GetValue())
-                if val > 0:
-                    UseList[item[0]]['Extinction'][2][item[1]][0] = val
-            except ValueError:
-                pass
-            Obj.SetValue("%10.3e"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
-        
         def OnEref(event):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
@@ -651,17 +615,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
             
-        def OnExtVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                ext = float(Obj.GetValue())
-                if ext >= 0:
-                    UseList[G2frame.hist]['Extinction'][0] = ext
-            except ValueError:
-                pass
-            Obj.SetValue("%.2f"%(UseList[G2frame.hist]['Extinction'][0]))
-
         if Type == 'HKLF':
             extSizer = wx.BoxSizer(wx.VERTICAL)
             typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
@@ -686,16 +639,12 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF   
                     valSizer =wx.BoxSizer(wx.HORIZONTAL)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
-                    tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
-                        '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
-                    tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
-                    tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
+                    tbarVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Tbar',
+                        min=0.,nDig=(10,3),typeHint=float)
                     valSizer.Add(tbarVal,0,WACV)
                     valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
-                    cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
-                        '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
-                    cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
-                    cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
+                    cos2tm = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2],'Cos2TM',
+                        min=0.,max=1.,nDig=(10,3),typeHint=float)
                     valSizer.Add(cos2tm,0,WACV)
                     extSizer.Add(valSizer,0,WACV)
                 val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
@@ -713,11 +662,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Indx[Eref.GetId()] = [G2frame.hist,ekey]
                     Eref.Bind(wx.EVT_CHECKBOX, OnEref)
                     val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
-                    Eval = wx.TextCtrl(DData,wx.ID_ANY,
-                        '%10.3e'%(UseList[G2frame.hist]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
-                    Indx[Eval.GetId()] = [G2frame.hist,ekey]
-                    Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
-                    Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
+                    Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
+                        min=0.,nDig=(10,3),typeHint=float)
                     val2Sizer.Add(Eval,0,WACV)
                 extSizer.Add(val2Sizer,0,WACV)
         else:   #PWDR
@@ -726,27 +672,13 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             extRef.SetValue(UseList[G2frame.hist]['Extinction'][1])
             extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
             extSizer.Add(extRef,0,WACV|wx.LEFT,5)
-            extVal = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.2f'%(UseList[G2frame.hist]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
-            extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
-            extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
+            extVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'],0,
+                min=0.,nDig=(10,2),typeHint=float)
             extSizer.Add(extVal,0,WACV)
 
         return extSizer
         
     def BabSizer():
-        
-        def OnBabVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            item,bab = Indx[Obj.GetId()]
-            try:
-                val = float(Obj.GetValue())
-                if val >= 0:
-                    UseList[item]['Babinet']['Bab'+bab][0] = val
-            except ValueError:
-                pass
-            Obj.SetValue("%.3f"%(UseList[item]['Babinet']['Bab'+bab][0]))
         
         def OnBabRef(event):
             Obj = event.GetEventObject()
@@ -760,26 +692,13 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Indx[babRef.GetId()] = [G2frame.hist,bab]
             babRef.Bind(wx.EVT_CHECKBOX, OnBabRef)
             babSizer.Add(babRef,0,WACV|wx.LEFT,5)
-            babVal = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.3f'%(UseList[G2frame.hist]['Babinet']['Bab'+bab][0]),style=wx.TE_PROCESS_ENTER)
-            Indx[babVal.GetId()] = [G2frame.hist,bab]
-            babVal.Bind(wx.EVT_TEXT_ENTER,OnBabVal)
-            babVal.Bind(wx.EVT_KILL_FOCUS,OnBabVal)
+            babVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Babinet']['Bab'+bab],0,
+                nDig=(10,3),min=0.,typeHint=float)
             babSizer.Add(babVal,0,WACV)
         return babSizer
         
     def FlackSizer():
         
-        def OnFlackVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                flack = float(Obj.GetValue())
-                UseList[G2frame.hist]['Flack'][0] = flack
-            except ValueError:
-                pass
-            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Flack'][0]))
-
         def OnFlackRef(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Flack'][1] = Obj.GetValue()
@@ -789,10 +708,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         flackRef.SetValue(UseList[G2frame.hist]['Flack'][1])
         flackRef.Bind(wx.EVT_CHECKBOX, OnFlackRef)
         flackSizer.Add(flackRef,0,WACV|wx.LEFT,5)
-        flackVal = wx.TextCtrl(DData,wx.ID_ANY,
-            '%.3f'%(UseList[G2frame.hist]['Flack'][0]),style=wx.TE_PROCESS_ENTER)
-        flackVal.Bind(wx.EVT_TEXT_ENTER,OnFlackVal)
-        flackVal.Bind(wx.EVT_KILL_FOCUS,OnFlackVal)
+        flackVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Flack'],0,nDig=(10,3),typeHint=float)
         flackSizer.Add(flackVal,0,WACV)
         return flackSizer
         
@@ -907,6 +823,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=Style)
                 if it:
                     Indx[twinval.GetId()] = it

@@ -2678,6 +2678,7 @@ class GSASII(wx.Frame):
             for id,item in enumerate(self.data[:-1]):
                 name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(300,20))
                 name.SetEditable(False)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
                 scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
@@ -2692,6 +2693,7 @@ class GSASII(wx.Frame):
                 self.dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
                 self.dataGridSizer.Add(wx.StaticText(panel,label='All scales value: '),0,  \
                     wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 allScale = wx.TextCtrl(panel,value='',style=wx.TE_PROCESS_ENTER)
                 allScale.Bind(wx.EVT_TEXT_ENTER,self.OnAllScale)
                 allScale.Bind(wx.EVT_KILL_FOCUS,self.OnAllScale)

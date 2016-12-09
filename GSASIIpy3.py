@@ -67,18 +67,22 @@ def FormatValue(val,maxdigits=None):
 
     :param float val: number to be formatted.
 
-    :param list maxdigits: the number of digits & places after decimal to be used for display of the
-      number (defaults to [10,2]).
+    :param list maxdigits: the number of digits, places after decimal and 'f' or 'g' to be used for display of the
+      number (defaults to [10,2,'f']).
 
     :returns: a string with <= maxdigits characters (usually).  
     '''
     if 'str' in str(type(val)) and (val == '?' or val == '.'):
         return val        
     if maxdigits is None:
-        digits = [10,2]
+        digits = [10,2,'f']
     else:
         digits = list(maxdigits)
-    fmt="{:."+str(digits[1])+"f}"
+    if len(digits) == 2:
+        digits.append('g')
+    if not val:
+        digits[2] = 'f'
+    fmt="{:"+str(digits[0])+"."+str(digits[1])+digits[2]+"}"
     string = fmt.format(float(val)).strip() # will standard .f formatting work?
     if len(string) <= digits[0]:
         if ':' in string: # deal with weird bug where a colon pops up in a number when formatting (EPD 7.3.2!)

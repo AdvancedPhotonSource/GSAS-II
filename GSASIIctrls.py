@@ -286,9 +286,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       
     :param number min: minimum allowed valid value. If None (default) the
       lower limit is unbounded.
+      NB: test in NumberValidator is val >= min not val > min
 
     :param number max: maximum allowed valid value. If None (default) the
       upper limit is unbounded
+      NB: test in NumberValidator is val <= max not val < max
 
     :param function OKcontrol: specifies a function or method that will be
       called when the input is validated. The called function is supplied
@@ -305,7 +307,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
          * invalid: (*bool*) True if the value for the TextCtrl is invalid
          * value:   (*int/float/str*)  the value contained in the TextCtrl
-         * tc:      (*wx.TextCtrl*)  the TextCtrl name
+         * tc:      (*wx.TextCtrl*)  the TextCtrl object
 
       The number of keyword arguments may be increased in the future should needs arise,
       so it is best to code these functions with a \*\*kwargs argument so they will
@@ -558,10 +560,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             if event: event.Skip()
             return
         self._setValue(self.result[self.key],show=False) # save value quietly
-        if self.OnLeave: self.OnLeave(invalid=self.invalid,
-                                      value=self.result[self.key],
-                                      tc=self,
-                                      **self.OnLeaveArgs)
+        if self.OnLeave:
+            self.event = event
+            self.OnLeave(invalid=self.invalid,value=self.result[self.key],
+                tc=self,**self.OnLeaveArgs)
         if event: event.Skip()
             
     def _onLoseFocus(self,event):
@@ -579,10 +581,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         elif self.result is not None: # show formatted result, as Bob wants
             if not self.invalid: # don't update an invalid expression
                 self._setValue(self.result[self.key])
-        if self.OnLeave: self.OnLeave(invalid=self.invalid,
-                                      value=self.result[self.key],
-                                      tc=self,
-                                      **self.OnLeaveArgs)
+        if self.OnLeave:
+            self.event = event
+            self.OnLeave(invalid=self.invalid,value=self.result[self.key],
+                tc=self,**self.OnLeaveArgs)
 
 ################################################################################
 class NumberValidator(wx.PyValidator):
@@ -698,6 +700,7 @@ class NumberValidator(wx.PyValidator):
         # if self.min != None and self.typ == int:
         #     if val < self.min:
         #         tc.invalid = True  # invalid
+        #TODO: this needs test on val > self.max & val < self.max via a control
         if self.max != None:
             if val > self.max:
                 tc.invalid = True

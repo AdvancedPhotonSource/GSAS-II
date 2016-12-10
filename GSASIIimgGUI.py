@@ -99,7 +99,6 @@ def GetImageZ(G2frame,data,newRange=True):
                 sumImg += np.array(backImage*backScale,dtype='int32')
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
-#    GSASIIpath.IPyBreak()
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     if newRange:
@@ -270,7 +269,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     G2frame.PatternTree.SelectItem(pId)
                     G2frame.PatternTree.Expand(pId)
                     G2frame.PatternId = pId
-#                        GSASIIpath.IPyBreak()
         finally:
             dlg.Destroy()
         
@@ -1698,24 +1696,16 @@ def UpdateStressStrain(G2frame,data):
         
     def DzeroSizer():
     
-        def OnDzero(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                value = min(20.0,max(0.25,float(Obj.GetValue())))
-            except ValueError:
-                value = 1.0
-            Obj.SetValue("%.5f"%(value))
-            data['d-zero'][Indx[Obj.GetId()]]['Dset'] = value
+        def OnDzero(invalid,value,tc):
             data['d-zero'] = G2mth.sortArray(data['d-zero'],'Dset',reverse=True)
-            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
+            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[tc.GetId()]],G2frame.ImageZ,Controls)
             if len(Ring):
-                data['d-zero'][Indx[Obj.GetId()]].update(R)
+                data['d-zero'][Indx[tc.GetId()]].update(R)
             else:
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
                 
-            UpdateStressStrain(G2frame,data)
-            G2plt.PlotExposedImage(G2frame,event=event,newPlot=False)
+            wx.CallAfter(UpdateStressStrain,G2frame,data)
+            G2plt.PlotExposedImage(G2frame,event=tc.event,newPlot=False)
             G2plt.PlotStrain(G2frame,data,newPlot=True)
             
         def OnDeleteDzero(event):
@@ -1725,17 +1715,9 @@ def UpdateStressStrain(G2frame,data):
             G2plt.PlotExposedImage(G2frame,event=event,newPlot=True)
             G2plt.PlotStrain(G2frame,data,newPlot=True)
         
-        def OnCutOff(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                value = min(20.0,max(0.5,float(Obj.GetValue())))
-            except ValueError:
-                value = 1.0
-            Obj.SetValue("%.1f"%(value))
-            data['d-zero'][Indx[Obj.GetId()]]['cutoff'] = value 
-            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
-            G2plt.PlotExposedImage(G2frame,event=event)
+        def OnCutOff(invalid,value,tc):
+            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[tc.GetId()]],G2frame.ImageZ,Controls)
+            G2plt.PlotExposedImage(G2frame,event=tc.event)
             G2plt.PlotStrain(G2frame,data,newPlot=True)
         
         def OnPixLimit(event):
@@ -1750,21 +1732,15 @@ def UpdateStressStrain(G2frame,data):
         dzeroSizer = wx.FlexGridSizer(0,8,5,5)
         for id,dzero in enumerate(data['d-zero']):
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            dZero = wx.TextCtrl(G2frame.dataDisplay,-1,value=('%.5f'%(dzero['Dset'])),
-                style=wx.TE_PROCESS_ENTER)
+            dZero = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['d-zero'][id],'Dset',
+                min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=OnDzero)
             dzeroSizer.Add(dZero,0,WACV)
-            dZero.Bind(wx.EVT_TEXT_ENTER,OnDzero)
-            dZero.Bind(wx.EVT_KILL_FOCUS,OnDzero)
             Indx[dZero.GetId()] = id
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),0,WACV)
                 
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (dzero['cutoff'])),
-                style=wx.TE_PROCESS_ENTER)
-            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
-            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+            cutOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['d-zero'][id],'cutoff',
+                    min=0.5,max=20.,nDig=(10,1),typeHint=float,OnLeave=OnCutOff)
             Indx[cutOff.GetId()] = id
             dzeroSizer.Add(cutOff,0,WACV)
         

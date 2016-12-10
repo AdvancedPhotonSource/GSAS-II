@@ -2668,16 +2668,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnBravais(event):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
-        
-    def OnZero(event):
-        event.Skip()
-        try:
-            Zero = min(5.0,max(-5.0,float(zero.GetValue())))
-        except ValueError:
-            Zero = 0.0
-        controls[1] = Zero
-        zero.SetValue("%.4f"%(Zero))
-        
+                
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
         
@@ -3200,10 +3191,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[0] = False
     else:
         littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Zero offset"),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-        zero = wx.TextCtrl(G2frame.dataDisplay,value="%.4f"%(controls[1]),style=wx.TE_PROCESS_ENTER)
-        zero.Bind(wx.EVT_TEXT_ENTER,OnZero)
-        zero.Bind(wx.EVT_KILL_FOCUS,OnZero)
+        zero = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controls,1,nDig=(10,4),typeHint=float,min=-5.,max=5.)
         littleSizer.Add(zero,0,WACV)
         zeroVar = wx.CheckBox(G2frame.dataDisplay,label="Refine?")
         zeroVar.SetValue(controls[0])

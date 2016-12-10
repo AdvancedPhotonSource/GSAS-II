@@ -122,17 +122,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Scale'][1] = Obj.GetValue()
             
-        def OnScaleVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                scale = float(Obj.GetValue())
-                if scale > 0:
-                    UseList[G2frame.hist]['Scale'][0] = scale
-            except ValueError:
-                pass
-            Obj.SetValue("%.4f"%(UseList[G2frame.hist]['Scale'][0]))          #reset in case of error
-                        
         scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'PWDR' in G2frame.hist:
             scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Phase fraction: ')
@@ -141,11 +130,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleRef.SetValue(UseList[G2frame.hist]['Scale'][1])
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-        scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
-            '%.4f'%(UseList[G2frame.hist]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
-        scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
-        scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
+        scaleVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Scale'],0,
+            min=0.,nDig=(10,4),typeHint=float)
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)
@@ -298,17 +284,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             pass
         Obj.SetValue("%.3g"%(UseList[G2frame.hist]['HStrain'][0][pid]))          #reset in case of error
 
-    def OnPOVal(event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        try:
-            mdVal = float(Obj.GetValue())
-            if mdVal > 0:
-                UseList[G2frame.hist]['Pref.Ori.'][1] = mdVal
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Pref.Ori.'][1]))          #reset in case of error
-        
     def OnPOAxis(event):
         event.Skip()
         Obj = event.GetEventObject()
@@ -526,11 +501,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         poRef.SetValue(POData[2])
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
         poSizer.Add(poRef,0,WACV|wx.LEFT,5)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-        poVal = wx.TextCtrl(DData,wx.ID_ANY,
-            '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
-        poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
-        poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
+        poVal = G2G.ValidatedTxtCtrl(DData,POData,1,nDig=(10,3),typeHint=float,min=0.)
         poSizer.Add(poVal,0,WACV)
         poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Unique axis, H K L: '),0,WACV)
         h,k,l =POData[3]
@@ -542,29 +513,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         
     def SHDataSizer(POData):
         
-        def OnODFValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            odf = ODFIndx[Obj.GetId()]
-            try:
-                value = float(Obj.GetValue())
-                POData[5][odf] = value
-            except ValueError:
-                pass
-            Obj.SetValue('%8.3f'%(POData[5][odf]))
+        def OnODFValue(invalid,value,tc):
             G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
     
         ODFSizer = wx.FlexGridSizer(0,8,2,2)
-        ODFIndx = {}
         ODFkeys = POData[5].keys()
         ODFkeys.sort()
         for odf in ODFkeys:
             ODFSizer.Add(wx.StaticText(DData,wx.ID_ANY,odf),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            ODFval = wx.TextCtrl(DData,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
-            ODFIndx[ODFval.GetId()] = odf
-            ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
-            ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
+            ODFval = G2G.ValidatedTxtCtrl(DData,POData[5],odf,nDig=(8,3),typeHint=float,OnLeave=OnODFValue)
             ODFSizer.Add(ODFval,0,WACV|wx.LEFT,5)
         return ODFSizer
         
@@ -736,17 +693,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Twins'][it][0][im] = uvw
             Obj.SetValue('%3d %3d %3d'%(uvw[0],uvw[1],uvw[2]))
             
-        def OnTwinVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            it = Indx[Obj.GetId()]
-            try:
-                val = float(Obj.GetValue())
-                if 0. > val > 1.:
-                    raise ValueError
-            except ValueError:
-                val = UseList[G2frame.hist]['Twins'][it][1]
-            UseList[G2frame.hist]['Twins'][it][1] = val
+        def OnTwinVal(invalid,value,tc):
+            it = Indx[tc.GetId()]
             sumTw = 0.
             for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
                 if it:
@@ -823,13 +771,12 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=Style)
                 if it:
+                    twinval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Twins'][it],1,nDig=(10,3),
+                        min=0.,max=1.,typeHint=float,OnLeave=OnTwinVal)
                     Indx[twinval.GetId()] = it
-                    twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
-                    twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
                 else:
+                    twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=Style)
                     twinval.SetBackgroundColour(VERY_LIGHT_GREY)
                 valSizer.Add(twinval,0,WACV)
                 if it and 'bool' not in str(type(Twin[0])):

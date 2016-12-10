@@ -2897,8 +2897,10 @@ def ChargeFlip(data,reflDict,pgbar):
                 b = sind(ph+dp)
                 phasep = complex(a,b)
                 phasem = complex(a,-b)
-                Ehkl[hkl+Hmax] = E*phasep
-                Ehkl[-hkl+Hmax] = E*phasem
+                h,k,l = hkl+Hmax
+                Ehkl[h,k,l] = E*phasep
+                h,k,l = -hkl+Hmax
+                Ehkl[h,k,l] = E*phasem
 #    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
     testHKL = np.array(flipData['testHKL'])+Hmax
     CEhkl = copy.copy(Ehkl)

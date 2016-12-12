@@ -620,7 +620,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                     Eref.Bind(wx.EVT_CHECKBOX, OnEref)
                     val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
                     Eval = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Extinction'][2][ekey],0,
-                        min=0.,nDig=(10,3),typeHint=float)
+                        min=0.,nDig=(10,3,'g'),typeHint=float)
                     val2Sizer.Add(Eval,0,WACV)
                 extSizer.Add(val2Sizer,0,WACV)
         else:   #PWDR

@@ -79,7 +79,7 @@ def FormatValue(val,maxdigits=None):
     else:
         digits = list(maxdigits)
     if len(digits) == 2:
-        digits.append('g')
+        digits.append('f')
     if not val:
         digits[2] = 'f'
     fmt="{:"+str(digits[0])+"."+str(digits[1])+digits[2]+"}"

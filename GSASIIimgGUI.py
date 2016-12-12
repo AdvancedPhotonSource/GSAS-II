@@ -601,9 +601,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['binType'] = binSel.GetValue()
             wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
-        def OnIOtth(event):
-            event.Skip()
-            Ltth = max(float(G2frame.InnerTth.GetValue()),0.001)
+        def OnIOtth(invalid,value,tc):
+            Ltth = float(G2frame.InnerTth.GetValue())
             Utth = float(G2frame.OuterTth.GetValue())
             if Ltth > Utth:
                 Ltth,Utth = Utth,Ltth
@@ -611,22 +610,21 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 data['IOtth'] = [2.*asind(Ltth*wave/(4.*math.pi)),2.*asind(Utth*wave/(4.*math.pi))]
             else:
                 data['IOtth'] = [Ltth,Utth]
-            G2frame.InnerTth.SetValue("%8.3f" % (Ltth))
-            G2frame.OuterTth.SetValue("%8.3f" % (Utth))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            G2frame.InnerTth.SetValue(Ltth)
+            G2frame.OuterTth.SetValue(Utth)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
-        def OnLRazim(event):
-            event.Skip()
+        def OnLRazim(invalid,value,tc):
             Lazm = float(G2frame.Lazim.GetValue())%360.
             Razm = float(G2frame.Razim.GetValue())%360.
             if Lazm > Razm:
                 Razm += 360.
             if data['fullIntegrate']:
                 Razm = Lazm+360.
-            G2frame.Lazim.SetValue("%6.1f" % (Lazm))
-            G2frame.Razim.SetValue("%6.1f" % (Razm))
+            G2frame.Lazim.SetValue(Lazm)
+            G2frame.Razim.SetValue(Razm)
             data['LRazimuth'] = [Lazm,Razm]
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
                 
         def OnNumOutAzms(invalid,value,tc):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
@@ -696,37 +694,21 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wave = data['wavelength']
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-        G2frame.InnerTth = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%8.3f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
-        G2frame.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
-        G2frame.InnerTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
+        G2frame.InnerTth = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,IOtth,0,nDig=(8,3,'f'),min=0.001,typeHint=float,OnLeave=OnIOtth)
         littleSizer.Add(G2frame.InnerTth,0,WACV)
-#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-        G2frame.OuterTth = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%8.2f" % (IOtth[1])),style=wx.TE_PROCESS_ENTER)
-        G2frame.OuterTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
-        G2frame.OuterTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
+        G2frame.OuterTth = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,IOtth,1,nDig=(8,3,'f'),min=0.001,typeHint=float,OnLeave=OnIOtth)
         littleSizer.Add(G2frame.OuterTth,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start/End azimuth'),0,WACV)
         LRazim = data['LRazimuth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-        G2frame.Lazim = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%6.1f" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
-        G2frame.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
-        G2frame.Lazim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
+        G2frame.Lazim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,LRazim,0,nDig=(6,1,'f'),typeHint=float,OnLeave=OnLRazim)
         littleSizer.Add(G2frame.Lazim,0,WACV)
-#        ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
-        G2frame.Razim = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%6.1f" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
-        G2frame.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
-        G2frame.Razim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
+        G2frame.Razim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,LRazim,1,nDig=(6,1,'f'),typeHint=float,OnLeave=OnLRazim)
         if data['fullIntegrate']:
             G2frame.Razim.Enable(False)
             G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
-            G2frame.Razim.SetValue("%6.1f" % (LRazim[0]+360.))
+            G2frame.Razim.SetValue(LRazim[0]+360.)
         littleSizer.Add(G2frame.Razim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,WACV)

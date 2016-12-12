@@ -4353,13 +4353,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     if Data['binType'] == 'Q':
                         wave = Data['wavelength']
                         IOtth = [4.*math.pi*sind(Data['IOtth'][0]/2.)/wave,4.*math.pi*sind(Data['IOtth'][1]/2.)/wave]
-                        G2frame.InnerTth.SetValue("%8.2f" % (IOtth[0]))
-                        G2frame.OuterTth.SetValue("%8.2f" % (IOtth[1]))
+                        G2frame.InnerTth.SetValue(IOtth[0])
+                        G2frame.OuterTth.SetValue(IOtth[1])
                     else:
-                        G2frame.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
-                        G2frame.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
-                    G2frame.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
-                    G2frame.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                        G2frame.InnerTth.SetValue(Data['IOtth'][0])
+                        G2frame.OuterTth.SetValue(Data['IOtth'][1])
+                    G2frame.Lazim.SetValue(Data['LRazimuth'][0])
+                    G2frame.Razim.SetValue(Data['LRazimuth'][1])
                 elif 'Circle' in itemPicked and PickName == 'Masks':
                     spots = Masks['Points']
                     newPos = itemPicked.split(')')[0].split('(')[2].split(',')

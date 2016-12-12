@@ -4530,7 +4530,7 @@ def MovePatternTreeToGrid(G2frame,item):
         data = G2frame.PatternTree.GetItemPyData(item)
         G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
         G2imG.UpdateImageControls(G2frame,data,masks)
-        G2plt.PlotImage(G2frame,newPlot=True)
+        G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.PatternTree.GetItemText(item) == 'Masks':
         G2frame.dataFrame.SetTitle('Masks')
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
@@ -4539,7 +4539,7 @@ def MovePatternTreeToGrid(G2frame,item):
             GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
         G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
         G2imG.UpdateMasks(G2frame,masks)
-        G2plt.PlotImage(G2frame,newPlot=True)
+        G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.PatternTree.GetItemText(item) == 'Stress/Strain':
         G2frame.dataFrame.SetTitle('Stress/Strain')
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)

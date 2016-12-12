@@ -1305,6 +1305,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.plotStyle['sqrtPlot'] = False
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
+        elif event.key == 's' and not G2frame.SinglePlot:
+            print 'make selection here - TBD'
         elif event.key in ['+','=']:
             G2frame.plusPlot = not G2frame.plusPlot
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
@@ -1828,7 +1830,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     Page.Choice = (' key press','n: log(I) off',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
+                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot','s: select data',
                         'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
             elif 'SASD' in plottype:
                 if G2frame.SinglePlot:
@@ -1848,7 +1850,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                         'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
-                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot',
+                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','s: select data',
                         'w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
                 if G2frame.SinglePlot:

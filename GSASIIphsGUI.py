@@ -646,6 +646,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(General,label=txt),0,WACV)
                 if ifEdit:          #a,b,c,etc.
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     cellVal = wx.TextCtrl(General,value=(fmt%(cell[Id+1])),
                         style=wx.TE_PROCESS_ENTER)
                     cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -739,6 +740,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if gfac == None:
                         elemSizer.Add((5,0),)
                     else:
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                         gfacTxt = wx.TextCtrl(General,value='%.2f'%(gfac),style=wx.TE_PROCESS_ENTER)
                         Indx[gfacTxt.GetId()] = ig
                         gfacTxt.Bind(wx.EVT_TEXT_ENTER,OnGfacVal)        
@@ -823,6 +825,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             magSizer.Add(spinSizer)
             dminSizer = wx.BoxSizer(wx.HORIZONTAL)
             dminSizer.Add(wx.StaticText(General,label=' Magnetic reflection d-min: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             dminVal = wx.TextCtrl(General,value='%.4f'%(generalData['MagDmin']),style=wx.TE_PROCESS_ENTER)
             dminVal.Bind(wx.EVT_TEXT_ENTER,OnDminVal)        
             dminVal.Bind(wx.EVT_KILL_FOCUS,OnDminVal)
@@ -862,11 +865,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             pawlVal = wx.TextCtrl(General,value='%.5f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawleySizer.Add(pawlVal,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             pawlNegWt = wx.TextCtrl(General,value='%.4f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
             pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
             pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
@@ -943,6 +948,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['SuperVec'][0],ifShow = G2spc.SSGModCheck(generalData['SuperVec'][0],modS)
             for i,[val,show] in enumerate(zip(generalData['SuperVec'][0],ifShow)):
                 if show:
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     modVal = wx.TextCtrl(General,value=('%.4f'%(val)),
                         size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
                     modVal.Bind(wx.EVT_TEXT_ENTER,OnVec)        
@@ -1025,11 +1031,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             mapRes =  wx.TextCtrl(General,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
             mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
             line2Sizer.Add(mapRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             cutOff =  wx.TextCtrl(General,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
             cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
             cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
@@ -1120,16 +1128,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             flipSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             flipRes =  wx.TextCtrl(General,value='%.2f'%(Flip['Resolution']),style=wx.TE_PROCESS_ENTER)
             flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
             line2Sizer.Add(flipRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             kFactor =  wx.TextCtrl(General,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
             line2Sizer.Add(kFactor,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             kMax = wx.TextCtrl(General,value='%.1f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
             kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
             kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
@@ -1245,6 +1256,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             lineSizer.Add(refList,0,WACV)
             lineSizer.Add(wx.StaticText(General,label=' d-min: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             dmin = wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['dmin']),style=wx.TE_PROCESS_ENTER)
             dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
             dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
@@ -1263,6 +1275,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             ranStart.Bind(wx.EVT_CHECKBOX, OnRanStart)
             ranStart.SetValue(MCSAdata.get('ranStart',False))
             line2Sizer.Add(ranStart,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             ranRange = wx.TextCtrl(General,-1,value='%.1f'%(MCSAdata.get('ranRange',0.10)*100),style=wx.TE_PROCESS_ENTER)
             ranRange.Bind(wx.EVT_TEXT_ENTER,OnRanRange)        
             ranRange.Bind(wx.EVT_KILL_FOCUS,OnRanRange)
@@ -1292,6 +1305,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     parms = 'fast parms'
                 for i,name in enumerate(Names):
                     line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata[parms][i]),style=wx.TE_PROCESS_ENTER)
                     Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
                     Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
@@ -1299,6 +1313,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     line3Sizer.Add(Ajump,0,WACV)
             elif 'log' in MCSAdata['Algorithm']:
                 line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 slope =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['log slope']),style=wx.TE_PROCESS_ENTER)
                 slope.Bind(wx.EVT_TEXT_ENTER,OnSlope)        
                 slope.Bind(wx.EVT_KILL_FOCUS,OnSlope)
@@ -2885,6 +2900,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(layerData,label=txt),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 cellVal = wx.TextCtrl(layerData,value=(fmt%(cell[Id+1])),
                     style=wx.TE_PROCESS_ENTER)
                 cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -2917,6 +2933,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
                 widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
                 widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
                 widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
@@ -3300,6 +3317,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             topLine.Add(stackType,0,WACV)
             if Layers['Stacking'][0] == 'recursive':
                 topLine.Add(wx.StaticText(layerData,label=' number of layers (<1022 or "infinite"): '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 numLayers = wx.TextCtrl(layerData,value=data['Layers']['Stacking'][1],style=wx.TE_PROCESS_ENTER)
                 numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
                 numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
@@ -3365,6 +3383,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         laueSizer.Add(laue,0,WACV)
         if Layers['Laue'] == 'unknown':
             laueSizer.Add(wx.StaticText(layerData,label=' Diffraction symmetry tolerance: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             toler = wx.TextCtrl(layerData,value='%.3f'%(Layers['Toler']),style=wx.TE_PROCESS_ENTER)
             toler.Bind(wx.EVT_TEXT_ENTER,OnToler)        
             toler.Bind(wx.EVT_KILL_FOCUS,OnToler)
@@ -3766,6 +3785,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                         for ival,val in enumerate(wave[0]):
                             if np.any(CSI[Stype][0][ival]):
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                                 waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
@@ -4778,6 +4798,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
             ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             Zstep = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Zstep']),
                 style=wx.TE_PROCESS_ENTER)
             Zstep.Bind(wx.EVT_TEXT_ENTER,OnZstep)
@@ -4975,12 +4996,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             radSizer = wx.BoxSizer(wx.HORIZONTAL)
             radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             sizeH = wx.TextCtrl(drawOptions,-1,value='%.2f'%(drawingData['sizeH']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
             sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
             sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
             radSizer.Add(sizeH,0,WACV)
     
             radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             radFactor = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['radiusFactor']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
             radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
             radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
@@ -5043,6 +5066,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             planeSizer1.Add(showStack,0,WACV)
             planeSizer2 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer2.Add(wx.StaticText(drawOptions,label=' Phase shift (deg): '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             phase = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Plane'][3]),
                 style=wx.TE_PROCESS_ENTER)
             phase.Bind(wx.EVT_TEXT_ENTER,OnPhase)
@@ -5321,6 +5345,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             hklList.Bind(wx.EVT_BUTTON,OnHKLList)
             shPenalty.Add(hklList,0,WACV)
             shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             shToler = wx.TextCtrl(Texture,wx.ID_ANY,'%.2f'%(Penalty[1]),style=wx.TE_PROCESS_ENTER)
             shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
             shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
@@ -5401,6 +5426,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,WACV)
             PX = textureData['PFxyz']
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
@@ -5428,6 +5454,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             ODFkeys.sort()
             for item in ODFkeys:
                 ODFSizer.Add(wx.StaticText(Texture,-1,item),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 ODFval = wx.TextCtrl(Texture,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
                 ODFIndx[ODFval.GetId()] = item
                 ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
@@ -5447,6 +5474,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angIndx[angRef.GetId()] = item
             angRef.Bind(wx.EVT_CHECKBOX, OnAngRef)
             angSizer.Add(angRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             angVal = wx.TextCtrl(Texture,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
             valIndx[angVal.GetId()] = item
             angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
@@ -5816,6 +5844,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 thermVal = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(model[1][i]),
                     style=wx.TE_PROCESS_ENTER)
                 thermVal.Bind(wx.EVT_TEXT_ENTER,OnThermval)
@@ -5888,6 +5917,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Orien.extend(OrienV/nl.norm(OrienV))
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,WACV)
             for ix,x in enumerate(Orig):
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 origX = wx.TextCtrl(RigidBodies,-1,value='%8.5f'%(x),style=wx.TE_PROCESS_ENTER)
                 origX.Bind(wx.EVT_TEXT_ENTER,OnOrigX)
                 origX.Bind(wx.EVT_KILL_FOCUS,OnOrigX)
@@ -5900,6 +5930,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
             for ix,x in enumerate(Orien):
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
                 orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
                 orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
@@ -5965,6 +5996,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             torSizer = wx.FlexGridSizer(0,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 torsTxt = wx.TextCtrl(RigidBodies,-1,value='%.3f'%(tors[0]),style=wx.TE_PROCESS_ENTER)
                 torsTxt.Bind(wx.EVT_TEXT_ENTER,OnTorsion)
                 torsTxt.Bind(wx.EVT_KILL_FOCUS,OnTorsion)
@@ -6363,6 +6395,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                         TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
                         TorSizer.Add(wx.StaticText(RigidBodies,-1,' Angle: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                         ang = wx.TextCtrl(RigidBodies,-1,value='%8.3f'%(torsion[0]),style=wx.TE_PROCESS_ENTER)
                         ang.Bind(wx.EVT_TEXT_ENTER,OnTorAngle)
                         ang.Bind(wx.EVT_KILL_FOCUS,OnTorAngle)
@@ -6633,6 +6666,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 atomsizer.Add(posRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
@@ -6706,6 +6740,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 rbsizer1.Add(posRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
@@ -6728,6 +6763,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oa: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             angVal = wx.TextCtrl(G2frame.MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
@@ -6775,6 +6811,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                     Indx[torRef.GetId()] = [model,'Tor',it]
                     rbsizer3.Add(torRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     torVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
                     torVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                     torVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
@@ -6838,6 +6875,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             poRef.SetValue(POData['Coef'][1])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             poVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
             poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
             poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)

@@ -2654,17 +2654,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnIfX20(event):
         G2frame.ifX20 = x20.GetValue()
         
-    def OnStartVol(event):
-        event.Skip()
-        try:
-            stVol = int(float(startVol.GetValue()))
-            if stVol < 25:
-                raise ValueError
-        except ValueError:
-            stVol = 25
-        controls[3] = stVol
-        startVol.SetValue("%d"%(stVol))
-        
     def OnBravais(event):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
@@ -3147,11 +3136,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     NcNo.SetValue(controls[2])
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,WACV)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start Volume '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-    startVol = wx.TextCtrl(G2frame.dataDisplay,value=str('%d'%(controls[3])),style=wx.TE_PROCESS_ENTER)
-    startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
-    startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
+    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Start Volume '),0,WACV)
+    startVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controls,3,typeHint=int,min=25)
     littleSizer.Add(startVol,0,WACV)
     x20 = wx.CheckBox(G2frame.dataDisplay,label='Use M20/(X20+1)?')
     x20.SetValue(G2frame.ifX20)
@@ -4164,15 +4150,6 @@ def UpdateModelsGrid(G2frame,data):
             data['Size']['Method'] = method.GetValue()
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
-        def OnPartVal(event):
-            event.Skip()
-            try:
-                val = max(0.0,float(partprm.GetValue()))
-            except ValueError:
-                val = 1
-            data['Size']['Shape'][1] = val
-            partprm.SetValue('%.3f'%(val))
-            
         sizeSizer = wx.BoxSizer(wx.VERTICAL)
         sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Size distribution parameters: '),0,WACV)
         binSizer = wx.FlexGridSizer(0,7,5,5)
@@ -4219,11 +4196,8 @@ def UpdateModelsGrid(G2frame,data):
         partSizer.Add(partsh,0,WACV)
         if data['Size']['Shape'][0] not in ['Unified sphere',]:
             partSizer.Add(wx.StaticText(G2frame.dataDisplay,label=shapes[data['Size']['Shape'][0]]),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            partprm = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Size']['Shape'][1]),
-                style=wx.TE_PROCESS_ENTER)
-            partprm.Bind(wx.EVT_TEXT_ENTER,OnPartVal)        
-            partprm.Bind(wx.EVT_KILL_FOCUS,OnPartVal)
+            partprm = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Size']['Shape'],1,
+                nDig=(10,3),typeHint=float,min=0.)
             partSizer.Add(partprm,0,WACV)
         sizeSizer.Add(partSizer,0)
         sizeSizer.Add((5,5),0)
@@ -4522,14 +4496,7 @@ def UpdateModelsGrid(G2frame,data):
         esdScale.SetValue('%.3f'%(value))
         RefreshPlots(True)
         
-    def OnBackChange(event):
-        event.Skip()
-        try:
-            value = float(backVal.GetValue())
-        except ValueError:
-            value = 0.0
-        backVal.SetValue('%.3g'%(value))
-        data['Back'][0] = value
+    def OnBackChange(invalid,value,tc):
         Profile[4][:] = value
         RefreshPlots()
         
@@ -4592,11 +4559,8 @@ def UpdateModelsGrid(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-    backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)
-    Indx[backVal.GetId()] = ['Back',0,'%.3g']
-    backVal.Bind(wx.EVT_TEXT_ENTER,OnBackChange)        
-    backVal.Bind(wx.EVT_KILL_FOCUS,OnBackChange)
+    backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Back'],0,
+        nDig=(10,3),typeHint=float,OnLeave=OnBackChange)
     backSizer.Add(backVal,0,WACV)
     backVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
     Indx[backVar.GetId()] = [data['Back'],1]
@@ -4896,12 +4860,10 @@ def UpdatePDFGrid(G2frame,data):
         return auxPlot
         
     def OnComputePDF(event):
-#        print 'Calculating PDF:'
         if not data['ElList']:
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
             return
         auxPlot = ComputePDF(data)
-#        print 'Done calculating PDF:'
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
             Status.SetStatusText('PDF computed')

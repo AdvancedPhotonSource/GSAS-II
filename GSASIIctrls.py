@@ -276,9 +276,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       type of int, float, str or unicode; the TextCrtl will be initialized
       from this value.
       
-    :param list nDig: number of digits & places ([nDig,nPlc]) after decimal to use
-      for display of float. Alternately, None can be specified which causes
-      numbers to be displayed with approximately 5 significant figures
+    :param list nDig: number of digits, places and optionally the format 
+     ([nDig,nPlc,fmt]) after decimal to use for display of float. The format 
+     is either 'f' (default) or 'g'. Alternately, None can be specified which 
+     causes numbers to be displayed with approximately 5 significant figures
       (Default=None).
 
     :param bool notBlank: if True (default) blank values are invalid
@@ -291,6 +292,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     :param number max: maximum allowed valid value. If None (default) the
       upper limit is unbounded
       NB: test in NumberValidator is val <= max not val < max
+      
+    :param list exclLim: if True exclude min/max value ([exclMin,exclMax]); 
+     (Default=[False,False]) 
 
     :param function OKcontrol: specifies a function or method that will be
       called when the input is validated. The called function is supplied
@@ -337,8 +341,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
     '''
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
-                 OKcontrol=None,OnLeave=None,typeHint=None,
-                 CIFinput=False, OnLeaveArgs={}, ASCIIonly=False, **kw):
+        OKcontrol=None,OnLeave=None,typeHint=None,CIFinput=False,exclLim=[False,False],
+        OnLeaveArgs={}, ASCIIonly=False, **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
@@ -360,13 +364,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             kw['style'] = wx.TE_PROCESS_ENTER
         if isinstance(val,int) or typeHint is int:
             self.type = int
-            wx.TextCtrl.__init__(
-                self,parent,wx.ID_ANY,
-                validator=NumberValidator(int,result=loc,key=key,
-                                          min=min,max=max,
-                                          OKcontrol=OKcontrol,
-                                          CIFinput=CIFinput),
-                **kw)
+            wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
+                validator=NumberValidator(int,result=loc,key=key,min=min,max=max,
+                    exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
             if val is not None:
                 self._setValue(val)
             else: # no default is invalid for a number
@@ -375,13 +375,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
         elif isinstance(val,float) or typeHint is float:
             self.type = float
-            wx.TextCtrl.__init__(
-                self,parent,wx.ID_ANY,
-                validator=NumberValidator(float,result=loc,key=key,
-                                          min=min,max=max,
-                                          OKcontrol=OKcontrol,
-                                          CIFinput=CIFinput),
-                **kw)
+            wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
+                validator=NumberValidator(float,result=loc,key=key,min=min,max=max,
+                    exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
             if val is not None:
                 self._setValue(val)
             else:
@@ -608,6 +604,9 @@ class NumberValidator(wx.PyValidator):
     :param number max: Maximum allowed value. If None (default) the
       upper limit is unbounded
       
+    :param list exclLim: if True exclude min/max value ([exclMin,exclMax]); 
+     (Default=[False,False]) 
+
     :param dict/list result: List or dict where value should be placed when valid
 
     :param any key: key to use for result (int for list)
@@ -620,8 +619,8 @@ class NumberValidator(wx.PyValidator):
       as valid input.
       
     '''
-    def __init__(self, typ, positiveonly=False, min=None, max=None,
-                 result=None, key=None, OKcontrol=None, CIFinput=False):
+    def __init__(self, typ, positiveonly=False, min=None, max=None,exclLim=[False,False],
+        result=None, key=None, OKcontrol=None, CIFinput=False):
         'Create the validator'
         wx.PyValidator.__init__(self)
         # save passed parameters
@@ -629,6 +628,7 @@ class NumberValidator(wx.PyValidator):
         self.positiveonly = positiveonly
         self.min = min
         self.max = max
+        self.exclLim = exclLim
         self.result = result
         self.key = key
         self.OKcontrol = OKcontrol
@@ -694,18 +694,15 @@ class NumberValidator(wx.PyValidator):
             else: 
                 tc.invalid = True
                 return
-        # if self.max != None and self.typ == int:
-        #     if val > self.max:
-        #         tc.invalid = True
-        # if self.min != None and self.typ == int:
-        #     if val < self.min:
-        #         tc.invalid = True  # invalid
-        #TODO: this needs test on val > self.max & val < self.max via a control
         if self.max != None:
-            if val > self.max:
+            if val >= self.max and exclLim[1]:
+                tc.invalid = True
+            elif val > self.max:
                 tc.invalid = True
         if self.min != None:
-            if val < self.min:
+            if val <= self.min and ecxlLim[0]:
+                tc.invalid = True
+            elif val < self.min:
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val

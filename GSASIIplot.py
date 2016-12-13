@@ -1306,7 +1306,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key == 'f' and not G2frame.SinglePlot:
-            choices = G2pdG.GetHistsLikeSelected(G2frame)
+            choices = G2gd.GetPatternTreeDataNames(G2frame,plotType)
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select dataset to plot', 
                 'Multidata plot selection',choices)
             if dlg.ShowModal() == wx.ID_OK:
@@ -1895,7 +1895,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         ParmList = []
         SampleList = []
         if G2frame.selections is None:
-            choices = G2pdG.GetHistsLikeSelected(G2frame)
+            choices = G2gd.GetPatternTreeDataNames(G2frame,plotType)
         else:
             choices = G2frame.selections
         for item in choices:
@@ -1904,7 +1904,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if len(Pattern) < 3:                    # put name on end if needed
                 Pattern.append(G2frame.PatternTree.GetItemText(id))
             if 'Offset' not in Pattern[0]:     #plot offset data
-                print 'no Offset?'
                 Ymax = max(Pattern[1][1])
                 Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
             PlotList.append(Pattern)
@@ -2337,13 +2336,13 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
 ##### PlotISFG
 ################################################################################
             
-def PlotISFG(G2frame,newPlot=False,type=''):
+def PlotISFG(G2frame,newPlot=False,plotType=''):
     ''' Plotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
-    if not type:
-        type = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
-    if type not in ['I(Q)','S(Q)','F(Q)','G(R)']:
+    if not plotType:
+        plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
+    if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)']:
         return
     superMinusOne = unichr(0xaf)+unichr(0xb9)
     
@@ -2373,6 +2372,20 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             if G2frame.Contour:
                 G2frame.SinglePlot = False
                 Page.Offset = [0.,0.]
+        elif event.key == 'f' and not G2frame.SinglePlot:
+            choices = G2gd.GetPatternTreeDataNames(G2frame,'PDF ')
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select dataset to plot', 
+                'Multidata plot selection',choices)
+            if dlg.ShowModal() == wx.ID_OK:
+                G2frame.PDFselections = []
+                select = dlg.GetSelections()
+                if select:
+                    for id in select:
+                        G2frame.PDFselections.append(choices[id])
+                else:
+                    G2frame.PDFselections = None
+            dlg.Destroy()
+            newPlot = True
         elif event.key == 's':
             if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -2399,7 +2412,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             dlg.Destroy()
         elif event.key == 't' and not G2frame.Contour:
             G2frame.Legend = not G2frame.Legend
-        PlotISFG(G2frame,newPlot=newPlot,type=type)
+        PlotISFG(G2frame,newPlot=newPlot,plotType=plotType)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -2410,12 +2423,12 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 if G2frame.Contour:
                     G2frame.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
                 else:
-                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,type,ypos),1)                   
+                    G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,plotType,ypos),1)                   
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+plotType+' pattern first',1)
     
     xylim = []
-    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(type,'mpl')
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'mpl')
     if not new:
         if not newPlot:
             xylim = lim
@@ -2429,25 +2442,25 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max',
-            'i: interpolation method','s: color scheme','c: contour off')
+            'i: interpolation method','s: color scheme','c: contour off','f: select data')
     else:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
             'o: reset offset','t: toggle legend','c: contour on',
-            'm: toggle multiplot','s: toggle single plot')
+            'm: toggle multiplot','s: toggle single plot','f: select data' )
     Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
-    Plot.set_title(type)
-    if type == 'G(R)':
+    Plot.set_title(plotType)
+    if plotType == 'G(R)':
         Plot.set_xlabel(r'$R,\AA$',fontsize=14)
     else:
         Plot.set_xlabel(r'$Q,\AA$'+superMinusOne,fontsize=14)
-    Plot.set_ylabel(r''+type,fontsize=14)
+    Plot.set_ylabel(r''+plotType,fontsize=14)
     colors=['b','g','r','c','m','k']
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     Pattern = []    
     if G2frame.SinglePlot:
         name = G2frame.PatternTree.GetItemText(PatternId)
-        name = type+name[4:]
+        name = plotType+name[4:]
         Id = G2gd.GetPatternTreeItemId(G2frame,PatternId,name)
         Pattern = G2frame.PatternTree.GetItemPyData(Id)
         if Pattern:
@@ -2455,17 +2468,18 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         PlotList = [Pattern,]
     else:
         PlotList = []
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            if 'PDF' in G2frame.PatternTree.GetItemText(item).split()[0]:
-                name = type+G2frame.PatternTree.GetItemText(item)[4:]
-                Id = G2gd.GetPatternTreeItemId(G2frame,item,name)
-                Pattern = G2frame.PatternTree.GetItemPyData(Id)
-                if Pattern:
-                    Pattern.append(name)
-                    PlotList.append(Pattern)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
-                    
+        if G2frame.PDFselections is None:
+            choices = G2gd.GetPatternTreeDataNames(G2frame,'PDF ')
+        else:
+            choices = G2frame.PDFselections
+        for item in choices:
+            Pid = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            name = plotType+item[4:]
+            Id = G2gd.GetPatternTreeItemId(G2frame,Pid,name)
+            Pattern = G2frame.PatternTree.GetItemPyData(Id)
+            if Pattern:
+                Pattern.append(item)
+                PlotList.append(Pattern)
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Ymax = 0.01
@@ -2500,13 +2514,13 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
             else:
                 Plot.plot(X,Y,colors[N%6],picker=False)
-            if type == 'G(R)':
+            if plotType == 'G(R)':
                 Xb = [0.,10.]
                 Yb = [0.,-40.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
-            elif type == 'F(Q)':
+            elif plotType == 'F(Q)':
                 Plot.axhline(0.,color=wx.BLACK)
-            elif type == 'S(Q)':
+            elif plotType == 'S(Q)':
                 Plot.axhline(1.,color=wx.BLACK)
     if G2frame.Contour and len(Pattern)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)

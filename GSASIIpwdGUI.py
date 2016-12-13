@@ -4871,10 +4871,10 @@ def UpdatePDFGrid(G2frame,data):
             XY = np.array(plot[:2])
             G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
         if event is not None:
-            G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
         else:
             G2plt.PlotISFG(G2frame,newPlot=False)
         
@@ -4894,10 +4894,10 @@ def UpdatePDFGrid(G2frame,data):
             if not G2frame.dataFrame.GetStatusBar():
                 Status = G2frame.dataFrame.CreateStatusBar()
                 Status.SetStatusText('All PDFs computed')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
             print ' Done calculating PDFs:'
         
     if G2frame.dataDisplay:

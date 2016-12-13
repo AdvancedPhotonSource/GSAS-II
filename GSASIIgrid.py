@@ -4489,7 +4489,7 @@ def MovePatternTreeToGrid(G2frame,item):
         elif 'PDF' in G2frame.PatternTree.GetItemText(item):
             G2frame.PatternId = item
             for i in G2frame.ExportPDF: i.Enable(True)
-            G2plt.PlotISFG(G2frame,type='S(Q)')
+            G2plt.PlotISFG(G2frame,plotType='S(Q)')
         elif G2frame.PatternTree.GetItemText(item) == 'Phases':
             G2frame.dataFrame.setSizePosLeft(defWid)
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
@@ -4498,22 +4498,22 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,type='I(Q)',newPlot=True)
+        G2plt.PlotISFG(G2frame,plotType='I(Q)',newPlot=True)
     elif 'S(Q)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,type='S(Q)',newPlot=True)
+        G2plt.PlotISFG(G2frame,plotType='S(Q)',newPlot=True)
     elif 'F(Q)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,type='F(Q)',newPlot=True)
+        G2plt.PlotISFG(G2frame,plotType='F(Q)',newPlot=True)
     elif 'G(R)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,type='G(R)',newPlot=True)            
+        G2plt.PlotISFG(G2frame,plotType='G(R)',newPlot=True)            
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         data = G2frame.PatternTree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data,oldPage)
@@ -4555,10 +4555,10 @@ def MovePatternTreeToGrid(G2frame,item):
         for i in G2frame.ExportPDF: i.Enable(True)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,type='I(Q)')
-        G2plt.PlotISFG(G2frame,type='S(Q)')
-        G2plt.PlotISFG(G2frame,type='F(Q)')
-        G2plt.PlotISFG(G2frame,type='G(R)')
+        G2plt.PlotISFG(G2frame,plotType='I(Q)')
+        G2plt.PlotISFG(G2frame,plotType='S(Q)')
+        G2plt.PlotISFG(G2frame,plotType='F(Q)')
+        G2plt.PlotISFG(G2frame,plotType='G(R)')
     elif G2frame.PatternTree.GetItemText(item) == 'Peak List':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPeakList: i.Enable(True)

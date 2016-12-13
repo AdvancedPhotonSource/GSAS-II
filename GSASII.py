@@ -2389,6 +2389,7 @@ class GSASII(wx.Frame):
         self.Legend = False
         self.SinglePlot = True
         self.selections= None
+        self.PDFselections = None
         self.SubBack = False
         self.seqReverse = False
         self.seqLines = True #draw lines between points

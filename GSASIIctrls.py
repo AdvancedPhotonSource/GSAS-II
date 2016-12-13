@@ -695,12 +695,12 @@ class NumberValidator(wx.PyValidator):
                 tc.invalid = True
                 return
         if self.max != None:
-            if val >= self.max and exclLim[1]:
+            if val >= self.max and self.exclLim[1]:
                 tc.invalid = True
             elif val > self.max:
                 tc.invalid = True
         if self.min != None:
-            if val <= self.min and ecxlLim[0]:
+            if val <= self.min and self.exclLim[0]:
                 tc.invalid = True
             elif val < self.min:
                 tc.invalid = True  # invalid
@@ -1314,6 +1314,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.ChoiceList = ChoiceList # list of choices (list of str values)
         self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
         self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
+        self.Stride = 1
         if options['style'] & wx.OK:
             useOK = True
             options['style'] ^= wx.OK
@@ -1359,9 +1360,14 @@ class G2MultiChoiceDialog(wx.Dialog):
             togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
             togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
             tSizer.Add(togBut)
+            tSizer.Add(wx.StaticText(self,label=' Set Stride:'),0,WACV)
+            numbs = [str(i+1) for i in range(10)]
+            self.stride = wx.ComboBox(self,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)
+            tSizer.Add(self.stride,0,WACV)
             self.rangeBut = wx.ToggleButton(self,wx.ID_ANY,'Set Range')
             self.rangeBut.Bind(wx.EVT_TOGGLEBUTTON,self.SetRange)
-            tSizer.Add(self.rangeBut)            
+            tSizer.Add(self.rangeBut)
             self.rangeCapt = wx.StaticText(self,wx.ID_ANY,'')
             tSizer.Add(self.rangeCapt)
             Sizer.Add(tSizer,0,wx.LEFT,12)
@@ -1381,6 +1387,9 @@ class G2MultiChoiceDialog(wx.Dialog):
         # OK done, let's get outa here
         self.SetSizer(Sizer)
         self.CenterOnParent()
+        
+    def OnStride(self,event):
+        self.Stride = int(self.stride.GetValue())
 
     def SetRange(self,event):
         '''Respond to a press of the Set Range button. Set the range flag and
@@ -1422,7 +1431,9 @@ class G2MultiChoiceDialog(wx.Dialog):
             
     def _SetAll(self,event):
         'Set all viewed choices on'
-        self.clb.SetChecked(range(len(self.filterlist)))
+        self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        self.stride.SetValue('1')
+        self.Stride = 1
         
     def _ToggleAll(self,event):
         'flip the state of all viewed choices'
@@ -1453,7 +1464,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             elif self.rangeFirst == id:
                 pass
             else:
-                for i in range(min(self.rangeFirst,id), max(self.rangeFirst,id)+1):
+                for i in range(min(self.rangeFirst,id), max(self.rangeFirst,id)+1,self.Stride):
                     self.clb.Check(i,self.clb.IsChecked(self.rangeFirst))
                 self.rangeBut.SetValue(False)
                 self.rangeCapt.SetLabel('')

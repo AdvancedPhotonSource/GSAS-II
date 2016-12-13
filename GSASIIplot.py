@@ -1305,8 +1305,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.plotStyle['sqrtPlot'] = False
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
-        elif event.key == 's' and not G2frame.SinglePlot:
-            print 'make selection here - TBD'
+        elif event.key == 'f' and not G2frame.SinglePlot:
+            choices = G2pdG.GetHistsLikeSelected(G2frame)
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select dataset to plot', 
+                'Multidata plot selection',choices)
+            if dlg.ShowModal() == wx.ID_OK:
+                G2frame.selections = []
+                select = dlg.GetSelections()
+                if select:
+                    for id in select:
+                        G2frame.selections.append(choices[id])
+                else:
+                    G2frame.selections = None
+            dlg.Destroy()
+            newPlot = True
         elif event.key in ['+','=']:
             G2frame.plusPlot = not G2frame.plusPlot
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
@@ -1830,7 +1842,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     Page.Choice = (' key press','n: log(I) off',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot','s: select data',
+                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot','f: select data',
                         'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
             elif 'SASD' in plottype:
                 if G2frame.SinglePlot:
@@ -1850,7 +1862,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                         'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
-                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','s: select data',
+                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','f: select data',
                         'w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
                 if G2frame.SinglePlot:
@@ -1877,27 +1889,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         ParmList = [Parms,]
         SampleList = [Sample,]
         Title = Pattern[-1]
-    else:        
+    else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         PlotList = []
         ParmList = []
         SampleList = []
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            if plottype in G2frame.PatternTree.GetItemText(item):
-                Pattern = G2frame.PatternTree.GetItemPyData(item)
-                if len(Pattern) < 3:                    # put name on end if needed
-                    Pattern.append(G2frame.PatternTree.GetItemText(item))
-                if 'Offset' not in Pattern[0]:     #plot offset data
-                    print 'no Offset?'
-                    Ymax = max(Pattern[1][1])
-                    Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
-                PlotList.append(Pattern)
-                ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-                    item,'Instrument Parameters'))[0])
-                SampleList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-                    item, 'Sample Parameters')))
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
+        if G2frame.selections is None:
+            choices = G2pdG.GetHistsLikeSelected(G2frame)
+        else:
+            choices = G2frame.selections
+        for item in choices:
+            id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, item)
+            Pattern = G2frame.PatternTree.GetItemPyData(id)
+            if len(Pattern) < 3:                    # put name on end if needed
+                Pattern.append(G2frame.PatternTree.GetItemText(id))
+            if 'Offset' not in Pattern[0]:     #plot offset data
+                print 'no Offset?'
+                Ymax = max(Pattern[1][1])
+                Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
+            PlotList.append(Pattern)
+            ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+                id,'Instrument Parameters'))[0])
+            SampleList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+                id, 'Sample Parameters')))
     lenX = 0
     Ymax = None
     for Pattern in PlotList:

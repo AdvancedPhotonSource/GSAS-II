@@ -2388,6 +2388,7 @@ class GSASII(wx.Frame):
         self.Contour = False
         self.Legend = False
         self.SinglePlot = True
+        self.selections= None
         self.SubBack = False
         self.seqReverse = False
         self.seqLines = True #draw lines between points
@@ -2661,7 +2662,8 @@ class GSASII(wx.Frame):
             return self.data
         
     class SumDialog(wx.Dialog):
-        'Allows user to supply scale factor(s) when summing data'
+        '''Allows user to supply scale factor(s) when summing data - 
+        TODO: CAN WE PREVIEW RESULT HERE?'''
         def __init__(self,parent,title,text,dataType,data):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)

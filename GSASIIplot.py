@@ -5159,10 +5159,11 @@ def PlotStructure(G2frame,data,firstCall=False):
                 G2frame.dataDisplay.viewDir.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
                 
     def SetMapPeaksText(mapPeaks):
+        data['Map Peaks'] = mapPeaks
         page = getSelection()
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
-                G2frame.MapPeaksTable.SetData(mapPeaks)
+                G2frame.MapPeaksTable.SetData(data['Map Peaks'])
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()
                 names = [child.GetName() for child in panel]
                 try:
@@ -5245,9 +5246,9 @@ def PlotStructure(G2frame,data,firstCall=False):
         return roll
                 
     def SetMapRoll(newxy):
-        rho = mapData['rho']
+        rho = generalData['Map']['rho']
         roll = GetRoll(newxy,rho.shape)
-        mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+        generalData['Map']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
         drawingData['oldxy'] = list(newxy)
         
     def Set4DMapRoll(newxy):
@@ -5256,7 +5257,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         generalData['4DmapData']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
         
     def SetPeakRoll(newxy):
-        rho = mapData['rho']
+        rho = generalData['Map']['rho']
         roll = GetRoll(newxy,rho.shape)
         steps = 1./np.array(rho.shape)
         dxy = roll*steps

@@ -521,7 +521,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             minSel.SetValue(int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
             
+        G2frame.prevMaxValue = None    
         def OnMaxSlider(event):
+            if G2frame.prevMaxValue == maxSel.GetValue(): # if this val has been processed, no need to repeat
+                #print 'duplication'
+                return
+            G2frame.prevMaxValue = maxSel.GetValue()
             sqrtDeltZero = math.sqrt(data['range'][0][1])
             imax = int(maxSel.GetValue())*sqrtDeltZero/100.
             data['range'][1][1] = imax**2
@@ -529,14 +534,25 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             DeltOne = max(1.0,data['range'][1][1]-data['range'][1][0])
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
             maxVal.SetValue(int(data['range'][1][1]))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)  # replace with code below for more speed
+            new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+            Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
+            Page.canvas.draw_idle()
             
+        G2frame.prevMinValue = None    
         def OnMinSlider(event):
+            if G2frame.prevMinValue == minSel.GetValue(): # if this val has been processed, no need to repeat
+                #print 'duplication'
+                return
+            G2frame.prevMinValue = minSel.GetValue()
             DeltOne = data['range'][1][1]-data['range'][1][0]
             imin = int(minSel.GetValue())*DeltOne/100.
             data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin))
             minVal.SetValue(int(data['range'][1][0]))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+            #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event) # replace with code below for more speed
+            new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+            Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
+            Page.canvas.draw_idle()
             
         maxSizer = wx.FlexGridSizer(0,3,0,5)
         maxSizer.AddGrowableCol(1,1)

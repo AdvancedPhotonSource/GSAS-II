@@ -4519,9 +4519,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Imin,Imax = [np.amin(A),np.amax(A)]
             Plot.imshow(AM,aspect='equal',cmap='Reds',
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
-            Img = Plot.imshow(A,aspect='equal',cmap=acolor,
+            Page.ImgObj = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-    
+            
         Plot.plot(xcent,ycent,'x')
         #G2frame.PatternTree.GetItemText(item)
         if Data['showLines']:
@@ -4643,7 +4643,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.frameList.append([Plot.plot(x,y,'g+',picker=10),0])
             Plot.plot(x,y,'g')            
         if newImage:
-            Page.figure.colorbar(Img)
+            Page.figure.colorbar(Page.ImgObj)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
         if Data['invert_x']:
@@ -4665,7 +4665,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.canvas.draw()
     finally:
         wx.EndBusyCursor()
-        
+    
 ################################################################################
 ##### PlotIntegration
 ################################################################################

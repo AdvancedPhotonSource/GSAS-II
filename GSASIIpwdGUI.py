@@ -2261,18 +2261,14 @@ def UpdateSampleGrid(G2frame,data):
             wx.CallAfter(UpdateSampleGrid,G2frame,data)            
             
     def OnMaterial(event):
-        event.Skip()
         Obj = event.GetEventObject()
-        id,key = Info[Obj.GetId()]
-        if key == 'Name':
-            data['Materials'][id][key] = Obj.GetValue()
-        elif key == 'VolFrac':
-            try:
-                value = min(max(0.,float(Obj.GetValue())),1.)
-            except ValueError:
-                value = data['Materials'][id][key]
-            data['Materials'][id][key] = value
-            data['Materials'][not id][key] = 1.-value
+        id = Info[Obj.GetId()]
+        data['Materials'][id]['Name'] = Obj.GetValue()
+        wx.CallAfter(UpdateSampleGrid,G2frame,data)
+        
+    def OnVolFrac(invalid,value,tc):
+        id = Info[tc.GetId()]
+        data['Materials'][not id][key] = 1.-value
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def OnCopy1Val(event):
@@ -2428,15 +2424,12 @@ def UpdateSampleGrid(G2frame,data):
             subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
             matsel = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=Substances['Substances'].keys(),
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Info[matsel.GetId()] = [id,'Name']
+            Info[matsel.GetId()] = id
             matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
             subSizer.Add(matsel,0,WACV)
             subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            volfrac = wx.TextCtrl(G2frame.dataDisplay,value=str('%.3f'%(item['VolFrac'])),style=wx.TE_PROCESS_ENTER)
-            Info[volfrac.GetId()] = [id,'VolFrac']
-            volfrac.Bind(wx.EVT_TEXT_ENTER,OnMaterial)
-            volfrac.Bind(wx.EVT_KILL_FOCUS,OnMaterial)
+            volfrac = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'VolFrac',
+                min=0.,max=1.,nDig=(10,3),typeHint=float,OnLeave=OnVolFrac)
             subSizer.Add(volfrac,0,WACV)
             material = Substances['Substances'][item['Name']]
             mu += item['VolFrac']*material.get('XAbsorption',0.)
@@ -2680,18 +2673,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
-    def OnModVal(event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        ObjId = Obj.GetId()
-        Id = Indx[ObjId]
-        try:
-            value = min(0.98,max(-0.98,float(Obj.GetValue())))
-        except ValueError:
-            value = ssopt['ModVec'][Id]
-        Obj.SetValue('%.4f'%(value))
-        ssopt['ModVec'][Id] = value
-        OnHklShow(event)
+    def OnModVal(invalid,value,tc):
+        OnHklShow(tc.event)
         
     def OnMoveMod(event):
         Obj = event.GetEventObject()
@@ -3242,11 +3225,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.4f'%(val)),
-                    size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
-                modVal.Bind(wx.EVT_TEXT_ENTER,OnModVal)        
-                modVal.Bind(wx.EVT_KILL_FOCUS,OnModVal)
+                modVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ssopt['ModVec'],i,
+                    min=-.98,max=.98,nDig=(10,4),typeHint=float,OnLeave=OnModVal)
                 valSizer.Add(modVal,0,WACV)
                 modSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
                 modSpin.SetValue(0)

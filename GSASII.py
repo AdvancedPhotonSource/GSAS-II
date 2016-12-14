@@ -2665,10 +2665,15 @@ class GSASII(wx.Frame):
     class SumDialog(wx.Dialog):
         '''Allows user to supply scale factor(s) when summing data - 
         TODO: CAN WE PREVIEW RESULT HERE?'''
-        def __init__(self,parent,title,text,dataType,data):
+        def __init__(self,parent,title,text,dataType,data,dataList):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            self.plotFrame = wx.Frame(self,-1,'Sum Plots',size=wx.Size(700,600), \
+                style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
+            self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
             self.data = data
+            self.dataList = dataList
+            self.dataType = dataType
             size = (400,250)
             panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
                 style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
@@ -2687,8 +2692,8 @@ class GSASII(wx.Frame):
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
                 self.dataGridSizer.Add(scale,0,wx.LEFT,10)
                 self.dataGridSizer.Add(name,0,wx.RIGHT,10)
-            if dataType:
-                self.dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
+            if self.dataType:
+                self.dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+self.dataType),0, \
                     wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
                 self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(300,20),style=wx.TE_PROCESS_ENTER)
                 self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
@@ -2702,21 +2707,22 @@ class GSASII(wx.Frame):
                 allScale.Bind(wx.EVT_KILL_FOCUS,self.OnAllScale)
                 self.dataGridSizer.Add(allScale,0,WACV)
             mainSizer.Add(self.dataGridSizer,0,wx.EXPAND)
+            TestBtn = wx.Button(panel,-1,"Test")
+            TestBtn.Bind(wx.EVT_BUTTON, self.OnTest)
             OkBtn = wx.Button(panel,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
             cancelBtn = wx.Button(panel,-1,"Cancel")
             cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-            btnSizer.Add((20,20),1)
+            btnSizer = wx.FlexGridSizer(0,3,10,20)
+            if self.dataType =='PWDR':  btnSizer.Add(TestBtn)
             btnSizer.Add(OkBtn)
-            btnSizer.Add((20,20),1)
             btnSizer.Add(cancelBtn)
-            btnSizer.Add((20,20),1)
             
             panel.SetSizer(mainSizer)
             panel.SetAutoLayout(1)
             panel.SetupScrolling()
-            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+            mainSizer.Add((10,10),1)
+            mainSizer.Add(btnSizer,0,wx.CENTER)
             panel.SetSizer(mainSizer)
             panel.Fit()
             self.Fit()
@@ -2751,9 +2757,58 @@ class GSASII(wx.Frame):
             
         def OnNameChange(self,event):
             event.Skip()
-            self.data[-1] = self.name.GetValue() 
+            self.data[-1] = self.name.GetValue()
+            
+        def OnTest(self,event):
+            lenX = 0
+            Xminmax = [0,0]
+            XY = []
+            Xsum = []
+            Ysum = []
+            Vsum = []
+            result = self.data
+            for i,item in enumerate(result[:-1]):
+                scale,name = item
+                data = self.dataList[i]
+                if scale:
+                    x,y,w,yc,yb,yd = data   #numpy arrays!
+                    XY.append([x,scale*y])
+                    v = 1./w
+                    if lenX:
+                        if lenX != len(x):
+                            self.ErrorDialog('Data length error','Data to be summed must have same number of points'+ \
+                                '\nExpected:'+str(lenX)+ \
+                                '\nFound:   '+str(len(x))+'\nfor '+name)
+                            self.OnCancel(event)
+                    else:
+                        lenX = len(x)
+                    if Xminmax[1]:
+                        if Xminmax != [x[0],x[-1]]:
+                            self.ErrorDialog('Data range error','Data to be summed must span same range'+ \
+                                '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+ \
+                                '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
+                            self.OnCancel(event)
+                        else:
+                            for j,yi in enumerate(y):
+                                 Ysum[j] += scale*yi
+                                 Vsum[j] += abs(scale)*v[j]
+                    else:
+                        Xminmax = [x[0],x[-1]]
+                        Xsum = x
+                        Ysum = scale*y
+                        Vsum = abs(scale*v)
+            Wsum = 1./np.array(Vsum)
+            YCsum = np.zeros(lenX)
+            YBsum = np.zeros(lenX)
+            YDsum = np.zeros(lenX)
+            XY.append([Xsum,Ysum])
+            self.result = [Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]
+            G2plt.PlotXY(self,XY,lines=True,Title='Sum:'+self.data[-1],labelY='Intensity',)
+            self.plotFrame.Show()
+            
             
         def OnOk(self,event):
+            if self.dataType == 'PWDR': self.OnTest(event)
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
@@ -2764,7 +2819,10 @@ class GSASII(wx.Frame):
             self.EndModal(wx.ID_CANCEL)              
             
         def GetData(self):
-            return self.data
+            if self.dataType == 'PWDR':
+                return self.data,self.result
+            else:
+                return self.data
                         
     def OnPwdrSum(self,event):
         'Sum together powder data(?)'
@@ -2788,48 +2846,12 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "PWDR" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern in summation','PWDR',TextList)
+            dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern in summation','PWDR',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    lenX = 0
-                    Xminmax = [0,0]
-                    Xsum = []
-                    Ysum = []
-                    Vsum = []
-                    result = dlg.GetData()
-                    for i,item in enumerate(result[:-1]):
-                        scale,name = item
-                        data = DataList[i]
-                        if scale:
-                            Comments.append("%10.3f %s" % (scale,' * '+name))
-                            x,y,w,yc,yb,yd = data   #numpy arrays!
-                            v = 1./w
-                            if lenX:
-                                if lenX != len(x):
-                                    self.ErrorDialog('Data length error','Data to be summed must have same number of points'+ \
-                                        '\nExpected:'+str(lenX)+ \
-                                        '\nFound:   '+str(len(x))+'\nfor '+name)
-                                    return
-                            else:
-                                lenX = len(x)
-                            if Xminmax[1]:
-                                if Xminmax != [x[0],x[-1]]:
-                                    self.ErrorDialog('Data range error','Data to be summed must span same range'+ \
-                                        '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+ \
-                                        '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
-                                    return
-                                else:
-                                    for j,yi in enumerate(y):
-                                         Ysum[j] += scale*yi
-                                         Vsum[j] += abs(scale)*v[j]
-                            else:
-                                Xminmax = [x[0],x[-1]]
-                                YCsum = YBsum = YDsum = [0.0 for i in range(lenX)]
-                                for j,yi in enumerate(y):
-                                    Xsum.append(x[j])
-                                    Ysum.append(scale*yi)
-                                    Vsum.append(abs(scale*v[j]))
-                    Wsum = 1./np.array(Vsum)
+                    result,sumData = dlg.GetData()
+                    Xsum,Ysum,Wsum,YCsum,YBsum,YDsum = sumData
+                    Xminmax = [Xsum[0],Xsum[-1]]
                     outname = 'PWDR '+result[-1]
                     Id = 0
                     if outname in Names:
@@ -2888,7 +2910,7 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "IMG" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each image in summation','IMG',TextList)
+            dlg = self.SumDialog(self,'Sum data','Enter scale for each image in summation','IMG',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0

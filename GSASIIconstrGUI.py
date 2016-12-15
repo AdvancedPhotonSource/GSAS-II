@@ -1075,7 +1075,6 @@ def UpdateConstraints(G2frame,data):
         panel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(500,Size[1])
         G2frame.dataFrame.setSizePosLeft(Size)
-#        G2frame.dataFrame.SetSize((500,250)) # set frame size here
 
     def OnPageChanged(event):
         '''Called when a tab is pressed or when a "select tab" menu button is
@@ -1611,9 +1610,10 @@ def UpdateRigidBodies(G2frame,data):
             def OnDelRB(event):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
-                del data['Vector'][rbId]
-                data['RBIds']['Vector'].remove(rbId)
-                rbData['useCount'] -= 1
+                if rbId in data['Vector']:
+                    del data['Vector'][rbId]
+                    data['RBIds']['Vector'].remove(rbId)
+                    rbData['useCount'] -= 1
                 wx.CallAfter(UpdateVectorRB)
                 
             def OnPlotRB(event):
@@ -1799,8 +1799,8 @@ def UpdateRigidBodies(G2frame,data):
         VectorRBSizer.Layout()    
         VectorRBDisplay.SetSizer(VectorRBSizer,True)
         Size = VectorRBSizer.GetMinSize()
-#        Size[0] += 40
-#        Size[1] = max(Size[1],450) + 20
+        Size[0] += 40
+        Size[1] = max(Size[1],450) + 20
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         VectorRB.Scroll(0,Scroll)
@@ -1821,8 +1821,9 @@ def UpdateRigidBodies(G2frame,data):
             def OnDelRB(event):
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
-                del data['Residue'][rbId]
-                data['RBIds']['Residue'].remove(rbId)
+                if rbId in data['Residue']: 
+                    del data['Residue'][rbId]
+                    data['RBIds']['Residue'].remove(rbId)
                 wx.CallAfter(UpdateResidueRB)
                 
             def OnPlotRB(event):
@@ -2059,7 +2060,9 @@ def UpdateRigidBodies(G2frame,data):
             
         #ResidueRB.DestroyChildren() # bad, deletes scrollbars on Mac!
         if ResidueRB.GetSizer():
-            ResidueRB.GetSizer().Clear(True)
+            ResidueRB.DestroyChildren()
+#            ResidueRB.GetSizer().Clear(True)
+            
         ResidueRBDisplay = wx.Panel(ResidueRB)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Residue']:
@@ -2084,8 +2087,8 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
         Size = ResidueRBSizer.GetMinSize()
-#        Size[0] += 40
-#        Size[1] = max(Size[1],450) + 20
+        Size[0] += 40
+        Size[1] = max(Size[1],450) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         Size[1] = min(500,Size[1])

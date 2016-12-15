@@ -4831,6 +4831,8 @@ def PlotStructure(G2frame,data,firstCall=False):
         peakMax = 100.
         if len(mapPeaks):
             peakMax = np.max(mapPeaks.T[0])
+    if 'Plane' not in drawingData:
+        drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
     resRBData = data['RBModels'].get('Residue',[])
     vecRBData = data['RBModels'].get('Vector',[])
     rbAtmDict = {}

@@ -865,9 +865,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 limits = calFile.Calibrants[data['calibrant']][4]
                 data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
                 pixLimit.SetValue(str(limits[1]))
-                cutOff.SetValue('%.1f'%(limits[2]))
+                cutOff.SetValue(limits[2])
                 calibSkip.SetValue(str(data['calibskip']))
-                calibDmin.SetValue('%.1f'%(limits[0]))
+                calibDmin.SetValue(limits[0])
             else:
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)

@@ -48,7 +48,7 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ##### Image Data
 ################################################################################
 
-def GetImageZ(G2frame,data,newRange=True):
+def GetImageZ(G2frame,data,newRange=False):
     '''Gets image & applies dark, background & flat background corrections
     :param wx.Frame G2frame: main GSAS-II frame
     param: dict data: Image Controls dictionary
@@ -101,7 +101,7 @@ def GetImageZ(G2frame,data,newRange=True):
     if backImg: del backImg
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
-    if newRange:
+    if 'range' not in data or newRange:
         data['range'] = [(0,Imax),[0,Imax]]
     return sumImg
 
@@ -515,11 +515,17 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             sqrtDeltOne = math.sqrt(DeltOne)
             maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+            Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
+            Page.canvas.draw_idle()
             
         def OnMinVal(invalid,value,tc):
             minSel.SetValue(int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+            Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
+            Page.canvas.draw_idle()
             
         G2frame.prevMaxValue = None    
         def OnMaxSlider(event):
@@ -553,8 +559,26 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
             Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
             Page.canvas.draw_idle()
+        def OnAutoSet(event):
+            '''Responds to a button labeled 95%, etc; Sets the Imax and Imin values
+            for the image so that 95% (etc.) of pixels are inside the color map limits.
+            An equal number of pixels are dropped at the minimum and maximum levels.
+            '''
+            val = int(event.GetEventObject().GetLabel()[:-1])  # get value from button
+            margin = (100-val)/2.
+            new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+            data['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
+            data['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
+            DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
+            sqrtDeltOne = math.sqrt(DeltOne)
+            maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
+            minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
+            maxVal.SetValue(int(data['range'][1][1]))
+            minVal.SetValue(int(data['range'][1][0]))
+            Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
+            Page.canvas.draw_idle()
             
-        maxSizer = wx.FlexGridSizer(0,3,0,5)
+        maxSizer = wx.FlexGridSizer(0,4,0,5)
         maxSizer.AddGrowableCol(1,1)
         maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
         sqrtDeltZero = max(1.0,math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0])))
@@ -565,9 +589,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             value=int(100*sqrtDeltOne/sqrtDeltZero))
         maxSizer.Add(maxSel,1,wx.EXPAND)
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
-        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],1,min=data['range'][1][0]+1,
-            max=data['range'][1][1]-1,typeHint=int,OnLeave=OnMaxVal)
+        maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],1,min=data['range'][0][0]+1,
+            max=data['range'][0][1]-1,typeHint=int,OnLeave=OnMaxVal)
         maxSizer.Add(maxVal,0,WACV)    
+        b99 = wx.Button(G2frame.dataDisplay,-1,'99%',style=wx.BU_EXACTFIT)
+        b99.Bind(wx.EVT_BUTTON,OnAutoSet)
+        maxSizer.Add(b99,0,WACV)    
         maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
         minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
@@ -576,6 +603,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],0,
             max=data['range'][0][1],typeHint=int,OnLeave=OnMinVal)
         maxSizer.Add(minVal,0,WACV)
+        b95 = wx.Button(G2frame.dataDisplay,-1,'95%',style=wx.BU_EXACTFIT)
+        b95.Bind(wx.EVT_BUTTON,OnAutoSet)
+        maxSizer.Add(b95,0,WACV)
         return maxSizer
         
     def CalibCoeffSizer():
@@ -1259,7 +1289,106 @@ def UpdateMasks(G2frame,data):
         data['Frames'] = []
     frame = data['Frames']             #3+ x,y pairs
     Arcs = data['Arcs']                 #radius, start/end azimuth, thickness
-    
+
+    ######################################################################
+    CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
+    controlData = G2frame.PatternTree.GetItemPyData(CId)
+    def OnMaxVal(invalid,value,tc):
+        DeltOne = controlData['range'][1][1]-max(0.0,controlData['range'][0][0])
+        sqrtDeltOne = math.sqrt(DeltOne)
+        maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
+        minSel.SetValue(int(100*(controlData['range'][1][0]/DeltOne)))
+        #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
+        Page.canvas.draw_idle()
+            
+    def OnMinVal(invalid,value,tc):
+        minSel.SetValue(int(100*(controlData['range'][1][0]-max(0.0,controlData['range'][0][0]))/DeltOne))
+        #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
+        Page.canvas.draw_idle()
+
+    G2frame.prevMaxValue = None    
+    def OnMaxSlider(event):
+        if G2frame.prevMaxValue == maxSel.GetValue(): # if this val has been processed, no need to repeat
+            return
+        G2frame.prevMaxValue = maxSel.GetValue()
+        sqrtDeltZero = math.sqrt(controlData['range'][0][1])
+        imax = int(maxSel.GetValue())*sqrtDeltZero/100.
+        controlData['range'][1][1] = imax**2
+        controlData['range'][1][0] = max(0.0,min(controlData['range'][1][1]-1,controlData['range'][1][0]))
+        DeltOne = max(1.0,controlData['range'][1][1]-controlData['range'][1][0])
+        minSel.SetValue(int(100*(controlData['range'][1][0]/DeltOne)))
+        maxVal.SetValue(int(controlData['range'][1][1]))
+        #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)  # replace with code below for more speed
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
+        Page.canvas.draw_idle()
+
+    G2frame.prevMinValue = None    
+    def OnMinSlider(event):
+        if G2frame.prevMinValue == minSel.GetValue(): # if this val has been processed, no need to repeat
+            return
+        G2frame.prevMinValue = minSel.GetValue()
+        DeltOne = controlData['range'][1][1]-controlData['range'][1][0]
+        imin = int(minSel.GetValue())*DeltOne/100.
+        controlData['range'][1][0] = max(0.0,min(controlData['range'][1][1]-1,imin))
+        minVal.SetValue(int(controlData['range'][1][0]))
+        #wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event) # replace with code below for more speed
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
+        Page.canvas.draw_idle()
+    def OnAutoSet(event):
+        '''Responds to a button labeled 95%, etc; Sets the Imax and Imin values
+        for the image so that 95% (etc.) of pixels are inside the color map limits.
+        An equal number of pixels are dropped at the minimum and maximum levels.
+        '''
+        val = int(event.GetEventObject().GetLabel()[:-1])  # get value from button
+        margin = (100-val)/2.
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        controlData['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
+        controlData['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
+        DeltOne = controlData['range'][1][1]-max(0.0,controlData['range'][0][0])
+        sqrtDeltOne = math.sqrt(DeltOne)
+        maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
+        minSel.SetValue(int(100*(controlData['range'][1][0]/DeltOne)))
+        maxVal.SetValue(int(controlData['range'][1][1]))
+        minVal.SetValue(int(controlData['range'][1][0]))
+        Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
+        Page.canvas.draw_idle()
+        
+    maxSizer = wx.FlexGridSizer(0,4,0,5)
+    maxSizer.AddGrowableCol(1,1)
+    maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
+    sqrtDeltZero = max(1.0,math.sqrt(controlData['range'][0][1]-max(0.0,controlData['range'][0][0])))
+    DeltOne = max(1.0,controlData['range'][1][1]-max(0.0,controlData['range'][0][0]))
+    sqrtDeltOne = math.sqrt(DeltOne)
+    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,WACV)
+    maxSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(100*sqrtDeltOne/sqrtDeltZero),size=[300,-1])
+    maxSizer.Add(maxSel,1,wx.EXPAND)
+    maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
+    maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controlData['range'][1],1,min=controlData['range'][0][0]+1,
+        max=controlData['range'][0][1]-1,typeHint=int,OnLeave=OnMaxVal)
+    maxSizer.Add(maxVal,0,WACV)
+    b99 = wx.Button(G2frame.dataDisplay,-1,'99%',style=wx.BU_EXACTFIT)
+    b99.Bind(wx.EVT_BUTTON,OnAutoSet)
+    maxSizer.Add(b99,0,WACV)    
+    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
+    minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(100*(controlData['range'][1][0]-max(0.0,controlData['range'][0][0]))/DeltOne))
+    maxSizer.Add(minSel,1,wx.EXPAND)
+    minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
+    minVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controlData['range'][1],0,
+        max=controlData['range'][0][1],typeHint=int,OnLeave=OnMinVal)
+    maxSizer.Add(minVal,0,WACV)
+    b95 = wx.Button(G2frame.dataDisplay,-1,'95%',style=wx.BU_EXACTFIT)
+    b95.Bind(wx.EVT_BUTTON,OnAutoSet)
+    maxSizer.Add(b95,0,WACV)
+    mainSizer.Add(maxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
+
     littleSizer = wx.FlexGridSizer(0,3,0,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper limits '),0,WACV)
     Text = wx.TextCtrl(G2frame.dataDisplay,value=str(thresh[0][0]),style=wx.TE_READONLY)

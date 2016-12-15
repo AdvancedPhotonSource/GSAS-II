@@ -298,6 +298,7 @@ def CalcPDF(data,inst,limits,xydata):
             xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
                 data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
         IofQ[1][1] += xycontainer[Ibeg:Ifin]
+    IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])

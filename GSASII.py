@@ -3480,7 +3480,7 @@ class GSASII(wx.Frame):
                     Qlimits.append([0.9*qMax,qMax])
                     ElList = {}
                     for item in Comments:           #grab chemical formula from Comments
-                        if 'formula' in item:
+                        if 'formula' in item[:15].lower():
                             formula = item.split('=')[1].split()
                             elems = formula[::2]
                             nums = formula[1::2]

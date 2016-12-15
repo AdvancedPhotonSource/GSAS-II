@@ -4601,6 +4601,8 @@ def UpdatePDFGrid(G2frame,data):
         data['noRing'] = False
     if 'Rmax' not in data:
         data['Rmax'] = 100.
+    if 'Flat Bkg' not in data:
+        data['Flat Bkg'] = 0.
     
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
@@ -4954,7 +4956,7 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(geoBox,0)
         
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,WACV)
     mainSizer.Add((5,5),0)
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
@@ -4968,6 +4970,10 @@ def UpdatePDFGrid(G2frame,data):
         obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(obliqCoeff,0)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
+    flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
+    sqBox.Add(flatBkg,0)    
     mainSizer.Add(sqBox,0)
         
     bkBox = wx.BoxSizer(wx.HORIZONTAL)

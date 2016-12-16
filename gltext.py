@@ -29,7 +29,7 @@ distributed under GNU General Public License.
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import wx
-from OpenGL.GL import *
+import OpenGL.GL as GL
 
 """
 Optimize with psyco if possible, this gains us about 50% speed when
@@ -45,8 +45,7 @@ psyco. If you don't like loosing the memory you have to turn the lines following
 #    psyco = None
     
 #Disable psyco
-psyco = None
-          
+#          
 class TextElement(object):
     """
     A simple class for using system Fonts to display
@@ -106,37 +105,37 @@ class TextElement(object):
         Draws the text to the scene
         """
         #Enable necessary functions
-        glColor(1,1,1,1)
-        glEnable(GL_TEXTURE_2D)     
-        glEnable(GL_ALPHA_TEST)       #Enable alpha test
-        glAlphaFunc(GL_GREATER, 0)
-        glEnable(GL_BLEND)            #Enable blending
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        GL.glColor(1,1,1,1)
+        GL.glEnable(GL.GL_TEXTURE_2D)     
+        GL.glEnable(GL.GL_ALPHA_TEST)       #Enable alpha test
+        GL.glAlphaFunc(GL.GL_GREATER, 0)
+        GL.glEnable(GL.GL_BLEND)            #Enable blending
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
         #Bind texture
-        glBindTexture(GL_TEXTURE_2D, self._texture)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._texture)
         
         ow, oh = self._text_size
         w , h  = self._texture_size
         #Perform transformations
-        glPushMatrix()
-        glTranslated(position.x, position.y, 0)
-        glRotate(-rotation, 0, 0, 1)
-        glScaled(scale, scale, scale)
+        GL.glPushMatrix()
+        GL.glTranslated(position.x, position.y, 0)
+        GL.glRotate(-rotation, 0, 0, 1)
+        GL.glScaled(scale, scale, scale)
         if self._centered:
-            glTranslate(-w/2, -oh/2, 0)
+            GL.glTranslate(-w/2, -oh/2, 0)
         #Draw vertices
-        glBegin(GL_QUADS)
-        glTexCoord2f(0,0); glVertex2f(0,0)
-        glTexCoord2f(0,1); glVertex2f(0,h)
-        glTexCoord2f(1,1); glVertex2f(w,h)
-        glTexCoord2f(1,0); glVertex2f(w,0)
-        glEnd()
-        glPopMatrix()
+        GL.glBegin(GL.GL_QUADS)
+        GL.glTexCoord2f(0,0); GL.glVertex2f(0,0)
+        GL.glTexCoord2f(0,1); GL.glVertex2f(0,h)
+        GL.glTexCoord2f(1,1); GL.glVertex2f(w,h)
+        GL.glTexCoord2f(1,0); GL.glVertex2f(w,0)
+        GL.glEnd()
+        GL.glPopMatrix()
         
         #Disable features
-        glDisable(GL_BLEND)
-        glDisable(GL_ALPHA_TEST)
-        glDisable(GL_TEXTURE_2D)
+        GL.glDisable(GL.GL_BLEND)
+        GL.glDisable(GL.GL_ALPHA_TEST)
+        GL.glDisable(GL.GL_TEXTURE_2D)
         
     def createTexture(self):
         """
@@ -237,22 +236,22 @@ class TextElement(object):
 
 
         # now convert it to ogl texture
-        self._texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self._texture)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        self._texture = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._texture)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
         
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 2)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+        GL.glPixelStorei(GL.GL_UNPACK_ROW_LENGTH, 0)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 2)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, w, h, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, data)
     
     def deleteTexture(self):
         """
         Deletes the OpenGL texture object
         """
         if self._texture:
-            if glIsTexture(self._texture):
-                glDeleteTextures(self._texture)
+            if GL.glIsTexture(self._texture):
+                GL.glDeleteTextures(self._texture)
             else:
                 self._texture = None
 
@@ -500,6 +499,6 @@ class Text(object):
     text_element = property(getTextElement,None , None, "TextElement bound to this class")
 
 #Optimize critical functions
-if psyco and not psyco_optimized:
-    psyco.bind(TextElement.createTexture)
-    psyco_optimized = True
+#if psyco and not psyco_optimized:
+#    psyco.bind(TextElement.createTexture)
+#    psyco_optimized = True

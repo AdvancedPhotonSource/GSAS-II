@@ -564,11 +564,18 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             for the image so that 95% (etc.) of pixels are inside the color map limits.
             An equal number of pixels are dropped at the minimum and maximum levels.
             '''
-            val = int(event.GetEventObject().GetLabel()[:-1])  # get value from button
-            margin = (100-val)/2.
+            try:
+                val = int(event.GetEventObject().GetStringSelection()[:-1])
+                margin = (100-val)/2.
+            except:
+                margin = 0
+                event.GetEventObject().SetSelection(0)
             new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
-            data['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
-            data['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
+            if margin == 0:
+                data['range'][1] = list(data['range'][0])
+            else:
+                data['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
+                data['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
             DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
             sqrtDeltOne = math.sqrt(DeltOne)
             maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
@@ -578,34 +585,43 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             Page.ImgObj.set_clim([data['range'][1][0],data['range'][1][1]])
             Page.canvas.draw_idle()
             
-        maxSizer = wx.FlexGridSizer(0,4,0,5)
-        maxSizer.AddGrowableCol(1,1)
-        maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
+        maxSizer = wx.GridBagSizer(0,0)
         sqrtDeltZero = max(1.0,math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0])))
         DeltOne = max(1.0,data['range'][1][1]-max(0.0,data['range'][0][0]))
         sqrtDeltOne = math.sqrt(DeltOne)
-        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,WACV)
+        r = c = 0
+        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),(r,c))
+        c += 1
         maxSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*sqrtDeltOne/sqrtDeltZero))
-        maxSizer.Add(maxSel,1,wx.EXPAND)
+        maxSizer.Add(maxSel,(r,c),flag=wx.EXPAND)
+        maxSizer.AddGrowableCol(c)
+        c += 1
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
         maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],1,min=data['range'][0][0]+1,
             max=data['range'][0][1]-1,typeHint=int,OnLeave=OnMaxVal)
-        maxSizer.Add(maxVal,0,WACV)    
-        b99 = wx.Button(G2frame.dataDisplay,-1,'99%',style=wx.BU_EXACTFIT)
-        b99.Bind(wx.EVT_BUTTON,OnAutoSet)
-        maxSizer.Add(b99,0,WACV)    
-        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
+        maxSizer.Add(maxVal,(r,c))
+        c += 1
+        scaleSel = wx.Choice(G2frame.dataDisplay,choices=("100%","99%","95%","90%","80%"),size=(-1,-1))
+        if (data['range'][1][0] == data['range'][0][0] and
+            data['range'][1][1] == data['range'][0][1]):
+            scaleSel.SetSelection(0)
+        else:
+            scaleSel.SetLabel("?%")
+        scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
+        maxSizer.Add(scaleSel,(r,c),(2,1),flag=wx.ALIGN_CENTER)
+        c = 0
+        r = 1
+        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),(r,c))
+        c += 1
         minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
-        maxSizer.Add(minSel,1,wx.EXPAND)
+        maxSizer.Add(minSel,(r,c),flag=wx.EXPAND|wx.ALL)
+        c += 1
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['range'][1],0,
             max=data['range'][0][1],typeHint=int,OnLeave=OnMinVal)
-        maxSizer.Add(minVal,0,WACV)
-        b95 = wx.Button(G2frame.dataDisplay,-1,'95%',style=wx.BU_EXACTFIT)
-        b95.Bind(wx.EVT_BUTTON,OnAutoSet)
-        maxSizer.Add(b95,0,WACV)
+        maxSizer.Add(minVal,(r,c))
         return maxSizer
         
     def CalibCoeffSizer():
@@ -1073,7 +1089,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     mainSizer.Add(ComboSizer(),0,wx.ALIGN_LEFT)
     mainSizer.Add((5,5),0)
     MaxSizer = MaxSizer()               #keep this so it can be changed in BackSizer   
-    mainSizer.Add(MaxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
+    mainSizer.Add(MaxSizer,0,wx.ALIGN_LEFT|wx.EXPAND|wx.ALL)
     
     mainSizer.Add((5,5),0)
     DataSizer = wx.FlexGridSizer(0,2,5,0)
@@ -1345,11 +1361,18 @@ def UpdateMasks(G2frame,data):
         for the image so that 95% (etc.) of pixels are inside the color map limits.
         An equal number of pixels are dropped at the minimum and maximum levels.
         '''
-        val = int(event.GetEventObject().GetLabel()[:-1])  # get value from button
-        margin = (100-val)/2.
+        try:
+            val = int(event.GetEventObject().GetStringSelection()[:-1])
+            margin = (100-val)/2.
+        except:
+            margin = 0
+            event.GetEventObject().SetSelection(0)
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
-        controlData['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
-        controlData['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
+        if margin == 0:
+            controlData['range'][1] = list(controlData['range'][0])
+        else:
+            controlData['range'][1][0] = int(np.percentile(Page.ImgObj.get_array().compressed(),margin))
+            controlData['range'][1][1] = int(np.percentile(Page.ImgObj.get_array().compressed(),100-margin))
         DeltOne = controlData['range'][1][1]-max(0.0,controlData['range'][0][0])
         sqrtDeltOne = math.sqrt(DeltOne)
         maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
@@ -1358,35 +1381,44 @@ def UpdateMasks(G2frame,data):
         minVal.SetValue(int(controlData['range'][1][0]))
         Page.ImgObj.set_clim([controlData['range'][1][0],controlData['range'][1][1]])
         Page.canvas.draw_idle()
-        
-    maxSizer = wx.FlexGridSizer(0,4,0,5)
-    maxSizer.AddGrowableCol(1,1)
-    maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
+
+    maxSizer = wx.GridBagSizer(0,0)
     sqrtDeltZero = max(1.0,math.sqrt(controlData['range'][0][1]-max(0.0,controlData['range'][0][0])))
     DeltOne = max(1.0,controlData['range'][1][1]-max(0.0,controlData['range'][0][0]))
     sqrtDeltOne = math.sqrt(DeltOne)
-    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,WACV)
+    r = c = 0
+    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),(r,c))
+    c += 1
     maxSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*sqrtDeltOne/sqrtDeltZero),size=[300,-1])
-    maxSizer.Add(maxSel,1,wx.EXPAND)
+    maxSizer.Add(maxSel,(r,c),flag=wx.EXPAND)
+    maxSizer.AddGrowableCol(c)
+    c += 1
     maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
     maxVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controlData['range'][1],1,min=controlData['range'][0][0]+1,
         max=controlData['range'][0][1]-1,typeHint=int,OnLeave=OnMaxVal)
-    maxSizer.Add(maxVal,0,WACV)
-    b99 = wx.Button(G2frame.dataDisplay,-1,'99%',style=wx.BU_EXACTFIT)
-    b99.Bind(wx.EVT_BUTTON,OnAutoSet)
-    maxSizer.Add(b99,0,WACV)    
-    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
+    maxSizer.Add(maxVal,(r,c))
+    c += 1
+    scaleSel = wx.Choice(G2frame.dataDisplay,choices=("100%","99%","95%","90%","80%"),size=(-1,-1))
+    if (controlData['range'][1][0] == controlData['range'][0][0] and
+        controlData['range'][1][1] == controlData['range'][0][1]):
+        scaleSel.SetSelection(0)
+    else:
+        scaleSel.SetLabelText("?%")
+    scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
+    maxSizer.Add(scaleSel,(r,c),(2,1),flag=wx.ALIGN_CENTER)
+    c = 0
+    r = 1
+    maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),(r,c))
+    c += 1
     minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
         value=int(100*(controlData['range'][1][0]-max(0.0,controlData['range'][0][0]))/DeltOne))
-    maxSizer.Add(minSel,1,wx.EXPAND)
+    maxSizer.Add(minSel,(r,c),flag=wx.EXPAND|wx.ALL)
+    c += 1
     minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
     minVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controlData['range'][1],0,
         max=controlData['range'][0][1],typeHint=int,OnLeave=OnMinVal)
-    maxSizer.Add(minVal,0,WACV)
-    b95 = wx.Button(G2frame.dataDisplay,-1,'95%',style=wx.BU_EXACTFIT)
-    b95.Bind(wx.EVT_BUTTON,OnAutoSet)
-    maxSizer.Add(b95,0,WACV)
+    maxSizer.Add(minVal,(r,c))
     mainSizer.Add(maxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
 
     littleSizer = wx.FlexGridSizer(0,3,0,5)

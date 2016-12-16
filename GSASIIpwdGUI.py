@@ -4617,13 +4617,13 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             
         def OnMoveMult(event):
-            data[key]['Mult'] = multSpin.GetValue()*0.01
+            data[key]['Mult'] += multSpin.GetValue()*0.01
             mult.SetValue(data[key]['Mult'])
+            multSpin.SetValue(0)
             wx.CallAfter(OnComputePDF,None)
                         
         def AfterChange(invalid,value,tc):
             if invalid: return
-            multSpin.SetValue(int(0.5 + data[key]['Mult']*100))
             wx.CallAfter(OnComputePDF,None)
         
         item = data[key]
@@ -4640,8 +4640,8 @@ def UpdatePDFGrid(G2frame,data):
             typeHint=float,OnLeave=AfterChange)
         mulBox.Add(mult,0,)
         multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
-        multSpin.SetRange(-100,100)
-        multSpin.SetValue(int(data[key]['Mult']*100))
+        multSpin.SetRange(-1,1)
+        multSpin.SetValue(0)
         multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
         mulBox.Add(multSpin,0,WACV)
         fileSizer.Add(mulBox,0,WACV)

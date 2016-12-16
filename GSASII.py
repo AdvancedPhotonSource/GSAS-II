@@ -326,9 +326,12 @@ class GSASII(wx.Frame):
     def PreviewFile(self,filename,fp):
         'confirm we have the right file'
         rdmsg = 'File '+ filename +' begins:\n\n'
-        rdmsg += fp.read(80)
-        rdmsg += '\n\nDo you want to read this file?'
-        if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
+        try:
+            rdmsg += fp.read(80)
+            rdmsg += '\n\nDo you want to read this file?'
+        except UnicodeDecodeError:
+            rdmsg = None
+        if rdmsg is None or not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
             rdmsg = 'File '+ filename +' is a binary file. Do you want to read this file?'
         # it would be better to use something that
         # would resize better, but this will do for now

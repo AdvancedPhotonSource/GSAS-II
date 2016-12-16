@@ -4614,19 +4614,20 @@ def UpdatePDFGrid(G2frame,data):
                 value = Obj.GetValue()
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            UpdatePDFGrid(G2frame,data)
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
             
         def OnMoveMult(event):
-            data[key]['Mult'] += multSpin.GetValue()*0.01
+            data[key]['Mult'] = multSpin.GetValue()*0.01
             mult.SetValue(data[key]['Mult'])
             wx.CallAfter(OnComputePDF,None)
                         
         def AfterChange(invalid,value,tc):
             if invalid: return
+            multSpin.SetValue(int(0.5 + data[key]['Mult']*100))
             wx.CallAfter(OnComputePDF,None)
         
         item = data[key]
-        fileList = GetFileList('PWDR')
+        fileList = [''] + GetFileList('PWDR')
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
         fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -4639,8 +4640,8 @@ def UpdatePDFGrid(G2frame,data):
             typeHint=float,OnLeave=AfterChange)
         mulBox.Add(mult,0,)
         multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
-        multSpin.SetValue(0)
-        multSpin.SetRange(-1,1)
+        multSpin.SetRange(-100,100)
+        multSpin.SetValue(int(data[key]['Mult']*100))
         multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
         mulBox.Add(multSpin,0,WACV)
         fileSizer.Add(mulBox,0,WACV)
@@ -4676,12 +4677,14 @@ def UpdatePDFGrid(G2frame,data):
             
     def OnGeometry(event):
         data['Geometry'] = geometry.GetValue()
-        UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        #UpdatePDFGrid(G2frame,data)
         wx.CallAfter(OnComputePDF,None)
         
     def OnDetType(event):
         data['DetType'] = detType.GetValue()
-        UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        #UpdatePDFGrid(G2frame,data)
         wx.CallAfter(OnComputePDF,None)
         
     def AfterChange(invalid,value,tc):
@@ -4801,7 +4804,8 @@ def UpdatePDFGrid(G2frame,data):
         finally:
             dlg.Destroy()
         OnComputePDF(event)                
-        UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        #UpdatePDFGrid(G2frame,data)
         
     def OnAddElement(event):
         ElList = data['ElList']
@@ -4812,7 +4816,8 @@ def UpdatePDFGrid(G2frame,data):
                 data['ElList'][El] = G2elem.GetElInfo(El,inst)
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
-        UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        #UpdatePDFGrid(G2frame,data)
         
     def OnDeleteElement(event):
         ElList = data['ElList']
@@ -4821,7 +4826,8 @@ def UpdatePDFGrid(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             del ElList[dlg.GetDeleteElement()]
         dlg.Destroy()
-        UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        #UpdatePDFGrid(G2frame,data)
                 
     def ComputePDF(Data):
         xydata = {}

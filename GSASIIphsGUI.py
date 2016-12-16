@@ -838,26 +838,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnPawleyRef(event):
                 generalData['doPawley'] = pawlRef.GetValue()
             
-            def OnPawleyVal(event):
-                event.Skip()
-                try:
-                    dmin = float(pawlVal.GetValue())
-                    if 0.25 <= dmin <= 20.:
-                        generalData['Pawley dmin'] = dmin
-                except ValueError:
-                    pass
-                pawlVal.SetValue("%.5f"%(generalData['Pawley dmin']))          #reset in case of error                
-            
-            def OnPawleyNegWt(event):
-                event.Skip()
-                try:
-                    wt = float(pawlNegWt.GetValue())
-                    if 0. <= wt <= 1.:
-                        generalData['Pawley neg wt'] = wt
-                except ValueError:
-                    pass
-                pawlNegWt.SetValue("%.4f"%(generalData['Pawley neg wt']))          #reset in case of error
-
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
             pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
@@ -865,16 +845,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            pawlVal = wx.TextCtrl(General,value='%.5f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
-            pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
-            pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
+            pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
+                min=0.25,max=20.,nDig=(10,5),typeHint=float)
             pawleySizer.Add(pawlVal,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            pawlNegWt = wx.TextCtrl(General,value='%.4f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
-            pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
-            pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
+            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
+                min=0.,max=1.,nDig=(10,4),typeHint=float)
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             

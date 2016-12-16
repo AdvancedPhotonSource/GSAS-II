@@ -2209,6 +2209,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     dmin = wave/(2.0*sind(limits[1]/2.0))
                 elif 'T' in inst['Type'][0]:
                     dmin = limits[0]/inst['difC'][1]
+                if Phases[phase]['General']['doPawley']:
+                    Tmin = G2lat.Dsp2pos(inst,dmin)
+                    if 'C' in inst['Type'][1]:
+                        limits[1] = min(limits[1],Tmin)
+                    else:
+                        limits[0] = max(limits[0],Tmin)
                 if Phases[phase]['General']['Type'] == 'magnetic':
                     dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 pfx = str(pId)+':'+str(hId)+':'

@@ -7273,6 +7273,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         General.SetSizer(mainSizer)
         mainSizer.Fit(General)
+        General.CenterOnParent()
         res = General.ShowModal()
         General.Destroy()
 

@@ -89,8 +89,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(4)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE, wxID_PAWLEYSELALL, wxID_PAWLEYSELNONE,
-  wxID_PAWLEYSELTOGGLE,
-] = [wx.NewId() for item in range(6)]
+  wxID_PAWLEYSELTOGGLE, wxID_PAWLEYSET,
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
@@ -2431,6 +2431,8 @@ class DataFrame(wx.Frame):
         self.PawleyMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PawleyEdit = wx.Menu(title='')
         self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
+        self.PawleyEdit.Append(id=wxID_PAWLEYSET, kind=wx.ITEM_NORMAL,text='Pawley settings',
+            help='Change Pawley refinement settings')
         self.PawleyEdit.Append(id=wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
             help='Initialize Pawley reflection list')
         self.PawleyEdit.Append(id=wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',

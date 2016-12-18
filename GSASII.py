@@ -3219,6 +3219,7 @@ class GSASII(wx.Frame):
         '''
         
         Id = 0
+        phaseId = None
         G2IO.ProjFileOpen(self)
         self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
         self.PatternTree.Expand(self.root)
@@ -3228,6 +3229,8 @@ class GSASII(wx.Frame):
             name = self.PatternTree.GetItemText(item)
             if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD',]:
                 Id = item
+            elif name == "Phases":
+                phaseId = item
             elif name == 'Controls':
                 data = self.PatternTree.GetItemPyData(item)
                 if data:
@@ -3237,6 +3240,11 @@ class GSASII(wx.Frame):
         if Id:
             self.EnablePlot = True
             self.PatternTree.SelectItem(Id)
+            self.PatternTree.Expand(Id)
+        elif phaseId:
+            self.PatternTree.SelectItem(phaseId)
+        if phaseId:
+            self.PatternTree.Expand(phaseId)
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]

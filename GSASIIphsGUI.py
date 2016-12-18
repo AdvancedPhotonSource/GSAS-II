@@ -25,6 +25,7 @@ import wx
 import wx.grid as wg
 import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
+import math
 import copy
 import time
 import sys
@@ -7210,6 +7211,82 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.PawleyRefl.AutoSizeColumns(False)
             G2frame.dataFrame.setSizePosLeft([450,300])
                     
+    def OnPawleySet(event):
+        '''Set Pawley parameters and optionally recompute
+        '''
+        #GSASIIpath.IPyBreak()
+        
+        def DisablePawleyOpts(*args):
+            pawlVal.Enable(generalData['doPawley'])
+            pawlNegWt.Enable(generalData['doPawley'])
+        generalData = data['General']
+        startDmin = generalData['Pawley dmin']
+        General = wx.Dialog(G2frame.dataFrame,wx.ID_ANY,'Set Pawley Parameters',
+                        style=wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(General,wx.ID_ANY,
+                                    'Set Pawley Extraction Parameters for phase '+
+                                    generalData.get('Name','?')))
+        mainSizer.Add([5,10])
+        pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+        pawleySizer.Add(wx.StaticText(General,label=' Do Pawley refinement?: '),0,WACV)
+        pawlRef = G2G.G2CheckBox(General,'',generalData,'doPawley',
+                             DisablePawleyOpts)
+        pawleySizer.Add(pawlRef,0,WACV)
+        mainSizer.Add(pawleySizer)
+        pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+        pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
+        def d2Q(*a,**kw):
+            temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
+            pawlQVal.SetValue(temp['Qmax'])
+        pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
+               min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
+        pawleySizer.Add(pawlVal,0,WACV)
+        pawleySizer.Add(wx.StaticText(General,label='   Qmax: '),0,WACV)
+        temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
+        def Q2D(*args,**kw):
+            generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
+            pawlVal.SetValue(generalData['Pawley dmin'])        
+        pawlQVal = G2G.ValidatedTxtCtrl(General,temp,'Qmax',
+               min=0.314,max=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
+        pawleySizer.Add(pawlQVal,0,WACV)
+        mainSizer.Add(pawleySizer)
+        pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+        pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
+        pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
+                    min=0.,max=1.,nDig=(10,4),typeHint=float)
+        pawleySizer.Add(pawlNegWt,0,WACV)
+        mainSizer.Add(pawleySizer)
+
+        # make OK button
+        def OnOK(event): General.EndModal(wx.ID_OK)
+        mainSizer.Add([5,5])
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(General, wx.ID_OK)
+        btn.Bind(wx.EVT_BUTTON, OnOK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        btn = wx.Button(General, wx.ID_CANCEL) 
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+
+        General.SetSizer(mainSizer)
+        mainSizer.Fit(General)
+        res = General.ShowModal()
+        General.Destroy()
+
+        if generalData['doPawley'] and res == wx.ID_OK and startDmin != generalData['Pawley dmin']:
+            dlg = wx.MessageDialog(G2frame,'Do you want to initialize the Pawley reflections with the new Dmin value?','Initialize Pawley?', 
+                wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+                if result == wx.ID_NO:
+                    return
+            finally:
+                dlg.Destroy()
+            OnPawleyLoad(event)
+            
     def OnPawleyLoad(event):
         generalData = data['General']
         histograms = data['Histograms'].keys()
@@ -7978,6 +8055,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
         # Pawley reflections
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.PawleyMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySet, id=G2gd.wxID_PAWLEYSET)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)

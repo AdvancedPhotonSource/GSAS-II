@@ -4603,6 +4603,8 @@ def UpdatePDFGrid(G2frame,data):
         data['Rmax'] = 100.
     if 'Flat Bkg' not in data:
         data['Flat Bkg'] = 0.
+    if 'IofQmin' not in data:
+        data['IofQmin'] = 1.0
     
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
@@ -4639,7 +4641,7 @@ def UpdatePDFGrid(G2frame,data):
         mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
             typeHint=float,OnLeave=AfterChange)
         mulBox.Add(mult,0,)
-        multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+        multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
         multSpin.SetRange(-1,1)
         multSpin.SetValue(0)
         multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
@@ -4685,6 +4687,12 @@ def UpdatePDFGrid(G2frame,data):
         data['DetType'] = detType.GetValue()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
         #UpdatePDFGrid(G2frame,data)
+        wx.CallAfter(OnComputePDF,None)
+        
+    def OnFlatSpin(event):
+        data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
+        flatBkg.SetValue(data['Flat Bkg'])
+        flatSpin.SetValue(0)        
         wx.CallAfter(OnComputePDF,None)
         
     def AfterChange(invalid,value,tc):
@@ -4979,7 +4987,13 @@ def UpdatePDFGrid(G2frame,data):
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
     flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
             typeHint=float,OnLeave=AfterChangeNoRefresh)
-    sqBox.Add(flatBkg,0)    
+    sqBox.Add(flatBkg,0)
+    if data.get('IofQmin',0.):
+        flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+        flatSpin.SetRange(-1,1)
+        flatSpin.SetValue(0)
+        flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
+        sqBox.Add(flatSpin,0,WACV)
     mainSizer.Add(sqBox,0)
         
     bkBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5029,7 +5043,6 @@ def UpdatePDFGrid(G2frame,data):
     noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
     sqBox.Add(noRing,0)
     mainSizer.Add(sqBox,0)
-    #Rmax
 
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

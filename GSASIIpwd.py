@@ -298,6 +298,7 @@ def CalcPDF(data,inst,limits,xydata):
             xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
                 data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
         IofQ[1][1] += xycontainer[Ibeg:Ifin]
+    data['IofQmin'] = IofQ[1][1][Ifin-1]
     IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.
     ElList = data['ElList']
@@ -360,7 +361,6 @@ def CalcPDF(data,inst,limits,xydata):
         xydata['FofQ'][1][1] *= LorchWeight(Q)    
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
-#    mul = 12
     mul = int(round(2.*np.pi*nR/(data.get('Rmax',100.)*qLimits[1])))
     xydata['GofR'][1][0] = 2.*np.pi*np.linspace(0,nR,nR)/(mul*qLimits[1])
     xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])

@@ -1043,10 +1043,12 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         NQ = np.where(np.abs(Q)>0.,1./np.abs(Q),0.)     #this sort of works esp for 1 axis moments
+#        NQ2 = np.where(np.abs(Q)>0.,1./np.sqrt(np.sum(Q**2,axis=0)),0.)
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
-        dqmx = np.sum(dqmx,axis=1)   #matrix * vector = vector
-        dmx = NQ*Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
+        dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
+        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
+        dmx = NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2                                #*Mag canceled out of dqmx term
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]

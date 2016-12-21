@@ -953,7 +953,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 pixLimit.SetValue(str(limits[1]))
                 cutOff.SetValue(limits[2])
                 calibSkip.SetValue(str(data['calibskip']))
-                calibDmin.SetValue(limits[0])
+                G2frame.calibDmin.SetValue(limits[0])
             else:
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
@@ -988,8 +988,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min calib d-spacing '),0,WACV)
-        calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'calibdmin',nDig=(10,2),typeHint=float,min=0.25)
-        comboSizer.Add(calibDmin,0,WACV)
+        G2frame.calibDmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'calibdmin',nDig=(10,2),typeHint=float,min=0.25)
+        comboSizer.Add(G2frame.calibDmin,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)

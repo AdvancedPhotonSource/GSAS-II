@@ -4144,6 +4144,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''
     from matplotlib.patches import Ellipse,Circle
     import numpy.ma as ma
+    G2frame.cid = None
     Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks,StrSta  # RVD: these are needed for multiple image controls/masks 
     colors=['b','g','r','c','m','k'] 
@@ -4238,6 +4239,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 finally:
                     dlg.Destroy()
                 return
+            elif event.key in ['d',]:  # set dmin from plot position
+                if not (event.xdata and event.ydata): return
+                xpos = event.xdata
+                ypos = event.ydata
+                tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
+                G2frame.calibDmin.SetValue(dsp)
             elif event.key == 'l':
                 G2frame.logPlot = not G2frame.logPlot
             elif event.key in ['x',]:
@@ -4247,11 +4254,86 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
             
     def OnImPick(event):
+        def OnDragIntBound(event):
+            if event.xdata is None or event.ydata is None:
+                # mouse is outside window. Could 
+                return
+            tth,azm,D,dsp = G2img.GetTthAzmDsp(event.xdata,event.ydata,Data)
+            itemPicked = str(G2frame.itemPicked)
+            if 'line1' in itemPicked and 'Line2D' in itemPicked:
+                Data['IOtth'][0] = max(tth,0.001)
+            elif 'line2' in itemPicked and 'Line2D' in itemPicked:
+                Data['IOtth'][1] = tth
+            elif 'line3' in itemPicked and 'Line2D' in itemPicked:
+                Data['LRazimuth'][0] = int(azm)
+                Data['LRazimuth'][0] %= 360
+            elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
+                Data['LRazimuth'][1] = int(azm)
+                Data['LRazimuth'][1] %= 360
+            else:
+                return
+            if Data['LRazimuth'][0] > Data['LRazimuth'][1]: Data['LRazimuth'][1] += 360
+            if Data['fullIntegrate']: Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
+            #if Data['IOtth'][0] > Data['IOtth'][1]:
+            #    Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
+            # compute arcs, etc
+            LRAzim = Data['LRazimuth']                  #NB: integers
+            Nazm = Data['outAzimuths']
+            delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
+            AzmthOff = Data['azmthOff']
+            IOtth = Data['IOtth']
+            wave = Data['wavelength']
+            dspI = wave/(2.0*sind(IOtth[0]/2.0))
+            ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
+            dspO = wave/(2.0*sind(IOtth[1]/2.0))
+            ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
+            Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
+            if ellI:
+                xyI = []
+                for azm in Azm:
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
+                    if np.any(xy):
+                        xyI.append(xy)
+                if len(xyI):
+                    xyI = np.array(xyI)
+                    arcxI,arcyI = xyI.T
+            if ellO:
+                xyO = []
+                for azm in Azm:
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
+                    if np.any(xy):
+                        xyO.append(xy)
+                if len(xyO):
+                    xyO = np.array(xyO)
+                    arcxO,arcyO = xyO.T                
+
+            Page.canvas.restore_region(savedplot)
+            if 'line1' in itemPicked and 'Line2D' in itemPicked:
+                pick.set_data([arcxI,arcyI])
+            elif 'line2' in itemPicked and 'Line2D' in itemPicked:
+                pick.set_data([arcxO,arcyO])
+            elif 'line3' in itemPicked and 'Line2D' in itemPicked:
+                pick.set_data([[arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]]])
+            elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
+                pick.set_data([[arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]]])
+            Page.figure.gca().draw_artist(pick)
+            Page.canvas.blit(Page.figure.gca().bbox)
+
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
             return
         if G2frame.itemPicked is not None: return
-        G2frame.itemPicked = event.artist
+        G2frame.itemPicked = pick = event.artist
         G2frame.mousePicked = event.mouseevent
+        if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Image Controls':
+            # prepare to animate move of integration ranges
+            Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+            saveLinestyle = pick.get_linestyle()
+            pick.set_linestyle(':') # set line as dotted
+            Page.figure.gca()
+            Page.canvas.draw() # refresh without dotted line & save bitmap
+            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+            G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragIntBound)
+            pick.set_linestyle(saveLinestyle) # back to original
         
     def OnImRelease(event):
         try:
@@ -4260,6 +4342,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             return
         if PickName not in ['Image Controls','Masks','Stress/Strain']:
             return
+        if G2frame.cid is not None:         # if there is a drag connection, delete it
+            Page.canvas.mpl_disconnect(G2frame.cid)
+            G2frame.cid = None
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
@@ -4470,7 +4555,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_title(Title)
     try:
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Image Controls',]:
-            Page.Choice = (' key press','l: log(I) on','x: flip x','y: flip y',)
+            Page.Choice = (' key press','l: log(I) on','d: set dmin','x: flip x','y: flip y',)
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
@@ -4524,7 +4609,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             
         Plot.plot(xcent,ycent,'x')
         #G2frame.PatternTree.GetItemText(item)
-        if Data['showLines']:
+        if Data['showLines']: # draw integration range arc/circles/lines
             LRAzim = Data['LRazimuth']                  #NB: integers
             Nazm = Data['outAzimuths']
             delAzm = float(LRAzim[1]-LRAzim[0])/Nazm

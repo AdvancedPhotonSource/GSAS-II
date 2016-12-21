@@ -544,8 +544,8 @@ def getWidthsCW(pos,sig,gam,shl):
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+widths[1]
-    fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
-    fmax = 15.0*fwhm
+    fmin = 100.*(fwhm+shl*abs(npcosd(pos)))
+    fmax = 150.0*fwhm
     if pos > 90:
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
@@ -557,8 +557,8 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     '''
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
-    fmin = 10.*fwhm*(1.+1./alp)    
-    fmax = 10.*fwhm*(1.+1./bet)
+    fmin = 30.*fwhm*(1.+1./alp)    
+    fmax = 30.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
     
 def getFWHM(pos,Inst):

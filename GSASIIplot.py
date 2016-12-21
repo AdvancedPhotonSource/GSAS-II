@@ -5598,7 +5598,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         xyz = np.array([x,y,z])
         GL.glEnable(GL.GL_COLOR_MATERIAL)
         GL.glLineWidth(3)
-        GL.glColor3fv(color*den/255)
+        GL.glColor3fv(2*color*den/255)
         GL.glPushMatrix()
         GL.glBegin(GL.GL_LINES)
         for vec in mapPeakVecs:
@@ -5650,10 +5650,10 @@ def PlotStructure(G2frame,data,firstCall=False):
                     alpha = min(1.0,(abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel))
                 if rho[I,J,K] < 0.:
                     XYZ.append(xyz)
-                    RC.append([0.1*alpha,Rd])
+                    RC.append([0.1*alpha,2*Rd])
                 else:
                     XYZ.append(xyz)
-                    RC.append([0.1*alpha,Gr])
+                    RC.append([0.1*alpha,2*Gr])
         RenderDots(XYZ,RC)
         GL.glShadeModel(GL.GL_SMOOTH)
                             

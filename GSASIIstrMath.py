@@ -646,7 +646,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
-    Nops = len(SGMT)
+    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
@@ -743,10 +743,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2*Nops*Ncen)     #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
             if SGData['SGInv']:
                 mphase = np.hstack((phase,-phase))
-                TMcorr = TMcorr/2.
             else:
                 mphase = phase 
             mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
@@ -761,7 +760,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
             fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
-#            GSASIIpath.IPyBreak()
             refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
             refl.T[7] = np.copy(refl.T[9])                
             refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
@@ -993,11 +991,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps
-#    dGdM = SGData['MagMom'][nxs,:,nxs]*dGdM
     Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
-#    GSASIIpath.IPyBreak()
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    dGdm = (1.-Gdata**2)/Mag                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
+    dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1029,10 +1025,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/Nops     #Nref,Natm                                  #Nref,Natm
+        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm                                  #Nref,Natm
         if SGData['SGInv']:
             mphase = np.hstack((phase,-phase))
-            TMcorr = TMcorr/2.
             Uniq = np.hstack((Uniq,-Uniq))      #Nref,Nops,hkl
             Hij = np.hstack((Hij,Hij))
         else:
@@ -1047,12 +1042,12 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #unit vector for H
         eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+        NQ = np.where(np.abs(Q)>0.,1./np.abs(Q),0.)     #this sort of works esp for 1 axis moments
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
         dqmx = np.sum(dqmx,axis=1)   #matrix * vector = vector
-        dmx = Q*dGdM[:,nxs,:,:]+dqmx*Mag[nxs,nxs,:,:]                                    #*Mag canceled out of dqmx term
-#        GSASIIpath.IPyBreak()
-#
+        dmx = NQ*Q*dGdM[:,nxs,:,:]+dqmx                                    #*Mag canceled out of dqmx term
+        
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]
         fams = np.sum(np.sum(fam,axis=-1),axis=-1)                      #Mxyz,Nref

@@ -4988,12 +4988,11 @@ def UpdatePDFGrid(G2frame,data):
     flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
             typeHint=float,OnLeave=AfterChangeNoRefresh)
     sqBox.Add(flatBkg,0)
-    if data.get('IofQmin',0.):
-        flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
-        flatSpin.SetRange(-1,1)
-        flatSpin.SetValue(0)
-        flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
-        sqBox.Add(flatSpin,0,WACV)
+    flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+    flatSpin.SetRange(-1,1)
+    flatSpin.SetValue(0)
+    flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
+    sqBox.Add(flatSpin,0,WACV)
     mainSizer.Add(sqBox,0)
         
     bkBox = wx.BoxSizer(wx.HORIZONTAL)

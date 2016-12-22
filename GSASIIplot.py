@@ -5567,7 +5567,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         for xyz,rc in zip(XYZ,RC):
             x,y,z = xyz
             r,c = rc
-            GL.glColor3ubv(c)
+            GL.glColor3fv(c/255.)
             GL.glPointSize(r*50)
             GL.glBegin(GL.GL_POINTS)
             GL.glVertex3fv(xyz)
@@ -5735,10 +5735,10 @@ def PlotStructure(G2frame,data,firstCall=False):
                     alpha = min(1.0,(abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel))
                 if rho[I,J,K] < 0.:
                     XYZ.append(xyz)
-                    RC.append([0.1*alpha,2*Rd])
+                    RC.append([0.2*alpha,2*Or])
                 else:
                     XYZ.append(xyz)
-                    RC.append([0.1*alpha,2*Gr])
+                    RC.append([0.2*alpha,2*Gr])
         RenderDots(XYZ,RC)
         GL.glShadeModel(GL.GL_SMOOTH)
                             

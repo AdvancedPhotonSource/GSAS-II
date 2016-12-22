@@ -538,27 +538,27 @@ fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
 def getWidthsCW(pos,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data. On low-angle side, 10 FWHM are used, 
-    on high-angle side 15 are used, low angle side extended by axial divergence
+    for constant wavelength data. On low-angle side, 50 FWHM are used, 
+    on high-angle side 75 are used, low angle side extended for axial divergence
     (for peaks above 90 deg, these are reversed.)
     '''
     widths = [np.sqrt(sig)/100.,gam/100.]
     fwhm = 2.355*widths[0]+widths[1]
-    fmin = 100.*(fwhm+shl*abs(npcosd(pos)))
-    fmax = 150.0*fwhm
+    fmin = 50.*(fwhm+shl*abs(npcosd(pos)))
+    fmax = 75.0*fwhm
     if pos > 90:
         fmin,fmax = [fmax,fmin]          
     return widths,fmin,fmax
     
 def getWidthsTOF(pos,alp,bet,sig,gam):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data. 10 FWHM are used on both sides each 
+    for constant wavelength data. 50 FWHM are used on both sides each 
     extended by exponential coeff.
     '''
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
-    fmin = 30.*fwhm*(1.+1./alp)    
-    fmax = 30.*fwhm*(1.+1./bet)
+    fmin = 50.*fwhm*(1.+1./alp)    
+    fmax = 50.*fwhm*(1.+1./bet)
     return widths,fmin,fmax
     
 def getFWHM(pos,Inst):

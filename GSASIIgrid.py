@@ -73,8 +73,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
-    wxID_DRAWDISTVP, wxID_DRAWADDSPHERE,
-] = [wx.NewId() for item in range(14)]
+    wxID_DRAWDISTVP, wxID_DRAWADDSPHERE,wxID_DRWAEDITRADII,
+] = [wx.NewId() for item in range(15)]
 
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
@@ -1375,12 +1375,18 @@ class DisAglDialog(wx.Dialog):
       :ref:`Phase Tree Item <Phase_table>`
     :param dict default:  A dict containing the default
       search ranges for each element.
+    :param bool Reset: if True (default), show Reset button
+    :param bool Angle: if True (default), show angle radii
     '''
-    def __init__(self,parent,data,default,Reset=True):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Distance Angle Controls', 
+    def __init__(self,parent,data,default,Reset=True,Angle=True):
+        text = 'Distance Angle Controls'
+        if not Angle:
+            text = 'Distance Controls'
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,text, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.default = default
         self.Reset = Reset
+        self.Angle = Angle
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self._default(data,self.default)
         self.Draw(self.data)
@@ -1410,34 +1416,31 @@ class DisAglDialog(wx.Dialog):
             0,WACV|wx.LEFT,10)
         mainSizer.Add((10,10),1)
         
-        radiiSizer = wx.FlexGridSizer(0,3,5,5)
+        ncol = 3
+        if not self.Angle:
+            ncol=2
+        radiiSizer = wx.FlexGridSizer(0,ncol,5,5)
         radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,WACV)
         radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,WACV)
-        radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,WACV)
+        if self.Angle:
+            radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,WACV)
         self.objList = {}
         for id,item in enumerate(self.data['AtomTypes']):
             radiiSizer.Add(wx.StaticText(self.panel,-1,' '+item),0,WACV)
-            bRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
-            self.objList[bRadii.GetId()] = ['BondRadii',id]
-            bRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
-            bRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
+            bRadii = G2G.ValidatedTxtCtrl(self.panel,data['BondRadii'],id,nDig=(10,3),typeHint=float)
             radiiSizer.Add(bRadii,0,WACV)
-            aRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
-            self.objList[aRadii.GetId()] = ['AngleRadii',id]
-            aRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
-            aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
-            radiiSizer.Add(aRadii,0,WACV)
+            if self.Angle:
+                aRadii = G2G.ValidatedTxtCtrl(self.panel,data['AngleRadii'],id,nDig=(10,3),typeHint=float)
+                radiiSizer.Add(aRadii,0,WACV)
         mainSizer.Add(radiiSizer,0,wx.EXPAND)
-        factorSizer = wx.FlexGridSizer(0,2,5,5)
-        Names = ['Bond','Angle']
-        for i,name in enumerate(Names):
-            factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,WACV)
-            bondFact = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
-            self.objList[bondFact.GetId()] = ['Factors',i]
-            bondFact.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
-            bondFact.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
-            factorSizer.Add(bondFact)
-        mainSizer.Add(factorSizer,0,wx.EXPAND)
+        if self.Angle:
+            factorSizer = wx.FlexGridSizer(0,2,5,5)
+            Names = ['Bond','Angle']
+            for i,name in enumerate(Names):
+                factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,WACV)
+                bondFact = G2G.ValidatedTxtCtrl(self.panel,data['Factors'],i,nDig=(10,3),typeHint=float)
+                factorSizer.Add(bondFact)
+            mainSizer.Add(factorSizer,0,wx.EXPAND)
         
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -1454,16 +1457,6 @@ class DisAglDialog(wx.Dialog):
         self.panel.Fit()
         self.Fit()
     
-    def OnRadiiVal(self,event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        item = self.objList[Obj.GetId()]
-        try:
-            self.data[item[0]][item[1]] = float(Obj.GetValue())
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(self.data[item[0]][item[1]]))          #reset in case of error
-        
     def GetData(self):
         'Returns the values from the dialog'
         return self.data
@@ -2363,6 +2356,8 @@ class DataFrame(wx.Frame):
             help='Select atoms first')
         self.DrawAtomEdit.Append(id=wxID_DRAWATOMRESETCOLOR, kind=wx.ITEM_NORMAL,text='Reset atom colors',
             help='Resets all atom colors to defaults')
+        self.DrawAtomEdit.Append(id=wxID_DRWAEDITRADII, kind=wx.ITEM_NORMAL,text='Edit atom radii',
+            help='Edit drawing atom radii')
         self.DrawAtomEdit.Append(id=wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
             help='View point is 1st atom selected')
         self.DrawAtomEdit.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',

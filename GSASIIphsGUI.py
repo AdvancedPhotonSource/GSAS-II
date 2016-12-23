@@ -87,6 +87,8 @@ def FindBondsDraw(data):
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     radii = generalData['BondRadii']
+    if generalData.get('DisAglCtls',{}):
+        radii = generalData['DisAglCtls']['BondRadii']
     atomTypes = generalData['AtomTypes']
     try:
         indH = atomTypes.index('H')
@@ -677,18 +679,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
                     
-            def OnGfacVal(event):
-                Obj = event.GetEventObject()
-                ig = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    if val < 0.5 or val > 3.0:
-                        raise ValueError
-                except ValueError:
-                    val = generalData['Lande g'][ig]
-                generalData['Lande g'][ig] = val
-                Obj.SetValue('%.2f'%(val))
-                
             elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
             for elem in generalData['AtomTypes']:
@@ -741,11 +731,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if gfac == None:
                         elemSizer.Add((5,0),)
                     else:
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                        gfacTxt = wx.TextCtrl(General,value='%.2f'%(gfac),style=wx.TE_PROCESS_ENTER)
-                        Indx[gfacTxt.GetId()] = ig
-                        gfacTxt.Bind(wx.EVT_TEXT_ENTER,OnGfacVal)        
-                        gfacTxt.Bind(wx.EVT_KILL_FOCUS,OnGfacVal)
+                        gfacTxt = G2G.ValidatedTxtCtrl(General,generalData['Lande g'],ig,
+                            min=0.5,max=3.0,nDig=(10,2),typeHint=float)
                         elemSizer.Add(gfacTxt,0,WACV)
             return elemSizer
         
@@ -4273,7 +4260,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atom[cs+2] = list(generalData['Color'][atNum])
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
-        G2plt.PlotStructure(G2frame,data)        
+        G2plt.PlotStructure(G2frame,data) 
+        
+    def OnEditAtomRadii(event):
+        DisAglCtls = {}
+        generalData = data['General']
+        if 'DisAglCtls' in generalData:
+            DisAglCtls = generalData['DisAglCtls']
+        dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Angle=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            DisAglCtls = dlg.GetData()
+        dlg.Destroy()
+        generalData['DisAglCtls'] = DisAglCtls
+        FindBondsDraw(data)
+        G2plt.PlotStructure(G2frame,data)         
         
     def SetViewPoint(event):
         indx = drawAtoms.GetSelectedRows()
@@ -7644,6 +7644,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ReflData = GetReflData(G2frame,phaseName,reflNames)
         if ReflData == None: return
         if 'Omit' in mapData['MapType']:
+            dim = '3D '
             pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
@@ -8008,6 +8009,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
         G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2gd.wxID_DRWAEDITRADII)   
         G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AddSphere, id=G2gd.wxID_DRAWADDSPHERE)

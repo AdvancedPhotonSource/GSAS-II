@@ -4908,6 +4908,11 @@ def PlotStructure(G2frame,data,firstCall=False):
     SpnFlp = SGData.get('SpnFlp',[1,])
     atomData = data['Atoms']
     mapPeaks = []
+    vdWRadii = generalData['vdWRadii']
+    if generalData.get('DisAglCtrls',{}):
+        BondRadii = generalData['DisAglCtrls']['BondRadii']
+    else:
+        BondRadii = generalData['BondRadii']
     drawingData = data['Drawing']
     if not drawingData:
         return          #nothing setup, nothing to draw   
@@ -5140,7 +5145,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if G2frame.dataDisplay.GetPageText(getSelection()) == 'Map peaks':
             for i,peak in enumerate(mapPeaks):
                 x,y,z = peak[1:4]
-                X,Y,Z = GLU.GLU.gluProject(x,y,z,Model,Proj,View)
+                X,Y,Z = GLU.gluProject(x,y,z,Model,Proj,View)
                 XY = [int(X),int(View[3]-Y)]
                 if np.allclose(xy,XY,atol=10) and Z < Zmax:
                     Zmax = Z
@@ -5856,16 +5861,16 @@ def PlotStructure(G2frame,data,firstCall=False):
                 elif 'H' == atom[ct]:
                     if drawingData['showHydrogen']:
                         if 'vdW' in atom[cs] and atNum >= 0:
-                            radius = vdwScale*generalData['vdWRadii'][atNum]
+                            radius = vdwScale*vdWRadii[atNum]
                         else:
                             radius = ballScale*drawingData['sizeH']
                     else:
                         radius = 0.0
                 else:
                     if 'vdW' in atom[cs]:
-                        radius = vdwScale*generalData['vdWRadii'][atNum]
+                        radius = vdwScale*vdWRadii[atNum]
                     else:
-                        radius = ballScale*generalData['BondRadii'][atNum]
+                        radius = ballScale*BondRadii[atNum]
                 RenderSphere(x,y,z,radius,atColor)
                 if 'sticks' in atom[cs]:
                     RenderBonds(x,y,z,Bonds,bondR,bndColor)

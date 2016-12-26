@@ -94,12 +94,12 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
-    wxID_IMCOPYSELECTED, wxID_SAVESELECTEDCONTROLS,
-] = [wx.NewId() for item in range(12)]
+    wxID_IMCOPYSELECTED, wxID_SAVESELECTEDCONTROLS, wxID_IMXFERCONTROLS,
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
-    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,  wxID_MASKLOADNOT,wxID_FINDSPOTS,
-] = [wx.NewId() for item in range(10)]
+    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,wxID_MULTISPOTMASK,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
     wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,
@@ -2097,8 +2097,10 @@ class DataFrame(wx.Frame):
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
         self.ImageEdit.Append(help='Save controls from selected images to file', 
             id=wxID_SAVESELECTEDCONTROLS, kind=wx.ITEM_NORMAL,text='Save Multiple Controls')
-        self.ImageEdit.Append(help='Load image controls from file', 
+        self.ImageEdit.Append(help='Load image controls from file',
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
+        self.ImageEdit.Append(help='Transfer integration range for other detector distances', 
+            id=wxID_IMXFERCONTROLS, kind=wx.ITEM_NORMAL,text='Xfer angles')
         self.ImageEdit.Append(help='Open Auto-integration window to integrate a series of images', 
             id=wxID_IMAUTOINTEG, kind=wx.ITEM_NORMAL,text='Auto Integrate')
         self.PostfillDataMenu()
@@ -2133,6 +2135,8 @@ class DataFrame(wx.Frame):
             id=wxID_NEWMASKRING, kind=wx.ITEM_NORMAL,text='Ring mask')
         submenu.Append(help='Create a spot mask with mouse input', 
             id=wxID_NEWMASKSPOT, kind=wx.ITEM_NORMAL,text='Spot mask')
+        submenu.Append(help='Turn on/off multiple spot mask creation mode',
+            id=wxID_MULTISPOTMASK, kind=wx.ITEM_NORMAL,text='Multiple spot masks')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain

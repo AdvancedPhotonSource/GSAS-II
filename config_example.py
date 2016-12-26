@@ -105,3 +105,17 @@ wxInspector = False
 '''If set to True, the wxInspector widget is displayed when
 GSAS-II is started.
 '''
+
+Spot_mask_diameter = 1.0
+'''Specifies the default diameter for creation of spot masks. Default is 1.0 mm
+'''
+
+Ring_mask_thickness = 0.1
+'''Specifies the default thickness for creation of ring and arc masks.
+Default is 0.1 degrees 2-theta.
+'''
+
+Arc_mask_azimuth = 10.0
+'''Specifies the default azimuthal range for creation of arc masks.
+Default is 10.0 degrees 2-theta.
+'''

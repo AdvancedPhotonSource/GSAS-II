@@ -4123,11 +4123,17 @@ def OnStartMask(G2frame):
         Page.figure.suptitle('Defining Polygon mask (use right-mouse to end)',color='r',fontweight='bold')
         Page.canvas.draw()
     elif G2frame.MaskKey == 's':
-        Masks['Points'].append([])
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('Left-click to create a spot mask',color='r',fontweight='bold')
+        Page.canvas.draw()
     elif G2frame.MaskKey == 'a':
-        Masks['Arcs'].append([])
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('Left-click to create an arc mask',color='r',fontweight='bold')
+        Page.canvas.draw()
     elif G2frame.MaskKey == 'r':
-        Masks['Rings'].append([])
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('Left-click to create a ring mask',color='r',fontweight='bold')
+        Page.canvas.draw()
     G2imG.UpdateMasks(G2frame,Masks)
     
 def OnStartNewDzero(G2frame):
@@ -4154,7 +4160,7 @@ def ToggleMultiSpotMask(G2frame):
     else:
         G2frame.MaskKey = 'm'
         (x0,y0),(x1,y1) = Plot.get_position().get_points()
-        Page.figure.suptitle('Multiple spot mode on',color='r',fontweight='bold')
+        Page.figure.suptitle('Multiple spot mode on, press m or right-click to end',color='r',fontweight='bold')
         Page.Choice[-1] = 'm: stop multiple spot mask mode'
         Page.canvas.draw()
 
@@ -4284,7 +4290,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                          'Keyboard only')
                     return
                 if not (event.xdata and event.ydata): return
-                spot = [event.xdata,event.ydata,1.]
+                d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
+                spot = [event.xdata,event.ydata,d]
                 Masks['Points'].append(spot)
                 artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',picker=3)
                 Page.figure.gca().add_artist(artist)
@@ -4626,27 +4633,48 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
                 return
             if G2frame.MaskKey == 'm':
-                spot = [Xpos,Ypos,1.]
-                Masks['Points'].append(spot)
-                artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=3)
-                Page.figure.gca().add_artist(artist)
-                artist.itemNumber = len(Masks['Points'])-1
-                artist.itemType = 'Spot'
-                G2imG.UpdateMasks(G2frame,Masks)
-                Page.canvas.draw()
+                if event.button == 3:
+                    ToggleMultiSpotMask(G2frame)
+                else:
+                    d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
+                    spot = [Xpos,Ypos,d]
+                    Masks['Points'].append(spot)
+                    artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=3)
+                    Page.figure.gca().add_artist(artist)
+                    artist.itemNumber = len(Masks['Points'])-1
+                    artist.itemType = 'Spot'
+                    G2imG.UpdateMasks(G2frame,Masks)
+                    Page.canvas.draw()
                 return 
-            elif G2frame.MaskKey == 's' and event.button == 1:
-                Masks['Points'][-1] = [Xpos,Ypos,1.]
+            elif G2frame.MaskKey == 's':
+                if event.button == 1:
+                    d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
+                    spot = [Xpos,Ypos,d]
+                    Masks['Points'].append(spot)
+                    G2imG.UpdateMasks(G2frame,Masks)
+                G2frame.MaskKey = ''
+                wx.CallAfter(PlotImage,G2frame,newImage=True)
+                return
+            elif G2frame.MaskKey == 'r':
+                if event.button == 1:
+                    tth = G2img.GetTth(Xpos,Ypos,Data)
+                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)                
+                    Masks['Rings'].append([tth,t])
+                    G2imG.UpdateMasks(G2frame,Masks)
                 G2frame.MaskKey = ''                
-            elif G2frame.MaskKey == 'r' and event.button == 1:
-                tth = G2img.GetTth(Xpos,Ypos,Data)
-                Masks['Rings'][-1] = [tth,0.1]
-                G2frame.MaskKey = ''                
-            elif G2frame.MaskKey == 'a' and event.button == 1:
-                tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
-                azm = int(azm)                
-                Masks['Arcs'][-1] = [tth,[azm-5,azm+5],0.1]
-                G2frame.MaskKey = ''                
+                wx.CallAfter(PlotImage,G2frame,newImage=True)
+                return
+            elif G2frame.MaskKey == 'a':
+                if event.button == 1:
+                    tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
+                    azm = int(azm)                
+                    t = GSASIIpath.GetConfigValue('Ring_mask_thickness',0.1)                
+                    a = GSASIIpath.GetConfigValue('Arc_mask_azimuth',10.0)                
+                    Masks['Arcs'].append([tth,[azm-a/2.,azm+a/2.],t])
+                    G2imG.UpdateMasks(G2frame,Masks)
+                G2frame.MaskKey = ''
+                wx.CallAfter(PlotImage,G2frame,newImage=True)
+                return
             elif G2frame.MaskKey =='p' or G2frame.MaskKey =='f':
                 if G2frame.MaskKey =='p':
                     polygon = Masks['Polygons'][-1]
@@ -4659,7 +4687,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 3: # close the polygon/frame
                     if len(polygon) <= 2: # too few points
                         if G2frame.MaskKey =='p':
-                            del Masks['Polygons']
+                            del Masks['Polygons'][-1]
                         else:
                             Masks['Frames'] = []
                         G2G.G2MessageBox(G2frame.G2plotNB,lbl+' deleted -- not enough points',

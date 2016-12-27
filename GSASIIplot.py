@@ -4937,7 +4937,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         # display the Masks
         if 'Frames' not in Masks: Masks['Frames'] = []  # patch
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks
-            if spot:
+            if len(spot):
                 x,y,d = spot
                 artist = Circle((x,y),radius=d/2,fc='none',ec='r',picker=3)
                 Plot.add_artist(artist)

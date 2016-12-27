@@ -1195,7 +1195,7 @@ def CleanupMasks(data):
     for key in ['Points','Rings','Arcs','Polygons']:
         data[key] = data.get(key,[])
         l1 = len(data[key])
-        data[key] = [i for i in data[key] if i]
+        data[key] = [i for i in data[key] if len(i)]
         l2 = len(data[key])
         if GSASIIpath.GetConfigValue('debug') and l1 != l2:
             print 'Mask Cleanup:',key,'was',l1,'entries','now',l2
@@ -1307,8 +1307,11 @@ def UpdateMasks(G2frame,data):
         'Do auto search for spot masks'
         Controls = copy.deepcopy(G2frame.PatternTree.GetItemPyData( 
             G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Image Controls')))
-        G2img.AutoSpotMasks(G2frame.ImageZ,data,Controls)
-        event.Skip()
+        Error = G2img.AutoSpotMasks(G2frame.ImageZ,data,Controls)
+        if not Error is None:
+            G2frame.ErrorDialog('Auto spot search error',Error)
+        wx.CallAfter(UpdateMasks,G2frame,data)
+        G2plt.PlotExposedImage(G2frame,event=event)                
             
     def ToggleSpotMaskMode(event):
         G2plt.ToggleMultiSpotMask(G2frame)
@@ -1562,7 +1565,7 @@ def UpdateMasks(G2frame,data):
         max=thresh[0][1],OnLeave=Replot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
-    if Spots:
+    if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
@@ -1571,7 +1574,7 @@ def UpdateMasks(G2frame,data):
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' diameter, mm'),0,WACV)
         littleSizer.Add((5,0),0)
         for i in range(len(Spots)):
-            if Spots[i]:
+            if len(Spots[i]):
                 x,y,d = Spots[i]
                 spotText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f,%.2f" % (x,y)),
                     style=wx.TE_READONLY)

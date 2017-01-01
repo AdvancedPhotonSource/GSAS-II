@@ -3109,9 +3109,16 @@ class MyHelp(wx.Menu):
         for documentation. Uses the helpKey value from the dataFrame window
         unless a special help key value has been defined for this menu id in
         self.HelpById
+
+        Note that self may be child of the main window (G2frame) or of the dataFrame
         '''
+        if hasattr(self.frame,'dataFrame'):  # find the dataFrame
+            dataFrame = self.frame.dataFrame
+        else:
+            dataFrame = self.frame
+            
         try:
-            helpKey = self.frame.helpKey # BHT: look up help from helpKey in data window
+            helpKey = dataFrame.helpKey # BHT: look up help from helpKey in data window
             #if GSASIIpath.GetConfigValue('debug'): print 'dataFrame help: key=',helpKey
         except AttributeError:
             helpKey = ''

@@ -3073,7 +3073,7 @@ class MyHelp(wx.Menu):
        menu.Append(menu=MyHelp(self,...),title="&Help")
 
     '''
-    def __init__(self,frame,helpType=None,helpLbl=None,includeTree=False,morehelpitems=[]):
+    def __init__(self,frame,includeTree=False,morehelpitems=[]):
         wx.Menu.__init__(self,'')
         self.HelpById = {}
         self.frame = frame
@@ -3095,30 +3095,30 @@ class MyHelp(wx.Menu):
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
         # add help lookup(s) in gsasii.html
-        if helpType is not None or includeTree:
-            self.AppendSeparator()
+        self.AppendSeparator()
         if includeTree:
-            if helpLbl is None: helpLbl = helpType
             helpobj = self.Append(text='Help on Data tree',
                                   id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
             frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
             self.HelpById[helpobj.GetId()] = 'Data tree'
-        if helpType is not None:
-            if helpLbl is None: helpLbl = helpType
-            helpobj = self.Append(text='Help on '+helpLbl,
-                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
-            self.HelpById[helpobj.GetId()] = helpType
+        helpobj = self.Append(text='Help on current data tree item',id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+        frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
        
     def OnHelpById(self,event):
-        '''Called when Help on... is pressed in a menu. Brings up
-        a web page for documentation.
+        '''Called when Help on... is pressed in a menu. Brings up a web page
+        for documentation. Uses the helpKey value from the dataFrame window
+        unless a special help key value has been defined for this menu id in
+        self.HelpById
         '''
-        helpType = self.HelpById.get(event.GetId())
-        if helpType is None:
-            print 'Error: help lookup failed!',event.GetEventObject()
-            print 'id=',event.GetId()
-        elif helpType == 'Tutorials': 
+        try:
+            helpKey = self.frame.helpKey # BHT: look up help from helpKey in data window
+            #if GSASIIpath.GetConfigValue('debug'): print 'dataFrame help: key=',helpKey
+        except AttributeError:
+            helpKey = ''
+            if GSASIIpath.GetConfigValue('debug'):
+                print('No helpKey for current dataFrame!')
+        helpType = self.HelpById.get(event.GetId(),helpKey)
+        if helpType == 'Tutorials': 
             dlg = OpenTutorial(self.frame)
             dlg.ShowModal()
             dlg.Destroy()
@@ -3831,12 +3831,10 @@ path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this
 def ShowHelp(helpType,frame):
     '''Called to bring up a web page for documentation.'''
     global htmlFirstUse,htmlPanel,htmlFrame
-    # look up a definition for help info from dict
-    #helplink = helpLocDict.get(helpType)
-    #if helplink is None:
-    if True:
-        # no defined link to use, create a default based on key
-        helplink = 'gsasII.html#'+helpType.replace(' ','_')
+    # no defined link to use, create a default based on key
+    helplink = 'gsasII.html'
+    if helpType:
+        helplink += '#'+helpType.replace(')','').replace('(','_').replace(' ','_')
     # determine if a web browser or the internal viewer should be used for help info
     if GSASIIpath.GetConfigValue('Help_mode'):
         helpMode = GSASIIpath.GetConfigValue('Help_mode')

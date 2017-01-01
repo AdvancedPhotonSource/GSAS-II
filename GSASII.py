@@ -658,7 +658,7 @@ class GSASII(wx.Frame):
             self.PatternTree.Expand(sub) 
             self.PatternTree.Expand(psub)
             self.PatternTree.SelectItem(psub) # show the page to complete the initialization (yuk!)
-            wx.Yield() # make sure call of GSASII.OnPatternTreeSelChanged happens before we go on
+            wx.Yield() # make sure call of GSASII.OnDataTreeSelChanged happens before we go on
 
             if rd.Constraints:
                 sub = G2gd.GetPatternTreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
@@ -2320,8 +2320,8 @@ class GSASII(wx.Frame):
         #self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE, # replaced for logging
         self.PatternTree = G2G.G2TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
-        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,self.OnPatternTreeSelChanged)
-        self.PatternTree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK,self.OnPatternTreeSelChanged)
+        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,self.OnDataTreeSelChanged)
+        self.PatternTree.Bind(wx.EVT_TREE_ITEM_RIGHT_CLICK,self.OnDataTreeSelChanged)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_COLLAPSED,
             self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
@@ -2338,7 +2338,6 @@ class GSASII(wx.Frame):
         self.root = self.PatternTree.root
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
-        #self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)
         self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame,G2frame=self)
         plotFrame.Show()
         
@@ -2455,7 +2454,7 @@ class GSASII(wx.Frame):
         self.mainPanel.SetSize(wx.Size(w,h))
         self.PatternTree.SetSize(wx.Size(w,h))
                         
-    def OnPatternTreeSelChanged(self, event):
+    def OnDataTreeSelChanged(self, event):
         '''Called when a data tree item is selected'''
         if self.TreeItemDelete:
             self.TreeItemDelete = False
@@ -2464,7 +2463,7 @@ class GSASII(wx.Frame):
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 self.G2plotNB.nb.GetPage(pltNum)
             item = event.GetItem()
-            G2gd.MovePatternTreeToGrid(self,item)
+            G2gd.SelectDataTreeItem(self,item)
             if self.oldFocus:
                 self.oldFocus.SetFocus()
         
@@ -2474,7 +2473,7 @@ class GSASII(wx.Frame):
 
     def OnPatternTreeItemExpanded(self, event):
         'Called when a tree item is expanded'
-        self.OnPatternTreeSelChanged(event)
+        self.OnDataTreeSelChanged(event)
         event.Skip()
         
     def OnPatternTreeItemDelete(self, event):
@@ -2515,7 +2514,7 @@ class GSASII(wx.Frame):
                 Id = self.PatternTree.AppendItem(parent=NewId,text=name)
                 self.PatternTree.SetItemPyData(Id,item)
             self.PatternTree.Delete(self.BeginDragId)
-            G2gd.MovePatternTreeToGrid(self,NewId)
+            G2gd.SelectDataTreeItem(self,NewId)
         
     def OnPatternTreeKeyDown(self,event): #doesn't exactly work right with Shift key down
         'Allows stepping through the tree with the up/down arrow keys'
@@ -3012,7 +3011,7 @@ class GSASII(wx.Frame):
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
         self.PatternTree.SetItemPyData(sub,G2IO.SetNewPhase(Name=PhaseName,SGData=SGData))
-        G2gd.MovePatternTreeToGrid(self,sub) #bring up new phase General tab
+        G2gd.SelectDataTreeItem(self,sub) #bring up new phase General tab
         
     def OnDeletePhase(self,event):
         'Delete a phase from the tree. Called by Data/Delete Phase menu'
@@ -3237,14 +3236,14 @@ class GSASII(wx.Frame):
                     for item in self.Refine: item.Enable(True)
                     self.EnableSeqRefineMenu()
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        if phaseId: # show all phases
+            self.PatternTree.Expand(phaseId)
         if Id:
             self.EnablePlot = True
             self.PatternTree.SelectItem(Id)
             self.PatternTree.Expand(Id)
         elif phaseId:
             self.PatternTree.SelectItem(phaseId)
-        if phaseId:
-            self.PatternTree.Expand(phaseId)
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
@@ -3901,7 +3900,6 @@ class GSASII(wx.Frame):
         if Id:
             self.PickId = Id
             self.PatternTree.SelectItem(Id)
-            #G2gd.MovePatternTreeToGrid(self,Id) # fails on Mac -- SelectItem already calls MovePatternTreeToGrid; double call fails to complete properly
         # update other self-updating plots
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if frame.plotInvalid and frame.replotFunction:
@@ -3968,7 +3966,6 @@ class GSASII(wx.Frame):
                     self.ResetPlots()
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)
-                    #G2gd.MovePatternTreeToGrid(self,Id) # fails on Mac -- SelectItem already calls MovePatternTreeToGrid; double call fails to complete properly
             finally:
                 dlg.Destroy()
         else:

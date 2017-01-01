@@ -250,6 +250,8 @@ class G2PlotNoteBook(wx.Panel):
         Page.plotInvalid = False # plot has just been drawn
         self.lastRaisedPlotTab = label
         self.RaisePageNoRefresh(Page)
+        # save in Tabbed page the help name for the DataItem that has created the plot
+        Page.helpKey = self.G2frame.dataFrame.helpKey
         return new,plotNum,Page,Plot,limits
     
     def _addPage(self,name,page):
@@ -442,11 +444,10 @@ class GSASIItoolbar(Toolbar):
         
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'
-        Page = self.GetParent().GetParent()
-        pageNo = Page.GetSelection()
-        bookmark = Page.GetPageText(pageNo)
-        bookmark = bookmark.strip(')').replace('(','_')
+        bookmark = self.Parent.helpKey  # get help category used to create plot
+        #if GSASIIpath.GetConfigValue('debug'): print 'plot help: key=',bookmark
         G2G.ShowHelp(bookmark,self.TopLevelParent)
+        
     def OnKey(self,event):
         '''Provide user with list of keystrokes defined for plot as well as an
         alternate way to access the same functionality

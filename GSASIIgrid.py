@@ -1584,15 +1584,13 @@ class DataFrame(wx.Frame):
                 return
             wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
         
-    def PrefillDataMenu(self,menu,helpType,helpLbl=None,empty=False):
+    def PrefillDataMenu(self,menu,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
         Windows nothing happens here. On Mac, this menu duplicates the
         tree menu, but adds an extra help command for the data item and a separator. 
         '''
         self.datamenu = menu
         self.G2frame.dataMenuBars.append(menu)
-        self.helpType = helpType
-        self.helpLbl = helpLbl
         if sys.platform == "darwin": # mac                         
             self.G2frame.FillMainMenu(menu,addhelp=False) # add the data tree menu items
             if not empty:
@@ -1606,17 +1604,14 @@ class DataFrame(wx.Frame):
         extra help command for the data item. 
         '''
         menu = self.datamenu
-        helpType = self.helpType
-        helpLbl = self.helpLbl
         if sys.platform == "darwin": # mac
             if not empty:
                 menu.Append(wx.Menu(title=''),title='|') # add another separator
-            HelpMenu=G2G.MyHelp(self,helpType=helpType,includeTree=True,
+            HelpMenu=G2G.MyHelp(self,includeTree=True,
                 morehelpitems=[('&Tutorials','Tutorials'),])
             menu.Append(menu=HelpMenu,title='&Help')
         else: # other
-            menu.Append(menu=G2G.MyHelp(self,helpType=helpType, helpLbl=helpLbl),
-                        title='&Help')
+            menu.Append(menu=G2G.MyHelp(self),title='&Help')
 
     def _init_menus(self):
         'define all GSAS-II data frame menus'
@@ -1626,22 +1621,22 @@ class DataFrame(wx.Frame):
         
         # Controls
         self.ControlsMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ControlsMenu,helpType='Controls',empty=True)
+        self.PrefillDataMenu(self.ControlsMenu,empty=True)
         self.PostfillDataMenu(empty=True)
         
         # Notebook
         self.DataNotebookMenu = wx.MenuBar() 
-        self.PrefillDataMenu(self.DataNotebookMenu,helpType='Notebook',empty=True)
+        self.PrefillDataMenu(self.DataNotebookMenu,empty=True)
         self.PostfillDataMenu(empty=True)
         
         # Comments
         self.DataCommentsMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.DataCommentsMenu,helpType='Comments',empty=True)
+        self.PrefillDataMenu(self.DataCommentsMenu,empty=True)
         self.PostfillDataMenu(empty=True)
         
         # Constraints
         self.ConstraintMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ConstraintMenu,helpType='Constraints')
+        self.PrefillDataMenu(self.ConstraintMenu)
         self.ConstraintTab = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintTab, title='Select tab')
         for id,txt in (
@@ -1680,7 +1675,7 @@ class DataFrame(wx.Frame):
 
         # Rigid bodies
         self.RigidBodyMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
+        self.PrefillDataMenu(self.RigidBodyMenu)
         self.ResidueRBMenu = wx.Menu(title='')
         self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ',
             help='Import rigid body XYZ from file')
@@ -1692,7 +1687,7 @@ class DataFrame(wx.Frame):
         self.PostfillDataMenu()
 
         self.VectorBodyMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.VectorBodyMenu,helpType='Vector rigid bodies')
+        self.PrefillDataMenu(self.VectorBodyMenu)
         self.VectorRBEdit = wx.Menu(title='')
         self.VectorRBEdit.Append(id=wxID_VECTORBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
             help='Add vector rigid body')
@@ -1722,14 +1717,14 @@ class DataFrame(wx.Frame):
             help='Delete selected restraints')
 
         self.RestraintMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
+        self.PrefillDataMenu(self.RestraintMenu)
         self.RestraintMenu.Append(menu=self.RestraintTab, title='Select tab')
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit Restr.')
         self.PostfillDataMenu()
             
         # Sequential results
         self.SequentialMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.SequentialMenu,helpType='Sequential',helpLbl='Sequential Refinement')
+        self.PrefillDataMenu(self.SequentialMenu)
         self.SequentialFile = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialFile, title='Columns')
         self.SequentialFile.Append(id=wxID_RENAMESEQSEL, kind=wx.ITEM_NORMAL,text='Rename selected',
@@ -1812,7 +1807,7 @@ class DataFrame(wx.Frame):
             
         # PWDR & SASD
         self.PWDRMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.PWDRMenu,helpType='PWDR Analysis',helpLbl='Powder Fit Error Analysis')
+        self.PrefillDataMenu(self.PWDRMenu)
         self.ErrorAnal = wx.Menu(title='')
         self.PWDRMenu.Append(menu=self.ErrorAnal,title='Commands')
         self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
@@ -1831,7 +1826,7 @@ class DataFrame(wx.Frame):
             
         # HKLF 
         self.HKLFMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.HKLFMenu,helpType='HKLF Analysis',helpLbl='HKLF Fit Error Analysis')
+        self.PrefillDataMenu(self.HKLFMenu)
         self.ErrorAnal = wx.Menu(title='')
         self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
         self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
@@ -1848,7 +1843,7 @@ class DataFrame(wx.Frame):
             
         # PWDR / Limits
         self.LimitMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.LimitMenu,helpType='Limits')
+        self.PrefillDataMenu(self.LimitMenu)
         self.LimitEdit = wx.Menu(title='')
         self.LimitMenu.Append(menu=self.LimitEdit, title='Edit Limits')
         self.LimitEdit.Append(id=wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
@@ -1859,7 +1854,7 @@ class DataFrame(wx.Frame):
             
         # PDR / Background
         self.BackMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.BackMenu,helpType='Background')
+        self.PrefillDataMenu(self.BackMenu)
         self.BackEdit = wx.Menu(title='')
         self.BackMenu.Append(menu=self.BackEdit, title='File')
         self.BackEdit.Append(id=wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
@@ -1893,7 +1888,7 @@ class DataFrame(wx.Frame):
             
         # PDR / Instrument Parameters
         self.InstMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.InstMenu,helpType='Instrument Parameters')
+        self.PrefillDataMenu(self.InstMenu)
         self.InstEdit = wx.Menu(title='')
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
         self.InstEdit.Append(help='Calibrate from indexed peaks', 
@@ -1919,7 +1914,7 @@ class DataFrame(wx.Frame):
         
         # PDR / Sample Parameters
         self.SampleMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.SampleMenu,helpType='Sample Parameters')
+        self.PrefillDataMenu(self.SampleMenu)
         self.SampleEdit = wx.Menu(title='')
         self.SampleMenu.Append(menu=self.SampleEdit, title='Command')
         self.SetScale = self.SampleEdit.Append(id=wxID_SETSCALE, kind=wx.ITEM_NORMAL,text='Set scale',
@@ -1944,7 +1939,7 @@ class DataFrame(wx.Frame):
 
         # PDR / Peak List
         self.PeakMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.PeakMenu,helpType='Peak List')
+        self.PrefillDataMenu(self.PeakMenu)
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
         self.peaksSel = self.PeakEdit.Append(wx.ID_ANY,
@@ -1981,7 +1976,7 @@ class DataFrame(wx.Frame):
         
         # PDR / Index Peak List
         self.IndPeaksMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.IndPeaksMenu,helpType='Index Peak List')
+        self.PrefillDataMenu(self.IndPeaksMenu)
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndPeaksMenu.Append(menu=self.IndPeaksEdit,title='Operations')
         self.IndPeaksEdit.Append(help='Load/Reload index peaks from peak list',id=wxID_INDXRELOAD, 
@@ -1990,7 +1985,7 @@ class DataFrame(wx.Frame):
         
         # PDR / Unit Cells List
         self.IndexMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.IndexMenu,helpType='Unit Cells List')
+        self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         self.IndexPeaks = self.IndexEdit.Append(help='', id=wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
@@ -2011,7 +2006,7 @@ class DataFrame(wx.Frame):
         
         # PDR / Reflection Lists
         self.ReflMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ReflMenu,helpType='Reflection List')
+        self.PrefillDataMenu(self.ReflMenu)
         self.ReflEdit = wx.Menu(title='')
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
         self.SelectPhase = self.ReflEdit.Append(help='Select phase for reflection list',id=wxID_SELECTPHASE, 
@@ -2024,7 +2019,7 @@ class DataFrame(wx.Frame):
         
         # SASD / Instrument Parameters
         self.SASDInstMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.SASDInstMenu,helpType='Instrument Parameters')
+        self.PrefillDataMenu(self.SASDInstMenu)
         self.SASDInstEdit = wx.Menu(title='')
         self.SASDInstMenu.Append(menu=self.SASDInstEdit, title='Operations')
         self.InstEdit.Append(help='Reset instrument profile parameters to default', 
@@ -2035,7 +2030,7 @@ class DataFrame(wx.Frame):
         
         #SASD & REFL/ Substance editor
         self.SubstanceMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.SubstanceMenu,helpType='Substances')
+        self.PrefillDataMenu(self.SubstanceMenu)
         self.SubstanceEdit = wx.Menu(title='')
         self.SubstanceMenu.Append(menu=self.SubstanceEdit, title='Edit substance')
         self.SubstanceEdit.Append(id=wxID_LOADSUBSTANCE, kind=wx.ITEM_NORMAL,text='Load substance',
@@ -2054,7 +2049,7 @@ class DataFrame(wx.Frame):
         
         # SASD/ Models
         self.ModelMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ModelMenu,helpType='Models')
+        self.PrefillDataMenu(self.ModelMenu)
         self.ModelEdit = wx.Menu(title='')
         self.ModelMenu.Append(menu=self.ModelEdit, title='Models')
         self.ModelEdit.Append(id=wxID_MODELADD,kind=wx.ITEM_NORMAL,text='Add',
@@ -2074,7 +2069,7 @@ class DataFrame(wx.Frame):
         
         # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ImageMenu,helpType='Image Controls')
+        self.PrefillDataMenu(self.ImageMenu)
         self.ImageEdit = wx.Menu(title='')
         self.ImageMenu.Append(menu=self.ImageEdit, title='Operations')
         self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
@@ -2107,7 +2102,7 @@ class DataFrame(wx.Frame):
             
         # IMG / Masks
         self.MaskMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.MaskMenu,helpType='Image Masks')
+        self.PrefillDataMenu(self.MaskMenu)
         self.MaskEdit = wx.Menu(title='')
         self.MaskMenu.Append(menu=self.MaskEdit, title='Operations')
         submenu = wx.Menu()
@@ -2141,7 +2136,7 @@ class DataFrame(wx.Frame):
             
         # IMG / Stress/Strain
         self.StrStaMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.StrStaMenu,helpType='Stress/Strain')
+        self.PrefillDataMenu(self.StrStaMenu)
         self.StrStaEdit = wx.Menu(title='')
         self.StrStaMenu.Append(menu=self.StrStaEdit, title='Operations')
         self.StrStaEdit.Append(help='Append d-zero for one ring', 
@@ -2166,7 +2161,7 @@ class DataFrame(wx.Frame):
             
         # PDF / PDF Controls
         self.PDFMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.PDFMenu,helpType='PDF Controls')
+        self.PrefillDataMenu(self.PDFMenu)
         self.PDFEdit = wx.Menu(title='')
         self.PDFMenu.Append(menu=self.PDFEdit, title='PDF Controls')
         self.PDFEdit.Append(help='Add element to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
@@ -2187,7 +2182,7 @@ class DataFrame(wx.Frame):
         
         # Phase / General tab
         self.DataGeneral = wx.MenuBar()
-        self.PrefillDataMenu(self.DataGeneral,helpType='General', helpLbl='Phase/General')
+        self.PrefillDataMenu(self.DataGeneral)
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
         self.GeneralCalc = wx.Menu(title='')
         self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
@@ -2212,7 +2207,7 @@ class DataFrame(wx.Frame):
         
         # Phase / Data tab
         self.DataMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
+        self.PrefillDataMenu(self.DataMenu)
         self.DataMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DataEdit = wx.Menu(title='')
         self.DataMenu.Append(menu=self.DataEdit, title='Edit Phase')
@@ -2234,7 +2229,7 @@ class DataFrame(wx.Frame):
             
         # Phase / Atoms tab
         self.AtomsMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.AtomsMenu,helpType='Atoms')
+        self.PrefillDataMenu(self.AtomsMenu)
         self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.AtomEdit = wx.Menu(title='')
         self.AtomCompute = wx.Menu(title='')
@@ -2310,7 +2305,7 @@ class DataFrame(wx.Frame):
         
         # Phase / Imcommensurate "waves" tab 
         self.WavesData = wx.MenuBar()
-        self.PrefillDataMenu(self.WavesData,helpType='Wave Data', helpLbl='Imcommensurate wave data')
+        self.PrefillDataMenu(self.WavesData)
         self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.WavesDataEdit = wx.Menu(title='')
         self.WavesData.Append(menu=self.WavesDataEdit, title='Edit Wave')
@@ -2320,7 +2315,7 @@ class DataFrame(wx.Frame):
         
         # Phase / Layer tab 
         self.LayerData = wx.MenuBar()
-        self.PrefillDataMenu(self.LayerData,helpType='Layer Data', helpLbl='Stacking fault layers')
+        self.PrefillDataMenu(self.LayerData)
         self.LayerData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.LayerDataEdit = wx.Menu(title='')
         self.LayerData.Append(menu=self.LayerDataEdit, title='Operations')
@@ -2336,13 +2331,13 @@ class DataFrame(wx.Frame):
                  
         # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
-        self.PrefillDataMenu(self.DataDrawOptions,helpType='Draw Options', helpLbl='Phase/Draw Options')
+        self.PrefillDataMenu(self.DataDrawOptions)
         self.DataDrawOptions.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PostfillDataMenu()
         
         # Phase / Draw Atoms tab 
         self.DrawAtomsMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.DrawAtomsMenu,helpType='Draw Atoms')
+        self.PrefillDataMenu(self.DrawAtomsMenu)
         self.DrawAtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DrawAtomEdit = wx.Menu(title='')
         self.DrawAtomCompute = wx.Menu(title='')
@@ -2396,7 +2391,7 @@ class DataFrame(wx.Frame):
 
         # Phase / MCSA tab
         self.MCSAMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.MCSAMenu,helpType='MC/SA')
+        self.PrefillDataMenu(self.MCSAMenu)
         self.MCSAMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MCSAEdit = wx.Menu(title='')
         self.MCSAMenu.Append(menu=self.MCSAEdit, title='MC/SA')
@@ -2414,7 +2409,7 @@ class DataFrame(wx.Frame):
             
         # Phase / Texture tab
         self.TextureMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.TextureMenu,helpType='Texture')
+        self.PrefillDataMenu(self.TextureMenu)
         self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
@@ -2426,7 +2421,7 @@ class DataFrame(wx.Frame):
             
         # Phase / Pawley tab
         self.PawleyMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.PawleyMenu,helpType='Pawley')
+        self.PrefillDataMenu(self.PawleyMenu)
         self.PawleyMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PawleyEdit = wx.Menu(title='')
         self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
@@ -2448,7 +2443,7 @@ class DataFrame(wx.Frame):
             
         # Phase / Map peaks tab
         self.MapPeaksMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.MapPeaksMenu,helpType='Map peaks')
+        self.PrefillDataMenu(self.MapPeaksMenu)
         self.MapPeaksMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MapPeaksEdit = wx.Menu(title='')
         self.MapPeaksMenu.Append(menu=self.MapPeaksEdit, title='Map peaks')
@@ -2474,7 +2469,7 @@ class DataFrame(wx.Frame):
 
         # Phase / Rigid bodies tab
         self.RigidBodiesMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.RigidBodiesMenu,helpType='Rigid bodies')
+        self.PrefillDataMenu(self.RigidBodiesMenu)
         self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit Body')
@@ -4370,10 +4365,10 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
         item, cookie = G2frame.PatternTree.GetNextChild(parentId, cookie)
     return 0                
 
-def MovePatternTreeToGrid(G2frame,item):
-    '''Called from :meth:`GSASII.GSASII.OnPatternTreeSelChanged` when a item is selected on the tree.
+def SelectDataTreeItem(G2frame,item):
+    '''Called from :meth:`GSASII.GSASII.OnDataTreeSelChanged` when a item is selected on the tree.
     Also called from GSASII.OnPatternTreeEndDrag, OnAddPhase -- might be better to select item, triggering
-    the the bind to MovePatternTreeToGrid
+    the the bind to SelectDataTreeItem
 
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
@@ -4416,8 +4411,26 @@ def MovePatternTreeToGrid(G2frame,item):
     parentID = G2frame.root
     #for i in G2frame.ExportPattern: i.Enable(False)
     defWid = [250,150]
-    if item != G2frame.root:
+    if item == G2frame.root:
+        G2frame.dataFrame.helpKey = "Data tree"
+        G2frame.dataFrame.setSizePosLeft(defWid)
+        wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
+                    value='Select an item from the tree to see/edit parameters')        
+        return
+    else:
         parentID = G2frame.PatternTree.GetItemParent(item)
+        # save name of calling tree item for help. N.B. may want to override this later
+        prfx = G2frame.PatternTree.GetItemText(item).split()[0]
+        prfx1 = G2frame.PatternTree.GetItemText(parentID).split()[0]
+        if prfx in ('IMG','PKS','PWDR','SASD','HKLF','PDF',):
+            G2frame.dataFrame.helpKey = prfx
+        elif prfx1 in ('IMG','PKS','PWDR','SASD','HKLF','PDF',):
+            suffix = G2frame.PatternTree.GetItemText(item)
+            suffix1 = suffix.split()[0]
+            if '(Q)' in suffix1 or '(R)' in suffix1: suffix = suffix1
+            G2frame.dataFrame.helpKey = prfx1 + '_' + suffix
+        else:
+            G2frame.dataFrame.helpKey = G2frame.PatternTree.GetItemText(item) # save name of calling tree item for help
     if G2frame.PatternTree.GetItemParent(item) == G2frame.root:
         G2frame.PatternId = item
         if G2frame.PatternTree.GetItemText(item) == 'Notebook':
@@ -4436,7 +4449,8 @@ def MovePatternTreeToGrid(G2frame,item):
             for i in G2frame.Refine: i.Enable(True)
             G2frame.EnableSeqRefineMenu()
             UpdateControls(G2frame,data)
-        elif 'Sequential' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('Sequential '):
+            G2frame.dataFrame.helpKey = 'Sequential'  # for now all sequential refinements are documented in one place
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateSeqResults(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':
@@ -4467,27 +4481,27 @@ def MovePatternTreeToGrid(G2frame,item):
                 phaseName = Phases.keys()[0]
             G2frame.dataFrame.setSizePosLeft(defWid)
             G2restG.UpdateRestraints(G2frame,data,Phases,phaseName)
-        elif 'IMG' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('IMG '):
             G2frame.Image = item
             G2frame.dataFrame.SetTitle('Image Data')
             data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(
                 G2frame,item,'Image Controls'))
             G2imG.UpdateImageData(G2frame,data)
             G2plt.PlotImage(G2frame,newPlot=True)
-        elif 'PKS' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('PKS '):
             G2plt.PlotPowderLines(G2frame)
-        elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('PWDR '):
             #for i in G2frame.ExportPattern: i.Enable(True)
             if G2frame.EnablePlot:
                 UpdatePWHKPlot(G2frame,'PWDR',item)
-        elif 'SASD' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('SASD '):
             #for i in G2frame.ExportPattern: i.Enable(True)
             if G2frame.EnablePlot:
                 UpdatePWHKPlot(G2frame,'SASD',item)
-        elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('HKLF '):
             G2frame.Sngl = True
             UpdatePWHKPlot(G2frame,'HKLF',item)
-        elif 'PDF' in G2frame.PatternTree.GetItemText(item):
+        elif G2frame.PatternTree.GetItemText(item).startswith('PDF '):
             G2frame.PatternId = item
             for i in G2frame.ExportPDF: i.Enable(True)
             G2plt.PlotISFG(G2frame,plotType='S(Q)')
@@ -4552,6 +4566,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotImage(G2frame,newPlot=False)
         G2imG.UpdateStressStrain(G2frame,strsta)
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
+        G2frame.dataFrame.helpKey = G2frame.PatternTree.GetItemText(item) # special treatment, not PDF_PDF Controls
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPDF: i.Enable(True)
         data = G2frame.PatternTree.GetItemPyData(item)

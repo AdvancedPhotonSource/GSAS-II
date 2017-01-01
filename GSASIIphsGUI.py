@@ -148,9 +148,9 @@ def FindBondsDraw(data):
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
-    Called only from :meth:`GSASIIgrid.MovePatternTreeToGrid`,
-    which in turn is called from :meth:`GSASII.GSASII.OnPatternTreeSelChanged`
-    when a tree item is selected.
+    Called only from :meth:`GSASIIgrid.SelectDataTreeItem`,
+    which in turn is called from :meth:`GSASII.GSASII.OnDataTreeSelChanged`
+    when a Phase tree item is selected.
 
     :param wx.frame G2frame: the main GSAS-II frame object
     :param wx.TreeItemId Item: the tree item that was selected
@@ -162,7 +162,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
       is to bring up the General tab.
 
     '''
-    
     def GetReflData(G2frame,phaseName,reflNames):
         ReflData = {'RefList':[],'Type':''}
         if '' in reflNames:
@@ -185,8 +184,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             ReflData['Type'] = reflData['Type']
         return ReflData
 
-    # UpdatePhaseData execution continues below
-    
     def SetupGeneral():
         generalData = data['General']
         atomData = data['Atoms']
@@ -1301,7 +1298,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add(line3Sizer)            
             return mcsaSizer
 
-        # UpdateGeneral execution continues here
+        # UpdateGeneral execution starts here
         if General.GetSizer():
             General.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -7857,7 +7854,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
-        bindings to the menu ietm to switch between phase tabs
+        bindings to the menu item to switch between phase tabs
         '''
         def OnSelectPage(event):
             'Called when an item is selected from the Select page menu'
@@ -7895,6 +7892,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataDisplayPhaseText = text
+        G2frame.dataFrame.helpKey = text # BHT: use name of Phase tab for help lookup
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             UpdateGeneral()
@@ -8078,8 +8076,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         data['General']['Modulated'] = False
     if 'modulated' in data['General']['Type']:
         data['General']['Modulated'] = True
-        data['General']['Type'] = 'nuclear'
-        
+        data['General']['Type'] = 'nuclear'     
 #end patch    
 
     global rbAtmDict   

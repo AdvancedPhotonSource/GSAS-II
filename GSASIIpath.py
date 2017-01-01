@@ -474,7 +474,7 @@ def IPyBreak_base():
     ipshell = InteractiveShellEmbed()
 
     frame = inspect.currentframe().f_back
-    msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}'.format(frame)
+    msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
     ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
     sys.excepthook = savehook # reset IPython's change to the exception hook
 

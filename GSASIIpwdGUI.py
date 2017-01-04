@@ -4568,44 +4568,9 @@ def UpdateModelsGrid(G2frame,data):
 ################################################################################
 #####  PDF controls
 ################################################################################           
-       
 def UpdatePDFGrid(G2frame,data):
     '''respond to selection of PWDR PDF data tree item.
-    '''
-    global inst
-    tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
-    tof2q = lambda t,C:2.0*math.pi*C/t
-    dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    powName = 'PWDR'+dataFile[4:]
-    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
-    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
-    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
-    if 'C' in inst['Type'][0]:
-        wave = G2mth.getWave(inst)
-        keV = 12.397639/wave
-        qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
-        polariz = inst['Polariz.'][1]
-    else:   #'T'of
-        qLimits = [tof2q(fullLimits[1],inst['difC'][1]),tof2q(fullLimits[0],inst['difC'][1])]
-        polariz = 1.0
-    data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
-    if data['QScaleLim'][0]:
-        data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
-    else:                                #initial setting at 90% of max Q
-        data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
-    itemDict = {}
-    #patch
-    if 'BackRatio' not in data:
-        data['BackRatio'] = 0.
-    if 'noRing' not in data:
-        data['noRing'] = False
-    if 'Rmax' not in data:
-        data['Rmax'] = 100.
-    if 'Flat Bkg' not in data:
-        data['Flat Bkg'] = 0.
-    if 'IofQmin' not in data:
-        data['IofQmin'] = 1.0
-    
+    '''    
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
         
@@ -4616,7 +4581,8 @@ def UpdatePDFGrid(G2frame,data):
                 value = Obj.GetValue()
             Obj.SetValue(fmt%(value))
             data[fileKey][itemKey] = value
-            wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            wx.CallLater(100,UpdatePDFGrid,G2frame,data)
+            wx.CallAfter(OnComputePDF,None)
             
         def OnMoveMult(event):
             data[key]['Mult'] += multSpin.GetValue()*0.01
@@ -4895,7 +4861,41 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
             print ' Done calculating PDFs:'
-        
+
+    # Routine UpdatePDFGrid starts here
+    global inst
+    tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
+    tof2q = lambda t,C:2.0*math.pi*C/t
+    dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    powName = 'PWDR'+dataFile[4:]
+    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
+    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
+    if 'C' in inst['Type'][0]:
+        wave = G2mth.getWave(inst)
+        keV = 12.397639/wave
+        qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
+        polariz = inst['Polariz.'][1]
+    else:   #'T'of
+        qLimits = [tof2q(fullLimits[1],inst['difC'][1]),tof2q(fullLimits[0],inst['difC'][1])]
+        polariz = 1.0
+    data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
+    if data['QScaleLim'][0]:
+        data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
+    else:                                #initial setting at 90% of max Q
+        data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
+    itemDict = {}
+    #patch
+    if 'BackRatio' not in data:
+        data['BackRatio'] = 0.
+    if 'noRing' not in data:
+        data['noRing'] = False
+    if 'Rmax' not in data:
+        data['Rmax'] = 100.
+    if 'Flat Bkg' not in data:
+        data['Flat Bkg'] = 0.
+    if 'IofQmin' not in data:
+        data['IofQmin'] = 1.0        
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)

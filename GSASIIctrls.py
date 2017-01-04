@@ -221,6 +221,18 @@ class G2TreeCtrl(wx.TreeCtrl):
         else:
             return size,imagefile,None
 
+    def UpdateImageLoc(self,TreeId,imagefile):
+        '''Saves a new imagefile name in the Tree. Handles cases where the
+        image name is specified, as well as where the image file name is
+        a tuple containing the image file and an image number
+        '''
+        
+        idata = self.GetItemPyData(TreeId)
+        if type(idata[1]) is tuple or type(idata[1]) is list:
+            idata[1][0] = [imagefile,idata[1][1]]
+        else:
+            idata[1]  = imagefile
+        
     def SaveExposedItems(self):
         '''Traverse the top level tree items and save names of exposed (expanded) tree items.
         Done before a refinement.

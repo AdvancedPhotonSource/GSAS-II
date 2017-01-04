@@ -140,17 +140,19 @@ def GetPowderPeaks(fileName):
     limits[1] = min(170.,(int(limits[1]+1.)/5)*5.)
     return Comments,Peaks,limits,wave
 
-def CheckImageFile(G2frame,imagefile):
+def GetCheckImageFile(G2frame,treeId):
     '''Try to locate an image file if the project and image have been moved
     together. If the image file cannot be found, request the location from
     the user.
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object
-    :param str imagefile: name of image file
-    :returns: imagefile, if it exists, or the name of a file
-      that does exist or False if the user presses Cancel
+    :param wx.Id treeId: Id for the main tree item for the image
+    :returns: Npix,imagefile,imagetag with (Npix) number of pixels,
+       imagefile, if it exists, or the name of a file that does exist or False if the user presses Cancel
+       and (imagetag) an optional image number
 
     '''
+    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
     if not os.path.exists(imagefile):
         print 'Image file '+imagefile+' not found'
         fil = imagefile.replace('\\','/') # windows?!
@@ -161,7 +163,9 @@ def CheckImageFile(G2frame,imagefile):
             prevpth = pth
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
                 print 'found image file '+os.path.join(G2frame.dirname,fil)
-                return os.path.join(G2frame.dirname,fil)
+                imagefile = os.path.join(G2frame.dirname,fil)
+                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
+                return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
             fil = os.path.join(enddir,fil)
         # not found as a subdirectory, drop common parts of path for last saved & image file names
@@ -183,7 +187,9 @@ def CheckImageFile(G2frame,imagefile):
             prevpth = pth
             if os.path.exists(os.path.join(pth,fil)):
                 print 'found image file '+os.path.join(pth,fil)
-                return os.path.join(pth,fil)
+                imagefile = os.path.join(pth,fil)
+                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
+                return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
         #GSASIIpath.IPyBreak()
 
@@ -197,11 +203,12 @@ def CheckImageFile(G2frame,imagefile):
             dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
                 imagefile = dlg.GetPath()
+                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
             else:
                 imagefile = False
         finally:
             dlg.Destroy()
-    return imagefile
+    return Npix,imagefile,imagetag
 
 def EditImageParms(parent,Data,Comments,Image,filename):
     dlg = wx.Dialog(parent, wx.ID_ANY, 'Edit image parameters',

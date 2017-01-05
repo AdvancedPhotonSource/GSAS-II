@@ -2338,7 +2338,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
 ################################################################################
             
 def PlotISFG(G2frame,newPlot=False,plotType=''):
-    ''' Plotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
+    ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
     if not plotType:
@@ -2450,12 +2450,14 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             'm: toggle multiplot','s: toggle single plot','f: select data' )
     Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
-    Plot.set_title(plotType)
     if plotType == 'G(R)':
-        Plot.set_xlabel(r'$R,\AA$',fontsize=14)
+        Plot.set_xlabel(r'r,$\AA$',fontsize=14)
+        Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
+        Plot.set_title('G(r)')
     else:
-        Plot.set_xlabel(r'$Q,\AA$'+superMinusOne,fontsize=14)
-    Plot.set_ylabel(r''+plotType,fontsize=14)
+        Plot.set_xlabel(r'$Q,\AA^{-1}$'+superMinusOne,fontsize=14)
+        Plot.set_ylabel(r''+plotType,fontsize=14)
+        Plot.set_title(plotType)
     colors=['b','g','r','c','m','k']
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     Pattern = []    
@@ -2516,8 +2518,8 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             else:
                 Plot.plot(X,Y,colors[N%6],picker=False)
             if plotType == 'G(R)':
-                Xb = [0.,10.]
-                Yb = [0.,-40.*np.pi*numbDen]
+                Xb = [0.,2.5]
+                Yb = [0.,-10.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
             elif plotType == 'F(Q)':
                 Plot.axhline(0.,color=wx.BLACK)

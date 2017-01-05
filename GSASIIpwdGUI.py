@@ -4972,7 +4972,7 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(geoBox,0)
         
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(R) controls: '),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
     mainSizer.Add((5,5),0)
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
@@ -5020,7 +5020,7 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling Q-range: '),0,WACV)
     SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),
                                  min=qLimits[0],max=.95*data['QScaleLim'][1],
                                  typeHint=float,OnLeave=AfterChangeNoRefresh)

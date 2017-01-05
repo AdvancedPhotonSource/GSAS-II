@@ -23,7 +23,12 @@ import wx
 import os
 import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
-    "Makes periodic table widget for picking element - caller maintains element list"
+    '''Makes periodic table widget for picking element. Modes:
+        oneOnly if True element symbols are provided, otherwise select isotope
+        ifNone ?
+        ifMag if True present magnetic scatters only
+        multiple if True multiple elements can be selected
+    '''
     Elem=None
     def _init_ctrls(self,prnt,ifMag=False):
         wx.Dialog.__init__(self, id=-1, name='PickElement',
@@ -49,12 +54,19 @@ class PickElement(wx.Dialog):
                pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),
                tip=E[3],color=color)
             i+=1
+        if self.multiple:
+            b = wx.Button(self,wx.ID_CLOSE,
+                          pos=wx.Point(16.5*self.butWid+25,7.75*24+24),
+                          label="Done")
+            b.Bind(wx.EVT_BUTTON, self.OnClose)
 
-    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False):
+    def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,multiple=False):
         'Needs a doc string'
         self.oneOnly = oneOnly
         self.ifNone = ifNone
+        self.multiple = multiple
         self._init_ctrls(parent,ifMag=ifMag)
+        self.elementList = []
         
     def ElButton(self, name, pos, tip, color):
         'Creates an element button widget'
@@ -89,8 +101,17 @@ class PickElement(wx.Dialog):
         else:
             El = event.GetEventObject().GetValue()
         self.Elem = El
-        self.EndModal(wx.ID_OK)        
-        
+        if self.multiple:
+            self.elementList.append(El)
+            event.GetEventObject().SetBackgroundColour('black') # Shows on Mac
+            event.GetEventObject().SetColour(
+                wx.Colour(*[int(i/2) for i in event.GetEventObject().GetColour()]))
+        else:
+            self.EndModal(wx.ID_OK)
+
+    def OnClose(self,event):
+        self.EndModal(wx.ID_OK)
+                
 class PickElements(wx.Dialog):
     """Makes periodic table widget for picking elements - caller maintains element list"""
     Elem = []

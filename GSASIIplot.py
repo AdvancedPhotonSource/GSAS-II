@@ -4123,10 +4123,6 @@ def OnStartMask(G2frame):
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         Page.figure.suptitle('Defining Polygon mask (use right-mouse to end)',color='r',fontweight='bold')
         Page.canvas.draw()
-    elif G2frame.MaskKey == 's':
-        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
-        Page.figure.suptitle('Left-click to create a spot mask',color='r',fontweight='bold')
-        Page.canvas.draw()
     elif G2frame.MaskKey == 'a':
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         Page.figure.suptitle('Left-click to create an arc mask',color='r',fontweight='bold')
@@ -4154,15 +4150,15 @@ def ToggleMultiSpotMask(G2frame):
     the is cleared by the next PlotImage call
     '''
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
-    if G2frame.MaskKey == 'm':
+    if G2frame.MaskKey == 's':
         G2frame.MaskKey = ''
-        Page.Choice[-1] = 'm: start multiple spot mask mode'
+        Page.Choice[-1] = 's: start multiple spot mask mode'
         wx.CallAfter(PlotImage,G2frame,newImage=True)
     else:
-        G2frame.MaskKey = 'm'
+        G2frame.MaskKey = 's'
         (x0,y0),(x1,y1) = Plot.get_position().get_points()
-        Page.figure.suptitle('Multiple spot mode on, press m or right-click to end',color='r',fontweight='bold')
-        Page.Choice[-1] = 'm: stop multiple spot mask mode'
+        Page.figure.suptitle('Multiple spot mode on, press s or right-click to end',color='r',fontweight='bold')
+        Page.Choice[-1] = 's: stop multiple spot mask mode'
         Page.canvas.draw()
 
 def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
@@ -4279,7 +4275,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         except TypeError:
             return
         if treeItem == 'Masks':
-            if event.key == 'm': # implement multiple spot mode
+            if event.key == 's': # implement multiple spot mode
                 ToggleMultiSpotMask(G2frame)
                 return
             elif event.key == 't':
@@ -4301,7 +4297,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2imG.UpdateMasks(G2frame,Masks)
                 Page.canvas.draw()
                 return 
-            elif event.key in ['l','p','f','s','a','r']:
+            elif event.key in ['l','p','f','a','r']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
                 
@@ -4633,7 +4629,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
                 return
-            if G2frame.MaskKey == 'm':
+            if G2frame.MaskKey == 's':
                 if event.button == 3:
                     ToggleMultiSpotMask(G2frame)
                 else:
@@ -4824,10 +4820,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Masks',]:
-            Page.Choice = [' key press','l: log(I) on','s: spot mask','a: arc mask','r: ring mask',
+            Page.Choice = [' key press','l: log(I) on','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',
                 't: add spot mask at mouse position']
-            Page.Choice.append('m: start multiple spot mask mode') # this must be the last choice
+            Page.Choice.append('s: start multiple spot mask mode') # this must be the last choice
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress

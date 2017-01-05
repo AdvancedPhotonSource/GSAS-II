@@ -4779,19 +4779,21 @@ def UpdatePDFGrid(G2frame,data):
             dlg.Destroy()
         OnComputePDF(event)                
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        #UpdatePDFGrid(G2frame,data)
         
     def OnAddElement(event):
         ElList = data['ElList']
-        PE = G2elemGUI.PickElement(G2frame,oneOnly=True)
+        PE = G2elemGUI.PickElement(G2frame,oneOnly=True,multiple=True)
         if PE.ShowModal() == wx.ID_OK:
-            El = PE.Elem
-            if El not in ElList and El != 'None':
-                data['ElList'][El] = G2elem.GetElInfo(El,inst)
+            for El in PE.elementList:
+                if El not in ElList and El != 'None':
+                    try:
+                        data['ElList'][El] = G2elem.GetElInfo(El,inst)
+                        data['ElList'][El]['FormulaNo'] = 1.0
+                    except IndexError: # happens with element Q
+                        pass
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        #UpdatePDFGrid(G2frame,data)
         
     def OnDeleteElement(event):
         ElList = data['ElList']
@@ -5019,12 +5021,14 @@ def UpdatePDFGrid(G2frame,data):
     
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
-    SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),min=qLimits[0],max=.95*data['QScaleLim'][1],
-        typeHint=float,OnLeave=AfterChangeNoRefresh)
+    SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),
+                                 min=qLimits[0],max=.95*data['QScaleLim'][1],
+                                 typeHint=float,OnLeave=AfterChangeNoRefresh)
     sqBox.Add(SQmin,0,WACV)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
-    SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),min=qLimits[0],max=qLimits[1],
-        typeHint=float,OnLeave=NewQmax)
+    SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),
+                                 min=qLimits[0],max=qLimits[1],
+                                 typeHint=float,OnLeave=NewQmax)
     sqBox.Add(SQmax,0,WACV)
     resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
     sqBox.Add(resetQ,0,WACV)

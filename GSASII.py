@@ -3519,7 +3519,7 @@ class GSASII(wx.Frame):
                             'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
                             'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits[i],
-                            'Lorch':True,'BackRatio':0.0,'Rmax':100.,'noRing':True,'IofQmin':1.0}
+                            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        

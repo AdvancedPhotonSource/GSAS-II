@@ -287,6 +287,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     CId = G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls')
                     oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(CId))
                     Data = copy.deepcopy(data)
+                    Data['range'][0] = oldData['range'][0]
                     Data['size'] = oldData['size']
                     Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
                     Data['ring'] = []
@@ -296,7 +297,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                         Data['dark image'] = ['',-1.]
                     if name == Data['background image'][0]:
                         Data['background image'] = ['',-1.]
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'),copy.deepcopy(Data))
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'),Data)
         finally:
             dlg.Destroy()
             G2frame.PatternTree.SelectItem(G2frame.PickId)
@@ -1312,11 +1313,6 @@ def UpdateMasks(G2frame,data):
     def ToggleSpotMaskMode(event):
         G2plt.ToggleMultiSpotMask(G2frame)
         
-    def OnNewSpotMask(event):
-        'Start a new spot mask'
-        G2frame.MaskKey = 's'
-        G2plt.OnStartMask(G2frame)
-        
     def OnNewArcMask(event):
         'Start a new arc mask'
         G2frame.MaskKey = 'a'
@@ -1505,8 +1501,7 @@ def UpdateMasks(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOADNOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoSpotMask, id=G2gd.wxID_FINDSPOTS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewSpotMask, id=G2gd.wxID_NEWMASKSPOT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2gd.wxID_MULTISPOTMASK)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2gd.wxID_NEWMASKSPOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2gd.wxID_NEWMASKARC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRingMask, id=G2gd.wxID_NEWMASKRING)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewPolyMask, id=G2gd.wxID_NEWMASKPOLY)
@@ -1517,8 +1512,6 @@ def UpdateMasks(G2frame,data):
         G2frame.dataFrame.GetStatusBar().SetStatusText('Frame mask active - LB pick next point, RB close polygon')
     elif G2frame.MaskKey == 'p':
         G2frame.dataFrame.GetStatusBar().SetStatusText('Polygon mask active - LB pick next point, RB close polygon')
-    elif G2frame.MaskKey == 's':
-        G2frame.dataFrame.GetStatusBar().SetStatusText('Spot mask active - LB pick spot location')
     elif G2frame.MaskKey == 'a':
         G2frame.dataFrame.GetStatusBar().SetStatusText('Arc mask active - LB pick arc location')
     elif G2frame.MaskKey == 'r':

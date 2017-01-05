@@ -98,8 +98,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(13)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
-    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,wxID_MULTISPOTMASK,
-] = [wx.NewId() for item in range(11)]
+    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
     wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,
@@ -2128,10 +2128,8 @@ class DataFrame(wx.Frame):
             id=wxID_NEWMASKPOLY, kind=wx.ITEM_NORMAL,text='Polygon mask')
         submenu.Append(help='Create a ring mask with mouse input', 
             id=wxID_NEWMASKRING, kind=wx.ITEM_NORMAL,text='Ring mask')
-        submenu.Append(help='Create a spot mask with mouse input', 
+        submenu.Append(help='Create spot masks with mouse clicks', 
             id=wxID_NEWMASKSPOT, kind=wx.ITEM_NORMAL,text='Spot mask')
-        submenu.Append(help='Turn on/off multiple spot mask creation mode',
-            id=wxID_MULTISPOTMASK, kind=wx.ITEM_NORMAL,text='Multiple spot masks')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain
@@ -2164,8 +2162,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.PDFMenu)
         self.PDFEdit = wx.Menu(title='')
         self.PDFMenu.Append(menu=self.PDFEdit, title='PDF Controls')
-        self.PDFEdit.Append(help='Add element to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
-            text='Add element')
+        self.PDFEdit.Append(help='Add one or more elements to sample composition',id=wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
+            text='Add elements')
         self.PDFEdit.Append(help='Delete element from sample composition',id=wxID_PDFDELELEMENT, kind=wx.ITEM_NORMAL,
             text='Delete element')
         self.PDFEdit.Append(help='Copy PDF controls', id=wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,

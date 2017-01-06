@@ -2805,10 +2805,13 @@ class GSASII(wx.Frame):
             YDsum = np.zeros(lenX)
             XY.append([Xsum,Ysum])
             self.result = [Xsum,Ysum,Wsum,YCsum,YBsum,YDsum]
+            # N.B. PlotXY expects the first arg to point to G2frame. In this case, we
+            # create a duplicate (temporary) Plot notebook window that is a child of the
+            # modal SumDialog dialog (self). This nicely gets deleted when the dialog is destroyed,
+            # but the plot window is not fully functional, at least on the Mac. 
             G2plt.PlotXY(self,XY,lines=True,Title='Sum:'+self.data[-1],labelY='Intensity',)
             self.plotFrame.Show()
-            
-            
+                        
         def OnOk(self,event):
             if self.dataType == 'PWDR': self.OnTest(event)
             parent = self.GetParent()

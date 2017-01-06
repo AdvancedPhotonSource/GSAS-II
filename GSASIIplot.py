@@ -250,8 +250,14 @@ class G2PlotNoteBook(wx.Panel):
         Page.plotInvalid = False # plot has just been drawn
         self.lastRaisedPlotTab = label
         self.RaisePageNoRefresh(Page)
-        # save in Tabbed page the help name for the DataItem that has created the plot
-        Page.helpKey = self.G2frame.dataFrame.helpKey
+        # Save the help name from the DataItem that has created the plot in Tabbed page object
+        # so we can use it in self.OnHelp(). 
+        # Are there any cases where plot tabs are created that are not tied to Data Tree entries?
+        # One example is GSASII.SumDialog, where a test plot is created. Are there others? 
+        try:
+            Page.helpKey = self.G2frame.dataFrame.helpKey
+        except AttributeError:
+            Page.helpKey = 'Data tree'
         return new,plotNum,Page,Plot,limits
     
     def _addPage(self,name,page):

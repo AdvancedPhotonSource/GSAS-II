@@ -29,6 +29,7 @@ import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
+import GSASIImath as G2mth
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -1140,18 +1141,20 @@ def AutoSpotMasks(Image,Masks,Controls):
             cent = np.zeros((3,3))
             cent[1,1] = mag
             msk = np.array(Image[ind[0]-1:ind[0]+2,ind[1]-1:ind[1]+2])
-            msk = msk-cent
-            if mag > 1.5*np.mean(msk):
+            msk = ma.array(msk,mask=(msk==mag))
+            if mag > 1.33*ma.mean(msk):
                 jndx.append([ind[1]+.5,ind[0]+.5])
+    print 'Spots found: ',len(jndx)
     if len(jndx) > 100:
         txt = 'Found: %d. Too many spots found; are rings spotty?'%(len(jndx))
         return txt
     jndx = np.array(jndx)
     peaks = jndx*pixelSize/1000.
     tth = GetTth(peaks.T[0],peaks.T[1],Controls)
-    histo = np.histogram(tth,2500)
+    Peakarray = np.vstack((tth,peaks.T)).T
+    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta order
     Points = np.ones((peaks.shape[0],3))
-    Points[:,:2] = peaks
+    Points[:,:2] = Peakarray[:,1:]
     Masks['Points'] = Points
     return None
                     

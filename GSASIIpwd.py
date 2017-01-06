@@ -279,7 +279,11 @@ def GetNumDensity(ElList,Vol):
     return sumNoAtoms/Vol
            
 def CalcPDF(data,inst,limits,xydata):
-    'needs a doc string'
+    '''Computes I(Q), S(Q) & G(r) from Sample, Bkg, etc. diffraction patterns loaded into
+    dict xydata; results are placed in xydata.
+    Calculation parameters are found in dicts data and inst and list limits.
+    The return value is at present an empty list.
+    '''
     auxPlot = []
     import copy
     import scipy.fftpack as ft

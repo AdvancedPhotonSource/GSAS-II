@@ -149,8 +149,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(5)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
-    wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
-] = [wx.NewId() for item in range(7)]
+    wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT, wxID_PDFOPT, 
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_MCRON,wxID_MCRLIST,wxID_MCRSAVE,wxID_MCRPLAY,
 ] = [wx.NewId() for item in range(4)]
@@ -2176,6 +2176,8 @@ class DataFrame(wx.Frame):
             text='Compute PDF')
         self.PDFEdit.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
             text='Compute all PDFs')
+        self.PDFEdit.Append(help='Optimize PDF', id=wxID_PDFOPT, kind=wx.ITEM_NORMAL,
+            text='Optimize corrections for r<Rmin section of current G(r)')
         self.PostfillDataMenu()
         
         # Phase / General tab

@@ -4693,7 +4693,6 @@ def UpdatePDFGrid(G2frame,data):
         wx.CallAfter(OnComputePDF,None)
                         
     def OnResetQ(event):
-        resetQ.SetValue(False)
         data['QScaleLim'][1] = qLimits[1]
         SQmax.SetValue(data['QScaleLim'][1])
         data['QScaleLim'][0] = 0.9*qLimits[1]
@@ -4804,8 +4803,96 @@ def UpdatePDFGrid(G2frame,data):
         dlg.Destroy()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
         #UpdatePDFGrid(G2frame,data)
+
+    def OnOptimizePDF(event):
+        '''Optimize Flat Bkg, BackRatio & Ruland corrections to remove spurious
+        "intensity" from portion of G(r) with r<Rmin.
+        Invoked by Optimize PDF button and from menu command.
+        '''
+        import scipy.optimize as opt
+        wx.BeginBusyCursor()
+        Min,Init,Done = SetupPDFEval()
+        xstart = Init()
+        rms = Min(xstart)
+        print('Optimizing corrections to improve G(r) at low r')
+        print('start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+        
+        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+                           method='L-BFGS-B',options={'maxiter':5})
+        Done(res['x'])      
+        print('end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})\n'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']))
+        wx.EndBusyCursor()
+        wx.CallAfter(UpdatePDFGrid,G2frame,data)
+        OnComputePDF(event)
+        
+    def SetupPDFEval():
+        '''Create functions needed to optimize the PDF at low r
+        '''
+        if not data['ElList']:
+            return None
+        Data = copy.deepcopy(data)
+        xydata = {}
+        for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
+            name = Data[key]['Name']
+            if name:
+                xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
+        powName = Data['Sample']['Name']
+        powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
+        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
+        numbDen = G2pwd.GetNumDensity(Data['ElList'],Data['Form Vol'])
+        BkgMax = 1.
+        def EvalLowPDF(arg):
+            '''Objective routine -- evaluates the RMS deviations in G(r)
+            from -4(pi)r for for r<Rmin
+            arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
+            the min & max values are between 0 and 1. 
+            '''
+            F,B,R = arg
+            Data['Flat Bkg'] = F*BkgMax
+            Data['BackRatio'] = B
+            Data['Ruland'] = R/10.
+            #for key in 'Flat Bkg','BackRatio','Ruland':
+            #    print key,Data[key],'; ',
+            G2pwd.CalcPDF(Data,inst,limits,xydata)
+            # test low r computation
+            g = xydata['GofR'][1][1]
+            r = xydata['GofR'][1][0]
+            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
+            #print ' Res=',sum(g0**2)
+            return sum(g0**2)
+        def GetCurrentVals():
+            '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
+            '''
+            try:
+                F = data['Flat Bkg']/BkgMax
+            except:
+                F = 0
+            return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
+        def SetFinalVals(arg):
+            '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
+            scaled, refined values and plot corrected region of G(r) 
+            '''
+            F,B,R = arg
+            data['Flat Bkg'] = F*BkgMax
+            data['BackRatio'] = B
+            data['Ruland'] = R/10.
+            G2pwd.CalcPDF(data,inst,limits,xydata)
+            g = xydata['GofR'][1][1]
+            r = xydata['GofR'][1][0]
+            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
+            G2plt.PlotXY(G2frame,[[r[r < Data['Rmin']], g0]],Title='G(r)+4pi*r',
+                         labelX=r'r, $\AA$',labelY=r'G(r)$+4\pi r$')            
+        EvalLowPDF(GetCurrentVals())
+        BkgMax = max(xydata['IofQ'][1][1])/50.
+        return EvalLowPDF,GetCurrentVals,SetFinalVals
                 
     def ComputePDF(Data):
+        '''Calls :func:`GSASIIpwd.CalcPDF` to compute and the PDF. Called from OnComputePDF and OnComputeAllPDF
+        '''
+
         xydata = {}
         for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
             name = Data[key]['Name']
@@ -4824,6 +4911,9 @@ def UpdatePDFGrid(G2frame,data):
         return auxPlot
         
     def OnComputePDF(event):
+        '''Compute and plot PDF, in response to a menu command or a change to a
+        computation parameter.
+        '''
         if not data['ElList']:
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
             return
@@ -4838,7 +4928,8 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
+            #G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
+            G2plt.PlotISFG(G2frame,newPlot=False,plotType='G(R)')
         else:
             G2plt.PlotISFG(G2frame,newPlot=False)
         
@@ -4898,6 +4989,8 @@ def UpdatePDFGrid(G2frame,data):
         data['Flat Bkg'] = 0.
     if 'IofQmin' not in data:
         data['IofQmin'] = 1.0        
+    if 'Rmin' not in data:
+        data['Rmin'] = 1.5
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)
@@ -4911,6 +5004,7 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnOptimizePDF, id=G2gd.wxID_PDFOPT)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     ElList = data['ElList']
@@ -4972,7 +5066,14 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(geoBox,0)
         
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
+    sqBox = wx.BoxSizer(wx.HORIZONTAL)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
+    sqBox.Add((1,1),1,wx.EXPAND,1)
+    optB = wx.Button(G2frame.dataDisplay,label='Optimize PDF',style=wx.BU_EXACTFIT)
+    optB.Bind(wx.EVT_BUTTON, OnOptimizePDF)
+    sqBox.Add(optB,0,WACV|wx.ALIGN_RIGHT)
+    mainSizer.Add(sqBox,0,wx.EXPAND)
+    
     mainSizer.Add((5,5),0)
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
@@ -4995,7 +5096,12 @@ def UpdatePDFGrid(G2frame,data):
     flatSpin.SetValue(0)
     flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
     sqBox.Add(flatSpin,0,WACV)
-    mainSizer.Add(sqBox,0)
+    sqBox.Add((1,1),1,wx.EXPAND,1)
+    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
+    rmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmin',nDig=(5,1),
+            typeHint=float,size=wx.Size(50,20))
+    sqBox.Add(rmin,0,WACV|wx.ALIGN_RIGHT)
+    mainSizer.Add(sqBox,0,wx.EXPAND)
         
     bkBox = wx.BoxSizer(wx.HORIZONTAL)
     bkBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background ratio: '),0,WACV)    
@@ -5030,9 +5136,9 @@ def UpdatePDFGrid(G2frame,data):
                                  min=qLimits[0],max=qLimits[1],
                                  typeHint=float,OnLeave=NewQmax)
     sqBox.Add(SQmax,0,WACV)
-    resetQ = wx.CheckBox(parent=G2frame.dataDisplay,label='Reset?')
+    resetQ = wx.Button(G2frame.dataDisplay,label='Reset?',style=wx.BU_EXACTFIT)
     sqBox.Add(resetQ,0,WACV)
-    resetQ.Bind(wx.EVT_CHECKBOX, OnResetQ)
+    resetQ.Bind(wx.EVT_BUTTON, OnResetQ)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
     rmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmax',nDig=(10,1),min=10.,max=200.,
         typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))

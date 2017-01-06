@@ -6029,6 +6029,7 @@ def PlotStructure(G2frame,data,firstCall=False):
 #        if caller:
 #            print caller,generalData['Name']
 # end of useful debug
+        vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']
         D4mapData = generalData.get('4DmapData',{})
         pageName = ''

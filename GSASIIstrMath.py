@@ -3756,7 +3756,9 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 w[xB:xF] = np.where(y[xB:xF]>0.,1./y[xB:xF],1.0)
             yd[xB:xF] = y[xB:xF]-yc[xB:xF]
             W = wtFactor*w
-            wdy = -ma.sqrt(W[xB:xF])*(yd[xB:xF])
+            wdy = -ma.sqrt(w[xB:xF])*(yd[xB:xF])
+            Histogram['Residuals']['Durbin-Watson'] = ma.sum(ma.diff(wdy)**2)/ma.sum(wdy**2)
+            wdy *= wtFactor
             Histogram['Residuals']['Nobs'] = ma.count(x[xB:xF])
             Nobs += Histogram['Residuals']['Nobs']
             Histogram['Residuals']['sumwYo'] = ma.sum(W[xB:xF]*y[xB:xF]**2)

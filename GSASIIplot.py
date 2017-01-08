@@ -4348,6 +4348,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             
     def OnImPick(event):
         'A object has been picked'
+        
         def OnDragIntBound(event):
             'Respond to the dragging of one of the integration boundaries'
             if event.xdata is None or event.ydata is None:
@@ -4374,8 +4375,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             #    Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
             # compute arcs, etc
             LRAzim = Data['LRazimuth']                  #NB: integers
-            Nazm = Data['outAzimuths']
-            delAzm = float(LRAzim[1]-LRAzim[0])/Nazm
             AzmthOff = Data['azmthOff']
             IOtth = Data['IOtth']
             wave = Data['wavelength']
@@ -4414,6 +4413,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 pick.set_data([[arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]]])
             Page.figure.gca().draw_artist(pick)
             Page.canvas.blit(Page.figure.gca().bbox)
+            
         def OnDragMask(event):
             'Respond to the dragging of a mask'
             if event.xdata is None or event.ydata is None:
@@ -4422,7 +4422,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return
             Xpos,Ypos = [event.xdata,event.ydata]
             #if Page.toolbar._active: return # zoom/pan selected
-            itemPicked = str(G2frame.itemPicked)
             Page.canvas.restore_region(savedplot)
             try:
                 pickType = pick.itemType
@@ -4577,12 +4576,19 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             else:
                 print('picktype {} should not happen!'.format(pickType))
                 GSASIIpath.IPyBreak()
-            saveLinestyle = [p.get_linestyle() for p in pl]
-            for p in pl: p.set_linestyle('dotted') # set line as dotted
-            Page.canvas.draw() # refresh without dotted line & save bitmap
-            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
-            G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMask)
-            for p,s in zip(pl,saveLinestyle): p.set_linestyle(s) # set back to original
+            if event.mouseevent.button == 3:
+                if pickType == 'Spot':
+                    print 'delete',pick.center
+                    del Masks['Points'][pick.itemNumber]
+                    
+                    Page.canvas.draw() # refresh without dotted line & save bitmap
+            else:
+                saveLinestyle = [p.get_linestyle() for p in pl]
+                for p in pl: p.set_linestyle('dotted') # set line as dotted
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMask)
+                for p,s in zip(pl,saveLinestyle): p.set_linestyle(s) # set back to original
 
     def OnImRelease(event):
         '''Called when the mouse is released inside an image plot window
@@ -4778,10 +4784,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.Lazim.SetValue(Data['LRazimuth'][0])
                 G2frame.Razim.SetValue(Data['LRazimuth'][1])
             elif pickType == "Spot" and treeItem == 'Masks':
-                # update the selected circle mask with the last drawn values
-                spotnum = G2frame.itemPicked.itemNumber
-                Masks['Points'][spotnum] = list(G2frame.itemPicked.center) + [
-                    2.*G2frame.itemPicked.radius]
+                if event.button == 3:
+                    # update the selected circle mask with the last drawn values
+                    spotnum = G2frame.itemPicked.itemNumber
+                    Masks['Points'][spotnum] = list(G2frame.itemPicked.center) + [
+                        2.*G2frame.itemPicked.radius]
                 G2imG.UpdateMasks(G2frame,Masks)
             elif pickType.startswith('Ring') and treeItem == 'Masks':
                 G2imG.UpdateMasks(G2frame,Masks) # changes saved during animation
@@ -5191,7 +5198,6 @@ def PlotStructure(G2frame,data,firstCall=False):
     SpnFlp = SGData.get('SpnFlp',[1,])
     atomData = data['Atoms']
     mapPeaks = []
-    vdWRadii = generalData['vdWRadii']
     if generalData.get('DisAglCtrls',{}):
         BondRadii = generalData['DisAglCtrls']['BondRadii']
     else:

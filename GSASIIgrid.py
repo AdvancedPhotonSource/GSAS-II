@@ -2118,7 +2118,7 @@ class DataFrame(wx.Frame):
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
         self.MaskEdit.Append(help='Load mask from file; ignore threshold', 
             id=wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask w/o threshold')
-        self.MaskEdit.Append(help='Auto search for spot masks', 
+        self.MaskEdit.Append(help='Auto search for spot masks; NB: will clear old spot masks', 
             id=wxID_FINDSPOTS, kind=wx.ITEM_NORMAL,text='Auto spot masks')
         submenu.Append(help='Create an arc mask with mouse input', 
             id=wxID_NEWMASKARC, kind=wx.ITEM_NORMAL,text='Arc mask')
@@ -2128,7 +2128,7 @@ class DataFrame(wx.Frame):
             id=wxID_NEWMASKPOLY, kind=wx.ITEM_NORMAL,text='Polygon mask')
         submenu.Append(help='Create a ring mask with mouse input', 
             id=wxID_NEWMASKRING, kind=wx.ITEM_NORMAL,text='Ring mask')
-        submenu.Append(help='Create spot masks with mouse clicks', 
+        submenu.Append(help='Create spot masks with mouse input', 
             id=wxID_NEWMASKSPOT, kind=wx.ITEM_NORMAL,text='Spot mask')
         self.PostfillDataMenu()
             
@@ -4270,6 +4270,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+            ' Durbin-Watson statistic: %.3f'%(data[0].get('Durbin-Watson',0.))))
         for value in data[0]:
             if 'Nref' in value:
                 pfx = value.split('Nref')[0]

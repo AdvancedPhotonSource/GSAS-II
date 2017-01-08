@@ -1131,7 +1131,7 @@ def AutoSpotMasks(Image,Masks,Controls):
     rolls = np.array([[ix,iy] for ix in indices for iy in indices])
     for roll in rolls:
         if np.any(roll):        #avoid [0,0]
-            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<=0.))
+            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<=0.10*np.mean(Image)))
     mags = spotMask[spotMask.nonzero()]
     indx = np.transpose(spotMask.nonzero())
     nx,ny = Image.shape
@@ -1145,17 +1145,18 @@ def AutoSpotMasks(Image,Masks,Controls):
             if mag > 1.33*ma.mean(msk):
                 jndx.append([ind[1]+.5,ind[0]+.5])
     print 'Spots found: ',len(jndx)
-    if len(jndx) > 100:
-        txt = 'Found: %d. Too many spots found; are rings spotty?'%(len(jndx))
-        return txt
     jndx = np.array(jndx)
     peaks = jndx*pixelSize/1000.
     tth = GetTth(peaks.T[0],peaks.T[1],Controls)
     Peakarray = np.vstack((tth,peaks.T)).T
-    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta order
+    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta 
+    if peaks.shape[0] > 100:
+        txt = 'More than 100 spots found: %d. Are rings spotty?'%(len(jndx))
+        return txt
+    #should be able to filter out spotty Bragg rings here
     Points = np.ones((peaks.shape[0],3))
     Points[:,:2] = Peakarray[:,1:]
-    Masks['Points'] = Points
+    Masks['Points'] = list(Points)
     return None
                     
     

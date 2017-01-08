@@ -2747,6 +2747,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 if 'PWDR' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
+                    print >>pFile,' Durbin-Watson statistic = %.3f'%(Histogram['Residuals']['Durbin-Watson'])
                     print >>pFile,' Bragg intensity sum = %.3g'%(Histogram['Residuals'][pfx+'sumInt'])
                 
                     if pfx+'Scale' in PhFrExtPOSig:

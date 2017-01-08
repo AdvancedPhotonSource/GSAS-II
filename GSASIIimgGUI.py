@@ -1302,13 +1302,14 @@ def UpdateMasks(G2frame,data):
             
     def OnAutoSpotMask(event):
         'Do auto search for spot masks'
+        wx.MessageDialog(G2frame.dataDisplay,'NB: This will clear any old spot masks','Auto Spot Masks', wx.OK).ShowModal()
         Controls = copy.deepcopy(G2frame.PatternTree.GetItemPyData( 
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Image Controls')))
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Image Controls')))
         Error = G2img.AutoSpotMasks(G2frame.ImageZ,data,Controls)
         if not Error is None:
             G2frame.ErrorDialog('Auto spot search error',Error)
         wx.CallAfter(UpdateMasks,G2frame,data)
-        G2plt.PlotExposedImage(G2frame,event=event)                
+        wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)                
             
     def ToggleSpotMaskMode(event):
         G2plt.ToggleMultiSpotMask(G2frame)
@@ -1669,7 +1670,6 @@ def UpdateMasks(G2frame,data):
     Size[1] = min(Size[1],500)
     G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
-    wx.Yield()
     if startScroll: # reset scroll to saved position
         G2frame.dataDisplay.Scroll(0,startScroll) # set to saved scroll position
         wx.Yield()

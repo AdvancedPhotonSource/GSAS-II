@@ -3178,7 +3178,7 @@ For DIFFaX use cite:
     def OnCheckUpdates(self,event):
         '''Check if the GSAS-II repository has an update for the current source files
         and perform that update if requested.
-        '''
+        '''            
         if not GSASIIpath.whichsvn():
             dlg = wx.MessageDialog(self.frame,
                                    'No Subversion','Cannot update GSAS-II because subversion (svn) was not found.',
@@ -3259,7 +3259,10 @@ For DIFFaX use cite:
             dlg.Destroy()
             return
         dlg.Destroy()
-        self.frame.OnFileSave(event)
+        try:
+            self.frame.OnFileSave(event)
+        except AttributeError:
+            self.frame.G2frame.OnFileSave(event)
         GSASIIpath.svnUpdateProcess(projectfile=self.frame.GSASprojectfile)
         return
 
@@ -3321,7 +3324,10 @@ For DIFFaX use cite:
             projectfile=self.frame.GSASprojectfile,
             version=str(ver)
             )
-        self.frame.OnFileSave(event)
+        try:
+            self.frame.OnFileSave(event)
+        except AttributeError:
+            self.frame.G2frame.OnFileSave(event)
         return
 
 ################################################################################

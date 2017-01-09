@@ -2410,6 +2410,7 @@ class GSASII(wx.Frame):
         self.Sngl = False
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
+        self.MskDelete = False      #trigger for mask delete
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
         self.hist = ''              # selected histogram in Phase/Data tab

@@ -1148,12 +1148,14 @@ def AutoSpotMasks(Image,Masks,Controls):
     jndx = np.array(jndx)
     peaks = jndx*pixelSize/1000.
     tth = GetTth(peaks.T[0],peaks.T[1],Controls)
+    histtth,bins = np.histogram(tth,2500)
+    
+    #should be able to filter out spotty Bragg rings here
     Peakarray = np.vstack((tth,peaks.T)).T
     Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta 
     if peaks.shape[0] > 100:
         txt = 'More than 100 spots found: %d. Are rings spotty?'%(len(jndx))
         return txt
-    #should be able to filter out spotty Bragg rings here
     Points = np.ones((peaks.shape[0],3))
     Points[:,:2] = Peakarray[:,1:]
     Masks['Points'] = list(Points)

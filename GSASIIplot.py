@@ -4139,6 +4139,11 @@ def OnStartMask(G2frame):
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         Page.figure.suptitle('Left-click to create a ring mask',color='r',fontweight='bold')
         Page.canvas.draw()
+    elif G2frame.MskDelete:
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('select spot mask to delete',color='r',fontweight='bold')
+        Page.canvas.draw()
+
     G2imG.UpdateMasks(G2frame,Masks)
     
 def OnStartNewDzero(G2frame):
@@ -4307,6 +4312,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return 
             elif event.key in ['l','p','f','a','r']:
                 G2frame.MaskKey = event.key
+                OnStartMask(G2frame)
+            elif event.key == 'd':
+                G2frame.MskDelete = True
                 OnStartMask(G2frame)
                 
         elif treeItem == 'Stress/Strain':
@@ -4576,19 +4584,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             else:
                 print('picktype {} should not happen!'.format(pickType))
                 GSASIIpath.IPyBreak()
-            if event.mouseevent.button == 3:
-                if pickType == 'Spot':
-                    print 'delete',pick.center
-                    del Masks['Points'][pick.itemNumber]
-                    
-                    Page.canvas.draw() # refresh without dotted line & save bitmap
-            else:
-                saveLinestyle = [p.get_linestyle() for p in pl]
-                for p in pl: p.set_linestyle('dotted') # set line as dotted
-                Page.canvas.draw() # refresh without dotted line & save bitmap
-                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
-                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMask)
-                for p,s in zip(pl,saveLinestyle): p.set_linestyle(s) # set back to original
+            saveLinestyle = [p.get_linestyle() for p in pl]
+            for p in pl: p.set_linestyle('dotted') # set line as dotted
+            Page.canvas.draw() # refresh without dotted line & save bitmap
+            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+            G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMask)
+            for p,s in zip(pl,saveLinestyle): p.set_linestyle(s) # set back to original
 
     def OnImRelease(event):
         '''Called when the mouse is released inside an image plot window
@@ -4722,6 +4723,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     return
             G2imG.UpdateMasks(G2frame,Masks)
             wx.CallAfter(PlotImage,G2frame,newImage=False)
+        elif G2frame.MskDelete:
+            G2frame.MskDelete = False
+            if G2frame.itemPicked:
+                del Masks['Points'][G2frame.itemPicked.itemNumber]
+            G2imG.UpdateMasks(G2frame,Masks)
+            wx.CallAfter(PlotImage,G2frame,newImage=True)
         elif treeItem == 'Stress/Strain' and G2frame.StrainKey:
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
@@ -4837,7 +4844,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Masks',]:
             Page.Choice = [' key press','l: log(I) on','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',
-                't: add spot mask at mouse position']
+                't: add spot mask at mouse position',
+                'd: select spot mask to delete with mouse']
             Page.Choice.append('s: start multiple spot mask mode') # this must be the last choice
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'

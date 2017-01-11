@@ -3003,10 +3003,9 @@ class GridFractionEditor(wg.PyGridCellEditor):
 class GSNoteBook(wx.aui.AuiNotebook):
     '''Notebook used in various locations; implemented with wx.aui extension
     '''
-    def __init__(self, parent, name='',size = None):
-        wx.aui.AuiNotebook.__init__(self, parent, -1,
-                                    style=wx.aui.AUI_NB_TOP |
-                                    wx.aui.AUI_NB_SCROLL_BUTTONS)
+    def __init__(self, parent, name='',size = None,style=wx.aui.AUI_NB_TOP |
+        wx.aui.AUI_NB_SCROLL_BUTTONS):
+        wx.aui.AuiNotebook.__init__(self, parent, style=style)
         if size: self.SetSize(size)
         self.parent = parent
         self.PageChangeHandler = None

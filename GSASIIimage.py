@@ -22,6 +22,7 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import polymask as pm
 from scipy.optimize import leastsq
+import scipy.signal as scsg
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1131,33 +1132,43 @@ def AutoSpotMasks(Image,Masks,Controls):
     rolls = np.array([[ix,iy] for ix in indices for iy in indices])
     for roll in rolls:
         if np.any(roll):        #avoid [0,0]
-            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<=0.10*np.mean(Image)))
+            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<0.))
     mags = spotMask[spotMask.nonzero()]
     indx = np.transpose(spotMask.nonzero())
     nx,ny = Image.shape
     jndx = []
     for [ind,mag] in zip(indx,mags):
-        if (0 < ind[0] < nx-1) and (0 < ind[1] < ny-1):
+        if (1 < ind[0] < nx-2) and (1 < ind[1] < ny-2):
             cent = np.zeros((3,3))
             cent[1,1] = mag
-            msk = np.array(Image[ind[0]-1:ind[0]+2,ind[1]-1:ind[1]+2])
+            msk = np.array(Image[ind[0]-2:ind[0]+3,ind[1]-2:ind[1]+3])
             msk = ma.array(msk,mask=(msk==mag))
-            if mag > 1.33*ma.mean(msk):
+            if mag > 1.5*ma.mean(msk):
                 jndx.append([ind[1]+.5,ind[0]+.5])
     print 'Spots found: ',len(jndx)
     jndx = np.array(jndx)
     peaks = jndx*pixelSize/1000.
     tth = GetTth(peaks.T[0],peaks.T[1],Controls)
-    histtth,bins = np.histogram(tth,2500)
-    
+    histth,bins = np.histogram(tth,2500)
+    for shft in [-1,1]:
+        histmsk = ma.array(histth,mask=-(histth-np.roll(histth,shft)<2.))
+    histmsk = ma.array(histmsk,mask=(histmsk>5))
+    binmsk = np.array(ma.nonzero(histmsk))
+    digts = np.digitize(tth,bins)-1
+    PeaksList = []
+    for digt,peak in zip(digts,peaks):
+        if digt in binmsk:
+            PeaksList.append(peak)
     #should be able to filter out spotty Bragg rings here
-    Peakarray = np.vstack((tth,peaks.T)).T
-    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta 
-    if peaks.shape[0] > 100:
-        txt = 'More than 100 spots found: %d. Are rings spotty?'%(len(jndx))
-        return txt
-    Points = np.ones((peaks.shape[0],3))
-    Points[:,:2] = Peakarray[:,1:]
+    PeaksList = np.array(PeaksList)
+#    Peakarray = np.vstack((tth,peaks.T)).T
+#    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta 
+#    if peaks.shape[0] > 100:
+#        txt = 'More than 100 spots found: %d. Are rings spotty?'%(len(jndx))
+#        return txt
+    Points = np.ones((PeaksList.shape[0],3))
+#    Points[:,:2] = Peakarray[:,1:]
+    Points[:,:2] = PeaksList
     Masks['Points'] = list(Points)
     return None
                     

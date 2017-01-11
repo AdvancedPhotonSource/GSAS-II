@@ -2511,14 +2511,17 @@ class DataFrame(wx.Frame):
         self.selectedRow = 0
         self.lastSize = [0,0]        
         self.manualPhaseSize = None
-        wx.Frame.Bind(self,wx.EVT_SIZE,self.OnReSize)
         self.userReSize = False
+        wx.Frame.Bind(self,wx.EVT_SIZE,self.OnReSize)
             
     def OnReSize(self,event):
         '''Keep track of size changes for Phase windows
         '''
         id = self.G2frame.PatternTree.GetSelection()
-        parent = self.G2frame.PatternTree.GetItemParent(id)
+        try:
+            parent = self.G2frame.PatternTree.GetItemParent(id)
+        except:         #avoid bad tree item on start via gpx file selection 
+            parent = 0
         if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases": 
             self.manualPhaseSize = event.EventObject.GetSize()
             if GSASIIpath.GetConfigValue('debug'): print 'Saving Phase size=',self.manualPhaseSize             
@@ -2538,7 +2541,10 @@ class DataFrame(wx.Frame):
         self.userReSize = False
         Width = list(Width)
         id = self.G2frame.PatternTree.GetSelection()
-        pid = self.G2frame.PatternTree.GetItemParent(id)
+        try:            #avoid bad tree item on start via gpx file selection 
+            pid = self.G2frame.PatternTree.GetItemParent(id)
+        except:
+            pid = 0
         if pid:
             parent = self.G2frame.PatternTree.GetItemText(pid)
             # is this a phase window and has a previous window has been resized?
@@ -2834,7 +2840,6 @@ def UpdateControls(G2frame,data):
         
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    #G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
      
 ################################################################################
@@ -4010,7 +4015,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(True)
     if prevSize:
-        #G2frame.dataDisplay.SetSize(prevSize)
         G2frame.dataFrame.setSizePosLeft(prevSize)
     else:
         G2frame.dataFrame.setSizePosLeft([700,350])

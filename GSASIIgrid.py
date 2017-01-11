@@ -2509,7 +2509,7 @@ class DataFrame(wx.Frame):
         self.SetPosition(wx.Point(xPos,clientSize[1]+250))
         self.AtomGrid = []
         self.selectedRow = 0
-        self.lastSize = [0,0]        
+        self.lastSize = Size        
         self.manualPhaseSize = None
         self.userReSize = False
         wx.Frame.Bind(self,wx.EVT_SIZE,self.OnReSize)
@@ -2528,7 +2528,7 @@ class DataFrame(wx.Frame):
 #                    print 'no save size=',self.lastSize
                 return
             self.manualPhaseSize = event.EventObject.GetSize()
-            self.lastSize = self.manualPhaseSize
+            self.lastSize = event.EventObject.GetSize()
 #            if GSASIIpath.GetConfigValue('debug'):
 #                print 'Saving Phase size=',self.manualPhaseSize
                 #HowDidIgetHere()

@@ -2524,12 +2524,13 @@ class DataFrame(wx.Frame):
             parent = 0
         if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases": 
             if self.lastSize == event.EventObject.GetSize():
-                if GSASIIpath.GetConfigValue('debug'):
-                    print 'no save size=',self.lastSize
+#                if GSASIIpath.GetConfigValue('debug'):
+#                    print 'no save size=',self.lastSize
                 return
             self.manualPhaseSize = event.EventObject.GetSize()
-            if GSASIIpath.GetConfigValue('debug'):
-                print 'Saving Phase size=',self.manualPhaseSize
+            self.lastSize = self.manualPhaseSize
+#            if GSASIIpath.GetConfigValue('debug'):
+#                print 'Saving Phase size=',self.manualPhaseSize
                 #HowDidIgetHere()
         event.Skip()
 
@@ -2560,6 +2561,7 @@ class DataFrame(wx.Frame):
         clientSize = wx.ClientDisplayRect()     #display window size (e.g. 1304x768)
         Width[1] = min(Width[1],clientSize[2]-300)
         Width[0] = max(Width[0],300)
+#        print 'current position/width:',Pos,Width
         self.SetSize(Width)
         if self.lastSize[0]:
             Pos[0] += self.lastSize[0]-Width[0]

@@ -129,7 +129,6 @@ def UpdateImageData(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     fitSize = mainSizer.Fit(G2frame.dataFrame)
     G2frame.dataFrame.setSizePosLeft(fitSize)
-    G2frame.dataDisplay.SetSize(fitSize)
 
 ################################################################################
 ##### Image Controls
@@ -1178,7 +1177,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataDisplay.SetSizer(mainSizer)
     fitSize = mainSizer.Fit(G2frame.dataFrame)
     G2frame.dataFrame.setSizePosLeft(fitSize)
-    G2frame.dataDisplay.SetSize(fitSize)
     
 ################################################################################
 ##### Masks
@@ -1663,12 +1661,10 @@ def UpdateMasks(G2frame,data):
         mainSizer.Add(littleSizer,0,)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 50 # room for scrollbar & status msg
     Size[1] = min(Size[1],500)
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
     if startScroll: # reset scroll to saved position
         G2frame.dataDisplay.Scroll(0,startScroll) # set to saved scroll position
@@ -2081,7 +2077,6 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
 
 ###########################################################################

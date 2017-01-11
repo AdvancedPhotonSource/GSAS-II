@@ -1764,6 +1764,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
+            G2frame.dataFrame.setSizePosLeft([700,300])
 
         # FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -1831,7 +1832,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
         Atoms.SetMargins(0,0)
         
-        G2frame.dataFrame.setSizePosLeft([700,300])
+#        G2frame.dataFrame.setSizePosLeft([700,300])
         Paint()
 
     def OnAtomAdd(event):
@@ -6969,10 +6970,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ResultsSizer(Results))
             
         SetPhaseWindow(G2frame.dataFrame,G2frame.MCSA,mainSizer)
-        Size = G2frame.MCSA.GetSize()
-        Size[0] = Xsize+40
-        G2frame.dataFrame.setSizePosLeft(Size)
-        G2frame.MCSA.Scroll(0,Scroll)
         
     def SetSolution(result,Models):
         for key,val in zip(result[-1],result[4:-1]):
@@ -8086,7 +8083,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2gd.SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
     G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
+        style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
     G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
     G2frame.dataDisplay.gridList = []

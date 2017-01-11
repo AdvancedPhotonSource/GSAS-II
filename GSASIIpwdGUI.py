@@ -1229,7 +1229,6 @@ def UpdateBackground(G2frame,data):
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)
         
 ################################################################################
@@ -1313,7 +1312,6 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         mainSizer.Layout()    
         G2frame.dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
-        G2frame.dataDisplay.SetSize(Size)
         G2frame.dataFrame.setSizePosLeft(Size)
         
         
@@ -2447,7 +2445,6 @@ def UpdateSampleGrid(G2frame,data):
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)
                 
 ################################################################################
@@ -3291,7 +3288,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
     
 ################################################################################
@@ -3849,7 +3845,6 @@ def UpdateSubstanceGrid(G2frame,data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
        
 ################################################################################
@@ -4562,7 +4557,6 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
     
 ################################################################################
@@ -5156,6 +5150,5 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)
     

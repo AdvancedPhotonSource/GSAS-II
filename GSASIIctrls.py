@@ -94,6 +94,8 @@ class G2TreeCtrl(wx.TreeCtrl):
     def onSelectionChanged(self,event):
         '''Log each press on a tree item here. 
         '''
+        if not self.G2frame.dataFrame:
+            return
         self.G2frame.dataFrame.userReSize = False
         if self.SelectionChanged:
             textlist = self._getTreeItemsList(event.GetItem())

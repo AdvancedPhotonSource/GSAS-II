@@ -2421,7 +2421,6 @@ class GSASII(wx.Frame):
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplayPhaseText = ''
         self.lastTreeSetting = []
-        self.lastSize = [0,0]
         
         arg = sys.argv
         if len(arg) > 1 and arg[1]:

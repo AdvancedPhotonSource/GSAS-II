@@ -2509,24 +2509,56 @@ class DataFrame(wx.Frame):
         self.SetPosition(wx.Point(xPos,clientSize[1]+250))
         self.AtomGrid = []
         self.selectedRow = 0
+        self.lastSize = [0,0]        
+        self.manualPhaseSize = None
+        wx.Frame.Bind(self,wx.EVT_SIZE,self.OnReSize)
+        self.userReSize = False
+            
+    def OnReSize(self,event):
+        '''Keep track of size changes for Phase windows
+        '''
+        id = self.G2frame.PatternTree.GetSelection()
+        parent = self.G2frame.PatternTree.GetItemParent(id)
+        if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases": 
+            self.manualPhaseSize = event.EventObject.GetSize()
+            if GSASIIpath.GetConfigValue('debug'): print 'Saving Phase size=',self.manualPhaseSize             
+        event.Skip()
+
+    def SendSizeEvent(self):
+        '''Prevent SendSizeEvent from overriding the saved size
+        '''
+        self.userReSize = False
+        wx.Frame.SendSizeEvent(self)
+        self.userReSize = True
         
     def setSizePosLeft(self,Width):
+        '''Place the dataFrame window so that the upper left-hand corner remains in the same place;
+        The size is dictated by parameter Width, unless overridden by a previous Phase window resize
+        '''
+        self.userReSize = False
         Width = list(Width)
+        id = self.G2frame.PatternTree.GetSelection()
+        pid = self.G2frame.PatternTree.GetItemParent(id)
+        if pid:
+            parent = self.G2frame.PatternTree.GetItemText(pid)
+            # is this a phase window and has a previous window has been resized?
+            if self.manualPhaseSize and parent == "Phases":
+                Width = list(self.manualPhaseSize)
         Pos = self.GetPosition()
-        lastSize = self.G2frame.lastSize
         clientSize = wx.ClientDisplayRect()     #display window size (e.g. 1304x768)
         Width[1] = min(Width[1],clientSize[2]-300)
         Width[0] = max(Width[0],300)
         self.SetSize(Width)
-        if lastSize[0]:
-            Pos[0] += lastSize[0]-Width[0]
+        if self.lastSize[0]:
+            Pos[0] += self.lastSize[0]-Width[0]
         offSet = 0
         if Pos[0] < clientSize[2]:
             offSet = Pos[0]+Width[0]-clientSize[2]
         if offSet > 0:
             Pos[0] -= offSet
         self.SetPosition(wx.Point(Pos[0],Pos[1]))
-        self.G2frame.lastSize = Width
+        self.lastSize = Width
+        self.userReSize = True
         
     def Clear(self):
         self.ClearBackground()
@@ -2802,7 +2834,7 @@ def UpdateControls(G2frame,data):
         
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
+    #G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
     G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
      
 ################################################################################
@@ -3978,7 +4010,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(True)
     if prevSize:
-        G2frame.dataDisplay.SetSize(prevSize)
+        #G2frame.dataDisplay.SetSize(prevSize)
+        G2frame.dataFrame.setSizePosLeft(prevSize)
     else:
         G2frame.dataFrame.setSizePosLeft([700,350])
     # highlight unconverged shifts 

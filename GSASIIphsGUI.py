@@ -65,7 +65,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
-    
+
 def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.SetSizer(mainSizer)
     Size = mainSizer.GetMinSize()
@@ -7885,7 +7885,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         '''
         for page in G2frame.dataDisplay.gridList: # clear out all grids, forcing edits in progress to complete
             page.ClearGrid()
-        wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
         page = event.GetSelection()
         ChangePage(page)
         
@@ -8090,7 +8089,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
-    wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
     G2frame.dataDisplay.gridList = []
     General = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(General,'General')
@@ -8141,6 +8139,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     FillMenus()
     if oldPage is None or oldPage == 0:
         ChangePage(0)
+        wx.CallAfter(G2frame.dataDisplay.SendSizeEvent)
     elif oldPage:
         SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
         G2frame.dataDisplay.SetSelection(oldPage)

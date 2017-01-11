@@ -94,6 +94,7 @@ class G2TreeCtrl(wx.TreeCtrl):
     def onSelectionChanged(self,event):
         '''Log each press on a tree item here. 
         '''
+        self.G2frame.dataFrame.userReSize = False
         if self.SelectionChanged:
             textlist = self._getTreeItemsList(event.GetItem())
             if log.LogInfo['Logging'] and event.GetItem() != self.root:
@@ -105,6 +106,7 @@ class G2TreeCtrl(wx.TreeCtrl):
                 return      #same as last time - don't get it again
             self.textlist = textlist
             self.SelectionChanged(event)
+        self.G2frame.dataFrame.userReSize = True
 
     def Bind(self,eventtype,handler,*args,**kwargs):
         '''Override the Bind() function so that page change events can be trapped

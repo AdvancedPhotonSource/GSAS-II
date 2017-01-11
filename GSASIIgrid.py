@@ -2523,8 +2523,14 @@ class DataFrame(wx.Frame):
         except:         #avoid bad tree item on start via gpx file selection 
             parent = 0
         if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases": 
+            if self.lastSize == event.EventObject.GetSize():
+                if GSASIIpath.GetConfigValue('debug'):
+                    print 'no save size=',self.lastSize
+                return
             self.manualPhaseSize = event.EventObject.GetSize()
-            if GSASIIpath.GetConfigValue('debug'): print 'Saving Phase size=',self.manualPhaseSize             
+            if GSASIIpath.GetConfigValue('debug'):
+                print 'Saving Phase size=',self.manualPhaseSize
+                #HowDidIgetHere()
         event.Skip()
 
     def SendSizeEvent(self):
@@ -4744,6 +4750,6 @@ def HowDidIgetHere():
     '''
     import traceback
     print 70*'*'    
-    for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip.rstrip())
+    for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip().rstrip())
     print 70*'*'    
         

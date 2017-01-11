@@ -8083,8 +8083,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2gd.SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
     G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-        style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
+    if GSASIIpath.GetConfigValue('debug'):
+        G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
+            style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
+    else:
+        G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
     G2frame.dataDisplay.gridList = []

@@ -216,13 +216,15 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
         sumImg = GetImageZ(G2frame,data)
         if IntegrateOnly:
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,
-                wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
-                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT))            
+            dlg = wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
+                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         else:
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,
-                wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE))
+            dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        try:
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)            
+        finally:
+            dlg.Destroy()
         G2frame.PauseIntegration = G2frame.Integrate[-1]
         del sumImg  #force cleanup
         Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
@@ -252,9 +254,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Masks = G2frame.PatternTree.GetItemPyData(
                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
                     image = GetImageZ(G2frame,Data)
-                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,
-                        wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT))
+                    dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+                    try:
+                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlg)
+                    finally:
+                        dlg.Destroy()
                     del image   #force cleanup
                     pId = G2IO.SaveIntegration(G2frame,CId,Data)
                     if G2frame.Integrate[-1]:       #Cancel from progress bar?
@@ -1071,7 +1076,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                             ctrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
                             vals = Items[Names.index(name)]
                             ctrls['GonioAngles'] = vals
-#                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'),ctrls)
                         id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             finally:
                 dlg.Destroy()
@@ -1177,6 +1181,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataDisplay.SetSizer(mainSizer)
     fitSize = mainSizer.Fit(G2frame.dataFrame)
     G2frame.dataFrame.setSizePosLeft(fitSize)
+    G2frame.dataFrame.SendSizeEvent()
     
 ################################################################################
 ##### Masks

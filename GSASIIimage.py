@@ -861,7 +861,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     return tax,tay,taz,tad,tabs
     
-def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
+def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
     print 'Begin image integration'
@@ -889,8 +889,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     Nup = nXBlks*nYBlks*3+3
     tbeg = time.time()
     Nup = 0
-    if dlg:
-        dlg.Update(Nup)
     times = [0,0,0,0,0]
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
@@ -901,18 +899,12 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             # next is most expensive step!
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
             Nup += 1
-#            if dlg and jBlk == 0:                    #update progress bar on each row
-#                pause = dlg.Update(Nup)
-#                if not pause[0]: CancelPressed = True
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
             del TA; del tam
             times[2] += time.time()-t0
             Nup += 1
-#            if dlg and jBlk == 0:                    #update progress bar on each row
-#                pause = dlg.Update(Nup)
-#                if not pause[0]: CancelPressed = True
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -933,9 +925,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             times[3] += time.time()-t0
             Nup += 1
             del tax; del tay; del taz; del tad; del tabs
-            if dlg and jBlk == 0:                    #update progress bar on each row
-                pause = dlg.Update(Nup)
-                if not pause[0]: CancelPressed = True
     t0 = time.time()
     NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)
@@ -958,9 +947,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
         #NB: in G2pwd.Polarization azm is defined from plane of polarization, not image x axis!
         H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     Nup += 1
-    if dlg:
-        pause = dlg.Update(Nup)
-        if not pause[0]: CancelPressed = True
     times[4] += time.time()-t0
     print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])

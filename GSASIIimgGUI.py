@@ -210,21 +210,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         '''
         CleanupMasks(masks)
         blkSize = 128   #this seems to be optimal; will break in polymask if >1024
-        Nx,Ny = data['size']
-        nXBlks = (Nx-1)/blkSize+1
-        nYBlks = (Ny-1)/blkSize+1
-        Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
         sumImg = GetImageZ(G2frame,data)
-        if IntegrateOnly:
-            dlg = wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
-                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        else:
-            dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        wx.BeginBusyCursor()
         try:
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)            
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize)            
         finally:
-            dlg.Destroy()
+            wx.EndBusyCursor()    
         G2frame.PauseIntegration = G2frame.Integrate[-1]
         del sumImg  #force cleanup
         Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
@@ -240,31 +231,26 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             if dlg.ShowModal() == wx.ID_OK:
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
-                for item in items:
-                    name = Names[item]
-                    G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                    CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
-                    Data = G2frame.PatternTree.GetItemPyData(CId)
-                    blkSize = 128   #this seems to be optimal; will break in polymask if >1024
-                    Nx,Ny = Data['size']
-                    nXBlks = (Nx-1)/blkSize+1
-                    nYBlks = (Ny-1)/blkSize+1
-                    Nup = nXBlks*nYBlks*3+3
-                    image = GetImageZ(G2frame,Data)
-                    Masks = G2frame.PatternTree.GetItemPyData(
-                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
-                    image = GetImageZ(G2frame,Data)
-                    dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-                    try:
-                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlg)
-                    finally:
-                        dlg.Destroy()
-                    del image   #force cleanup
-                    pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                    if G2frame.Integrate[-1]:       #Cancel from progress bar?
-                        break
-                else:
+                dlgp = wx.ProgressDialog("Elapsed time","2D image integrations",len(items)+1,
+                    style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+                try:
+                    for icnt,item in enumerate(items):
+                        GoOn = dlgp.Update(icnt)
+                        if not GoOn[0]:
+                            break
+                        name = Names[item]
+                        G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                        CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
+                        Data = G2frame.PatternTree.GetItemPyData(CId)
+                        Masks = G2frame.PatternTree.GetItemPyData(
+                            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
+                        image = GetImageZ(G2frame,Data)
+                        blkSize = 128   #this seems to be optimal; will break in polymask if >1024
+                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize)
+                        del image   #force cleanup
+                        pId = G2IO.SaveIntegration(G2frame,CId,Data)
+                finally:    
+                    dlgp.Destroy()
                     G2frame.EnablePlot = True
                     G2frame.PatternTree.SelectItem(pId)
                     G2frame.PatternTree.Expand(pId)

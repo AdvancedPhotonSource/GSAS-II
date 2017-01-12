@@ -1501,10 +1501,16 @@ class GSASII(wx.Frame):
         lastIparmfile = ''
         lastdatafile = ''
         newHistList = []
+        lastVals = []
         self.EnablePlot = False
         for rd in rdlist:
-            if 'Instrument Parameters' not in rd.pwdparms:
+            if 'Instrument Parameters' in rd.pwdparms:
+                Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
+            else:
                 # get instrument parameters for each dataset, unless already set
+                if lastIparmfile:  # is this histogram like previous?
+                    if lastVals != (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0])):
+                        lastIparmfile = ''
                 Iparms = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
                 if not Iparms:  #may have bailed out
                     Id = 0
@@ -1512,12 +1518,11 @@ class GSASII(wx.Frame):
                 Iparm1,Iparm2 = Iparms
                 if rd.repeat_instparm: 
                     lastIparmfile = rd.instfile
+                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
                 # override any keys in read instrument parameters with ones set in import
                 for key in Iparm1:  
                     if key in rd.instdict:
                         Iparm1[key] = rd.instdict[key]
-            else:
-                Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
             lastdatafile = rd.powderentry[0]
             HistName = rd.idstring
             HistName = 'PWDR '+HistName
@@ -1693,11 +1698,10 @@ class GSASII(wx.Frame):
         rd.comments.append('This is a dummy dataset for powder pattern simulation')
         self.CheckNotebook()
         Iparm = None
-        lastIparmfile = ''
         lastdatafile = ''
         self.zipfile = None
         # get instrument parameters for it
-        Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+        Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, '', lastdatafile)
         if 'T' in Iparm1['Type'][0]:
             print('TOF simulation not supported yet')
             return False

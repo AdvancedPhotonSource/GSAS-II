@@ -152,7 +152,7 @@ def GetCheckImageFile(G2frame,treeId):
        and (imagetag) an optional image number
 
     '''
-    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
+    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(treeId)
     if not os.path.exists(imagefile):
         print 'Image file '+imagefile+' not found'
         fil = imagefile.replace('\\','/') # windows?!
@@ -164,7 +164,7 @@ def GetCheckImageFile(G2frame,treeId):
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
                 print 'found image file '+os.path.join(G2frame.dirname,fil)
                 imagefile = os.path.join(G2frame.dirname,fil)
-                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
+                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
             fil = os.path.join(enddir,fil)
@@ -188,7 +188,7 @@ def GetCheckImageFile(G2frame,treeId):
             if os.path.exists(os.path.join(pth,fil)):
                 print 'found image file '+os.path.join(pth,fil)
                 imagefile = os.path.join(pth,fil)
-                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
+                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
         #GSASIIpath.IPyBreak()
@@ -203,7 +203,7 @@ def GetCheckImageFile(G2frame,treeId):
             dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
                 imagefile = dlg.GetPath()
-                G2frame.PatternTree.UpdateImageLoc(G2frame.Image,imagefile)
+                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
             else:
                 imagefile = False
         finally:

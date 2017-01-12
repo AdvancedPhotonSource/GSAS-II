@@ -68,8 +68,8 @@ def GetImageZ(G2frame,data,newRange=False):
         if Did:
             Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
             dformatName = Ddata.get('formatName','')
-            Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
+            Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
+            darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
             if darkImg is not None:                
                 sumImg += np.array(darkImage*darkScale,dtype='int32')
     if not 'background image' in data:
@@ -78,17 +78,17 @@ def GetImageZ(G2frame,data,newRange=False):
     if backImg:     #ignores any transmission effect in the background image
         Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
         if Bid:
-            Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
+            Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
             Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
             bformatName = Bdata.get('formatName','')
-            backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=bformatName)
+            backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
             if darkImg and backImage is not None:
                 Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
                 if Did:
                     Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
                     dformatName = Ddata.get('formatName','')
-                    Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
+                    Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
+                    darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
                     if darkImage is not None:
                         backImage += np.array(darkImage*darkScale,dtype='int32')
             if backImage is not None:
@@ -214,21 +214,21 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         nXBlks = (Nx-1)/blkSize+1
         nYBlks = (Ny-1)/blkSize+1
         Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
-        if IntegrateOnly:
-            pdlg = wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
-                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)            
-        else:
-            pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         sumImg = GetImageZ(G2frame,data)
-        G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
+        if IntegrateOnly:
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,
+                wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
+                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT))            
+        else:
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,
+                wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE))
         G2frame.PauseIntegration = G2frame.Integrate[-1]
         del sumImg  #force cleanup
         Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
         G2frame.PatternId = Id
         G2frame.PatternTree.SelectItem(Id)
         G2frame.PatternTree.Expand(Id)
-        wx.CallAfter(pdlg.Destroy)
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
@@ -248,15 +248,15 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     nXBlks = (Nx-1)/blkSize+1
                     nYBlks = (Ny-1)/blkSize+1
                     Nup = nXBlks*nYBlks*3+3
-                    dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
                     image = GetImageZ(G2frame,Data)
                     Masks = G2frame.PatternTree.GetItemPyData(
                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
-                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
+                    image = GetImageZ(G2frame,Data)
+                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,
+                        wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT))
                     del image   #force cleanup
                     pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                    dlgp.Destroy()
                     if G2frame.Integrate[-1]:       #Cancel from progress bar?
                         break
                 else:

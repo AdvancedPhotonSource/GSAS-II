@@ -507,10 +507,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def _IndicateValidity(self):
         'Set the control colors to show invalid input'
         if self.invalid:
+            ins = self.GetInsertionPoint()
             self.SetForegroundColour("red")
             self.SetBackgroundColour("yellow")
             self.SetFocus()
-            self.Refresh()
+            self.Refresh() # this selects text on some Linuxes
+            self.SetSelection(0,0)   # unselect
+            self.SetInsertionPoint(ins) # put insertion point back 
         else: # valid input
             self.SetBackgroundColour(
                 wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
@@ -732,10 +735,13 @@ class NumberValidator(wx.PyValidator):
 
         '''
         if tc.invalid:
+            ins = tc.GetInsertionPoint()
             tc.SetForegroundColour("red")
             tc.SetBackgroundColour("yellow")
             tc.SetFocus()
-            tc.Refresh()
+            tc.Refresh() # this selects text on some Linuxes
+            tc.SetSelection(0,0)   # unselect
+            tc.SetInsertionPoint(ins) # put insertion point back 
             return False
         else: # valid input
             tc.SetBackgroundColour(

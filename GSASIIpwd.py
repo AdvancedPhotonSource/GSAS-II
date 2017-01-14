@@ -340,7 +340,10 @@ def CalcPDF(data,inst,limits,xydata):
     minQ = np.searchsorted(Qpoints,qLimits[0])
     maxQ = np.searchsorted(Qpoints,qLimits[1])
     newdata = []
-    xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],IofQ[2]]
+    if len(IofQ) < 3:
+        xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],'']
+    else:
+        xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],IofQ[2]]
     for item in xydata['IofQ'][1]:
         newdata.append(item[:maxQ])
     xydata['IofQ'][1] = newdata

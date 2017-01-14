@@ -2392,6 +2392,7 @@ class AutoIntFrame(wx.Frame):
         lblsizr.Add(sizer)
         mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER,1)
 
+        #put automatic PDF controls here?
         # buttons on bottom
         mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'),0,wx.TOP,5)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2408,7 +2409,11 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(self.btnclose)
         sizer.Add((20,-1))
         mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
+        '''or put automatic PDF controls here?
+        Auto PDF check box - if True:
+            chemical formula needed - or maybe fake it?
         
+        '''
         # finish up window
         mnpnl.SetSizer(mnsizer)
         OnRadioSelect(None) # disable widgets
@@ -2521,10 +2526,7 @@ class AutoIntFrame(wx.Frame):
         # on windows
         if sys.platform != "win32":
             for item in (self.btnstart,self.btnreset,self.btnclose): item.Enable(flag)
-        if flag:
-            self.btnstart.SetLabel('Pause')
-        else:
-            self.btnstart.SetLabel('(running)')
+        self.btnstart.SetLabel('Pause')
         wx.Yield()
                 
     def ResetFromTable(self,dist):

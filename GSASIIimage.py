@@ -22,7 +22,6 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import polymask as pm
 from scipy.optimize import leastsq
-import scipy.signal as scsg
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -30,7 +29,6 @@ import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
-import GSASIImath as G2mth
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -886,9 +884,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     Nx,Ny = data['size']
     nXBlks = (Nx-1)/blkSize+1
     nYBlks = (Ny-1)/blkSize+1
-    Nup = nXBlks*nYBlks*3+3
     tbeg = time.time()
-    Nup = 0
     times = [0,0,0,0,0]
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
@@ -898,13 +894,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
-            Nup += 1
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
             del TA; del tam
             times[2] += time.time()-t0
-            Nup += 1
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -923,7 +917,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             times[3] += time.time()-t0
-            Nup += 1
             del tax; del tay; del taz; del tad; del tabs
     t0 = time.time()
     NST = np.array(NST,dtype=np.float)
@@ -946,7 +939,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     if 'SASD' in data['type'] and data['PolaVal'][1]:
         #NB: in G2pwd.Polarization azm is defined from plane of polarization, not image x axis!
         H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
-    Nup += 1
     times[4] += time.time()-t0
     print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
@@ -1147,13 +1139,7 @@ def AutoSpotMasks(Image,Masks,Controls):
             PeaksList.append(peak)
     #should be able to filter out spotty Bragg rings here
     PeaksList = np.array(PeaksList)
-#    Peakarray = np.vstack((tth,peaks.T)).T
-#    Peakarray = np.array(G2mth.sortArray(Peakarray,0))  #now in 2theta 
-#    if peaks.shape[0] > 100:
-#        txt = 'More than 100 spots found: %d. Are rings spotty?'%(len(jndx))
-#        return txt
     Points = np.ones((PeaksList.shape[0],3))
-#    Points[:,:2] = Peakarray[:,1:]
     Points[:,:2] = PeaksList
     Masks['Points'] = list(Points)
     return None

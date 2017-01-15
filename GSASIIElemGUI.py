@@ -21,6 +21,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import wx
 import os
+import sys
 import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     '''Makes periodic table widget for picking element. Modes:
@@ -80,16 +81,15 @@ class PickElement(wx.Dialog):
             butWid = self.butWid
             if name[0] == 'None':
                 butWid *= 2
-            # patch for wx 2.9+ on Mac where EVT_COMBOBOX happens only on
+            # patch for wx 2.9+ on Mac/Linux where EVT_COMBOBOX happens only on a
             # value change. Not ideal because wx.CB_READONLY is better.
             i,j= wx.__version__.split('.')[0:2]
-            if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
-
+            if int(i)+int(j)/10. > 2.8 and 'win' not in sys.platform:
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
                     style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
             else:
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
-                    style=wx.CB_READONLY, value=name[0]) 
+                    style=wx.CB_READONLY, value=name[0])
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
         El.SetBackgroundColour(color)

@@ -3222,8 +3222,8 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
             print >>pFile,135*'='
             print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
             print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
-            print >>pFile,' Other residuals: R = %.2f%%, Rb = %.2f%%, wRb = %.2f%% wRmin = %.2f%%'% \
-                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wRb'],Histogram['Residuals']['wRmin'])
+            print >>pFile,' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%'% \
+                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin'])
             if Print:
                 print >>pFile,' Instrument type: ',Sample['Type']
                 if FFtables != None and 'N' not in Inst['Type'][0]:

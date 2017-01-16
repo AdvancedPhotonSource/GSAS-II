@@ -4419,13 +4419,13 @@ def SelectDataTreeItem(G2frame,item):
 
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
-    pickName = G2frame.PatternTree.GetItemText(item)
-    if G2frame.PickIdText == pickName:
+    if G2frame.PickIdText == G2frame.GetTreeItemsList(item):
         return
-    
+    wx.Yield()
     oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:
         SetDataMenuBar(G2frame)
+        # save comments or notebook contents before clearing the window contents
         if G2frame.dataFrame.GetLabel() == 'Comments':
             try:
                 data = [G2frame.dataDisplay.GetValue()]

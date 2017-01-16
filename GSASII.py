@@ -2471,8 +2471,9 @@ class GSASII(wx.Frame):
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 self.G2plotNB.nb.GetPage(pltNum)
             item = event.GetItem()
+            wx.Yield()
             G2gd.SelectDataTreeItem(self,item)
-            if self.oldFocus:
+            if self.oldFocus: # Why do this?
                 self.oldFocus.SetFocus()
         
     def OnPatternTreeItemCollapsed(self, event):

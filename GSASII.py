@@ -159,6 +159,10 @@ class GSASII(wx.Frame):
             help='Create empty new project, saving current is optional', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&New project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
+        item = parent.Append(              #not a good idea - reads all images as each is expanded!
+            help='Expand all items in GSAS-II data tree',id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Expand all')
+        self.Bind(wx.EVT_MENU,self.ExpandAll,id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES, text = "&Preferences")
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
         if GSASIIpath.GetConfigValue('debug'):
@@ -3316,6 +3320,9 @@ class GSASII(wx.Frame):
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:
             dlg.Destroy()
+            
+    def ExpandAll(self,event):
+        self.PatternTree.ExpandAll()        
 
     def ExitMain(self, event):
         '''Called if the main window is closed'''

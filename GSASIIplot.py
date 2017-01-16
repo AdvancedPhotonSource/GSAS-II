@@ -2347,6 +2347,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
+    import matplotlib.collections as mplC
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
     if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)']:
@@ -2394,18 +2395,15 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             dlg.Destroy()
             newPlot = True
         elif event.key == 's':
-            if G2frame.Contour:
-                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-                choice.sort()
-                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    G2frame.ContourColor = choice[sel]
-                else:
-                    G2frame.ContourColor = 'Paired'
-                dlg.Destroy()
+            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.ContourColor = choice[sel]
             else:
-                G2frame.SinglePlot = not G2frame.SinglePlot                
+                G2frame.ContourColor = 'Paired'
+            dlg.Destroy()
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -2453,18 +2451,9 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     else:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
             'o: reset offset','t: toggle legend','c: contour on',
-            'm: toggle multiplot','s: toggle single plot','f: select data' )
+            'm: toggle multiplot','s: color scheme','f: select data' )
     Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
-    if plotType == 'G(R)':
-        Plot.set_xlabel(r'r,$\AA$',fontsize=14)
-        Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
-        Plot.set_title('G(r)')
-    else:
-        Plot.set_xlabel(r'$Q,\AA^{-1}$'+superMinusOne,fontsize=14)
-        Plot.set_ylabel(r''+plotType,fontsize=14)
-        Plot.set_title(plotType)
-    colors=['b','g','r','c','m','k']
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     Pattern = []    
     if G2frame.SinglePlot:
@@ -2489,6 +2478,16 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             if Pattern:
                 Pattern.append(item)
                 PlotList.append(Pattern)
+        name = plotType
+    if plotType == 'G(R)':
+        Plot.set_xlabel(r'r,$\AA$',fontsize=14)
+        Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
+        Plot.set_title(name)
+    else:
+        Plot.set_xlabel(r'$Q,\AA^{-1}$',fontsize=14)
+        Plot.set_ylabel(r''+plotType,fontsize=14)
+        Plot.set_title(name)
+    colors=['b','g','r','c','m','k']
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Ymax = 0.01
@@ -2503,6 +2502,8 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         ContourZ = []
         ContourY = []
         Nseq = 0
+    else:
+        XYlist = []
     for N,Pattern in enumerate(PlotList):
         xye = Pattern[1]
         X = xye[0]
@@ -2519,25 +2520,47 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         else:
             X = xye[0]+Page.Offset[0]*.005*N
             Y = xye[1]+Page.Offset[1]*.01*N
-            if G2frame.Legend:
-                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
-            else:
-                Plot.plot(X,Y,colors[N%6],picker=False)
-            if plotType == 'G(R)':
-                Xb = [0.,2.5]
-                Yb = [0.,-10.*np.pi*numbDen]
-                Plot.plot(Xb,Yb,color='k',dashes=(5,5))
-            elif plotType == 'F(Q)':
-                Plot.axhline(0.,color=wx.BLACK)
-            elif plotType == 'S(Q)':
-                Plot.axhline(1.,color=wx.BLACK)
+            XYlist.append(list(zip(X,Y)))
+#            if G2frame.Legend:
+#                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
+#            else:
+#                Plot.plot(X,Y,colors[N%6],picker=False)
     if G2frame.Contour and len(Pattern)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
-    elif G2frame.Legend:
-        Plot.legend(loc='best')
+    else:
+        XYlist = np.array(XYlist)
+        Xmin = np.amin(XYlist.T[0])
+        Xmax = np.amax(XYlist.T[0])
+        dx = 0.02*(Xmax-Xmin)
+        Ymin = np.amin(XYlist.T[1])
+        Ymax = np.amax(XYlist.T[1])
+        dy = 0.02*(Ymax-Ymin)
+        Plot.set_xlim(Xmin-dx,Xmax+dx)
+        Plot.set_ylim(Ymin-dy,Ymax+dy)
+        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        if XYlist.shape[0]>1:            
+            lines = mplC.LineCollection(XYlist,cmap=acolor)
+        else:
+            lines = mplC.LineCollection(XYlist,color=colors[0])
+        lines.set_array(np.arange(XYlist.shape[0]))
+        Plot.add_collection(lines)
+        if plotType == 'G(R)':
+            Xb = [0.,2.5]
+            Yb = [0.,-10.*np.pi*numbDen]
+            Plot.plot(Xb,Yb,color='k',dashes=(5,5))
+        elif plotType == 'F(Q)':
+            Plot.axhline(0.,color=wx.BLACK)
+        elif plotType == 'S(Q)':
+            Plot.axhline(1.,color=wx.BLACK)
+        if XYlist.shape[0] > 1:
+            axcb = Page.figure.colorbar(lines)
+            axcb.set_label('Run number')
+        
+#    elif G2frame.Legend:
+#        Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

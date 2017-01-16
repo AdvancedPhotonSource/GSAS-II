@@ -233,6 +233,7 @@ class G2TreeCtrl(wx.TreeCtrl):
         
         idata = self.GetItemPyData(TreeId)
         if type(idata[1]) is tuple or type(idata[1]) is list:
+            idata[1] = list(idata[1])
             idata[1][0] = [imagefile,idata[1][1]]
         else:
             idata[1]  = imagefile

@@ -4874,11 +4874,11 @@ def UpdatePDFGrid(G2frame,data):
             data['BackRatio'] = B
             data['Ruland'] = R/10.
             G2pwd.CalcPDF(data,inst,limits,xydata)
-            g = xydata['GofR'][1][1]
-            r = xydata['GofR'][1][0]
-            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-            G2plt.PlotXY(G2frame,[[r[r < Data['Rmin']], g0]],Title='G(r)+4pi*r',
-                         labelX=r'r, $\AA$',labelY=r'G(r)$+4\pi r$')            
+#            g = xydata['GofR'][1][1]
+#            r = xydata['GofR'][1][0]
+#            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
+#            G2plt.PlotXY(G2frame,[[r[r < Data['Rmin']], g0]],Title='G(r)+4pi*r',
+#                         labelX=r'r, $\AA$',labelY=r'G(r)$+4\pi r$')            
         EvalLowPDF(GetCurrentVals())
         BkgMax = max(xydata['IofQ'][1][1])/50.
         return EvalLowPDF,GetCurrentVals,SetFinalVals

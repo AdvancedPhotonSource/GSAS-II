@@ -2945,30 +2945,25 @@ class GridFractionEditor(wg.PyGridCellEditor):
         changed = False
 
         self.nextval = self.startValue
-        val = self._tc.GetValue().lower()
+        val = self._tc.GetValue().lower().strip()
         if val != self.startValue:
             changed = True
             neg = False
-            if '-' in val:
+            if val.startswith('-'):
                 neg = True
-            if '/' in val and '.' not in val:
-                val += '.'
-            elif 's' in val and not 'sind(' in val:
-                if neg:
-                    val = '-sind('+val.strip('-s')+')'
-                else:
-                    val = 'sind('+val.strip('s')+')'
-            elif 'c' in val and not 'cosd(' in val:
-                if neg:
-                    val = '-cosd('+val.strip('-c')+')'
-                else:
-                    val = 'cosd('+val.strip('c')+')'
-            try:
-                self.nextval = val = float(eval(val))
-            except (SyntaxError,NameError,ZeroDivisionError):
-                val = self.startValue
+                val = val[1:]
+            # allow old GSAS s20 and c20 etc for sind(20) and cosd(20)
+            if val.startswith('s') and '(' not in val:
+                val = 'sind('+val.strip('s')+')'
+            elif val.startswith('c') and '(' not in val:
+                val = 'cosd('+val.strip('c')+')'
+            if neg:
+                val = '-' + val
+            val = G2py3.FormulaEval(val)
+            if val:
+                self.nextval = val
+            else:
                 return None
-            
             if oldVal is None: # this arg appears in 2.9+; before, we should go ahead & change the table
                 grid.GetTable().SetValue(row, col, val) # update the table
             # otherwise self.ApplyEdit gets called
@@ -2997,16 +2992,12 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
     def OnChar(self, evt):
         key = evt.GetKeyCode()
-        if key == 15:
-            return
-        if key > 255:
+        if key < 32 or key >= 127:
             evt.Skip()
-            return
-        char = chr(key)
-        if char in '.+-/0123456789cosind()':
-            self._tc.WriteText(char)
+        elif chr(key).lower() in '.+-*/0123456789cosind()':
+            evt.Skip()
         else:
-            evt.Skip()
+            evt.StopPropagation()
             
 ################################################################################
 #####  Customized Notebook
@@ -4249,6 +4240,25 @@ if __name__ == '__main__':
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
     
+    #======================================================================
+    # test Grid with GridFractionEditor
+    #======================================================================
+    tbl = [[1.,2.,3.],[1.1,2.1,3.1]]
+    colTypes = 3*[wg.GRID_VALUE_FLOAT+':10,5',]
+    Gtbl = Table(tbl,types=colTypes,rowLabels=['a','b'],colLabels=['1','2','3'])
+    Grid = GSGrid(frm)
+    Grid.SetTable(Gtbl,True)
+    for i in (0,1,2):
+        attr = wx.grid.GridCellAttr()
+        attr.IncRef()
+        attr.SetEditor(GridFractionEditor(Grid))
+        Grid.SetColAttr(i, attr)
+    frm.SetSize((400,200))
+    app.MainLoop()
+    sys.exit()
+    #======================================================================
+    # test Tutorial access
+    #======================================================================
     dlg = OpenTutorial(frm)
     if dlg.ShowModal() == wx.ID_OK:
         print "OK"

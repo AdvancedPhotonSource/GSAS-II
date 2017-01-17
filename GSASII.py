@@ -2429,7 +2429,8 @@ class GSASII(wx.Frame):
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplayPhaseText = ''
         self.lastTreeSetting = []
-        
+        self.ExpandingAll = False
+                
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
@@ -2467,6 +2468,9 @@ class GSASII(wx.Frame):
         if self.TreeItemDelete:
             self.TreeItemDelete = False
         else:
+            if self.ExpandingAll:
+                #if GSASIIpath.GetConfigValue('debug'): print('Skipping Tree selection due to ExpandAll')
+                return
             pltNum = self.G2plotNB.nb.GetSelection()
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 self.G2plotNB.nb.GetPage(pltNum)
@@ -3323,7 +3327,11 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             
     def ExpandAll(self,event):
-        self.PatternTree.ExpandAll()        
+        self.ExpandingAll = True
+        try:
+            self.PatternTree.ExpandAll()
+        finally:
+            self.ExpandingAll = False
 
     def ExitMain(self, event):
         '''Called if the main window is closed'''

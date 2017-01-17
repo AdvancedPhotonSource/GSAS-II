@@ -21,6 +21,7 @@ import wx
 import wx.aui
 import wx.glcanvas
 import matplotlib as mpl
+import matplotlib.collections as mplC
 import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on')
@@ -2347,12 +2348,10 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
-    import matplotlib.collections as mplC
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
     if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)']:
         return
-    superMinusOne = unichr(0xaf)+unichr(0xb9)
     
     def OnPlotKeyPress(event):
         newPlot = False
@@ -2482,11 +2481,10 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     if plotType == 'G(R)':
         Plot.set_xlabel(r'r,$\AA$',fontsize=14)
         Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
-        Plot.set_title(name)
     else:
         Plot.set_xlabel(r'$Q,\AA^{-1}$',fontsize=14)
         Plot.set_ylabel(r''+plotType,fontsize=14)
-        Plot.set_title(name)
+    Plot.set_title(name)
     colors=['b','g','r','c','m','k']
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
@@ -2542,10 +2540,11 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         Plot.set_ylim(Ymin-dy,Ymax+dy)
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         if XYlist.shape[0]>1:            
+            colorRange = np.arange(XYlist.shape[0])
             lines = mplC.LineCollection(XYlist,cmap=acolor)
+            lines.set_array(colorRange)
         else:
             lines = mplC.LineCollection(XYlist,color=colors[0])
-        lines.set_array(np.arange(XYlist.shape[0]))
         Plot.add_collection(lines)
         if plotType == 'G(R)':
             Xb = [0.,2.5]
@@ -2557,7 +2556,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             Plot.axhline(1.,color=wx.BLACK)
         if XYlist.shape[0] > 1:
             axcb = Page.figure.colorbar(lines)
-            axcb.set_label('Run number')
+            axcb.set_label('PDF number')
         
 #    elif G2frame.Legend:
 #        Plot.legend(loc='best')

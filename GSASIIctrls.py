@@ -1384,7 +1384,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
             tSizer.Add(togBut)
             tSizer.Add(wx.StaticText(self,label=' Set Stride:'),0,WACV)
-            numbs = [str(i+1) for i in range(10)]
+            numbs = [str(i+1) for i in range(9)]+[str(2*i+10) for i in range(6)]
             self.stride = wx.ComboBox(self,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)
             tSizer.Add(self.stride,0,WACV)

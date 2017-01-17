@@ -3134,7 +3134,7 @@ class GSASII(wx.Frame):
             while item:
                 name = self.PatternTree.GetItemText(item)
                 if name not in ['Notebook','Controls','Covariance','Constraints',
-                    'Restraints','Phases','Rigid bodies'] or 'Sequential' not in name:
+                    'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
                     if 'PWDR' in name: nItems['PWDR'] += 1
                     if 'SASD' in name: nItems['SASD'] += 1
                     if 'IMG' in name:  nItems['IMG'] += 1

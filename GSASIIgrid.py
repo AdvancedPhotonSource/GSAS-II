@@ -2541,12 +2541,12 @@ class DataFrame(wx.Frame):
         wx.Frame.SendSizeEvent(self)
         self.userReSize = True
         
-    def setSizePosLeft(self,Width):
+    def setSizePosLeft(self,Size):
         '''Place the dataFrame window so that the upper left-hand corner remains in the same place;
         The size is dictated by parameter Width, unless overridden by a previous Phase window resize
         '''
         self.userReSize = False
-        Width = list(Width)
+        Size = list(Size)
         id = self.G2frame.PatternTree.GetSelection()
         try:            #avoid bad tree item on start via gpx file selection 
             pid = self.G2frame.PatternTree.GetItemParent(id)
@@ -2556,22 +2556,22 @@ class DataFrame(wx.Frame):
             parent = self.G2frame.PatternTree.GetItemText(pid)
             # is this a phase window and has a previous window has been resized?
             if self.manualPhaseSize and parent == "Phases":
-                Width = list(self.manualPhaseSize)
+                Size = list(self.manualPhaseSize)
         Pos = self.GetPosition()
         clientSize = wx.ClientDisplayRect()     #display window size (e.g. 1304x768)
-        Width[1] = min(Width[1],clientSize[2]-300)
-        Width[0] = max(Width[0],300)
+        Size[1] = min(Size[1],clientSize[2]-300)
+        Size[0] = max(Size[0],300)
 #        print 'current position/width:',Pos,Width
-        self.SetSize(Width)
+        self.SetSize(Size)
         if self.lastSize[0]:
-            Pos[0] += self.lastSize[0]-Width[0]
+            Pos[0] += self.lastSize[0]-Size[0]
         offSet = 0
         if Pos[0] < clientSize[2]:
-            offSet = Pos[0]+Width[0]-clientSize[2]
+            offSet = Pos[0]+Size[0]-clientSize[2]
         if offSet > 0:
             Pos[0] -= offSet
         self.SetPosition(wx.Point(Pos[0],Pos[1]))
-        self.lastSize = Width
+        self.lastSize = Size
         self.userReSize = True
         
     def Clear(self):

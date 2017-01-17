@@ -75,6 +75,8 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.Scroll(0,Scroll)
     Size[1] = min(500,Size[1])
     mainFrame.setSizePosLeft(Size)
+    Size[1] += 1                    #kluge to get correct scrolling!
+    mainFrame.setSizePosLeft(Size)
     
 def FindBondsDraw(data):    
     '''uses numpy & masks - very fast even for proteins!
@@ -3055,6 +3057,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(atomGrid))
                 atomGrid.SetColAttr(c, attr)
+            for row,atom in enumerate(Layer['Atoms']):
+                atomGrid.SetReadOnly(row,1,True)
             atomGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
             atomGrid.AutoSizeColumns(True)
             layerSizer.Add(atomGrid)

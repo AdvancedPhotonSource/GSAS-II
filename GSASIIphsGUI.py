@@ -1720,6 +1720,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for row in range(Atoms.GetNumberRows()):
                 atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
+                Atoms.SetReadOnly(row,colType,True)
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
                 if Atoms.GetCellValue(row,colIA) == 'A':

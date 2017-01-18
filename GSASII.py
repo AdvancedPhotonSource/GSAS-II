@@ -207,14 +207,14 @@ class GSASII(wx.Frame):
             text='Delete phase')
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=item.GetId())
         item = parent.Append(
-            help='',id=wx.ID_ANY,
+            help='Rename the selected data tree item (PWDR, HKLF or IMG)',id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,
-            text='Rename data') 
+            text='Rename tree item') 
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
         item = parent.Append(
-            help='',id=wx.ID_ANY,
+            help='Delete selected data items from data tree',id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,
-            text='Delete data')
+            text='Delete tree items')
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
         expandmenu = wx.Menu()
         item = parent.AppendMenu(

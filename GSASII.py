@@ -159,7 +159,7 @@ class GSASII(wx.Frame):
             help='Create empty new project, saving current is optional', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&New project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
-        item = parent.Append(              #not a good idea - reads all images as each is expanded!
+        item = parent.Append(
             help='Expand all items in GSAS-II data tree',id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Expand all')
         self.Bind(wx.EVT_MENU,self.ExpandAll,id=item.GetId())
@@ -216,7 +216,26 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,
             text='Delete data')
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
-                
+        expandmenu = wx.Menu()
+        item = parent.AppendMenu(
+            wx.ID_ANY, 'Expand tree items', expandmenu, 
+            help='Expand items of type in GSAS-II data tree')
+        for s in 'all','IMG','PWDR','PDF','HKLF','SASD':
+            if s == 'all':
+                help = 'Expand all items in GSAS-II data tree'
+            else:
+                help = 'Expand '+s+' type items in GSAS-II data tree'
+            item = expandmenu.Append(wx.ID_ANY,kind=wx.ITEM_NORMAL,text=s,help=help)
+            self.Bind(wx.EVT_MENU,self.ExpandAll,id=item.GetId())
+        movemenu = wx.Menu()
+        item = parent.AppendMenu(
+            wx.ID_ANY, 'Move tree items', movemenu, 
+            help='Move items of type items to end of GSAS-II data tree')
+        for s in 'IMG','PWDR','PDF','HKLF','SASD','Phase':
+            help = 'Move '+s+' type items to end of GSAS-II data tree'
+            item = movemenu.Append(wx.ID_ANY,kind=wx.ITEM_NORMAL,text=s,help=help)
+            self.Bind(wx.EVT_MENU,self.MoveTreeItems,id=item.GetId())
+
     def _Add_CalculateMenuItems(self,parent):
         item = parent.Append(help='Make new PDFs from selected powder patterns', 
             id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Make new PDFs')
@@ -2422,7 +2441,7 @@ class GSASII(wx.Frame):
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
         self.hist = ''              # selected histogram in Phase/Data tab
-        self.dirname = os.path.expanduser('~')       #start in the users home directory by default; may be meaningless
+        self.dirname = os.path.abspath(os.path.expanduser('~'))       #start in the users home directory by default; may be meaningless
         self.TutorialImportDir = None  # location to read tutorial files, set when a tutorial is viewed
         self.LastImportDir = None # last-used directory where an import was done
         self.LastGPXdir = None    # directory where a GPX file was last read
@@ -2434,7 +2453,7 @@ class GSASII(wx.Frame):
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
-            self.dirname = os.path.dirname(arg[1])
+            self.dirname = os.path.abspath(os.path.dirname(arg[1]))
             if self.dirname: os.chdir(self.dirname)
             try:
                 self.StartProject()         #open the file if possible
@@ -3327,12 +3346,55 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             
     def ExpandAll(self,event):
+        '''Expand all tree items or those of a single type
+        '''
+        txt = self.GetMenuBar().GetLabel(event.Id)
+        if txt == 'all':
+            self.ExpandingAll = True
+            try:
+                self.PatternTree.ExpandAll()
+            finally:
+                self.ExpandingAll = False
+        else:
+            self.ExpandingAll = True
+            try:
+                item, cookie = self.PatternTree.GetFirstChild(self.root)
+                while item:
+                    name = self.PatternTree.GetItemText(item)
+                    if name.startswith(txt+' '): self.PatternTree.Expand(item)
+                    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            finally:
+                self.ExpandingAll = False
+
+    def MoveTreeItems(self,event):
+        '''Move tree items of a single type to the end of the tree
+        '''
+        txt = self.GetMenuBar().GetLabel(event.Id)
+        # make a list of items to copy
+        copyList = []
+        item, cookie = self.PatternTree.GetFirstChild(self.root)
+        while item:
+            if self.PatternTree.GetItemText(item).startswith(txt+' '):
+                copyList.append(item)
+            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        
         self.ExpandingAll = True
         try:
-            self.PatternTree.ExpandAll()
+            for item in copyList:
+                name = self.PatternTree.GetItemText(item)
+                newId = self.PatternTree.AppendItem(self.root,name)
+                self.PatternTree.SetItemPyData(newId,self.PatternTree.GetItemPyData(item))
+                chld, chldcookie = self.PatternTree.GetFirstChild(item)
+                while chld:
+                    chname = self.PatternTree.GetItemText(chld)
+                    newCh = self.PatternTree.AppendItem(newId,chname)
+                    self.PatternTree.SetItemPyData(newCh,self.PatternTree.GetItemPyData(chld))
+                    chld, chldcookie = self.PatternTree.GetNextChild(item, chldcookie)
+                self.PatternTree.Delete(item)
         finally:
             self.ExpandingAll = False
-
+        G2gd.SelectDataTreeItem(self,self.root)
+            
     def ExitMain(self, event):
         '''Called if the main window is closed'''
         if self.G2plotNB:

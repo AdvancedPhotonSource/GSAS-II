@@ -2563,8 +2563,9 @@ class DataFrame(wx.Frame):
         Size[0] = max(Size[0],300)
 #        print 'current position/width:',Pos,Width
         self.SetSize(Size)
-        if self.lastSize[0]:
-            Pos[0] += self.lastSize[0]-Size[0]
+        Size[1] += 1        #kluge to ensure scrollbar settings & window properly displayed
+        self.SetSize(Size)
+        Pos[0] += self.lastSize[0]-Size[0]
         offSet = 0
         if Pos[0] < clientSize[2]:
             offSet = Pos[0]+Size[0]-clientSize[2]

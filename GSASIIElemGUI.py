@@ -40,7 +40,7 @@ class PickElement(wx.Dialog):
         if 'nt' in os.name:
             self.butWid = 40
         self.SetClientSize(wx.Size(50+18*self.butWid, 250))
-        
+        self.Centre()
         i=0
         Elems = ET.ElTable
         if ifMag:

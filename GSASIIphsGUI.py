@@ -75,8 +75,6 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.Scroll(0,Scroll)
     Size[1] = min(500,Size[1])
     mainFrame.setSizePosLeft(Size)
-    Size[1] += 1                    #kluge to get correct scrolling!
-    mainFrame.setSizePosLeft(Size)
     
 def FindBondsDraw(data):    
     '''uses numpy & masks - very fast even for proteins!

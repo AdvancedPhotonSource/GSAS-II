@@ -919,6 +919,7 @@ def UpdateBackground(G2frame,data):
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
 
     def OnBkgFit(event):
+        
         def SetInstParms(Inst):
             dataType = Inst['Type'][0]
             insVary = []
@@ -929,7 +930,8 @@ def UpdateBackground(G2frame,data):
                 insVals.append(Inst[parm][1])
                 if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
                     'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
-                        insVary.append(parm)
+                        Inst[parm][2] = False
+#                        insVary.append(parm)
             instDict = dict(zip(insNames,insVals))
             instDict['X'] = max(instDict['X'],0.01)
             instDict['Y'] = max(instDict['Y'],0.01)
@@ -963,6 +965,7 @@ def UpdateBackground(G2frame,data):
         Z = [0]*len(xdata)
 
         # load instrument and background params
+        print ' NB: Any instrument parameter refinement flags will be cleared'
         dataType,insDict,insVary = SetInstParms(inst)
         bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
         # how many background parameters are refined?
@@ -985,8 +988,8 @@ def UpdateBackground(G2frame,data):
         bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
         parmDict.update(bakDict)
         parmDict.update(insDict)
-        pwddata[3] *= 0
-        pwddata[5] *= 0
+        pwddata[3][xBeg:xFin] *= 0.
+        pwddata[5][xBeg:xFin] *= 0.
         pwddata[4][xBeg:xFin] = G2pwd.getBackground(
             '',parmDict,bakType,dataType,xdata)[0]
         G2plt.PlotPatterns(G2frame,plotType='PWDR')

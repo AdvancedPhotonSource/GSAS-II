@@ -4972,23 +4972,31 @@ def UpdatePDFGrid(G2frame,data):
             print('  No PDFs to compute\n')
             return
         Names = [choices[i] for i in results]
+        pgbar = wx.ProgressDialog('Compute PDF','PDFs done',len(Names)+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         notConverged = 0
         id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while id:
-            Name = G2frame.PatternTree.GetItemText(id)
-            if Name in Names:
-                Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
-                print('  Computing {}'.format(Name))
-                ComputePDF(Data)
-                if od['value_1']:
-                    notConverged += not OptimizePDF(Data,maxCycles=10)
-            id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()
+        N = 0
+        try:
+            while id:
+                Name = G2frame.PatternTree.GetItemText(id)
+                if Name in Names:
+                    N += 1
+                    if not pgbar.Update(N)[0]:
+                        pgbar.Destroy()
+                        break
+                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
+                    print('  Computing {}'.format(Name))
+                    ComputePDF(Data)
+                    if od['value_1']:
+                        notConverged += not OptimizePDF(Data,maxCycles=10)
+                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        finally:
+            pgbar.Destroy()
         if od['value_1']:
-            msg = '{} PDFs computed; {} unconverged'.format(len(Names),notConverged)
+            msg = '{}/{} PDFs computed; {} unconverged'.format(N,len(Names),notConverged)
         else:
-            msg = '{} PDFs computed'.format(len(Names))
+            msg = '{}/{} PDFs computed'.format(N,len(Names))
         G2frame.dataFrame.GetStatusBar().SetStatusText(msg)
         print(msg)
         # what item is being plotted? -- might be better to select from tree

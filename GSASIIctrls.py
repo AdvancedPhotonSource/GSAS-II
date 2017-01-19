@@ -1380,17 +1380,17 @@ class G2MultiChoiceDialog(wx.Dialog):
         # set/toggle buttons
         if toggle:
             tSizer = wx.FlexGridSizer(cols=2,hgap=5,vgap=5)
+            tSizer.Add(wx.StaticText(self,label=' Set Stride:'),0,WACV)
+            numbs = [str(i+1) for i in range(9)]+[str(2*i+10) for i in range(6)]
+            self.stride = wx.ComboBox(self,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)
+            tSizer.Add(self.stride,0,WACV)
             setBut = wx.Button(self,wx.ID_ANY,'Set All')
             setBut.Bind(wx.EVT_BUTTON,self._SetAll)
             tSizer.Add(setBut)
             togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
             togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
             tSizer.Add(togBut)
-            tSizer.Add(wx.StaticText(self,label=' Set Stride:'),0,WACV)
-            numbs = [str(i+1) for i in range(9)]+[str(2*i+10) for i in range(6)]
-            self.stride = wx.ComboBox(self,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)
-            tSizer.Add(self.stride,0,WACV)
             self.rangeBut = wx.ToggleButton(self,wx.ID_ANY,'Set Range')
             self.rangeBut.Bind(wx.EVT_TOGGLEBUTTON,self.SetRange)
             tSizer.Add(self.rangeBut)

@@ -2395,7 +2395,6 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
                 else:
                     G2frame.PDFselections = None
             dlg.Destroy()
-            newPlot = True
         elif event.key == 's':
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
@@ -2543,6 +2542,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         Plot.set_xlim(Xmin-dx,Xmax+dx)
         Plot.set_ylim(Ymin-dy,Ymax+dy)
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        wx.BeginBusyCursor()
         if XYlist.shape[0]>1:
             if G2frame.Waterfall:
                 for xylist in XYlist:            
@@ -2555,7 +2555,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
                     line.set_array(colorRange)
                     Plot.add_collection(line)
                 axcb = Page.figure.colorbar(line)
-                axcb.set_label('Intensity')
+                axcb.set_label(plotType)
             else:   #ok
                 lines = mplC.LineCollection(XYlist,cmap=acolor)
                 lines.set_array(np.arange(XYlist.shape[0]))
@@ -2574,6 +2574,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             else:   #ok
                 line = mplC.LineCollection(XYlist,color=colors[0])
                 Plot.add_collection(line)
+        wx.EndBusyCursor()
         if plotType == 'G(R)':
             Xb = [0.,2.5]
             Yb = [0.,-10.*np.pi*numbDen]

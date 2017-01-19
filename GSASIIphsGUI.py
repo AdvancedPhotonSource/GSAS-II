@@ -385,6 +385,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
+                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitLayers, id=G2gd.wxID_LAYERSFIT)                        
                         if 'Wave Data' in pages:
                             pass
 #                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
@@ -2736,7 +2737,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
         transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-            [wg.GRID_VALUE_CHOICE+": ,P,Dx,Dy,Dz",wg.GRID_VALUE_BOOL,]
+            [wg.GRID_VALUE_CHOICE+": ,P,Dx,Dy,Dz,Dxy,Dxz,Dyz,Dxyz",wg.GRID_VALUE_BOOL,]
         plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
             'viewPoint':[[0.,0.,0.],[]],}
         Indx = {}
@@ -3489,6 +3490,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2pwd.CalcStackingSADP(data['Layers'],debug)
         wx.MessageBox('Simulation finished',caption='Stacking fault simulation',style=wx.ICON_EXCLAMATION)
         wx.CallAfter(UpdateLayerData)
+        
+    def OnFitLayers(event):
+        print ' fit stacking fault model TBD'
+        import scipy.optimize as opt
+        wx.BeginBusyCursor()
+#        Min,Init,Done = SetupPDFEval()
+#        xstart = Init()
+#        rms = Min(xstart)
+#        print('Optimizing corrections to improve G(r) at low r')
+#        print('start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})'.format(
+#                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+#        
+#        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+#                           method='L-BFGS-B',options={'maxiter':5})
+#        Done(res['x'])      
+#        print('end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})\n'.format(
+#                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']))
+        wx.EndBusyCursor()
+        wx.CallAfter(UpdateLayerData)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnSeqSimulate(event):
         
@@ -7996,6 +8017,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2gd.wxID_COPYPHASE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitLayers, id=G2gd.wxID_LAYERSFIT)                        
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)

@@ -2416,6 +2416,7 @@ class GSASII(wx.Frame):
         self.Contour = False
         self.Legend = False
         self.SinglePlot = True
+        self.Waterfall = False
         self.selections= None
         self.PDFselections = None
         self.SubBack = False

@@ -42,6 +42,7 @@ import pytexture as ptx
 import OpenGL.GL as GL
 import OpenGL.GLU as GLU
 import gltext
+import matplotlib.colors as mpcls
 from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
@@ -2379,6 +2380,8 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             if G2frame.Contour:
                 G2frame.SinglePlot = False
                 Page.Offset = [0.,0.]
+        elif not G2frame.Contour and event.key == 'w':
+            G2frame.Waterfall = not G2frame.Waterfall
         elif event.key == 'f' and not G2frame.SinglePlot:
             choices = G2gd.GetPatternTreeDataNames(G2frame,'PDF ')
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select dataset to plot', 
@@ -2449,7 +2452,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             'i: interpolation method','s: color scheme','c: contour off','f: select data')
     else:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
-            'o: reset offset','t: toggle legend','c: contour on',
+            'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
             'm: toggle multiplot','s: color scheme','f: select data' )
     Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
@@ -2535,17 +2538,42 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         dx = 0.02*(Xmax-Xmin)
         Ymin = np.amin(XYlist.T[1])
         Ymax = np.amax(XYlist.T[1])
+        normcl = mpcls.Normalize(Ymin,Ymax)
         dy = 0.02*(Ymax-Ymin)
         Plot.set_xlim(Xmin-dx,Xmax+dx)
         Plot.set_ylim(Ymin-dy,Ymax+dy)
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        if XYlist.shape[0]>1:            
-            colorRange = np.arange(XYlist.shape[0])
-            lines = mplC.LineCollection(XYlist,cmap=acolor)
-            lines.set_array(colorRange)
+        if XYlist.shape[0]>1:
+            if G2frame.Waterfall:
+                for xylist in XYlist:            
+                    ymin = np.amin(xylist.T[1])
+                    ymax = np.amax(xylist.T[1])
+                    normcl = mpcls.Normalize(ymin,ymax)
+                    colorRange = xylist.T[1]
+                    segs = np.reshape(np.hstack((xylist[:-1],xylist[1:])),(-1,2,2))
+                    line = mplC.LineCollection(segs,cmap=acolor,norm=normcl)
+                    line.set_array(colorRange)
+                    Plot.add_collection(line)
+                axcb = Page.figure.colorbar(line)
+                axcb.set_label('Intensity')
+            else:   #ok
+                lines = mplC.LineCollection(XYlist,cmap=acolor)
+                lines.set_array(np.arange(XYlist.shape[0]))
+                Plot.add_collection(lines)
+                axcb = Page.figure.colorbar(lines)
+                axcb.set_label('PDF number')
         else:
-            lines = mplC.LineCollection(XYlist,color=colors[0])
-        Plot.add_collection(lines)
+            if G2frame.Waterfall:
+                colorRange = XYlist[0].T[1]
+                segs = np.reshape(np.hstack((XYlist[0][:-1],XYlist[0][1:])),(-1,2,2))
+                line = mplC.LineCollection(segs,cmap=acolor,norm=normcl)
+                line.set_array(colorRange)
+                Plot.add_collection(line)
+                axcb = Page.figure.colorbar(line)
+                axcb.set_label('Intensity')
+            else:   #ok
+                line = mplC.LineCollection(XYlist,color=colors[0])
+                Plot.add_collection(line)
         if plotType == 'G(R)':
             Xb = [0.,2.5]
             Yb = [0.,-10.*np.pi*numbDen]
@@ -2554,9 +2582,6 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             Plot.axhline(0.,color=wx.BLACK)
         elif plotType == 'S(Q)':
             Plot.axhline(1.,color=wx.BLACK)
-        if XYlist.shape[0] > 1:
-            axcb = Page.figure.colorbar(lines)
-            axcb.set_label('PDF number')
         
 #    elif G2frame.Legend:
 #        Plot.legend(loc='best')

@@ -4806,25 +4806,40 @@ def UpdatePDFGrid(G2frame,data):
         "intensity" from portion of G(r) with r<Rmin.
         Invoked by Optimize PDF button and from menu command.
         '''
-        import scipy.optimize as opt
         wx.BeginBusyCursor()
-        Min,Init,Done = SetupPDFEval()
-        xstart = Init()
-        rms = Min(xstart)
-        print('Optimizing corrections to improve G(r) at low r')
-        print('start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-        
-        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
-                           method='L-BFGS-B',options={'maxiter':5})
-        Done(res['x'])      
-        print('end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})\n'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']))
-        wx.EndBusyCursor()
+        try:
+            OptimizePDF(data)
+        finally:
+            wx.EndBusyCursor()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
         OnComputePDF(event)
         
-    def SetupPDFEval():
+    def OptimizePDF(data,showFit=True,maxCycles=5):
+        import scipy.optimize as opt
+        Min,Init,Done = SetupPDFEval(data)
+        xstart = Init()
+        if showFit:
+            rms = Min(xstart)
+            print('  Optimizing corrections to improve G(r) at low r')
+            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+        
+        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+                            method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+        Done(res['x'])
+        if showFit:
+            #print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+            #    data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']),
+            #    end='')
+            print '  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']),
+            if res['success']:
+                print(' *** Converged ***\n')
+            else:
+                print(' *** not converged ***\n')
+        return res['success']
+
+    def SetupPDFEval(data):
         '''Create functions needed to optimize the PDF at low r
         '''
         if not data['ElList']:
@@ -4851,15 +4866,12 @@ def UpdatePDFGrid(G2frame,data):
             Data['Flat Bkg'] = F*BkgMax
             Data['BackRatio'] = B
             Data['Ruland'] = R/10.
-            #for key in 'Flat Bkg','BackRatio','Ruland':
-            #    print key,Data[key],'; ',
             G2pwd.CalcPDF(Data,inst,limits,xydata)
             # test low r computation
             g = xydata['GofR'][1][1]
             r = xydata['GofR'][1][0]
             g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-            #print ' Res=',sum(g0**2)
-            return sum(g0**2)
+            return sum(g0**2)/len(g0)
         def GetCurrentVals():
             '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
             '''
@@ -4931,26 +4943,59 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnComputeAllPDF(event):
-        print 'Calculating PDFs:'
+        print('Calculating PDFs...')
+        choices = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 Name = G2frame.PatternTree.GetItemText(id)
-                if 'PDF' in Name.split()[0]:
+                if Name.startswith('PDF '):
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
                     if not Data['ElList']:
-                        G2frame.ErrorDialog('PDF error','Chemical formula not defined for \n'+Name)
-                        return
-                    ComputePDF(Data)                    
+                        print('  No chemical formula for {}'.format(Name))
+                    else:
+                        choices.append(Name)
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if not G2frame.dataFrame.GetStatusBar():
-                Status = G2frame.dataFrame.CreateStatusBar()
-                Status.SetStatusText('All PDFs computed')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
-            print ' Done calculating PDFs:'
+        if not choices:
+            print('  No PDFs to compute\n')
+            return
+        od = {'label_1':'Optimize PDFs','value_1':True}
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame, 'Select PDFs to compute','Select PDFs',
+            choices,extraOpts=od)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                results = dlg.GetSelections()
+        finally:
+            dlg.Destroy()
+        if not results:
+            print('  No PDFs to compute\n')
+            return
+        Names = [choices[i] for i in results]
+        notConverged = 0
+        id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while id:
+            Name = G2frame.PatternTree.GetItemText(id)
+            if Name in Names:
+                Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
+                print('  Computing {}'.format(Name))
+                ComputePDF(Data)
+                if od['value_1']:
+                    notConverged += not OptimizePDF(Data,maxCycles=10)
+            id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()
+        if od['value_1']:
+            msg = '{} PDFs computed; {} unconverged'.format(len(Names),notConverged)
+        else:
+            msg = '{} PDFs computed'.format(len(Names))
+        G2frame.dataFrame.GetStatusBar().SetStatusText(msg)
+        print(msg)
+        # what item is being plotted? -- might be better to select from tree
+        G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
+        G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
 
     # Routine UpdatePDFGrid starts here
     global inst
@@ -5001,7 +5046,7 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnOptimizePDF, id=G2gd.wxID_PDFOPT)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnOptimizePDF, id=G2gd.wxID_PDFOPT)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     ElList = data['ElList']
@@ -5154,4 +5199,4 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
     G2frame.dataFrame.setSizePosLeft(Size)
-    
+#    G2frame.dataFrame.SendSizeEvent()  # for Mac, but not needed due to Bob's size+1 change in setSizePosLeft

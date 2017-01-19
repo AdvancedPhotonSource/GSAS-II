@@ -1320,15 +1320,18 @@ class G2MultiChoiceDialog(wx.Dialog):
       if True use a equally-spaced font.
     :param bool filterBox: If True (default) an input widget is placed on
       the window and only entries matching the entered text are shown.
+    :param dict extraOpts: a dict containing a entries of form label_i and value_i with extra
+      options to present to the user, where value_i is the default value. At present only bool
+      values are supported.
     :param kw: optional keyword parameters for the wx.Dialog may
       be included such as size [which defaults to `(320,310)`] and
       style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
-      note that `wx.OK` and `wx.CANCEL` controls
+      note that `wx.OK` and `wx.CANCEL` style items control 
       the presence of the eponymous buttons in the dialog.
     :returns: the name of the created dialog  
     '''
     def __init__(self,parent, title, header, ChoiceList, toggle=True,
-                 monoFont=False, filterBox=True, **kw):
+                 monoFont=False, filterBox=True, extraOpts={}, **kw):
         # process keyword parameters, notably style
         options = {'size':(320,310), # default Frame keywords
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
@@ -1394,14 +1397,32 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.rangeCapt = wx.StaticText(self,wx.ID_ANY,'')
             tSizer.Add(self.rangeCapt)
             Sizer.Add(tSizer,0,wx.LEFT,12)
+        # Extra widgets
+        Sizer.Add((-1,5),0,wx.LEFT,0)
+        bSizer = wx.BoxSizer(wx.VERTICAL)
+        for lbl in sorted(extraOpts.keys()):
+            if not lbl.startswith('label'): continue
+            key = lbl.replace('label','value')
+            if key not in extraOpts: continue
+            eSizer = wx.BoxSizer(wx.HORIZONTAL)
+            if type(extraOpts[key]) is bool:
+                eSizer.Add(G2CheckBox(self,extraOpts[lbl],extraOpts,key))
+            else:
+                eSizer.Add(wx.StaticText(self,wx.ID_ANY,extraOpts[lbl]))
+                eSizer.Add(ValidatedTxtCtrl(self,extraOpts,key))
+            bSizer.Add(eSizer,0,wx.LEFT,0)
+        Sizer.Add(bSizer,0,wx.CENTER,0)
+        Sizer.Add((-1,5),0,wx.LEFT,0)
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
         if useOK:
             self.OKbtn = wx.Button(self, wx.ID_OK)
             self.OKbtn.SetDefault()
             btnsizer.AddButton(self.OKbtn)
+            self.OKbtn.Bind(wx.EVT_BUTTON,self.onOk)
         if useCANCEL:
             btn = wx.Button(self, wx.ID_CANCEL)
+            btn.Bind(wx.EVT_BUTTON,self.onCancel)
             btnsizer.AddButton(btn)
         btnsizer.Realize()
         Sizer.Add((-1,5))
@@ -1409,7 +1430,18 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add((-1,20))
         # OK done, let's get outa here
         self.SetSizer(Sizer)
+        Sizer.Fit(self)
         self.CenterOnParent()
+        
+    def onOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def onCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
         
     def OnStride(self,event):
         self.Stride = int(self.stride.GetValue())
@@ -4243,29 +4275,29 @@ if __name__ == '__main__':
     #======================================================================
     # test Grid with GridFractionEditor
     #======================================================================
-    tbl = [[1.,2.,3.],[1.1,2.1,3.1]]
-    colTypes = 3*[wg.GRID_VALUE_FLOAT+':10,5',]
-    Gtbl = Table(tbl,types=colTypes,rowLabels=['a','b'],colLabels=['1','2','3'])
-    Grid = GSGrid(frm)
-    Grid.SetTable(Gtbl,True)
-    for i in (0,1,2):
-        attr = wx.grid.GridCellAttr()
-        attr.IncRef()
-        attr.SetEditor(GridFractionEditor(Grid))
-        Grid.SetColAttr(i, attr)
-    frm.SetSize((400,200))
-    app.MainLoop()
-    sys.exit()
+    # tbl = [[1.,2.,3.],[1.1,2.1,3.1]]
+    # colTypes = 3*[wg.GRID_VALUE_FLOAT+':10,5',]
+    # Gtbl = Table(tbl,types=colTypes,rowLabels=['a','b'],colLabels=['1','2','3'])
+    # Grid = GSGrid(frm)
+    # Grid.SetTable(Gtbl,True)
+    # for i in (0,1,2):
+    #     attr = wx.grid.GridCellAttr()
+    #     attr.IncRef()
+    #     attr.SetEditor(GridFractionEditor(Grid))
+    #     Grid.SetColAttr(i, attr)
+    # frm.SetSize((400,200))
+    # app.MainLoop()
+    # sys.exit()
     #======================================================================
     # test Tutorial access
     #======================================================================
-    dlg = OpenTutorial(frm)
-    if dlg.ShowModal() == wx.ID_OK:
-        print "OK"
-    else:
-        print "Cancel"
-    dlg.Destroy()
-    sys.exit()
+    # dlg = OpenTutorial(frm)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print "OK"
+    # else:
+    #     print "Cancel"
+    # dlg.Destroy()
+    # sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================
@@ -4355,16 +4387,29 @@ if __name__ == '__main__':
     choices = []
     for i in range(21):
         choices.append("option_"+str(i))
+    od = {
+        'label_1':'This is a bool','value_1':True,
+        'label_2':'This is a int','value_2':-1,
+        'label_3':'This is a float','value_3':1.0,
+        'label_4':'This is a string','value_4':'test',}
     dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
                               'Select dataset to include',
-                              choices)
+                              choices,extraOpts=od)
     sel = range(2,11,2)
     dlg.SetSelections(sel)
     dlg.SetSelections((1,5))
     if dlg.ShowModal() == wx.ID_OK:
         for sel in dlg.GetSelections():
             print sel,choices[sel]
-    
+    print od
+    od = {}
+    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+                              'Select dataset to include',
+                              choices,extraOpts=od)
+    sel = range(2,11,2)
+    dlg.SetSelections(sel)
+    dlg.SetSelections((1,5))
+    if dlg.ShowModal() == wx.ID_OK: pass
     #======================================================================
     # test wx.MultiChoiceDialog
     #======================================================================

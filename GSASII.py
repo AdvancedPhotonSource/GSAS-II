@@ -237,10 +237,9 @@ class GSASII(wx.Frame):
             self.Bind(wx.EVT_MENU,self.MoveTreeItems,id=item.GetId())
 
     def _Add_CalculateMenuItems(self,parent):
-        item = parent.Append(help='Make new PDFs from selected powder patterns', 
-            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Make new PDFs')
+        item = parent.Append(help='Create PDF tree entries for selected powder patterns', 
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Setup PDFs')
         self.MakePDF.append(item)
-#        item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
         item = parent.Append(help='View least squares parameters', 

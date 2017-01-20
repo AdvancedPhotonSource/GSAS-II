@@ -1639,7 +1639,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                     else:
                         peak[2*j] = G2mth.getTOFgamma(parmDict,dsp)
                         
-    def PeaksPrint(dataType,parmDict,sigDict,varyList):
+    def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
         print 'Peak coefficients:'
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
@@ -1651,6 +1651,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                 head += name.center(8)+'esd'.center(8)
             else:
                 head += name.center(10)+'esd'.center(10)
+        head += 'bins'.center(8)
         print head
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
@@ -1669,6 +1670,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                         ptstr += 8*' '
                     else:
                         ptstr += 10*' '
+            ptstr += '%9.2f'%(ptsperFW[i])
             print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
                 
     def devPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):
@@ -1695,6 +1697,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     yc *= 0.                            #set calcd ones to zero
     yb *= 0.
     yd *= 0.
+    cw = x[1:]-x[:-1]
     xBeg = np.searchsorted(x,Limits[0])
     xFin = np.searchsorted(x,Limits[1])
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
@@ -1755,8 +1758,21 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     if bakVary: BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)
     if insVary: InstPrint(Inst,sigDict)
-    GetPeaksParms(Inst,parmDict,Peaks,varyList)    
-    if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList)
+    GetPeaksParms(Inst,parmDict,Peaks,varyList)
+    binsperFWHM = []
+    for peak in Peaks:
+        FWHM = getFWHM(peak[0],Inst)
+        try:
+            binsperFWHM.append(FWHM/cw[x.searchsorted(peak[0])])
+        except IndexError:
+            binsperFWHM.append(0.)
+    if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
+    if min(binsperFWHM) < 3.:
+        print '*** Warning: calculated peak widths are too narrow to refine profile coefficients ***'
+        if 'T' in Inst['Type'][0]:
+            print ' Manually increase sig-0, 1, or 2 in Instrument Parameters'
+        else:
+            print ' Manually increase W in Instrument Parameters'
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
 
 def calcIncident(Iparm,xdata):

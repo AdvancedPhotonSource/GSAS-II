@@ -1380,7 +1380,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         # set/toggle buttons
         if toggle:
             tSizer = wx.FlexGridSizer(cols=2,hgap=5,vgap=5)
-            tSizer.Add(wx.StaticText(self,label=' Set Stride:'),0,WACV)
+            tSizer.Add(wx.StaticText(self,label=' Apply stride:'),0,WACV)
             numbs = [str(i+1) for i in range(9)]+[str(2*i+10) for i in range(6)]
             self.stride = wx.ComboBox(self,value='1',choices=numbs,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             self.stride.Bind(wx.EVT_COMBOBOX,self.OnStride)

@@ -548,11 +548,11 @@ def UpdatePeakGrid(G2frame, data):
         if Reverse:
             names.reverse()
         try:
-            wx.BeginBusyCursor()
             for i,name in enumerate(names):
                 print ' Sequential fit for ',name
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
+                    dlg.Destroy()
                     break
                 PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
@@ -576,6 +576,7 @@ def UpdatePeakGrid(G2frame, data):
                 finally:
                     dlg2.Destroy()
                 if len(result[0]) != len(fullvaryList):
+                    dlg.Destroy()
                     print ' ***** Sequential peak fit stopped at '+name+' *****'
                     break
                 else:
@@ -587,7 +588,6 @@ def UpdatePeakGrid(G2frame, data):
             print ' ***** Sequential peak fit successful *****'
         finally:
             dlg.Destroy()
-            wx.EndBusyCursor()
         if Reverse:
             Names.reverse()
         SeqResult['histNames'] = Names
@@ -624,7 +624,6 @@ def UpdatePeakGrid(G2frame, data):
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        wx.BeginBusyCursor()
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -636,7 +635,6 @@ def UpdatePeakGrid(G2frame, data):
             peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
         finally:
             print 'finished'
-            wx.EndBusyCursor()
             dlg.Destroy()    
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
         UpdatePeakGrid(G2frame,copy.copy(peaks))
@@ -1241,8 +1239,14 @@ def UpdateBackground(G2frame,data):
 def UpdateLimitsGrid(G2frame, data,plottype):
     '''respond to selection of PWDR Limits data tree item.
     '''
+    def AfterChange(invalid,value,tc):
+        if invalid: return
+        plottype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
+#        print 'new plot'
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
+
     def LimitSizer():
-        limits = wx.FlexGridSizer(2,3,0,5)
+        limits = wx.FlexGridSizer(0,3,0,5)
         labels = ['Tmin','Tmax']
         for i in [0,1]:
             limits.Add(wx.StaticText(G2frame.dataDisplay,label=' Original %s: %.4f'%(labels[0],data[0][i])),0,WACV)
@@ -1251,12 +1255,6 @@ def UpdateLimitsGrid(G2frame, data,plottype):
                 min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
         return limits
         
-    def AfterChange(invalid,value,tc):
-        if invalid: return
-        plottype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
-#        print 'new plot'
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
-
     def ExclSizer():
         
         def OnDelExcl(event):
@@ -1281,6 +1279,10 @@ def UpdateLimitsGrid(G2frame, data,plottype):
             excl.Add(delExcl,0,WACV)
         return excl
                
+    def OnAddExcl(event):
+        G2frame.ifGetExclude = True
+        print 'Add excluded region'
+        
     def OnLimitCopy(event):
         hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
@@ -1301,22 +1303,17 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         finally:
             dlg.Destroy()
             
-    def OnAddExcl(event):
-        G2frame.ifGetExclude = True
-        print 'Add excluded region'
-        
     def Draw():
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(LimitSizer())
         if len(data)>2:
-            mainSizer.Add((0,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.dataFrame,label=' Excluded regions:'),0,WACV)
+#            mainSizer.Add((0,5),0)
+            mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Excluded regions:'),0,WACV)
             mainSizer.Add(ExclSizer())
         mainSizer.Layout()    
         G2frame.dataDisplay.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         G2frame.dataFrame.setSizePosLeft(Size)
-        
         
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()

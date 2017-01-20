@@ -2980,6 +2980,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         try:
             OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
+            if not OK:
+                dlg.Destroy()
         finally:
             dlg.Destroy()
         cells = keepcells+newcells
@@ -3288,6 +3290,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
+    Size[1] = min(600,Size[1])
     G2frame.dataFrame.setSizePosLeft(Size)    
     
 ################################################################################

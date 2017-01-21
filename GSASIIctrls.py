@@ -3294,9 +3294,11 @@ For DIFFaX use cite:
         dlg.Destroy()
         try:
             self.frame.OnFileSave(event)
+            GPX = self.frame.GSASprojectfile
         except AttributeError:
             self.frame.G2frame.OnFileSave(event)
-        GSASIIpath.svnUpdateProcess(projectfile=self.frame.GSASprojectfile)
+            GPX = self.frame.G2frame.GSASprojectfile
+        GSASIIpath.svnUpdateProcess(projectfile=GPX)
         return
 
     def OnSelectVersion(self,event):
@@ -3353,14 +3355,13 @@ For DIFFaX use cite:
             return
         dlg.Destroy()
         print('start regress to '+str(ver))
-        GSASIIpath.svnUpdateProcess(
-            projectfile=self.frame.GSASprojectfile,
-            version=str(ver)
-            )
         try:
             self.frame.OnFileSave(event)
+            GPX = self.frame.GSASprojectfile
         except AttributeError:
             self.frame.G2frame.OnFileSave(event)
+            GPX = self.frame.G2frame.GSASprojectfile
+        GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
         return
 
 ################################################################################

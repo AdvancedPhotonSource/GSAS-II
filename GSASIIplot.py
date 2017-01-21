@@ -2153,6 +2153,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                 Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
                             else:
                                 Lines.append(Plot.axvline(item[0],color=colors[Ni%6],picker=2.))
+                            if Ni == N+1:
+                                Lines[-1].set_lw(Lines[-1].get_lw()+1)
                     if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
                         tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                         Page.canvas.SetToolTipString(tip)

@@ -497,12 +497,18 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataFrame.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
+        if G2frame.dataDisplay.IsCellEditControlEnabled(): # complete any grid edits in progress
+            G2frame.dataDisplay.HideCellEditControl()
+            G2frame.dataDisplay.DisableCellEditControl()
         if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can write in the same directory
             G2frame.OnFileSaveas(event)
-        OnPeakFit('LSQ')
+        wx.CallAfter(OnPeakFit,'LSQ')
         
     def OnOneCycle(event):
-        OnPeakFit('LSQ',oneCycle=True)
+        if G2frame.dataDisplay.IsCellEditControlEnabled(): # complete any grid edits in progress
+            G2frame.dataDisplay.HideCellEditControl()
+            G2frame.dataDisplay.DisableCellEditControl()
+        wx.CallAfter(OnPeakFit,'LSQ',oneCycle=True)
         
     def OnSeqPeakFit(event):
         hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
@@ -635,10 +641,11 @@ def UpdatePeakGrid(G2frame, data):
             peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
         finally:
             print 'finished'
-            dlg.Destroy()    
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
-        UpdatePeakGrid(G2frame,copy.copy(peaks))
+            dlg.Destroy()
+        newpeaks = copy.copy(peaks)
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         return
         
     def OnResetSigGam(event):
@@ -676,6 +683,9 @@ def UpdatePeakGrid(G2frame, data):
                        G2frame.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
                                                   
     def KeyEditPeakGrid(event):
+        '''Respond to pressing a key to act on selection of a row, column or cell
+        in the Peak List table
+        '''
         rowList = G2frame.dataDisplay.GetSelectedRows()
         colList = G2frame.dataDisplay.GetSelectedCols()
         selectList = G2frame.dataDisplay.GetSelectedCells()
@@ -686,26 +696,25 @@ def UpdatePeakGrid(G2frame, data):
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_SHIFT:
             event.Skip(True)
-        elif rowList:
+        elif rowList and (event.GetKeyCode() == wx.WXK_DELETE or event.GetKeyCode() == 8):
+            # pressing the delete key or backspace deletes selected peak(s)
             G2frame.dataDisplay.ClearSelection()
-            if event.GetKeyCode() == wx.WXK_DELETE:
-                G2frame.dataDisplay.ClearGrid()
-                rowList.sort()
-                rowList.reverse()
-                nDel = 0
-                for row in rowList:
-                    G2frame.PeakTable.DeleteRow(row)
-                    nDel += 1
-                if nDel:
-                    msg = wg.GridTableMessage(G2frame.PeakTable, 
-                        wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
-                    G2frame.dataDisplay.ProcessTableMessage(msg)
-                data['peaks'] = G2frame.PeakTable.GetData()[:-nDel]
-                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
-                G2frame.dataDisplay.ForceRefresh()
-                setBackgroundColors()
-                        
-        elif colList:
+            G2frame.dataDisplay.ClearGrid()
+            rowList.sort()
+            rowList.reverse()
+            nDel = 0
+            for row in rowList:
+                G2frame.PeakTable.DeleteRow(row)
+                nDel += 1
+            if nDel:
+                msg = wg.GridTableMessage(G2frame.PeakTable, 
+                    wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
+                G2frame.dataDisplay.ProcessTableMessage(msg)
+            data['peaks'] = G2frame.PeakTable.GetData()[:-nDel]
+            G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
+            wx.CallAfter(G2frame.dataDisplay.ForceRefresh)
+            setBackgroundColors()
+        elif colList and (event.GetKeyCode() == 89 or event.GetKeyCode() == 78):
             G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
@@ -714,7 +723,7 @@ def UpdatePeakGrid(G2frame, data):
                         for row in range(G2frame.PeakTable.GetNumberRows()): data['peaks'][row][col]=True
                     elif key == 78:  #'N'
                         for row in range(G2frame.PeakTable.GetNumberRows()): data['peaks'][row][col]=False
-        elif selectList:
+        elif selectList and (event.GetKeyCode() == 89 or event.GetKeyCode() == 78):
             G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for row,col in selectList:
@@ -723,7 +732,12 @@ def UpdatePeakGrid(G2frame, data):
                         data['peaks'][row][col]=True
                     elif key == 78:  #'N'
                         data['peaks'][row][col]=False
+        else:
+            event.Skip()
+            return
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        #wx.CallAfter(G2frame.dataDisplay.ForceRefresh) # did not always work
+        wx.CallAfter(UpdatePeakGrid,G2frame,data)
             
     def SelectVars(rows):
         '''Set or clear peak refinement variables for peaks listed in rows
@@ -763,12 +777,45 @@ def UpdatePeakGrid(G2frame, data):
         '''
         SelectVars(range(G2frame.dataDisplay.GetNumberRows()))
 
-    def onSelectedRow(event):
+    def onCellListSClick(event):
         '''Called when a peak is selected so that it can be highlighted in the plot
         '''
         event.Skip()
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
-                           
+        r,c =  event.GetRow(),event.GetCol()
+        if c < 0: # replot except whan a column is selected
+            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+        
+    def onCellListDClick(event):
+        '''Called after a double-click on a cell label'''
+        r,c =  event.GetRow(),event.GetCol()
+        grid = G2frame.dataDisplay
+        if r < 0 and c < 0:
+            for row in range(grid.GetNumberRows()):
+                grid.SelectRow(row,True)                    
+            for col in range(grid.GetNumberCols()):
+                grid.SelectCol(col,True)                    
+        elif r > 0:     #row label: select it and replot!
+            grid.ClearSelection()
+            grid.SelectRow(r,True)
+            wx.CallAfter(G2frame.dataDisplay.ForceRefresh)
+            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+        elif c > 0:     #column label: just select it (& redisplay)
+            grid.ClearSelection()
+            grid.SelectCol(c,True)
+            if grid.GetColLabelValue(c) != 'refine': return
+            choice = ['Y - vary all','N - vary none',]
+            dlg = wx.SingleChoiceDialog(G2frame.dataFrame,
+                                        'Select refinement option for '+grid.GetColLabelValue(c-1),
+                                        'Refinement controls',choice)
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                if sel == 0:
+                    for row in range(grid.GetNumberRows()): data['peaks'][row][c]=True
+                else:
+                    for row in range(grid.GetNumberRows()): data['peaks'][row][c]=False
+            wx.CallAfter(UpdatePeakGrid,G2frame,data)
+                 
     #======================================================================
     # beginning of UpdatePeakGrid init
     #======================================================================
@@ -836,12 +883,14 @@ def UpdatePeakGrid(G2frame, data):
     setBackgroundColors()                         
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onSelectedRow)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onSelectedRow)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onCellListSClick)
+#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onCellListSClick)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
+#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([535,350])
-    G2frame.dataFrame.SendSizeEvent()
+    #G2frame.dataFrame.SendSizeEvent()
 
 ################################################################################
 #####  Background

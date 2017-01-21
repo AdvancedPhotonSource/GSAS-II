@@ -1767,7 +1767,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         except IndexError:
             binsperFWHM.append(0.)
     if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
-    if min(binsperFWHM) < 3.:
+    if len(binsperFWHM) and min(binsperFWHM) < 3.:
         print '*** Warning: calculated peak widths are too narrow to refine profile coefficients ***'
         if 'T' in Inst['Type'][0]:
             print ' Manually increase sig-0, 1, or 2 in Instrument Parameters'

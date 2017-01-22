@@ -878,6 +878,7 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
     G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Peak List')
+    G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
     setBackgroundColors()                         
@@ -903,6 +904,7 @@ def UpdateBackground(G2frame,data):
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:
         data[1].update({'nPeaks':0,'peaksList':[]})
+    G2frame.dataFrame.currentGrids = []
     
     def OnBackFlagCopy(event):
         flag = data[0][1]
@@ -1238,6 +1240,7 @@ def UpdateBackground(G2frame,data):
         topSizer.Add(peaks,0,WACV)
         topSizer.Add((5,0),0)
         peaksSizer.Add(topSizer)
+        G2frame.dataFrame.currentGrids = []
         if data[1]['nPeaks']:
             peaksSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peak list:'),0,WACV)       
             rowLabels = []
@@ -2620,6 +2623,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.PatternTree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Index Peak List')
+    G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)                
     G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
     XY = []
@@ -3299,6 +3303,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssSizer.Add(findMV,0,WACV)
         mainSizer.Add(ssSizer,0)
 
+    G2frame.dataFrame.currentGrids = []
     if cells:
         mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='\n Indexing Result:'),0,WACV)
         rowLabels = []
@@ -3586,6 +3591,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             
     G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.refTable = {}
+    G2frame.dataFrame.currentGrids = []
     for tabnum,phase in enumerate(phases):
         if len(data[phase]):
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)

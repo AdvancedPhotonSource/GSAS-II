@@ -4010,6 +4010,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # add recip cell coeff. values
     depVarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
 
+    G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = G2G.Table(
         [list(cl) for cl in zip(*colList)],     # convert from columns to rows
@@ -4428,10 +4429,14 @@ def SelectDataTreeItem(G2frame,item):
     if G2frame.dataFrame:
         # save or finish processing of outstanding events
         for grid in G2frame.dataFrame.currentGrids:  # complete any open wx.Grid edits
-            if grid.IsCellEditControlEnabled(): # complete any grid edits in progress
-                if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',grid
-                grid.HideCellEditControl()
-                grid.DisableCellEditControl()
+            #if GSASIIpath.GetConfigValue('debug'): print 'Testing grid edit in',grid
+            try: 
+                if grid.IsCellEditControlEnabled(): # complete any grid edits in progress
+                    if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',grid
+                    grid.HideCellEditControl()
+                    grid.DisableCellEditControl()
+            except:
+                pass
         if G2frame.dataFrame.GetLabel() == 'Comments': # save any recently entered comments 
             try:
                 data = [G2frame.dataDisplay.GetValue()]

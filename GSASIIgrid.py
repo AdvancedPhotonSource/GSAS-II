@@ -4427,11 +4427,11 @@ def SelectDataTreeItem(G2frame,item):
     oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:
         # save or finish processing of outstanding events
-        if G2frame.dataFrame.currentGrid:  # complete any open wx.Grid edits
-            if G2frame.dataFrame.currentGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
-                if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',G2frame.dataFrame.currentGrid
-                G2frame.dataFrame.currentGrid.HideCellEditControl()
-                G2frame.dataFrame.currentGrid.DisableCellEditControl()
+        for grid in G2frame.dataFrame.currentGrids:  # complete any open wx.Grid edits
+            if grid.IsCellEditControlEnabled(): # complete any grid edits in progress
+                if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',grid
+                grid.HideCellEditControl()
+                grid.DisableCellEditControl()
         if G2frame.dataFrame.GetLabel() == 'Comments': # save any recently entered comments 
             try:
                 data = [G2frame.dataDisplay.GetValue()]
@@ -4460,7 +4460,7 @@ def SelectDataTreeItem(G2frame,item):
         
     SetDataMenuBar(G2frame)
     G2frame.dataFrame.Raise()            
-    G2frame.dataFrame.currentGrid = None # this will be a pointer to a grid placed in the frame
+    G2frame.dataFrame.currentGrids = [] # this will contain pointers to a grid placed in the frame
     G2frame.PickId = item
     G2frame.PickIdText = None
     parentID = G2frame.root

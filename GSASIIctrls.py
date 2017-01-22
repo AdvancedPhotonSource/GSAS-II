@@ -2738,7 +2738,8 @@ class GSGrid(wg.Grid):
     '''
     def __init__(self, parent, name=''):
         wg.Grid.__init__(self,parent,-1,name=name)
-        parent.TopLevelParent.currentGrid = self      # save a reference to the grid in the Frame
+        if hasattr(parent.TopLevelParent,'currentGrids'):
+            parent.TopLevelParent.currentGrids.append(self)      # save a reference to the grid in the Frame
             
     def Clear(self):
         wg.Grid.ClearGrid(self)

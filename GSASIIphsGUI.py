@@ -3998,11 +3998,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies')
 
 ################################################################################
-##### Atom draw routines
+##### Draw Atom routines
 ################################################################################
             
     def UpdateDrawAtoms(atomStyle=''):
-        def RefreshAtomGrid(event):
+        def RefreshDrawAtomGrid(event):
             def SetChoice(name,c,n=0):
                 choice = []
                 for r in range(len(atomData)):
@@ -4171,9 +4171,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         drawAtoms.AutoSizeColumns(True)
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
-        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshAtomGrid)
-        drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
-        drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshAtomGrid)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
+        drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
+        drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
         for i,atom in enumerate(drawingData['Atoms']):
             attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
@@ -7917,7 +7917,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataDisplayPhaseText = text
         G2frame.dataFrame.helpKey = text # use name of Phase tab for help lookup
-        G2frame.dataFrame.currentGrid = None
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             UpdateGeneral()
@@ -7928,7 +7927,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillAtomsGrid(Atoms)
-            G2frame.dataFrame.currentGrid = Atoms
         elif text == 'Layers':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LayerData)
             UpdateLayerData()
@@ -7943,7 +7941,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
             UpdateDrawAtoms()
-            G2frame.dataFrame.currentGrid = drawAtoms
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
@@ -7951,7 +7948,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             FillMapPeaksGrid()
-            G2frame.dataFrame.currentGrid = MapPeaks
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
@@ -7964,7 +7960,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
             FillPawleyReflectionsGrid()
-            G2frame.dataFrame.currentGrid = G2frame.PawleyRefl
         else:
             G2gd.SetDataMenuBar(G2frame)
             

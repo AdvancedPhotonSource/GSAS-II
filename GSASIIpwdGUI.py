@@ -5021,7 +5021,7 @@ def UpdatePDFGrid(G2frame,data):
             print('  No PDFs to compute\n')
             return
         Names = [choices[i] for i in results]
-        pgbar = wx.ProgressDialog('Compute PDF','PDFs done',len(Names)+1, 
+        pgbar = wx.ProgressDialog('Compute PDF','PDFs done: 0',len(Names)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         notConverged = 0
         id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -5031,7 +5031,8 @@ def UpdatePDFGrid(G2frame,data):
                 Name = G2frame.PatternTree.GetItemText(id)
                 if Name in Names:
                     N += 1
-                    if not pgbar.Update(N)[0]:
+                    msg = 'PDFs done: {} of {}'.format(N-1,len(Names))
+                    if not pgbar.Update(N,msg)[0]:
                         pgbar.Destroy()
                         break
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))

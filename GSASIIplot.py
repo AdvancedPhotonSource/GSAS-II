@@ -2292,6 +2292,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, PatternName)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Error analysis','mpl')
     if new:
+        G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
@@ -2351,13 +2352,23 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
+    G2frame.ShiftDown = False
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
     if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)']:
         return
     
+    def OnPlotKeyUp(event):    
+        if event.key == 'shift':
+            G2frame.ShiftDown = False
+            return
+        
     def OnPlotKeyPress(event):
+        if event.key == 'shift':
+            G2frame.ShiftDown = True
+            return
         newPlot = False
+        if G2frame.ShiftDown: event.key = event.key.upper()
         if event.key == 'u':
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
@@ -2368,6 +2379,10 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
             elif Page.Offset[1] > 0.:
                 Page.Offset[1] -= 1.
+        elif event.key == 'U':
+            G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/20.
+        elif event.key == 'D':
+            G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/20.
         elif event.key == 'l':
             Page.Offset[0] -= 1.
         elif event.key == 'r':
@@ -2442,15 +2457,19 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             xylim = lim
     else:
         newPlot = True
+        G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+        Page.canvas.mpl_connect('key_release_event', OnPlotKeyUp)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max',
-            'i: interpolation method','s: color scheme','c: contour off','f: select data')
+            'D: lower contour min','U: raise contour min',
+            'i: interpolation method','s: color scheme','c: contour off','f: select data',
+            )
     else:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
             'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
@@ -2529,7 +2548,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
 #                Plot.plot(X,Y,colors[N%6],picker=False)
     if G2frame.Contour and len(Pattern)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
+        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
     else:

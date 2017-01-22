@@ -2737,10 +2737,8 @@ class GSGrid(wg.Grid):
     '''Basic wx.Grid implementation
     '''
     def __init__(self, parent, name=''):
-        wg.Grid.__init__(self,parent,-1,name=name)                    
-        #self.SetSize(parent.GetClientSize())
-        # above removed to speed drawing of initial grid
-        # does not appear to be needed
+        wg.Grid.__init__(self,parent,-1,name=name)
+        parent.TopLevelParent.currentGrid = self      # save a reference to the grid in the Frame
             
     def Clear(self):
         wg.Grid.ClearGrid(self)

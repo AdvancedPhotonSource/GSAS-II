@@ -4422,14 +4422,17 @@ def SelectDataTreeItem(G2frame,item):
 
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
-    if G2frame.PickIdText == G2frame.GetTreeItemsList(item):
+    if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
         return
-    wx.Yield()
     oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:
-        SetDataMenuBar(G2frame)
-        # save comments or notebook contents before clearing the window contents
-        if G2frame.dataFrame.GetLabel() == 'Comments':
+        # save or finish processing of outstanding events
+        if G2frame.dataFrame.currentGrid:  # complete any open wx.Grid edits
+            if G2frame.dataFrame.currentGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
+                if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',G2frame.dataFrame.currentGrid
+                G2frame.dataFrame.currentGrid.HideCellEditControl()
+                G2frame.dataFrame.currentGrid.DisableCellEditControl()
+        if G2frame.dataFrame.GetLabel() == 'Comments': # save any recently entered comments 
             try:
                 data = [G2frame.dataDisplay.GetValue()]
                 G2frame.dataDisplay.Clear() 
@@ -4437,7 +4440,7 @@ def SelectDataTreeItem(G2frame,item):
                 if Id: G2frame.PatternTree.SetItemPyData(Id,data)
             except:     #clumsy but avoids dead window problem when opening another project
                 pass
-        elif G2frame.dataFrame.GetLabel() == 'Notebook':
+        elif G2frame.dataFrame.GetLabel() == 'Notebook': # save any recent notebook entries
             try:
                 data = [G2frame.dataDisplay.GetValue()]
                 G2frame.dataDisplay.Clear() 
@@ -4455,7 +4458,9 @@ def SelectDataTreeItem(G2frame,item):
         G2frame.dataFrame = DataFrame(parent=G2frame.mainPanel,frame=G2frame)
         G2frame.dataFrame.PhaseUserSize = None
         
+    SetDataMenuBar(G2frame)
     G2frame.dataFrame.Raise()            
+    G2frame.dataFrame.currentGrid = None # this will be a pointer to a grid placed in the frame
     G2frame.PickId = item
     G2frame.PickIdText = None
     parentID = G2frame.root

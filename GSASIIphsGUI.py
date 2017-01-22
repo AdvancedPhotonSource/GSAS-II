@@ -149,7 +149,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     in the main (data tree) window.
     Called only from :meth:`GSASIIgrid.SelectDataTreeItem`,
     which in turn is called from :meth:`GSASII.GSASII.OnDataTreeSelChanged`
-    when a Phase tree item is selected.
+    when a Phase tree item is selected. This creates all tabs on the page and fills
+    their contents. Routine OnPageChanged is called each time a tab is pressed
+    and updates the contents of the tab's page.
 
     :param wx.frame G2frame: the main GSAS-II frame object
     :param wx.TreeItemId Item: the tree item that was selected
@@ -1693,7 +1695,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 table.append(atom)
                 rowLabels.append(str(i))
             atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Atoms.SetTable(atomTable, True)
+            try:
+                Atoms.SetTable(atomTable, True)    # Paint may be called after the Grid has been deleted
+            except:
+                return
             Atoms.frm = -1            
             colType = colLabels.index('Type')
             colR = colLabels.index('refine')
@@ -7911,7 +7916,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataDisplayPhaseText = text
-        G2frame.dataFrame.helpKey = text # BHT: use name of Phase tab for help lookup
+        G2frame.dataFrame.helpKey = text # use name of Phase tab for help lookup
+        G2frame.dataFrame.currentGrid = None
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             UpdateGeneral()
@@ -7922,6 +7928,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillAtomsGrid(Atoms)
+            G2frame.dataFrame.currentGrid = Atoms
         elif text == 'Layers':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LayerData)
             UpdateLayerData()
@@ -7936,6 +7943,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
             UpdateDrawAtoms()
+            G2frame.dataFrame.currentGrid = drawAtoms
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
@@ -7943,6 +7951,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
             FillMapPeaksGrid()
+            G2frame.dataFrame.currentGrid = MapPeaks
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
@@ -7955,6 +7964,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
             FillPawleyReflectionsGrid()
+            G2frame.dataFrame.currentGrid = G2frame.PawleyRefl
         else:
             G2gd.SetDataMenuBar(G2frame)
             

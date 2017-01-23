@@ -433,8 +433,8 @@ def GetUsedHistogramsAndPhases(GPXfile):
                         Histograms[hist]['hId'] = hId
                     except KeyError: # would happen if a referenced histogram were
                         # renamed or deleted
-                        print('For phase "'+str(phase)+
-                              '" unresolved reference to histogram "'+str(hist)+'"')
+                        print('For phase "'+phase+
+                              '" unresolved reference to histogram "'+hist+'"')
     G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
     

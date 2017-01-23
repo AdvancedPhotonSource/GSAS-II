@@ -159,10 +159,6 @@ class GSASII(wx.Frame):
             help='Create empty new project, saving current is optional', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&New project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
-        item = parent.Append(
-            help='Expand all items in GSAS-II data tree',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Expand all')
-        self.Bind(wx.EVT_MENU,self.ExpandAll,id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES, text = "&Preferences")
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
         if GSASIIpath.GetConfigValue('debug'):
@@ -782,7 +778,7 @@ class GSASII(wx.Frame):
                     refList[generalData['Name']] = {}
                     UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
                 else:
-                    raise Exception('Unexpected histogram '+str(histoName))
+                    raise Exception('Unexpected histogram '+histoName)
         wx.EndBusyCursor()
         self.EnableRefineCommand()
         return # success
@@ -882,7 +878,7 @@ class GSASII(wx.Frame):
                 for Bank in rd.Banks:
                     valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
                     HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                    print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
+                    print 'Read structure factor table '+HistName+' from file '+self.lastimport
                     Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
                     if not Bank['RefDict'].get('FF'):
                         Bank['RefDict']['FF'] = {}
@@ -895,7 +891,7 @@ class GSASII(wx.Frame):
             else:
                 valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
+                print 'Read structure factor table '+HistName+' from file '+self.lastimport
                 if not rd.RefDict.get('FF'):
                     rd.RefDict['FF'] = {}
                 Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
@@ -1823,7 +1819,7 @@ class GSASII(wx.Frame):
             {})
         self.PatternTree.Expand(Id)
         self.PatternTree.SelectItem(Id)
-        print('Added simulation powder data '+str(HistName)+ 
+        print('Added simulation powder data '+HistName+ 
               ' with parameters from '+str(rd.instmsg))
 
         # make a list of phase names
@@ -1917,8 +1913,8 @@ class GSASII(wx.Frame):
             HistName = 'SASD '+HistName
             # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,SASDlist)
-            print 'Read small angle data '+str(HistName)+ \
-                ' from file '+str(self.lastimport)
+            print 'Read small angle data '+HistName+ \
+                ' from file '+self.lastimport
             # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
             Iparm1,Iparm2 = GetSASDIparm(rd)
@@ -3785,8 +3781,8 @@ class GSASII(wx.Frame):
                             hId = histoList.index(hist)
                             Histograms[hist]['hId'] = hId
                         else: # would happen if a referenced histogram were renamed or deleted
-                            print('For phase "'+str(phase)+
-                                  '" unresolved reference to histogram "'+str(hist)+'"')
+                            print('For phase "'+phase+
+                                  '" unresolved reference to histogram "'+hist+'"')
         #G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases

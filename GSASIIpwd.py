@@ -579,7 +579,7 @@ def getFWHM(pos,Inst):
     ''' 
     
     sig = lambda Th,U,V,W: np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))
-    sigTOF = lambda dsp,S0,S1,S2,Sq:  S0+S1*dsp**2+S2*dsp**4+Sq/dsp**2
+    sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq/dsp**2)
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))
     gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2
     if 'C' in Inst['Type'][0]:
@@ -1767,12 +1767,16 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         except IndexError:
             binsperFWHM.append(0.)
     if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
-    if len(binsperFWHM) and min(binsperFWHM) < 3.:
-        print '*** Warning: calculated peak widths are too narrow to refine profile coefficients ***'
-        if 'T' in Inst['Type'][0]:
-            print ' Manually increase sig-0, 1, or 2 in Instrument Parameters'
-        else:
-            print ' Manually increase W in Instrument Parameters'
+    if len(binsperFWHM):
+        if min(binsperFWHM) < 1.:
+            print '*** Warning: calculated peak widths are too narrow to refine profile coefficients ***'
+            if 'T' in Inst['Type'][0]:
+                print ' Manually increase sig-0, 1, or 2 in Instrument Parameters'
+            else:
+                print ' Manually increase W in Instrument Parameters'
+        elif min(binsperFWHM) < 4.:
+            print '*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***'
+            print '*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM))
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
 
 def calcIncident(Iparm,xdata):

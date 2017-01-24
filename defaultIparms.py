@@ -33,7 +33,9 @@ defaultIparms: defines a list of multiple strings with values for each set of de
 
 defaultIparm_lbl = []
 defaultIparms = []
-
+''' the phrase 'lab data' in the following makes the default goniometer type='Bragg-Brentano'
+    otherwise it is set to 'Debye-Scherrer'
+'''
 defaultIparm_lbl.append('CuKa lab data')
 defaultIparms.append([
     '#GSAS-II instrument parameter file for lab CuKa data\n',

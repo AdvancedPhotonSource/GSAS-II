@@ -2348,7 +2348,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
 ##### PlotISFG
 ################################################################################
             
-def PlotISFG(G2frame,newPlot=False,plotType=''):
+def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
@@ -2388,7 +2388,12 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         elif event.key == 'r':
             Page.Offset[0] += 1.
         elif event.key == 'o':
-            Page.Offset = [0,0]
+            if G2frame.Contour:
+                G2frame.Interpolate = 'nearest'
+                G2frame.Cmin = 0.0
+                G2frame.Cmax = 1.0
+            else:
+                Page.Offset = [0,0]            
         elif event.key == 'm':
             G2frame.SinglePlot = not G2frame.SinglePlot
         elif event.key == 'c':
@@ -2396,7 +2401,9 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             G2frame.Contour = not G2frame.Contour
             if G2frame.Contour:
                 G2frame.SinglePlot = False
+            else:
                 Page.Offset = [0.,0.]
+                G2frame.SinglePlot = not G2frame.SinglePlot
         elif not G2frame.Contour and event.key == 'w':
             G2frame.Waterfall = not G2frame.Waterfall
         elif event.key == 'f' and not G2frame.SinglePlot:
@@ -2435,7 +2442,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             dlg.Destroy()
         elif event.key == 't' and not G2frame.Contour:
             G2frame.Legend = not G2frame.Legend
-        PlotISFG(G2frame,newPlot=newPlot,plotType=plotType)
+        PlotISFG(G2frame,data,newPlot=newPlot,plotType=plotType)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -2465,27 +2472,26 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
         Page.Offset = [0,0]
     
     G2frame.G2plotNB.status.DestroyChildren()
-    if G2frame.Contour:
-        Page.Choice = (' key press','d: lower contour max','u: raise contour max',
-            'D: lower contour min','U: raise contour min',
-            'i: interpolation method','s: color scheme','c: contour off','f: select data',
-            )
+    if peaks == None:
+        if G2frame.Contour:
+            Page.Choice = (' key press','d: lower contour max','u: raise contour max',
+                'D: lower contour min','U: raise contour min','o: reset to default',
+                'i: interpolation method','s: color scheme','c: contour off','f: select data',
+                )
+        else:
+            Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
+                'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
+                'm: toggle multiplot','s: color scheme','f: select data' )
+        Page.keyPress = OnPlotKeyPress
     else:
-        Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
-            'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
-            'm: toggle multiplot','s: color scheme','f: select data' )
-    Page.keyPress = OnPlotKeyPress
+        Page.Choice = ()
+        newPlot = True
     PatternId = G2frame.PatternId
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
-    Pattern = []    
     if G2frame.SinglePlot:
-        name = G2frame.PatternTree.GetItemText(PatternId)
-        name = plotType+name[4:]
-        Id = G2gd.GetPatternTreeItemId(G2frame,PatternId,name)
-        Pattern = G2frame.PatternTree.GetItemPyData(Id)
-        if Pattern:
-            Pattern.append(name)
-        PlotList = [Pattern,]
+        if 'G(R)' not in data:
+            return
+        PlotList = [data[plotType],]
     else:
         PlotList = []
         if G2frame.PDFselections is None:
@@ -2494,12 +2500,10 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             choices = G2frame.PDFselections
         for item in choices:
             Pid = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            name = plotType+item[4:]
-            Id = G2gd.GetPatternTreeItemId(G2frame,Pid,name)
+            Id = G2gd.GetPatternTreeItemId(G2frame,Pid,'PDF Controls')
             Pattern = G2frame.PatternTree.GetItemPyData(Id)
             if Pattern:
-                Pattern.append(item)
-                PlotList.append(Pattern)
+                PlotList.append(Pattern[plotType])
         name = plotType
     if plotType == 'G(R)':
         Plot.set_xlabel(r'r,$\AA$',fontsize=14)
@@ -2514,23 +2518,19 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
     Ymax = 0.01
     lenX = 0
     for Pattern in PlotList:
-        try:
-            xye = Pattern[1]
-        except IndexError:
-            return
+        xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
+    XYlist = []
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
         Nseq = 0
-    else:
-        XYlist = []
     for N,Pattern in enumerate(PlotList):
         xye = Pattern[1]
         X = xye[0]
         if not lenX:
             lenX = len(X)           
-        if G2frame.Contour and len(Pattern)>1:
+        if G2frame.Contour and len(PlotList)>1:
             Y = xye[1]
             if lenX == len(X):
                 ContourY.append(N)
@@ -2546,7 +2546,7 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
 #                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
 #            else:
 #                Plot.plot(X,Y,colors[N%6],picker=False)
-    if G2frame.Contour and len(Pattern)>1:
+    if G2frame.Contour and len(PlotList)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
@@ -2595,6 +2595,9 @@ def PlotISFG(G2frame,newPlot=False,plotType=''):
             else:   #ok
                 line = mplC.LineCollection(XYlist,color=colors[0])
                 Plot.add_collection(line)
+            if peaks != None:
+                Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),picker=2.)
+                Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),picker=2.)
         wx.EndBusyCursor()
         if plotType == 'G(R)':
             Xb = [0.,2.5]

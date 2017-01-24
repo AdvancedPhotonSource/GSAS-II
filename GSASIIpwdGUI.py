@@ -781,7 +781,7 @@ def UpdatePeakGrid(G2frame, data):
         '''Called when a peak is selected so that it can be highlighted in the plot
         '''
         event.Skip()
-        r,c =  event.GetRow(),event.GetCol()
+        c =  event.GetRow(),event.GetCol()[1]
         if c < 0: # replot except whan a column is selected
             wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
         
@@ -4854,7 +4854,6 @@ def UpdatePDFGrid(G2frame,data):
             del ElList[dlg.GetDeleteElement()]
         dlg.Destroy()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        #UpdatePDFGrid(G2frame,data)
 
     def OnOptimizePDF(event):
         '''Optimize Flat Bkg, BackRatio & Ruland corrections to remove spurious
@@ -4944,11 +4943,6 @@ def UpdatePDFGrid(G2frame,data):
             data['BackRatio'] = B
             data['Ruland'] = R/10.
             G2pwd.CalcPDF(data,inst,limits,xydata)
-#            g = xydata['GofR'][1][1]
-#            r = xydata['GofR'][1][0]
-#            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-#            G2plt.PlotXY(G2frame,[[r[r < Data['Rmin']], g0]],Title='G(r)+4pi*r',
-#                         labelX=r'r, $\AA$',labelY=r'G(r)$+4\pi r$')            
         EvalLowPDF(GetCurrentVals())
         BkgMax = max(xydata['IofQ'][1][1])/50.
         return EvalLowPDF,GetCurrentVals,SetFinalVals
@@ -4967,11 +4961,10 @@ def UpdatePDFGrid(G2frame,data):
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
         inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
         auxPlot = G2pwd.CalcPDF(Data,inst,limits,xydata)
-        PDFId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PDF '+powName[4:])
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'F(Q)'+powName[4:]),xydata['FofQ'])
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'G(R)'+powName[4:]),xydata['GofR'])
+        data['I(Q)'] = xydata['IofQ']
+        data['S(Q)'] = xydata['SofQ']
+        data['F(Q)'] = xydata['FofQ']
+        data['G(R)'] = xydata['GofR']
         return auxPlot
         
     def OnComputePDF(event):
@@ -4989,13 +4982,12 @@ def UpdatePDFGrid(G2frame,data):
             XY = np.array(plot[:2])
             G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
         if event is not None:
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
-            G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
-            #G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
-            G2plt.PlotISFG(G2frame,newPlot=False,plotType='G(R)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='I(Q)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
+            G2plt.PlotISFG(G2frame,data,newPlot=False,plotType='G(R)')
         else:
-            G2plt.PlotISFG(G2frame,newPlot=False)
+            G2plt.PlotISFG(G2frame,data,newPlot=False)
         
     def OnComputeAllPDF(event):
         print('Calculating PDFs...')
@@ -5056,10 +5048,10 @@ def UpdatePDFGrid(G2frame,data):
         G2frame.dataFrame.GetStatusBar().SetStatusText(msg)
         print(msg)
         # what item is being plotted? -- might be better to select from tree
-        G2plt.PlotISFG(G2frame,newPlot=True,plotType='I(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,plotType='S(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,plotType='F(Q)')
-        G2plt.PlotISFG(G2frame,newPlot=True,plotType='G(R)')
+        G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='I(Q)')
+        G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
+        G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
+        G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
 
     # Routine UpdatePDFGrid starts here
     global inst
@@ -5110,7 +5102,6 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnOptimizePDF, id=G2gd.wxID_PDFOPT)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     ElList = data['ElList']
@@ -5263,4 +5254,29 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
     G2frame.dataFrame.setSizePosLeft(Size)
-#    G2frame.dataFrame.SendSizeEvent()  # for Mac, but not needed due to Bob's size+1 change in setSizePosLeft
+###############################################################################################################
+#UpdatePDFPeaks: peaks in G(r)
+###############################################################################################################
+def UpdatePDFPeaks(G2frame,peaks,data):
+
+
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFPksMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF peaks: '),0,WACV)
+    mainSizer.Add((5,5),0)    
+
+
+
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size = (500,300)
+    G2frame.dataFrame.setSizePosLeft(Size)
+    

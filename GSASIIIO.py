@@ -783,7 +783,14 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     else:
                         for p in datum[1]['PythonVersions']:
                             print("  {:<12s} {:s}".format(p[0]+':',p[1]))
+            oldPDF = False
             for datus in data[1:]:
+#patch - 1/23/17 PDF cleanup
+                if datus[0][:4] in ['I(Q)','S(Q)','F(Q)','G(R)']:
+                    oldPDF = True
+                    data[1][1][datus[0][:4]] = copy.deepcopy(datus[1][:2])
+                    continue
+#end PDF cleanup
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
                 if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
@@ -795,6 +802,9 @@ def ProjFileOpen(G2frame,showProvenance=True):
                         datus[1][0][item] = list(datus[1][0][item])
 #end patch
                 G2frame.PatternTree.SetItemPyData(sub,datus[1])
+            if 'PDF ' in datum[0][:4] and oldPDF:
+                sub = G2frame.PatternTree.AppendItem(Id,'PDF Peaks')
+                G2frame.PatternTree.SetItemPyData(sub,{'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
             if datum[0].startswith('IMG'):                   #retrieve image default flag & data if set
                 Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
@@ -984,20 +994,15 @@ def PDFSave(G2frame,exports):
     import scipy.interpolate as scintp
     for export in exports:
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-        SQname = 'S(Q)'+export[4:]
-        FQname = 'F(Q)'+export[4:]
-        GRname = 'G(R)'+export[4:]
+        PDFControls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, PickId,'PDF Controls'))
         sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
         fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
         grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
-        sqId = G2gd.GetPatternTreeItemId(G2frame, PickId, SQname)
-        fqId = G2gd.GetPatternTreeItemId(G2frame, PickId, FQname)
-        grId = G2gd.GetPatternTreeItemId(G2frame, PickId, GRname)
-        sqdata = np.array(G2frame.PatternTree.GetItemPyData(sqId)[1][:2])
+        sqdata = PDFControls['S(Q)'][1]
         sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
-        fqdata = np.array(G2frame.PatternTree.GetItemPyData(fqId)[1][:2])
+        fqdata = PDFControls['F(Q)'][1]
         fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
-        grdata = np.array(G2frame.PatternTree.GetItemPyData(grId)[1][:2])
+        grdata = PDFControls['G(R)'][1]
         grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
         sqfile = open(sqfilename,'w')
         fqfile = open(sqfilename,'w')

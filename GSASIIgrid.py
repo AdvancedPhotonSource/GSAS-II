@@ -148,9 +148,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,wxID_MERGEHKL,
 ] = [wx.NewId() for item in range(5)]
 
-[ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
-    wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT, #wxID_PDFOPT, 
-] = [wx.NewId() for item in range(7)]
+[ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, 
+    wxID_PDFADDELEMENT, wxID_PDFDELELEMENT, wxID_PDFPKSFIT,wxID_PDFPKSFITALL,wxID_PDFCOPYPEAKS,
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_MCRON,wxID_MCRLIST,wxID_MCRSAVE,wxID_MCRPLAY,
 ] = [wx.NewId() for item in range(4)]
@@ -2179,6 +2179,21 @@ class DataFrame(wx.Frame):
 #        self.PDFEdit.Append(help='Optimize PDF', id=wxID_PDFOPT, kind=wx.ITEM_NORMAL,
 #            text='Optimize corrections for r<Rmin section of current G(r)')
         self.PostfillDataMenu()
+        
+        # PDF / PDF Peaks
+        self.PDFPksMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.PDFPksMenu)
+        self.PDFPksEdit = wx.Menu(title='')
+        self.PDFPksMenu.Append(menu=self.PDFPksEdit, title='PDF Peaks')
+        self.PDFPksEdit.Append(help='Fit PDF peaks', id=wxID_PDFPKSFIT, kind=wx.ITEM_NORMAL,
+            text='Fit Peaks')
+        self.PDFPksEdit.Append(help='Fit all PDF peaks', id=wxID_PDFPKSFITALL, kind=wx.ITEM_NORMAL,
+            text='Fit all PDF peakss')
+        self.PDFPksEdit.Append(help='Copy PDF peaks', id=wxID_PDFCOPYPEAKS, kind=wx.ITEM_NORMAL,
+            text='Copy peaks')
+        
+        self.PostfillDataMenu()
+
         
         # Phase / General tab
         self.DataGeneral = wx.MenuBar()
@@ -4566,45 +4581,27 @@ def SelectDataTreeItem(G2frame,item):
             for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
             data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,item,'PDF Controls'))
             G2pdG.UpdatePDFGrid(G2frame,data)
-            G2plt.PlotISFG(G2frame,plotType='S(Q)')
+            G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.PatternTree.GetItemText(item) == 'Phases':
             G2frame.dataFrame.setSizePosLeft(defWid)
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                 value='Select one phase to see its parameters')            
-    elif 'I(Q)' in G2frame.PatternTree.GetItemText(item):
-        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
+    elif G2frame.PatternTree.GetItemText(item) == 'PDF Peaks':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        peaks = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Peaks'))
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
-        G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,plotType='I(Q)',newPlot=True)
-    elif 'S(Q)' in G2frame.PatternTree.GetItemText(item):
-        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
-        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
-        G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,plotType='S(Q)',newPlot=True)
-    elif 'F(Q)' in G2frame.PatternTree.GetItemText(item):
-        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
-        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
-        G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,plotType='F(Q)',newPlot=True)
-    elif 'G(R)' in G2frame.PatternTree.GetItemText(item):
-        for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
-        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
-        G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,plotType='G(R)',newPlot=True)            
+        G2pdG.UpdatePDFPeaks(G2frame,peaks,data)
+        G2plt.PlotISFG(G2frame,data,plotType='G(R)',newPlot=True,peaks=peaks)            
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
         G2frame.dataFrame.helpKey = G2frame.PatternTree.GetItemText(item) # special treatment to avoid PDF_PDF Controls
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,plotType='I(Q)')
-        G2plt.PlotISFG(G2frame,plotType='S(Q)')
-        G2plt.PlotISFG(G2frame,plotType='F(Q)')
-        G2plt.PlotISFG(G2frame,plotType='G(R)')
+        G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
+        G2plt.PlotISFG(G2frame,data,plotType='S(Q)')
+        G2plt.PlotISFG(G2frame,data,plotType='F(Q)')
+        G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         data = G2frame.PatternTree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data,oldPage)

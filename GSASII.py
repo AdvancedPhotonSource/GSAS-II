@@ -1201,9 +1201,11 @@ class GSASII(wx.Frame):
                     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                     v = (v[0],v[2],v[4])
                     codes = [0,0,0,0]
+                    rd.Sample['Type'] = 'Debye-Scherrer'
                 else:
                     names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
                     codes = [0,0,0,0,0,0]
+                    rd.Sample['Type'] = 'Bragg-Brentano'
                 data.extend(v)
                 if 'INS  1PRCF  ' in Iparm:
                     v1 = Iparm['INS  1PRCF  '].split()                                                  
@@ -1339,6 +1341,10 @@ class GSASII(wx.Frame):
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
                 rd.instfile = ''
+                if 'lab data' in choices[res]:
+                    rd.Sample['Type'] = 'Bragg-Brentano'
+                else:
+                    rd.Sample['Type'] = 'Debye-Scherrer'
                 if 'Generic' in choices[res]:
                     dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
                         prompts=['Total FP','2-theta',],values=[25.0,150.,],
@@ -3599,12 +3605,11 @@ class GSASII(wx.Frame):
                             'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
                             'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits[i],
-                            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0}
+                            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
+                            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='F(Q)'+PWDRname),[])        
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='G(R)'+PWDRname),[])        
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Peaks'),
+                            {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})        
                 for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()

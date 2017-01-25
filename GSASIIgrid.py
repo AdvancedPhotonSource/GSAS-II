@@ -4581,7 +4581,8 @@ def SelectDataTreeItem(G2frame,item):
             for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
             data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,item,'PDF Controls'))
             G2pdG.UpdatePDFGrid(G2frame,data)
-            G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+            if len(data['G(R)']):
+                G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.PatternTree.GetItemText(item) == 'Phases':
             G2frame.dataFrame.setSizePosLeft(defWid)
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
@@ -4591,17 +4592,19 @@ def SelectDataTreeItem(G2frame,item):
         peaks = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Peaks'))
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFPeaks(G2frame,peaks,data)
-        G2plt.PlotISFG(G2frame,data,plotType='G(R)',newPlot=True,peaks=peaks)            
+        if len(data['G(R)']):
+            G2plt.PlotISFG(G2frame,data,plotType='G(R)',newPlot=True,peaks=peaks)            
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         for i in G2frame.ExportPDF: i.Enable(True) # this should be done on .gpx load; is done on OnMakePDFs (GSASII.py)
         G2frame.dataFrame.helpKey = G2frame.PatternTree.GetItemText(item) # special treatment to avoid PDF_PDF Controls
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
-        G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
-        G2plt.PlotISFG(G2frame,data,plotType='S(Q)')
-        G2plt.PlotISFG(G2frame,data,plotType='F(Q)')
-        G2plt.PlotISFG(G2frame,data,plotType='G(R)')
+        if len(data['G(R)']):
+            G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
+            G2plt.PlotISFG(G2frame,data,plotType='S(Q)')
+            G2plt.PlotISFG(G2frame,data,plotType='F(Q)')
+            G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         data = G2frame.PatternTree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data,oldPage)

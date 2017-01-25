@@ -4624,7 +4624,7 @@ def UpdatePDFGrid(G2frame,data):
     '''respond to selection of PWDR PDF data tree item.
     '''    
     def FillFileSizer(fileSizer,key):
-        #fileSizer is a FlexGridSizer(3,6)
+        #fileSizer is a FlexGridSizer(3,4)
         
         def OnSelectFile(event):
             Obj = event.GetEventObject()
@@ -4665,9 +4665,6 @@ def UpdatePDFGrid(G2frame,data):
         multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
         mulBox.Add(multSpin,0,WACV)
         fileSizer.Add(mulBox,0,WACV)
-        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Add:'),0,WACV)
-        fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Add',nDig=(10,0),
-            typeHint=float,OnLeave=AfterChange),0,)
         
     def SumElementVolumes():
         sumVol = 0.
@@ -4799,7 +4796,8 @@ def UpdatePDFGrid(G2frame,data):
                 File = open(filename,'w')
                 File.write("#GSAS-II PDF controls file; do not add/delete items!\n")
                 for item in data:
-                    File.write(item+':'+unicode(data[item])+'\n')
+                    if item[:] not in ['I(Q)','S(Q)','F(Q)','G(R)']:
+                        File.write(item+':'+unicode(data[item])+'\n')
                 File.close()
                 print 'PDF controls saved to: '+filename
         finally:
@@ -4860,6 +4858,9 @@ def UpdatePDFGrid(G2frame,data):
         "intensity" from portion of G(r) with r<Rmin.
         Invoked by Optimize PDF button and from menu command.
         '''
+        if not data['ElList']:
+            G2frame.ErrorDialog('PDF error','Chemical formula not defined')
+            return
         wx.BeginBusyCursor()
         try:
             OptimizePDF(data)
@@ -4870,7 +4871,8 @@ def UpdatePDFGrid(G2frame,data):
         
     def OptimizePDF(data,showFit=True,maxCycles=5):
         import scipy.optimize as opt
-        Min,Init,Done = SetupPDFEval(data)
+        SetUp = SetupPDFEval(data)
+        Min,Init,Done = SetUp
         xstart = Init()
         if showFit:
             rms = Min(xstart)
@@ -4896,8 +4898,6 @@ def UpdatePDFGrid(G2frame,data):
     def SetupPDFEval(data):
         '''Create functions needed to optimize the PDF at low r
         '''
-        if not data['ElList']:
-            return None
         Data = copy.deepcopy(data)
         xydata = {}
         for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
@@ -4985,7 +4985,7 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='I(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
-            G2plt.PlotISFG(G2frame,data,newPlot=False,plotType='G(R)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
         else:
             G2plt.PlotISFG(G2frame,data,newPlot=False)
         
@@ -5111,7 +5111,7 @@ def UpdatePDFGrid(G2frame,data):
         str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
         mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
     mainSizer.Add((5,5),0)
-    fileSizer = wx.FlexGridSizer(0,6,5,1)
+    fileSizer = wx.FlexGridSizer(0,4,5,1)
     select = ['Sample Bkg.','Container']
     if data['Container']['Name']:
         select.append('Container Bkg.')
@@ -5258,7 +5258,53 @@ def UpdatePDFGrid(G2frame,data):
 #UpdatePDFPeaks: peaks in G(r)
 ###############################################################################################################
 def UpdatePDFPeaks(G2frame,peaks,data):
-
+    
+    def limitSizer():
+        
+        def NewLim(invalid,value,tc):
+            if invalid:
+                return
+            G2plt.PlotISFG(G2frame,data,newPlot=False,plotType='G(R)',peaks=peaks)
+                        
+        limitBox = wx.BoxSizer(wx.HORIZONTAL)
+        limitBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Limits: '),0,WACV)
+        lowLim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Limits'],0,nDig=(10,3),
+            min=0.,max=10.,typeHint=float,OnLeave=NewLim)
+        limitBox.Add(lowLim,0,WACV)
+        highLim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Limits'],1,nDig=(10,3),
+            min=peaks['Limits'][0],max=10.,typeHint=float,OnLeave=NewLim)
+        limitBox.Add(highLim,0,WACV)
+        return limitBox
+        
+    def backSizer():
+        
+        def NewBack(invalid,value,tc):
+            if invalid:
+                return
+            G2plt.PlotISFG(G2frame,data,newPlot=False,plotType='G(R)',peaks=peaks)
+            
+        def OnRefBack(event):
+            peaks['Background'][2] = refbk.GetValue()
+        
+        backBox = wx.wx.BoxSizer(wx.HORIZONTAL)
+        backBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background slope: '),0,WACV)
+        slope = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Background'][1],1,nDig=(10,3),
+            min=-4.*np.pi,max=0.,typeHint=float,OnLeave=NewBack)
+        backBox.Add(slope,0,WACV)
+        refbk = wx.CheckBox(parent=G2frame.dataDisplay,label=' Refine?')
+        refbk.SetValue(peaks['Background'][2])
+        refbk.Bind(wx.EVT_CHECKBOX, OnRefBack)
+        backBox.Add(refbk,0,WACV)
+        return backBox
+        
+    def peakSizer():
+        
+        for item in peaks['Peaks']: print item
+        peakBox = wx.BoxSizer(wx.VERTICAL)
+        
+        
+        return peakBox
+        
 
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -5269,10 +5315,14 @@ def UpdatePDFPeaks(G2frame,peaks,data):
 #    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
 #    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF peaks: '),0,WACV)
-    mainSizer.Add((5,5),0)    
-
-
+    mainSizer.Add((5,5),0) 
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF peak fit controls:'),0,WACV)
+    mainSizer.Add((5,5),0) 
+    mainSizer.Add(limitSizer(),0,WACV) 
+    mainSizer.Add((5,5),0) 
+    mainSizer.Add(backSizer())
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(peakSizer())
 
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

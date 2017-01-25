@@ -3599,9 +3599,9 @@ class GSASII(wx.Frame):
                         PWDRname = item[4:]
                         Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
                         Data = {
-                            'Sample':{'Name':item,'Mult':1.0,'Add':0.0},
-                            'Sample Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},
-                            'Container':{'Name':'','Mult':-1.0,'Add':0.0},
+                            'Sample':{'Name':item,'Mult':1.0},
+                            'Sample Bkg.':{'Name':'','Mult':-1.0},
+                            'Container':{'Name':'','Mult':-1.0},
                             'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
                             'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits[i],

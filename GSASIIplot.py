@@ -2352,6 +2352,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     ''' Plotting package for PDF analysis; displays I(Q), S(Q), F(Q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
+    global Peaks
+    Peaks = peaks
     G2frame.ShiftDown = False
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
@@ -2456,6 +2458,70 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     G2frame.G2plotNB.status.SetStatusText('R =%.3fA %s =%.2f'%(xpos,plotType,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+plotType+' pattern first',1)
+                
+    def OnPick(event):
+
+        def OnDragLine(event):
+            '''Respond to dragging of a plot line
+            '''
+            if event.xdata is None: return   # ignore if cursor out of window
+            Page.canvas.restore_region(savedplot)
+            coords = G2frame.itemPicked.get_data()
+            coords[0][0] = coords[0][1] = event.xdata
+            coords = G2frame.itemPicked.set_data(coords)
+            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(Page.figure.gca().bbox)
+
+        if Peaks == None: return
+        if G2frame.itemPicked is not None: return
+        pick = event.artist
+        mouse = event.mouseevent
+        xpos = pick.get_xdata()
+        ypos = pick.get_ydata()
+        ind = event.ind
+        xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
+        if not ind[0]:          # a limit line - allow it to drag
+            # prepare to animate move of line
+            G2frame.itemPicked = pick
+            pick.set_linestyle(':') # set line as dotted
+            Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+            Page.figure.gca()
+            Page.canvas.draw() # refresh without dotted line & save bitmap
+            savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+            G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+            pick.set_linestyle('--') # back to dashed
+        else:       # a profile point, e.g. a peak
+            if mouse.button == 1:
+                Peaks['Peaks'].append([xy[0],xy[1]*.5,.5,'','','',0.])
+                Peaks['Peaks'] = G2mth.sortArray(Peaks['Peaks'],0,reverse=False)
+                PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
+                G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
+        
+    def OnRelease(event):
+        if Peaks == None: return
+        if G2frame.itemPicked == None: return
+        if G2frame.cid is not None:         # if there is a drag connection, delete it
+            Page.canvas.mpl_disconnect(G2frame.cid)
+            G2frame.cid = None
+        if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
+            Page.canvas.mpl_disconnect(G2frame.cid)
+            G2frame.cid = None
+            PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
+            return
+        lines = []
+        for line in G2frame.Lines: 
+            lines.append(line.get_xdata()[0])
+        try:
+            lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
+        except ValueError:
+            lineNo = -1
+        if lineNo in [0,1]:
+            Peaks['Limits'][lineNo] = event.xdata
+        if event.button == 3:
+            del Peaks['Peaks'][lineNo-2]
+        G2frame.itemPicked = None
+        G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
+        PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
     
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'mpl')
@@ -2469,10 +2535,12 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('key_release_event', OnPlotKeyUp)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
+        Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.Offset = [0,0]
     
     G2frame.G2plotNB.status.DestroyChildren()
-    if peaks == None:
+    if Peaks == None:
         if G2frame.Contour:
             Page.Choice = (' key press','d: lower contour max','u: raise contour max',
                 'D: lower contour min','U: raise contour min','o: reset to default',
@@ -2484,8 +2552,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 'm: toggle multiplot','s: color scheme','f: select data' )
         Page.keyPress = OnPlotKeyPress
     else:
+        G2frame.cid = None
         Page.Choice = ()
-        newPlot = True
     PatternId = G2frame.PatternId
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     if G2frame.SinglePlot:
@@ -2518,6 +2586,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     Ymax = 0.01
     lenX = 0
     for Pattern in PlotList:
+        if not len(Pattern): return     #no PDF's yet
         xye = Pattern[1]
         Ymax = max(Ymax,max(xye[1]))
     XYlist = []
@@ -2558,56 +2627,65 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         dx = 0.02*(Xmax-Xmin)
         Ymin = np.amin(XYlist.T[1])
         Ymax = np.amax(XYlist.T[1])
-        normcl = mpcls.Normalize(Ymin,Ymax)
         dy = 0.02*(Ymax-Ymin)
         Plot.set_xlim(Xmin-dx,Xmax+dx)
         Plot.set_ylim(Ymin-dy,Ymax+dy)
-        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        wx.BeginBusyCursor()
-        if XYlist.shape[0]>1:
-            if G2frame.Waterfall:
-                for xylist in XYlist:            
-                    ymin = np.amin(xylist.T[1])
-                    ymax = np.amax(xylist.T[1])
-                    normcl = mpcls.Normalize(ymin,ymax)
-                    colorRange = xylist.T[1]
-                    segs = np.reshape(np.hstack((xylist[:-1],xylist[1:])),(-1,2,2))
+        if Peaks == None:
+            normcl = mpcls.Normalize(Ymin,Ymax)
+            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            wx.BeginBusyCursor()
+            if XYlist.shape[0]>1:
+                if G2frame.Waterfall:
+                    for xylist in XYlist:            
+                        ymin = np.amin(xylist.T[1])
+                        ymax = np.amax(xylist.T[1])
+                        normcl = mpcls.Normalize(ymin,ymax)
+                        colorRange = xylist.T[1]
+                        segs = np.reshape(np.hstack((xylist[:-1],xylist[1:])),(-1,2,2))
+                        line = mplC.LineCollection(segs,cmap=acolor,norm=normcl)
+                        line.set_array(colorRange)
+                        Plot.add_collection(line)
+                    axcb = Page.figure.colorbar(line)
+                    axcb.set_label(plotType)
+                else:   #ok
+                    lines = mplC.LineCollection(XYlist,cmap=acolor)
+                    lines.set_array(np.arange(XYlist.shape[0]))
+                    Plot.add_collection(lines)
+                    axcb = Page.figure.colorbar(lines)
+                    axcb.set_label('PDF number')
+            else:
+                if G2frame.Waterfall:
+                    colorRange = XYlist[0].T[1]
+                    segs = np.reshape(np.hstack((XYlist[0][:-1],XYlist[0][1:])),(-1,2,2))
                     line = mplC.LineCollection(segs,cmap=acolor,norm=normcl)
                     line.set_array(colorRange)
                     Plot.add_collection(line)
-                axcb = Page.figure.colorbar(line)
-                axcb.set_label(plotType)
-            else:   #ok
-                lines = mplC.LineCollection(XYlist,cmap=acolor)
-                lines.set_array(np.arange(XYlist.shape[0]))
-                Plot.add_collection(lines)
-                axcb = Page.figure.colorbar(lines)
-                axcb.set_label('PDF number')
+                    axcb = Page.figure.colorbar(line)
+                    axcb.set_label('Intensity')
+                else:   #ok
+                    line = mplC.LineCollection(XYlist,color=colors[0])
+                    Plot.add_collection(line)
+            wx.EndBusyCursor()
+            if plotType == 'G(R)':
+                Xb = [0.,2.5]
+                Yb = [0.,-10.*np.pi*numbDen]
+                Plot.plot(Xb,Yb,color='k',dashes=(5,5))
+            elif plotType == 'F(Q)':
+                Plot.axhline(0.,color=wx.BLACK)
+            elif plotType == 'S(Q)':
+                Plot.axhline(1.,color=wx.BLACK)
         else:
-            if G2frame.Waterfall:
-                colorRange = XYlist[0].T[1]
-                segs = np.reshape(np.hstack((XYlist[0][:-1],XYlist[0][1:])),(-1,2,2))
-                line = mplC.LineCollection(segs,cmap=acolor,norm=normcl)
-                line.set_array(colorRange)
-                Plot.add_collection(line)
-                axcb = Page.figure.colorbar(line)
-                axcb.set_label('Intensity')
-            else:   #ok
-                line = mplC.LineCollection(XYlist,color=colors[0])
-                Plot.add_collection(line)
-            if peaks != None:
-                Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),picker=2.)
-                Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),picker=2.)
-        wx.EndBusyCursor()
-        if plotType == 'G(R)':
-            Xb = [0.,2.5]
-            Yb = [0.,-10.*np.pi*numbDen]
+            G2frame.Lines = []
+            X = XYlist[0].T[0]
+            Y = XYlist[0].T[1]
+            Plot.plot(X,Y,color='b',picker=3)
+            G2frame.Lines.append(Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),picker=2.))
+            G2frame.Lines.append(Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),picker=2.))
+            for peak in Peaks['Peaks']:
+                G2frame.Lines.append(Plot.axvline(peak[0],color='r',picker=2.))
+            Xb = [0.,peaks['Limits'][1]]
+            Yb = [0.,Xb[1]*peaks['Background'][1][1]]
             Plot.plot(Xb,Yb,color='k',dashes=(5,5))
-        elif plotType == 'F(Q)':
-            Plot.axhline(0.,color=wx.BLACK)
-        elif plotType == 'S(Q)':
-            Plot.axhline(1.,color=wx.BLACK)
-        
 #    elif G2frame.Legend:
 #        Plot.legend(loc='best')
     if not newPlot:

@@ -294,15 +294,13 @@ def CalcPDF(data,inst,limits,xydata):
     IofQ = copy.deepcopy(xydata['Sample'])
     IofQ[1] = np.array(IofQ[1])[:,Ibeg:Ifin]
     if data['Sample Bkg.']['Name']:
-        IofQ[1][1] += (xydata['Sample Bkg.'][1][1][Ibeg:Ifin]+
-            data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
+        IofQ[1][1] += xydata['Sample Bkg.'][1][1][Ibeg:Ifin]*data['Sample Bkg.']['Mult']
     if data['Container']['Name']:
-        xycontainer = (xydata['Container'][1][1]+data['Container']['Add'])*data['Container']['Mult']
+        xycontainer = xydata['Container'][1][1]*data['Container']['Mult']
         if data['Container Bkg.']['Name']:
-            xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
-                data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
+            xycontainer += xydata['Container Bkg.'][1][1][Ibeg:Ifin]*data['Container Bkg.']['Mult']
         IofQ[1][1] += xycontainer[Ibeg:Ifin]
-    data['IofQmin'] = IofQ[1][1][Ifin-1]
+    data['IofQmin'] = IofQ[1][1][-1]
     IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.
     ElList = data['ElList']

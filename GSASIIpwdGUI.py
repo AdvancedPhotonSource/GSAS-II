@@ -5299,9 +5299,21 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         
     def peakSizer():
         
-        for item in peaks['Peaks']: print item
+        atms = ','.join(data['ElList'].keys())
+        colLabels = ['position','magnitude','width','refine','Atom A','Atom B','Cooord. No.']
+        Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,W,PM,PW,MW,PMW',]+     \
+            2*[wg.GRID_VALUE_CHOICE+':'+atms,]+[wg.GRID_VALUE_FLOAT+':10,3',]
+        rowLabels = range(len(peaks['Peaks']))
+        peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        PDFPeaks = G2G.GSGrid(G2frame.dataDisplay)
+        PDFPeaks.SetTable(peakTable,False)
+        PDFPeaks.SetMargins(0,0)
+        PDFPeaks.SetRowLabelSize(40)
+        PDFPeaks.AutoSizeColumns(False)
+
         peakBox = wx.BoxSizer(wx.VERTICAL)
-        
+        peakBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Peaks:'),0,WACV)
+        peakBox.Add(PDFPeaks,0,WACV)
         
         return peakBox
         
@@ -5321,9 +5333,9 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     mainSizer.Add(limitSizer(),0,WACV) 
     mainSizer.Add((5,5),0) 
     mainSizer.Add(backSizer())
-    mainSizer.Add((5,5),0)
-    mainSizer.Add(peakSizer())
-
+    if len(peaks['Peaks']):
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(peakSizer())
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)

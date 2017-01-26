@@ -2492,7 +2492,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             pick.set_linestyle('--') # back to dashed
         else:       # a profile point, e.g. a peak
             if mouse.button == 1:
-                Peaks['Peaks'].append([xy[0],xy[1]*.5,.5,'','','',0.])
+                El = data['ElList'].keys()[0]
+                Peaks['Peaks'].append([xy[0],(xy[1]-Peaks['Background'][1][1]*xy[0])/.798,.5,'',El,El,0.])
                 Peaks['Peaks'] = G2mth.sortArray(Peaks['Peaks'],0,reverse=False)
                 PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
                 G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)

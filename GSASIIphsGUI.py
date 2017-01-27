@@ -2217,7 +2217,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if dlg.Elem not in ['None']:
                     El = dlg.Elem.strip()
                     for r in indx:                        
-                        if not Atoms.IsReadOnly(r,cid):
+                        if not Atoms.IsReadOnly(r,0):   #not if in RB!
                             atomData[r][cid] = El
                             if len(El) in [2,4]:
                                 atomData[r][cid-1] = El[:2]+'%d'%(r+1)
@@ -2237,7 +2237,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 result = dlg.ShowModal()
                 if result == wx.ID_YES:
                     for r in indx:
-                        if not Atoms.IsReadOnly(r,cid+1):
+                        if not Atoms.IsReadOnly(r,0):   #not if in RB!
                             El = atomData[r][cid+1]
                             if len(El) in [2,4]:
                                 atomData[r][cid] = El[:2]+'%d'%(r+1)
@@ -2254,7 +2254,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 sel = dlg.GetSelection()
                 parm = choices[sel][0]
                 for r in indx:                        
-                    if not Atoms.IsReadOnly(r,cid):
+                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] = parm
                 FillAtomsGrid(Atoms)
             dlg.Destroy()
@@ -2268,7 +2268,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in indx:                        
-                    if not Atoms.IsReadOnly(r,cid):
+                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] = parm
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
@@ -2280,7 +2280,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in indx:                        
-                    if not Atoms.IsReadOnly(r,cid):
+                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] += parm
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
@@ -2292,7 +2292,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in indx:                        
-                    if not Atoms.IsReadOnly(r,cid):
+                    if not Atoms.IsReadOnly(r,0):   #not if in RB!
                         atomData[r][cid] = parm
                 SetupGeneral()
                 FillAtomsGrid(Atoms)

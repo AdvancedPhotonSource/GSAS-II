@@ -85,7 +85,7 @@ class PickElement(wx.Dialog):
             # value change. Not ideal because wx.CB_READONLY is better.
             i,j= wx.__version__.split('.')[0:2]
             if int(i)+int(j)/10. > 2.8 and not sys.platform.startswith('win'):
-                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
+                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,27),
                     style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
             else:
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),

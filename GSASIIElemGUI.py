@@ -84,7 +84,7 @@ class PickElement(wx.Dialog):
             # patch for wx 2.9+ on Mac/Linux where EVT_COMBOBOX happens only on a
             # value change. Not ideal because wx.CB_READONLY is better.
             i,j= wx.__version__.split('.')[0:2]
-            if int(i)+int(j)/10. > 2.8 and 'win' not in sys.platform:
+            if int(i)+int(j)/10. > 2.8 and not sys.platform.startswith('win'):
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
                     style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
             else:

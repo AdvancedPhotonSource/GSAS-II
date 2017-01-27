@@ -872,7 +872,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     HistName = dlg.GetValue()
                 dlg.Destroy()
-            HistName = 'HKLF '+HistName
+            HistName = 'HKLF '+G2obj.StripUnicode(HistName,'_')
             # make new histogram names unique
             if len(rd.Banks):
                 for Bank in rd.Banks:
@@ -1548,8 +1548,7 @@ class GSASII(wx.Frame):
                     if key in rd.instdict:
                         Iparm1[key] = rd.instdict[key]
             lastdatafile = rd.powderentry[0]
-            HistName = rd.idstring
-            HistName = 'PWDR '+HistName
+            HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
             # make new histogram names unique
             if HistName in PWDRlist:
                 dlg = wx.MessageDialog(self,'Skip %s?'%(HistName),'Duplicate data name',wx.YES_NO)
@@ -3594,22 +3593,7 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for i in dlg.GetSelections():
-                        item = TextList[i]
-                        ElList = ElLists[i]
-                        PWDRname = item[4:]
-                        Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
-                        Data = {
-                            'Sample':{'Name':item,'Mult':1.0},
-                            'Sample Bkg.':{'Name':'','Mult':-1.0},
-                            'Container':{'Name':'','Mult':-1.0},
-                            'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
-                            'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
-                            'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits[i],
-                            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
-                            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Peaks'),
-                            {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})        
+                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i])
                 for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()

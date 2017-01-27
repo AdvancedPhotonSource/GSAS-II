@@ -882,6 +882,22 @@ DefaultControls = {
 '''Values to be used as defaults for the initial contents of the ``Controls``
 data tree item.
 '''
+def StripUnicode(string,subs='.'):
+    '''Strip non-ASCII characters from strings
+    
+    :param str string: string to strip Unicode characters from
+    :param str subs: character(s) to place into string in place of each
+      Unicode character. Defaults to '.'
+
+    :returns: a new string with only ASCII characters
+    '''
+    s = ''
+    for c in string:
+        if ord(c) < 128:
+            s += c
+        else:
+            s += subs
+    return s.encode('ascii','replace')
 
 def MakeUniqueLabel(lbl,labellist):
     '''Make sure that every a label is unique against a list by adding
@@ -892,7 +908,7 @@ def MakeUniqueLabel(lbl,labellist):
     :returns: lbl if not found in labellist or lbl with ``_1-9`` (or
       ``_10-99``, etc.) appended at the end
     '''
-    lbl = lbl.strip()
+    lbl = StripUnicode(lbl.strip(),'_')
     if not lbl: # deal with a blank label
         lbl = '_1'
     if lbl not in labellist:
@@ -2066,6 +2082,31 @@ class G2Exception(Exception):
         self.msg = msg
     def __str__(self):
         return repr(self.msg)
+
+def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits):
+    '''Create and initialize a new set of PDF tree entries
+
+    :param Frame G2frame: main GSAS-II tree frame object
+    :param str PWDRtree: name of PWDR to be used to create PDF item
+    :param dict ElList: data structure with composition
+    :param list Qlimits: Q limits to be used for computing the PDF
+    :returns: the Id of the newly created PDF entry
+    '''
+    PWDRname = PWDRtree[4:]
+    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='PDF '+PWDRname)
+    Data = {
+        'Sample':{'Name':PWDRtree,'Mult':1.0},
+        'Sample Bkg.':{'Name':'','Mult':-1.0},
+        'Container':{'Name':'','Mult':-1.0},
+        'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
+        'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
+        'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits,
+        'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
+        'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='PDF Peaks'),
+        {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
+    return Id        
 
 
 if __name__ == "__main__":

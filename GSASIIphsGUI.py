@@ -3498,7 +3498,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnFitLayers(event):
         print ' fit stacking fault model TBD'
-        import scipy.optimize as opt
+#        import scipy.optimize as opt
         wx.BeginBusyCursor()
 #        Min,Init,Done = SetupPDFEval()
 #        xstart = Init()
@@ -6170,7 +6170,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     dist = G2mth.GetXYZDist(xyz,oldXYZ,Amat)
                     dmax = max(dmax,np.min(dist))
                     id = np.argmin(dist)
-                    Ids.append(atomData[id][-1])
+                    Id = atomData[id][-1]
+                    if Id in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
+                        dist[id] = 100.
+                        id =  np.argmin(dist)
+                        Id = atomData[id][-1]
+                    Ids.append(Id)
                     atomData[id][cx:cx+3] = xyz
                 if dmax > 1.0:
                     print '**** WARNING - some atoms not found or misidentified ****'
@@ -6218,7 +6223,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for item in RBData[rbType][rbId].get('rbSeq',[]):
                     data['testRBObj']['rbObj']['Torsions'].append([item[2],False])
                     data['testRBObj']['torAtms'].append([-1,-1,-1])
-                Draw()
+                wx.CallAfter(Draw)
                 
             def fillAtNames(refType,atomData,ct):
                 atNames = [{},{},{}]
@@ -6294,19 +6299,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         item.SetLabel('%10.5f'%(x))
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnTorAngle(event):
-                event.Skip()
+            def OnTorAngle(invalid,value,tc):
                 OkBtn.SetLabel('OK')
                 OkBtn.Enable(True)
-                Obj = event.GetEventObject()
+                Obj = tc.event.GetEventObject()
                 [tor,torSlide] = Indx[Obj.GetId()]
-                Tors = data['testRBObj']['rbObj']['Torsions'][tor]
-                try:
-                    value = float(Obj.GetValue())
-                except ValueError:
-                    value = Tors[0]
-                Tors[0] = value
-                Obj.SetValue('%8.3f'%(value))
                 torSlide.SetValue(int(value*10))
                 G2plt.PlotStructure(G2frame,data)
                 
@@ -6397,10 +6394,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                         TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
                         TorSizer.Add(wx.StaticText(RigidBodies,-1,' Angle: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                        ang = wx.TextCtrl(RigidBodies,-1,value='%8.3f'%(torsion[0]),style=wx.TE_PROCESS_ENTER)
-                        ang.Bind(wx.EVT_TEXT_ENTER,OnTorAngle)
-                        ang.Bind(wx.EVT_KILL_FOCUS,OnTorAngle)
+                        ang = G2G.ValidatedTxtCtrl(RigidBodies,torsion,0,nDig=(8,3),typeHint=float,OnLeave=OnTorAngle)
                         Indx[torSlide.GetId()] = [t,ang]
                         Indx[ang.GetId()] = [t,torSlide]
                         TorSizer.Add(ang,0,WACV)                            
@@ -6431,7 +6425,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
             SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
-        Draw()
+        wx.CallAfter(Draw)
         
     def OnAutoFindResRB(event):
         RBData = G2frame.PatternTree.GetItemPyData(   

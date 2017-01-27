@@ -220,7 +220,7 @@ class G2PlotNoteBook(wx.Panel):
         if plotNum is not None:
             wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
 
-    def FindPlotTab(self,label,type,newImage=True):
+    def FindPlotTab(self,label,Type,newImage=True):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
         Set a flag (Page.plotInvalid) that it has been redrawn
         Record the name of the this plot in self.lastRaisedPlotTab
@@ -230,7 +230,7 @@ class G2PlotNoteBook(wx.Panel):
         try:
             new = False
             plotNum,Page = self.GetTabIndex(label)
-            if type == 'mpl' or type == '3d':          
+            if Type == 'mpl' or Type == '3d':          
                 Plot = Page.figure.gca()          #get previous plot
                 limits = Plot.get_xlim(),Plot.get_ylim() # save previous limits
 #                print 'Plot limits:',limits
@@ -240,11 +240,11 @@ class G2PlotNoteBook(wx.Panel):
             self.SetSelectionNoRefresh(plotNum) # raises plot tab
         except (ValueError,AttributeError):
             new = True
-            if type == 'mpl':
+            if Type == 'mpl':
                 Plot = self.addMpl(label).gca()
-            elif type == 'ogl':
+            elif Type == 'ogl':
                 Plot = self.addOgl(label)
-            elif type == '3d':
+            elif Type == '3d':
                 Plot = mp3d.Axes3D(self.add3D(label))
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)

@@ -38,7 +38,7 @@ class PickElement(wx.Dialog):
         import ElementTable as ET
         self.butWid = 60
         if 'nt' in os.name:
-            self.butWid = 40
+            self.butWid = 50
         self.SetClientSize(wx.Size(50+18*self.butWid, 250))
         self.Centre()
         i=0

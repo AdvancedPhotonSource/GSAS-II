@@ -87,6 +87,8 @@ class PickElement(wx.Dialog):
             if int(i)+int(j)/10. > 2.8 and not sys.platform.startswith('win'):
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,27),
                     style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
+                if sum(color)/3 < 128: # background is mostly dark, use white letters
+                    El.SetForegroundColour((255,255,255))
             else:
                 El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
                     style=wx.CB_READONLY, value=name[0])
@@ -332,4 +334,14 @@ class DeleteElement(wx.Dialog):
     def GetDeleteElement(self):
         return DeleteElement.El
         
+if __name__ == '__main__':
+    app = wx.PySimpleApp()
+    GSASIIpath.InvokeDebugOpts()
+    G2frame = wx.Frame(None) # create a frame
+    G2frame.Show(True)
+
+    PE = PickElement(G2frame)
+    if PE.ShowModal() == wx.ID_OK:
+        print PE.Elem
+    PE.Destroy()
 

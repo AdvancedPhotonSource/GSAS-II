@@ -29,10 +29,12 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
 import GSASIImath as G2mth
+import GSASIIpwdGUI as G2pdG
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
+import GSASIIobj as G2obj
 import GSASIIpy3 as G2py3
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -43,6 +45,7 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
     
 ################################################################################
 ##### Image Data
@@ -2205,7 +2208,9 @@ class AutoIntFrame(wx.Frame):
                 self.Status.SetStatusText('Press Pause to delay integration or Reset to prepare to reintegrate all images')
                 if self.timer.IsRunning(): self.timer.Stop()
                 self.PreventReEntryTimer = False
-                self.StartLoop()
+                if self.StartLoop():
+                    G2G.G2MessageBox(self,'Error in setting up integration. See console')
+                    return
                 self.OnTimerLoop(None) # run once immediately
                 if not self.Pause:
                     # no pause, so start timer to check for new files
@@ -2248,6 +2253,25 @@ class AutoIntFrame(wx.Frame):
                         fInp3.SetValue(self.params['outdir'])
                 finally:
                     dlg.Destroy()
+                return
+            elif btn4 == event.GetEventObject():
+                msg = ''
+                pth = G2G.GetExportPath(G2frame)
+                dlg = wx.FileDialog(
+                    self, 'Select a PDF parameter file',
+                    pth, self.params['pdfprm'], 
+                    "PDF controls file (*.pdfprm)|*.pdfprm",
+                    wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+                dlg.CenterOnParent()
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        self.params['pdfprm'] = dlg.GetPath()
+                        fInp4.SetValue(self.params['pdfprm'])
+                        scanPDFprm()
+                        msg = self.checkPDFprm()
+                finally:
+                    dlg.Destroy()
+                if msg: G2G.G2MessageBox(self,msg,'Warning')
                 return
                 
         def OnRadioSelect(event):
@@ -2301,7 +2325,26 @@ class AutoIntFrame(wx.Frame):
                     self.editTable.Enable(False)
             finally:
                 dlg.Destroy()
-
+                
+        def showPDFctrls(event):
+            '''Called to show or hide AutoPDF widgets. Note that fInp4 must be included in the
+            sizer layout with .Show(True) before .Show(False) will work properly.
+            '''
+            fInp4.Enable(self.params['ComputePDF'])
+            fInp4.Show(self.params['ComputePDF'])
+            fInp4a.Enable(self.params['ComputePDF'])
+            btn4.Enable(self.params['ComputePDF'])
+            if self.params['ComputePDF']:
+                lbl4.SetForegroundColour("black")
+                lbl4a.SetForegroundColour("black")
+            else:
+                lbl4.SetForegroundColour("gray")
+                lbl4a.SetForegroundColour("gray")
+                                    
+        def scanPDFprm(**kw):
+            fInp4.invalid = not os.path.exists(fInp4.GetValue())
+            fInp4._IndicateValidity()
+                
         ##################################################
         # beginning of __init__ processing
         ##################################################
@@ -2321,6 +2364,10 @@ class AutoIntFrame(wx.Frame):
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
         self.imageBase = G2frame.Image
+        self.params['ComputePDF'] = False
+        self.params['pdfDmax'] = 0.0
+        self.params['pdfprm'] = ''
+        self.pdfControls = {}
 
         G2frame.PatternTree.GetSelection()
         size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(self.imageBase)        
@@ -2369,14 +2416,13 @@ class AutoIntFrame(wx.Frame):
         lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Output settings")
         lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '))
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '),0,wx.ALIGN_CENTER_VERTICAL)
         fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',notBlank=False,size=(300,-1))
-        sizer.Add(fInp3)
+        sizer.Add(fInp3,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
         btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
         btn3.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn3)
-        lblsizr.Add(sizer)
-        #lblsizr.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s): '))
+        sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s): '))
         for dfmt in self.fmtlist:
@@ -2390,9 +2436,25 @@ class AutoIntFrame(wx.Frame):
         self.params['SeparateDir'] = False
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'SeparateDir'))
         lblsizr.Add(sizer)
-        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER,1)
-
-        #put automatic PDF controls here?
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Autocompute PDF'),0,wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'ComputePDF',OnChange=showPDFctrls))
+        lbl4a = wx.StaticText(mnpnl, wx.ID_ANY,'Max detector distance: ')
+        sizer.Add(lbl4a,0,wx.ALIGN_CENTER_VERTICAL)
+        fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',min=0.0)
+        sizer.Add(fInp4a,0,wx.ALIGN_CENTER_VERTICAL)
+        lblsizr.Add(sizer,0)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lbl4 = wx.StaticText(mnpnl, wx.ID_ANY,'PDF control: ')
+        sizer.Add(lbl4,0,wx.ALIGN_CENTER_VERTICAL)
+        fInp4 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfprm',notBlank=True,size=(300,-1),
+                                     OnLeave=scanPDFprm)
+        sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
+        btn4.Bind(wx.EVT_BUTTON, OnBrowse)
+        sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        lblsizr.Add(sizer,0,wx.EXPAND)
+        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER|wx.EXPAND,1)
         # buttons on bottom
         mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'),0,wx.TOP,5)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2409,18 +2471,55 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(self.btnclose)
         sizer.Add((20,-1))
         mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
-        '''or put automatic PDF controls here?
-        Auto PDF check box - if True:
-            chemical formula needed - or maybe fake it?
-        
-        '''
         # finish up window
         mnpnl.SetSizer(mnsizer)
         OnRadioSelect(None) # disable widgets
         mnsizer.Fit(self)
         self.CenterOnParent()
         self.Show()
+        showPDFctrls(None)
 
+    def checkPDFprm(self):
+        '''Read in the PDF (.pdfprm) parameter file and check for problems
+        '''
+        self.pdfControls = {}
+        msg = ''
+        File = None
+        try:
+            File = open(self.params['pdfprm'],'r')
+            S = File.readline()
+            while S:
+                if '#' in S:
+                    S = File.readline()
+                    continue
+                key,val = S.split(':',1)
+                try:
+                    self.pdfControls[key] = eval(val)
+                except:
+                    self.pdfControls[key] = val
+                S = File.readline()
+        except Exception as err:
+            msg += 'PDF processing error: Error with open or read of {}'.format(self.params['pdfprm'])
+            if GSASIIpath.GetConfigValue('debug'):
+                print(msg)
+                print(err)
+            self.pdfControls = {}
+            return msg
+        finally:
+            if File: File.close()
+        # may want to offer a substitution when not found
+        for key in ['Sample Bkg.','Container','Container Bkg.']:
+            if key not in self.pdfControls:
+                if msg: msg += '\n'
+                msg += 'Error, missing key in self.pdfControls: '+key
+                continue
+            name = self.pdfControls[key]['Name']
+            if not name: continue
+            if not G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.root,name):
+                if msg: msg += '\n'
+                msg += 'Warning, tree item for PDF '+key+' not present:\n  '+name
+        return msg
+    
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
         G2frame = self.G2frame
         if invalid: return
@@ -2472,7 +2571,9 @@ class AutoIntFrame(wx.Frame):
         self.Pause = True
             
     def IntegrateImage(self,img):
-        '''Integrates a single image'''
+        '''Integrates a single image. Ids for created PWDR entries (more than one is possible)
+        are placed in G2frame.IntgOutList
+        '''
         G2frame = self.G2frame
         imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
         G2frame.Image = imgId
@@ -2557,10 +2658,11 @@ class AutoIntFrame(wx.Frame):
             self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
         
     def StartLoop(self):
-        '''Save current Image params for use in future integrations
+        '''Prepare to start autointegration timer loop. 
+        Save current Image params for use in future integrations
         also label the window so users understand what is being used
         '''
-        print '\nStarting new autointegration\n'
+        print('\nStarting new autointegration\n')
         G2frame = self.G2frame
         # show current IMG base
         if self.params['Mode'] != 'table':
@@ -2621,33 +2723,49 @@ class AutoIntFrame(wx.Frame):
             wx.Yield()
             self.Reset = False
         G2frame.AutointPWDRnames = [] # list of created PWDR tree item names
-
+        G2frame.AutointPDFnames = [] # list of created PWDR tree item names
+        # check that AutoPDF input is OK, offer chance to use alternate PDWRs if referenced ones
+        # are not present
+        if self.params['ComputePDF']:
+            msg = self.checkPDFprm()
+            if 'Error' in msg:
+                print(msg)
+                return True
+            elif msg:
+                fileList = []
+                id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+                while id:
+                    name = G2frame.PatternTree.GetItemText(id)
+                    if name.startswith('PWDR '):
+                        fileList.append(name)
+                    id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                if not fileList:
+                    print(msg)
+                    print('No PWDR entries to select')
+                    return True
+                for key in ['Sample Bkg.','Container','Container Bkg.']:
+                    name = self.pdfControls[key]['Name']
+                    if not name: continue
+                    if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name):
+                        indx = G2G.ItemSelector(fileList, self, header='Select PDWR item',
+                                    title='Select a PDWR tree item for '+key+'\n(or cancel to quit)')
+                        if indx is None:
+                            print('No PWDR entry selected for '+key)
+                            return True
+                        self.pdfControls[key]['Name'] = fileList[indx]
+        return False
+                
     def OnTimerLoop(self,event):
         '''A method that is called every :meth:`PollTime` seconds that is
-        used to check for new files and process them. This is called only
-        after the "Start" button is pressed (then its label reads "Pause").
+        used to check for new files and process them. Integrates new images.
+        Also optionally sets up and computes PDF. 
+        This is called only after the "Start" button is pressed (then its label reads "Pause").
         '''
-        G2frame = self.G2frame
-        try:
-            self.currImageList = sorted(
-                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
-            self.ShowMatchingFiles(self.params['filter'])
-        except IndexError:
-            self.currImageList = []
-            return
-
-        if self.PreventReEntryTimer: return
-        self.PreventReEntryTimer = True
-        imageFileList = []
-        # integrate the images that have already been read in, but
-        # have not yet been processed
-        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
-            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
-            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
-            # Create a list of image files that have been read in
-            if imagefile not in imageFileList: imageFileList.append(imagefile)
-            # skip if already integrated
-            if img in G2frame.IntegratedList: continue
+        def AutoIntegrateImage(imgId):
+            '''Integrates an image that has been read into the data tree and updates the
+            AutoInt window. 
+            '''
+            img = G2frame.PatternTree.GetItemText(imgId)
             controlsDict = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
             ImageMasks = G2frame.PatternTree.GetItemPyData(
@@ -2663,11 +2781,94 @@ class AutoIntFrame(wx.Frame):
                 self.IntegrateImage(img)
             finally:
                 self.EnableButtons(True)
-            self.Pause |= G2frame.PauseIntegration
             self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
             wx.Yield()
             self.ShowMatchingFiles(self.params['filter'])
             wx.Yield()
+            
+        def AutoComputePDF(imgId):
+            '''Computes a PDF for a PWDR data tree tree item
+            '''
+            for pwdr in G2frame.AutointPWDRnames[:]:
+                if not pwdr.startswith('PWDR '): continue
+                if pwdr in G2frame.AutointPDFnames: continue
+                PWid = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,pwdr)
+                controlsDict = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
+                if self.params['pdfDmax'] != 0 and controlsDict['distance'] > self.params['pdfDmax']:
+                    print('Skipping PDF for '+pwdr+' due to detector position')
+                    continue
+                # Setup PDF
+                Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,PWid,'Instrument Parameters'))[0]
+                fullLimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,PWid,'Limits'))[0]
+                if 'C' in Parms['Type'][0]:
+                    qMax = tth2q(fullLimits[1],G2mth.getWave(Parms))
+                else:
+                    qMax = tof2q(fullLimits[0],Parms['difC'][1])
+                Qlimits = [0.9*qMax,qMax]
+
+                PWDRname = pwdr[4:]
+                item = pwdr
+                Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,imgId, 'Comments'))
+                ElList = {}
+                for item in Comments:           #grab chemical formula from Comments, if there
+                    if 'formula' in item[:15].lower():
+                        formula = item.split('=')[1].split()
+                        elems = formula[::2]
+                        nums = formula[1::2]
+                        formula = zip(elems,nums)
+                        for [elem,num] in formula:
+                            ElData = G2elem.GetElInfo(elem,Parms)
+                            ElData['FormulaNo'] = float(num)
+                            ElList[elem] = ElData
+                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits)
+                PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,PDFid, 'PDF Controls'))
+                PDFdata.update(self.pdfControls)
+                if ElList: PDFdata['ElList'] = ElList # override with formula from comments, if present
+                PDFdata['Sample']['Name'] = pwdr
+                # compute PDF
+                wx.Yield()
+                G2pdG.computePDF(G2frame,PDFdata)
+                wx.Yield()
+                G2pdG.OptimizePDF(G2frame,PDFdata,maxCycles=10,)
+                wx.Yield()
+                G2frame.AutointPDFnames.append(pwdr)
+                # save names of PDF entry to be deleted later if needed
+                G2frame.AutointPWDRnames.append(G2frame.PatternTree.GetItemText(PDFid))
+            
+        G2frame = self.G2frame
+        try:
+            self.currImageList = sorted(
+                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
+            self.ShowMatchingFiles(self.params['filter'])
+        except IndexError:
+            self.currImageList = []
+            return
+
+        if self.PreventReEntryTimer: return
+        self.PreventReEntryTimer = True
+        imageFileList = []
+        # integrate the images that have already been read in, but
+        # have not yet been processed            
+        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
+            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
+            # Create a list of image files that have been read in
+            if imagefile not in imageFileList: imageFileList.append(imagefile)
+            # skip if already integrated
+            if img in G2frame.IntegratedList: continue
+            AutoIntegrateImage(imgId)
+            #self.Pause |= G2frame.PauseIntegration
+            #if self.Pause:
+            #    self.OnPause()
+            #    self.PreventReEntryTimer = False
+            #    return
+            if self.pdfControls: AutoComputePDF(imgId)
+            self.Pause |= G2frame.PauseIntegration
             if self.Pause:
                 self.OnPause()
                 self.PreventReEntryTimer = False
@@ -2675,35 +2876,20 @@ class AutoIntFrame(wx.Frame):
 
         # loop over image files matching glob, reading in any new ones
         for newImage in self.currImageList:
-
             if newImage in imageFileList or self.Pause: continue # already read?
             for imgId in G2IO.ReadImages(G2frame,newImage):
-                controlsDict = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
-                ImageMasks = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
-                if self.params['Mode'] == 'table': # look up parameter values from table
-                    self.ResetFromTable(controlsDict['distance'])
-                # update controls from master
-                controlsDict.update(self.ImageControls)
-                # update masks from master w/o Thresholds
-                ImageMasks.update(self.ImageMasks)
-                # now integrate the image
-                img = G2frame.PatternTree.GetItemText(imgId)
-                self.EnableButtons(False)
-                try:
-                    self.IntegrateImage(img)
-                finally:
-                    self.EnableButtons(True)
+                AutoIntegrateImage(imgId)           
+                #self.Pause |= G2frame.PauseIntegration
+                #if self.Pause:
+                #    self.OnPause()
+                #    self.PreventReEntryTimer = False
+                #    return
+                if self.pdfControls: AutoComputePDF(imgId)
                 self.Pause |= G2frame.PauseIntegration
-                self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
-                wx.Yield()
-                self.ShowMatchingFiles(self.params['filter'])
-                wx.Yield()
-            if self.Pause:
-                self.OnPause()
-                break
-        
+                if self.Pause:
+                    self.OnPause()
+                    self.PreventReEntryTimer = False
+                    return
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
             print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))

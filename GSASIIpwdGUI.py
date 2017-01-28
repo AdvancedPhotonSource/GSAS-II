@@ -4620,6 +4620,105 @@ def UpdateModelsGrid(G2frame,data):
 ################################################################################
 #####  PDF controls
 ################################################################################           
+def computePDF(G2frame,data):
+    '''Calls :func:`GSASIIpwd.CalcPDF` to compute the PDF and put into the data tree array.
+    Called from OnComputePDF and OnComputeAllPDF and OnComputeAllPDF in
+    GSASIIimgGUI.py
+    '''
+
+    xydata = {}
+    for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
+        name = data[key]['Name']
+        if name:
+            xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
+    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample']['Name'])
+    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
+    auxPlot = G2pwd.CalcPDF(data,inst,limits,xydata)
+    data['I(Q)'] = xydata['IofQ']
+    data['S(Q)'] = xydata['SofQ']
+    data['F(Q)'] = xydata['FofQ']
+    data['G(R)'] = xydata['GofR']
+    return auxPlot
+
+def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
+    '''Optimize the PDF to minimize the difference between G(r) and the expected value for
+    low r (-4 pi r #density). 
+    '''
+    import scipy.optimize as opt
+    SetUp = SetupPDFEval(G2frame,data)
+    Min,Init,Done = SetUp
+    xstart = Init()
+    if showFit:
+        rms = Min(xstart)
+        print('  Optimizing corrections to improve G(r) at low r')
+        print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+            data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+
+    res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+                        method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+    Done(res['x'])
+    if showFit:
+        if res['success']:
+            msg = 'Converged'
+        else:
+            msg = 'Not Converged'
+        print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
+            data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
+    return res['success']
+
+def SetupPDFEval(G2frame,data):
+    '''Create functions needed to optimize the PDF at low r
+    '''
+    Data = copy.deepcopy(data)
+    xydata = {}
+    for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
+        name = Data[key]['Name']
+        if name:
+            xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
+    powName = Data['Sample']['Name']
+    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
+    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
+    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
+    numbDen = G2pwd.GetNumDensity(Data['ElList'],Data['Form Vol'])
+    BkgMax = 1.
+    def EvalLowPDF(arg):
+        '''Objective routine -- evaluates the RMS deviations in G(r)
+        from -4(pi)*#density*r for for r<Rmin
+        arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
+        the min & max values are between 0 and 1. 
+        '''
+        F,B,R = arg
+        Data['Flat Bkg'] = F*BkgMax
+        Data['BackRatio'] = B
+        Data['Ruland'] = R/10.
+        G2pwd.CalcPDF(Data,inst,limits,xydata)
+        # test low r computation
+        g = xydata['GofR'][1][1]
+        r = xydata['GofR'][1][0]
+        g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
+        return sum(g0**2)/len(g0)
+    def GetCurrentVals():
+        '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
+        '''
+        try:
+            F = data['Flat Bkg']/BkgMax
+        except:
+            F = 0
+        return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
+    def SetFinalVals(arg):
+        '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
+        scaled, refined values and plot corrected region of G(r) 
+        '''
+        F,B,R = arg
+        data['Flat Bkg'] = F*BkgMax
+        data['BackRatio'] = B
+        data['Ruland'] = R/10.
+        G2pwd.CalcPDF(data,inst,limits,xydata)
+    EvalLowPDF(GetCurrentVals())
+    BkgMax = max(xydata['IofQ'][1][1])/50.
+    return EvalLowPDF,GetCurrentVals,SetFinalVals
+    
 def UpdatePDFGrid(G2frame,data):
     '''respond to selection of PWDR PDF data tree item.
     '''    
@@ -4820,9 +4919,11 @@ def UpdatePDFGrid(G2frame,data):
                     key,val = S.split(':',1)
                     try:
                         newdata[key] = eval(val)
-                    except SyntaxError:
+                    #except SyntaxError:
+                    except:
                         newdata[key] = val
                     S = File.readline()
+                File.close()
                 data.update(newdata)
         finally:
             dlg.Destroy()
@@ -4863,110 +4964,12 @@ def UpdatePDFGrid(G2frame,data):
             return
         wx.BeginBusyCursor()
         try:
-            OptimizePDF(data)
+            OptimizePDF(G2frame,data)
         finally:
             wx.EndBusyCursor()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        OnComputePDF(event)
-        
-    def OptimizePDF(data,showFit=True,maxCycles=5):
-        import scipy.optimize as opt
-        SetUp = SetupPDFEval(data)
-        Min,Init,Done = SetUp
-        xstart = Init()
-        if showFit:
-            rms = Min(xstart)
-            print('  Optimizing corrections to improve G(r) at low r')
-            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-        
-        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
-                            method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
-        Done(res['x'])
-        if showFit:
-            #print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
-            #    data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']),
-            #    end='')
-            print '  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']),
-            if res['success']:
-                print(' *** Converged ***\n')
-            else:
-                print(' *** not converged ***\n')
-        return res['success']
-
-    def SetupPDFEval(data):
-        '''Create functions needed to optimize the PDF at low r
-        '''
-        Data = copy.deepcopy(data)
-        xydata = {}
-        for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
-            name = Data[key]['Name']
-            if name:
-                xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
-        powName = Data['Sample']['Name']
-        powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
-        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-        numbDen = G2pwd.GetNumDensity(Data['ElList'],Data['Form Vol'])
-        BkgMax = 1.
-        def EvalLowPDF(arg):
-            '''Objective routine -- evaluates the RMS deviations in G(r)
-            from -4(pi)r for for r<Rmin
-            arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
-            the min & max values are between 0 and 1. 
-            '''
-            F,B,R = arg
-            Data['Flat Bkg'] = F*BkgMax
-            Data['BackRatio'] = B
-            Data['Ruland'] = R/10.
-            G2pwd.CalcPDF(Data,inst,limits,xydata)
-            # test low r computation
-            g = xydata['GofR'][1][1]
-            r = xydata['GofR'][1][0]
-            g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-            return sum(g0**2)/len(g0)
-        def GetCurrentVals():
-            '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
-            '''
-            try:
-                F = data['Flat Bkg']/BkgMax
-            except:
-                F = 0
-            return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
-        def SetFinalVals(arg):
-            '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
-            scaled, refined values and plot corrected region of G(r) 
-            '''
-            F,B,R = arg
-            data['Flat Bkg'] = F*BkgMax
-            data['BackRatio'] = B
-            data['Ruland'] = R/10.
-            G2pwd.CalcPDF(data,inst,limits,xydata)
-        EvalLowPDF(GetCurrentVals())
-        BkgMax = max(xydata['IofQ'][1][1])/50.
-        return EvalLowPDF,GetCurrentVals,SetFinalVals
-                
-    def ComputePDF(Data):
-        '''Calls :func:`GSASIIpwd.CalcPDF` to compute and the PDF. Called from OnComputePDF and OnComputeAllPDF
-        '''
-
-        xydata = {}
-        for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
-            name = Data[key]['Name']
-            if name:
-                xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
-        powName = Data['Sample']['Name']
-        powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
-        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-        auxPlot = G2pwd.CalcPDF(Data,inst,limits,xydata)
-        data['I(Q)'] = xydata['IofQ']
-        data['S(Q)'] = xydata['SofQ']
-        data['F(Q)'] = xydata['FofQ']
-        data['G(R)'] = xydata['GofR']
-        return auxPlot
-        
+        OnComputePDF(event)        
+                        
     def OnComputePDF(event):
         '''Compute and plot PDF, in response to a menu command or a change to a
         computation parameter.
@@ -4974,7 +4977,7 @@ def UpdatePDFGrid(G2frame,data):
         if not data['ElList']:
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
             return
-        auxPlot = ComputePDF(data)
+        auxPlot = computePDF(G2frame,data)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
             Status.SetStatusText('PDF computed')
@@ -5035,9 +5038,9 @@ def UpdatePDFGrid(G2frame,data):
                         break
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
                     print('  Computing {}'.format(Name))
-                    ComputePDF(Data)
+                    computePDF(G2frame,Data)
                     if od['value_1']:
-                        notConverged += not OptimizePDF(Data,maxCycles=10)
+                        notConverged += not OptimizePDF(G2frame,Data,maxCycles=10)
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         finally:
             pgbar.Destroy()

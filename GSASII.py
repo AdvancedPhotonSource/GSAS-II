@@ -1619,9 +1619,12 @@ class GSASII(wx.Frame):
                 rd.comments)
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
+            Tmin1 = Tmin
+            if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:                
+                Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Limits'),
-                rd.pwdparms.get('Limits',[(Tmin,Tmax),[Tmin,Tmax]])
+                rd.pwdparms.get('Limits',[(Tmin,Tmax),[Tmin1,Tmax]])
                 )
             self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
             self.PatternTree.SetItemPyData(

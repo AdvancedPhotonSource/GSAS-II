@@ -2292,10 +2292,16 @@ class AutoIntFrame(wx.Frame):
                         self.params['pdfprm'] = dlg.GetPath()
                         fInp4.SetValue(self.params['pdfprm'])
                         scanPDFprm()
-                        msg = self.checkPDFprm()
+                        msg = self.checkPDFprm(True)
                 finally:
                     dlg.Destroy()
-                if msg: G2G.G2MessageBox(self,msg,'Warning')
+                if 'Error' in msg:
+                    print(msg)
+                    lbl = 'PDFPRM error'
+                else:
+                    msg = 'Information from file {}\n\n{}'.format(self.params['pdfprm'],msg)
+                    lbl = 'PDFPRM information'
+                G2G.G2MessageBox(self,msg,lbl)
                 return
                 
         def OnRadioSelect(event):
@@ -2463,7 +2469,7 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'SeparateDir'))
         lblsizr.Add(sizer)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Autocompute PDF'),0,wx.ALIGN_CENTER_VERTICAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Autocompute PDF:'),0,wx.ALIGN_CENTER_VERTICAL)
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'ComputePDF',OnChange=showPDFctrls))
         lbl4a = wx.StaticText(mnpnl, wx.ID_ANY,'Max detector distance: ')
         sizer.Add(lbl4a,0,wx.ALIGN_CENTER_VERTICAL)
@@ -2507,8 +2513,11 @@ class AutoIntFrame(wx.Frame):
         self.Show()
         showPDFctrls(None)
 
-    def checkPDFprm(self):
-        '''Read in the PDF (.pdfprm) parameter file and check for problems
+    def checkPDFprm(self,ShowContents=False):
+        '''Read in the PDF (.pdfprm) parameter file and check for problems.
+        If ShowContents is True, a formatted text version of some of the file
+        contents is returned. If errors are found, the return string will contain
+        the string "Error:" at least once. 
         '''
         self.pdfControls = {}
         msg = ''
@@ -2527,7 +2536,7 @@ class AutoIntFrame(wx.Frame):
                     self.pdfControls[key] = val
                 S = File.readline()
         except Exception as err:
-            msg += 'PDF processing error: Error with open or read of {}'.format(self.params['pdfprm'])
+            msg += 'PDF Processing Error: error with open or read of {}'.format(self.params['pdfprm'])
             if GSASIIpath.GetConfigValue('debug'):
                 print(msg)
                 print(err)
@@ -2535,17 +2544,27 @@ class AutoIntFrame(wx.Frame):
             return msg
         finally:
             if File: File.close()
-        # may want to offer a substitution when not found
+        formula = ''
+        for el in self.pdfControls['ElList']:
+            if self.pdfControls['ElList'][el]['FormulaNo'] <= 0: continue
+            if formula: formula += ' '
+            formula += '{}({:.1f})'.format(el,self.pdfControls['ElList'][el]['FormulaNo'])
+        if not formula:
+            msg += 'Error: no chemical formula in file'
         for key in ['Sample Bkg.','Container','Container Bkg.']:
             if key not in self.pdfControls:
                 if msg: msg += '\n'
-                msg += 'Error, missing key in self.pdfControls: '+key
+                msg += 'Error: missing key in self.pdfControls: '+key
                 continue
+        if msg or not ShowContents: return msg  # stop on error
+        msg += 'Default formula: '+formula+'\n'
+        for key in ['Sample Bkg.','Container','Container Bkg.']:
             name = self.pdfControls[key]['Name']
+            mult = self.pdfControls[key].get('Mult',0.0)
             if not name: continue
+            msg += '\n{}: {:.2f} * "{}"'.format(key,mult,name)
             if not G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.root,name):
-                if msg: msg += '\n'
-                msg += 'Warning, tree item for PDF '+key+' not present:\n  '+name
+                msg += ' *** missing ***'
         return msg
     
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
@@ -2756,31 +2775,29 @@ class AutoIntFrame(wx.Frame):
         # are not present
         if self.params['ComputePDF']:
             msg = self.checkPDFprm()
-            if 'Error' in msg:
+            if 'Error:' in msg:
                 print(msg)
                 return True
-            elif msg:
-                fileList = []
-                id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-                while id:
-                    name = G2frame.PatternTree.GetItemText(id)
-                    if name.startswith('PWDR '):
-                        fileList.append(name)
-                    id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-                if not fileList:
-                    print(msg)
-                    print('No PWDR entries to select')
-                    return True
-                for key in ['Sample Bkg.','Container','Container Bkg.']:
-                    name = self.pdfControls[key]['Name']
-                    if not name: continue
-                    if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name):
-                        indx = G2G.ItemSelector(fileList, self, header='Select PDWR item',
+            fileList = []
+            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while id:
+                name = G2frame.PatternTree.GetItemText(id)
+                if name.startswith('PWDR '): fileList.append(name)
+                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            if not fileList:
+                print(msg)
+                print('No PWDR entries to select')
+                return True
+            for key in ['Sample Bkg.','Container','Container Bkg.']:
+                name = self.pdfControls[key]['Name']
+                if not name: continue
+                if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name):
+                    indx = G2G.ItemSelector(fileList, self, header='Select PDWR item',
                                     title='Select a PDWR tree item for '+key+'\n(or cancel to quit)')
-                        if indx is None:
-                            print('No PWDR entry selected for '+key)
-                            return True
-                        self.pdfControls[key]['Name'] = fileList[indx]
+                    if indx is None:
+                        print('No PWDR entry selected for '+key)
+                        return True
+                    self.pdfControls[key]['Name'] = fileList[indx]
         return False
                 
     def OnTimerLoop(self,event):

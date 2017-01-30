@@ -1319,7 +1319,12 @@ def UpdateMasks(G2frame,data):
             if not Error is None:
                 G2frame.ErrorDialog('Auto spot search error',Error)
             wx.CallAfter(UpdateMasks,G2frame,data)
-            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)                
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+
+    def OnDeleteSpotMask(event):
+        data['Points'] = []
+        wx.CallAfter(UpdateMasks,G2frame,data)
+        wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)          
             
     def ToggleSpotMaskMode(event):
         G2plt.ToggleMultiSpotMask(G2frame)
@@ -1512,6 +1517,7 @@ def UpdateMasks(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOADNOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoSpotMask, id=G2gd.wxID_FINDSPOTS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteSpotMask, id=G2gd.wxID_DELETESPOTS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2gd.wxID_NEWMASKSPOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2gd.wxID_NEWMASKARC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRingMask, id=G2gd.wxID_NEWMASKRING)

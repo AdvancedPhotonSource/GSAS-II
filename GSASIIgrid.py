@@ -98,8 +98,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(13)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
-    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,
-] = [wx.NewId() for item in range(10)]
+    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,wxID_DELETESPOTS
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
     wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,
@@ -2120,6 +2120,8 @@ class DataFrame(wx.Frame):
             id=wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask w/o threshold')
         self.MaskEdit.Append(help='Auto search for spot masks; NB: will clear old spot masks', 
             id=wxID_FINDSPOTS, kind=wx.ITEM_NORMAL,text='Auto spot masks')
+        self.MaskEdit.Append(help='Delete all spot masks', 
+            id=wxID_DELETESPOTS, kind=wx.ITEM_NORMAL,text='Delete spot masks')        
         submenu.Append(help='Create an arc mask with mouse input', 
             id=wxID_NEWMASKARC, kind=wx.ITEM_NORMAL,text='Arc mask')
         submenu.Append(help='Create a frame mask with mouse input', 

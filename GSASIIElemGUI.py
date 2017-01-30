@@ -25,8 +25,8 @@ import sys
 import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     '''Makes periodic table widget for picking element. Modes:
-        oneOnly if True element symbols are provided, otherwise select isotope
-        ifNone ?
+        oneOnly if True element symbols are provided, otherwise select valence
+        ifNone if True show None button
         ifMag if True present magnetic scatters only
         multiple if True multiple elements can be selected
     '''
@@ -71,6 +71,7 @@ class PickElement(wx.Dialog):
         
     def ElButton(self, name, pos, tip, color):
         'Creates an element button widget'
+        self.color = color
         if not self.ifNone and name[0] == 'None':
             return
         if self.oneOnly:
@@ -104,8 +105,12 @@ class PickElement(wx.Dialog):
             El = event.GetEventObject().GetValue()
         self.Elem = El
         if self.multiple:
-            self.elementList.append(El)
-            event.GetEventObject().SetBackgroundColour('black') # Shows on Mac
+            if El in self.elementList:
+                self.elementList.remove(El)
+                event.GetEventObject().SetBackgroundColour(self.color) # Shows on Mac
+            else:
+                self.elementList.append(El)
+                event.GetEventObject().SetBackgroundColour('black') # Shows on Mac
             event.GetEventObject().SetColour(
                 wx.Colour(*[int(i/2) for i in event.GetEventObject().GetColour()]))
         else:

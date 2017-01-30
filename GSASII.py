@@ -3151,6 +3151,7 @@ class GSASII(wx.Frame):
         DelList = []
         DelItemList = []
         nItems = {'PWDR':0,'SASD':0,'IMG':0,'HKLF':0,'PDF':0}
+        PDFnames = []
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
@@ -3161,9 +3162,13 @@ class GSASII(wx.Frame):
                     if 'SASD' in name: nItems['SASD'] += 1
                     if 'IMG' in name:  nItems['IMG'] += 1
                     if 'HKLF' in name: nItems['HKLF'] += 1
-                    if 'PDF' in name:  nItems['PDF'] += 1
+                    if 'PDF' in name:
+                        PDFnames.append(name)
+                        nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+            for pdfName in PDFnames:
+                TextList.remove('PWDR'+pdfName[4:])
             dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:

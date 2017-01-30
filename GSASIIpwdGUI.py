@@ -4932,10 +4932,11 @@ def UpdatePDFGrid(G2frame,data):
         
     def OnAddElement(event):
         ElList = data['ElList']
-        PE = G2elemGUI.PickElement(G2frame,oneOnly=True,multiple=True)
+        choice = ElList.keys()
+        PE = G2elemGUI.PickElements(G2frame,choice)
         if PE.ShowModal() == wx.ID_OK:
-            for El in PE.elementList:
-                if El not in ElList and El != 'None':
+            for El in PE.Elem:
+                if El not in ElList:
                     try:
                         data['ElList'][El] = G2elem.GetElInfo(El,inst)
                         data['ElList'][El]['FormulaNo'] = 1.0
@@ -5250,7 +5251,7 @@ def UpdatePDFGrid(G2frame,data):
     noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
     noRing.SetValue(data['noRing'])
     noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
-    sqBox.Add(noRing,0)
+    sqBox.Add(noRing,0,WACV)
     mainSizer.Add(sqBox,0)
 
     mainSizer.Layout()    
@@ -5325,7 +5326,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         TextList = GetFileList(G2frame,'PDF')
         Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
-            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
+            G2frame.ErrorDialog('Nothing to copy PDF peaks to','There must be more than one "PDF" pattern')
             return
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF peaks','Copy peaks from '+Source+' to:',TextList)
         try:
@@ -5341,6 +5342,13 @@ def UpdatePDFPeaks(G2frame,peaks,data):
             dlg.Destroy()
         
     def OnFitPDFpeaks(event):
+        PatternId = G2frame.PatternId
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))['G(R)']
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'))
+        if not peaks:
+            G2frame.ErrorDialog('No peaks!','Nothing to fit!')
+            return
+        
         print 'fit peaks'
         
     def OnFitAllPDFpeaks(event):

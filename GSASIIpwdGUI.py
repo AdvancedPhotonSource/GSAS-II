@@ -4732,49 +4732,298 @@ def SetupPDFEval(G2frame,data):
 def UpdatePDFGrid(G2frame,data):
     '''respond to selection of PWDR PDF data tree item.
     '''    
-    def FillFileSizer(fileSizer,key):
-        #fileSizer is a FlexGridSizer(3,4)
+    
+    def PDFFileSizer():
         
-        def OnSelectFile(event):
-            Obj = event.GetEventObject()
-            fileKey,itemKey,fmt = itemDict[Obj.GetId()]
-            if itemKey == 'Name':
-                value = Obj.GetValue()
-            Obj.SetValue(fmt%(value))
-            data[fileKey][itemKey] = value
-            wx.CallLater(100,UpdatePDFGrid,G2frame,data)
-            wx.CallAfter(OnComputePDF,None)
+        def FillFileSizer(fileSizer,key):
+            #fileSizer is a FlexGridSizer(3,4)
             
-        def OnMoveMult(event):
-            data[key]['Mult'] += multSpin.GetValue()*0.01
-            mult.SetValue(data[key]['Mult'])
+            def OnSelectFile(event):
+                Obj = event.GetEventObject()
+                fileKey,itemKey,fmt = itemDict[Obj.GetId()]
+                if itemKey == 'Name':
+                    value = Obj.GetValue()
+                Obj.SetValue(fmt%(value))
+                data[fileKey][itemKey] = value
+                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
+                wx.CallAfter(OnComputePDF,None)
+                
+            def OnMoveMult(event):
+                data[key]['Mult'] += multSpin.GetValue()*0.01
+                mult.SetValue(data[key]['Mult'])
+                multSpin.SetValue(0)
+                wx.CallAfter(OnComputePDF,None)
+                            
+            def AfterChange(invalid,value,tc):
+                if invalid: return
+                wx.CallAfter(OnComputePDF,None)
+            
+            item = data[key]
+            fileList = [''] + GetFileList(G2frame,'PWDR')
+            fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
+            fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            itemDict[fileName.GetId()] = [key,'Name','%s']
+            fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
+            fileSizer.Add(fileName,0,)
+            fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
+            mulBox = wx.BoxSizer(wx.HORIZONTAL)
+            mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
+                typeHint=float,OnLeave=AfterChange)
+            mulBox.Add(mult,0,)
+            multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+            multSpin.SetRange(-1,1)
             multSpin.SetValue(0)
-            wx.CallAfter(OnComputePDF,None)
-                        
+            multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
+            mulBox.Add(multSpin,0,WACV)
+            fileSizer.Add(mulBox,0,WACV)
+        
+        PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
+        PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
+        PDFfileSizer.Add((5,5),0)    
+        if 'C' in inst['Type'][0]:
+            str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+            PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
+        PDFfileSizer.Add((5,5),0)
+        fileSizer = wx.FlexGridSizer(0,4,5,1)
+        select = ['Sample Bkg.','Container']
+        if data['Container']['Name']:
+            select.append('Container Bkg.')
+        for key in select:
+            FillFileSizer(fileSizer,key)
+        PDFfileSizer.Add(fileSizer,0)
+        return PDFfileSizer
+        
+    def SampleSizer():
+    
+        def FillElemSizer(elemSizer,ElData):
+            
+            def AfterChange(invalid,value,tc):
+                if invalid: return
+                data['Form Vol'] = max(10.0,SumElementVolumes())
+                wx.CallAfter(UpdatePDFGrid,G2frame,data)
+                wx.CallAfter(OnComputePDF,None)
+                    
+            elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
+                label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
+            num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ElData,'FormulaNo',nDig=(10,3),min=0.0,
+                typeHint=float,OnLeave=AfterChange)
+            elemSizer.Add(num,0,WACV)
+            elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
+                label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
+                0,WACV)
+            
         def AfterChange(invalid,value,tc):
+            if invalid: return
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            wx.CallAfter(OnComputePDF,None)
+        
+        def OnGeometry(event):
+            data['Geometry'] = geometry.GetValue()
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            #UpdatePDFGrid(G2frame,data)
+            wx.CallAfter(OnComputePDF,None)
+        
+        sampleSizer = wx.BoxSizer(wx.VERTICAL)
+        if not ElList:
+            sampleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: fill in this 1st'),0,WACV)
+        else:
+            sampleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,WACV)
+        sampleSizer.Add((5,5),0)    
+        Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
+        Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
+        elemSizer = wx.FlexGridSizer(0,3,5,1)
+        for El in ElList:
+            FillElemSizer(elemSizer,ElList[El])
+        sampleSizer.Add(elemSizer,0)
+        sampleSizer.Add((5,5),0)    
+        midSizer = wx.BoxSizer(wx.HORIZONTAL)
+        midSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Formula volume: '),0,WACV)
+        formVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Form Vol',nDig=(10,3),min=10.0,
+            typeHint=float,OnLeave=AfterChange)
+        midSizer.Add(formVol,0)
+        midSizer.Add(wx.StaticText(G2frame.dataDisplay,
+            label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
+            0,WACV)
+        sampleSizer.Add(midSizer,0)
+        sampleSizer.Add((5,5),0)
+        geoBox = wx.BoxSizer(wx.HORIZONTAL)
+        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample geometry: '),0,WACV)
+        choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
+        geometry = wx.ComboBox(G2frame.dataDisplay,value=data['Geometry'],choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
+        geoBox.Add(geometry,0)
+        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample diameter/thickness, mm: '),0,WACV)
+        diam = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Diam',nDig=(10,3),min=0.01,
+            typeHint=float,OnLeave=AfterChange)
+        geoBox.Add(diam,0)
+        sampleSizer.Add(geoBox,0)
+        sampleSizer.Add((5,5),0)    
+        geoBox = wx.BoxSizer(wx.HORIZONTAL)
+        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Packing: '),0,WACV)
+        pack = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Pack',nDig=(10,2),min=0.01,
+            typeHint=float,OnLeave=AfterChange)
+        geoBox.Add(pack,0)
+        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
+        sampleSizer.Add(geoBox,0)
+        return sampleSizer
+        
+    def SFGctrlSizer():
+        
+        def OnOptimizePDF(event):
+            '''Optimize Flat Bkg, BackRatio & Ruland corrections to remove spurious
+            "intensity" from portion of G(r) with r<Rmin.
+            Invoked by Optimize PDF button and from menu command.
+            '''
+            if not data['ElList']:
+                G2frame.ErrorDialog('PDF error','Chemical formula not defined')
+                return
+            wx.BeginBusyCursor()
+            try:
+                OptimizePDF(G2frame,data)
+            finally:
+                wx.EndBusyCursor()
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            OnComputePDF(event)        
+                        
+        def AfterChangeNoRefresh(invalid,value,tc):
             if invalid: return
             wx.CallAfter(OnComputePDF,None)
         
-        item = data[key]
-        fileList = [''] + GetFileList(G2frame,'PWDR')
-        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
-        fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        itemDict[fileName.GetId()] = [key,'Name','%s']
-        fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
-        fileSizer.Add(fileName,0,)
-        fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
-        mulBox = wx.BoxSizer(wx.HORIZONTAL)
-        mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
-            typeHint=float,OnLeave=AfterChange)
-        mulBox.Add(mult,0,)
-        multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
-        multSpin.SetRange(-1,1)
-        multSpin.SetValue(0)
-        multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
-        mulBox.Add(multSpin,0,WACV)
-        fileSizer.Add(mulBox,0,WACV)
+        def OnDetType(event):
+            data['DetType'] = detType.GetValue()
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            wx.CallAfter(OnComputePDF,None)
         
+        def OnFlatSpin(event):
+            data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
+            flatBkg.SetValue(data['Flat Bkg'])
+            flatSpin.SetValue(0)        
+            wx.CallAfter(OnComputePDF,None)
+                
+        def OnBackSlider(event):
+            value = int(backSldr.GetValue())/100.
+            data['BackRatio'] = value
+            backVal.SetValue(data['BackRatio'])
+            wx.CallAfter(OnComputePDF,None)
+        
+        def OnRulSlider(event):
+            value = int(rulandSldr.GetValue())/1000.
+            data['Ruland'] = max(0.001,value)
+            rulandWdt.SetValue(data['Ruland'])
+            wx.CallAfter(OnComputePDF,None)
+        
+        def NewQmax(invalid,value,tc):
+            if invalid: return
+            data['QScaleLim'][0] = 0.9*value
+            SQmin.SetValue(data['QScaleLim'][0])
+            wx.CallAfter(OnComputePDF,None)
+        
+        def OnResetQ(event):
+            data['QScaleLim'][1] = qLimits[1]
+            SQmax.SetValue(data['QScaleLim'][1])
+            data['QScaleLim'][0] = 0.9*qLimits[1]
+            SQmin.SetValue(data['QScaleLim'][0])
+            wx.CallAfter(OnComputePDF,None)
+            
+        def OnLorch(event):
+            data['Lorch'] = lorch.GetValue()
+            wx.CallAfter(OnComputePDF,None)
+                            
+        def OnNoRing(event):
+            data['noRing'] = not data['noRing']
+            wx.CallAfter(OnComputePDF,None)
+
+        sfgSizer = wx.BoxSizer(wx.VERTICAL)         
+        sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
+        sqBox.Add((1,1),1,wx.EXPAND,1)
+        optB = wx.Button(G2frame.dataDisplay,label='Optimize PDF',style=wx.BU_EXACTFIT)
+        optB.Bind(wx.EVT_BUTTON, OnOptimizePDF)
+        sqBox.Add(optB,0,WACV|wx.ALIGN_RIGHT)
+        sfgSizer.Add(sqBox,0,wx.EXPAND)
+        
+        sfgSizer.Add((5,5),0)
+        sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
+        choice = ['Image plate','Point detector']
+        detType = wx.ComboBox(G2frame.dataDisplay,value=data['DetType'],choices=choice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        detType.Bind(wx.EVT_COMBOBOX, OnDetType)
+        sqBox.Add(detType,0)
+        if data['DetType'] == 'Image plate':
+            sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,WACV)
+            obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
+                typeHint=float,OnLeave=AfterChangeNoRefresh)
+            sqBox.Add(obliqCoeff,0)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
+        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
+                typeHint=float,OnLeave=AfterChangeNoRefresh)
+        sqBox.Add(flatBkg,0)
+        flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+        flatSpin.SetRange(-1,1)
+        flatSpin.SetValue(0)
+        flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
+        sqBox.Add(flatSpin,0,WACV)
+        sqBox.Add((1,1),1,wx.EXPAND,1)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
+        rmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmin',nDig=(5,1),
+                typeHint=float,size=wx.Size(50,20))
+        sqBox.Add(rmin,0,WACV|wx.ALIGN_RIGHT)
+        sfgSizer.Add(sqBox,0,wx.EXPAND)
+            
+        bkBox = wx.BoxSizer(wx.HORIZONTAL)
+        bkBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background ratio: '),0,WACV)    
+        backSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+            value=int(100*data['BackRatio']))
+        bkBox.Add(backSldr,1,wx.EXPAND)
+        backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
+        backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'BackRatio',nDig=(10,3),min=0.0,max=1.0,
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
+        bkBox.Add(backVal,0,WACV)    
+        sfgSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+    
+        sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Ruland width: '),0,WACV)    
+        rulandSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+            value=int(1000*data['Ruland']))
+        sqBox.Add(rulandSldr,1,wx.EXPAND)
+        rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
+        rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
+        sqBox.Add(rulandWdt,0,WACV)    
+        sfgSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+        
+        sqBox = wx.BoxSizer(wx.HORIZONTAL)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling Q-range: '),0,WACV)
+        SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),
+            min=qLimits[0],max=.95*data['QScaleLim'][1],
+            typeHint=float,OnLeave=AfterChangeNoRefresh)
+        sqBox.Add(SQmin,0,WACV)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
+        SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),
+                                     min=qLimits[0],max=qLimits[1],
+                                     typeHint=float,OnLeave=NewQmax)
+        sqBox.Add(SQmax,0,WACV)
+        resetQ = wx.Button(G2frame.dataDisplay,label='Reset?',style=wx.BU_EXACTFIT)
+        sqBox.Add(resetQ,0,WACV)
+        resetQ.Bind(wx.EVT_BUTTON, OnResetQ)
+        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
+        rmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmax',nDig=(10,1),min=10.,max=200.,
+            typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))
+        sqBox.Add(rmax,0,WACV)
+        lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
+        lorch.SetValue(data['Lorch'])
+        lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
+        sqBox.Add(lorch,0,WACV)
+        noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
+        noRing.SetValue(data['noRing'])
+        noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
+        sqBox.Add(noRing,0,WACV)
+        sfgSizer.Add(sqBox,0)
+        return sfgSizer
+            
     def SumElementVolumes():
         sumVol = 0.
         ElList = data['ElList']
@@ -4784,83 +5033,6 @@ def UpdatePDFGrid(G2frame,data):
         return sumVol
         wx.CallAfter(OnComputePDF,None)
         
-    def FillElemSizer(elemSizer,ElData):
-        
-        def AfterChange(invalid,value,tc):
-            if invalid: return
-            data['Form Vol'] = max(10.0,SumElementVolumes())
-            wx.CallAfter(UpdatePDFGrid,G2frame,data)
-            wx.CallAfter(OnComputePDF,None)
-                
-        elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
-            label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
-        num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ElData,'FormulaNo',nDig=(10,3),min=0.0,
-            typeHint=float,OnLeave=AfterChange)
-        elemSizer.Add(num,0,WACV)
-        elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
-            label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
-            0,WACV)
-            
-    def OnGeometry(event):
-        data['Geometry'] = geometry.GetValue()
-        wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        #UpdatePDFGrid(G2frame,data)
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnDetType(event):
-        data['DetType'] = detType.GetValue()
-        wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        #UpdatePDFGrid(G2frame,data)
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnFlatSpin(event):
-        data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
-        flatBkg.SetValue(data['Flat Bkg'])
-        flatSpin.SetValue(0)        
-        wx.CallAfter(OnComputePDF,None)
-        
-    def AfterChange(invalid,value,tc):
-        if invalid: return
-        wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        wx.CallAfter(OnComputePDF,None)
-        
-    def AfterChangeNoRefresh(invalid,value,tc):
-        if invalid: return
-        wx.CallAfter(OnComputePDF,None)
-        
-    def NewQmax(invalid,value,tc):
-        if invalid: return
-        data['QScaleLim'][0] = 0.9*value
-        SQmin.SetValue(data['QScaleLim'][0])
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnBackSlider(event):
-        value = int(backSldr.GetValue())/100.
-        data['BackRatio'] = value
-        backVal.SetValue(data['BackRatio'])
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnRulSlider(event):
-        value = int(rulandSldr.GetValue())/1000.
-        data['Ruland'] = max(0.001,value)
-        rulandWdt.SetValue(data['Ruland'])
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnLorch(event):
-        data['Lorch'] = lorch.GetValue()
-        wx.CallAfter(OnComputePDF,None)
-                        
-    def OnResetQ(event):
-        data['QScaleLim'][1] = qLimits[1]
-        SQmax.SetValue(data['QScaleLim'][1])
-        data['QScaleLim'][0] = 0.9*qLimits[1]
-        SQmin.SetValue(data['QScaleLim'][0])
-        wx.CallAfter(OnComputePDF,None)
-        
-    def OnNoRing(event):
-        data['noRing'] = not data['noRing']
-        wx.CallAfter(OnComputePDF,None)
-
     def OnCopyPDFControls(event):
         import copy
         TextList = GetFileList(G2frame,'PDF')
@@ -4955,22 +5127,6 @@ def UpdatePDFGrid(G2frame,data):
         dlg.Destroy()
         wx.CallAfter(UpdatePDFGrid,G2frame,data)
 
-    def OnOptimizePDF(event):
-        '''Optimize Flat Bkg, BackRatio & Ruland corrections to remove spurious
-        "intensity" from portion of G(r) with r<Rmin.
-        Invoked by Optimize PDF button and from menu command.
-        '''
-        if not data['ElList']:
-            G2frame.ErrorDialog('PDF error','Chemical formula not defined')
-            return
-        wx.BeginBusyCursor()
-        try:
-            OptimizePDF(G2frame,data)
-        finally:
-            wx.EndBusyCursor()
-        wx.CallAfter(UpdatePDFGrid,G2frame,data)
-        OnComputePDF(event)        
-                        
     def OnComputePDF(event):
         '''Compute and plot PDF, in response to a menu command or a change to a
         computation parameter.
@@ -5108,154 +5264,14 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     ElList = data['ElList']
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
-    mainSizer.Add((5,5),0)    
-    if 'C' in inst['Type'][0]:
-        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
-    mainSizer.Add((5,5),0)
-    fileSizer = wx.FlexGridSizer(0,4,5,1)
-    select = ['Sample Bkg.','Container']
-    if data['Container']['Name']:
-        select.append('Container Bkg.')
-    for key in select:
-        FillFileSizer(fileSizer,key)
-    mainSizer.Add(fileSizer,0)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(PDFFileSizer(),0,WACV)
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    if not ElList:
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: fill in this 1st'),0,WACV)
-    else:
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,WACV)
-    mainSizer.Add((5,5),0)    
-    Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
-    Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
-    elemSizer = wx.FlexGridSizer(0,3,5,1)
-    for El in ElList:
-        FillElemSizer(elemSizer,ElList[El])
-    mainSizer.Add(elemSizer,0)
-    mainSizer.Add((5,5),0)    
-    midSizer = wx.BoxSizer(wx.HORIZONTAL)
-    midSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Formula volume: '),0,WACV)
-    formVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Form Vol',nDig=(10,3),min=10.0,
-        typeHint=float,OnLeave=AfterChange)
-    midSizer.Add(formVol,0)
-    midSizer.Add(wx.StaticText(G2frame.dataDisplay,
-        label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
-        0,WACV)
-    mainSizer.Add(midSizer,0)
-    mainSizer.Add((5,5),0)
-    geoBox = wx.BoxSizer(wx.HORIZONTAL)
-    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample geometry: '),0,WACV)
-    choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
-    geometry = wx.ComboBox(G2frame.dataDisplay,value=data['Geometry'],choices=choice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
-    geoBox.Add(geometry,0)
-    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample diameter/thickness, mm: '),0,WACV)
-    diam = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Diam',nDig=(10,3),min=0.01,
-        typeHint=float,OnLeave=AfterChange)
-    geoBox.Add(diam,0)
-    mainSizer.Add(geoBox,0)
-    mainSizer.Add((5,5),0)    
-    geoBox = wx.BoxSizer(wx.HORIZONTAL)
-    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Packing: '),0,WACV)
-    pack = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Pack',nDig=(10,2),min=0.01,
-        typeHint=float,OnLeave=AfterChange)
-    geoBox.Add(pack,0)
-    geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
-    mainSizer.Add(geoBox,0)
-        
+    mainSizer.Add(SampleSizer(),0,WACV)
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
-    sqBox.Add((1,1),1,wx.EXPAND,1)
-    optB = wx.Button(G2frame.dataDisplay,label='Optimize PDF',style=wx.BU_EXACTFIT)
-    optB.Bind(wx.EVT_BUTTON, OnOptimizePDF)
-    sqBox.Add(optB,0,WACV|wx.ALIGN_RIGHT)
-    mainSizer.Add(sqBox,0,wx.EXPAND)
-    
-    mainSizer.Add((5,5),0)
-    sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
-    choice = ['Image plate','Point detector']
-    detType = wx.ComboBox(G2frame.dataDisplay,value=data['DetType'],choices=choice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    detType.Bind(wx.EVT_COMBOBOX, OnDetType)
-    sqBox.Add(detType,0)
-    if data['DetType'] == 'Image plate':
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,WACV)
-        obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
-            typeHint=float,OnLeave=AfterChangeNoRefresh)
-        sqBox.Add(obliqCoeff,0)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
-    flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
-            typeHint=float,OnLeave=AfterChangeNoRefresh)
-    sqBox.Add(flatBkg,0)
-    flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
-    flatSpin.SetRange(-1,1)
-    flatSpin.SetValue(0)
-    flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
-    sqBox.Add(flatSpin,0,WACV)
-    sqBox.Add((1,1),1,wx.EXPAND,1)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
-    rmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmin',nDig=(5,1),
-            typeHint=float,size=wx.Size(50,20))
-    sqBox.Add(rmin,0,WACV|wx.ALIGN_RIGHT)
-    mainSizer.Add(sqBox,0,wx.EXPAND)
-        
-    bkBox = wx.BoxSizer(wx.HORIZONTAL)
-    bkBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background ratio: '),0,WACV)    
-    backSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(100*data['BackRatio']))
-    bkBox.Add(backSldr,1,wx.EXPAND)
-    backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
-    backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'BackRatio',nDig=(10,3),min=0.0,max=1.0,
-        typeHint=float,OnLeave=AfterChangeNoRefresh)
-    bkBox.Add(backVal,0,WACV)    
-    mainSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
-
-    sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Ruland width: '),0,WACV)    
-    rulandSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
-        value=int(1000*data['Ruland']))
-    sqBox.Add(rulandSldr,1,wx.EXPAND)
-    rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
-    rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
-        typeHint=float,OnLeave=AfterChangeNoRefresh)
-    sqBox.Add(rulandWdt,0,WACV)    
-    mainSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
-    
-    sqBox = wx.BoxSizer(wx.HORIZONTAL)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling Q-range: '),0,WACV)
-    SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),
-                                 min=qLimits[0],max=.95*data['QScaleLim'][1],
-                                 typeHint=float,OnLeave=AfterChangeNoRefresh)
-    sqBox.Add(SQmin,0,WACV)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
-    SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),
-                                 min=qLimits[0],max=qLimits[1],
-                                 typeHint=float,OnLeave=NewQmax)
-    sqBox.Add(SQmax,0,WACV)
-    resetQ = wx.Button(G2frame.dataDisplay,label='Reset?',style=wx.BU_EXACTFIT)
-    sqBox.Add(resetQ,0,WACV)
-    resetQ.Bind(wx.EVT_BUTTON, OnResetQ)
-    sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
-    rmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmax',nDig=(10,1),min=10.,max=200.,
-        typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))
-    sqBox.Add(rmax,0,WACV)
-    lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
-    lorch.SetValue(data['Lorch'])
-    lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
-    sqBox.Add(lorch,0,WACV)
-    noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
-    noRing.SetValue(data['noRing'])
-    noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
-    sqBox.Add(noRing,0,WACV)
-    mainSizer.Add(sqBox,0)
-
+    mainSizer.Add(SFGctrlSizer(),0,WACV)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)

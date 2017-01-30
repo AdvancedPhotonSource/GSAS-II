@@ -1647,7 +1647,7 @@ def UpdateMasks(G2frame,data):
         mainSizer.Add(littleSizer,0,)
     if Polygons:
         lbl = wx.StaticText(parent=G2frame.dataDisplay,
-            label=' Polygon masks (on plot RB vertex drag to move,\nLB vertex drag to insert)')
+            label=' Polygon masks (on plot RB vertex drag to move, LB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
@@ -1664,7 +1664,7 @@ def UpdateMasks(G2frame,data):
         mainSizer.Add(littleSizer,0,)
     if frame:
         lbl = wx.StaticText(parent=G2frame.dataDisplay,
-            label=' Frame mask (on plot RB vertex drag to move,LB vertex drag to insert)')
+            label=' Frame mask (on plot RB vertex drag to move, LB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)

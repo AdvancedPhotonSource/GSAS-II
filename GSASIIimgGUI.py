@@ -46,7 +46,9 @@ tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
-    
+atand = lambda x: 180.*math.atan(x)/math.pi
+atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
+
 ################################################################################
 ##### Image Data
 ################################################################################
@@ -464,29 +466,43 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         '''
         Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
         if len(Names) == 1:
-            G2frame.ErrorDialog('Nothing images to transfer integration angles to','Need more "IMG"s')
+            G2frame.ErrorDialog('No images to transfer integration angles to','Need more "IMG"s')
             return
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         Names.pop(Names.index(Source))
-# select targets & do copy
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles','Transfer integration range from '+Source+' to:',Names)
+        # select targets & do copy
+        extraopts = {"label_1":"Xfer scaled calib d-min", "value_1":False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles',
+                                      'Transfer integration range from '+Source+' to:',Names,
+                                      extraOpts=extraopts)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                xferAng = lambda tth,dist1,dist2: asind(dist1 * sind(tth) / dist2)
+                #xferAng = lambda tth,dist1,dist2: asind(dist1 * sind(tth) / dist2)
+                xferAng = lambda tth,dist1,dist2: atand(dist1 * tand(tth) / dist2)
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,Source)
                 data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                 ttmin0,ttmax0 = data['IOtth']
                 dist0 = data['distance']
-                print 'distance =',dist0,' integration range: ',data['IOtth']
+                wave0 = data['wavelength']
+                dsp0 = data['calibdmin']
+                print('distance = {:.2f} integration range: [{:.4f}, {:.4f}], calib dmin {:.3f}'
+                            .format(dist0,ttmin0,ttmax0,dsp0))
                 for item in items:
                     name = Names[item]
                     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                     dist1 = data['distance']
                     data['IOtth'] = [xferAng(ttmin0,dist0,dist1),xferAng(ttmax0,dist0,dist1)]
-                    print 'distance =',dist1,' integration range: ',data['IOtth']
+                    if extraopts["value_1"]:
+                        ang1 = xferAng(2.0*asind(wave0/(2.*dsp0)),dist0,dist1)
+                        data['calibdmin'] = data['wavelength']/(2.*sind(ang1/2.))
+                        print('distance = {:.2f} integration range: [{:.4f}, {:.4f}], calib dmin {:.3f}'
+                            .format(dist1,data['IOtth'][0],data['IOtth'][1],data['calibdmin']))
+                    else:
+                        print('distance = {:.2f} integration range: [{:.4f}, {:.4f}]'
+                            .format(dist1,data['IOtth'][0],data['IOtth'][1]))
         finally:
             dlg.Destroy()
             G2frame.PatternTree.SelectItem(G2frame.PickId)        

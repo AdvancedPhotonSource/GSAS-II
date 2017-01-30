@@ -359,12 +359,18 @@ def GetDetectorXY(dsp,azm,data):
     return xy
     
 def GetDetXYfromThAzm(Th,Azm,data):
-    'Needs a doc string'
+    '''Computes a detector position from a 2theta angle and an azimultal
+    angle (both in degrees)
+    '''
     dsp = data['wavelength']/(2.0*npsind(Th))    
     return GetDetectorXY(dsp,Azm,data)
                     
 def GetTthAzmDsp(x,y,data): #expensive
-    'Needs a doc string - checked OK for ellipses & hyperbola'
+    '''Computes a 2theta, etc. from a detector position and calibration constants
+    - checked OK for ellipses & hyperbola
+    :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
+       G is ? and dsp is the d-space
+    '''
     wave = data['wavelength']
     cent = data['center']
     tilt = data['tilt']

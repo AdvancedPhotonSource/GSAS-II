@@ -2358,6 +2358,7 @@ class AutoIntFrame(wx.Frame):
             fInp4.Show(self.params['ComputePDF'])
             fInp4a.Enable(self.params['ComputePDF'])
             btn4.Enable(self.params['ComputePDF'])
+            cOpt.Enable(self.params['ComputePDF'])
             if self.params['ComputePDF']:
                 lbl4.SetForegroundColour("black")
                 lbl4a.SetForegroundColour("black")
@@ -2391,6 +2392,7 @@ class AutoIntFrame(wx.Frame):
         self.params['ComputePDF'] = False
         self.params['pdfDmax'] = 0.0
         self.params['pdfprm'] = ''
+        self.params['optPDF'] = True
         self.pdfControls = {}
 
         G2frame.PatternTree.GetSelection()
@@ -2467,6 +2469,8 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(lbl4a,0,wx.ALIGN_CENTER_VERTICAL)
         fInp4a = G2G.ValidatedTxtCtrl(mnpnl,self.params,'pdfDmax',min=0.0)
         sizer.Add(fInp4a,0,wx.ALIGN_CENTER_VERTICAL)
+        cOpt = G2G.G2CheckBox(mnpnl,'Optimize',self.params,'optPDF')
+        sizer.Add(cOpt)
         lblsizr.Add(sizer,0)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         lbl4 = wx.StaticText(mnpnl, wx.ID_ANY,'PDF control: ')
@@ -2847,7 +2851,8 @@ class AutoIntFrame(wx.Frame):
                             ElData = G2elem.GetElInfo(elem,Parms)
                             ElData['FormulaNo'] = float(num)
                             ElList[elem] = ElData
-                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits)
+                PDFnames = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
+                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,PDFnames)
                 PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,PDFid, 'PDF Controls'))
                 PDFdata.update(self.pdfControls)
@@ -2857,8 +2862,12 @@ class AutoIntFrame(wx.Frame):
                 wx.Yield()
                 G2pdG.computePDF(G2frame,PDFdata)
                 wx.Yield()
-                G2pdG.OptimizePDF(G2frame,PDFdata,maxCycles=10,)
-                wx.Yield()
+                G2frame.PatternId = PDFid
+                G2plt.PlotISFG(G2frame,PDFdata,newPlot=False,plotType='G(R)')
+                if self.params['optPDF']:
+                    G2pdG.OptimizePDF(G2frame,PDFdata,maxCycles=10,)
+                    wx.Yield()
+                    G2plt.PlotISFG(G2frame,PDFdata,newPlot=False,plotType='G(R)')
                 G2frame.AutointPDFnames.append(pwdr)
                 # save names of PDF entry to be deleted later if needed
                 G2frame.AutointPWDRnames.append(G2frame.PatternTree.GetItemText(PDFid))

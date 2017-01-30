@@ -2114,10 +2114,10 @@ class DataFrame(wx.Frame):
             id=wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
         self.MaskEdit.Append(help='Save mask to file', 
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
-        self.MaskEdit.Append(help='Load mask from file', 
-            id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
-        self.MaskEdit.Append(help='Load mask from file; ignore threshold', 
-            id=wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask w/o threshold')
+        self.MaskEdit.Append(help='Load mask from file; ignoring threshold', 
+            id=wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask')
+        self.MaskEdit.Append(help='Load mask from file keeping the threshold value', 
+            id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask w/threshold')
         self.MaskEdit.Append(help='Auto search for spot masks; NB: will clear old spot masks', 
             id=wxID_FINDSPOTS, kind=wx.ITEM_NORMAL,text='Auto spot masks')
         self.MaskEdit.Append(help='Delete all spot masks', 
@@ -2176,7 +2176,8 @@ class DataFrame(wx.Frame):
             text='Save controls')
         self.PDFEdit.Append(help='Compute PDF', id=wxID_PDFCOMPUTE, kind=wx.ITEM_NORMAL,
             text='Compute PDF')
-        self.PDFEdit.Append(help='Compute all PDFs', id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
+        self.PDFEdit.Append(help='Compute all PDFs with or w/o optimization',
+                            id=wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
             text='Compute all PDFs')
 #        self.PDFEdit.Append(help='Optimize PDF', id=wxID_PDFOPT, kind=wx.ITEM_NORMAL,
 #            text='Optimize corrections for r<Rmin section of current G(r)')

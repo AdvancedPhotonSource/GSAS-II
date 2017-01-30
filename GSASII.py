@@ -3601,7 +3601,8 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for i in dlg.GetSelections():
-                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i])
+                        PDFnames = G2gd.GetPatternTreeDataNames(self,['PDF ',])
+                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i],PDFnames)
                 for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()

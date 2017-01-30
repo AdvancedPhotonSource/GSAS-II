@@ -5017,6 +5017,8 @@ def UpdatePDFGrid(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 results = dlg.GetSelections()
+            else:
+                return
         finally:
             dlg.Destroy()
         if not results:

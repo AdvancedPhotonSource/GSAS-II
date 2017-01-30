@@ -2083,7 +2083,7 @@ class G2Exception(Exception):
     def __str__(self):
         return repr(self.msg)
 
-def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits):
+def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
     :param Frame G2frame: main GSAS-II tree frame object
@@ -2092,8 +2092,9 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits):
     :param list Qlimits: Q limits to be used for computing the PDF
     :returns: the Id of the newly created PDF entry
     '''
-    PWDRname = PWDRtree[4:]
-    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='PDF '+PWDRname)
+    PDFname = 'PDF '+PWDRtree[4:] # this places two spaces after PDF which is needed is some places
+    PDFname = MakeUniqueLabel(PDFname,PDFnames)
+    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=PDFname)
     Data = {
         'Sample':{'Name':PWDRtree,'Mult':1.0},
         'Sample Bkg.':{'Name':'','Mult':-1.0},

@@ -29,6 +29,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
 import GSASIImath as G2mth
+import GSASIIElem as G2elem
 import GSASIIpwdGUI as G2pdG
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
@@ -46,6 +47,7 @@ tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
 tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
+tof2q = lambda t,C:2.0*math.pi*C/t
 atand = lambda x: 180.*math.atan(x)/math.pi
 atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 
@@ -2825,7 +2827,6 @@ class AutoIntFrame(wx.Frame):
                     qMax = tof2q(fullLimits[0],Parms['difC'][1])
                 Qlimits = [0.9*qMax,qMax]
 
-                PWDRname = pwdr[4:]
                 item = pwdr
                 Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,imgId, 'Comments'))

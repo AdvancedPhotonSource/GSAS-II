@@ -211,6 +211,16 @@ def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
     return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}}}
 
+def GetFileList(G2frame,fileType):
+    fileList = []
+    id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+    while id:
+        name = G2frame.PatternTree.GetItemText(id)
+        if fileType in name.split()[0]:
+            fileList.append(name)
+        id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    return fileList
+        
 def GetHistsLikeSelected(G2frame):
     '''Get the histograms that match the current selected one:
     The histogram prefix and data type (PXC etc.), the number of
@@ -4746,7 +4756,7 @@ def UpdatePDFGrid(G2frame,data):
             wx.CallAfter(OnComputePDF,None)
         
         item = data[key]
-        fileList = [''] + GetFileList('PWDR')
+        fileList = [''] + GetFileList(G2frame,'PWDR')
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
         fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -4851,19 +4861,9 @@ def UpdatePDFGrid(G2frame,data):
         data['noRing'] = not data['noRing']
         wx.CallAfter(OnComputePDF,None)
 
-    def GetFileList(fileType):
-        fileList = []
-        id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while id:
-            name = G2frame.PatternTree.GetItemText(id)
-            if fileType in name.split()[0]:
-                fileList.append(name)
-            id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        return fileList
-        
     def OnCopyPDFControls(event):
         import copy
-        TextList = GetFileList('PDF')
+        TextList = GetFileList(G2frame,'PDF')
         Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
@@ -5320,6 +5320,32 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         
         return peakBox
         
+    def OnCopyPDFPeaks(event):
+        import copy
+        TextList = GetFileList(G2frame,'PDF')
+        Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        if len(TextList) == 1:
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF peaks','Copy peaks from '+Source+' to:',TextList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                PDFlist = [TextList[i] for i in dlg.GetSelections()]
+                for item in PDFlist:
+                    id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Peaks'))
+                    olddata.update(copy.deepcopy(peaks))
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Peaks'),olddata)
+                Status.SetStatusText('PDF peaks copied')
+        finally:
+            dlg.Destroy()
+        
+    def OnFitPDFpeaks(event):
+        print 'fit peaks'
+        
+    def OnFitAllPDFpeaks(event):
+        print 'fit all pdf peaks'
+        
 
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -5327,8 +5353,9 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()    
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFPeaks, id=G2gd.wxID_PDFCOPYPEAKS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2gd.wxID_PDFPKSFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2gd.wxID_PDFPKSFITALL)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0) 
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF peak fit controls:'),0,WACV)
@@ -5342,6 +5369,5 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)
-    Size = (500,300)
     G2frame.dataFrame.setSizePosLeft(Size)
     

@@ -2523,7 +2523,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         G2frame.itemPicked = None
         G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
         PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
-    
+
+    # PlotISFG continues here
+    ############################################################
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'mpl')
     if not new:
@@ -2654,6 +2656,16 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     Plot.add_collection(lines)
                     axcb = Page.figure.colorbar(lines)
                     axcb.set_label('PDF number')
+                    lgndlist = []
+                    if G2frame.Legend:
+                        # make short names from choices dropping PDF and AZM and then extension
+                        labels = [os.path.splitext(i[3:i.find('Azm')].strip())[0] for i in choices]
+                        numlines = len(labels)
+                        # create an empty labeled line for each label with color from color map
+                        for i,lbl in enumerate(labels):
+                            color = acolor(int(0.5+acolor.N*i/(numlines-1.)))
+                            lgndlist.append(mpl.lines.Line2D([], [], color=color, label=lbl))
+                        Plot.legend(handles=lgndlist,loc='best')
             else:
                 if G2frame.Waterfall:
                     colorRange = XYlist[0].T[1]
@@ -2698,7 +2710,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-        
+
 ################################################################################
 ##### PlotCalib
 ################################################################################

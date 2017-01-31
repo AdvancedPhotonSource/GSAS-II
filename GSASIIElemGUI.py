@@ -82,17 +82,19 @@ class PickElement(wx.Dialog):
             butWid = self.butWid
             if name[0] == 'None':
                 butWid *= 2
-            # patch for wx 2.9+ on Mac/Linux where EVT_COMBOBOX happens only on a
-            # value change. Not ideal because wx.CB_READONLY is better.
+            # patch for wx 2.9+ where EVT_COMBOBOX happens only on a value change.
             i,j= wx.__version__.split('.')[0:2]
             if int(i)+int(j)/10. > 2.8:
-                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,27),
-                    style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
-                if sum(color)/3 < 150 and color[1] < 150: # background is mostly dark, use white letters
-                    El.SetForegroundColour((255,255,255))
+                startname = name[0]+' '  # add an invisible space
             else:
-                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
-                    style=wx.CB_READONLY, value=name[0])
+                startname = name[0]
+            # Not ideal because wx.CB_READONLY is better.
+            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,27),
+                    style=wx.CB_DROPDOWN, value=startname)
+            #El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
+            #        style=wx.CB_READONLY, value=name[0])
+            if sum(color)/3 < 150 and color[1] < 150: # background is mostly dark, use white letters
+                El.SetForegroundColour((255,255,255))
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
         El.SetBackgroundColour(color)

@@ -2493,7 +2493,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         else:       # a profile point, e.g. a peak
             if mouse.button == 1:
                 El = data['ElList'].keys()[0]
-                Peaks['Peaks'].append([xy[0],(xy[1]-Peaks['Background'][1][1]*xy[0])/.798,.5,'',El,El,0.])
+                Peaks['Peaks'].append([xy[0],(xy[1]-Peaks['Background'][1][1]*xy[0])/4.7,.085,'',El,El,0.])
                 Peaks['Peaks'] = G2mth.sortArray(Peaks['Peaks'],0,reverse=False)
                 PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
                 G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
@@ -2692,6 +2692,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             X = XYlist[0].T[0]
             Y = XYlist[0].T[1]
             Plot.plot(X,Y,color='b',picker=3)
+            if 'calc' in Peaks and len(Peaks['calc']):
+                XC,YC= Peaks['calc']
+                Plot.plot(XC,YC,color='g')
             G2frame.Lines.append(Plot.axvline(peaks['Limits'][0],color='g',dashes=(5,5),picker=2.))
             G2frame.Lines.append(Plot.axvline(peaks['Limits'][1],color='r',dashes=(5,5),picker=2.))
             for peak in Peaks['Peaks']:

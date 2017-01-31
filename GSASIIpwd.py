@@ -17,6 +17,7 @@ import math
 import time
 import os
 import subprocess as subp
+import copy
 
 import numpy as np
 import numpy.linalg as nl
@@ -285,7 +286,6 @@ def CalcPDF(data,inst,limits,xydata):
     The return value is at present an empty list.
     '''
     auxPlot = []
-    import copy
     import scipy.fftpack as ft
     Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
     Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
@@ -372,6 +372,84 @@ def CalcPDF(data,inst,limits,xydata):
     if data.get('noRing',True):
         xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
     return auxPlot
+    
+def PDFPeakFit(peaks,data):
+    rs2pi = 1./np.sqrt(2*np.pi)
+    
+    def MakeParms(peaks):
+        varyList = []
+        parmDict = {'slope':peaks['Background'][1][1]}
+        if peaks['Background'][2]:
+            varyList.append('slope')
+        for i,peak in enumerate(peaks['Peaks']):
+            parmDict[str(i)+':pos'] = peak[0]
+            parmDict[str(i)+':mag'] = peak[1]
+            parmDict[str(i)+':sig'] = peak[2]
+            if 'P' in peak[3]:
+                varyList.append(str(i)+':pos')
+            if 'M' in peak[3]:
+                varyList.append(str(i)+':mag')
+            if 'S' in peak[3]:
+                varyList.append(str(i)+':sig')
+        return parmDict,varyList
+        
+    def SetParms(peaks,parmDict,varyList):
+        if 'slope' in varyList:
+            peaks['Background'][1][1] = parmDict['slope']
+        for i,peak in enumerate(peaks['Peaks']):
+            if str(i)+':pos' in varyList:
+                peak[0] = parmDict[str(i)+':pos']
+            if str(i)+':mag' in varyList:
+                peak[1] = parmDict[str(i)+':mag']
+            if str(i)+':sig' in varyList:
+                peak[2] = parmDict[str(i)+':sig']
+        
+    
+    def CalcPDFpeaks(parmdict,Xdata):
+        Z = parmDict['slope']*Xdata
+        ipeak = 0
+        while True:
+            try:
+                pos = parmdict[str(ipeak)+':pos']
+                mag = parmdict[str(ipeak)+':mag']
+                wid = parmdict[str(ipeak)+':sig']
+                wid2 = 2.*wid**2
+                Z += mag*rs2pi*np.exp(-(Xdata-pos)**2/wid2)/wid
+                ipeak += 1
+            except KeyError:        #no more peaks to process
+                return Z
+                
+    def errPDFProfile(values,xdata,ydata,parmdict,varylist):        
+        parmdict.update(zip(varylist,values))
+        M = CalcPDFpeaks(parmdict,xdata)-ydata
+        return M
+                               
+            
+    print 'Do PDF peak fitting'
+    newpeaks = copy.copy(peaks)
+    iBeg = np.searchsorted(data[1][0],newpeaks['Limits'][0])
+    iFin = np.searchsorted(data[1][0],newpeaks['Limits'][1])
+    X = data[1][0][iBeg:iFin]
+    Y = data[1][1][iBeg:iFin]
+    parmDict,varyList = MakeParms(peaks)
+    if not len(varyList):
+        print ' Nothing varied'
+        return newpeaks
+    
+    begin = time.time()
+    values =  np.array(Dict2Values(parmDict, varyList))
+    result = so.leastsq(errPDFProfile,values,full_output=True,ftol=0.0001,
+           args=(X,Y,parmDict,varyList))
+    ncyc = int(result[2]['nfev']/2)
+    runtime = time.time()-begin    
+    print 'PDF fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+#    chisq = np.sum(result[2]['fvec']**2)
+    Values2Dict(parmDict, varyList, result[0])
+    SetParms(peaks,parmDict,varyList)
+    
+    Z = CalcPDFpeaks(parmDict,X)
+    newpeaks['calc'] = [X,Z]
+    return newpeaks    
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):
     import scipy.fftpack as ft

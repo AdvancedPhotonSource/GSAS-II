@@ -306,7 +306,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             return
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         # Assemble a list of item labels
-        keyList = ['type','wavelength','calibrant','distance','center',
+        keyList = ['type','wavelength','calibrant','distance','center','Oblique',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
@@ -357,7 +357,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 
     def WriteControls(filename,data):
         File = open(filename,'w')
-        keys = ['type','wavelength','calibrant','distance','center',
+        keys = ['type','wavelength','calibrant','distance','center','Oblique',
             'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
             'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
@@ -416,7 +416,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             WriteControls(filename,data)
             
     def OnLoadControls(event):
-        cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
+        cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
             'PolaVal','SampleAbs','dark image','background image']
@@ -496,7 +496,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                     dist1 = data['distance']
-                    data['IOtth'] = [xferAng(ttmin0,dist0,dist1),xferAng(ttmax0,dist0,dist1)]
+                    if ttmin0 < 1.0:
+                        data['IOtth'] = [ttmin0,xferAng(ttmax0,dist0,dist1)]
+                    else:
+                        data['IOtth'] = [xferAng(ttmin0,dist0,dist1),xferAng(ttmax0,dist0,dist1)]
                     if extraopts["value_1"]:
                         ang1 = xferAng(2.0*asind(wave0/(2.*dsp0)),dist0,dist1)
                         data['calibdmin'] = data['wavelength']/(2.*sind(ang1/2.))
@@ -2098,7 +2101,8 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.setSizePosLeft(Size)    
 
 ###########################################################################
-# Autointegration follows 
+# Autointegration
+###########################################################################
 def ReadMask(filename):
     'Read a mask (.immask) file'
     File = open(filename,'r')
@@ -2337,6 +2341,7 @@ class AutoIntFrame(wx.Frame):
             '''Called to edit the distance-dependent parameter look-up table.
             Should be called only when table is defined and active.
             '''
+            event.Skip()
             try:
                 dlg = IntegParmTable(self.G2frame,self.ImgTblParms,self.IMfileList)
                 dlg.CenterOnParent()

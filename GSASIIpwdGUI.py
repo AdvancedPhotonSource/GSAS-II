@@ -656,7 +656,6 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
-        return
         
     def OnResetSigGam(event):
         PatternId = G2frame.PatternId
@@ -5322,8 +5321,8 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     def peakSizer():
         
         atms = ','.join(data['ElList'].keys())
-        colLabels = ['position','magnitude','width','refine','Atom A','Atom B','Cooord. No.']
-        Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,W,PM,PW,MW,PMW',]+     \
+        colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Cooord. No.']
+        Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,S,PM,PS,MS,PMS',]+     \
             2*[wg.GRID_VALUE_CHOICE+':'+atms,]+[wg.GRID_VALUE_FLOAT+':10,3',]
         rowLabels = range(len(peaks['Peaks']))
         peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
@@ -5361,16 +5360,25 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         
     def OnFitPDFpeaks(event):
         PatternId = G2frame.PatternId
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))['G(R)']
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'))
         if not peaks:
             G2frame.ErrorDialog('No peaks!','Nothing to fit!')
             return
-        
-        print 'fit peaks'
+        newpeaks = G2pwd.PDFPeakFit(peaks,data['G(R)'])
+        print 'PDF peak fit finished'
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'),newpeaks)
+        G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
+        wx.CallAfter(UpdatePDFPeaks,G2frame,newpeaks,data)
         
     def OnFitAllPDFpeaks(event):
         print 'fit all pdf peaks'
+        
+    def OnClearPDFpeaks(event):
+        peaks['Peaks'] = []
+        G2plt.PlotISFG(G2frame,data,peaks=peaks,newPlot=False)
+        wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
+        
         
 
     if G2frame.dataDisplay:
@@ -5382,6 +5390,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFPeaks, id=G2gd.wxID_PDFCOPYPEAKS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2gd.wxID_PDFPKSFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2gd.wxID_PDFPKSFITALL)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2gd.wxID_CLEARPDFPEAKS)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0) 
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF peak fit controls:'),0,WACV)

@@ -148,9 +148,10 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,wxID_MERGEHKL,
 ] = [wx.NewId() for item in range(5)]
 
-[ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, 
-    wxID_PDFADDELEMENT, wxID_PDFDELELEMENT, wxID_PDFPKSFIT,wxID_PDFPKSFITALL,wxID_PDFCOPYPEAKS,
-] = [wx.NewId() for item in range(10)]
+[ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, wxID_PDFCOMPUTE, 
+    wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT, wxID_PDFPKSFIT,
+    wxID_PDFPKSFITALL,wxID_PDFCOPYPEAKS,wxID_CLEARPDFPEAKS,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_MCRON,wxID_MCRLIST,wxID_MCRSAVE,wxID_MCRPLAY,
 ] = [wx.NewId() for item in range(4)]
@@ -2194,7 +2195,8 @@ class DataFrame(wx.Frame):
             text='Fit all PDF peakss')
         self.PDFPksEdit.Append(help='Copy PDF peaks', id=wxID_PDFCOPYPEAKS, kind=wx.ITEM_NORMAL,
             text='Copy peaks')
-        
+        self.PDFPksEdit.Append(help='Clear PDF peaks', id=wxID_CLEARPDFPEAKS, kind=wx.ITEM_NORMAL,
+            text='Clear peaks')        
         self.PostfillDataMenu()
 
         

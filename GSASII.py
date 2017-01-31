@@ -2711,7 +2711,7 @@ class GSASII(wx.Frame):
             self.data = data
             self.dataList = dataList
             self.dataType = dataType
-            size = (400,250)
+            size = (450,350)
             panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
                 style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2744,14 +2744,15 @@ class GSASII(wx.Frame):
                 allScale.Bind(wx.EVT_KILL_FOCUS,self.OnAllScale)
                 self.dataGridSizer.Add(allScale,0,WACV)
             mainSizer.Add(self.dataGridSizer,0,wx.EXPAND)
-            TestBtn = wx.Button(panel,-1,"Test")
-            TestBtn.Bind(wx.EVT_BUTTON, self.OnTest)
             OkBtn = wx.Button(panel,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
             cancelBtn = wx.Button(panel,-1,"Cancel")
             cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
             btnSizer = wx.FlexGridSizer(0,3,10,20)
-            if self.dataType =='PWDR':  btnSizer.Add(TestBtn)
+            if self.dataType =='PWDR':
+                TestBtn = wx.Button(panel,-1,"Test")
+                TestBtn.Bind(wx.EVT_BUTTON, self.OnTest)
+                btnSizer.Add(TestBtn)
             btnSizer.Add(OkBtn)
             btnSizer.Add(cancelBtn)
             
@@ -2934,6 +2935,7 @@ class GSASII(wx.Frame):
         'Sum together image data'
         TextList = []
         DataList = []
+        IdList = []
         Names = []
         Comments = ['Sum equals: \n']
         if self.PatternTree.GetCount():
@@ -2944,6 +2946,7 @@ class GSASII(wx.Frame):
                 if 'IMG' in name:
                     TextList.append([0.0,name])
                     DataList.append(self.PatternTree.GetImageLoc(item))        #Size,Image,Tag
+                    IdList.append(item)
                     Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,item,'Image Controls'))
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if len(TextList) < 2:
@@ -2963,7 +2966,7 @@ class GSASII(wx.Frame):
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             Npix,imagefile,imagetag = DataList[i]
-                            imagefile = G2IO.CheckImageFile(self,imagefile)
+                            imagefile = G2IO.GetCheckImageFile(self,IdList[i])[1]
                             image = G2IO.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)
                             if First:
                                 newImage = np.zeros_like(image)

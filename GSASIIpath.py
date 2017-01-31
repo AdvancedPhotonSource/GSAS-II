@@ -501,7 +501,7 @@ def exceptHook(*args):
             return
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
-    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}'.format(frame)
+    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
     savehook = sys.excepthook # save the exception hook
     try:
         InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)

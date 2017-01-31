@@ -2341,9 +2341,9 @@ class AutoIntFrame(wx.Frame):
             '''Called to edit the distance-dependent parameter look-up table.
             Should be called only when table is defined and active.
             '''
-            event.Skip()
+            dlg = None
             try:
-                dlg = IntegParmTable(self.G2frame,self.ImgTblParms,self.IMfileList)
+                dlg = IntegParmTable(self,self.ImgTblParms,self.IMfileList)
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:
                     self.ImgTblParms = dlg.parms
@@ -2359,7 +2359,7 @@ class AutoIntFrame(wx.Frame):
                             G2frame.PatternTree.GetItemText(self.imageBase))
                     self.editTable.Enable(False)
             finally:
-                dlg.Destroy()
+                if dlg: dlg.Destroy()
                 
         def showPDFctrls(event):
             '''Called to show or hide AutoPDF widgets. Note that fInp4 must be included in the

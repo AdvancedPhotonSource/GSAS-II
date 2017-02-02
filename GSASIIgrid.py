@@ -2071,34 +2071,42 @@ class DataFrame(wx.Frame):
         # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ImageMenu)
+        
         self.ImageEdit = wx.Menu(title='')
-        self.ImageMenu.Append(menu=self.ImageEdit, title='Operations')
+        self.ImageMenu.Append(menu=self.ImageEdit, title='Calibration')
         self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         self.ImageEdit.Append(help='Recalibrate detector by fitting to calibrant lines', 
             id=wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Recalibrate')
         self.ImageEdit.Append(help='Recalibrate all images by fitting to calibrant lines', 
             id=wxID_IMRECALIBALL, kind=wx.ITEM_NORMAL,text='Recalibrate all')            
-        self.ImageEdit.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, 
-            kind=wx.ITEM_NORMAL,text='Clear calibration')
-        self.ImageEdit.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 
+        self.ImageEdit.Append(help='Clear calibration data points and rings',
+            id=wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
+        
+        ImageIntegrate = wx.Menu(title='')
+        self.ImageMenu.Append(menu=ImageIntegrate, title='Integration')
+        ImageIntegrate.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 
             kind=wx.ITEM_NORMAL,text='Integrate')
-        self.ImageEdit.Append(help='Integrate all images selected from list',id=wxID_INTEGRATEALL,
+        ImageIntegrate.Append(help='Integrate all images selected from list',id=wxID_INTEGRATEALL,
             kind=wx.ITEM_NORMAL,text='Integrate all')
-        self.ImageEdit.Append(help='Copy image controls to other images', 
-            id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
-        self.ImageEdit.Append(help='Copy selected image controls to other images', 
-            id=wxID_IMCOPYSELECTED, kind=wx.ITEM_NORMAL,text='Copy Selected')
-        self.ImageEdit.Append(help='Save image controls to file', 
-            id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
-        self.ImageEdit.Append(help='Save controls from selected images to file', 
-            id=wxID_SAVESELECTEDCONTROLS, kind=wx.ITEM_NORMAL,text='Save Multiple Controls')
-        self.ImageEdit.Append(help='Load image controls from file',
-            id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
-        self.ImageEdit.Append(help='Transfer integration range for other detector distances', 
-            id=wxID_IMXFERCONTROLS, kind=wx.ITEM_NORMAL,text='Xfer angles')
-        self.ImageEdit.Append(help='Open Auto-integration window to integrate a series of images', 
+        ImageIntegrate.Append(help='Open Auto-integration window to integrate a series of images', 
             id=wxID_IMAUTOINTEG, kind=wx.ITEM_NORMAL,text='Auto Integrate')
+
+        ImageParams = wx.Menu(title='')
+        self.ImageMenu.Append(menu=ImageParams, title='Parms')
+        ImageParams.Append(help='Copy image controls to other images', 
+            id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
+        ImageParams.Append(help='Copy selected image controls to other images', 
+            id=wxID_IMCOPYSELECTED, kind=wx.ITEM_NORMAL,text='Copy Selected')
+        ImageParams.Append(help='Save image controls to file', 
+            id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
+        ImageParams.Append(help='Save controls from selected images to file', 
+            id=wxID_SAVESELECTEDCONTROLS, kind=wx.ITEM_NORMAL,text='Save Multiple Controls')
+        ImageParams.Append(help='Load image controls from file',
+            id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
+        ImageParams.Append(help='Transfer integration range for other detector distances', 
+            id=wxID_IMXFERCONTROLS, kind=wx.ITEM_NORMAL,text='Xfer angles')
+        
         self.PostfillDataMenu()
             
         # IMG / Masks

@@ -311,7 +311,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
-        keyText = [i+'='+str(data[i]) for i in keyList]
+        keyList.sort(key=lambda s: s.lower())
+        keyText = [i+' = '+str(data[i]) for i in keyList]
         # sort both lists together, ordered by keyText
         selectedKeys = []
         dlg = G2G.G2MultiChoiceDialog(
@@ -473,13 +474,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         Names.pop(Names.index(Source))
         # select targets & do copy
-        extraopts = {"label_1":"Xfer scaled calib d-min", "value_1":False}
+        extraopts = {"label_1":"Xfer scaled calib d-min", "value_1":False,
+                     "label_2":"Xfer scaled 2-theta min", "value_2":False,
+                     "label_3":"Xfer scaled 2-theta max", "value_3":True,
+                     }
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles',
                                       'Transfer integration range from '+Source+' to:',Names,
                                       extraOpts=extraopts)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                #xferAng = lambda tth,dist1,dist2: asind(dist1 * sind(tth) / dist2)
+                for i in '_1','_2','_3':
+                    if extraopts['value'+i]: break
+                else:
+                    G2G.G2MessageBox(G2frame,'Nothing to do!')
+                    return
                 xferAng = lambda tth,dist1,dist2: atand(dist1 * tand(tth) / dist2)
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
@@ -496,10 +504,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
                     dist1 = data['distance']
-                    if ttmin0 < 1.0:
-                        data['IOtth'] = [ttmin0,xferAng(ttmax0,dist0,dist1)]
-                    else:
-                        data['IOtth'] = [xferAng(ttmin0,dist0,dist1),xferAng(ttmax0,dist0,dist1)]
+                    if extraopts["value_2"]:
+                        data['IOtth'][0] = xferAng(ttmin0,dist0,dist1)
+                    if extraopts["value_3"]:
+                        data['IOtth'][1] = xferAng(ttmax0,dist0,dist1)
                     if extraopts["value_1"]:
                         ang1 = xferAng(2.0*asind(wave0/(2.*dsp0)),dist0,dist1)
                         data['calibdmin'] = data['wavelength']/(2.*sind(ang1/2.))

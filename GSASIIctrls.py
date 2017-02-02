@@ -1321,8 +1321,8 @@ class G2MultiChoiceDialog(wx.Dialog):
     :param bool filterBox: If True (default) an input widget is placed on
       the window and only entries matching the entered text are shown.
     :param dict extraOpts: a dict containing a entries of form label_i and value_i with extra
-      options to present to the user, where value_i is the default value. At present only bool
-      values are supported.
+      options to present to the user, where value_i is the default value. 
+      Options are listed ordered by the value_i values.
     :param kw: optional keyword parameters for the wx.Dialog may
       be included such as size [which defaults to `(320,310)`] and
       style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);

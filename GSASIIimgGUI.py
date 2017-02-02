@@ -162,6 +162,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['binType'] = 'log(q)'
     if 'varyList' not in data:
         data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
+    if data['DetDepth'] > 0.1:
+        data['DetDepth'] /= data['distance']
 #end patch
 
 # Menu items
@@ -195,6 +197,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Mid = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks')
                     Masks = G2frame.PatternTree.GetItemPyData(Mid)
                     vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(G2frame,Data,Masks)
+                    if 'distance' not in varyList:
+                        vals.append(parmDict['dist'])
+                        varyList.append('dist')
+                        list(sigList).append(0.0)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = names
@@ -744,7 +750,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             Names.append('dep') 
         Parms = {'dist':['Distance',(10,3),data,'distance'],'det-X':['Beam center X',(10,3),data['center'],0],
             'det-Y':['Beam center Y',(10,3),data['center'],1],'tilt':['Tilt angle',(10,3),data,'tilt'],
-            'phi':['Tilt rotation',(10,2),data,'rotation'],'dep':['Penetration',(10,2),data,'DetDepth'],
+            'phi':['Tilt rotation',(10,2),data,'rotation'],'dep':['Penetration',(10,4),data,'DetDepth'],
             'wave':['Wavelength',(10,6),data,'wavelength']}
         for name in Names:
             calSel = wx.CheckBox(parent=G2frame.dataDisplay,label=Parms[name][0])
@@ -755,6 +761,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             if name == 'wave':
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
                     Parms[name][3],min=0.01,max=10.,nDig=Parms[name][1],typeHint=float)
+            elif name == 'dep':
+                calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
+                    Parms[name][3],min=0.0,max=0.1,nDig=Parms[name][1],typeHint=float)
             else:
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
                     Parms[name][3],nDig=Parms[name][1],typeHint=float)

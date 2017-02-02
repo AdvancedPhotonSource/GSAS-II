@@ -65,10 +65,10 @@ def pointInPolygon(pXY,xy):
         p1x,p1y = p2x,p2y
     return Inside
     
-def peneCorr(tth,dep,tilt=0.,azm=0.):
+def peneCorr(tth,dep,dist,tilt=0.,azm=0.):
     'Needs a doc string'
 #    return dep*(1.-npcosd(abs(tilt*npsind(azm))-tth*npcosd(azm)))  #something wrong here
-    return dep*(1.-npcosd(tth))         #best one
+    return dep*(1.-npcosd(tth))*dist         #best one
 #    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):
@@ -165,7 +165,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         phi = parms['phi']-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(parms['wave']/(2.*dsp))
         phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
-        dxy = peneCorr(tth,parms['dep'],parms['tilt'],phi0)
+        dxy = peneCorr(tth,parms['dep'],parms['dist'],parms['tilt'],phi0)
         stth = npsind(tth)
         cosb = npcosd(parms['tilt'])
         tanb = nptand(parms['tilt'])        
@@ -190,7 +190,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
-    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.2f','%12.6f']
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.4f','%12.6f']
     Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
@@ -311,8 +311,8 @@ def GetEllipse(dsp,data):
     phi = data['rotation']
     dep = data.get('DetDepth',0.0)
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
-    dxy = peneCorr(tth,dep,tilt)
     dist = data['distance']
+    dxy = peneCorr(tth,dep,dist,tilt)
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
         
 def GetDetectorXY(dsp,azm,data):
@@ -386,7 +386,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep,tilt,npatan2d(dy,dx))
+    dxy = peneCorr(tth,dep,dist,tilt,npatan2d(dy,dx))
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX) 
@@ -420,7 +420,7 @@ def GetTthAzmG(x,y,data):
     Z = np.dot(X,MN).T[2]
     xyZ = dx**2+dy**2-Z**2    
     tth = npatand(np.sqrt(xyZ)/(dist-Z))
-    dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
+    dxy = peneCorr(tth,data['DetDepth'],dist,tilt,npatan2d(dy,dx))
     tth = npatan2d(np.sqrt(xyZ),dist-Z+dxy) 
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
     return tth,azm,G
@@ -524,6 +524,8 @@ def ImageRecalibrate(G2frame,data,masks):
     cutoff = data['cutoff']
     data['rings'] = []
     data['ellipses'] = []
+    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+        data['DetDepth'] /= data['distance']
     if not data['calibrant']:
         print 'no calibration material selected'
         return []    
@@ -748,6 +750,8 @@ def ImageCalibrate(G2frame,data):
         data['ellipses'].append(ellipsem[:]+('r',))
         data['rings'].append(np.array(Ringm))
         G2plt.PlotImage(G2frame,newImage=True)
+    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+        data['DetDepth'] /= data['distance']
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     varyList = [item for item in varyDict if varyDict[item]]
@@ -883,6 +887,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
     dtth = (lutth[1]-lutth[0])/numChans
     muT = data.get('SampleAbs',[0.0,''])[0]
+    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+        data['DetDepth'] /= data['distance']
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)

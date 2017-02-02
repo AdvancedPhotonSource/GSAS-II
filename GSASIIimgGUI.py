@@ -131,7 +131,13 @@ def UpdateImageData(G2frame,data):
             typeHint=float,OnLeave=OnPixVal)
         pixSize.Add(pixVal,0,WACV)
     mainSizer.Add(pixSize,0)
-    
+    distSizer = wx.BoxSizer(wx.HORIZONTAL)
+    distSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Set detector distance: '),0,WACV)
+    if 'setdist' not in data:
+        data['setdist'] = data['distance']
+    distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'setdist',nDig=(10,2),
+            typeHint=float),0,WACV)
+    mainSizer.Add(distSizer,0)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     fitSize = mainSizer.Fit(G2frame.dataFrame)
@@ -190,17 +196,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     names.append(name)
                     print 'calibrating',name
                     G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                    CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
-                    Data = G2frame.PatternTree.GetItemPyData(CId)
+                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls'))
                     G2frame.ImageZ = GetImageZ(G2frame,Data)
                     Data['setRings'] = True
                     Mid = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks')
                     Masks = G2frame.PatternTree.GetItemPyData(Mid)
                     vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(G2frame,Data,Masks)
-                    if 'distance' not in varyList:
+                    sigList = list(sigList)
+                    if 'dist' not in varyList:
                         vals.append(parmDict['dist'])
                         varyList.append('dist')
-                        list(sigList).append(0.0)
+                        sigList.append(0.0)
+                    vals.append(Data['setdist'])
+                    varyList.append('setdist')
+                    sigList.append(0.01)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = names
@@ -326,7 +335,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         # Assemble a list of item labels
         keyList = ['type','wavelength','calibrant','distance','center','Oblique',
-                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
@@ -378,7 +387,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def WriteControls(filename,data):
         File = open(filename,'w')
         keys = ['type','wavelength','calibrant','distance','center','Oblique',
-            'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+            'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
             'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
             'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
@@ -438,7 +447,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def OnLoadControls(event):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
+            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','setdist',
             'PolaVal','SampleAbs','dark image','background image']
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'

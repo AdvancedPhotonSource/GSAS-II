@@ -3366,6 +3366,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         Note this likely could be faster if the loop over calcobjs were done
         inside after the Dict was created. 
         '''
+        if not ESD:
+            return 0.
         step = ESD/10
         Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
                          ['A'+str(i) for i in range(6)])

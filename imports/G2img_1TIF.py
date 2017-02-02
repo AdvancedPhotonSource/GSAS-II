@@ -303,6 +303,6 @@ def GetTifData(filename):
     center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
     wavelength = (not wavelength) and 0.10 or wavelength
     distance = (not distance) and 100.0 or distance
-    data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy}
+    data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy,'setdist':distance}
     File.close()    
     return head,data,Npix,image

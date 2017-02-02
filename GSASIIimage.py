@@ -545,6 +545,7 @@ def ImageRecalibrate(G2frame,data,masks):
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
+        'setdist':data.get('setdist',data['distance']),
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
     wave = data['wavelength']

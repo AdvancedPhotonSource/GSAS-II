@@ -179,10 +179,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
+                SeqResult = {}
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
+                names = []
                 for item in items:
                     name = Names[item]
+                    names.append(name)
                     print 'calibrating',name
                     G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
@@ -191,9 +194,19 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Data['setRings'] = True
                     Mid = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks')
                     Masks = G2frame.PatternTree.GetItemPyData(Mid)
-                    G2img.ImageRecalibrate(G2frame,Data,Masks)
+                    vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(G2frame,Data,Masks)
+                    SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
+                        'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
+                SeqResult['histNames'] = names
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
+                if Id:
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                else:
+                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential image calibration results')
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         finally:
             dlg.Destroy()
+        print 'All selected images recalibrated - results in Sequential image calibration results'
         G2plt.PlotExposedImage(G2frame,event=None)
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         

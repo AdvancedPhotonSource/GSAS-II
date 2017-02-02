@@ -204,8 +204,8 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     ValSig = zip(varyList,vals,sig)
     if Print:
         CalibPrint(ValSig,chisq,rings.shape[0])
-    return chisq
-                    
+    return [chisq,vals,sigList]
+
 def ImageLocalMax(image,w,Xpix,Ypix):
     'Needs a doc string'
     w2 = w*2
@@ -526,7 +526,7 @@ def ImageRecalibrate(G2frame,data,masks):
     data['ellipses'] = []
     if not data['calibrant']:
         print 'no calibration material selected'
-        return True    
+        return []    
     skip = data['calibskip']
     dmin = data['calibdmin']
     Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
@@ -571,10 +571,10 @@ def ImageRecalibrate(G2frame,data,masks):
             continue
     if not data['rings']:
         print 'no rings found; try lower Min ring I/Ib'
-        return True    
+        return []    
         
     rings = np.concatenate((data['rings']),axis=0)
-    chisq = FitDetector(rings,varyList,parmDict)
+    [chisq,vals,sigList] = FitDetector(rings,varyList,parmDict)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
@@ -589,7 +589,7 @@ def ImageRecalibrate(G2frame,data,masks):
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     print 'calibration time = %.3f'%(time.time()-time0)
     G2plt.PlotImage(G2frame,newImage=True)        
-    return True
+    return [vals,varyList,sigList,parmDict]
             
 def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
@@ -714,7 +714,7 @@ def ImageCalibrate(G2frame,data):
                 'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
             varyList = [item for item in varyDict if varyDict[item]]
             if len(Ringp) > 10:
-                chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
+                chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)[0]
                 tiltp = parmDict['tilt']
                 phip = parmDict['phi']
                 centp = [parmDict['det-X'],parmDict['det-Y']]
@@ -726,7 +726,7 @@ def ImageCalibrate(G2frame,data):
             Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
-                chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
+                chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)[0]
                 tiltm = parmDict['tilt']
                 phim = parmDict['phi']
                 centm = [parmDict['det-X'],parmDict['det-Y']]
@@ -768,7 +768,7 @@ def ImageCalibrate(G2frame,data):
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
             if i:
-                chisq = FitDetector(rings,varyList,parmDict,False)
+                chisq = FitDetector(rings,varyList,parmDict,False)[0]
                 data['distance'] = parmDict['dist']
                 data['center'] = [parmDict['det-X'],parmDict['det-Y']]
                 data['rotation'] = parmDict['phi']
@@ -788,7 +788,7 @@ def ImageCalibrate(G2frame,data):
         print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
     N = len(data['ellipses'])
     if N > 2:
-        FitDetector(rings,varyList,parmDict)
+        FitDetector(rings,varyList,parmDict)[0]
         data['wavelength'] = parmDict['wave']
         data['distance'] = parmDict['dist']
         data['center'] = [parmDict['det-X'],parmDict['det-Y']]

@@ -2198,9 +2198,9 @@ class DataFrame(wx.Frame):
         self.PDFPksEdit = wx.Menu(title='')
         self.PDFPksMenu.Append(menu=self.PDFPksEdit, title='PDF Peaks')
         self.PDFPksEdit.Append(help='Fit PDF peaks', id=wxID_PDFPKSFIT, kind=wx.ITEM_NORMAL,
-            text='Fit Peaks')
-        self.PDFPksEdit.Append(help='Fit all PDF peaks', id=wxID_PDFPKSFITALL, kind=wx.ITEM_NORMAL,
-            text='Fit all PDF peakss')
+            text='PDF peak fit')
+        self.PDFPksEdit.Append(help='Sequential Peak fitting for all PDFs', id=wxID_PDFPKSFITALL, kind=wx.ITEM_NORMAL,
+            text='Seq PDF peak fit')
         self.PDFPksEdit.Append(help='Copy PDF peaks', id=wxID_PDFCOPYPEAKS, kind=wx.ITEM_NORMAL,
             text='Copy peaks')
         self.PDFPksEdit.Append(help='Clear PDF peaks', id=wxID_CLEARPDFPEAKS, kind=wx.ITEM_NORMAL,

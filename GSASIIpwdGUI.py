@@ -5320,6 +5320,22 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         
     def peakSizer():
         
+        def PeaksRefine(event):
+            c =  event.GetCol()
+            if PDFPeaks.GetColLabelValue(c) == 'refine':
+                choice = ['P - position','M - magnitude','S - standrd deviation']
+                dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelections()
+                    parms = ''
+                    for x in sel:
+                        parms += choice[x][0]
+                    for peak in peaks['Peaks']:
+                        peak[3] = parms
+                dlg.Destroy()
+                wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
+                
+        
         atms = ','.join(data['ElList'].keys())
         colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Cooord. No.']
         Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,S,PM,PS,MS,PMS',]+     \
@@ -5331,6 +5347,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         PDFPeaks.SetMargins(0,0)
         PDFPeaks.SetRowLabelSize(40)
         PDFPeaks.AutoSizeColumns(False)
+        PDFPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PeaksRefine)
 
         peakBox = wx.BoxSizer(wx.VERTICAL)
         peakBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Peaks:'),0,WACV)

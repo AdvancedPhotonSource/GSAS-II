@@ -206,10 +206,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     if 'dist' not in varyList:
                         vals.append(parmDict['dist'])
                         varyList.append('dist')
-                        sigList.append(0.0)
+                        sigList.append(None)
                     vals.append(Data['setdist'])
                     varyList.append('setdist')
-                    sigList.append(0.01)
+                    sigList.append(None)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = names
@@ -1979,7 +1979,7 @@ def UpdateStressStrain(G2frame,data):
                     parmDict['%d;Ivar'%(j)] = item['Ivar']
                     variables.append(item['Ivar'])
                     varyList.append('%d;Ivar'%(j))
-                    sig.append(0.)
+                    sig.append(None)
                 SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
                     'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
             else:

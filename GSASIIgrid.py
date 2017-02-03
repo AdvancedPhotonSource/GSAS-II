@@ -2947,6 +2947,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 for item in sampleParmDict:
                     sampleParmDict[item].append(data[name]['parmDict'].get(item,0))
             else:
+                if 'PDF' in name:
+                    name = 'PWDR' + name[4:]
                 Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
                 sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
                 for item in sampleParmDict:

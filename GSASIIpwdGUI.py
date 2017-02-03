@@ -428,8 +428,7 @@ def UpdatePeakGrid(G2frame, data):
         iFin = np.searchsorted(x0,limits[1])
         x = x0[iBeg:iFin]
         y0 = profile[1][iBeg:iFin]
-        y1 = copy.copy(y0)
-        ysig = 0.5*np.std(y1)
+        ysig = 0.5*np.std(y0)
         offset = [-1,1]
         ymask = ma.array(y0,mask=(y0<ysig))
         for off in offset:
@@ -5382,14 +5381,44 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         if not peaks:
             G2frame.ErrorDialog('No peaks!','Nothing to fit!')
             return
-        newpeaks = G2pwd.PDFPeakFit(peaks,data['G(R)'])
+        newpeaks = G2pwd.PDFPeakFit(peaks,data['G(R)'])[0]
         print 'PDF peak fit finished'
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'),newpeaks)
         G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
         wx.CallAfter(UpdatePDFPeaks,G2frame,newpeaks,data)
         
     def OnFitAllPDFpeaks(event):
-        print 'fit all pdf peaks'
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'PDF peak fitting','Select PDFs to fit:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                SeqResult = {}
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                names = []
+                for item in items:
+                    name = Names[item]
+                    names.append(name)
+                    print 'PDF peak fitting',name
+                    pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Controls'))
+                    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'PDF Peaks'))
+                    newpeaks,vals,varyList,sigList,parmDict,Rvals = G2pwd.PDFPeakFit(peaks,data['G(R)'])
+                    SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':Rvals,
+                        'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Peaks'),newpeaks)
+                SeqResult['histNames'] = names
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
+                if Id:
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                else:
+                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        finally:
+            dlg.Destroy()
+        G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
+        wx.CallAfter(UpdatePDFPeaks,G2frame,newpeaks,data)
+        print 'All PDFs peak fitted - results in Sequential PDF peak fit results'
         
     def OnClearPDFpeaks(event):
         peaks['Peaks'] = []

@@ -1355,6 +1355,10 @@ def CompileVarDesc():
         'U([123][123])cos$' :  'Cos thermal wave for U\\1',
         'M([XYZ])sin$' :  'Sin mag. moment wave for \\1',
         'M([XYZ])cos$' :  'Cos mag. moment wave for \\1',
+        # PDF peak parms (l:<var>;l = peak no.)
+        'PDFpos'  : 'PDF peak position',
+        'PDFmag'  : 'PDF peak magnitude',
+        'PDFsig'  : 'PDF peak std. dev.',
         # SASD vars (l:<var>;l = component)
         'Aspect ratio' : 'Particle aspect ratio',
         'Length' : 'Cylinder length',

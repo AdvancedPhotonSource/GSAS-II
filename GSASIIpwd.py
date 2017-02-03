@@ -382,27 +382,27 @@ def PDFPeakFit(peaks,data):
         if peaks['Background'][2]:
             varyList.append('slope')
         for i,peak in enumerate(peaks['Peaks']):
-            parmDict[str(i)+':pos'] = peak[0]
-            parmDict[str(i)+':mag'] = peak[1]
-            parmDict[str(i)+':sig'] = peak[2]
+            parmDict['PDFpos;'+str(i)] = peak[0]
+            parmDict['PDFmag;'+str(i)] = peak[1]
+            parmDict['PDFsig;'+str(i)] = peak[2]
             if 'P' in peak[3]:
-                varyList.append(str(i)+':pos')
+                varyList.append('PDFpos;'+str(i))
             if 'M' in peak[3]:
-                varyList.append(str(i)+':mag')
+                varyList.append('PDFmag;'+str(i))
             if 'S' in peak[3]:
-                varyList.append(str(i)+':sig')
+                varyList.append('PDFsig;'+str(i))
         return parmDict,varyList
         
     def SetParms(peaks,parmDict,varyList):
         if 'slope' in varyList:
             peaks['Background'][1][1] = parmDict['slope']
         for i,peak in enumerate(peaks['Peaks']):
-            if str(i)+':pos' in varyList:
-                peak[0] = parmDict[str(i)+':pos']
-            if str(i)+':mag' in varyList:
-                peak[1] = parmDict[str(i)+':mag']
-            if str(i)+':sig' in varyList:
-                peak[2] = parmDict[str(i)+':sig']
+            if 'PDFpos;'+str(i) in varyList:
+                peak[0] = parmDict['PDFpos;'+str(i)]
+            if 'PDFmag;'+str(i) in varyList:
+                peak[1] = parmDict['PDFmag;'+str(i)]
+            if 'PDFsig;'+str(i) in varyList:
+                peak[2] = parmDict['PDFsig;'+str(i)]
         
     
     def CalcPDFpeaks(parmdict,Xdata):
@@ -410,9 +410,9 @@ def PDFPeakFit(peaks,data):
         ipeak = 0
         while True:
             try:
-                pos = parmdict[str(ipeak)+':pos']
-                mag = parmdict[str(ipeak)+':mag']
-                wid = parmdict[str(ipeak)+':sig']
+                pos = parmdict['PDFpos;'+str(ipeak)]
+                mag = parmdict['PDFmag;'+str(ipeak)]
+                wid = parmdict['PDFsig;'+str(ipeak)]
                 wid2 = 2.*wid**2
                 Z += mag*rs2pi*np.exp(-(Xdata-pos)**2/wid2)/wid
                 ipeak += 1
@@ -423,9 +423,7 @@ def PDFPeakFit(peaks,data):
         parmdict.update(zip(varylist,values))
         M = CalcPDFpeaks(parmdict,xdata)-ydata
         return M
-                               
             
-    print 'Do PDF peak fitting'
     newpeaks = copy.copy(peaks)
     iBeg = np.searchsorted(data[1][0],newpeaks['Limits'][0])
     iFin = np.searchsorted(data[1][0],newpeaks['Limits'][1])
@@ -434,22 +432,22 @@ def PDFPeakFit(peaks,data):
     parmDict,varyList = MakeParms(peaks)
     if not len(varyList):
         print ' Nothing varied'
-        return newpeaks
+        return newpeaks,None,None,None,None,None
     
-    begin = time.time()
+    Rvals = {}
     values =  np.array(Dict2Values(parmDict, varyList))
     result = so.leastsq(errPDFProfile,values,full_output=True,ftol=0.0001,
            args=(X,Y,parmDict,varyList))
-    ncyc = int(result[2]['nfev']/2)
-    runtime = time.time()-begin    
-    print 'PDF fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
 #    chisq = np.sum(result[2]['fvec']**2)
     Values2Dict(parmDict, varyList, result[0])
     SetParms(peaks,parmDict,varyList)
-    
+    chisq = np.sum(result[2]['fvec']**2)/(len(X)-len(values))   #reduced chi^2 = M/(Nobs-Nvar)
+    Rvals['Rwp'] = np.sqrt(chisq/np.sum(Y**2))*100.      #to %
+    Rvals['GOF'] = chisq/(len(X)-len(varyList))       #reduced chi^2
+    sigList = list(np.sqrt(chisq*np.diag(result[1])))    
     Z = CalcPDFpeaks(parmDict,X)
     newpeaks['calc'] = [X,Z]
-    return newpeaks    
+    return newpeaks,result[0],varyList,sigList,parmDict,Rvals    
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):
     import scipy.fftpack as ft

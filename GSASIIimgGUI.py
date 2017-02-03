@@ -772,7 +772,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Parms[name][3],min=0.01,max=10.,nDig=Parms[name][1],typeHint=float)
             elif name == 'dep':
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
-                    Parms[name][3],min=0.0,max=0.1,nDig=Parms[name][1],typeHint=float)
+                    Parms[name][3],min=0.0,max=0.2,nDig=Parms[name][1],typeHint=float)
             else:
                 calVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[name][2],
                     Parms[name][3],nDig=Parms[name][1],typeHint=float)

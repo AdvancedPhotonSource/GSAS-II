@@ -68,7 +68,7 @@ def pointInPolygon(pXY,xy):
 def peneCorr(tth,dep,dist,tilt=0.,azm=0.):
     'Needs a doc string'
 #    return dep*(1.-npcosd(abs(tilt*npsind(azm))-tth*npcosd(azm)))  #something wrong here
-    return dep*(1.-npcosd(tth))*dist         #best one
+    return dep*(1.-npcosd(tth))*dist**2/1000.         #best one
 #    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):

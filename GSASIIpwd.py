@@ -438,12 +438,11 @@ def PDFPeakFit(peaks,data):
     values =  np.array(Dict2Values(parmDict, varyList))
     result = so.leastsq(errPDFProfile,values,full_output=True,ftol=0.0001,
            args=(X,Y,parmDict,varyList))
-#    chisq = np.sum(result[2]['fvec']**2)
+    chisq = np.sum(result[2]['fvec']**2)
     Values2Dict(parmDict, varyList, result[0])
     SetParms(peaks,parmDict,varyList)
-    chisq = np.sum(result[2]['fvec']**2)/(len(X)-len(values))   #reduced chi^2 = M/(Nobs-Nvar)
     Rvals['Rwp'] = np.sqrt(chisq/np.sum(Y**2))*100.      #to %
-    Rvals['GOF'] = chisq/(len(X)-len(varyList))       #reduced chi^2
+    chisq = np.sum(result[2]['fvec']**2)/(len(X)-len(values))   #reduced chi^2 = M/(Nobs-Nvar)
     sigList = list(np.sqrt(chisq*np.diag(result[1])))    
     Z = CalcPDFpeaks(parmDict,X)
     newpeaks['calc'] = [X,Z]

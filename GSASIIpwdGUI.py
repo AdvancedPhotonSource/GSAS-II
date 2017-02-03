@@ -5399,7 +5399,6 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                 for item in items:
                     name = Names[item]
                     names.append(name)
-                    print 'PDF peak fitting',name
                     pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Controls'))
                     peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'PDF Peaks'))
@@ -5424,8 +5423,6 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         peaks['Peaks'] = []
         G2plt.PlotISFG(G2frame,data,peaks=peaks,newPlot=False)
         wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
-        
-        
 
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()

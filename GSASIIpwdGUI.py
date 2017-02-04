@@ -5220,6 +5220,9 @@ def UpdatePDFGrid(G2frame,data):
     dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
     powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
+    if not powId: # skip if no matching PWDR entry
+        G2G.G2MessageBox(G2frame,'matching PWDR record not found. PDF can not be used.')
+        return
     fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
     inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
     if 'C' in inst['Type'][0]:

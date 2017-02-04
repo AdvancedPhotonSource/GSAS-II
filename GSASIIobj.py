@@ -2096,8 +2096,11 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,PDFnames=[]):
     :param list Qlimits: Q limits to be used for computing the PDF
     :returns: the Id of the newly created PDF entry
     '''
-    PDFname = 'PDF '+PWDRtree[4:] # this places two spaces after PDF which is needed is some places
-    PDFname = MakeUniqueLabel(PDFname,PDFnames)
+    PDFname = 'PDF '+PWDRtree[4:] # this places two spaces after PDF, which is needed is some places
+    if PDFname in PDFnames:
+        print('Skipping, entry already exists: '+PDFname)
+        return None
+    #PDFname = MakeUniqueLabel(PDFname,PDFnames)
     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=PDFname)
     Data = {
         'Sample':{'Name':PWDRtree,'Mult':1.0},

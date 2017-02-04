@@ -2914,6 +2914,7 @@ class AutoIntFrame(wx.Frame):
                             ElList[elem] = ElData
                 PDFnames = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
                 PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,PDFnames)
+                if not PDFid: continue
                 PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,PDFid, 'PDF Controls'))
                 PDFdata.update(self.pdfControls)

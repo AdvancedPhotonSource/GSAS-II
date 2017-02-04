@@ -1389,7 +1389,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
+        newPhase['Drawing'] = []
+        
         if ifMag and ifConstr:
+            G2frame.GetUsedHistogramsAndPhasesfromTree()
             G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
         G2frame.PatternTree.SelectItem(sub)
         

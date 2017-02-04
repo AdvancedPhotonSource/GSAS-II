@@ -1274,7 +1274,7 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                 parmDict[parm] = nAcof[As.index(Aid[2])]
                 if not parm in varyList:
                     varyList.append(parm)
-                DepCons.append([invTrans[Aid[0],Aid[0]]*invTrans[Aid[1],Aid[1]],G2obj.G2VarObj(parm)])
+                DepCons.append([Trans[Aid[0],Aid[0]]*Trans[Aid[1],Aid[1]],G2obj.G2VarObj(parm)])
         if len(DepCons) == 1:
             constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
         elif len(DepCons) > 1:        

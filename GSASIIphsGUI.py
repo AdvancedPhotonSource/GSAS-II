@@ -940,8 +940,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     'Use data',refsList)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
+                        if not len(dlg.GetSelections()):
+                            dlg.Destroy()
+                            return
                         Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
                     else:
+                        dlg.Destroy()
                         return
                 finally:
                     dlg.Destroy()
@@ -1015,8 +1019,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     'Use data',refsList)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
+                        if not len(dlg.GetSelections()):
+                            dlg.Destroy()
+                            return
                         Flip['RefList'] = [refsList[i] for i in dlg.GetSelections()]
                     else:
+                        dlg.Destroy()
                         return
                 finally:
                     dlg.Destroy()

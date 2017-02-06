@@ -1423,7 +1423,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
                 
-    def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots                  
+    def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots
         np.seterr(invalid='ignore')
                                                    
     def onMoveDiffCurve(event):

@@ -4001,6 +4001,7 @@ class GSASII(wx.Frame):
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequential results')
             self.PatternTree.SetItemPyData(Id,{})            
+        self.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         Controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
         if not Controls.get('Seq Data'):
             print('Error: a sequential refinement has not been set up')

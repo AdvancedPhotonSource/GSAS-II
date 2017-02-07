@@ -2928,7 +2928,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
               * 'newAtomDict' - new atom parameters after shifts applied
               * 'newCellDict' - refined cell parameters after shifts to A0-A5 from Dij terms applied'
     """
-
+    ''' there is an issue here: #TODO move stuff from Controls to the specific SeqData tree entry (e.g. use data instead of Controls) 
+        make SeqData creation save old pseudoVars, etc. in the various places it is rebuilt
+        check validity of pseudoVars, ect. against current variable set
+    '''
     def GetSampleParms():
         '''Make a dictionary of the sample parameters are not the same over the
         refinement series.

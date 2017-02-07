@@ -609,6 +609,7 @@ def UpdatePeakGrid(G2frame, data):
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         else:
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
@@ -4106,6 +4107,7 @@ def UpdateModelsGrid(G2frame,data):
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         else:
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
@@ -5413,6 +5415,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                 Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
                 if Id:
                     G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                    G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
                 else:
                     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
                     G2frame.PatternTree.SetItemPyData(Id,SeqResult)

@@ -1739,6 +1739,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
             except ValueError:
                 lineNo = -1
+            nxcl = len(exclLines)
             if  lineNo in [0,1] or lineNo in exclLines:
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 limits = G2frame.PatternTree.GetItemPyData(LimitId)
@@ -1756,18 +1757,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,limits,plottype)
-            elif lineNo > 1:
+            elif lineNo > 1+nxcl:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.PatternTree.GetItemPyData(PeakId)
                 if event.button == 3:
-                    del peaks['peaks'][lineNo-2]
+                    del peaks['peaks'][lineNo-2-nxcl]
                 else:
                     if G2frame.plotStyle['qPlot']:
-                        peaks['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
+                        peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                     elif G2frame.plotStyle['dPlot']:
-                        peaks['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,xpos)
+                        peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
-                        peaks['peaks'][lineNo-2][0] = xpos
+                        peaks['peaks'][lineNo-2-nxcl][0] = xpos
                     peaks['sigDict'] = {}        #no longer valid
                 G2pdG.UpdatePeakGrid(G2frame,peaks)
         elif G2frame.PatternTree.GetItemText(PickId) in ['Models',] and xpos:
@@ -4178,11 +4179,10 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Draw()
         elif event.key == 'l':
             G2frame.seqLines = not G2frame.seqLines
-            wx.CallAfter(Draw)
+            Draw()
             
     def Draw():
         global Title,xLabel,yLabel
-        G2frame.G2plotNB.RaisePageNoRefresh(Page)
         G2frame.G2plotNB.status.SetStatusText(  \
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()

@@ -135,7 +135,7 @@ def UpdateImageData(G2frame,data):
     distSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Set detector distance: '),0,WACV)
     if 'setdist' not in data:
         data['setdist'] = data['distance']
-    distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'setdist',nDig=(10,2),
+    distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'setdist',nDig=(10,4),
             typeHint=float),0,WACV)
     mainSizer.Add(distSizer,0)
     mainSizer.Layout()    
@@ -168,7 +168,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['binType'] = 'log(q)'
     if 'varyList' not in data:
         data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
-    if data['DetDepth'] > 0.1:
+    if data['DetDepth'] > 0.5:
         data['DetDepth'] /= data['distance']
 #end patch
 
@@ -216,6 +216,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
                 if Id:
                     G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                    G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
                 else:
                     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential image calibration results')
                     G2frame.PatternTree.SetItemPyData(Id,SeqResult)
@@ -1994,6 +1995,7 @@ def UpdateStressStrain(G2frame,data):
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential strain fit results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         else:
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)

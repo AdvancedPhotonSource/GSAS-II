@@ -524,7 +524,7 @@ def ImageRecalibrate(G2frame,data,masks):
     cutoff = data['cutoff']
     data['rings'] = []
     data['ellipses'] = []
-    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+    if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     if not data['calibrant']:
         print 'no calibration material selected'
@@ -751,7 +751,7 @@ def ImageCalibrate(G2frame,data):
         data['ellipses'].append(ellipsem[:]+('r',))
         data['rings'].append(np.array(Ringm))
         G2plt.PlotImage(G2frame,newImage=True)
-    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+    if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
@@ -888,7 +888,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
     dtth = (lutth[1]-lutth[0])/numChans
     muT = data.get('SampleAbs',[0.0,''])[0]
-    if data['DetDepth'] > 0.1:          #patch - redefine DetDepth
+    if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT

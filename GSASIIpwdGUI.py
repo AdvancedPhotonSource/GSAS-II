@@ -520,15 +520,9 @@ def UpdatePeakGrid(G2frame, data):
         wx.CallAfter(OnPeakFit,'LSQ',oneCycle=True)
         
     def OnSeqPeakFit(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        histList = GetHistsLikeSelected(G2frame)
-        if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
-            return
-        sel = []
+        histList = G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential peak fits',
              'Select dataset to include',histList)
-        dlg.SetSelections(sel)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
@@ -536,7 +530,13 @@ def UpdatePeakGrid(G2frame, data):
         dlg.Destroy()
         if not names:
             return
-        SeqResult = {}
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
+        if Id:
+            SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+        else:
+            SeqResult = {}
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.',]
@@ -557,7 +557,6 @@ def UpdatePeakGrid(G2frame, data):
         oneCycle = False
         FitPgm = 'LSQ'
         prevVaryList = []
-        Names = []
         peaks = None
         varyList = None
         if Reverse:
@@ -578,24 +577,13 @@ def UpdatePeakGrid(G2frame, data):
                 limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
                 inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
                 data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-                dlg2 = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-                screenSize = wx.ClientDisplayRect()
-                Size = dlg.GetSize()
-                if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
-                    dlg2.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
-                    dlg2.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-                try:
-                    peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
-                        background,limits,inst,inst2,data,prevVaryList,oneCycle,controls,dlg2)
-                finally:
-                    dlg2.Destroy()
+                peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
+                    background,limits,inst,inst2,data,prevVaryList,oneCycle,controls)
                 if len(result[0]) != len(fullvaryList):
                     dlg.Destroy()
                     print ' ***** Sequential peak fit stopped at '+name+' *****'
                     break
                 else:
-                    Names.append(name)    
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
                     SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                         'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
@@ -603,16 +591,8 @@ def UpdatePeakGrid(G2frame, data):
             print ' ***** Sequential peak fit successful *****'
         finally:
             dlg.Destroy()
-        if Reverse:
-            Names.reverse()
-        SeqResult['histNames'] = Names
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
-        if Id:
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        SeqResult['histNames'] = histList
+        G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2frame.PatternTree.SelectItem(Id)
         
     def OnClearPeaks(event):
@@ -4041,16 +4021,24 @@ def UpdateModelsGrid(G2frame,data):
                 
     def OnFitModelAll(event):
         choices = G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
-        sel = []
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
              'Select dataset to include',choices)
-        dlg.SetSelections(sel)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
+            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
+            if Id:
+                SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+            else:
+                SeqResult = {}
+                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
+                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            SeqResult['histNames'] = choices
+        else:
+            dlg.Destroy()
+            return
         dlg.Destroy()
-        SeqResult = {}
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.']
@@ -4101,16 +4089,6 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        if Reverse:
-            names.reverse()
-        SeqResult['histNames'] = names
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
-        if Id:
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         
     def OnFitModel(event):
@@ -5341,7 +5319,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                 
         
         atms = ','.join(data['ElList'].keys())
-        colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Cooord. No.']
+        colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Bond No.']
         Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,S,PM,PS,MS,PMS',]+     \
             2*[wg.GRID_VALUE_CHOICE+':'+atms,]+[wg.GRID_VALUE_FLOAT+':10,3',]
         rowLabels = range(len(peaks['Peaks']))
@@ -5397,13 +5375,17 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         dlg = G2G.G2MultiChoiceDialog(G2frame,'PDF peak fitting','Select PDFs to fit:',Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                SeqResult = {}
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
+                if Id:
+                    SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+                else:
+                    SeqResult = {}
+                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
-                names = []
                 for item in items:
                     name = Names[item]
-                    names.append(name)
                     pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Controls'))
                     peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'PDF Peaks'))
@@ -5411,18 +5393,12 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':Rvals,
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Peaks'),newpeaks)
-                SeqResult['histNames'] = names
-                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
-                if Id:
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-                    G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-                else:
-                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                SeqResult['histNames'] = Names
+                G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         finally:
             dlg.Destroy()
         G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
-        wx.CallAfter(UpdatePDFPeaks,G2frame,newpeaks,data)
+        G2frame.PatternTree.SelectItem(Id)
         print 'All PDFs peak fitted - results in Sequential PDF peak fit results'
         
     def OnClearPDFpeaks(event):

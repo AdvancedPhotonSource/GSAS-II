@@ -3575,6 +3575,8 @@ class GSASII(wx.Frame):
                 Names.append(name)
                 if 'PWDR' in name:
                     TextList.append(name)
+                    Data = self.PatternTree.GetItemPyData(id)[1]
+                    pwdrMin = np.min(Data[1])
                     Comments = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Comments'))
                     Parms = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Instrument Parameters'))[0]
                     fullLimits = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,id,'Limits'))[0]
@@ -3605,7 +3607,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     for i in dlg.GetSelections():
                         PDFnames = G2gd.GetPatternTreeDataNames(self,['PDF ',])
-                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i],PDFnames)
+                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i],pwdrMin,PDFnames)
                 for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()

@@ -187,13 +187,17 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                SeqResult = {}
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
+                if Id:
+                    SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+                else:
+                    SeqResult = {}
+                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential image calibration results')
+                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
-                names = []
                 for item in items:
                     name = Names[item]
-                    names.append(name)
                     print 'calibrating',name
                     G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls'))
@@ -212,19 +216,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     sigList.append(None)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
-                SeqResult['histNames'] = names
-                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
-                if Id:
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-                    G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-                else:
-                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential image calibration results')
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                SeqResult['histNames'] = Names
         finally:
             dlg.Destroy()
         print 'All selected images recalibrated - results in Sequential image calibration results'
+        G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
-        wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
+        G2frame.PatternTree.SelectItem(Id)
         
     def OnClearCalib(event):
         data['ring'] = []
@@ -1914,19 +1912,24 @@ def UpdateStressStrain(G2frame,data):
         
     def OnFitAllStrSta(event):
         choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
-        sel = []
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
-        dlg.SetSelections(sel)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
+            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential strain fit results')
+            if Id:
+                SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+            else:
+                SeqResult = {}
+                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
+                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         else:
-            return
-        if not names:
+            dlg.Destroy()
             return
         dlg.Destroy()
-        SeqResult = {}
+        if not names:
+            return
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.',]
@@ -1989,16 +1992,7 @@ def UpdateStressStrain(G2frame,data):
                 print ' ***** Sequential strain refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        if Reverse:
-            names.reverse()
-        SeqResult['histNames'] = names
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential strain fit results')
-        if Id:
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-            G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        SeqResult['histNames'] = choices
         G2frame.PatternTree.SelectItem(Id)
         print 'All images fitted'
         
@@ -2890,6 +2884,8 @@ class AutoIntFrame(wx.Frame):
                     print('Skipping PDF for '+pwdr+' due to detector position')
                     continue
                 # Setup PDF
+                Data = G2frame.PatternTree.GetItemPyData(PWid)[1]
+                pwdrMin = np.min(Data[1])
                 Parms = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,PWid,'Instrument Parameters'))[0]
                 fullLimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
@@ -2915,7 +2911,7 @@ class AutoIntFrame(wx.Frame):
                             ElData['FormulaNo'] = float(num)
                             ElList[elem] = ElData
                 PDFnames = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
-                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,PDFnames)
+                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,pwdrMin,PDFnames)
                 if not PDFid: continue
                 PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,PDFid, 'PDF Controls'))

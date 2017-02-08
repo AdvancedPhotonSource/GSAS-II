@@ -1025,7 +1025,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm                                  #Nref,Natm
+        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
         if SGData['SGInv']:
             mphase = np.hstack((phase,-phase))
             Uniq = np.hstack((Uniq,-Uniq))      #Nref,Nops,hkl

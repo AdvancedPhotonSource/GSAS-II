@@ -3783,9 +3783,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     posdict = {}
     prevVaryList = []
     foundNames = []
+    missing = 0
     for i,name in enumerate(histNames):
         if name not in data:
-            print("Error: "+name+" not found!")
+            if missing < 5:
+                print(" Warning: "+name+" not found")
+            elif missing == 5:
+                print ' Warning: more are missing'
+            missing += 1
             continue
         foundNames.append(name)
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
@@ -3802,6 +3807,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 svar = striphist(var,'*')
                 posdict[name][combinedVaryList.index(svar)] = svar
             VaryListChanges.append(name)
+    if missing:
+        print ' Warning: Total of %d data sets missing from sequential results'%(missing)
     if len(VaryListChanges) > 1:
         G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,True)
     else:

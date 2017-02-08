@@ -2087,7 +2087,7 @@ class G2Exception(Exception):
     def __str__(self):
         return repr(self.msg)
 
-def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,PDFnames=[]):
+def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
     :param Frame G2frame: main GSAS-II tree frame object
@@ -2107,7 +2107,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,PDFnames=[]):
         'Sample Bkg.':{'Name':'','Mult':-1.0},
         'Container':{'Name':'','Mult':-1.0},
         'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
-        'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
+        'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,'Flat Bkg':FltBkg,
         'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits,
         'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
         'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}

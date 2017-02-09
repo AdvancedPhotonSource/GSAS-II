@@ -2930,13 +2930,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
               * 'newAtomDict' - new atom parameters after shifts applied
               * 'newCellDict' - refined cell parameters after shifts to A0-A5 from Dij terms applied'
     """
-    ''' there is an issue here: #TODO move stuff from Controls to the specific SeqData tree entry (e.g. use data instead of Controls) 
-        make SeqData creation save old pseudoVars, etc. in the various places it is rebuilt
-        check validity of pseudoVars, ect. against current variable set
-    '''
     def GetSampleParms():
-        '''Make a dictionary of the sample parameters are not the same over the
-        refinement series.
+        '''Make a dictionary of the sample parameters that are not the same over the
+        refinement series. Controls here is local
         '''
         if 'IMG' in histNames[0]:
             sampleParmDict = {'Sample load':[],}
@@ -2974,7 +2970,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colName = G2frame.SeqTable.GetColLabelValue(col)
         plotName = variableLabels.get(colName,colName)
         plotName = plotSpCharFix(plotName)
-        return plotName,colList[col],colSigs[col]
+        return plotName,G2frame.colList[col],G2frame.colSigs[col]
             
     def PlotSelect(event):
         'Plots a row (covariance) or column on double-click'
@@ -3180,7 +3176,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     
     def EnablePseudoVarMenus():
         'Enables or disables the PseudoVar menu items that require existing defs'
-        if Controls['SeqPseudoVars']:
+        if data['SeqPseudoVars']:
             val = True
         else:
             val = False
@@ -3189,7 +3185,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def DelPseudoVar(event):
         'Ask the user to select a pseudo var expression to delete'
-        choices = Controls['SeqPseudoVars'].keys()
+        choices = data['SeqPseudoVars'].keys()
         selected = G2G.ItemSelector(
             choices,G2frame.dataFrame,
             multiple=True,
@@ -3197,13 +3193,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             header='Delete expression')
         if selected is None: return
         for item in selected:
-            del Controls['SeqPseudoVars'][choices[item]]
+            del data['SeqPseudoVars'][choices[item]]
         if selected:
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
     def EditPseudoVar(event):
         'Edit an existing pseudo var expression'
-        choices = Controls['SeqPseudoVars'].keys()
+        choices = data['SeqPseudoVars'].keys()
         if len(choices) == 1:
             selected = 0
         else:
@@ -3215,29 +3211,27 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if selected is not None:
             dlg = G2exG.ExpressionDialog(
                 G2frame.dataDisplay,PSvarDict,
-                Controls['SeqPseudoVars'][choices[selected]],
+                data['SeqPseudoVars'][choices[selected]],
                 header="Edit the PseudoVar expression",
                 VarLabel="PseudoVar #"+str(selected+1),
                 fit=False)
             newobj = dlg.Show(True)
             if newobj:
                 calcobj = G2obj.ExpressionCalcObj(newobj)
-                del Controls['SeqPseudoVars'][choices[selected]]
-                Controls['SeqPseudoVars'][calcobj.eObj.expression] = newobj
+                del data['SeqPseudoVars'][choices[selected]]
+                data['SeqPseudoVars'][calcobj.eObj.expression] = newobj
                 UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         
     def AddNewPseudoVar(event):
         'Create a new pseudo var expression'
-        dlg = G2exG.ExpressionDialog(
-            G2frame.dataDisplay,PSvarDict,
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,PSvarDict,
             header='Enter an expression for a PseudoVar here',
-            VarLabel = "New PseudoVar",
-            fit=False)
+            VarLabel = "New PseudoVar",fit=False)
         obj = dlg.Show(True)
         dlg.Destroy()
         if obj:
             calcobj = G2obj.ExpressionCalcObj(obj)
-            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            data['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
             
     def AddNewDistPseudoVar(event):
@@ -3278,7 +3272,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         dlg.Destroy()
         if obj:
-            Controls['SeqPseudoVars'][obj.expression] = obj
+            data['SeqPseudoVars'][obj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
     def AddNewAnglePseudoVar(event):
@@ -3326,7 +3320,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         dlg.Destroy()
         if obj:
-            Controls['SeqPseudoVars'][obj.expression] = obj
+            data['SeqPseudoVars'][obj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
             
     def UpdateParmDict(parmDict):
@@ -3424,7 +3418,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         
     def EnableParFitEqMenus():
         'Enables or disables the Parametric Fit menu items that require existing defs'
-        if Controls['SeqParFitEqList']:
+        if data['SeqParFitEqList']:
             val = True
         else:
             val = False
@@ -3452,7 +3446,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if eqObj is not None:
             eqObjList = [eqObj,]
         else:
-            eqObjList = Controls['SeqParFitEqList']
+            eqObjList = data['SeqParFitEqList']
         UseFlags = G2frame.SeqTable.GetColValues(0)         
         for obj in eqObjList:
             # assemble refined vars for this equation
@@ -3466,7 +3460,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # assemble a list of the independent variables
             indepVars = obj.GetIndependentVars()
             # loop over each datapoint
-            for j,row in enumerate(zip(*colList)):
+            for j,row in enumerate(zip(*G2frame.colList)):
                 if not UseFlags[j]: continue
                 # assemble equations to fit
                 calcobj = G2obj.ExpressionCalcObj(obj)
@@ -3475,7 +3469,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 calcobj.SetupCalc(indepVarDict)                
                 # values and sigs for current value of dependent var
                 calcobj.depVal = row[indx]
-                calcobj.depSig = colSigs[indx][j]
+                calcobj.depSig = G2frame.colSigs[indx][j]
                 calcObjList.append(calcobj)
         # varied parameters
         varyList = varyValueDict.keys()
@@ -3520,34 +3514,32 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             indepVars = obj.GetIndependentVars()            
             # loop over each datapoint
             fitvals = []
-            for j,row in enumerate(zip(*colList)):
+            for j,row in enumerate(zip(*G2frame.colList)):
                 calcobj.SetupCalc(
                     {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
                     )
                 fitvals.append(calcobj.EvalExpression())
-            G2plt.PlotSelectedSequence(
-                G2frame,[indx],GetColumnInfo,SelectXaxis,
-                fitnum,fitvals)
+            G2plt.PlotSelectedSequence(G2frame,[indx],GetColumnInfo,SelectXaxis,fitnum,fitvals)
 
     def SingleParEqFit(eqObj):
         DoParEqFit(None,eqObj)
 
     def DelParFitEq(event):
         'Ask the user to select function to delete'
-        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
         selected = G2G.ItemSelector(
             txtlst,G2frame.dataFrame,
             multiple=True,
             title='Select a parametric equation(s) to remove',
             header='Delete equation')
         if selected is None: return
-        Controls['SeqParFitEqList'] = [obj for i,obj in enumerate(Controls['SeqParFitEqList']) if i not in selected]
+        data['SeqParFitEqList'] = [obj for i,obj in enumerate(data['SeqParFitEqList']) if i not in selected]
         EnableParFitEqMenus()
-        if Controls['SeqParFitEqList']: DoParEqFit(event)
+        if data['SeqParFitEqList']: DoParEqFit(event)
         
     def EditParFitEq(event):
         'Edit an existing parametric equation'
-        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
         if len(txtlst) == 1:
             selected = 0
         else:
@@ -3559,46 +3551,43 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if selected is not None:
             dlg = G2exG.ExpressionDialog(
                 G2frame.dataDisplay,indepVarDict,
-                Controls['SeqParFitEqList'][selected],
+                data['SeqParFitEqList'][selected],
                 depVarDict=depVarDict,
                 header="Edit the formula for this minimization function",
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
             if newobj:
-                Controls['SeqParFitEqList'][selected] = newobj
+                data['SeqParFitEqList'][selected] = newobj
                 EnableParFitEqMenus()
-            if Controls['SeqParFitEqList']: DoParEqFit(event)
+            if data['SeqParFitEqList']: DoParEqFit(event)
 
     def AddNewParFitEq(event):
         'Create a new parametric equation to be fit to sequential results'
 
         # compile the variable names used in previous freevars to avoid accidental name collisions
         usedvarlist = []
-        for obj in Controls['SeqParFitEqList']:
+        for obj in data['SeqParFitEqList']:
             for var in obj.freeVars:
                 if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
 
-        dlg = G2exG.ExpressionDialog(
-            G2frame.dataDisplay,indepVarDict,
-            depVarDict=depVarDict,
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,depVarDict=depVarDict,
             header='Define an equation to minimize in the parametric fit',
-            ExtraButton=['Fit',SingleParEqFit],
-            usedVars=usedvarlist)
+            ExtraButton=['Fit',SingleParEqFit],usedVars=usedvarlist)
         obj = dlg.Show(True)
         dlg.Destroy()
         if obj:
-            Controls['SeqParFitEqList'].append(obj)
+            data['SeqParFitEqList'].append(obj)
             EnableParFitEqMenus()
-            if Controls['SeqParFitEqList']: DoParEqFit(event)
+            if data['SeqParFitEqList']: DoParEqFit(event)
                 
     def CopyParFitEq(event):
         'Copy an existing parametric equation to be fit to sequential results'
         # compile the variable names used in previous freevars to avoid accidental name collisions
         usedvarlist = []
-        for obj in Controls['SeqParFitEqList']:
+        for obj in data['SeqParFitEqList']:
             for var in obj.freeVars:
                 if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
-        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in data['SeqParFitEqList']]
         if len(txtlst) == 1:
             selected = 0
         else:
@@ -3608,7 +3597,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 title='Select a parametric equation to copy',
                 header='Copy equation')
         if selected is not None:
-            newEqn = copy.deepcopy(Controls['SeqParFitEqList'][selected])
+            newEqn = copy.deepcopy(data['SeqParFitEqList'][selected])
             for var in newEqn.freeVars:
                 newEqn.freeVars[var][0] = G2obj.MakeUniqueLabel(newEqn.freeVars[var][0],usedvarlist)
             dlg = G2exG.ExpressionDialog(
@@ -3619,16 +3608,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
             if newobj:
-                Controls['SeqParFitEqList'].append(newobj)
+                data['SeqParFitEqList'].append(newobj)
                 EnableParFitEqMenus()
-            if Controls['SeqParFitEqList']: DoParEqFit(event)
+            if data['SeqParFitEqList']: DoParEqFit(event)
                                             
     def GridSetToolTip(row,col):
         '''Routine to show standard uncertainties for each element in table
         as a tooltip
         '''
-        if colSigs[col]:
-            return u'\u03c3 = '+str(colSigs[col][row])
+        if G2frame.colSigs[col]:
+            return u'\u03c3 = '+str(G2frame.colSigs[col][row])
         return ''
         
     def GridColLblToolTip(col):
@@ -3689,10 +3678,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
+#    Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
     # create a place to store Pseudo Vars & Parametric Fit functions, if not present
-    if 'SeqPseudoVars' not in Controls: Controls['SeqPseudoVars'] = {}
-    if 'SeqParFitEqList' not in Controls: Controls['SeqParFitEqList'] = []
+    if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
+    if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
     histNames = data['histNames']
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -3819,34 +3808,34 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
-    colList = [nRows*[True]]
-    colSigs = [None]
+    G2frame.colList = [nRows*[True]]
+    G2frame.colSigs = [None]
     colLabels = ['Use']
     Types = [wg.GRID_VALUE_BOOL]
     # start with Rwp values
     if 'IMG ' not in histNames[0][:4]:
-        colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
-        colSigs += [None]
+        G2frame.colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
+        G2frame.colSigs += [None]
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    if histNames[0][:4] not in ['SASD','IMG '] and Controls.get('ShowCell'):
-        colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
-        colSigs += [None]
+    if histNames[0][:4] not in ['SASD','IMG '] and data.get('ShowCell'):
+        G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
+        G2frame.colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
         Types += [wg.GRID_VALUE_FLOAT,]
     deltaChiCol = len(colLabels)-1
     # add changing sample parameters to table
     for key in sampleParms:
-        colList += [sampleParms[key]]
-        colSigs += [None]
+        G2frame.colList += [sampleParms[key]]
+        G2frame.colSigs += [None]
         colLabels += [key]
         Types += [wg.GRID_VALUE_FLOAT,]
     sampleDict = {}
     for i,name in enumerate(histNames):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
     # add unique cell parameters TODO: review this where the cell symmetry changes (when possible)
-    if Controls.get('ShowCell',False):
+    if data.get('ShowCell',False):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []
@@ -3876,8 +3865,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
                 cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
                 cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
-            colList += zip(*cells)
-            colSigs += zip(*cellESDs)
+            G2frame.colList += zip(*cells)
+            G2frame.colSigs += zip(*cellESDs)
     # sort out the variables in their selected order
     varcols = 0
     for d in posdict.itervalues():
@@ -3908,8 +3897,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
         #GSASIIpath.IPyBreak()
-    colList += zip(*vals)
-    colSigs += zip(*esds)
+    G2frame.colList += zip(*vals)
+    G2frame.colSigs += zip(*esds)
     # compute and add weight fractions to table if varied
     for phase in Phases:
         var = str(Phases[phase]['pId'])+':*:Scale'
@@ -3929,8 +3918,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 sig = 0.0
             sigwtFrList.append(sig)
         colLabels.append(str(Phases[phase]['pId'])+':*:WgtFrac')
-        colList += [wtFrList]
-        colSigs += [sigwtFrList]
+        G2frame.colList += [wtFrList]
+        G2frame.colSigs += [sigwtFrList]
                 
     # tabulate constrained variables, removing histogram numbers if needed
     # from parameter label
@@ -3951,22 +3940,22 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if len(depValDict[var]) != len(histNames): continue
         colLabels.append(var)
         Types += [wg.GRID_VALUE_FLOAT,]
-        colSigs += [depSigDict[var]]
-        colList += [depValDict[var]]
+        G2frame.colSigs += [depSigDict[var]]
+        G2frame.colList += [depValDict[var]]
 
     # add atom parameters to table
     colLabels += atomLookup.keys()
     Types += len(atomLookup)*[wg.GRID_VALUE_FLOAT]
     for parm in sorted(atomLookup):
-        colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
+        G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
         if atomLookup[parm] in data[histNames[0]]['varyList']:
             col = data[histNames[0]]['varyList'].index(atomLookup[parm])
-            colSigs += [[data[name]['sig'][col] for name in histNames]]
+            G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
         else:
-            colSigs += [None] # should not happen
+            G2frame.colSigs += [None] # should not happen
     # evaluate Pseudovars, their ESDs and add them to grid
-    for expr in Controls['SeqPseudoVars']:
-        obj = Controls['SeqPseudoVars'][expr]
+    for expr in data['SeqPseudoVars']:
+        obj = data['SeqPseudoVars'][expr]
         calcobj = G2obj.ExpressionCalcObj(obj)
         valList = []
         esdList = []
@@ -4011,8 +4000,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 #            if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:
             esdList = None
-        colList += [valList]
-        colSigs += [esdList]
+        G2frame.colList += [valList]
+        G2frame.colSigs += [esdList]
         colLabels += [expr]
         Types += [wg.GRID_VALUE_FLOAT,]
     #---- table build done -------------------------------------------------------------
@@ -4025,10 +4014,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     UpdateParmDict(PSvarDict)
     # Also dicts of dependent (depVarDict) & independent vars (indepVarDict)
     # for Parametric fitting from the data table
-    parmDict = dict(zip(colLabels,zip(*colList)[0])) # scratch dict w/all values in table
-    parmDict.update(
-        {var:val for var,val in data[name].get('newCellDict',{}).values()} #  add varied reciprocal cell terms
-    )
+    parmDict = dict(zip(colLabels,zip(*G2frame.colList)[0])) # scratch dict w/all values in table
+    parmDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()}) #  add varied reciprocal cell terms
+    del parmDict['Use']
     name = histNames[0]
 
     #******************************************************************************
@@ -4039,15 +4027,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     depVarDict = {}
     for i,var in enumerate(colLabels):
         if var == 'Use': continue
-        if colList[i][0] is None:
+        if G2frame.colList[i][0] is None:
             val,sig = firstValueDict.get(var,[None,None])
-        elif colSigs[i]:
-            val,sig = colList[i][0],colSigs[i][0]
+        elif G2frame.colSigs[i]:
+            val,sig = G2frame.colList[i][0],G2frame.colSigs[i][0]
         else:
-            val,sig = colList[i][0],None
+            val,sig = G2frame.colList[i][0],None
         if val is None:
             continue
-        elif sig is None:
+        elif sig is None or sig == 0.:
             indepVarDict[var] = val
         elif striphist(var) not in Dlookup:
             depVarDict[var] = val
@@ -4057,7 +4045,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = G2G.Table(
-        [list(cl) for cl in zip(*colList)],     # convert from columns to rows
+        [list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=colLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     #G2frame.dataDisplay.EnableEditing(False)

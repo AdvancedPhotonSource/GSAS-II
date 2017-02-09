@@ -191,9 +191,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 if Id:
                     SeqResult = G2frame.PatternTree.GetItemPyData(Id)
                 else:
-                    SeqResult = {}
                     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential image calibration results')
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 for item in items:
@@ -216,7 +215,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     sigList.append(None)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
-                SeqResult['histNames'] = Names
+                SeqResult['histNames'] = Names                
+                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         finally:
             dlg.Destroy()
         print 'All selected images recalibrated - results in Sequential image calibration results'
@@ -1939,6 +1939,7 @@ def UpdateStressStrain(G2frame,data):
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
                 G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            SeqResult.update({'SeqPseudoVars':{},'SeqParFitEqList':[]})
         else:
             dlg.Destroy()
             return

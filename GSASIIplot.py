@@ -4169,7 +4169,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         global Title,xLabel,yLabel
         if event.key == 's':
             G2frame.seqXaxis = G2frame.seqXselect()
-            Draw()
+            wx.CallAfter(Draw)
         elif event.key == 't':
             dlg = G2G.MultiStringDialog(G2frame,'Set titles & labels',[' Title ',' x-Label ',' y-Label '],
                 [Title,xLabel,yLabel])

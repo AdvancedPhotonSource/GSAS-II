@@ -537,6 +537,7 @@ def UpdatePeakGrid(G2frame, data):
             SeqResult = {}
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.',]
@@ -4035,6 +4036,7 @@ def UpdateModelsGrid(G2frame,data):
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
                 G2frame.PatternTree.SetItemPyData(Id,SeqResult)
             SeqResult['histNames'] = choices
+            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         else:
             dlg.Destroy()
             return
@@ -5382,6 +5384,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                     SeqResult = {}
                     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
                     G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+                SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
                 for item in items:

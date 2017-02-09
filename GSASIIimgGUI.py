@@ -342,9 +342,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         keyText = [i+' = '+str(data[i]) for i in keyList]
         # sort both lists together, ordered by keyText
         selectedKeys = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
-            'Select which image controls\nto copy',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which image controls\nto copy',
             'Select image controls', keyText)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -355,9 +353,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         copyDict = {}
         for parm in selectedKeys:
             copyDict[parm] = data[parm]
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
-            'Copy image controls from\n'+Source+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Copy image controls from\n'+Source+' to...',
             'Copy image controls', Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -410,7 +406,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             print('No images!')
             return
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Which images to select?',
-                                      'Select images', imglist, wx.CHOICEDLG_STYLE)
+            'Select images', imglist, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 treeEntries = [imglist[i] for i in dlg.GetSelections()]
@@ -505,9 +501,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                      "label_2":"Xfer scaled 2-theta min", "value_2":False,
                      "label_3":"Xfer scaled 2-theta max", "value_3":True,
                      }
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles',
-                                      'Transfer integration range from '+Source+' to:',Names,
-                                      extraOpts=extraopts)
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles','Transfer integration range from '+Source+' to:',
+            Names,extraOpts=extraopts)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for i in '_1','_2','_3':
@@ -546,6 +541,26 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         finally:
             dlg.Destroy()
             G2frame.PatternTree.SelectItem(G2frame.PickId)        
+            
+    def OnResetDist(event):
+        dlg = wx.MessageDialog(G2frame,'Are you sure you want to do this?',caption='Reset dist to set dist',style=wx.YES_NO|wx.ICON_EXCLAMATION)
+        if dlg.ShowModal() != wx.ID_YES:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Reset dist','Reset dist to set dist for:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                for item in items:
+                    name = Names[item]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
+                    Data['distance'] = Data['setdist']
+        finally:
+            dlg.Destroy()
+        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
             
 # Sizers
     Indx = {}                                    
@@ -1114,20 +1129,19 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     return
                 dlg = G2G.G2HistoDataDialog(G2frame,' Edit sample goniometer data:',
                     'Edit data',['Omega','Chi','Phi'],['%.2f','%.2f','%.2f'],Names,Items)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()      #?? what was this for?
-                    id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-                    while id:
-                        name = G2frame.PatternTree.GetItemText(id)
-                        if 'IMG' in name:
-                            ctrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
-                            vals = Items[Names.index(name)]
-                            ctrls['GonioAngles'] = vals
-                        id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            finally:
-                dlg.Destroy()
-                G2frame.PatternTree.SelectItem(G2frame.PickId)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+                        while id:
+                            name = G2frame.PatternTree.GetItemText(id)
+                            if 'IMG' in name:
+                                ctrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
+                                vals = Items[Names.index(name)]
+                                ctrls['GonioAngles'] = vals
+                            id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                finally:
+                    dlg.Destroy()
+                    G2frame.PatternTree.SelectItem(G2frame.PickId)
         
         gonioSizer = wx.BoxSizer(wx.HORIZONTAL)
         names = ['Omega','Chi','Phi']
@@ -1193,6 +1207,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMultiControls, id=G2gd.wxID_SAVESELECTEDCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnTransferAngles, id=G2gd.wxID_IMXFERCONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnResetDist, id=G2gd.wxID_IMRESETDIST)
     def OnDestroy(event):
         G2frame.autoIntFrame = None
     def OnAutoInt(event):

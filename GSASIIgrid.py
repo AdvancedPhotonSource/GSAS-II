@@ -94,8 +94,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
-    wxID_IMCOPYSELECTED, wxID_SAVESELECTEDCONTROLS, wxID_IMXFERCONTROLS,
-] = [wx.NewId() for item in range(13)]
+    wxID_IMCOPYSELECTED, wxID_SAVESELECTEDCONTROLS, wxID_IMXFERCONTROLS,wxID_IMRESETDIST,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
     wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,wxID_MASKLOADNOT,wxID_FINDSPOTS,wxID_DELETESPOTS
@@ -2106,6 +2106,8 @@ class DataFrame(wx.Frame):
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
         ImageParams.Append(help='Transfer integration range for other detector distances', 
             id=wxID_IMXFERCONTROLS, kind=wx.ITEM_NORMAL,text='Xfer angles')
+        ImageParams.Append(help='Reset all detector dist to set dist', 
+            id=wxID_IMRESETDIST, kind=wx.ITEM_NORMAL,text='Reset dist')
         
         self.PostfillDataMenu()
             

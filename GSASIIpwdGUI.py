@@ -551,9 +551,7 @@ def UpdatePeakGrid(G2frame, data):
         dlg.Destroy()
         dlg = wx.ProgressDialog('Sequential peak fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
         controls = {'deriv type':'analytic','min dM/M':0.0001,}
-        Controls['ShowCell'] = False
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         oneCycle = False
         FitPgm = 'LSQ'

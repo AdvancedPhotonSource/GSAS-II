@@ -23,6 +23,7 @@ import sys
 import os
 import random as ran
 import numpy as np
+import numpy.ma as ma
 import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -3005,10 +3006,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnAveSelSeq(event):
         'average the selected columns from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        useCol = -np.array(G2frame.SeqTable.GetColValues(0),dtype=bool)
         if cols:
             for col in cols:
-                ave = np.mean(GetColumnInfo(col)[1])
-                sig = np.std(GetColumnInfo(col)[1])
+                items = GetColumnInfo(col)[1]
+                noneMask = np.array([item is None for item in items])
+                info = ma.array(items,mask=useCol+noneMask)
+                ave = ma.mean(ma.compressed(info))
+                sig = ma.std(ma.compressed(info))
                 print ' Average for '+G2frame.SeqTable.GetColLabelValue(col)+': '+'%.6g'%(ave)+' +/- '+'%.6g'%(sig)
         else:
             G2frame.ErrorDialog(
@@ -3436,7 +3441,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         result = []
         for calcobj in calcObjList:
             calcobj.UpdateVars(varyList,Values)
-            result.append((calcobj.depVal-calcobj.EvalExpression())/calcobj.depSig)
+            if calcobj.depSig:
+                result.append((calcobj.depVal-calcobj.EvalExpression())/calcobj.depSig)
+            else:
+                result.append(calcobj.depVal-calcobj.EvalExpression())
         return result
 
     def DoParEqFit(event,eqObj=None):
@@ -3468,6 +3476,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 indepVarDict = {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
                 calcobj.SetupCalc(indepVarDict)                
                 # values and sigs for current value of dependent var
+                if row[indx] is None: continue
                 calcobj.depVal = row[indx]
                 calcobj.depSig = G2frame.colSigs[indx][j]
                 calcObjList.append(calcobj)
@@ -3479,12 +3488,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         try:
             result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
-                                args=(calcObjList,varyList)
-                                )
+                args=(calcObjList,varyList))
             values = result[0]
             covar = result[1]
             if covar is None:
                 raise Exception
+            chisq = np.sum(result[2]['fvec']**2)
+            GOF = np.sqrt(chisq/(len(calcObjList)-len(varyList)))
             esdDict = {}
             for i,avar in enumerate(varyList):
                 esdDict[avar] = np.sqrt(covar[i,i])
@@ -3492,6 +3502,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             print('====> Fit failed')
             return
         print('==== Fit Results ====')
+        print '  chisq =  %.2f, GOF = %.2f'%(chisq,GOF)
         for obj in eqObjList:
             obj.UpdateVariedVars(varyList,values)
             ind = '      '
@@ -3515,9 +3526,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # loop over each datapoint
             fitvals = []
             for j,row in enumerate(zip(*G2frame.colList)):
-                calcobj.SetupCalc(
-                    {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
-                    )
+                calcobj.SetupCalc({var:row[i] for i,var in enumerate(colLabels) if var in indepVars})
                 fitvals.append(calcobj.EvalExpression())
             G2plt.PlotSelectedSequence(G2frame,[indx],GetColumnInfo,SelectXaxis,fitnum,fitvals)
 
@@ -3549,10 +3558,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 title='Select a parametric equation to edit',
                 header='Edit equation')
         if selected is not None:
-            dlg = G2exG.ExpressionDialog(
-                G2frame.dataDisplay,indepVarDict,
-                data['SeqParFitEqList'][selected],
-                depVarDict=depVarDict,
+            dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,
+                data['SeqParFitEqList'][selected],depVarDict=VarDict,
                 header="Edit the formula for this minimization function",
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
@@ -3570,7 +3577,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             for var in obj.freeVars:
                 if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
 
-        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,depVarDict=depVarDict,
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,depVarDict=VarDict,
             header='Define an equation to minimize in the parametric fit',
             ExtraButton=['Fit',SingleParEqFit],usedVars=usedvarlist)
         obj = dlg.Show(True)
@@ -3601,9 +3608,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             for var in newEqn.freeVars:
                 newEqn.freeVars[var][0] = G2obj.MakeUniqueLabel(newEqn.freeVars[var][0],usedvarlist)
             dlg = G2exG.ExpressionDialog(
-                G2frame.dataDisplay,indepVarDict,
-                newEqn,
-                depVarDict=depVarDict,
+                G2frame.dataDisplay,VarDict,newEqn,depVarDict=VarDict,
                 header="Edit the formula for this minimization function",
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
@@ -3678,7 +3683,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-#    Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
+    Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
     # create a place to store Pseudo Vars & Parametric Fit functions, if not present
     if 'SeqPseudoVars' not in data: data['SeqPseudoVars'] = {}
     if 'SeqParFitEqList' not in data: data['SeqParFitEqList'] = []
@@ -3819,7 +3824,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    if histNames[0][:4] not in ['SASD','IMG '] and data.get('ShowCell'):
+    if histNames[0][:4] not in ['SASD','IMG '] and Controls.get('ShowCell'):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         G2frame.colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
@@ -3835,7 +3840,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for i,name in enumerate(histNames):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
     # add unique cell parameters TODO: review this where the cell symmetry changes (when possible)
-    if data.get('ShowCell',False):
+    if Controls.get('ShowCell',False):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []
@@ -4012,7 +4017,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     PSvarDict = parmDict.copy()
     PSvarDict.update(sampleParms)
     UpdateParmDict(PSvarDict)
-    # Also dicts of dependent (depVarDict) & independent vars (indepVarDict)
+    # Also dicts of variables 
     # for Parametric fitting from the data table
     parmDict = dict(zip(colLabels,zip(*G2frame.colList)[0])) # scratch dict w/all values in table
     parmDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()}) #  add varied reciprocal cell terms
@@ -4023,24 +4028,22 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # create a set of values for example evaluation of pseudovars and 
     # this does not work for refinements that have differing numbers of variables.
     #raise Exception
-    indepVarDict = {}     #  values in table w/o ESDs
-    depVarDict = {}
+    VarDict = {}
     for i,var in enumerate(colLabels):
-        if var == 'Use': continue
+        if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue
         if G2frame.colList[i][0] is None:
             val,sig = firstValueDict.get(var,[None,None])
         elif G2frame.colSigs[i]:
             val,sig = G2frame.colList[i][0],G2frame.colSigs[i][0]
         else:
             val,sig = G2frame.colList[i][0],None
-        if val is None:
-            continue
+        if val is None: continue
         elif sig is None or sig == 0.:
-            indepVarDict[var] = val
+            VarDict[var] = val
         elif striphist(var) not in Dlookup:
-            depVarDict[var] = val
+            VarDict[var] = val
     # add recip cell coeff. values
-    depVarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
+    VarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
 
     G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)

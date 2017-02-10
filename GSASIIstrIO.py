@@ -545,6 +545,25 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
             
     print 'GPX file save successful'
     
+def GetSeqResult(GPXfile):
+    '''
+    Needs doc string
+    
+    :param str GPXfile: full .gpx file name
+    '''
+    fl = open(GPXfile,'rb')
+    SeqResult = {}
+    while True:
+        try:
+            data = cPickle.load(fl)
+        except EOFError:
+            break
+        datum = data[0]
+        if datum[0] == 'Sequential results':
+            SeqResult = datum[1]
+    fl.close()
+    return SeqResult
+    
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
     Needs doc string

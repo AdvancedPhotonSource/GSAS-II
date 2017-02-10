@@ -279,7 +279,8 @@ def SeqRefine(GPXfile,dlg):
         histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
     if Controls.get('Reverse Seq'):
         histNames.reverse()
-    SeqResult = {}
+    SeqResult = G2stIO.GetSeqResult(GPXfile)
+#    SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
     makeBack = True
     Histo = {}
     NewparmDict = {}

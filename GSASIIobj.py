@@ -877,7 +877,7 @@ DefaultControls = {
     'FreePrm1':'Sample humidity (%)',
     'FreePrm2':'Sample voltage (V)',
     'FreePrm3':'Applied load (MN)',
-    'SeqPseudoVars':{},'SeqParFitEqList':[],'ShowCell':False,
+    'ShowCell':False,
     }
 '''Values to be used as defaults for the initial contents of the ``Controls``
 data tree item.

@@ -1201,11 +1201,12 @@ class GSASII(wx.Frame):
                     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                     v = (v[0],v[2],v[4])
                     codes = [0,0,0,0]
-                    rd.Sample['Type'] = 'Debye-Scherrer'
+                    rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
                 else:
                     names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
                     codes = [0,0,0,0,0,0]
-                    rd.Sample['Type'] = 'Bragg-Brentano'
+                    rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+                        'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
                 data.extend(v)
                 if 'INS  1PRCF  ' in Iparm:
                     v1 = Iparm['INS  1PRCF  '].split()                                                  

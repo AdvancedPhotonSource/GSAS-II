@@ -1938,7 +1938,6 @@ def UpdateStressStrain(G2frame,data):
             else:
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
-                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
             SeqResult.update({'SeqPseudoVars':{},'SeqParFitEqList':[]})
         else:
             dlg.Destroy()
@@ -1969,14 +1968,14 @@ def UpdateStressStrain(G2frame,data):
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
-                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                G2frame.Image = Id
-                Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
-                StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Stress/Strain'))
+                sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                G2frame.Image = sId
+                Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Image Controls'))
+                StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Stress/Strain'))
                 if not len(StaCtrls['d-zero']):
                     continue
                 goodnames.append(name)
-                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
+                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(sId)
                 image = GetImageZ(G2frame,Controls)
                 sig = []
                 varyList = []
@@ -2009,6 +2008,7 @@ def UpdateStressStrain(G2frame,data):
         finally:
             wx.EndBusyCursor()    
         SeqResult['histNames'] = choices
+        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         print 'All images fitted'
         

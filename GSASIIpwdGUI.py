@@ -536,7 +536,6 @@ def UpdatePeakGrid(G2frame, data):
         else:
             SeqResult = {}
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
-            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         Reverse = False
         CopyForward = False
@@ -591,6 +590,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         SeqResult['histNames'] = histList
+        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2frame.PatternTree.SelectItem(Id)
         
@@ -769,7 +769,7 @@ def UpdatePeakGrid(G2frame, data):
         '''Called when a peak is selected so that it can be highlighted in the plot
         '''
         event.Skip()
-        c =  event.GetRow(),event.GetCol()[1]
+        c =  event.GetRow(),event.GetCol()
         if c < 0: # replot except whan a column is selected
             wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
         
@@ -4032,7 +4032,6 @@ def UpdateModelsGrid(G2frame,data):
             else:
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
-                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
             SeqResult['histNames'] = choices
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         else:
@@ -4062,13 +4061,13 @@ def UpdateModelsGrid(G2frame,data):
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
-                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'),JModel)
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
                 IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
-                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'))
-                ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
-                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
+                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
+                ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Sample Parameters'))
+                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
                 JModel = copy.deepcopy(IModel)
                 if not IfOK:
@@ -4079,7 +4078,7 @@ def UpdateModelsGrid(G2frame,data):
                     dlg.Destroy()
                     break
                 else:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'),copy.deepcopy(IModel))
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
                 
                 G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
@@ -4089,6 +4088,7 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
+        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         
     def OnFitModel(event):
@@ -5381,7 +5381,6 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                 else:
                     SeqResult = {}
                     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
-                    G2frame.PatternTree.SetItemPyData(Id,SeqResult)
                 SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
                 items = dlg.GetSelections()
                 G2frame.EnablePlot = False
@@ -5399,6 +5398,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         finally:
             dlg.Destroy()
         G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
+        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         print 'All PDFs peak fitted - results in Sequential PDF peak fit results'
         

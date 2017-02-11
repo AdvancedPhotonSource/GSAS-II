@@ -134,11 +134,18 @@ class raw_ReaderClass(G2IO.ImportPowderData):
                 self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
                 if blockNum <= nBlock:
                     for iBlock in range(blockNum):
-                        headLen = int(st.unpack('<i',File.read(4))[0])+40
+                        headLen = int(st.unpack('<i',File.read(4))[0])
+                        if nBlock > 1:
+                            headLen += 40
                         nSteps = int(st.unpack('<i',File.read(4))[0])
+                        if not nSteps: break
                         if iBlock+1 == blockNum:
                             st.unpack('<d',File.read(8))[0]
                             start2Th = st.unpack('<d',File.read(8))[0]
+                            File.seek(pos+212)
+                            temp = st.unpack('<f',File.read(4))[0]
+                            if temp > 0.:
+                                self.Sample['Temperature'] = temp                                                        
                             File.seek(pos+176)
                             step = st.unpack('<d',File.read(8))[0]
                             pos += headLen      #position at start of data block

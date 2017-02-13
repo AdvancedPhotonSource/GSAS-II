@@ -4723,6 +4723,7 @@ def UpdatePDFGrid(G2frame,data):
                     value = Obj.GetValue()
                 Obj.SetValue(fmt%(value))
                 data[fileKey][itemKey] = value
+                ResetFlatBkg()
                 wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                 
@@ -4730,10 +4731,14 @@ def UpdatePDFGrid(G2frame,data):
                 data[key]['Mult'] += multSpin.GetValue()*0.01
                 mult.SetValue(data[key]['Mult'])
                 multSpin.SetValue(0)
+                ResetFlatBkg()
+                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                             
-            def AfterChange(invalid,value,tc):
+            def OnMult(invalid,value,tc):
                 if invalid: return
+                ResetFlatBkg()
+                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
             
             item = data[key]
@@ -4747,7 +4752,7 @@ def UpdatePDFGrid(G2frame,data):
             fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
             mulBox = wx.BoxSizer(wx.HORIZONTAL)
             mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
-                typeHint=float,OnLeave=AfterChange)
+                typeHint=float,OnLeave=OnMult)
             mulBox.Add(mult,0,)
             multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
             multSpin.SetRange(-1,1)
@@ -4755,12 +4760,31 @@ def UpdatePDFGrid(G2frame,data):
             multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
             mulBox.Add(multSpin,0,WACV)
             fileSizer.Add(mulBox,0,WACV)
-        
+            
+        def ResetFlatBkg():
+            Smin = np.min(G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:]))[1][1])
+            Bmin = 0; Cmin = 0.; Cmul = 0.; CBmin = 0.
+            if data['Sample Bkg.']['Name']:
+                Bmin = np.min(G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample Bkg.']['Name']))[1][1])
+                Smin += Bmin*data['Sample Bkg.']['Mult']
+            if data['Container']['Name']:
+                Cmin = np.min(G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Container']['Name']))[1][1])
+                Cmul = data['Container']['Mult']
+                if data['Container Bkg.']['Name']:
+                    CBmin = np.min(G2frame.PatternTree.GetItemPyData(
+                        G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Container Bkg.']['Name']))[1][1])
+                    Cmin += CBmin*data['Container Bkg.']['Mult']
+                Smin += Cmul*Cmin
+            data['Flat Bkg'] = Smin
+                            
         PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
         PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
         PDFfileSizer.Add((5,5),0)    
         if 'C' in inst['Type'][0]:
-            str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+            str = ' Sample file: PWDR%s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[4:],wave,keV,polariz)
             PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
         PDFfileSizer.Add((5,5),0)
         fileSizer = wx.FlexGridSizer(0,4,5,1)
@@ -4925,12 +4949,12 @@ def UpdatePDFGrid(G2frame,data):
         sfgSizer.Add((5,5),0)
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
         sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
-        choice = ['Image plate','Point detector']
+        choice = ['Area detector','Point detector']
         detType = wx.ComboBox(G2frame.dataDisplay,value=data['DetType'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         detType.Bind(wx.EVT_COMBOBOX, OnDetType)
         sqBox.Add(detType,0)
-        if data['DetType'] == 'Image plate':
+        if data['DetType'] == 'Area detector':
             sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,WACV)
             obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)

@@ -1817,9 +1817,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
-    Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
-    Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
     if 'PWDR' in G2frame.PatternTree.GetItemText(G2frame.PickId):
+        Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
+        Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataFrame.moveTickLoc.GetId())
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataFrame.moveTickSpc.GetId())
@@ -2559,6 +2559,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         G2frame.cid = None
         Page.Choice = ()
     PatternId = G2frame.PatternId
+    PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
+    numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     if G2frame.SinglePlot:
         if 'G(R)' not in data:
@@ -2585,8 +2587,6 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Plot.set_ylabel(r''+plotType,fontsize=14)
     Plot.set_title(name)
     colors=['b','g','r','c','m','k']
-    PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
-    numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Ymax = 0.01
     lenX = 0
     for Pattern in PlotList:

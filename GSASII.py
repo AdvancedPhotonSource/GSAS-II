@@ -17,6 +17,7 @@ Main routines for the GSAS-II program
 
 import os
 import sys
+import time
 import math
 import copy
 import random as ran
@@ -240,7 +241,7 @@ class GSASII(wx.Frame):
         
         item = parent.Append(help='View least squares parameters', 
             id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='&View LS parms')
-        self.Bind(wx.EVT_MENU, self.ShowLSParms, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.OnShowLSParms, id=item.GetId())
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
             text='&Refine')
@@ -1591,13 +1592,14 @@ class GSASII(wx.Frame):
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
+            Ymin = np.min(rd.powderdata[1])                 
             Ymax = np.max(rd.powderdata[1])                 
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-                'qPlot':False,'dPlot':False,'sqrtPlot':False
+                'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                 }
             # apply user-supplied corrections to powder data
             if 'CorrectionCode' in Iparm1:
@@ -1788,13 +1790,14 @@ class GSASII(wx.Frame):
         HistName = 'PWDR '+HistName
         HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)  # make new histogram names unique
         Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+        Ymin = np.min(rd.powderdata[1])
         Ymax = np.max(rd.powderdata[1])
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':True,
             'ranId':ran.randint(0,sys.maxint),
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-            'qPlot':False,'dPlot':False,'sqrtPlot':False
+            'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
             }
         self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
         self.PatternTree.SetItemPyData(
@@ -2907,13 +2910,14 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
+                        Ymin = np.min(Ysum)
                         Ymax = np.max(Ysum)
                         valuesdict = {
                             'wtFactor':1.0,
                             'Dummy':False,
                             'ranId':ran.randint(0,sys.maxint),
                             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-                            'qPlot':False,'dPlot':False,'sqrtPlot':False
+                            'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                             }
                         self.PatternTree.SetItemPyData(Id,[valuesdict,[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
@@ -3843,10 +3847,11 @@ class GSASII(wx.Frame):
         # fl.close()
         return parmDict,varyList
 
-    def ShowLSParms(self,event):
+    def OnShowLSParms(self,event):
         '''Displays a window showing all parameters in the refinement.
         Called from the Calculate/View LS Parms menu.
         '''
+        time0 = time.time()
         parmDict,varyList = self.MakeLSParmDict()
         parmValDict = {}
         for i in parmDict:
@@ -3868,6 +3873,7 @@ class GSASII(wx.Frame):
             G2mv.Map2Dict(parmValDict,varyList)
         except:
             pass
+        print ' Setup time: %.3f'%(time.time()-time0)
         dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()

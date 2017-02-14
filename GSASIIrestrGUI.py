@@ -1580,7 +1580,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             
         def OnDeleteRestraint(event):
             #rows = GetSelectedRows()
-            rows = ChemComps.GetSelectedRows()[0] # why is this indexed as [0]?
+            rows = ChemComps.GetSelectedRows()
             if not rows:
                 return
             rowLabl = ChemComps.GetRowLabelValue(r)

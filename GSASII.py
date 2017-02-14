@@ -3851,7 +3851,6 @@ class GSASII(wx.Frame):
         '''Displays a window showing all parameters in the refinement.
         Called from the Calculate/View LS Parms menu.
         '''
-        time0 = time.time()
         parmDict,varyList = self.MakeLSParmDict()
         parmValDict = {}
         for i in parmDict:
@@ -3873,7 +3872,6 @@ class GSASII(wx.Frame):
             G2mv.Map2Dict(parmValDict,varyList)
         except:
             pass
-        print ' Setup time: %.3f'%(time.time()-time0)
         dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()

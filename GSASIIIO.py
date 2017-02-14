@@ -907,7 +907,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             if nOcc:
                 Aname += '(%d)'%(nOcc)
-        Sample = G2pdG.SetDefaultSample()
+        Sample = G2pdG.SetDefaultSample()       #set as Debye-Scherrer
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]

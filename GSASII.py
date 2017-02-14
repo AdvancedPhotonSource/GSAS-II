@@ -1344,9 +1344,11 @@ class GSASII(wx.Frame):
                 if res is None: return None
                 rd.instfile = ''
                 if 'lab data' in choices[res]:
-                    rd.Sample['Type'] = 'Bragg-Brentano'
+                    rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+                        'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
                 else:
-                    rd.Sample['Type'] = 'Debye-Scherrer'
+                    rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
+                        'DisplaceY':[0.,False]})
                 if 'Generic' in choices[res]:
                     dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
                         prompts=['Total FP','2-theta',],values=[25.0,150.,],

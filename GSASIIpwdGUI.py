@@ -146,7 +146,7 @@ def IsHistogramInAnyPhase(G2frame,histoName):
         return False
 
 def SetDefaultSample():
-    'Fills in default items for the Sample dictionary'
+    'Fills in default items for the Sample dictionary for Debye-Scherrer & SASD'
     return {
         'InstrName':'',
         'ranId':ran.randint(0,sys.maxint),

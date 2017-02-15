@@ -656,6 +656,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             if len(compDict.keys()) == 0: return # no elements!
             if Z < 1: # Z has not been computed or set by user
                 Z = 1
+                if not sitemultlist: 
+                    General['cellZ'] = 1
+                    return
                 for i in range(2,min(sitemultlist)+1):
                     for m in sitemultlist:
                         if m % i != 0:

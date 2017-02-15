@@ -5256,6 +5256,8 @@ def UpdatePDFGrid(G2frame,data):
         data['IofQmin'] = 1.0        
     if 'Rmin' not in data:
         data['Rmin'] = 1.5
+    if data['DetType'] == 'Image plate':
+        data['DetType'] = 'Area detector'
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)

@@ -650,7 +650,7 @@ def UpdateConstraints(G2frame,data):
         title1 = "Hold "+vartype+" variable"
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
         l2 = l1 = 1
         for i in varList:
@@ -683,7 +683,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional "+vartype+" variable(s) to be equivalent with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
 #        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'equivalence')
@@ -696,7 +696,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional atoms(s) to be equivalent with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
 #        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'equivalence')
@@ -709,7 +709,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional atoms(s) to ride on "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
 #        legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'riding')
@@ -722,7 +722,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Include additional "+vartype+" variable(s) to be included with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
 #        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'function')
@@ -735,7 +735,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional "+vartype+" variable(s) to include in constraint with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                                parent=G2frame.dataFrame)
+                parent=G2frame.dataFrame)
             return
 #        legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'constraint')
@@ -753,8 +753,7 @@ def UpdateConstraints(G2frame,data):
         fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]        
         dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',
-                                      title1,varListlbl,
-                                      monoFont=True,size=(625,400))
+            title1,varListlbl,monoFont=True,size=(625,400))
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
@@ -803,8 +802,7 @@ def UpdateConstraints(G2frame,data):
         AtNames = Atoms.keys()
         AtNames.sort()
         dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st atom:',
-                                      title1,AtNames,
-                                      monoFont=True,size=(625,400))
+            title1,AtNames,monoFont=True,size=(625,400))
         dlg.CenterOnParent()
         FrstAtom = ''
         if dlg.ShowModal() == wx.ID_OK:
@@ -877,6 +875,7 @@ def UpdateConstraints(G2frame,data):
         :param wx.Panel pageDisplay: parent panel for sizer
         :returns: wx.Sizer created by method
         '''
+        #TODO: show symmetry generated constraints - no clue how to do this.
         constSizer = wx.FlexGridSizer(0,6,0,0)
         maxlen = 70 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):

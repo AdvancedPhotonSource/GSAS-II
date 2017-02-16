@@ -990,47 +990,69 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
     File.close()
     print ' XY data saved to: ',filename
             
-def PDFSave(G2frame,exports):
-    'Save a PDF G(r) and F(Q), S(Q) in column formats'
+def PDFSave(G2frame,exports,PDFsaves):
+    'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
     import scipy.interpolate as scintp
     for export in exports:
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         PDFControls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, PickId,'PDF Controls'))
-        sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
-        fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
-        grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
-        sqdata = PDFControls['S(Q)'][1]
-        sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
-        fqdata = PDFControls['F(Q)'][1]
-        fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
-        grdata = PDFControls['G(R)'][1]
-        grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
-        sqfile = open(sqfilename,'w')
-        fqfile = open(sqfilename,'w')
-        grfile = open(grfilename,'w')
-        sqfile.write('#T S(Q) %s\n'%(export))
-        fqfile.write('#T F(Q) %s\n'%(export))
-        grfile.write('#T G(R) %s\n'%(export))
-        sqfile.write('#L Q     S(Q)\n')
-        fqfile.write('#L Q     F(Q)\n')
-        grfile.write('#L R     G(R)\n')
-        qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
-        rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
-        sqnew = zip(qnew,sqfxn(qnew))
-        for q,sq in sqnew:
-            sqfile.write("%15.6g %15.6g\n" % (q,sq))
-        sqfile.close()
-        print ' S(Q) saved to: ',sqfilename
-        fqnew = zip(qnew,fqfxn(qnew))
-        for q,fq in fqnew:
-            fqfile.write("%15.6g %15.6g\n" % (q,fq))
-        fqfile.close()
-        print ' F(Q) saved to: ',fqfilename
-        grnew = zip(rnew,grfxn(rnew))
-        for r,gr in grnew:
-            grfile.write("%15.6g %15.6g\n" % (r,gr))
-        grfile.close()
-        print ' G)R) saved to: ',grfilename
+        if PDFsaves[0]:     #I(Q)
+            iqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.iq')
+            iqdata = PDFControls['I(Q)'][0]
+            iqfxn = scintp.interp1d(iqdata[0],iqdata[1],kind='linear')
+            iqfile = open(iqfilename,'w')
+            iqfile.write('#T I(Q) %s\n'%(export))
+            iqfile.write('#L Q     I(Q)\n')
+            qnew = np.arange(iqdata[0][0],iqdata[0][-1],0.005)
+            iqnew = zip(qnew,iqfxn(qnew))
+            for q,iq in iqnew:
+                iqfile.write("%15.6g %15.6g\n" % (q,iq))
+            iqfile.close()
+            print ' I(Q) saved to: ',iqfilename
+            
+        if PDFsaves[1]:     #S(Q)
+            sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
+            sqdata = PDFControls['S(Q)'][1]
+            sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
+            sqfile = open(sqfilename,'w')
+            sqfile.write('#T S(Q) %s\n'%(export))
+            sqfile.write('#L Q     S(Q)\n')
+            qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
+            sqnew = zip(qnew,sqfxn(qnew))
+            for q,sq in sqnew:
+                sqfile.write("%15.6g %15.6g\n" % (q,sq))
+            sqfile.close()
+            print ' S(Q) saved to: ',sqfilename
+            
+            
+        if PDFsaves[2]:     #F(Q)
+            fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
+            fqdata = PDFControls['F(Q)'][1]
+            fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
+            fqfile = open(sqfilename,'w')
+            fqfile.write('#T F(Q) %s\n'%(export))
+            fqfile.write('#L Q     F(Q)\n')
+            qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
+            fqnew = zip(qnew,fqfxn(qnew))
+            for q,fq in fqnew:
+                fqfile.write("%15.6g %15.6g\n" % (q,fq))
+            fqfile.close()
+            print ' F(Q) saved to: ',fqfilename
+            
+
+        if PDFsaves[3]:     #G(R)
+            grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
+            grdata = PDFControls['G(R)'][1]
+            grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
+            grfile = open(grfilename,'w')
+            grfile.write('#T G(R) %s\n'%(export))
+            grfile.write('#L R     G(R)\n')
+            rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+            grnew = zip(rnew,grfxn(rnew))
+            for r,gr in grnew:
+                grfile.write("%15.6g %15.6g\n" % (r,gr))
+            grfile.close()
+            print ' G)R) saved to: ',grfilename
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'

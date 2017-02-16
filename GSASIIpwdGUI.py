@@ -940,9 +940,7 @@ def UpdateBackground(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy bkg params from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Copy bkg params from\n'+str(hst[5:])+' to...',
             'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:

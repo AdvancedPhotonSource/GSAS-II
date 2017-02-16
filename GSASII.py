@@ -3543,26 +3543,20 @@ class GSASII(wx.Frame):
         
     def OnExportPDF(self,event):
         #need S(Q) and G(R) to be saved here - probably best from selection?
-        names = ['All']
+        names = G2pdG.GetFileList(self,'PDF')
         exports = []
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
-        while item:
-            name = self.PatternTree.GetItemText(item)
-            if 'PDF' in name:
-                names.append(name)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         if names:
-            dlg = wx.MultiChoiceDialog(self,'Select','PDF patterns to export',names)
+            od = {'label_1':'Export I(Q)','value_1':False,'label_2':'Export S(Q)','value_2':False,
+                  'label_3':'Export F(Q)','value_3':False,'label_4':'Export G(R)','value_4':True}
+            dlg = G2G.G2MultiChoiceDialog(self,'Select','PDF patterns to export',names,extraOpts=od)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
-                if sel[0] == 0:
-                    exports = names[1:]
-                else:
-                    for x in sel:
-                        exports.append(names[x])
+                for x in sel:
+                    exports.append(names[x])
             dlg.Destroy()
         if exports:
-            G2IO.PDFSave(self,exports)
+            PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4']]
+            G2IO.PDFSave(self,exports,PDFsaves)
         
     def OnMakePDFs(self,event):
         '''Sets up PDF data structure filled with defaults; if found chemical formula is inserted

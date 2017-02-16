@@ -4634,25 +4634,36 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
     low r (-4 pi r #density). 
     '''
     import scipy.optimize as opt
-    SetUp = SetupPDFEval(G2frame,data)
-    Min,Init,Done = SetUp
+    Min,Init,Done = SetupPDFEval(G2frame,data)
     xstart = Init()
+    bakMul = data['Sample Bkg.']['Mult']
     if showFit:
         rms = Min(xstart)
         print('  Optimizing corrections to improve G(r) at low r')
-        print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
-            data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-
-    res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
-                        method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+        if data['Sample Bkg.']['Refine']:
+            print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
+                data['Ruland'],data['Sample Bkg.']['Mult'],rms))
+        else:
+            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+    if data['Sample Bkg.']['Refine']:
+        res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
+                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+    else:
+        res = opt.minimize(Min,xstart,bounds=([1,None],[0,1],[0.01,1]),
+                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     Done(res['x'])
     if showFit:
         if res['success']:
             msg = 'Converged'
         else:
             msg = 'Not Converged'
-        print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
-            data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
+        if data['Sample Bkg.']['Refine']:
+            print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
+                data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
+        else:
+            print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
     return res['success']
 
 def SetupPDFEval(G2frame,data):
@@ -4676,9 +4687,13 @@ def SetupPDFEval(G2frame,data):
         arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
         the min & max values are between 0 and 1. 
         '''
-        F,B,R = arg
-        Data['Flat Bkg'] = F*BkgMax
-        Data['BackRatio'] = B
+        if Data['Sample Bkg.']['Refine']:
+            R,S = arg
+            Data['Sample Bkg.']['Mult'] = S
+        else:
+            F,B,R = arg
+            Data['Flat Bkg'] = F*BkgMax
+            Data['BackRatio'] = B
         Data['Ruland'] = R/10.
         G2pwd.CalcPDF(Data,inst,limits,xydata)
         # test low r computation
@@ -4689,18 +4704,24 @@ def SetupPDFEval(G2frame,data):
     def GetCurrentVals():
         '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
         '''
+        if data['Sample Bkg.']['Refine']:
+            return [max(10*data['Ruland'],.05),data['Sample']['Mult']]            
         try:
             F = data['Flat Bkg']/BkgMax
         except:
-            F = 0
+            F = 10
         return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
     def SetFinalVals(arg):
         '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
         scaled, refined values and plot corrected region of G(r) 
         '''
-        F,B,R = arg
-        data['Flat Bkg'] = F*BkgMax
-        data['BackRatio'] = B
+        if data['Sample Bkg.']['Refine']:
+            R,S = arg
+            data['Sample Bkg.']['Mult'] = S
+        else:
+            F,B,R = arg
+            data['Flat Bkg'] = F*BkgMax
+            data['BackRatio'] = B
         data['Ruland'] = R/10.
         G2pwd.CalcPDF(data,inst,limits,xydata)
     EvalLowPDF(GetCurrentVals())
@@ -4740,6 +4761,9 @@ def UpdatePDFGrid(G2frame,data):
                 ResetFlatBkg()
                 wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
+                
+            def OnRefMult(event):
+                item['Refine'] = refMult.GetValue()
             
             item = data[key]
             fileList = [''] + GetFileList(G2frame,'PWDR')
@@ -4760,6 +4784,13 @@ def UpdatePDFGrid(G2frame,data):
             multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
             mulBox.Add(multSpin,0,WACV)
             fileSizer.Add(mulBox,0,WACV)
+            if 'Refine' in item:
+                refMult = wx.CheckBox(parent=G2frame.dataDisplay,label='Refine?')
+                refMult.SetValue(item['Refine'])
+                refMult.Bind(wx.EVT_CHECKBOX, OnRefMult)
+                fileSizer.Add(refMult,0,WACV)
+            else:
+                fileSizer.Add((5,5),0)
             
         def ResetFlatBkg():
             Smin = np.min(G2frame.PatternTree.GetItemPyData(
@@ -4787,7 +4818,7 @@ def UpdatePDFGrid(G2frame,data):
             str = ' Sample file: PWDR%s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[4:],wave,keV,polariz)
             PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
         PDFfileSizer.Add((5,5),0)
-        fileSizer = wx.FlexGridSizer(0,4,5,1)
+        fileSizer = wx.FlexGridSizer(0,5,5,1)
         select = ['Sample Bkg.','Container']
         if data['Container']['Name']:
             select.append('Container Bkg.')
@@ -4886,8 +4917,8 @@ def UpdatePDFGrid(G2frame,data):
                 OptimizePDF(G2frame,data)
             finally:
                 wx.EndBusyCursor()
-            wx.CallAfter(UpdatePDFGrid,G2frame,data)
             OnComputePDF(event)        
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
                         
         def AfterChangeNoRefresh(invalid,value,tc):
             if invalid: return
@@ -4895,8 +4926,8 @@ def UpdatePDFGrid(G2frame,data):
         
         def OnDetType(event):
             data['DetType'] = detType.GetValue()
-            wx.CallAfter(UpdatePDFGrid,G2frame,data)
             wx.CallAfter(OnComputePDF,None)
+            wx.CallAfter(UpdatePDFGrid,G2frame,data)
         
         def OnFlatSpin(event):
             data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
@@ -5042,16 +5073,20 @@ def UpdatePDFGrid(G2frame,data):
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
+        od = {'label_1':'Only copy flags','value_1':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PDFlist = [TextList[i] for i in dlg.GetSelections()]
                 for item in PDFlist:
                     id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
                     olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'))
-                    sample = olddata['Sample']
-                    olddata.update(copy.deepcopy(data))
-                    olddata['Sample'] = sample
+                    if od['value_1']:
+                        olddata['Sample Bkg.']['Refine'] = data['Sample Bkg.']['Refine']    #only one flag
+                    else:
+                        sample = olddata['Sample']
+                        olddata.update(copy.deepcopy(data))
+                        olddata['Sample'] = sample
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'),olddata)
                 Status.SetStatusText('PDF controls copied')
         finally:
@@ -5169,8 +5204,7 @@ def UpdatePDFGrid(G2frame,data):
             print('  No PDFs to compute\n')
             return
         od = {'label_1':'Optimize PDFs','value_1':True}
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 'Select PDFs to compute','Select PDFs',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Select PDFs to compute','Select PDFs',
             choices,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5197,11 +5231,14 @@ def UpdatePDFGrid(G2frame,data):
                     if not pgbar.Update(N,msg)[0]:
                         pgbar.Destroy()
                         break
-                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
+                    pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
+                    Data = G2frame.PatternTree.GetItemPyData(pId)
                     print('  Computing {}'.format(Name))
                     computePDF(G2frame,Data)
                     if od['value_1']:
                         notConverged += not OptimizePDF(G2frame,Data,maxCycles=10)
+                    computePDF(G2frame,Data)
+                    G2frame.PatternTree.SetItemPyData(pId,Data)
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         finally:
             pgbar.Destroy()
@@ -5258,6 +5295,8 @@ def UpdatePDFGrid(G2frame,data):
         data['Rmin'] = 1.5
     if data['DetType'] == 'Image plate':
         data['DetType'] = 'Area detector'
+    if 'Refine' not in data['Sample Bkg.']:
+        data['Sample Bkg.']['Refine'] = False
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)

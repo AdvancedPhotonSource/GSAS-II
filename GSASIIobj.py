@@ -2104,9 +2104,9 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,FltBkg=0,PDFnames=[]):
     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=PDFname)
     Data = {
         'Sample':{'Name':PWDRtree,'Mult':1.0},
-        'Sample Bkg.':{'Name':'','Mult':-1.0},
-        'Container':{'Name':'','Mult':-1.0},
-        'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':ElList,
+        'Sample Bkg.':{'Name':'','Mult':-1.0,'Refine':False},
+        'Container':{'Name':'','Mult':-1.0,'Refine':False},
+        'Container Bkg.':{'Name':'','Mult':-1.0},'ElList':ElList,
         'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,'Flat Bkg':FltBkg,
         'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits,
         'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,

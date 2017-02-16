@@ -1337,7 +1337,7 @@ class G2MultiChoiceDialog(wx.Dialog):
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
                    }
         options.update(kw)
-        self.ChoiceList = ChoiceList # list of choices (list of str values)
+        self.ChoiceList = ['%4d) %s'%(i,item) for i,item in enumerate(ChoiceList)] # numbered list of choices (list of str values)
         self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
         self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
         self.Stride = 1
@@ -1369,7 +1369,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.settingRange = False
         self.rangeFirst = None
-        self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
+        self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, self.ChoiceList)
         self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
         if monoFont:
             font1 = wx.Font(self.clb.GetFont().GetPointSize(),

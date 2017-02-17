@@ -3971,16 +3971,24 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 for i in range(6):
                     var = str(pId)+'::A'+str(i)
                     if var in ESDlookup:
-                        val = data[name]['newCellDict'][ESDlookup[var]][1] # get refined value 
-                        A[i] = val # override with updated value
+                        try:
+                            val = data[name]['newCellDict'][ESDlookup[var]][1] # get refined value 
+                            A[i] = val # override with updated value
+                        except KeyError:
+                            A[i] = None
                 # apply symmetry
                 Albls = [pfx+'A'+str(i) for i in range(6)]
                 cellDict = dict(zip(Albls,A))
-                A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
-                # convert to direct cell & add only unique values to table
-                c = G2lat.A2cell(A)
-                vol = G2lat.calc_V(A)
-                cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                if None in A:
+                    c = 6*[None]
+                    cE = 6*[None]
+                    vol = None
+                else:
+                    A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
+                    # convert to direct cell & add only unique values to table
+                    c = G2lat.A2cell(A)
+                    vol = G2lat.calc_V(A)
+                    cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
                 cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
                 cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
             G2frame.colList += zip(*cells)
@@ -4070,7 +4078,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             col = data[histNames[0]]['varyList'].index(atomLookup[parm])
             G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
         else:
-            G2frame.colSigs += [None] # should not happen
+            G2frame.colSigs += [None]
     # evaluate Pseudovars, their ESDs and add them to grid
     for expr in data['SeqPseudoVars']:
         obj = data['SeqPseudoVars'][expr]

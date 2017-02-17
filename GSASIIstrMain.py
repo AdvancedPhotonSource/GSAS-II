@@ -401,8 +401,8 @@ def SeqRefine(GPXfile,dlg):
             # the uncertainties for dependent constrained parms into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     
-            # a dict with values & esds for dependent (constrained) parameters
-            depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i not in varyList}
+            # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
+            depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i in sigDict and i not in varyList}
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             histRefData = {

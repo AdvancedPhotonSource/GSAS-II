@@ -3547,7 +3547,8 @@ class GSASII(wx.Frame):
         exports = []
         if names:
             od = {'label_1':'Export I(Q)','value_1':False,'label_2':'Export S(Q)','value_2':False,
-                  'label_3':'Export F(Q)','value_3':False,'label_4':'Export G(R)','value_4':True}
+                  'label_3':'Export F(Q)','value_3':False,'label_4':'Export G(R)','value_4':True,
+                  'label_5':'Make G(R) for pdfGUI','value_5':False}
             dlg = G2G.G2MultiChoiceDialog(self,'Select','PDF patterns to export',names,extraOpts=od)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -3555,7 +3556,7 @@ class GSASII(wx.Frame):
                     exports.append(names[x])
             dlg.Destroy()
         if exports:
-            PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4']]
+            PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4'],od['value_5']]
             G2IO.PDFSave(self,exports,PDFsaves)
         
     def OnMakePDFs(self,event):

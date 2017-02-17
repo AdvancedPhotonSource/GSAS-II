@@ -35,6 +35,7 @@ import GSASIIgrid as G2gd
 import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
+import GSASIImath as G2mth
 import GSASIIpwdGUI as G2pdG
 import GSASIIimgGUI as G2imG
 import GSASIIimage as G2img
@@ -1024,7 +1025,6 @@ def PDFSave(G2frame,exports,PDFsaves):
             sqfile.close()
             print ' S(Q) saved to: ',sqfilename
             
-            
         if PDFsaves[2]:     #F(Q)
             fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
             fqdata = PDFControls['F(Q)'][1]
@@ -1039,7 +1039,6 @@ def PDFSave(G2frame,exports,PDFsaves):
             fqfile.close()
             print ' F(Q) saved to: ',fqfilename
             
-
         if PDFsaves[3]:     #G(R)
             grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
             grdata = PDFControls['G(R)'][1]
@@ -1052,7 +1051,70 @@ def PDFSave(G2frame,exports,PDFsaves):
             for r,gr in grnew:
                 grfile.write("%15.6g %15.6g\n" % (r,gr))
             grfile.close()
-            print ' G)R) saved to: ',grfilename
+            print ' G(R) saved to: ',grfilename
+        
+        if PDFsaves[4]: #pdfGUI file for G(R)
+            pId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
+            Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, pId,'Instrument Parameters'))[0]
+            Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, pId,'Limits'))
+            grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
+            grdata = PDFControls['G(R)'][1]
+            qdata = PDFControls['I(Q)'][1][0]
+            grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
+            grfile = open(grfilename,'w')
+            rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+            grnew = zip(rnew,grfxn(rnew))
+
+            grfile.write('[DEFAULT]\n')
+            grfile.write('\n')
+            grfile.write('version = GSAS-II-v'+str(GSASIIpath.GetVersionNumber())+'\n')
+            grfile.write('\n')
+            grfile.write('# input and output specifications\n')
+            grfile.write('dataformat = Qnm\n')
+            grfile.write('inputfile = %s\n'%(PDFControls['Sample']['Name']))
+            grfile.write('backgroundfile = %s\n'%(PDFControls['Sample Bkg.']['Name']))
+            grfile.write('outputtype = gr\n')
+            grfile.write('\n')
+            grfile.write('# PDF calculation setup\n')
+            if 'x' in Inst['Type']:
+                grfile.write('mode = %s\n'%('xray'))
+            elif 'N' in Inst['Type']:
+                grfile.write('mode = %s\n'%('neutron'))
+            wave = G2mth.getMeanWave(Inst)
+            grfile.write('wavelength = %.5f\n'%(wave))
+            formula = ''
+            for el in PDFControls['ElList']:
+                formula += el
+                num = PDFControls['ElList'][el]['FormulaNo']
+                if num == round(num):
+                    formula += '%d'%(int(num))
+                else:
+                    formula += '%.2f'%(num)
+            grfile.write('composition = %s\n'%(formula))
+            grfile.write('bgscale = %.3f\n'%(-PDFControls['Sample Bkg.']['Mult']))
+            grfile.write('rpoly = 1.05\n')
+            highQ = 2.*np.pi/G2lat.Pos2dsp(Inst,Limits[1][1])
+            grfile.write('qmaxinst = %.2f\n'%(highQ))
+            grfile.write('qmin = %.5f\n'%(qdata[0]))
+            grfile.write('qmax = %.4f\n'%(qdata[-1]))
+            grfile.write('rmin = %.2f\n'%(PDFControls['Rmin']))
+            grfile.write('rmax = %.2f\n'%(PDFControls['Rmax']))
+            grfile.write('rstep = 0.01\n')
+            
+            
+            grfile.write('\n')
+            grfile.write('# End of config '+63*'-')
+            grfile.write('\n')
+            grfile.write('#### start data\n')
+            grfile.write('#S 1\n')
+            grfile.write('#L r($\AA$)  G($\AA^{-2}$)\n')            
+            for r,gr in grnew:
+                grfile.write("%15.2F %15.6F\n" % (r,gr))
+            grfile.close()
+            print ' G(R) saved to: ',grfilename
+            
+            
+            
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'

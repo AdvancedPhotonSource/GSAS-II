@@ -4648,7 +4648,7 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
         res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     else:
-        res = opt.minimize(Min,xstart,bounds=([1,None],[0,1],[0.01,1]),
+        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     Done(res['x'])
     if showFit:
@@ -4698,7 +4698,8 @@ def SetupPDFEval(G2frame,data):
         g = xydata['GofR'][1][1]
         r = xydata['GofR'][1][0]
         g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-        return sum(g0**2)/len(g0)
+        M = sum(g0**2)/len(g0)
+        return M
     def GetCurrentVals():
         '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
         '''
@@ -4707,7 +4708,7 @@ def SetupPDFEval(G2frame,data):
         try:
             F = data['Flat Bkg']/BkgMax
         except:
-            F = 10
+            F = 0
         return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
     def SetFinalVals(arg):
         '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
@@ -4782,7 +4783,7 @@ def UpdatePDFGrid(G2frame,data):
             multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
             mulBox.Add(multSpin,0,WACV)
             fileSizer.Add(mulBox,0,WACV)
-            if 'Refine' in item:
+            if 'Refine' in item and item['Name']:
                 refMult = wx.CheckBox(parent=G2frame.dataDisplay,label='Refine?')
                 refMult.SetValue(item['Refine'])
                 refMult.Bind(wx.EVT_CHECKBOX, OnRefMult)
@@ -4915,8 +4916,8 @@ def UpdatePDFGrid(G2frame,data):
                 OptimizePDF(G2frame,data)
             finally:
                 wx.EndBusyCursor()
-            OnComputePDF(event)        
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            OnComputePDF(event)        
                         
         def AfterChangeNoRefresh(invalid,value,tc):
             if invalid: return
@@ -4924,8 +4925,8 @@ def UpdatePDFGrid(G2frame,data):
         
         def OnDetType(event):
             data['DetType'] = detType.GetValue()
-            wx.CallAfter(OnComputePDF,None)
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
+            wx.CallAfter(OnComputePDF,None)
         
         def OnFlatSpin(event):
             data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
@@ -5034,8 +5035,7 @@ def UpdatePDFGrid(G2frame,data):
         sqBox.Add(SQmin,0,WACV)
         sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
         SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),
-                                     min=qLimits[0],max=qLimits[1],
-                                     typeHint=float,OnLeave=NewQmax)
+            min=qLimits[0],max=qLimits[1],typeHint=float,OnLeave=NewQmax)
         sqBox.Add(SQmax,0,WACV)
         resetQ = wx.Button(G2frame.dataDisplay,label='Reset?',style=wx.BU_EXACTFIT)
         sqBox.Add(resetQ,0,WACV)

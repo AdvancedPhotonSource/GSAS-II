@@ -2215,6 +2215,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             except KeyError:                        
                 #skip if histogram not included e.g. in a sequential refinement
                 continue
+            if not HistoPhase[histogram]['Use']:        #remove previously created  & now unused phase reflection list
+                if phase in Histograms[histogram]['Reflection Lists']:
+                    del Histograms[histogram]['Reflection Lists'][phase]
+                continue
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']
             if 'PWDR' in histogram:
@@ -2653,6 +2657,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 Histogram = Histograms[histogram]
             except KeyError:                        
                 #skip if histogram not included e.g. in a sequential refinement
+                continue
+            if not Phases[phase]['Histograms'][histogram]['Use']:
+                #skip if phase absent from this histogram
                 continue
             hapData = HistoPhase[histogram]
             hId = Histogram['hId']

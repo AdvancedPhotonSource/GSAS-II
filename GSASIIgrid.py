@@ -1497,11 +1497,11 @@ class ShowLSParms(wx.Dialog):
         self.globVars = list(set([' ',]+[item[2] for item in splitNames if not item[0] and not item[1]]))
         self.globVars.sort()
         self.hisNames = [':'.join(item) for item in splitNames if not item[0]]
-        self.hisNums = [' ',]+list(set([item.split(':')[1] for item in self.hisNames]))
-        if '' in self.hisNums: self.hisNums.remove('')
+        self.hisNums = list(set([int(item.split(':')[1]) for item in self.hisNames]))
+        self.hisNums.sort()
+        self.hisNums = [' ',]+[str(item) for item in self.hisNums]
         self.hisVars = list(set([' ',]+[item[2] for item in splitNames if not item[0]]))
         self.hisVars.sort()
-        self.hisNums.sort()
         self.phasNames = [':'.join(item) for item in splitNames if not item[1] and 'is' not in item[2]]
         self.phasNums = [' ',]+list(set([item.split(':')[0] for item in self.phasNames]))
         if '' in self.phasNums: self.phasNums.remove('')
@@ -1613,7 +1613,6 @@ class ShowLSParms(wx.Dialog):
         subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'refine?'))
         subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
         explainRefine = False
-        time0 = time.time()
         for name in choiceDict[self.parmChoice]:
             # skip entries without numerical values
             if isinstance(self.parmDict[name],basestring): continue
@@ -1644,7 +1643,6 @@ class ShowLSParms(wx.Dialog):
                 subSizer.Add((-1,-1))
             subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
 
-        print time.time()-time0
         mainSizer.Add(subSizer,0)
         if explainRefine:
             mainSizer.Add(

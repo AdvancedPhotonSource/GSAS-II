@@ -4186,19 +4186,38 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         G2frame.G2plotNB.status.SetStatusText(  \
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
+        colors=['b','g','r','c','m','k']
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
         else:
             X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
             xName = 'Data sequence number'
-        for col in Page.seqYaxisList:
+        for ic,col in enumerate(Page.seqYaxisList):
+            Ncol = colors[ic%6]
             name,Y,sig = Page.seqTableGet(col)
             # deal with missing (None) values
             Xnew = []
             Ynew = []
             Ysnew = []
             for i in range(len(X)):
-                if X[i] is None or Y[i] is None: continue
+                if X[i] is None or Y[i] is None:
+                    if Ysnew:
+                        if G2frame.seqReverse and not G2frame.seqXaxis:
+                            Ynew = Ynew[::-1]
+                            Ysnew = Ysnew[::-1]
+                        if G2frame.seqLines:
+                            Plot.errorbar(Xnew,Ynew,yerr=Ysnew,color=Ncol)
+                        else:
+                            Plot.errorbar(Xnew,Ynew,yerr=Ysnew,linestyle='None',color=Ncol,marker='x')
+                    else:
+                        if G2frame.seqReverse and not G2frame.seqXaxis:
+                            Ynew = Ynew[::-1]
+                        Plot.plot(Xnew,Ynew,color=Ncol)
+                        Plot.plot(Xnew,Ynew,'o',color=Ncol)
+                    Xnew = []
+                    Ynew = []
+                    Ysnew = []
+                    continue
                 Xnew.append(X[i])
                 Ynew.append(Y[i])
                 if sig: Ysnew.append(sig[i])
@@ -4207,14 +4226,14 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                     Ynew = Ynew[::-1]
                     Ysnew = Ysnew[::-1]
                 if G2frame.seqLines:
-                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name)
+                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,color=Ncol,label=name)
                 else:
-                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name,linestyle='None',marker='x')
+                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name,linestyle='None',color=Ncol,marker='x')
             else:
                 if G2frame.seqReverse and not G2frame.seqXaxis:
                     Ynew = Ynew[::-1]
-                Plot.plot(Xnew,Ynew)
-                Plot.plot(Xnew,Ynew,'o',label=name)
+                Plot.plot(Xnew,Ynew,color=Ncol)
+                Plot.plot(Xnew,Ynew,'o',color=Ncol,label=name)
         if Page.fitvals: # TODO: deal with fitting of None values
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]

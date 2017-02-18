@@ -3590,15 +3590,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             else:
                 G2frame.RefList = ''
                 phaseName = ''
-#    if phaseName not in G2frame.refTable:
-#        print phaseName
-#        print phases
-#        raise Exception("how did we get a invalid phase name?")    
     if phaseName:
         ShowReflTable(phaseName)
-#    G2frame.refTable[phaseName].Fit()   #slow!!
-#    size = G2frame.refTable[phaseName].GetSize()
-#    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
     G2frame.dataFrame.setSizePosLeft([550,350])
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     

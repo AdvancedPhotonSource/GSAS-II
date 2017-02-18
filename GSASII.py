@@ -17,7 +17,6 @@ Main routines for the GSAS-II program
 
 import os
 import sys
-import time
 import math
 import copy
 import random as ran

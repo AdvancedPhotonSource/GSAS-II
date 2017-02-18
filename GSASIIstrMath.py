@@ -400,6 +400,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         cell = General['Cell'][1:7]
         pWsum[name] = 0.0
         for hist in Phases[phase]['Histograms']:
+            if not Phases[phase]['Histograms'][hist]['Use']:
+                continue
             if hist in Histograms and 'PWDR' in hist:
                 hId = Histograms[hist]['hId']
                 phfx = '%d:%d:'%(pId,hId)

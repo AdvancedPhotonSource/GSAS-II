@@ -3591,12 +3591,17 @@ class GSASII(wx.Frame):
                     for item in Comments:           #grab chemical formula from Comments
                         if 'formula' in item[:15].lower():
                             formula = item.split('=')[1].split()
-                            elems = formula[::2]
-                            nums = formula[1::2]
-                            formula = zip(elems,nums)
-                            for [elem,num] in formula:
-                                ElData = G2elem.GetElInfo(elem,Parms)
-                                ElData['FormulaNo'] = float(num)
+                            try:
+                                elems = formula[::2]
+                                nums = formula[1::2]
+                                Formula = zip(elems,nums)
+                                for [elem,num] in Formula:
+                                    ElData = G2elem.GetElInfo(elem,Parms)
+                                    ElData['FormulaNo'] = float(num)
+                                    ElList[elem] = ElData
+                            except ValueError:
+                                ElData = G2elem.GetElInfo(formula[0],Parms)
+                                ElData['FormulaNo'] = 1.0
                                 ElList[elem] = ElData
                     ElLists.append(ElList)
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)

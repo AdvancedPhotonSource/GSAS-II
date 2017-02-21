@@ -90,7 +90,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(5)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE, wxID_PAWLEYSELALL, wxID_PAWLEYSELNONE,
-  wxID_PAWLEYSELTOGGLE, wxID_PAWLEYSET,
+  wxID_PAWLEYSELTOGGLE, wxID_PAWLEYSET, 
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
@@ -3900,8 +3900,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             missing += 1
             continue
         foundNames.append(name)
+        maxPWL = 5
         for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
             svar = striphist(var,'*') # wild-carded
+            if 'PWL' in svar:
+                if int(svar.split(':')[-1]) > maxPWL:
+                    continue
             if svar not in combinedVaryList:
                 # add variables to list as they appear
                 combinedVaryList.append(svar)
@@ -3912,6 +3916,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             posdict[name] = {}
             for var in data[name]['varyList']:
                 svar = striphist(var,'*')
+                if 'PWL' in svar:
+                    if int(svar.split(':')[-1]) > maxPWL:
+                        continue
                 posdict[name][combinedVaryList.index(svar)] = svar
             VaryListChanges.append(name)
     if missing:
@@ -3960,10 +3967,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             colLabels += [pfx+'Vol']
             Types += (1+len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT,]
             for name in histNames:
-                covData = {
-                    'varyList': [Dlookup.get(striphist(v),v) for v in data[name]['varyList']],
-                    'covMatrix': data[name]['covMatrix']
-                    }
+                covData = {'varyList': [Dlookup.get(striphist(v),v) for v in data[name]['varyList']],
+                    'covMatrix': data[name]['covMatrix']}
                 A = RecpCellTerms[pId][:] # make copy of starting A values
                 # update with refined values
                 for i in range(6):

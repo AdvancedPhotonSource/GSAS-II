@@ -1092,7 +1092,6 @@ def PDFSave(G2frame,exports,PDFsaves):
                     formula += '%.2f'%(num)
             grfile.write('composition = %s\n'%(formula))
             grfile.write('bgscale = %.3f\n'%(-PDFControls['Sample Bkg.']['Mult']))
-            grfile.write('rpoly = 1.05\n')
             highQ = 2.*np.pi/G2lat.Pos2dsp(Inst,Limits[1][1])
             grfile.write('qmaxinst = %.2f\n'%(highQ))
             grfile.write('qmin = %.5f\n'%(qdata[0]))

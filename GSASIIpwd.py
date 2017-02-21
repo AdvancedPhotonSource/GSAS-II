@@ -1851,7 +1851,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
             print '*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***'
             print '*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM))
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
-
+    
 def calcIncident(Iparm,xdata):
     'needs a doc string'
 

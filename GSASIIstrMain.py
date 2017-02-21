@@ -236,6 +236,16 @@ def Refine(GPXfile,dlg):
         fl.close()
     if dlg:
         return True,Rvals
+        
+def phaseCheck(phaseVary,Phases,histogram):
+    '''
+    Removes unused parameters from phase varylist if phase not in histogram 
+    '''
+    pIds = []
+    for phase in Phases:
+        if Phases[phase]['Histograms'][histogram]['Use']:
+            pIds.append(str(Phases[phase]['pId']))
+    return [item for item in phaseVary if item.split(':')[0] in pIds]
 
 def SeqRefine(GPXfile,dlg):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
@@ -299,12 +309,13 @@ def SeqRefine(GPXfile,dlg):
         if histogram not in Histograms:
             print("Error: not found!")
             continue
+        redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)
-        varyList = rbVary+phaseVary+hapVary+histVary
+        varyList = rbVary+redphaseVary+hapVary+histVary
         if not ihst:
             # save the initial vary list, but without histogram numbers on parameters
             saveVaryList = varyList[:]

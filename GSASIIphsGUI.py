@@ -205,7 +205,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'testHKL' not in generalData['Flip']:
             generalData['Flip']['testHKL'] = [[0,0,2],[2,0,0],[1,1,1],[0,2,0],[1,2,3]]
         if 'doPawley' not in generalData:
-            generalData['doPawley'] = False
+            generalData['doPawley'] = False     #ToDo: change to ''
         if 'Pawley dmin' not in generalData:
             generalData['Pawley dmin'] = 1.0
         if 'Pawley neg wt' not in generalData:
@@ -827,6 +827,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
             pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
+            #ToDo: change parameter to ComboBox of blank, Pawley, LeBail
             pawlRef.SetValue(generalData['doPawley'])
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
@@ -5549,7 +5550,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
             refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'LeBail':False,
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
                 'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
@@ -5606,7 +5607,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail']
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
@@ -5701,7 +5702,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail']
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []
@@ -5750,7 +5751,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         newList = TextList[1:]
                     for histoName in newList:
                         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-                        UseList[histoName] = {'Histogram':histoName,'Show':False,
+                        UseList[histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -7376,7 +7377,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Modulated']:
             im = 1
         HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
-        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
+        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])       #only use 1st histogram
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
         Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
@@ -7417,7 +7418,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def OnPawleyUpdate(event):
         '''This is the place for any reflection modification trick
-        Patterson squared, leBail extraction, etc.
+        Patterson squared, etc.
         '''
         try:
             Refs = data['Pawley ref']

@@ -2965,6 +2965,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     yp[iBeg2:iFin2] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
                                     sumInt += refl[11+im]*refl[9+im]*kRatio
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11+im]*(1.+kRatio)),0.0))
+                            if parmDict[phfx+'LeBail']:
+                                refl[9+im] = refl[8+im]
                                 
                     elif 'T' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
@@ -2982,6 +2984,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         if iBeg < iFin:
                             yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))  #>90% of time spent here
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
+                            if parmDict[phfx+'LeBail']:
+                                refl[9+im] = refl[8+im]
                             sumInt += refl[11+im]*refl[9+im]
                     Fo = np.sqrt(np.abs(refl[8+im]))
                     Fc = np.sqrt(np.abs(refl[9]+im))
@@ -3074,7 +3078,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             raise G2obj.G2Exception('invalid metric tensor \n cell/Dij refinement not advised')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
-        if not Phase['General'].get('doPawley'):
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
             if im:
                 SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3249,7 +3253,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General'].get('doPawley'):
+        if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail']:
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3444,7 +3448,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
-            if not Phase['General'].get('doPawley'):
+            if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail']:
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.

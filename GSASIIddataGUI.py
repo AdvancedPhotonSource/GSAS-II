@@ -815,7 +815,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnUseData(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Use'] = Obj.GetValue()
-        
+
+        def OnLeBail(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
+
         def OnResetSize(event):
             Obj = event.GetEventObject()
             Obj.SetValue(False)
@@ -852,13 +856,21 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             return
         if 'Use' not in UseList[G2frame.hist]:      #patch
             UseList[G2frame.hist]['Use'] = True
+        if 'LeBail' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['LeBail'] = False
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
+        useBox = wx.BoxSizer(wx.HORIZONTAL)
         useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+G2frame.hist+' ?')
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
-        bottomSizer.Add(useData,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
+        useBox.Add(useData,0,WACV)
+        lebail = wx.CheckBox(DData,wx.ID_ANY,label='Do LeBail extraction?')
+        lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
+        lebail.SetValue(UseList[G2frame.hist]['LeBail'])
+        useBox.Add(lebail,0,WACV)
+        bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
             

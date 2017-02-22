@@ -368,8 +368,7 @@ class GSASII(wx.Frame):
         return False
     
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
-                        usedRanIdList=[],Preview=True,
-                        load2Tree=False):
+        usedRanIdList=[],Preview=True,load2Tree=False):
         '''Used for all imports, including Phases, datasets, images...
 
         Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
@@ -534,18 +533,12 @@ class GSASII(wx.Frame):
                     rd.objname = os.path.basename(filename)
                     flag = False
                     if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
-                        flag = rd.Reader(filename,fp,self,
-                                         buffer=rdbuffer,
-                                         blocknum=block,
-                                         usedRanIdList=usedRanIdList,
-                                         )
+                        flag = rd.Reader(filename,fp,self,buffer=rdbuffer,blocknum=block,
+                            usedRanIdList=usedRanIdList,)
                     else:
                         try:
-                            flag = rd.Reader(filename,fp,self,
-                                             buffer=rdbuffer,
-                                             blocknum=block,
-                                             usedRanIdList=usedRanIdList,
-                                             )
+                            flag = rd.Reader(filename,fp,self,buffer=rdbuffer,
+                                blocknum=block,usedRanIdList=usedRanIdList,)
                         except rd.ImportException as detail:
                             rd.errors += "\n  Read exception: "+str(detail)
                         except Exception as detail:
@@ -579,19 +572,17 @@ class GSASII(wx.Frame):
                 if rd_list: # read succeeded, was there a warning or any errors? 
                     if rd.warnings:
                         self.ErrorDialog('Read Warning','The '+ rd.formatName+
-                                         ' reader reported a warning message:\n\n'+
-                                         rd.warnings)
+                            ' reader reported a warning message:\n\n'+rd.warnings)
                     break # success in reading, try no further
             else:
                 if singlereader:
-                    print('The '+ rd.formatName+
-                            ' reader was not able to read file '+filename+msg)
+                    print('The '+ rd.formatName+' reader was not able to read file '+filename+msg)
                     try:
                         print('\n\nError message(s):\n\t'+errorReport)
                     except:
                         pass
                     self.ErrorDialog('Read Error','The '+ rd.formatName+
-                                     ' reader was not able to read file '+filename+msg)
+                        ' reader was not able to read file '+filename+msg)
                 else:
                     print('No reader was able to read file '+filename+msg)
                     try:
@@ -613,10 +604,8 @@ class GSASII(wx.Frame):
                 kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import phase data, use file to try to determine format',
-                              kind=wx.ITEM_NORMAL,
-                              text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,help='Import phase data, use file to try to determine format',
+            kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         
     def OnImportPhase(self,event):
@@ -638,9 +627,8 @@ class GSASII(wx.Frame):
             for h in usedHistograms[p]:
                 if h.startswith('HKLF ') and h not in usedHKLFhists:
                     usedHKLFhists.append(h)
-        rdlist = self.OnImportGeneric(reqrdr,
-                                  self.ImportPhaseReaderlist,
-                                  'phase',usedRanIdList=phaseRIdList)
+        rdlist = self.OnImportGeneric(reqrdr,self.ImportPhaseReaderlist,
+            'phase',usedRanIdList=phaseRIdList)
         if len(rdlist) == 0: return
         # for now rdlist is only expected to have one element
         # but below will allow multiple phases to be imported
@@ -649,10 +637,8 @@ class GSASII(wx.Frame):
         newPhaseList = []
         for rd in rdlist:
             PhaseName = ''
-            dlg = wx.TextEntryDialog( # allow editing of phase name
-                                    self, 'Enter the name for the new phase',
-                                    'Edit phase name', rd.Phase['General']['Name'],
-                                    style=wx.OK)
+            dlg = wx.TextEntryDialog(self, 'Enter the name for the new phase',
+                'Edit phase name', rd.Phase['General']['Name'],style=wx.OK)
             while PhaseName == '':
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:
@@ -794,10 +780,8 @@ class GSASII(wx.Frame):
                 kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,
-                              help='Import image data, use file to try to determine format',
-                              kind=wx.ITEM_NORMAL,
-                              text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,help='Import image data, use file to try to determine format',
+            kind=wx.ITEM_NORMAL,text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         
     def OnImportImage(self,event):
@@ -813,10 +797,8 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
-        rdlist = self.OnImportGeneric(reqrdr,
-                    self.ImportImageReaderlist,
-                    'image',multiple=True,Preview=False,
-                    load2Tree=True)
+        rdlist = self.OnImportGeneric(reqrdr,self.ImportImageReaderlist,
+            'image',multiple=True,Preview=False,load2Tree=True)
         if rdlist: 
             self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
                     
@@ -3167,17 +3149,20 @@ class GSASII(wx.Frame):
                 name = self.PatternTree.GetItemText(item)
                 if name not in ['Notebook','Controls','Covariance','Constraints',
                     'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
-                    if 'PWDR' in name: nItems['PWDR'] += 1
-                    if 'SASD' in name: nItems['SASD'] += 1
-                    if 'IMG' in name:  nItems['IMG'] += 1
-                    if 'HKLF' in name: nItems['HKLF'] += 1
-                    if 'PDF' in name:
+                    if 'PWDR' in name[:4]: nItems['PWDR'] += 1
+                    if 'SASD' in name[:4]: nItems['SASD'] += 1
+                    if 'IMG' in name[:3]:  nItems['IMG'] += 1
+                    if 'HKLF' in name[:4]: nItems['HKLF'] += 1
+                    if 'PDF' in name[:3]:
                         PDFnames.append(name)
                         nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             for pdfName in PDFnames:
-                TextList.remove('PWDR'+pdfName[4:])
+                try:
+                    TextList.remove('PWDR'+pdfName[4:])
+                except ValueError:
+                    print 'PWDR'+pdfName[4:]+' for '+pdfName+' not found'
             dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -3187,11 +3172,11 @@ class GSASII(wx.Frame):
                     while item:
                         itemName = self.PatternTree.GetItemText(item)
                         if itemName in DelList:
-                            if 'PWDR' in itemName: nItems['PWDR'] -= 1
-                            elif 'SASD' in itemName: nItems['SASD'] -= 1
-                            elif 'IMG' in itemName: nItems['IMG'] -= 1
-                            elif 'HKLF' in itemName: nItems['HKLF'] -= 1
-                            elif 'PDF' in itemName: nItems['PDF'] -= 1
+                            if 'PWDR' in itemName[:4]: nItems['PWDR'] -= 1
+                            elif 'SASD' in itemName[:4]: nItems['SASD'] -= 1
+                            elif 'IMG' in itemName[:3]: nItems['IMG'] -= 1
+                            elif 'HKLF' in itemName[:4]: nItems['HKLF'] -= 1
+                            elif 'PDF' in itemName[:3]: nItems['PDF'] -= 1
                             DelItemList.append(item)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
                     for item in DelItemList:

@@ -137,6 +137,9 @@ def UpdateImageData(G2frame,data):
         data['setdist'] = data['distance']
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'setdist',nDig=(10,4),
             typeHint=float),0,WACV)
+    distSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Polarization: '),0,WACV)
+    distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['PolaVal'],0,nDig=(10,4),
+        min=0.,max=1.,typeHint=float),0,WACV)
     mainSizer.Add(distSizer,0)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

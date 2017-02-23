@@ -3816,8 +3816,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
     Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
     # N.B. These Dij vars are missing a histogram #
-    newCellDict = data[histNames[0]].get('newCellDict',{})
+    newCellDict = {}
+    for name in histNames:
+        newCellDict.update(data[name].get('newCellDict',{}))
+#    newCellDict = data[histNames[0]].get('newCellDict',{})
+    cellAlist = []
     for item in newCellDict:
+        cellAlist.append(newCellDict[item][0])
         if item in data['varyList']:
             ESDlookup[newCellDict[item][0]] = item
             Dlookup[item] = newCellDict[item][0]
@@ -3966,21 +3971,28 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
             colLabels += [pfx+'Vol']
             Types += (1+len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT,]
-            for name in histNames:
-                covData = {'varyList': [Dlookup.get(striphist(v),v) for v in data[name]['varyList']],
+            Albls = [pfx+'A'+str(i) for i in range(6)]
+            for hId,name in enumerate(histNames):
+                phfx = '%d:%d:'%(pId,hId)
+                esdLookUp = {}
+                dLookup = {}
+                for item in data[name]['newCellDict']:
+                    if phfx+item.split('::')[1] in data[name]['varyList']:
+                        esdLookUp[newCellDict[item][0]] = item
+                        dLookup[item] = newCellDict[item][0]
+                covData = {'varyList': [dLookup.get(striphist(v),v) for v in data[name]['varyList']],
                     'covMatrix': data[name]['covMatrix']}
                 A = RecpCellTerms[pId][:] # make copy of starting A values
                 # update with refined values
                 for i in range(6):
                     var = str(pId)+'::A'+str(i)
-                    if var in ESDlookup:
+                    if var in cellAlist:
                         try:
-                            val = data[name]['newCellDict'][ESDlookup[var]][1] # get refined value 
+                            val = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
                             A[i] = val # override with updated value
                         except KeyError:
                             A[i] = None
                 # apply symmetry
-                Albls = [pfx+'A'+str(i) for i in range(6)]
                 cellDict = dict(zip(Albls,A))
                 if None in A:
                     c = 6*[None]
@@ -4651,15 +4663,13 @@ def SelectDataTreeItem(G2frame,item):
         else:
             G2frame.dataFrame.helpKey = G2frame.PatternTree.GetItemText(item) # save name of calling tree item for help
     if G2frame.PatternTree.GetItemParent(item) == G2frame.root:
-        G2frame.PatternId = item
+        G2frame.PatternId = 0
         if G2frame.PatternTree.GetItemText(item) == 'Notebook':
             SetDataMenuBar(G2frame,G2frame.dataFrame.DataNotebookMenu)
-            G2frame.PatternId = 0
             #for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateNotebook(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Controls':
-            G2frame.PatternId = 0
             #for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             if not data:           #fill in defaults
@@ -4710,10 +4720,12 @@ def SelectDataTreeItem(G2frame,item):
         elif G2frame.PatternTree.GetItemText(item).startswith('PKS '):
             G2plt.PlotPowderLines(G2frame)
         elif G2frame.PatternTree.GetItemText(item).startswith('PWDR '):
+            G2frame.PatternId = item
             #for i in G2frame.ExportPattern: i.Enable(True)
             if G2frame.EnablePlot:
                 UpdatePWHKPlot(G2frame,'PWDR',item)
         elif G2frame.PatternTree.GetItemText(item).startswith('SASD '):
+            G2frame.PatternId = item
             #for i in G2frame.ExportPattern: i.Enable(True)
             if G2frame.EnablePlot:
                 UpdatePWHKPlot(G2frame,'SASD',item)

@@ -3453,11 +3453,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             key = item.split(':')
             if len(key) < 3: continue
             # remove the dA[xyz] terms, they would only bring confusion
+            if key[0] and key[0] not in phaselist: phaselist.append(key[0])
             if key[2].startswith('dA'):
                 delList.append(item)
             # compute and update the corrected reciprocal cell terms using the Dij values
             elif key[2] in Ddict:
-                if key[0] not in phaselist: phaselist.append(key[0])
                 akey = key[0]+'::'+Ddict[key[2]]
                 parmDict[akey] -= parmDict[item]
                 delList.append(item)
@@ -3953,7 +3953,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         G2frame.colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
-        Types += [wg.GRID_VALUE_FLOAT,]
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
     deltaChiCol = len(colLabels)-1
     # add changing sample parameters to table
     for key in sampleParms:
@@ -3972,7 +3972,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             cellESDs = []
             colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
             colLabels += [pfx+'Vol']
-            Types += (1+len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT,]
+            Types += (len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT+':10,5',]
+            Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             Albls = [pfx+'A'+str(i) for i in range(6)]
             for hId,name in enumerate(histNames):
                 phfx = '%d:%d:'%(pId,hId)
@@ -4023,7 +4024,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if lbl != "": lbl += '/'
                 lbl += posdict[h].get(i)
         colLabels.append(lbl)
-    Types += varcols*[wg.GRID_VALUE_FLOAT]
+    Types += varcols*[wg.GRID_VALUE_FLOAT,]
     vals = []
     esds = []
     varsellist = None        # will be a list of variable names in the order they are selected to appear
@@ -4061,6 +4062,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 sig = 0.0
             sigwtFrList.append(sig)
         colLabels.append(str(Phases[phase]['pId'])+':*:WgtFrac')
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
         G2frame.colList += [wtFrList]
         G2frame.colSigs += [sigwtFrList]
                 
@@ -4082,15 +4084,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for var in sorted(depValDict):
         if len(depValDict[var]) != len(histNames): continue
         colLabels.append(var)
-        Types += [wg.GRID_VALUE_FLOAT,]
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
         G2frame.colSigs += [depSigDict[var]]
         G2frame.colList += [depValDict[var]]
 
     # add atom parameters to table
     colLabels += atomLookup.keys()
-    Types += len(atomLookup)*[wg.GRID_VALUE_FLOAT]
     for parm in sorted(atomLookup):
         G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
+        Types += [wg.GRID_VALUE_FLOAT+':10,5',]
         if atomLookup[parm] in data[histNames[0]]['varyList']:
             col = data[histNames[0]]['varyList'].index(atomLookup[parm])
             G2frame.colSigs += [[data[name]['sig'][col] for name in histNames]]
@@ -4149,7 +4151,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colList += [valList]
         G2frame.colSigs += [esdList]
         colLabels += [expr]
-        Types += [wg.GRID_VALUE_FLOAT,]
+        Types += [wg.GRID_VALUE_FLOAT+':10,3']
     #---- table build done -------------------------------------------------------------
 
     # Make dict needed for creating & editing pseudovars (PSvarDict).
@@ -4189,8 +4191,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
-    G2frame.SeqTable = G2G.Table(
-        [list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
+    G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=colLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     #G2frame.dataDisplay.EnableEditing(False)
@@ -4202,7 +4203,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(True)
+    G2frame.dataDisplay.AutoSizeColumns(False)
     if prevSize:
         G2frame.dataFrame.setSizePosLeft(prevSize)
     else:

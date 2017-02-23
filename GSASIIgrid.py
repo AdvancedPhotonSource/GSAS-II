@@ -3530,6 +3530,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # dict should be fully updated, use it & calculate
             calcobj.SetupCalc(VparmDict)
             results.append(calcobj.EvalExpression())
+        if None in results:
+            return None
         return (results[0] - results[1]) / (2.*step)
         
     def EnableParFitEqMenus():
@@ -3823,7 +3825,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     cellAlist = []
     for item in newCellDict:
         cellAlist.append(newCellDict[item][0])
-        if item in data['varyList']:
+        if item in data.get('varyList',[]):
             ESDlookup[newCellDict[item][0]] = item
             Dlookup[item] = newCellDict[item][0]
     # add coordinate equivalents to lookup table
@@ -4131,8 +4133,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 derivs = np.array(
                     [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
                      for var,ESD in zip(varyList,sigs)])
-                esdList.append(np.sqrt(
-                    np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+                if None in list(derivs):
+                    esdList.append(None)
+                else:
+                    esdList.append(np.sqrt(
+                        np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
             PSvarDict = parmDict.copy()
             PSvarDict.update(sampleDict[name])
             UpdateParmDict(PSvarDict)
@@ -4148,6 +4153,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #---- table build done -------------------------------------------------------------
 
     # Make dict needed for creating & editing pseudovars (PSvarDict).
+    
     name = histNames[0]
     parmDict = data[name].get('parmDict',{})
     PSvarDict = parmDict.copy()
@@ -4156,7 +4162,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # Also dicts of variables 
     # for Parametric fitting from the data table
     parmDict = dict(zip(colLabels,zip(*G2frame.colList)[0])) # scratch dict w/all values in table
-    parmDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()}) #  add varied reciprocal cell terms
+    parmDict.update({var:val for var,val in newCellDict.values()}) #  add varied reciprocal cell terms
     del parmDict['Use']
     name = histNames[0]
 
@@ -4173,13 +4179,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             val,sig = G2frame.colList[i][0],G2frame.colSigs[i][0]
         else:
             val,sig = G2frame.colList[i][0],None
-        if val is None: continue
-        elif sig is None or sig == 0.:
-            VarDict[var] = val
-        elif striphist(var) not in Dlookup:
+#        if val is None: continue
+#        elif sig is None or sig == 0.:
+#            VarDict[var] = val
+        if striphist(var) not in Dlookup:
             VarDict[var] = val
     # add recip cell coeff. values
-    VarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
+    VarDict.update({var:val for var,val in newCellDict.values()})
 
     G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)

@@ -153,7 +153,11 @@ def GetCheckImageFile(G2frame,treeId):
        and (imagetag) an optional image number
 
     '''
-    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(treeId)
+    Npix,Imagefile,imagetag = G2frame.PatternTree.GetImageLoc(treeId)
+    if isinstance(Imagefile,list):
+        imagefile,imagetag = Imagefile
+    else:
+        imagefile = Imagefile
     if not os.path.exists(imagefile):
         print 'Image file '+imagefile+' not found'
         fil = imagefile.replace('\\','/') # windows?!

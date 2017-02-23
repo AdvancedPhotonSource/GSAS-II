@@ -316,16 +316,19 @@ def SeqRefine(GPXfile,dlg):
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)
         calcControls.update(controlDict)
         varyList = rbVary+redphaseVary+hapVary+histVary
-        if not ihst:
+#        if not ihst:
             # save the initial vary list, but without histogram numbers on parameters
-            saveVaryList = varyList[:]
-            for i,item in enumerate(saveVaryList):
-                items = item.split(':')
-                if items[1]:
-                    items[1] = ''
-                item = ':'.join(items)
-                saveVaryList[i] = item
+        saveVaryList = varyList[:]
+        for i,item in enumerate(saveVaryList):
+            items = item.split(':')
+            if items[1]:
+                items[1] = ''
+            item = ':'.join(items)
+            saveVaryList[i] = item
+        if not ihst:
             SeqResult['varyList'] = saveVaryList
+        else:
+            SeqResult['varyList'] = list(set(SeqResult['varyList']+saveVaryList))
         parmDict = {}
         parmDict.update(phaseDict)
         parmDict.update(hapDict)

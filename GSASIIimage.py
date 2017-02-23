@@ -258,7 +258,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             Y /= scaley
             if [X,Y,dsp] not in ring:           #no duplicates!
                 ring.append([X,Y,dsp])
-                azm.append(a)
+                azm.append(360.-a)
     if len(ring) < 10:
         ring = []
         azm = []

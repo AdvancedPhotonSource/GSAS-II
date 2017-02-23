@@ -2029,7 +2029,8 @@ class ExpressionCalcObj(object):
                 else:
                     self.exprDict[v] = parmDict[varname]
             else:
-                raise Exception,"No value for variable "+str(v)
+                self.exprDict[v] = None
+#                raise Exception,"No value for variable "+str(v)
         self.exprDict.update(self.fxnpkgdict)
 
     def UpdateVars(self,varList,valList):
@@ -2076,7 +2077,10 @@ class ExpressionCalcObj(object):
             return angle
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"
-        val = eval(self.compiledExpr,globals(),self.exprDict)
+        try:
+            val = eval(self.compiledExpr,globals(),self.exprDict)
+        except TypeError:
+            val = None
         if not np.isscalar(val):
             val = np.sum(val)
         return val

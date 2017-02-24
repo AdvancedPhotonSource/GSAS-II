@@ -1006,6 +1006,7 @@ def FitStrSta(Image,StrSta,Controls):
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
@@ -1025,6 +1026,7 @@ def IntStrSta(Image,StrSta,Controls):
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             print ' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'var(MRD):',np.var(ringint))

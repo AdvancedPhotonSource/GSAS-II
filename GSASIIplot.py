@@ -4920,7 +4920,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,
-                'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
+                'ImxyObs':[[],[]],'ImxyCalc':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
             R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
             if not len(R):
                 del StrSta['d-zero'][-1]
@@ -5137,6 +5137,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):
+                if 'ImxyCalc' in ring:
+                    xringc,yringc = ring['ImxyCalc']
+                    Plot.plot(xringc,yringc,colors[N%6])
                 xring,yring = ring['ImxyObs']
                 Plot.plot(xring,yring,colors[N%6]+'.')
         # display the Masks

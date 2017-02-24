@@ -246,8 +246,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        x = radii[1]*cosd(a+phi)        #major axis
-        y = radii[0]*sind(a+phi)
+        x = radii[1]*cosd(a-phi+90.)        #major axis
+        y = radii[0]*sind(a-phi+90.)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)

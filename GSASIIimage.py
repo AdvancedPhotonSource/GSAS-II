@@ -246,8 +246,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        x = radii[1]*cosd(a)        #major axis
-        y = radii[0]*sind(a)
+        x = radii[1]*cosd(a+phi)        #major axis
+        y = radii[0]*sind(a+phi)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
@@ -258,7 +258,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             Y /= scaley
             if [X,Y,dsp] not in ring:           #no duplicates!
                 ring.append([X,Y,dsp])
-                azm.append(360.-a)
+                azm.append(a)
     if len(ring) < 10:
         ring = []
         azm = []
@@ -1007,7 +1007,7 @@ def FitStrSta(Image,StrSta,Controls):
             ellipse = FitEllipse(R['ImxyObs'].T)
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
-            ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
+            ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
             print 'Variance in normalized ring intensity: %.3f'%(ring['Ivar'])
@@ -1027,7 +1027,7 @@ def IntStrSta(Image,StrSta,Controls):
             ellipse = FitEllipse(R['ImxyObs'].T)
             ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
-            ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
+            ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             print ' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'var(MRD):',np.var(ringint))
             RingsAI.append(np.array(zip(ringazm,ringint)).T)

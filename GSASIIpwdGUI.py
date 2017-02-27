@@ -4801,7 +4801,7 @@ def UpdatePDFGrid(G2frame,data):
                         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Container Bkg.']['Name']))[1][1])
                     Cmin += CBmin*data['Container Bkg.']['Mult']
                 Smin += Cmul*Cmin
-            data['Flat Bkg'] = Smin
+            data['Flat Bkg'] = max(0,Smin)
                             
         PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
         PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
@@ -4983,7 +4983,7 @@ def UpdatePDFGrid(G2frame,data):
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
         sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
-        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),
+        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),min=0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(flatBkg,0)
         flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))

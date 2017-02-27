@@ -3078,7 +3078,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             raise G2obj.G2Exception('invalid metric tensor \n cell/Dij refinement not advised')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
-        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
             if im:
                 SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3253,7 +3253,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail']:
+        if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3448,7 +3448,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
-            if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail']:
+            if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.

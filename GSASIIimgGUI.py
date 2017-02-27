@@ -2921,18 +2921,21 @@ class AutoIntFrame(wx.Frame):
                 Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,imgId, 'Comments'))
                 ElList = {}
+                sumnum = 1.0
                 for item in Comments:           #grab chemical formula from Comments, if there
                     if 'formula' in item[:15].lower():
                         formula = item.split('=')[1].split()
                         elems = formula[::2]
                         nums = formula[1::2]
                         formula = zip(elems,nums)
+                        sumnum = 0.
                         for [elem,num] in formula:
                             ElData = G2elem.GetElInfo(elem,Parms)
                             ElData['FormulaNo'] = float(num)
+                            sumnum += float(num)
                             ElList[elem] = ElData
                 PDFnames = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
-                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,pwdrMin,PDFnames)
+                PDFid = G2obj.CreatePDFitems(G2frame,pwdr,ElList.copy(),Qlimits,sumnum,pwdrMin,PDFnames)
                 if not PDFid: continue
                 PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
                     G2frame,PDFid, 'PDF Controls'))

@@ -3573,6 +3573,7 @@ class GSASII(wx.Frame):
                         qMax = tof2q(fullLimits[0],Parms['difC'][1])
                     Qlimits.append([0.9*qMax,qMax])
                     ElList = {}
+                    sumnum = 1.
                     for item in Comments:           #grab chemical formula from Comments
                         if 'formula' in item[:15].lower():
                             formula = item.split('=')[1].split()
@@ -3580,10 +3581,13 @@ class GSASII(wx.Frame):
                                 elems = formula[::2]
                                 nums = formula[1::2]
                                 Formula = zip(elems,nums)
+                                sumnum = 0.
                                 for [elem,num] in Formula:
                                     ElData = G2elem.GetElInfo(elem,Parms)
                                     ElData['FormulaNo'] = float(num)
+                                    sumnum += float(num)
                                     ElList[elem] = ElData
+                                
                             except ValueError:
                                 ElData = G2elem.GetElInfo(formula[0],Parms)
                                 ElData['FormulaNo'] = 1.0
@@ -3598,7 +3602,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     for i in dlg.GetSelections():
                         PDFnames = G2gd.GetPatternTreeDataNames(self,['PDF ',])
-                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i],pwdrMin,PDFnames)
+                        G2obj.CreatePDFitems(self,TextList[i],ElLists[i],Qlimits[i],sumnum,pwdrMin,PDFnames)
                 for item in self.ExportPDF: item.Enable(True)
             finally:
                 dlg.Destroy()
@@ -3866,6 +3870,7 @@ class GSASII(wx.Frame):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
         '''
+        self.dataFrame.userReSize = False               #avoids bad resizing based on MessageDialog
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
         if Id:
             dlg = wx.MessageDialog(
@@ -3927,7 +3932,6 @@ class GSASII(wx.Frame):
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
-        self.dataFrame.userReSize = False
         
     def SaveTreeSetting(self):
         'Save the last tree setting'

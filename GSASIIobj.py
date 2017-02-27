@@ -2091,13 +2091,17 @@ class G2Exception(Exception):
     def __str__(self):
         return repr(self.msg)
 
-def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,FltBkg=0,PDFnames=[]):
+def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
     :param Frame G2frame: main GSAS-II tree frame object
     :param str PWDRtree: name of PWDR to be used to create PDF item
     :param dict ElList: data structure with composition
     :param list Qlimits: Q limits to be used for computing the PDF
+    :param float numAtm: no. atom in chemical formula
+    :param float FltBkg: flat background value
+    :param list PDFnames: previously used PDF names
+    
     :returns: the Id of the newly created PDF entry
     '''
     PDFname = 'PDF '+PWDRtree[4:] # this places two spaces after PDF, which is needed is some places
@@ -2111,7 +2115,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,FltBkg=0,PDFnames=[]):
         'Sample Bkg.':{'Name':'','Mult':-1.0,'Refine':False},
         'Container':{'Name':'','Mult':-1.0,'Refine':False},
         'Container Bkg.':{'Name':'','Mult':-1.0},'ElList':ElList,
-        'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,'Flat Bkg':FltBkg,
+        'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0*numAtm,'Flat Bkg':FltBkg,
         'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits,
         'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
         'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}

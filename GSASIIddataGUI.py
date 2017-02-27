@@ -866,10 +866,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
-        lebail = wx.CheckBox(DData,wx.ID_ANY,label='Do LeBail extraction?')
-        lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
-        lebail.SetValue(UseList[G2frame.hist]['LeBail'])
-        useBox.Add(lebail,0,WACV)
+        if not generalData['doPawley']:
+            lebail = wx.CheckBox(DData,wx.ID_ANY,label='Do LeBail extraction?')
+            lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
+            lebail.SetValue(UseList[G2frame.hist]['LeBail'])
+            useBox.Add(lebail,0,WACV)
         bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)

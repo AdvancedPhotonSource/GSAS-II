@@ -186,7 +186,7 @@ def ReadCheckConstraints(GPXfile):
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
         GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
-    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
+    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
     errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)

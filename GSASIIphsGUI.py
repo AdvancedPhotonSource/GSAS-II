@@ -7377,6 +7377,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Modulated']:
             im = 1
         HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
+        if not len(HistoNames):
+            G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
+            return
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])       #only use 1st histogram
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]

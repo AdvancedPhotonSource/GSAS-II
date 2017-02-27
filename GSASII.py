@@ -3927,6 +3927,7 @@ class GSASII(wx.Frame):
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
+        self.dataFrame.userReSize = False
         
     def SaveTreeSetting(self):
         'Save the last tree setting'

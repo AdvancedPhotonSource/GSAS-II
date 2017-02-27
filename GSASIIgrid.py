@@ -2666,7 +2666,7 @@ class DataFrame(wx.Frame):
             parent = self.G2frame.PatternTree.GetItemParent(id)
         except:         #avoid bad tree item on start via gpx file selection 
             parent = 0
-        if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases": 
+        if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases":
             if self.lastSize == event.EventObject.GetSize():
 #                if GSASIIpath.GetConfigValue('debug'):
 #                    print 'no save size=',self.lastSize
@@ -2690,6 +2690,8 @@ class DataFrame(wx.Frame):
         The size is dictated by parameter Width, unless overridden by a previous Phase window resize
         '''
         self.userReSize = False
+#        if GSASIIpath.GetConfigValue('debug'):
+#            print 'setSizePosLeft size',Size,self.lastSize
         Size = list(Size)
         id = self.G2frame.PatternTree.GetSelection()
         try:            #avoid bad tree item on start via gpx file selection 

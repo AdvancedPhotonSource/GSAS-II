@@ -4765,7 +4765,9 @@ def UpdatePDFGrid(G2frame,data):
             def GetExposure(backFile):
                 dataId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:])
                 dataComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,dataId,'Comments'))
-                backId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample Bkg.']['Name'])
+                if not backFile:
+                    return -1.
+                backId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,backFile)
                 backComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,backId,'Comments'))
                 expTime = 1.
                 sumExp = 1.

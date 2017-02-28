@@ -4632,6 +4632,7 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
         rms = Min(xstart)
         print('  Optimizing corrections to improve G(r) at low r')
         if data['Sample Bkg.']['Refine']:
+#            data['Flat Bkg'] = 0.
             print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],rms))
         else:
@@ -4736,6 +4737,7 @@ def UpdatePDFGrid(G2frame,data):
                     value = Obj.GetValue()
                 Obj.SetValue(fmt%(value))
                 data[fileKey][itemKey] = value
+                data[fileKey]['Mult'] = GetExposure(value)
                 ResetFlatBkg()
                 wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
@@ -4744,18 +4746,44 @@ def UpdatePDFGrid(G2frame,data):
                 data[key]['Mult'] += multSpin.GetValue()*0.01
                 mult.SetValue(data[key]['Mult'])
                 multSpin.SetValue(0)
-                ResetFlatBkg()
+#                ResetFlatBkg()
                 wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                             
             def OnMult(invalid,value,tc):
                 if invalid: return
-                ResetFlatBkg()
+#                ResetFlatBkg()
                 wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                 
             def OnRefMult(event):
                 item['Refine'] = refMult.GetValue()
+                if item['Refine']:
+                    Status.SetStatusText('Be sure Mult is close to anticipated value. '+   \
+                        'Suggest setting Flat Bkg. to 0 before Optimize Mult')
+            
+            def GetExposure(backFile):
+                dataId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:])
+                dataComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,dataId,'Comments'))
+                backId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample Bkg.']['Name'])
+                backComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,backId,'Comments'))
+                expTime = 1.
+                sumExp = 1.
+                for item in dataComments:
+                    if 'exposureTime' in item:
+                        expTime = float(item.split('=')[1])
+                    if 'summedExposures' in item:
+                        sumExp = float(item.split('=')[1])
+                dataExp = expTime*sumExp
+                expTime = 1.
+                sumExp = 1.
+                for item in backComments:
+                    if 'exposureTime' in item:
+                        expTime = float(item.split('=')[1])
+                    if 'summedExposures' in item:
+                        sumExp = float(item.split('=')[1])
+                backExp = expTime*sumExp
+                return -dataExp/backExp
             
             item = data[key]
             fileList = [''] + GetFileList(G2frame,'PWDR')
@@ -4783,7 +4811,7 @@ def UpdatePDFGrid(G2frame,data):
                 fileSizer.Add(refMult,0,WACV)
             else:
                 fileSizer.Add((5,5),0)
-            
+                            
         def ResetFlatBkg():
             Smin = np.min(G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:]))[1][1])
@@ -4904,6 +4932,7 @@ def UpdatePDFGrid(G2frame,data):
             if not data['ElList']:
                 G2frame.ErrorDialog('PDF error','Chemical formula not defined')
                 return
+            Status.SetStatusText('')
             wx.BeginBusyCursor()
             try:
                 OptimizePDF(G2frame,data)

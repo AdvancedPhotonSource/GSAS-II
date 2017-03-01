@@ -2235,6 +2235,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 pfx = str(pId)+':'+str(hId)+':'
                 if Phases[phase]['General']['doPawley']:
                     hapDict[pfx+'LeBail'] = False           #Pawley supercedes LeBail
+                    hapDict[pfx+'newLeBail'] = True
                     Tmin = G2lat.Dsp2pos(inst,dmin)
                     if 'C' in inst['Type'][1]:
                         limits[1] = min(limits[1],Tmin)
@@ -2242,6 +2243,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         limits[0] = max(limits[0],Tmin)
                 else:
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
+                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
                 if Phases[phase]['General']['Type'] == 'magnetic':
                     dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 for item in ['Scale','Extinction']:
@@ -2332,7 +2334,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if Phases[phase]['General']['Type'] != 'magnetic' and not hapDict[pfx+'LeBail']:
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])                        
-                if resetRefList and not hapDict[pfx+'LeBail']:
+                if resetRefList and hapDict[pfx+'newLeBail']:
+                    if hapData.get('LeBail',False):
+                        hapData['newLeBail'] = False
                     refList = []
                     Uniq = []
                     Phi = []

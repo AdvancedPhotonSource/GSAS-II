@@ -818,6 +818,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
 
         def OnLeBail(event):
             Obj = event.GetEventObject()
+            if not UseList[G2frame.hist]['LeBail']:
+                UseList[G2frame.hist]['newLeBail'] = True
+            else:
+                UseList[G2frame.hist]['newLeBail'] = False
             UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
 
         def OnResetSize(event):
@@ -858,6 +862,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Use'] = True
         if 'LeBail' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['LeBail'] = False
+        if 'newLeBail' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['newLeBail'] = True
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
@@ -871,6 +877,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
             lebail.SetValue(UseList[G2frame.hist]['LeBail'])
             useBox.Add(lebail,0,WACV)
+            if UseList[G2frame.hist]['LeBail']:
+                G2frame.dataFrame.SetStatusText('To reset LeBail, cycle LeBail check box.')
         bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
@@ -979,6 +987,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     for name in keyList:
         if name in UseList:
             useList.append(name)
+    if not G2frame.dataFrame.GetStatusBar():
+        G2frame.dataFrame.CreateStatusBar()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)
     if G2frame.hist != '':

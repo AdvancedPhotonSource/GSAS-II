@@ -3078,7 +3078,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             raise G2obj.G2Exception('invalid metric tensor \n cell/Dij refinement not advised')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
-        if not Phase['General'].get('doPawley'):    # and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
             if im:
                 SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3253,7 +3253,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
-        if not Phase['General'].get('doPawley'):    #  and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
             if im:
                 dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
@@ -3448,7 +3448,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
-            if not Phase['General'].get('doPawley')  and not parmDict[phfx+'LeBail'] and len(refDict['FF']):
+            if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.
@@ -3636,6 +3636,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = np.sqrt(wtFactor)*dMdvh
             
+    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
@@ -3712,6 +3713,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 Hess = wtFactor*np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
+    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
@@ -3925,6 +3927,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
+    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs
     Histograms['Nrej'] = Nrej

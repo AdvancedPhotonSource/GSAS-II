@@ -213,7 +213,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
     xpix = int(Xpix)            #get reference corner of pixel chosen
     ypix = int(Ypix)
     if not w:
-        ZMax = np.sum(image[ypix-1:ypix+1,xpix-1:xpix+1])
+        ZMax = np.sum(image[ypix-2:ypix+2,xpix-2:xpix+2])
         return xpix,ypix,ZMax,0.0001
     if (w2 < xpix < sizex-w2) and (w2 < ypix < sizey-w2) and image[ypix,xpix]:
         ZMax = image[ypix-w:ypix+w,xpix-w:xpix+w]
@@ -1029,9 +1029,8 @@ def IntStrSta(Image,StrSta,Controls):
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
-            print ' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'var(MRD):',np.var(ringint))
+            print ' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)))
             RingsAI.append(np.array(zip(ringazm,ringint)).T)
-#            GSASIIpath.IPyBreak()
     return RingsAI
     
 def CalcStrSta(StrSta,Controls):
@@ -1055,7 +1054,6 @@ def CalcStrSta(StrSta,Controls):
             ring['Dcalc'] = dmin+(dmax-dmin)/4.
         else:                       #compression
             ring['Dcalc'] = dmin+3.*(dmax-dmin)/4.
-#        ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
 
 def calcFij(omg,phi,azm,th):
     '''    Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)

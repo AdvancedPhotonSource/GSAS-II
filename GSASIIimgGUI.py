@@ -1921,6 +1921,29 @@ def UpdateStressStrain(G2frame,data):
             labelY='MRD',newPlot=True,Title='Ring Intensities',
             names=Names,lines=True)
         
+    def OnSaveStrRing(event):
+        Controls = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+        RingInt = G2img.IntStrSta(G2frame.ImageZ,data,Controls)
+        Names = ['d=%.3f'%(ring['Dcalc']) for ring in data['d-zero']]
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose strain ring intensity file', pth, '', 
+            'ring intensity file (*.txt)|*.txt',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'w')
+                for i,name in enumerate(Names):
+                    File.write('%s%s\n'%(' Ring intensity for ',name))
+                    File.write('%12s %12s\n'%('Azimuth','RMD'))
+                    for item in RingInt[i].T:
+                        File.write(' %12.3f %12.3f\n'%(item[0],item[1]))
+                    File.write('\n')
+                File.close()
+        finally:
+            dlg.Destroy()
+                
+                
     def OnFitStrSta(event):
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -2128,7 +2151,8 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUpdateDzero, id=G2gd.wxID_UPDATEDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotStrSta, id=G2gd.wxID_STRSTAPLOT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotStrSta, id=G2gd.wxID_STRSTAPLOT)  
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrRing, id=G2gd.wxID_STRRINGSAVE)  
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)

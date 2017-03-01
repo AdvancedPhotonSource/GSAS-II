@@ -103,8 +103,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(11)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
-    wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,
-] = [wx.NewId() for item in range(9)]
+    wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,wxID_STRRINGSAVE,
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
@@ -2268,6 +2268,8 @@ class DataFrame(wx.Frame):
             id=wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
         self.StrStaEdit.Append(help='Plot intensity distribution', 
             id=wxID_STRSTAPLOT, kind=wx.ITEM_NORMAL,text='Plot intensity distribution')
+        self.StrStaEdit.Append(help='Save intensity distribution', 
+            id=wxID_STRRINGSAVE, kind=wx.ITEM_NORMAL,text='Save intensity distribution')
         self.StrStaEdit.Append(help='Update d-zero from ave d-zero',
             id=wxID_UPDATEDZERO, kind=wx.ITEM_NORMAL,text='Update d-zero')        
         self.StrStaEdit.Append(help='Fit stress/strain data for all images', 

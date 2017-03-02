@@ -3870,7 +3870,6 @@ class GSASII(wx.Frame):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
         '''
-        self.dataFrame.userReSize = False               #avoids bad resizing based on MessageDialog
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
         if Id:
             dlg = wx.MessageDialog(

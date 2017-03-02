@@ -2669,11 +2669,13 @@ class DataFrame(wx.Frame):
         except:         #avoid bad tree item on start via gpx file selection 
             parent = 0
         if self.userReSize and parent and self.G2frame.PatternTree.GetItemText(parent) == "Phases":
-            if self.lastSize == event.EventObject.GetSize():
+            newSize = event.EventObject.GetSize()
+            if newSize[1] < 200: return             #avois spurious small window after Refine
+            if self.lastSize == newSize:
 #                if GSASIIpath.GetConfigValue('debug'):
 #                    print 'no save size=',self.lastSize
                 return
-            self.manualPhaseSize = event.EventObject.GetSize()
+            self.manualPhaseSize = newSize
             self.lastSize = event.EventObject.GetSize()
 #            if GSASIIpath.GetConfigValue('debug'):
 #                print 'Saving Phase size=',self.manualPhaseSize

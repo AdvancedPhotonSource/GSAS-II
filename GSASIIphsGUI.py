@@ -66,9 +66,10 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
-def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
-    phasePage.SetSizer(mainSizer)
-    Size = mainSizer.GetMinSize()
+def SetPhaseWindow(mainFrame,phasePage,mainSizer=None,Size=None,Scroll=0):
+    if not mainSizer is None: 
+        phasePage.SetSizer(mainSizer)
+        Size = mainSizer.GetMinSize()
     Size[0] += 40
     Size[1] = min(Size[1]+ 150,500) 
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
@@ -1782,7 +1783,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
-            G2frame.dataFrame.setSizePosLeft([700,300])
+            SetPhaseWindow(G2frame.dataFrame,Atoms,Size=[700,300])
 
         # FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -1850,7 +1851,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Atoms.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, ChangeSelection)
         Atoms.SetMargins(0,0)
         
-#        G2frame.dataFrame.setSizePosLeft([700,300])
         Paint()
 
     def OnAtomAdd(event):
@@ -3397,7 +3397,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2G.HorizontalLine(bottomSizer,layerData)
         bottomSizer.Add(StackSizer())
         mainSizer.Add(bottomSizer)
-        SetPhaseWindow(G2frame.dataFrame,G2frame.layerData,mainSizer,Scroll)
+        SetPhaseWindow(G2frame.dataFrame,G2frame.layerData,mainSizer,Scroll=Scroll)
         
     def OnCopyPhase(event):
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
@@ -3834,7 +3834,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(topSizer,0,WACV)
         G2frame.bottomSizer = ShowAtomInfo()
         mainSizer.Add(G2frame.bottomSizer)
-        SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll)
+        SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll=Scroll)
     
     def OnWaveVary(event):
         generalData = data['General']
@@ -4204,7 +4204,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        G2frame.dataFrame.setSizePosLeft([600,300])
+        SetPhaseWindow(G2frame.dataFrame,drawAtoms,Size=[600,300])
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
@@ -7236,7 +7236,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            G2frame.dataFrame.setSizePosLeft([450,300])
+            SetPhaseWindow(G2frame.dataFrame,G2frame.PawleyRefl,Size=[450,300])
                     
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
@@ -7521,7 +7521,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
-        G2frame.dataFrame.setSizePosLeft([500,300])
         G2frame.dataFrame.SetStatusText('')
         if 'Map Peaks' in data:
             G2frame.dataFrame.SetStatusText('Double click any column heading to sort')
@@ -7538,6 +7537,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             MapPeaks.SetMargins(0,0)
             MapPeaks.AutoSizeColumns(False)
+            SetPhaseWindow(G2frame.dataFrame,MapPeaks,Size=[440,300])
                     
     def OnPeaksMove(event):
         if 'Map Peaks' in data:

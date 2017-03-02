@@ -1222,8 +1222,10 @@ class GSASII(wx.Frame):
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
-                s = Iparm['INS   FPATH1'].split()
-                fltPath0 = G2IO.sfloat(s[0])
+                fltPath0 = 20.                      #arbitrary
+                if 'INS   FPATH1' in Iparm:                    
+                    s = Iparm['INS   FPATH1'].split()
+                    fltPath0 = G2IO.sfloat(s[0])
                 if 'INS  1BNKPAR' not in Iparm:     #bank missing from Iparm file
                     return []
                 s = Iparm['INS  1BNKPAR'].split()

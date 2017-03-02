@@ -2255,7 +2255,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 for i,name in enumerate(names):
                     hapDict[pfx+name] = hapData['HStrain'][0][i]
                     HSvals.append(hapDict[pfx+name])
-                    if hapData['HStrain'][1][i]:
+                    if hapData['HStrain'][1][i] and not hapDict[pfx+'newLeBail']:
                         hapVary.append(pfx+name)
                     controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                     if hapData['Pref.Ori.'][0] == 'MD':
@@ -2282,16 +2282,16 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
                     hapDict[pfx+item+';mx'] = hapData[item][1][2]
-                    if hapData[item][2][2]:
+                    if hapData[item][2][2] and not hapDict[pfx+'newLeBail']:
                         hapVary.append(pfx+item+';mx')
                     if hapData[item][0] in ['isotropic','uniaxial']:
                         hapDict[pfx+item+';i'] = hapData[item][1][0]
-                        if hapData[item][2][0]:
+                        if hapData[item][2][0] and not hapDict[pfx+'newLeBail']:
                             hapVary.append(pfx+item+';i')
                         if hapData[item][0] == 'uniaxial':
                             controlDict[pfx+item+'Axis'] = hapData[item][3]
                             hapDict[pfx+item+';a'] = hapData[item][1][1]
-                            if hapData[item][2][1]:
+                            if hapData[item][2][1] and not hapDict[pfx+'newLeBail']:
                                 hapVary.append(pfx+item+';a')
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
@@ -2305,7 +2305,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         for i in range(Nterms):
                             sfx = ';'+str(i)
                             hapDict[pfx+item+sfx] = hapData[item][4][i]
-                            if hapData[item][5][i]:
+                            if hapData[item][5][i] and not hapDict[pfx+'newLeBail']:
                                 hapVary.append(pfx+item+sfx)
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for bab in ['BabA','BabU']:

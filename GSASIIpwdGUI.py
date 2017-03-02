@@ -1365,8 +1365,6 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)
     Draw() 
     
-    
-    
 ################################################################################
 #####  Instrument parameters
 ################################################################################           
@@ -1819,7 +1817,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 txt = '%8.3f'%(insVal['fltPath'])
                 subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
                 labelLst.append('flight path')
-                elemKeysLst.append(['fltpath',1])
+                elemKeysLst.append(['fltPath',1])
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
                 subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  2-theta: '),0,WACV)

@@ -899,8 +899,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             if 'Map' in phasedict['General'] and 'minmax' in phasedict['General']['Map']:
                 WriteCIFitem('\n# Difference density results')
                 MinMax = phasedict['General']['Map']['minmax']
-                WriteCIFitem('_refine_diff_density_max',G2mth.ValEsd(MinMax[1],-0.009))
-                WriteCIFitem('_refine_diff_density_min',G2mth.ValEsd(MinMax[0],-0.009))
+                WriteCIFitem('_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
+                WriteCIFitem('_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
                 
         def Yfmt(ndec,val):
             'Format intensity values'

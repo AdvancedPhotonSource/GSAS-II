@@ -6291,8 +6291,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Orig = np.array(atomData[atInd[0]][cx:cx+3])
                 else:
                     Orig = np.array(data['testRBObj']['rbObj']['Orig'][0])                
-                VAC = np.inner(Amat,np.array(atomData[atInd[1]][cx:cx+3])-Orig)
-                VBC = np.inner(Amat,np.array(atomData[atInd[2]][cx:cx+3])-Orig)
+                VAC = np.inner(Amat,np.array(atomData[atInd[1]][cx:cx+3]-Orig))
+                VBC = np.inner(Amat,np.array(atomData[atInd[2]][cx:cx+3]-Orig))
                 VCC = np.cross(VAR,VAC)
                 QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
                 VAR = G2mth.prodQVQ(QuatA,VAR)

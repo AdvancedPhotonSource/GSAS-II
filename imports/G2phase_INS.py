@@ -48,20 +48,20 @@ class PhaseReaderClass(G2IO.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a ins file using :meth:`ReadINSPhase`'
-        try:
-            self.Phase = self.ReadINSPhase(filename, ParentFrame)
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print 'INS read error:',detail # for testing
-            traceback.print_exc(file=sys.stdout)
-            return False
+        #try:
+        self.Phase = self.ReadINSPhase(filename, ParentFrame)
+        return True
+        #except Exception as detail:
+        #    self.errors += '\n  '+str(detail)
+        #    print 'INS read error:',detail # for testing
+        #    traceback.print_exc(file=sys.stdout)
+        #    return False
 
     def ReadINSPhase(self,filename,parent=None):
         '''Read a phase from a INS file.
         '''
         Shelx = ['TITL','CELL','ZERR','LATT','SYMM','SFAC','DISP','UNIT','LAUE','EADP',
-            'MORE','TIME','END ','HKLF','OMIT','SHEL','BASF','TWIN','EXTI','SWAT',
+            'MORE','TIME','HKLF','OMIT','SHEL','BASF','TWIN','EXTI','SWAT',
             'HOPE','MERG','SPEC','RESI','RTAB','MPLA','HFIX','MOVE','ANIS','AFIX',
             'FRAG','FEND','EXYZ','EDAP','EQIV','CONN','PART','BIND','FREE','DFIX','DANG',
             'BUMP','SAME','SADI','CHIV','FLAT','DELU','SIMU','DEFS','ISOR','NCSY',
@@ -115,7 +115,9 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 pass
             elif S[:3].upper() == 'REM':
                 pass
-            elif S[:4].upper() not in Shelx:   #this will find an atom record!
+            elif S[:3].upper() == 'END':
+                pass
+            elif S[:4].strip().upper() not in Shelx:   #this will find an atom record!
                 AtRec = S.split()
                 Atype = aTypes[int(AtRec[1])-1]
                 Aname = AtRec[0]

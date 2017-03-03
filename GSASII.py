@@ -328,7 +328,7 @@ class GSASII(wx.Frame):
             #    print 'Import_'+errprefix+': Error importing file '+ filename
             except Exception,errmsg:
                 print('\nImport_'+errprefix+': Error importing file '+ filename)
-                print('Error message: '+str(errmsg)+'\n')
+                print(u'Error message: {}\n'.format(errmsg))
             if fp: fp.close()
 
     def EnableSeqRefineMenu(self):
@@ -651,7 +651,7 @@ class GSASII(wx.Frame):
             rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName,phaseNameList)
             PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
-            print 'Read phase '+str(PhaseName)+' from file '+str(self.lastimport)
+            print(u'Read phase {} from file {}'.format(PhaseName,self.lastimport))
             if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
                 sub = self.PatternTree.AppendItem(parent=self.root,text='Phases')
             else:
@@ -1097,7 +1097,7 @@ class GSASII(wx.Frame):
                     continue
                 Iparm[S[:12]] = S[12:-1]
         except IOError:
-            print('Error reading file:'+str(instfile))
+            print(u'Error reading file: {}'.format(instfile))
         if fp:        
             fp.close()
 
@@ -1423,8 +1423,9 @@ class GSASII(wx.Frame):
                     rd.instmsg = instParmList   #an error message
                     return GetDefaultParms(self,rd)
             else:
-                self.ErrorDialog('Open Error','Error opening instrument parameter file '
-                    +str(instfile)+' requested by file '+ filename)
+                self.ErrorDialog('Open Error',
+                                 u'Error opening instrument parameter file '
+                                +'{} requested by file '.format(instfile,filename))
         #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
@@ -1463,7 +1464,7 @@ class GSASII(wx.Frame):
                     return SetPowderInstParms(Iparm,rd)
                 else:
                     self.ErrorDialog('Read Error',
-                                     'Error opening/reading file '+str(instfile))
+                                     u'Error opening/reading file {}'.format(instfile))
     def EnableRefineCommand(self):
         haveData = False
         # check for phases connected to histograms
@@ -1594,9 +1595,9 @@ class GSASII(wx.Frame):
                     exec(corr)
                     print('done')
                 except Exception as err:
-                    print('error: '+str(err))
+                    print(u'error: {}'.format(err))
                     print('with commands -------------------')
-                    print(str(corr))
+                    print(corr)
                     print('---------------------------------')
                 finally:
                     del Iparm1['CorrectionCode']
@@ -1816,8 +1817,8 @@ class GSASII(wx.Frame):
             {})
         self.PatternTree.Expand(Id)
         self.PatternTree.SelectItem(Id)
-        print('Added simulation powder data '+HistName+ 
-              ' with parameters from '+str(rd.instmsg))
+        print(u'Added simulation powder data {}'++ 
+              ' with parameters from {}'.format(HistName,rd.instmsg))
 
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
@@ -3809,7 +3810,7 @@ class GSASII(wx.Frame):
         for phase in Phases:
             if 'pId' not in Phases[phase]:
                 self.ErrorDialog('View parameter error','You must run least squares at least once')
-                raise Exception,'No pId for phase '+str(phase)
+                raise Exception,'No pId for phase '+phase
         rigidbodyDict = self.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)

@@ -4629,14 +4629,14 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
     if showFit:
         rms = Min(xstart)
         print('  Optimizing corrections to improve G(r) at low r')
-        if data['Sample Bkg.']['Refine']:
+        if data['Sample Bkg.'].get('Refine',False):
 #            data['Flat Bkg'] = 0.
             print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],rms))
         else:
             print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
                 data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-    if data['Sample Bkg.']['Refine']:
+    if data['Sample Bkg.'].get('Refine',False):
         res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
                     method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
     else:
@@ -4648,7 +4648,7 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
             msg = 'Converged'
         else:
             msg = 'Not Converged'
-        if data['Sample Bkg.']['Refine']:
+        if data['Sample Bkg.'].get('Refine',False):
             print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
         else:
@@ -4677,7 +4677,7 @@ def SetupPDFEval(G2frame,data):
         arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
         the min & max values are between 0 and 1. 
         '''
-        if Data['Sample Bkg.']['Refine']:
+        if Data['Sample Bkg.'].get('Refine',False):
             R,S = arg
             Data['Sample Bkg.']['Mult'] = S
         else:
@@ -4695,8 +4695,8 @@ def SetupPDFEval(G2frame,data):
     def GetCurrentVals():
         '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
         '''
-        if data['Sample Bkg.']['Refine']:
-            return [max(10*data['Ruland'],.05),data['Sample']['Mult']]            
+        if data['Sample Bkg.'].get('Refine',False):
+                return [max(10*data['Ruland'],.05),data['Sample']['Mult']]
         try:
             F = data['Flat Bkg']/BkgMax
         except:
@@ -4706,7 +4706,7 @@ def SetupPDFEval(G2frame,data):
         '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
         scaled, refined values and plot corrected region of G(r) 
         '''
-        if data['Sample Bkg.']['Refine']:
+        if data['Sample Bkg.'].get('Refine',False):
             R,S = arg
             data['Sample Bkg.']['Mult'] = S
         else:
@@ -5082,12 +5082,14 @@ def UpdatePDFGrid(G2frame,data):
         def OnSelectGR(event):
             data['diffGRname'] = grName.GetValue()
             if data['diffGRname']:
+                data['delt-G(R)'] = copy.deepcopy(data['G(R)'])
                 id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['diffGRname'])
                 pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
-                subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)'][1]
-                if subData[0].shape != data['G(R)'][1][0].shape:
+                subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)']
+                if subData[1][0].shape != data['G(R)'][1][0].shape:
                     print 'Error - G(R) not same length'
-                data['delt-G(R)'] = [subData[0],data['G(R)'][1][0]-subData[1]]
+                data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-subData[1][1]])
+                data['delt-G(R)'][2] += ('-\n'+subData[2])
                 G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
         
         diffSizer = wx.BoxSizer(wx.HORIZONTAL)

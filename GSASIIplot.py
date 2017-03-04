@@ -2561,11 +2561,11 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     PatternId = G2frame.PatternId
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
-    name = G2frame.PatternTree.GetItemText(PatternId)[4:]
     if G2frame.SinglePlot:
         if 'G(R)' not in data:
             return
         PlotList = [data[plotType],]
+        name = PlotList[0][2]
     else:
         PlotList = []
         if G2frame.PDFselections is None:

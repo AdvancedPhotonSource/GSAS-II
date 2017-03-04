@@ -863,7 +863,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if 'LeBail' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['LeBail'] = False
         if 'newLeBail' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['newLeBail'] = True
+            UseList[G2frame.hist]['newLeBail'] = False
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         bottomSizer = wx.BoxSizer(wx.VERTICAL)

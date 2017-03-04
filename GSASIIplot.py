@@ -2358,7 +2358,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     G2frame.ShiftDown = False
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
-    if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)']:
+    if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)','delt-G(R)']:
         return
     
     def OnPlotKeyUp(event):    

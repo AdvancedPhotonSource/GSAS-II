@@ -2235,7 +2235,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 pfx = str(pId)+':'+str(hId)+':'
                 if Phases[phase]['General']['doPawley']:
                     hapDict[pfx+'LeBail'] = False           #Pawley supercedes LeBail
-                    hapDict[pfx+'newLeBail'] = True
+                    hapDict[pfx+'newLeBail'] = False
                     Tmin = G2lat.Dsp2pos(inst,dmin)
                     if 'C' in inst['Type'][1]:
                         limits[1] = min(limits[1],Tmin)
@@ -2243,12 +2243,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         limits[0] = max(limits[0],Tmin)
                 else:
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
-                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
+                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',False)
                 if Phases[phase]['General']['Type'] == 'magnetic':
                     dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]
-                    if hapData[item][1] and not hapDict[pfx+'LeBail']:
+                    if hapData[item][1]:
                         hapVary.append(pfx+item)
                 names = G2spc.HStrainNames(SGData)
                 HSvals = []
@@ -2261,7 +2261,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapData['Pref.Ori.'][0] == 'MD':
                         hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
                         controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                        if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
+                        if hapData['Pref.Ori.'][2]:
                             hapVary.append(pfx+'MD')
                     else:                           #'SH' spherical harmonics
                         controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
@@ -2277,21 +2277,21 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             pass
                         for item in hapData['Pref.Ori.'][5]:
                             hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                            if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
+                            if hapData['Pref.Ori.'][2]:
                                 hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
                     hapDict[pfx+item+';mx'] = hapData[item][1][2]
-                    if hapData[item][2][2] and not hapDict[pfx+'newLeBail']:
+                    if hapData[item][2][2]:
                         hapVary.append(pfx+item+';mx')
                     if hapData[item][0] in ['isotropic','uniaxial']:
                         hapDict[pfx+item+';i'] = hapData[item][1][0]
-                        if hapData[item][2][0] and not hapDict[pfx+'newLeBail']:
+                        if hapData[item][2][0]:
                             hapVary.append(pfx+item+';i')
                         if hapData[item][0] == 'uniaxial':
                             controlDict[pfx+item+'Axis'] = hapData[item][3]
                             hapDict[pfx+item+';a'] = hapData[item][1][1]
-                            if hapData[item][2][1] and not hapDict[pfx+'newLeBail']:
+                            if hapData[item][2][1]:
                                 hapVary.append(pfx+item+';a')
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
@@ -2305,12 +2305,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         for i in range(Nterms):
                             sfx = ';'+str(i)
                             hapDict[pfx+item+sfx] = hapData[item][4][i]
-                            if hapData[item][5][i] and not hapDict[pfx+'newLeBail']:
+                            if hapData[item][5][i]:
                                 hapVary.append(pfx+item+sfx)
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for bab in ['BabA','BabU']:
                         hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                        if hapData['Babinet'][bab][1] and not hapDict[pfx+'LeBail']:
+                        if hapData['Babinet'][bab][1]:
                             hapVary.append(pfx+bab)
                                 
                 if Print: 
@@ -2331,7 +2331,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
-                    if Phases[phase]['General']['Type'] != 'magnetic' and not hapDict[pfx+'LeBail']:
+                    if Phases[phase]['General']['Type'] != 'magnetic':
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])                        
                 if resetRefList and hapDict[pfx+'newLeBail']:

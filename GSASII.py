@@ -3982,9 +3982,9 @@ class GSASII(wx.Frame):
             self.PickId = Id
             self.PatternTree.SelectItem(Id)
         # update other self-updating plots
-        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
-            if frame.plotInvalid and frame.replotFunction:
-                frame.replotFunction(*frame.replotArgs,**frame.replotKWargs)
+#        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+#            if frame.plotInvalid and frame.replotFunction:
+#                frame.replotFunction(*frame.replotArgs,**frame.replotKWargs)
         # delete any remaining plots that are still invalid and need a refresh
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if frame.plotInvalid and frame.plotRequiresRedraw:

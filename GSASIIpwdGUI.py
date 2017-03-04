@@ -5076,6 +5076,28 @@ def UpdatePDFGrid(G2frame,data):
         sqBox.Add(noRing,0,WACV)
         sfgSizer.Add(sqBox,0)
         return sfgSizer
+        
+    def DiffSizer():
+        
+        def OnSelectGR(event):
+            data['diffGRname'] = grName.GetValue()
+            if data['diffGRname']:
+                id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['diffGRname'])
+                pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
+                subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)'][1]
+                if subData[0].shape != data['G(R)'][1][0].shape:
+                    print 'Error - G(R) not same length'
+                data['delt-G(R)'] = [subData[0],data['G(R)'][1][0]-subData[1]]
+                G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
+        
+        diffSizer = wx.BoxSizer(wx.HORIZONTAL)
+        fileList = [''] + GetFileList(G2frame,'PDF')
+        diffSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Subtract G(R) for: '),0,WACV)
+        grName = wx.ComboBox(G2frame.dataDisplay,value=data['diffGRname'],choices=fileList,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        grName.Bind(wx.EVT_COMBOBOX,OnSelectGR)        
+        diffSizer.Add(grName,0,)
+        return diffSizer
             
     def SumElementVolumes():
         sumVol = 0.
@@ -5317,6 +5339,8 @@ def UpdatePDFGrid(G2frame,data):
         data['DetType'] = 'Area detector'
     if 'Refine' not in data['Sample Bkg.']:
         data['Sample Bkg.']['Refine'] = False
+    if 'diffGRname' not in data:
+        data['diffGRname'] = ''
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)
@@ -5338,6 +5362,8 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer.Add(SampleSizer(),0,WACV)
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
     mainSizer.Add(SFGctrlSizer(),0,WACV)
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    mainSizer.Add(DiffSizer(),0,WACV)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     Size = mainSizer.Fit(G2frame.dataFrame)

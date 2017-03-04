@@ -99,43 +99,34 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
                     rdbuffer['histnames'] = histnames
                     rdbuffer['selections'] = selections
 
-        try:
-            fl = open(filename,'rb')
-            fl.seek(poslist[selblk])
-            data = cPickle.load(fl)
-            N = len(data[0][1][1][0])
-            #self.powderdata = data[0][1][1]
-            self.powderdata = [
-                data[0][1][1][0], # x-axis values
-                data[0][1][1][1], # powder pattern intensities
-                data[0][1][1][2], # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # calc. background (zero)
-                np.zeros(N), # obs-calc profiles
-            ]
-            self.powderentry[0] = filename
-            self.powderentry[2] = selblk+1
-            # pull some sections from the PWDR children
-            for i in range(1,len(data)):
-                if data[i][0] == 'Comments':
-                    self.comments = data[i][1]
-                    continue
-                elif data[i][0] == 'Sample Parameters':
-                    self.Sample = data[i][1]
-                    continue
-                for keepitem in ('Limits','Background','Instrument Parameters'): 
-                    if data[i][0] == keepitem:
-                        self.pwdparms[data[i][0]] = data[i][1]
-                        break
-            self.idstring = data[0][0][5:]
-            self.repeat_instparm = False # prevent reuse of iparm when several hists are read
-            return True
-        except Exception as detail:
-            self.errors = 'Error reading selected histogram\n  '+str(detail)
-            print self.formatName+' error:',detail # for testing
-            print sys.exc_info()[0] # for testing
-            import traceback
-            print traceback.format_exc()
-            return False
-        finally:
-            fl.close()
+        fl = open(filename,'rb')
+        fl.seek(poslist[selblk])
+        data = cPickle.load(fl)
+        N = len(data[0][1][1][0])
+        #self.powderdata = data[0][1][1]
+        self.powderdata = [
+            data[0][1][1][0], # x-axis values
+            data[0][1][1][1], # powder pattern intensities
+            data[0][1][1][2], # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # calc. background (zero)
+            np.zeros(N), # obs-calc profiles
+        ]
+        self.powderentry[0] = filename
+        self.powderentry[2] = selblk+1
+        # pull some sections from the PWDR children
+        for i in range(1,len(data)):
+            if data[i][0] == 'Comments':
+                self.comments = data[i][1]
+                continue
+            elif data[i][0] == 'Sample Parameters':
+                self.Sample = data[i][1]
+                continue
+            for keepitem in ('Limits','Background','Instrument Parameters'): 
+                if data[i][0] == keepitem:
+                    self.pwdparms[data[i][0]] = data[i][1]
+                    break
+        self.idstring = data[0][0][5:]
+        self.repeat_instparm = False # prevent reuse of iparm when several hists are read
+        fl.close()
+        return True

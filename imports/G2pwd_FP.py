@@ -71,97 +71,90 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         x = []
         y = []
         w = []
-        try:
-            gotCcomment = False
-            begin = True
-            steps = False
-            Stop = False
-            N = 0
-            for i,S in enumerate(filepointer):
-                self.errors = 'Error reading line: '+str(i+1)
-                # or a block of comments delimited by /* and */
-                # or (GSAS style) each line can begin with '#' or '!'
-                if begin:
-                    if gotCcomment and S.find('*/') > -1:
-                        self.comments.append(S[:-1])
-                        begin = False
-                        continue
-                    if S.strip().startswith('/*'):
-                        self.comments.append(S[:-1])
-                        gotCcomment = True
-                        continue   
-                    if S.lstrip()[0] in ["'",'#','!',]:
-                        self.comments.append(S[:-1])
-                        continue       #ignore comments, if any
+        gotCcomment = False
+        begin = True
+        steps = False
+        Stop = False
+        N = 0
+        for i,S in enumerate(filepointer):
+            self.errors = 'Error reading line: '+str(i+1)
+            # or a block of comments delimited by /* and */
+            # or (GSAS style) each line can begin with '#' or '!'
+            if begin:
+                if gotCcomment and S.find('*/') > -1:
+                    self.comments.append(S[:-1])
+                    begin = False
+                    continue
+                if S.strip().startswith('/*'):
+                    self.comments.append(S[:-1])
+                    gotCcomment = True
+                    continue   
+                if S.lstrip()[0] in ["'",'#','!',]:
+                    self.comments.append(S[:-1])
+                    continue       #ignore comments, if any
+                else:
+                    begin = False
+            # valid line to read
+            if not steps:
+                vals = S.split(None,4)
+                if len(vals) >= 3:
+                    steps = True
+                    start = float(vals[0])
+                    step = float(vals[1])
+                    stop = float(vals[2])
+                    if len(vals) > 3:
+                        self.comments.append(vals[3][:-1])
+                    continue
+            vals = S.split()    #data strings
+            try:
+                for j in range(len(vals)):
+                    x.append(start+N*step)
+                    f = float(vals[j])
+                    if f <= 0.0:
+                        y.append(0.0)
+                        w.append(0.0)
                     else:
-                        begin = False
-                # valid line to read
-                if not steps:
-                    vals = S.split(None,4)
-                    if len(vals) >= 3:
-                        steps = True
-                        start = float(vals[0])
-                        step = float(vals[1])
-                        stop = float(vals[2])
-                        if len(vals) > 3:
-                            self.comments.append(vals[3][:-1])
-                        continue
-                vals = S.split()    #data strings
-                try:
-                    for j in range(len(vals)):
-                        x.append(start+N*step)
-                        f = float(vals[j])
-                        if f <= 0.0:
-                            y.append(0.0)
-                            w.append(0.0)
-                        else:
-                            y.append(float(vals[j]))
-                            w.append(1.0/float(vals[j]))
-                        if x[-1] >= stop:
-                            Stop = True
-                            break
-                        N += 1
-                    if Stop:
+                        y.append(float(vals[j]))
+                        w.append(1.0/float(vals[j]))
+                    if x[-1] >= stop:
+                        Stop = True
                         break
-                except ValueError:
-                    msg = 'Error parsing number in line '+str(i+1)
-                    print msg
-                    print S
+                    N += 1
+                if Stop:
                     break
+            except ValueError:
+                msg = 'Error parsing number in line '+str(i+1)
+                print msg
+                print S
+                break
+            except:
+                msg = 'Error in line '+str(i+1)
+                print msg
+                print S
+                break
+        N = len(x)
+        if N <= 1: return False
+        self.powderdata = [
+            np.array(x), # x-axis values
+            np.array(y), # powder pattern intensities
+            np.array(w), # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # calc. background (zero)
+            np.zeros(N), # obs-calc profiles
+            ]
+        self.powderentry[0] = filename
+        #self.powderentry[1] = pos # bank offset (N/A here)
+        #self.powderentry[2] = 1 # xye file only has one bank
+        self.idstring = ospath.basename(filename)
+        # scan comments for temperature
+        Temperature = 300
+        for S in self.comments:
+            if 'Temp' in S.split('=')[0]:
+                try:
+                    Temperature = float(S.split('=')[1])
                 except:
-                    msg = 'Error in line '+str(i+1)
-                    print msg
-                    print S
-                    break
-            N = len(x)
-            if N <= 1: return False
-            self.powderdata = [
-                np.array(x), # x-axis values
-                np.array(y), # powder pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # calc. background (zero)
-                np.zeros(N), # obs-calc profiles
-                ]
-            self.powderentry[0] = filename
-            #self.powderentry[1] = pos # bank offset (N/A here)
-            #self.powderentry[2] = 1 # xye file only has one bank
-            self.idstring = ospath.basename(filename)
-            # scan comments for temperature
-            Temperature = 300
-            for S in self.comments:
-                if 'Temp' in S.split('=')[0]:
-                    try:
-                        Temperature = float(S.split('=')[1])
-                    except:
-                        pass
-            self.Sample['Temperature'] = Temperature
+                    pass
+        self.Sample['Temperature'] = Temperature
 
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+        return True
 

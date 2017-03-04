@@ -63,16 +63,8 @@ class PhaseReaderClass(G2IO.ImportPhase):
             if selblk is None:
                 self.errors = 'No phase selected'
                 return False # User pressed cancel
-        try:
-            self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
-            self.Phase['Histograms'] = {}       #remove any histograms
-            self.Phase['Pawley ref'] = []       # & any Pawley refl.
-            self.Phase['ranId'] = ran.randint(0,sys.maxint)
-            return True
-        except Exception as detail:
-            self.errors = 'Error reading selected phase'
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' error:',detail # for testing
-            print sys.exc_info()[0] # for testing
-            import traceback
-            print traceback.format_exc()
+        self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
+        self.Phase['Histograms'] = {}       #remove any histograms
+        self.Phase['Pawley ref'] = []       # & any Pawley refl.
+        self.Phase['ranId'] = ran.randint(0,sys.maxint)
+        return True

@@ -57,14 +57,8 @@ class PDB_ReaderClass(G2IO.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a PDF file using :meth:`ReadPDBPhase`'
-        try:
-            self.Phase = self.ReadPDBPhase(filename, ParentFrame)
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print 'PDB read error:',detail # for testing
-            traceback.print_exc(file=sys.stdout)
-            return False
+        self.Phase = self.ReadPDBPhase(filename, ParentFrame)
+        return True
         
     def ReadPDBPhase(self,filename,parent=None):
         '''Read a phase from a PDB file.
@@ -185,14 +179,8 @@ class EXP_ReaderClass(G2IO.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a phase from a GSAS .EXP file using :meth:`ReadEXPPhase`'
-        try:
-            self.Phase = self.ReadEXPPhase(ParentFrame, filepointer)
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print 'GSAS .EXP read error:',detail # for testing
-            traceback.print_exc(file=sys.stdout)
-            return False
+        self.Phase = self.ReadEXPPhase(ParentFrame, filepointer)
+        return True
 
     def ReadEXPPhase(self, G2frame,filepointer):
         '''Read a phase from a GSAS .EXP file.
@@ -383,14 +371,8 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a m50 file using :meth:`ReadJANAPhase`'
-        try:
-            self.Phase = self.ReadJANAPhase(filename, ParentFrame)
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print 'JANA read error:',detail # for testing
-            traceback.print_exc(file=sys.stdout)
-            return False
+        self.Phase = self.ReadJANAPhase(filename, ParentFrame)
+        return True
         
     def ReadJANAPhase(self,filename,parent=None):
         '''Read a phase from a JANA2006 m50 & m40 files.

@@ -1893,135 +1893,127 @@ class ExportCIF(G2IO.ExportBaseclass):
         else:
             #=== multiblock: multiple phases and/or histograms ====================
             nsteps = 1 + len(self.Phases) + len(self.powderDict) + len(self.xtalDict)
-            try:
-                dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
+            dlg = wx.ProgressDialog('CIF progress','starting',nsteps,parent=self.G2frame)
 #                Size = dlg.GetSize()
 #                Size = (int(Size[0]*3),Size[1]) # increase size along x
 #                dlg.SetSize(Size)
-                dlg.CenterOnParent()
+            dlg.CenterOnParent()
 
-                # publication info
-                step = 1
-                dlg.Update(step,"Exporting overall section")
-                WriteCIFitem('\ndata_'+self.CIFname+'_publ')
-                WriteAudit()
-                WriteCIFitem('_pd_block_id',
-                             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                             str(self.shortauthorname) + "|Overall")
-                writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
-                # ``template_publ.cif`` or a modified version
-                # overall info
-                WriteCIFitem('data_'+str(self.CIFname)+'_overall')
-                WriteOverall()
-                #============================================================
-                WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
-                datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
-                # loop over phase blocks
-                if len(self.Phases) > 1:
-                    loopprefix = ''
-                    WriteCIFitem('loop_   _pd_phase_block_id')
-                else:
-                    loopprefix = '_pd_phase_block_id'
+            # publication info
+            step = 1
+            dlg.Update(step,"Exporting overall section")
+            WriteCIFitem('\ndata_'+self.CIFname+'_publ')
+            WriteAudit()
+            WriteCIFitem('_pd_block_id',
+                         str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                         str(self.shortauthorname) + "|Overall")
+            writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
+            # ``template_publ.cif`` or a modified version
+            # overall info
+            WriteCIFitem('data_'+str(self.CIFname)+'_overall')
+            WriteOverall()
+            #============================================================
+            WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
+            datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
+            # loop over phase blocks
+            if len(self.Phases) > 1:
+                loopprefix = ''
+                WriteCIFitem('loop_   _pd_phase_block_id')
+            else:
+                loopprefix = '_pd_phase_block_id'
 
-                for phasenam in sorted(self.Phases.keys()):
-                    i = self.Phases[phasenam]['pId']
-                    datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                 'phase_'+ str(i) + '|' + str(self.shortauthorname))
-                    WriteCIFitem(loopprefix,datablockidDict[phasenam])
-                # loop over data blocks
-                if len(self.powderDict) + len(self.xtalDict) > 1:
-                    loopprefix = ''
-                    WriteCIFitem('loop_   _pd_block_diffractogram_id')
-                else:
-                    loopprefix = '_pd_block_diffractogram_id'
-                for i in sorted(self.powderDict.keys()):
-                    hist = self.powderDict[i]
-                    histblk = self.Histograms[hist]
-                    instnam = histblk["Sample Parameters"]['InstrName']
-                    instnam = instnam.replace(' ','')
-                    j = histblk['hId']
-                    datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                             str(self.shortauthorname) + "|" +
-                                             instnam + "_hist_"+str(j))
-                    WriteCIFitem(loopprefix,datablockidDict[hist])
-                for i in sorted(self.xtalDict.keys()):
-                    hist = self.xtalDict[i]
-                    histblk = self.Histograms[hist]
-                    instnam = histblk["Instrument Parameters"][0]['InstrName']
-                    instnam = instnam.replace(' ','')
-                    i = histblk['hId']
-                    datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                             str(self.shortauthorname) + "|" +
-                                             instnam + "_hist_"+str(i))
-                    WriteCIFitem(loopprefix,datablockidDict[hist])
-                #============================================================
-                # loop over phases, exporting them
-                phasebyhistDict = {} # create a cross-reference to phases by histogram
-                for j,phasenam in enumerate(sorted(self.Phases.keys())):
+            for phasenam in sorted(self.Phases.keys()):
+                i = self.Phases[phasenam]['pId']
+                datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                             'phase_'+ str(i) + '|' + str(self.shortauthorname))
+                WriteCIFitem(loopprefix,datablockidDict[phasenam])
+            # loop over data blocks
+            if len(self.powderDict) + len(self.xtalDict) > 1:
+                loopprefix = ''
+                WriteCIFitem('loop_   _pd_block_diffractogram_id')
+            else:
+                loopprefix = '_pd_block_diffractogram_id'
+            for i in sorted(self.powderDict.keys()):
+                hist = self.powderDict[i]
+                histblk = self.Histograms[hist]
+                instnam = histblk["Sample Parameters"]['InstrName']
+                instnam = instnam.replace(' ','')
+                j = histblk['hId']
+                datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                         str(self.shortauthorname) + "|" +
+                                         instnam + "_hist_"+str(j))
+                WriteCIFitem(loopprefix,datablockidDict[hist])
+            for i in sorted(self.xtalDict.keys()):
+                hist = self.xtalDict[i]
+                histblk = self.Histograms[hist]
+                instnam = histblk["Instrument Parameters"][0]['InstrName']
+                instnam = instnam.replace(' ','')
+                i = histblk['hId']
+                datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+                                         str(self.shortauthorname) + "|" +
+                                         instnam + "_hist_"+str(i))
+                WriteCIFitem(loopprefix,datablockidDict[hist])
+            #============================================================
+            # loop over phases, exporting them
+            phasebyhistDict = {} # create a cross-reference to phases by histogram
+            for j,phasenam in enumerate(sorted(self.Phases.keys())):
+                step += 1
+                dlg.Update(step,"Exporting phase "+phasenam+' (#'+str(j+1)+')')
+                i = self.Phases[phasenam]['pId']
+                WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
+                WriteCIFitem('# Information for phase '+str(i))
+                WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
+                # report the phase
+                writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
+                WritePhaseInfo(phasenam)
+                # preferred orientation
+                if self.ifPWDR:
+                    SH = FormatSH(phasenam)
+                    MD = FormatHAPpo(phasenam)
+                    if SH and MD:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
+                    elif SH or MD:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
+                    else:
+                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
+                # report sample profile terms
+                PP = FormatPhaseProfile(phasenam)
+                if PP:
+                    WriteCIFitem('_pd_proc_ls_profile_function',PP)
+
+            #============================================================
+            # loop over histograms, exporting them
+            for i in sorted(self.powderDict.keys()):
+                hist = self.powderDict[i]
+                histblk = self.Histograms[hist]
+                if hist.startswith("PWDR"): 
                     step += 1
-                    dlg.Update(step,"Exporting phase "+phasenam+' (#'+str(j+1)+')')
-                    i = self.Phases[phasenam]['pId']
-                    WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
-                    WriteCIFitem('# Information for phase '+str(i))
-                    WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
-                    # report the phase
-                    writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-                    WritePhaseInfo(phasenam)
-                    # preferred orientation
-                    if self.ifPWDR:
-                        SH = FormatSH(phasenam)
-                        MD = FormatHAPpo(phasenam)
-                        if SH and MD:
-                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
-                        elif SH or MD:
-                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
-                        else:
-                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
-                    # report sample profile terms
-                    PP = FormatPhaseProfile(phasenam)
-                    if PP:
-                        WriteCIFitem('_pd_proc_ls_profile_function',PP)
+                    dlg.Update(step,"Exporting "+hist.strip())
+                    WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
+                    #instnam = histblk["Sample Parameters"]['InstrName']
+                    # report instrumental profile terms
+                    WriteCIFitem('_pd_proc_ls_profile_function',
+                        FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
+                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
+                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                    histprm = self.Histograms[hist]["Sample Parameters"]
+                    writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
+                    WritePowderData(hist)
+            for i in sorted(self.xtalDict.keys()):
+                hist = self.xtalDict[i]
+                histblk = self.Histograms[hist]
+                if hist.startswith("HKLF"): 
+                    step += 1
+                    dlg.Update(step,"Exporting "+hist.strip())
+                    WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
+                    #instnam = histblk["Instrument Parameters"][0]['InstrName']
+                    WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
+                    WriteCIFitem('_pd_block_id',datablockidDict[hist])
+                    histprm = self.Histograms[hist]["Instrument Parameters"][0]
+                    writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
+                    WriteSingleXtalData(hist)
 
-                #============================================================
-                # loop over histograms, exporting them
-                for i in sorted(self.powderDict.keys()):
-                    hist = self.powderDict[i]
-                    histblk = self.Histograms[hist]
-                    if hist.startswith("PWDR"): 
-                        step += 1
-                        dlg.Update(step,"Exporting "+hist.strip())
-                        WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
-                        #instnam = histblk["Sample Parameters"]['InstrName']
-                        # report instrumental profile terms
-                        WriteCIFitem('_pd_proc_ls_profile_function',
-                            FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
-                        WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
-                        WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                        histprm = self.Histograms[hist]["Sample Parameters"]
-                        writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
-                        WritePowderData(hist)
-                for i in sorted(self.xtalDict.keys()):
-                    hist = self.xtalDict[i]
-                    histblk = self.Histograms[hist]
-                    if hist.startswith("HKLF"): 
-                        step += 1
-                        dlg.Update(step,"Exporting "+hist.strip())
-                        WriteCIFitem('\ndata_'+self.CIFname+"_sx_"+str(i))
-                        #instnam = histblk["Instrument Parameters"][0]['InstrName']
-                        WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
-                        WriteCIFitem('_pd_block_id',datablockidDict[hist])
-                        histprm = self.Histograms[hist]["Instrument Parameters"][0]
-                        writeCIFtemplate(histprm,'single',histprm['InstrName']) # single crystal template
-                        WriteSingleXtalData(hist)
-
-            except Exception:
-                import traceback
-                print(traceback.format_exc())
-                self.G2frame.ErrorDialog('Exception',
-                                         'Error occurred in CIF creation. '+
-                                         'See full error message in console output ')
-            finally:
-                dlg.Destroy()
+            dlg.Destroy()
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
         self.CloseFile()
@@ -2727,23 +2719,12 @@ class CIFtemplateSelect(wx.BoxSizer):
         fil = dlg.GetPath()
         dlg.Destroy()
         if ret == wx.ID_OK:
-            try:
-                cf = G2IO.ReadCIF(fil)
-                if len(cf.keys()) == 0:
-                    raise Exception,"No CIF data_ blocks found"
-                if len(cf.keys()) != 1:
-                    raise Exception, 'Error, CIF Template has more than one block: '+fil
-                self.dict["CIF_template"] = fil
-            except Exception as err:
-                print('\nError reading CIF: '+fil)
-                dlg = wx.MessageDialog(self.cifdefs,
-                                   'Error reading CIF '+fil,
-                                   'Error in CIF file',
-                                   wx.OK)
-                dlg.ShowModal()
-                dlg.Destroy()
-                print(err.message)
-                return
+            cf = G2IO.ReadCIF(fil)
+            if len(cf.keys()) == 0:
+                raise Exception,"No CIF data_ blocks found"
+            if len(cf.keys()) != 1:
+                raise Exception, 'Error, CIF Template has more than one block: '+fil
+            self.dict["CIF_template"] = fil
             self.repaint() #EditCIFDefaults()
 
     def _onEditTemplateContents(self,event):

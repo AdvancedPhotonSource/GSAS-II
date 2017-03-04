@@ -243,7 +243,6 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             
         def Tmap2TOF(TMap,clockWd):
             TOF = []
-            chWdt = []
             Tch,T,Step = TMap[0]
             for tmap in TMap[1:]:
                 tch,t,step = tmap
@@ -252,9 +251,6 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             TOF = np.array(TOF)*clockWd
             return TOF
 
-        x = []
-        y = []
-        w = []
         Banks = []
         Pos = []
         rdbuffer = kwarg.get('buffer')
@@ -274,48 +270,41 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         # This is going to need a fair amount of work to track line numbers
         # in the input file. 
         if len(Banks) != len(Pos) or len(Banks) == 0:
-            try:
-                i = -1
-                while True:
-                    i += 1
-                    S = filepointer.readline()
-                    if len(S) == 0: break
-                        
-                    if i==0: # first line is always a comment
-                        self.errors = 'Error reading title'
-                        title = S[:-1]
-                        comments = [[title,]]
-                        continue
-                    if i==1 and S[:4].lower() == 'inst' and ':' in S:
-                        # 2nd line is instrument parameter file (optional)
-                        self.errors = 'Error reading instrument parameter filename'
-                        self.instparm = S.split(':')[1].strip('[]').strip()
-                        continue
-                    if S[0] == '#': # allow comments anywhere in the file
-                        # comments in fact should only preceed BANK lines
-                        comments[-1].append(S[:-1])
-                        continue
-                    if S[:4] == 'BANK':
-                        self.errors = 'Error reading bank:'
-                        self.errors += '  '+str(S)
-                        comments.append([title,])
-                        Banks.append(S)
-                        Pos.append(filepointer.tell())
-                    if S[:8] == 'TIME_MAP':     #assumes one time map; HIPPO has multiple time maps
-                        if len(Banks) == 0:
-                            self.errors = 'Error reading time map before any bank lines'
-                        else:
-                            self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
-                        timemap,clockwd,mapNo = GetTimeMap(filepointer,filepointer.tell(),S)
-                        self.TimeMap[mapNo] = timemap
-                        self.clockWd[mapNo] = clockwd 
-                        
-            except Exception as detail:
-                self.errors += '\n  '+str(detail)
-                print self.formatName+' scan error:'+str(detail) # for testing
-                import traceback
-                traceback.print_exc(file=sys.stdout)
-                return False
+            i = -1
+            while True:
+                i += 1
+                S = filepointer.readline()
+                if len(S) == 0: break
+                    
+                if i==0: # first line is always a comment
+                    self.errors = 'Error reading title'
+                    title = S[:-1]
+                    comments = [[title,]]
+                    continue
+                if i==1 and S[:4].lower() == 'inst' and ':' in S:
+                    # 2nd line is instrument parameter file (optional)
+                    self.errors = 'Error reading instrument parameter filename'
+                    self.instparm = S.split(':')[1].strip('[]').strip()
+                    continue
+                if S[0] == '#': # allow comments anywhere in the file
+                    # comments in fact should only preceed BANK lines
+                    comments[-1].append(S[:-1])
+                    continue
+                if S[:4] == 'BANK':
+                    self.errors = 'Error reading bank:'
+                    self.errors += '  '+str(S)
+                    comments.append([title,])
+                    Banks.append(S)
+                    Pos.append(filepointer.tell())
+                if S[:8] == 'TIME_MAP':     #assumes one time map; HIPPO has multiple time maps
+                    if len(Banks) == 0:
+                        self.errors = 'Error reading time map before any bank lines'
+                    else:
+                        self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
+                    timemap,clockwd,mapNo = GetTimeMap(filepointer,filepointer.tell(),S)
+                    self.TimeMap[mapNo] = timemap
+                    self.clockWd[mapNo] = clockwd 
+                    
 
         # Now select the bank to read
         if not Banks: # use of ContentsValidator should prevent this error
@@ -358,31 +347,24 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             bnkNo = int(Bank.split()[1])
         except ValueError:
             bnkNo = 1
-        try:
-            if 'FXYE' in Bank:
-                self.errors = 'Error reading FXYE data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
-            elif 'FXY' in Bank:
-                self.errors = 'Error reading FXY data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetFXYdata(filepointer,Pos[selblk],Banks[selblk])
-            elif 'ESD' in Bank:
-                self.errors = 'Error reading ESD data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetESDdata(filepointer,Pos[selblk],Banks[selblk])
-            elif 'STD' in Bank:
-                self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
-            elif 'ALT' in Bank:
-                self.errors = 'Error reading ALT data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetALTdata(filepointer,Pos[selblk],Banks[selblk])
-            else:
-                self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
-                self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+        if 'FXYE' in Bank:
+            self.errors = 'Error reading FXYE data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
+        elif 'FXY' in Bank:
+            self.errors = 'Error reading FXY data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetFXYdata(filepointer,Pos[selblk],Banks[selblk])
+        elif 'ESD' in Bank:
+            self.errors = 'Error reading ESD data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetESDdata(filepointer,Pos[selblk],Banks[selblk])
+        elif 'STD' in Bank:
+            self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
+        elif 'ALT' in Bank:
+            self.errors = 'Error reading ALT data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetALTdata(filepointer,Pos[selblk],Banks[selblk])
+        else:
+            self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
+            self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
 
         self.errors = 'Error processing information after read complete'
         if comments is not None:

@@ -15,8 +15,6 @@ current project.
 
 '''
 import sys
-import traceback
-import math
 import numpy as np
 import random as ran
 import GSASIIIO as G2IO
@@ -48,14 +46,8 @@ class PhaseReaderClass(G2IO.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a ins file using :meth:`ReadINSPhase`'
-        #try:
         self.Phase = self.ReadINSPhase(filename, ParentFrame)
         return True
-        #except Exception as detail:
-        #    self.errors += '\n  '+str(detail)
-        #    print 'INS read error:',detail # for testing
-        #    traceback.print_exc(file=sys.stdout)
-        #    return False
 
     def ReadINSPhase(self,filename,parent=None):
         '''Read a phase from a INS file.
@@ -67,26 +59,21 @@ class PhaseReaderClass(G2IO.ImportPhase):
             'BUMP','SAME','SADI','CHIV','FLAT','DELU','SIMU','DEFS','ISOR','NCSY',
             'SUMP','L.S.','CGLS','BLOC','DAMP','STIR','WGHT','FVAR','BOND','CONF','MPLA',
             'HTAB','LIST','ACTA','SIZE','TEMP','WPDB','FMAP','GRID','PLAN','MOLE']
-        EightPiSq = 8.*math.pi**2
         self.errors = 'Error opening file'
         file = open(filename, 'Ur')
         Phase = {}
         Title = ''
-        Compnd = ''
         Atoms = []
         aTypes = []
-        A = np.zeros(shape=(3,3))
         S = file.readline()
         line = 1
         SGData = None
         cell = None
-        numbs = [str(i) for i in range(10)]
         while S:
             if '!' in S:
                 S = S.split('!')[0]
             self.errors = 'Error reading at line '+str(line)
             Atom = []
-            Aindx = [ch in numbs for ch in S[:4]]   #False for all letters
             if 'TITL' in S[:4].upper():
                 Title = S[4:72].strip()
             elif not S.strip():
@@ -99,7 +86,6 @@ class PhaseReaderClass(G2IO.ImportPhase):
                     float(angles[0]),float(angles[1]),float(angles[2])]
                 Volume = G2lat.calc_V(G2lat.cell2A(cell))
                 AA,AB = G2lat.cell2AB(cell)
-                SpGrp = 'P 1'
                 SGData = G2IO.SGData # P 1
                 self.warnings += '\nThe space group is not given in an ins file and has been set to "P 1".'
                 self.warnings += "\nChange this in phase's General tab; NB: it might be in the Phase name."

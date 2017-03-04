@@ -55,71 +55,63 @@ class txt_XRayReaderClass(G2IO.ImportSmallAngleData):
         x = []
         y = []
         w = []
-        try:
-            wave = 1.5428   #Cuka default
-            Temperature = 300
-            Ndata = 0
-            for i,S in enumerate(filepointer):
-                if len(S) == 1:     #skip blank line
-                    continue
-                if '=' in S:
-                    self.comments.append(S[:-1])
-                    if 'wave' in S.split('=')[0].lower():
-                        try:
-                            wave = float(S.split('=')[1])
-                        except:
-                            pass
-                    continue
-                vals = S.split()
-                if len(vals) >= 2:
+        wave = 1.5428   #Cuka default
+        Temperature = 300
+        for i,S in enumerate(filepointer):
+            if len(S) == 1:     #skip blank line
+                continue
+            if '=' in S:
+                self.comments.append(S[:-1])
+                if 'wave' in S.split('=')[0].lower():
                     try:
-                        data = [float(val) for val in vals]
-                        x.append(float(data[0]))
-                        f = float(data[1])
-                        if f <= 0.0:
-                            del x[-1]
-                            continue
-                        elif len(vals) > 2:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[2])**2)
-                        else:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[1]))
-                    except ValueError:
-                        msg = 'Error in line '+str(i+1)
-                        print msg
-                        continue
-            N = len(x)
-            for S in self.comments:
-                if 'Temp' in S.split('=')[0]:
-                    try:
-                        Temperature = float(S.split('=')[1])
+                        wave = float(S.split('=')[1])
                     except:
                         pass
-            self.instdict['wave'] = wave
-            self.instdict['type'] = 'LXC'
-            x = np.array(x)
-            self.smallangledata = [
-                x, # x-axis values q
-                np.array(y), # small angle pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # obs-calc profiles
-                np.zeros(N), # fix bkg
-                ]
-            self.smallangleentry[0] = filename
-            self.smallangleentry[2] = 1 # xye file only has one bank
-            self.idstring = ospath.basename(filename)
-            # scan comments for temperature
-            self.Sample['Temperature'] = Temperature
-    
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+                continue
+            vals = S.split()
+            if len(vals) >= 2:
+                try:
+                    data = [float(val) for val in vals]
+                    x.append(float(data[0]))
+                    f = float(data[1])
+                    if f <= 0.0:
+                        del x[-1]
+                        continue
+                    elif len(vals) > 2:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[2])**2)
+                    else:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[1]))
+                except ValueError:
+                    msg = 'Error in line '+str(i+1)
+                    print msg
+                    continue
+        N = len(x)
+        for S in self.comments:
+            if 'Temp' in S.split('=')[0]:
+                try:
+                    Temperature = float(S.split('=')[1])
+                except:
+                    pass
+        self.instdict['wave'] = wave
+        self.instdict['type'] = 'LXC'
+        x = np.array(x)
+        self.smallangledata = [
+            x, # x-axis values q
+            np.array(y), # small angle pattern intensities
+            np.array(w), # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # obs-calc profiles
+            np.zeros(N), # fix bkg
+            ]
+        self.smallangleentry[0] = filename
+        self.smallangleentry[2] = 1 # xye file only has one bank
+        self.idstring = ospath.basename(filename)
+        # scan comments for temperature
+        self.Sample['Temperature'] = Temperature
+
+        return True
 
 class txt_nmXRayReaderClass(G2IO.ImportSmallAngleData):
     'Routines to import X-ray q SAXD data from a .xsad or .xdat file, q in nm-1'
@@ -153,71 +145,63 @@ class txt_nmXRayReaderClass(G2IO.ImportSmallAngleData):
         x = []
         y = []
         w = []
-        try:
-            wave = 1.5428   #Cuka default
-            Temperature = 300
-            Ndata = 0
-            for i,S in enumerate(filepointer):
-                if len(S) == 1:     #skip blank line
-                    continue
-                if '=' in S:
-                    self.comments.append(S[:-1])
-                    if 'wave' in S.split('=')[0].lower():
-                        try:
-                            wave = float(S.split('=')[1])
-                        except:
-                            pass
-                    continue
-                vals = S.split()
-                if len(vals) >= 2:
+        wave = 1.5428   #Cuka default
+        Temperature = 300
+        for i,S in enumerate(filepointer):
+            if len(S) == 1:     #skip blank line
+                continue
+            if '=' in S:
+                self.comments.append(S[:-1])
+                if 'wave' in S.split('=')[0].lower():
                     try:
-                        data = [float(val) for val in vals]
-                        x.append(float(data[0])/10.)        #convert nm-1 to A-1
-                        f = float(data[1])
-                        if f <= 0.0:
-                            x.pop()
-                            continue
-                        elif len(vals) > 2:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[2])**2)
-                        else:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[1]))
-                    except ValueError:
-                        msg = 'Error in line '+str(i+1)
-                        print msg
-                        continue
-            N = len(x)
-            for S in self.comments:
-                if 'Temp' in S.split('=')[0]:
-                    try:
-                        Temperature = float(S.split('=')[1])
+                        wave = float(S.split('=')[1])
                     except:
                         pass
-            self.instdict['wave'] = wave
-            self.instdict['type'] = 'LXC'
-            x = np.array(x)
-            self.smallangledata = [
-                x, # x-axis values q
-                np.array(y), # small angle pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # obs-calc profiles
-                np.zeros(N), # fix bkg
-                ]
-            self.smallangleentry[0] = filename
-            self.smallangleentry[2] = 1 # xye file only has one bank
-            self.idstring = ospath.basename(filename)
-            # scan comments for temperature
-            self.Sample['Temperature'] = Temperature
-    
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+                continue
+            vals = S.split()
+            if len(vals) >= 2:
+                try:
+                    data = [float(val) for val in vals]
+                    x.append(float(data[0])/10.)        #convert nm-1 to A-1
+                    f = float(data[1])
+                    if f <= 0.0:
+                        x.pop()
+                        continue
+                    elif len(vals) > 2:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[2])**2)
+                    else:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[1]))
+                except ValueError:
+                    msg = 'Error in line '+str(i+1)
+                    print msg
+                    continue
+        N = len(x)
+        for S in self.comments:
+            if 'Temp' in S.split('=')[0]:
+                try:
+                    Temperature = float(S.split('=')[1])
+                except:
+                    pass
+        self.instdict['wave'] = wave
+        self.instdict['type'] = 'LXC'
+        x = np.array(x)
+        self.smallangledata = [
+            x, # x-axis values q
+            np.array(y), # small angle pattern intensities
+            np.array(w), # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # obs-calc profiles
+            np.zeros(N), # fix bkg
+            ]
+        self.smallangleentry[0] = filename
+        self.smallangleentry[2] = 1 # xye file only has one bank
+        self.idstring = ospath.basename(filename)
+        # scan comments for temperature
+        self.Sample['Temperature'] = Temperature
+
+        return True
 
 class txt_CWNeutronReaderClass(G2IO.ImportSmallAngleData):
     'Routines to import neutron CW q SAXD data from a .nsad or .ndat file'
@@ -251,73 +235,65 @@ class txt_CWNeutronReaderClass(G2IO.ImportSmallAngleData):
         x = []
         y = []
         w = []
-        try:
-            wave = 1.5428   #Cuka default
-            Temperature = 300
-            Ndata = 0
-            for i,S in enumerate(filepointer):
-                if len(S) == 1:     #skip blank line
-                    continue
-                if '=' in S:
-                    self.comments.append(S[:-1])
-                    if 'wave' in S.split('=')[0].lower():
-                        try:
-                            wave = float(S.split('=')[1])
-                        except:
-                            pass
-                    continue
-                vals = S.split()
-                if len(vals) >= 2:
+        wave = 1.5428   #Cuka default
+        Temperature = 300
+        for i,S in enumerate(filepointer):
+            if len(S) == 1:     #skip blank line
+                continue
+            if '=' in S:
+                self.comments.append(S[:-1])
+                if 'wave' in S.split('=')[0].lower():
                     try:
-                        data = [float(val) for val in vals]
-                        x.append(float(data[0]))
-                        f = float(data[1])
-                        if f <= 0.0:
-                            y.append(0.0)
-                            w.append(1.0)
-                        elif len(vals) > 2:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[2])**2)
-                        else:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[1]))
-                    except ValueError:
-                        msg = 'Error in line '+str(i+1)
-                        print msg
-                        continue
-            N = len(x)
-            for S in self.comments:
-                if 'Temp' in S.split('=')[0]:
-                    try:
-                        Temperature = float(S.split('=')[1])
+                        wave = float(S.split('=')[1])
                     except:
                         pass
-            self.instdict['wave'] = wave
-            self.instdict['type'] = 'LNC'
-            x = np.array(x)
-            if np.any(x > 2.):         #q must be nm-1
-                x /= 10.
-            self.smallangledata = [
-                x, # x-axis values q
-                np.array(y), # small angle pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # obs-calc profiles
-                np.zeros(N), # fix bkg
-                ]
-            self.smallangleentry[0] = filename
-            self.smallangleentry[2] = 1 # xye file only has one bank
-            self.idstring = ospath.basename(filename)
-            # scan comments for temperature
-            self.Sample['Temperature'] = Temperature
-    
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+                continue
+            vals = S.split()
+            if len(vals) >= 2:
+                try:
+                    data = [float(val) for val in vals]
+                    x.append(float(data[0]))
+                    f = float(data[1])
+                    if f <= 0.0:
+                        y.append(0.0)
+                        w.append(1.0)
+                    elif len(vals) > 2:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[2])**2)
+                    else:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[1]))
+                except ValueError:
+                    msg = 'Error in line '+str(i+1)
+                    print msg
+                    continue
+        N = len(x)
+        for S in self.comments:
+            if 'Temp' in S.split('=')[0]:
+                try:
+                    Temperature = float(S.split('=')[1])
+                except:
+                    pass
+        self.instdict['wave'] = wave
+        self.instdict['type'] = 'LNC'
+        x = np.array(x)
+        if np.any(x > 2.):         #q must be nm-1
+            x /= 10.
+        self.smallangledata = [
+            x, # x-axis values q
+            np.array(y), # small angle pattern intensities
+            np.array(w), # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # obs-calc profiles
+            np.zeros(N), # fix bkg
+            ]
+        self.smallangleentry[0] = filename
+        self.smallangleentry[2] = 1 # xye file only has one bank
+        self.idstring = ospath.basename(filename)
+        # scan comments for temperature
+        self.Sample['Temperature'] = Temperature
+
+        return True
 
 class txt_nmCWNeutronReaderClass(G2IO.ImportSmallAngleData):
     'Routines to import neutron CW q in nm-1 SAXD data from a .nsad or .ndat file'
@@ -351,68 +327,60 @@ class txt_nmCWNeutronReaderClass(G2IO.ImportSmallAngleData):
         x = []
         y = []
         w = []
-        try:
-            wave = 1.5428   #Cuka default
-            Temperature = 300
-            Ndata = 0
-            for i,S in enumerate(filepointer):
-                if len(S) == 1:     #skip blank line
-                    continue
-                if '=' in S:
-                    self.comments.append(S[:-1])
-                    if 'wave' in S.split('=')[0].lower():
-                        try:
-                            wave = float(S.split('=')[1])
-                        except:
-                            pass
-                    continue
-                vals = S.split()
-                if len(vals) >= 2:
+        wave = 1.5428   #Cuka default
+        Temperature = 300
+        for i,S in enumerate(filepointer):
+            if len(S) == 1:     #skip blank line
+                continue
+            if '=' in S:
+                self.comments.append(S[:-1])
+                if 'wave' in S.split('=')[0].lower():
                     try:
-                        data = [float(val) for val in vals]
-                        x.append(float(data[0])/10.)    #convert to A-1
-                        f = float(data[1])
-                        if f <= 0.0:
-                            y.append(0.0)
-                            w.append(1.0)
-                        elif len(vals) > 2:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[2])**2)
-                        else:
-                            y.append(float(data[1]))
-                            w.append(1.0/float(data[1]))
-                    except ValueError:
-                        msg = 'Error in line '+str(i+1)
-                        print msg
-                        continue
-            N = len(x)
-            for S in self.comments:
-                if 'Temp' in S.split('=')[0]:
-                    try:
-                        Temperature = float(S.split('=')[1])
+                        wave = float(S.split('=')[1])
                     except:
                         pass
-            self.instdict['wave'] = wave
-            self.instdict['type'] = 'LNC'
-            x = np.array(x)
-            self.smallangledata = [
-                x, # x-axis values q
-                np.array(y), # small angle pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.zeros(N), # calc. intensities (zero)
-                np.zeros(N), # obs-calc profiles
-                np.zeros(N), # fix bkg
-                ]
-            self.smallangleentry[0] = filename
-            self.smallangleentry[2] = 1 # xye file only has one bank
-            self.idstring = ospath.basename(filename)
-            # scan comments for temperature
-            self.Sample['Temperature'] = Temperature
-    
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
+                continue
+            vals = S.split()
+            if len(vals) >= 2:
+                try:
+                    data = [float(val) for val in vals]
+                    x.append(float(data[0])/10.)    #convert to A-1
+                    f = float(data[1])
+                    if f <= 0.0:
+                        y.append(0.0)
+                        w.append(1.0)
+                    elif len(vals) > 2:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[2])**2)
+                    else:
+                        y.append(float(data[1]))
+                        w.append(1.0/float(data[1]))
+                except ValueError:
+                    msg = 'Error in line '+str(i+1)
+                    print msg
+                    continue
+        N = len(x)
+        for S in self.comments:
+            if 'Temp' in S.split('=')[0]:
+                try:
+                    Temperature = float(S.split('=')[1])
+                except:
+                    pass
+        self.instdict['wave'] = wave
+        self.instdict['type'] = 'LNC'
+        x = np.array(x)
+        self.smallangledata = [
+            x, # x-axis values q
+            np.array(y), # small angle pattern intensities
+            np.array(w), # 1/sig(intensity)^2 values (weights)
+            np.zeros(N), # calc. intensities (zero)
+            np.zeros(N), # obs-calc profiles
+            np.zeros(N), # fix bkg
+            ]
+        self.smallangleentry[0] = filename
+        self.smallangleentry[2] = 1 # xye file only has one bank
+        self.idstring = ospath.basename(filename)
+        # scan comments for temperature
+        self.Sample['Temperature'] = Temperature
+
+        return True

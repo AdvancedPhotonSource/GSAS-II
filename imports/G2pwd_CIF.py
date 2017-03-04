@@ -13,7 +13,6 @@
 Routine to read in powder data from a CIF. 
 
 '''
-import sys
 import numpy as np
 import os.path
 import GSASIIIO as G2IO
@@ -95,80 +94,66 @@ class CIFpwdReader(G2IO.ImportPowderData):
         if cf is None:
             self.ShowBusy() # this can take a while
             print "Starting parse of CIF file"
-            try:
-                cf = G2IO.ReadCIF(filename)
-            except Exception as detail:
-                self.errors = "Parse or reading of file failed in pyCifRW; check syntax of file in enCIFer or CheckCIF"
-                return False
-            finally:
-                self.DoneBusy()
+            cf = G2IO.ReadCIF(filename)
+            self.DoneBusy()
             print "CIF file parsed"
         # scan all blocks for sets of data
         if choicelist is None:
-            try:
-                choicelist = []
-                for blk in cf.keys():
-                    blkkeys = [k.lower() for k in cf[blk].keys()] # save a list of the data items, since we will use it often
-                    # scan through block for x items
-                    xldict = {}
-                    for x in xDataItems:
-                        if type(x) is tuple: # check for the presence of all three items that define a range of data
-                            if not all([i in blkkeys for i in x]): continue
-                            try:
-                                items = [float(cf[blk][xi]) for xi in x]
-                                l = 1 + int(0.5 + (items[1]-items[0])/items[2])
-                            except:
-                                continue
+            choicelist = []
+            for blk in cf.keys():
+                blkkeys = [k.lower() for k in cf[blk].keys()] # save a list of the data items, since we will use it often
+                # scan through block for x items
+                xldict = {}
+                for x in xDataItems:
+                    if type(x) is tuple: # check for the presence of all three items that define a range of data
+                        if not all([i in blkkeys for i in x]): continue
+                        try:
+                            items = [float(cf[blk][xi]) for xi in x]
+                            l = 1 + int(0.5 + (items[1]-items[0])/items[2])
+                        except:
+                            continue
+                    else:
+                        if x not in blkkeys: continue
+                        l = len(cf[blk][x])
+                    if xldict.get(l) is None:
+                        xldict[l] = [x]
+                    else:
+                        xldict[l].append(x)
+                # now look for matching intensity items
+                yldict = {}
+                suldict = {}
+                for y in intDataItems:
+                    if y in blkkeys:
+                        l = len(cf[blk][y])
+                        if yldict.get(l) is None:
+                            yldict[l] = [y]
                         else:
-                            if x not in blkkeys: continue
-                            l = len(cf[blk][x])
-                        if xldict.get(l) is None:
-                            xldict[l] = [x]
+                            yldict[l].append(y)
+                        # now check if the first item has an uncertainty
+                        if cif.get_number_with_esd(cf[blk][y][0])[1] is None: continue
+                        if suldict.get(l) is None:
+                            suldict[l] = [y]
                         else:
-                            xldict[l].append(x)
-                    # now look for matching intensity items
-                    yldict = {}
-                    suldict = {}
-                    for y in intDataItems:
-                        if y in blkkeys:
-                            l = len(cf[blk][y])
-                            if yldict.get(l) is None:
-                                yldict[l] = [y]
-                            else:
-                                yldict[l].append(y)
-                            # now check if the first item has an uncertainty
-                            if cif.get_number_with_esd(cf[blk][y][0])[1] is None: continue
-                            if suldict.get(l) is None:
-                                suldict[l] = [y]
-                            else:
-                                suldict[l].append(y)
-                    for y in ESDDataItems:
-                        if y in blkkeys:
-                            l = len(cf[blk][y])
-                            if suldict.get(l) is None:
-                                suldict[l] = [y]
-                            else:
-                                suldict[l].append(y)
-                    modldict = {}
-                    for y in ModDataItems:
-                        if y in blkkeys:
-                            l = len(cf[blk][y])
-                            if modldict.get(l) is None:
-                                modldict[l] = [y]
-                            else:
-                                modldict[l].append(y)
-                    for l in xldict:
-                        if yldict.get(l) is None: continue
-                        choicelist.append([blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])])
-                        #print blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])
-            except Exception as detail:
-                self.errors = "Error scanning blocks"
-                self.errors += "\n  Read exception: "+str(detail)
-                print self.formatName+' read error:'+str(detail) # for testing
-                import traceback
-                traceback.print_exc(file=sys.stdout)
-                #self.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
-                return False
+                            suldict[l].append(y)
+                for y in ESDDataItems:
+                    if y in blkkeys:
+                        l = len(cf[blk][y])
+                        if suldict.get(l) is None:
+                            suldict[l] = [y]
+                        else:
+                            suldict[l].append(y)
+                modldict = {}
+                for y in ModDataItems:
+                    if y in blkkeys:
+                        l = len(cf[blk][y])
+                        if modldict.get(l) is None:
+                            modldict[l] = [y]
+                        else:
+                            modldict[l].append(y)
+                for l in xldict:
+                    if yldict.get(l) is None: continue
+                    choicelist.append([blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])])
+                    #print blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])
             print "CIF file scanned for blocks with data"
         if not choicelist:
             selblk = None # no block to choose
@@ -239,95 +224,83 @@ class CIFpwdReader(G2IO.ImportPowderData):
             xi,yi,sui,modi = res
 
         # now read in the values
-        try:
-            self.ShowBusy() # this can also take a while
-            # x-values
-            xcf = xch[xi]
-            if type(xcf) is tuple:
-                vals = [float(cf[blk][xi]) for xi in xcf]
-                x = np.array(
-                    [(i*vals[2] + vals[0]) for i in range(1 + int(0.5 + (vals[1]-vals[0])/vals[2]))]
-                    )
+        self.ShowBusy() # this can also take a while
+        # x-values
+        xcf = xch[xi]
+        if type(xcf) is tuple:
+            vals = [float(cf[blk][ixi]) for ixi in xcf]
+            x = np.array([(i*vals[2] + vals[0]) for i in range(1 + int(0.5 + (vals[1]-vals[0])/vals[2]))])
+        else:
+            vl = []
+            for val in cf[blk].get(xcf,'?'):
+                v,e = cif.get_number_with_esd(val)
+                if v is None: # not parsed
+                    vl.append(np.NaN)
+                else:
+                    vl.append(v)
+            x = np.array(vl)
+        # y-values
+        ycf = ych[yi]
+        vl = []
+        v2 = []
+        for val in cf[blk].get(ycf,'?'):
+            v,e = cif.get_number_with_esd(val)
+            if v is None: # not parsed
+                vl.append(np.NaN)
+                v2.append(np.NaN)
             else:
-                vl = []
-                for val in cf[blk].get(xcf,'?'):
+                vl.append(v)
+                v2.append(max(e,1.0))
+        y = np.array(vl)
+        w = 1./np.array(v2)**2
+        # weights
+        if sui == -1:
+            # no weights
+            vl = np.zeros(len(x)) + 1.
+        else:
+            vl = []
+            sucf = such[sui]
+            if sucf ==  '_pd_proc_ls_weight':
+                for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)
                     if v is None: # not parsed
-                        vl.append(np.NaN)
+                        vl.append(0.)
                     else:
                         vl.append(v)
-                x = np.array(vl)
-            # y-values
-            ycf = ych[yi]
+            elif sucf ==  '_pd_meas_counts_total':
+                for val in cf[blk].get(sucf,'?'):
+                    v,e = cif.get_number_with_esd(val)
+                    if v is None: # not parsed
+                        vl.append(0.)
+                    elif v <= 0:
+                        vl.append(1.)
+                    else:
+                        vl.append(1./v)
+            else:
+                for val in cf[blk].get(sucf,'?'):
+                    v,e = cif.get_number_with_esd(val)
+                    if v is None or e is None: # not parsed or no ESD
+                        vl.append(np.NaN)
+                    elif e <= 0:
+                        vl.append(1.)
+                    else:
+                        vl.append(1./(e*e))
+#            w = np.array(vl)
+        # intensity modification factor
+        if modi >= 1:
+            ycf = modch[modi-1]
             vl = []
-            v2 = []
             for val in cf[blk].get(ycf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
                     vl.append(np.NaN)
-                    v2.append(np.NaN)
                 else:
                     vl.append(v)
-                    v2.append(max(e,1.0))
-            y = np.array(vl)
-            w = 1./np.array(v2)**2
-            # weights
-            if sui == -1:
-                # no weights
-                vl = np.zeros(len(x)) + 1.
-            else:
-                vl = []
-                sucf = such[sui]
-                if sucf ==  '_pd_proc_ls_weight':
-                    for val in cf[blk].get(sucf,'?'):
-                        v,e = cif.get_number_with_esd(val)
-                        if v is None: # not parsed
-                            vl.append(0.)
-                        else:
-                            vl.append(v)
-                elif sucf ==  '_pd_meas_counts_total':
-                    for val in cf[blk].get(sucf,'?'):
-                        v,e = cif.get_number_with_esd(val)
-                        if v is None: # not parsed
-                            vl.append(0.)
-                        elif v <= 0:
-                            vl.append(1.)
-                        else:
-                            vl.append(1./v)
-                else:
-                    for val in cf[blk].get(sucf,'?'):
-                        v,e = cif.get_number_with_esd(val)
-                        if v is None or e is None: # not parsed or no ESD
-                            vl.append(np.NaN)
-                        elif e <= 0:
-                            vl.append(1.)
-                        else:
-                            vl.append(1./(e*e))
-#            w = np.array(vl)
-            # intensity modification factor
-            if modi >= 1:
-                ycf = modch[modi-1]
-                vl = []
-                for val in cf[blk].get(ycf,'?'):
-                    v,e = cif.get_number_with_esd(val)
-                    if v is None: # not parsed
-                        vl.append(np.NaN)
-                    else:
-                        vl.append(v)
-                y /= np.array(vl)
-                w /= np.array(vl)
-            N = len(x)
-        except Exception as detail:
-            self.errors = "Error reading from selected block"
-            self.errors += "\n  Read exception: "+str(detail)
-            print self.formatName+' read error:'+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            #self.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
-            return False
-        finally:
-            self.DoneBusy()
-            print "CIF file, read from selected block"
+            y /= np.array(vl)
+            w /= np.array(vl)
+        N = len(x)
+        self.DoneBusy()
+        print "CIF file, read from selected block"
 
         self.errors = "Error while storing read values"
         self.powderdata = [

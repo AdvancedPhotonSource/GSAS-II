@@ -2235,7 +2235,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 pfx = str(pId)+':'+str(hId)+':'
                 if Phases[phase]['General']['doPawley']:
                     hapDict[pfx+'LeBail'] = False           #Pawley supercedes LeBail
-                    hapDict[pfx+'newLeBail'] = False
+                    hapDict[pfx+'newLeBail'] = True
                     Tmin = G2lat.Dsp2pos(inst,dmin)
                     if 'C' in inst['Type'][1]:
                         limits[1] = min(limits[1],Tmin)
@@ -2243,7 +2243,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         limits[0] = max(limits[0],Tmin)
                 else:
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
-                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',False)
+                    hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
                 if Phases[phase]['General']['Type'] == 'magnetic':
                     dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 for item in ['Scale','Extinction']:
@@ -2255,13 +2255,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 for i,name in enumerate(names):
                     hapDict[pfx+name] = hapData['HStrain'][0][i]
                     HSvals.append(hapDict[pfx+name])
-                    if hapData['HStrain'][1][i] and not hapDict[pfx+'newLeBail']:
+                    if hapData['HStrain'][1][i] and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+name)
                     controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                     if hapData['Pref.Ori.'][0] == 'MD':
                         hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
                         controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                        if hapData['Pref.Ori.'][2]:
+                        if hapData['Pref.Ori.'][2] and not parmDict[pfx+'LeBail']:
                             hapVary.append(pfx+'MD')
                     else:                           #'SH' spherical harmonics
                         controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
@@ -2277,7 +2277,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             pass
                         for item in hapData['Pref.Ori.'][5]:
                             hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                            if hapData['Pref.Ori.'][2]:
+                            if hapData['Pref.Ori.'][2] and not parmDict[pfx+'LeBail']:
                                 hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
@@ -2310,7 +2310,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for bab in ['BabA','BabU']:
                         hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                        if hapData['Babinet'][bab][1]:
+                        if hapData['Babinet'][bab][1] and not parmDict[pfx+'LeBail']:
                             hapVary.append(pfx+bab)
                                 
                 if Print: 
@@ -2335,7 +2335,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])                        
                 if resetRefList and hapDict[pfx+'newLeBail']:
-                    if hapData.get('LeBail',False):
+                    if hapData.get('LeBail',False):         #stop regeneating reflections for LeBail
                         hapData['newLeBail'] = False
                     refList = []
                     Uniq = []
@@ -2677,21 +2677,20 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             if hId not in wtFrSum:
                 wtFrSum[hId] = 0.
             if 'PWDR' in histogram:
-                if not parmDict[pfx+'LeBail']:
-                    for item in ['Scale','Extinction']:
-                        hapData[item][0] = parmDict[pfx+item]
-                        if pfx+item in sigDict:
+                for item in ['Scale','Extinction']:
+                    hapData[item][0] = parmDict[pfx+item]
+                    if pfx+item in sigDict and not hapData[pfx+'LeBail']:
+                        PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
+                wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
+                    if pfx+'MD' in sigDict and not hapData[pfx+'LeBail']:
+                        PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
+                else:                           #'SH' spherical harmonics
+                    for item in hapData['Pref.Ori.'][5]:
+                        hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
+                        if pfx+item in sigDict and not hapData[pfx+'LeBail']:
                             PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
-                    wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
-                    if hapData['Pref.Ori.'][0] == 'MD':
-                        hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                        if pfx+'MD' in sigDict:
-                            PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
-                    else:                           #'SH' spherical harmonics
-                        for item in hapData['Pref.Ori.'][5]:
-                            hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
-                            if pfx+item in sigDict:
-                                PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                 SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                     pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],
                     pfx+'HStrain':{}})                  
@@ -2724,10 +2723,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
                     if pfx+name in sigDict:
                         SizeMuStrSig[pfx+'HStrain'][name] = sigDict[pfx+name]
-                if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict[pfx+'LeBail']:
+                if Phases[phase]['General']['Type'] != 'magnetic':
                     for name in ['BabA','BabU']:
                         hapData['Babinet'][name][0] = parmDict[pfx+name]
-                        if pfx+name in sigDict:
+                        if pfx+name in sigDict and not parmDict[pfx+'LeBail']:
                             BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:

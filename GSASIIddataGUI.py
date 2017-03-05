@@ -820,8 +820,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             if not UseList[G2frame.hist]['LeBail']:
                 UseList[G2frame.hist]['newLeBail'] = True
-            else:
-                UseList[G2frame.hist]['newLeBail'] = False
             UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
 
         def OnResetSize(event):

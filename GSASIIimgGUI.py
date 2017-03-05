@@ -390,7 +390,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
             'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
-            'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
+            'binType','SampleShape','PolaVal','SampleAbs','dark image','background image',
+            ]
         for key in keys:
             if key not in data:     #uncalibrated!
                 continue
@@ -2243,7 +2244,7 @@ def Read_imctrl(imctrl_file):
     cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
                         'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
                         'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg',
-                        'PolaVal','SampleAbs','dark image','background image']
+                        'PolaVal','SampleAbs','dark image','background image','setdist']
     File = open(imctrl_file,'r')
     fullIntegrate = False
     try:
@@ -2679,7 +2680,7 @@ class AutoIntFrame(wx.Frame):
                 if msg1:
                     msg += 'Files to integrate from '+os.path.join(self.imagedir,value)+msg1
                 else:
-                    msg += 'All files integrated'
+                    msg += 'No files found to read'
         except IndexError:
             msg += 'Error searching for files named '+os.path.join(self.imagedir,value)
         self.ListBox.Clear()
@@ -2768,7 +2769,6 @@ class AutoIntFrame(wx.Frame):
         '''
         #dist = self.controlsDict['distance']
         interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
-        #if GSASIIpath.GetConfigValue('debug'):
         if GSASIIpath.GetConfigValue('debug'):
             print 'interpolated values: ',interpDict
         self.ImageControls = ReadControls(imgctrl)
@@ -2901,7 +2901,7 @@ class AutoIntFrame(wx.Frame):
             ImageMasks = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
             if self.params['Mode'] == 'table': # look up parameter values from table
-                self.ResetFromTable(controlsDict['distance'])
+                self.ResetFromTable(controlsDict['setdist'])
             # update controls from master
             controlsDict.update(self.ImageControls)
             # update masks from master w/o Thresholds
@@ -3050,7 +3050,7 @@ def DefineEvaluator(dlg):
         '''            
         x = np.array([float(i) for i in parms[0]])
         closest = abs(x-dist).argmin()
-        D = {'distance':dist}
+        D = {'setdist':dist}
         imctfile = IMfileList[closest]
         if parms[-1][closest].lower() != '(none)':
             maskfile = parms[-1][closest]
@@ -3091,13 +3091,13 @@ class IntegParmTable(wx.Dialog):
     In this case, :func:`DefineEvaluator` should be called to obtain a function that
     creates a dictionary with interpolated parameter values.
     '''
-    ParmList = ('distance','center_x','center_y','wavelength','tilt','rotation','DetDepth',
+    ParmList = ('setdist','distance','center_x','center_y','wavelength','tilt','rotation','DetDepth',
             'LRazimuth_min','LRazimuth_max','IOtth_min','IOtth_max','outChannels',
             'maskfile',
             )
     nonInterpVars = ('tilt','rotation','LRazimuth_min','LRazimuth_max','IOtth_min','IOtth_max',
                      'outChannels')  # values in this list are taken from nearest rather than interpolated
-    HeaderList = ('Det Dist','X cntr','Y cntr','wavelength','tilt','rotation','DetDepth',
+    HeaderList = ('Set Dist','Calib Dist','X cntr','Y cntr','wavelength','tilt','rotation','DetDepth',
             'Azimuth min','Azimuth max','2Th min','2Th max','Int. pts',
             'Mask File',
             )
@@ -3182,6 +3182,9 @@ class IntegParmTable(wx.Dialog):
                     del tmpDict[key][c]
             fileList = tmpDict.get('filenames','[]')
             parms = []
+            if 'setdist' not in tmpDict:
+                print(u'Old file, recreate before using: {}'.format(files[0]))
+                return [[]],[]
             for key in self.ParmList:
                 try:
                     float(tmpDict[key][0])
@@ -3196,7 +3199,10 @@ class IntegParmTable(wx.Dialog):
         # option 2, read in a list of files
         for file in files: # read all files; place in dict by distance
             imgDict = Read_imctrl(file)
-            tmpDict[imgDict.get('distance')] = imgDict
+            dist = imgDict.get('setdist')
+            if dist is None:
+                print('Skipping old file, redo: {}'.format(file))
+            tmpDict[dist] = imgDict
         parms = [[] for key in self.ParmList]
         fileList = []
         for d in sorted(tmpDict):
@@ -3276,6 +3282,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         for i,lbl in enumerate(self.parent.HeaderList):
             self.InsertColumn(i, lbl)
         for r,d in enumerate(parms[0]):
+            if d is None: continue
             if float(d) < 0: continue
             index = self.InsertStringItem(sys.maxint, d)
             for j in range(1,len(parms)):

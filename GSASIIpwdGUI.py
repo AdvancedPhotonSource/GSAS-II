@@ -5080,14 +5080,17 @@ def UpdatePDFGrid(G2frame,data):
     def DiffSizer():
         
         def OnSelectGR(event):
-            data['diffGRname'] = grName.GetValue()
-            if data['diffGRname']:
+            newName = grName.GetValue()
+            if newName:
                 data['delt-G(R)'] = copy.deepcopy(data['G(R)'])
-                id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['diffGRname'])
+                id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,newName)
                 pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
                 subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)']
-                if subData[1][0].shape != data['G(R)'][1][0].shape:
-                    print 'Error - G(R) not same length'
+                if subData[1][0][-1] != data['G(R)'][1][0][-1]:
+                    G2frame.ErrorDialog('delt-G(R) Error',' G(R) for '+newName+' not same R range')
+                    grName.SetValue(data['diffGRname'])
+                    return
+                data['diffGRname'] = newName
                 data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-subData[1][1]])
                 data['delt-G(R)'][2] += ('-\n'+subData[2])
                 G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')

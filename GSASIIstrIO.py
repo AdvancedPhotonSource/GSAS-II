@@ -2261,7 +2261,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapData['Pref.Ori.'][0] == 'MD':
                         hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
                         controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
-                        if hapData['Pref.Ori.'][2] and not parmDict[pfx+'LeBail']:
+                        if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
                             hapVary.append(pfx+'MD')
                     else:                           #'SH' spherical harmonics
                         controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
@@ -2277,7 +2277,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             pass
                         for item in hapData['Pref.Ori.'][5]:
                             hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                            if hapData['Pref.Ori.'][2] and not parmDict[pfx+'LeBail']:
+                            if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
                                 hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
@@ -2310,7 +2310,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for bab in ['BabA','BabU']:
                         hapDict[pfx+bab] = hapData['Babinet'][bab][0]
-                        if hapData['Babinet'][bab][1] and not parmDict[pfx+'LeBail']:
+                        if hapData['Babinet'][bab][1] and not hapDict[pfx+'LeBail']:
                             hapVary.append(pfx+bab)
                                 
                 if Print: 

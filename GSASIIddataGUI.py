@@ -1011,4 +1011,4 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),
                       0,WACV|wx.TOP,10)
         
-    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer,Scroll)
+    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer,Scroll=Scroll)

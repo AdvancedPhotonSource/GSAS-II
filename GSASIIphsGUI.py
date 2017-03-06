@@ -66,16 +66,22 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
-def SetPhaseWindow(mainFrame,phasePage,mainSizer=None,Size=None,Scroll=0):
+def SetPhaseWindow(mainFrame,phasePage,mainSizer=None,size=None,Scroll=0):
     if not mainSizer is None: 
         phasePage.SetSizer(mainSizer)
         Size = mainSizer.GetMinSize()
+    else:
+        Size = phasePage.GetBestSize()
     Size[0] += 40
-    Size[1] = min(Size[1]+ 150,500) 
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
     phasePage.Scroll(0,Scroll)
-    Size[1] = min(500,Size[1])
-    mainFrame.setSizePosLeft(Size)
+    if size is None:
+        Size[1] = min(Size[1]+ 150,500) 
+#        Size[1] = min(500,Size[1])
+        mainFrame.setSizePosLeft(Size)
+    else:
+        size[1] = min(500,size[1])
+        mainFrame.setSizePosLeft(size)
     
 def FindBondsDraw(data):    
     '''uses numpy & masks - very fast even for proteins!
@@ -1358,7 +1364,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
         G2frame.dataFrame.SetStatusText('')
-        SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll)
+        SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll=Scroll)
         
     def OnTransform(event):
         dlg = G2gd.TransformDialog(G2frame,data)
@@ -1783,7 +1789,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,Atoms,Size=[700,300])
+            SetPhaseWindow(G2frame.dataFrame,Atoms,size=[700,300])
 
         # FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -4204,7 +4210,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        SetPhaseWindow(G2frame.dataFrame,drawAtoms,Size=[600,300])
+        SetPhaseWindow(G2frame.dataFrame,drawAtoms,size=[600,300])
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
@@ -6229,7 +6235,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 data['testRBObj']['atNames'] = atNames
                 data['testRBObj']['AtNames'] = AtNames
                 data['testRBObj']['rbObj'] = {'Orig':[[0,0,0],False],
-                    'Orient':[[0.,0.,0.,1.],' '],'Ids':[],'RBId':rbId,'Torsions':[],
+                    'Orient':[[0.,0.,0.,0.],' '],'Ids':[],'RBId':rbId,'Torsions':[],
                     'numChain':'','RBname':RBData[rbType][rbId]['RBname']}
                 data['testRBObj']['torAtms'] = []                
                 for item in RBData[rbType][rbId].get('rbSeq',[]):
@@ -6294,11 +6300,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 VAC = np.inner(Amat,np.array(atomData[atInd[1]][cx:cx+3]-Orig))
                 VBC = np.inner(Amat,np.array(atomData[atInd[2]][cx:cx+3]-Orig))
                 VCC = np.cross(VAR,VAC)
-                QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
-                VAR = G2mth.prodQVQ(QuatA,VAR)
-                VBR = G2mth.prodQVQ(QuatA,VBR)
-                QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
-                QuatC = G2mth.prodQQ(QuatB,QuatA)
+                if nl.norm(VCC) > 1e-7:
+                    QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
+                    VAR = G2mth.prodQVQ(QuatA,VAR)
+                    VBR = G2mth.prodQVQ(QuatA,VBR)
+                    QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
+                    QuatC = G2mth.prodQQ(QuatB,QuatA)
+                else:                               #parallel/antiparallel
+                    if np.dot(VAR,VAC)/(nl.norm(VAR)*nl.norm(VAC)) > 1e-7:  #no rotation
+                        QuatC = G2mth.AVdeg2Q(0.,[0.,0.,1.])
+                    else:
+                        QuatC = G2mth.AVdeg2Q(180.,VBR+VBC)
                 data['testRBObj']['rbObj']['Orient'] = [QuatC,' ']
                 for x,item in zip(QuatC,Osizers):
                     item.SetLabel('%10.4f'%(x))                
@@ -7236,7 +7248,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,G2frame.PawleyRefl,Size=[450,300])
+            SetPhaseWindow(G2frame.dataFrame,G2frame.PawleyRefl,size=[450,300])
                     
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
@@ -7537,7 +7549,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             MapPeaks.SetMargins(0,0)
             MapPeaks.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,MapPeaks,Size=[440,300])
+            SetPhaseWindow(G2frame.dataFrame,MapPeaks,size=[440,300])
                     
     def OnPeaksMove(event):
         if 'Map Peaks' in data:

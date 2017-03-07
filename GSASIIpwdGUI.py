@@ -3487,7 +3487,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,8+im,wx.RED)
                         
                                                   
-        if not len(data[phaseName]):
+        if not HKLF and not len(data[phaseName]):
             return          #deleted phase?
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
@@ -3510,8 +3510,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
             setBackgroundColors(im,itof)
-#        GSASIIpath.IPyBreak()
-        refList = np.array([refl[:6+im] for refl in data[phaseName]['RefList']])
+        if HKLF:
+            refList = np.array([refl[:6+im] for refl in data[1]['RefList']])
+        else:
+            refList = np.array([refl[:6+im] for refl in data[phaseName]['RefList']])
         G2frame.HKL = np.vstack((refList.T)).T    #build for plots
         # raise the tab (needed for 1st use and from OnSelectPhase)
         for PageNum in range(G2frame.dataDisplay.GetPageCount()):
@@ -3577,7 +3579,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.refTable = {}
     G2frame.dataFrame.currentGrids = []
     for tabnum,phase in enumerate(phases):
-        if len(data[phase]):
+        if isinstance(data,list):           #single crystal HKLF
+            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
+            G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+        elif len(data[phase]):              #else dict for PWDR
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
             G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
         else:       #cleanup deleted phase reflection lists

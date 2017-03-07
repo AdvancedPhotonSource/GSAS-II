@@ -4530,6 +4530,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     Size[1] += 10
     G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
+    G2frame.PatternId = item
     if kind in ['PWDR','SASD']:
         NewPlot = True
         if 'xylim' in dir(G2frame):

@@ -229,7 +229,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         except ValueError:
             pass
         if UseList[G2frame.hist]['Mustrain'][0] == 'generalized':
-            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Mustrain'][4][pid]))          #reset in case of error
+            Obj.SetValue("%.1f"%(UseList[G2frame.hist]['Mustrain'][4][pid]))          #reset in case of error
         else:
             Obj.SetValue("%.1f"%(UseList[G2frame.hist]['Mustrain'][1][pid]))          #reset in case of error
         wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
@@ -448,7 +448,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             strainRef.Bind(wx.EVT_CHECKBOX, OnStrainRef)
             dataSizer.Add(strainRef,0,WACV)
 #        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            strainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+            strainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.1f'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[strainVal.GetId()] = [G2frame.hist,id]
             strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
             strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
@@ -889,7 +889,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,WACV)
                 bottomSizer.Add(isoSizer)
-                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size','%.5f',
+                bottomSizer.Add(IsoSizer(u'size(\xb5m): ','Size','%.3f',
                     OnSizeVal,OnSizeRef),0,WACV|wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -899,7 +899,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,WACV)
                 bottomSizer.Add(UniSizer('Size',OnSizeAxis),0,WACV)
                 bottomSizer.Add(uniSizer)
-                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.5f',OnSizeVal,OnSizeRef)
+                bottomSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.3f',OnSizeVal,OnSizeRef)
                     ,0,WACV|wx.BOTTOM,5)
             elif UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)

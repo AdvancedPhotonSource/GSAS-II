@@ -2113,9 +2113,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
     def PrintSize(hapData):
         if hapData[0] in ['isotropic','uniaxial']:
             line = '\n Size model    : %9s'%(hapData[0])
-            line += ' equatorial:'+'%12.5f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
+            line += ' equatorial:'+'%12.3f'%(hapData[1][0])+' Refine? '+str(hapData[2][0])
             if hapData[0] == 'uniaxial':
-                line += ' axial:'+'%12.5f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
+                line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line += '\n\t LG mixing coeff.: %12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
             print >>pFile,line
         else:
@@ -2127,7 +2127,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             varstr = ' refine:'
             for i,name in enumerate(Snames):
                 ptlbls += '%12s' % (name)
-                ptstr += '%12.6f' % (hapData[4][i])
+                ptstr += '%12.3f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
             print >>pFile,ptlbls
             print >>pFile,ptstr
@@ -2150,7 +2150,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             varstr = ' refine:'
             for i,name in enumerate(Snames):
                 ptlbls += '%12s' % (name)
-                ptstr += '%12.6f' % (hapData[4][i])
+                ptstr += '%12.1f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
             print >>pFile,ptlbls
             print >>pFile,ptstr
@@ -2248,7 +2248,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]
-                    if hapData[item][1]:
+                    if hapData[item][1] and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+item)
                 names = G2spc.HStrainNames(SGData)
                 HSvals = []
@@ -2257,28 +2257,28 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     HSvals.append(hapDict[pfx+name])
                     if hapData['HStrain'][1][i] and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+name)
-                    controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
-                    if hapData['Pref.Ori.'][0] == 'MD':
-                        hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
-                        controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
+                controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
+                if hapData['Pref.Ori.'][0] == 'MD':
+                    hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
+                    controlDict[pfx+'MDAxis'] = hapData['Pref.Ori.'][3]
+                    if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
+                        hapVary.append(pfx+'MD')
+                else:                           #'SH' spherical harmonics
+                    controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
+                    controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
+                    controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
+                    controlDict[pfx+'SHhkl'] = []
+                    try: #patch for old Pref.Ori. items
+                        controlDict[pfx+'SHtoler'] = 0.1
+                        if hapData['Pref.Ori.'][6][0] != '':
+                            controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
+                        controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
+                    except IndexError:
+                        pass
+                    for item in hapData['Pref.Ori.'][5]:
+                        hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
                         if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
-                            hapVary.append(pfx+'MD')
-                    else:                           #'SH' spherical harmonics
-                        controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
-                        controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                        controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
-                        controlDict[pfx+'SHhkl'] = []
-                        try: #patch for old Pref.Ori. items
-                            controlDict[pfx+'SHtoler'] = 0.1
-                            if hapData['Pref.Ori.'][6][0] != '':
-                                controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
-                            controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
-                        except IndexError:
-                            pass
-                        for item in hapData['Pref.Ori.'][5]:
-                            hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
-                            if hapData['Pref.Ori.'][2] and not hapDict[pfx+'LeBail']:
-                                hapVary.append(pfx+item)
+                            hapVary.append(pfx+item)
                 for item in ['Mustrain','Size']:
                     controlDict[pfx+item+'Type'] = hapData[item][0]
                     hapDict[pfx+item+';mx'] = hapData[item][1][2]
@@ -2317,7 +2317,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'='
                     if hapDict[pfx+'LeBail']:
-                        print >>pFile,' Perform Lebail extraction'                        
+                        print >>pFile,' Perform LeBail extraction'                        
                     else:
                         print >>pFile,' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
                         print >>pFile,' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]

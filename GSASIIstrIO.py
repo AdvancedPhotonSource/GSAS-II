@@ -2679,17 +2679,17 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             if 'PWDR' in histogram:
                 for item in ['Scale','Extinction']:
                     hapData[item][0] = parmDict[pfx+item]
-                    if pfx+item in sigDict and not hapData[pfx+'LeBail']:
+                    if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
                         PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                 wtFrSum[hId] += hapData['Scale'][0]*General['Mass']
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapData['Pref.Ori.'][1] = parmDict[pfx+'MD']
-                    if pfx+'MD' in sigDict and not hapData[pfx+'LeBail']:
+                    if pfx+'MD' in sigDict and not parmDict[pfx+'LeBail']:
                         PhFrExtPOSig.update({pfx+'MD':sigDict[pfx+'MD'],})
                 else:                           #'SH' spherical harmonics
                     for item in hapData['Pref.Ori.'][5]:
                         hapData['Pref.Ori.'][5][item] = parmDict[pfx+item]
-                        if pfx+item in sigDict and not hapData[pfx+'LeBail']:
+                        if pfx+item in sigDict and not parmDict[pfx+'LeBail']:
                             PhFrExtPOSig.update({pfx+item:sigDict[pfx+item],})
                 SizeMuStrSig.update({pfx+'Mustrain':[[0,0,0],[0 for i in range(len(hapData['Mustrain'][4]))]],
                     pfx+'Size':[[0,0,0],[0 for i in range(len(hapData['Size'][4]))]],

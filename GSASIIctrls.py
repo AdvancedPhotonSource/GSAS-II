@@ -2991,7 +2991,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
             if neg:
                 val = '-' + val
             val = G2py3.FormulaEval(val)
-            if val:
+            if val is not None:
                 self.nextval = val
             else:
                 return None

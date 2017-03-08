@@ -666,6 +666,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return
     if parmDict[pfx+'isMag']:
         Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
         Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
@@ -690,22 +692,21 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
     nRef = refDict['RefList'].shape[0]
-    if not len(refDict['FF']):                #no form factors - 1st time thru StructureFactor
-        SQ = 1./(2.*refDict['RefList'].T[4])**2
-        if 'N' in calcControls[hfx+'histType']:
-            dat = G2el.getBLvalues(BLtables)
-            refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
-            refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
-            for iel,El in enumerate(refDict['FF']['El']):
-                if El in MFtables:
-                    refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
-        else:       #'X'
-            dat = G2el.getFFvalues(FFtables,0.)
-            refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
-            for iel,El in enumerate(refDict['FF']['El']):
-                refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
+    SQ = 1./(2.*refDict['RefList'].T[4])**2
+    if 'N' in calcControls[hfx+'histType']:
+        dat = G2el.getBLvalues(BLtables)
+        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
+        refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            if El in MFtables:
+                refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
+    else:       #'X'
+        dat = G2el.getFFvalues(FFtables,0.)
+        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
@@ -826,6 +827,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -982,6 +985,8 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)
     Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
@@ -1049,7 +1054,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
         dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
         dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
-        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
+#        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
         dmx = NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2                                #*Mag canceled out of dqmx term
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
@@ -1132,6 +1137,8 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1292,6 +1299,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Flack = 1.-2.*parmDict[phfx+'Flack']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
@@ -1305,22 +1314,21 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     bij = Mast*Uij
     blkSize = 32       #no. of reflections in a block
     nRef = refDict['RefList'].shape[0]
-    if not len(refDict['FF']):
-        SQ = 1./(2.*refDict['RefList'].T[5])**2
-        if 'N' in calcControls[hfx+'histType']:
-            dat = G2el.getBLvalues(BLtables)
-            refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
-            refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
-            for iel,El in enumerate(refDict['FF']['El']):
-                if El in MFtables:
-                    refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
-        else:
-            dat = G2el.getFFvalues(FFtables,0.)
-            refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
-            for iel,El in enumerate(refDict['FF']['El']):
-                refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
+    SQ = 1./(2.*refDict['RefList'].T[5])**2
+    if 'N' in calcControls[hfx+'histType']:
+        dat = G2el.getBLvalues(BLtables)
+        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
+        refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            if El in MFtables:
+                refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
+    else:
+        dat = G2el.getFFvalues(FFtables,0.)
+        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
+        for iel,El in enumerate(refDict['FF']['El']):
+            refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
     time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
@@ -1419,6 +1427,8 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
@@ -1548,6 +1558,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
@@ -1760,6 +1772,8 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
@@ -1988,6 +2002,8 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)

@@ -834,7 +834,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
             pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
-            #ToDo: change parameter to ComboBox of blank, Pawley, LeBail
             pawlRef.SetValue(generalData['doPawley'])
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
@@ -5556,7 +5555,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
             refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'LeBail':False,
+                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'LeBail':False,'newLeBail':True,
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
                 'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
@@ -5613,7 +5612,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail',]
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
@@ -5680,7 +5679,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 elif name == 'Twins':
                                     UseList[item]['Twins'][0][1][1] = copyDict['Twins']
                                 else:
-                                    UseList[item][name][1] = copy.deepcopy(copyDict[name])
+                                    try:
+                                        UseList[item][name][1] = copy.deepcopy(copyDict[name])
+                                    except KeyError:
+                                        continue
                             elif name in ['Size','Mustrain']:
                                 UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
                                 UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
@@ -5757,7 +5759,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         newList = TextList[1:]
                     for histoName in newList:
                         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-                        UseList[histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,
+                        UseList[histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -5992,11 +5994,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnDelResRB(event):
                 Obj = event.GetEventObject()
                 RBId = Indx[Obj.GetId()]
-                RBData['Residue'][RBId]['useCount'] -= 1
                 RBObjs = data['RBModels']['Residue']
                 for rbObj in RBObjs:
                     if RBId == rbObj['RBId']:
-                       data['RBModels']['Residue'].remove(rbObj)                 
+                        RBData['Residue'][RBId]['useCount'] -= 1
+                        data['RBModels']['Residue'].remove(rbObj)                 
                 G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(FillRigidBodyGrid,True)
                 

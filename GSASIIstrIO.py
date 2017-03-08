@@ -2773,13 +2773,15 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 except KeyError:                        
                     #skip if histogram not included e.g. in a sequential refinement
                     continue
-                print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                print >>pFile,135*'='
                 hapData = HistoPhase[histogram]
                 hId = Histogram['hId']
                 Histogram['Residuals'][str(pId)+'::Name'] = phase
                 pfx = str(pId)+':'+str(hId)+':'
                 hfx = ':%s:'%(hId)
+                if pfx+'Nref' not in Histogram['Residuals']:    #skip not used phase in histogram
+                    continue
+                print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
+                print >>pFile,135*'='
                 if 'PWDR' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])

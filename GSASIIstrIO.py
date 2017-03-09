@@ -2335,7 +2335,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])                        
                 if resetRefList and hapDict[pfx+'newLeBail']:
-                    if hapData.get('LeBail',False):         #stop regeneating reflections for LeBail
+                    if hapData.get('LeBail',True):         #stop regeneating reflections for LeBail
                         hapData['newLeBail'] = False
                     refList = []
                     Uniq = []

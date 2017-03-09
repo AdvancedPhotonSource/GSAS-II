@@ -848,7 +848,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
-    time0 = time.time()
+#    time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
     blkSize = 32       #no. of reflections in a block - optimized for speed
@@ -940,7 +940,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                             fbs[0,nxs]*np.array([np.sum(dfbdba.T*dBabdA,axis=0),np.sum(-dfbdba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])).T
 #        GSASIIpath.IPyBreak()
         iBeg += blkSize
-    print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
+#    print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -1077,7 +1077,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfbdua = np.sum(-Hij[nxs,:,:,nxs,:]*fbm[:,:,:,:,nxs],axis=2)
         #accumulate derivatives    
         dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/Nops,axis=0) #ok
-        dFdx[iBeg:iFin] =  2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)        #ok
+        dFdx[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)         #ok
         dFdMx[:,iBeg:iFin,:] = 2.*(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx)                       #problems
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)              #ok
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)      #problems U12 & U23 in sarc

@@ -207,6 +207,10 @@ def SetDefaultSASDModel():
         'Current':'Size dist.','BackFile':'',
         }
         
+def SetDefaultREFDModel():
+    'Fills in default items for the SASD Models dictionary'    
+    return {'Back':[0.0,False],'Layers':[{'Thickness':[1000.,False],'Name':'vacuum'},],'BackFile':'',}
+        
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
     return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}}}

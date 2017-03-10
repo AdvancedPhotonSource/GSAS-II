@@ -1176,7 +1176,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
                         at[cs] = Sytsym
                         xId,xCoef = G2spc.GetCSxinel(at[cs])
-                    xId,xCoef = G2spc.GetCSxinel(at[cs])
                     names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
                     equivs = [[],[],[]]
                     for j in range(3):
@@ -1200,7 +1199,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                             Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
                             at[cs] = Sytsym
                             uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
-                        uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                         names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
                             pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
                         equivs = [[],[],[],[],[],[]]
@@ -1214,7 +1212,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 coef = equiv[0][1]
                                 for eqv in equiv[1:]:
                                     eqv[1] /= coef
-                                G2mv.StoreEquivalence(name,equiv[1:])
+                                    G2mv.StoreEquivalence(name,(eqv,))
                 if 'M' in at[ct+1]:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(at[cx:cx+3],SGData)
                     mId,mCoef = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
@@ -1283,7 +1281,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                         coef = equiv[0][1]
                                         for eqv in equiv[1:]:
                                             eqv[1] /= coef
-                                        G2mv.StoreEquivalence(name,equiv[1:])
+                                            G2mv.StoreEquivalence(name,(eqv,))
                             maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
             textureData = General['SH Texture']
             if textureData['Order'] and not seqRef:

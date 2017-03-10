@@ -2059,8 +2059,8 @@ def UpdateRigidBodies(G2frame,data):
             
         #ResidueRB.DestroyChildren() # bad, deletes scrollbars on Mac!
         if ResidueRB.GetSizer():
-            ResidueRB.DestroyChildren()
-#            ResidueRB.GetSizer().Clear(True)
+#            ResidueRB.DestroyChildren()
+            ResidueRB.GetSizer().Clear(True)
             
         ResidueRBDisplay = wx.Panel(ResidueRB)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)

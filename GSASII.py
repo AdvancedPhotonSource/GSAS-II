@@ -216,7 +216,7 @@ class GSASII(wx.Frame):
         item = parent.AppendMenu(
             wx.ID_ANY, 'Expand tree items', expandmenu, 
             help='Expand items of type in GSAS-II data tree')
-        for s in 'all','IMG','PWDR','PDF','HKLF','SASD':
+        for s in 'all','IMG','PWDR','PDF','HKLF','SASD','REFD':
             if s == 'all':
                 help = 'Expand all items in GSAS-II data tree'
             else:
@@ -227,7 +227,7 @@ class GSASII(wx.Frame):
         item = parent.AppendMenu(
             wx.ID_ANY, 'Move tree items', movemenu, 
             help='Move items of type items to end of GSAS-II data tree')
-        for s in 'IMG','PWDR','PDF','HKLF','SASD','Phase':
+        for s in 'IMG','PWDR','PDF','HKLF','SASD','REFD','Phase':
             help = 'Move '+s+' type items to end of GSAS-II data tree'
             item = movemenu.Append(wx.ID_ANY,kind=wx.ITEM_NORMAL,text=s,help=help)
             self.Bind(wx.EVT_MENU,self.MoveTreeItems,id=item.GetId())
@@ -279,6 +279,8 @@ class GSASII(wx.Frame):
         self._init_Import_routines('pwd',self.ImportPowderReaderlist,'Powder_Data')
         self.ImportSmallAngleReaderlist = []
         self._init_Import_routines('sad',self.ImportSmallAngleReaderlist,'SmallAngle_Data')
+        self.ImportReflectometryReaderlist = []
+        self._init_Import_routines('rfd',self.ImportReflectometryReaderlist,'Reflectometry_Data')
         self.ImportImageReaderlist = []
         self._init_Import_routines('img',self.ImportImageReaderlist,'Images')
         self.ImportMenuId = {}
@@ -372,8 +374,8 @@ class GSASII(wx.Frame):
         '''Used for all imports, including Phases, datasets, images...
 
         Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
-        :meth:`GSASII.OnImportSfact`, :meth:`GSASII.OnImportPowder` and
-        :meth:`GSASII.OnImportSmallAngle`
+        :meth:`GSASII.OnImportSfact`, :meth:`GSASII.OnImportPowder`,
+        :meth:`GSASII.OnImportSmallAngle` and :meth:'GSASII.OnImportReflectometry`
 
         Uses reader_objects subclassed from :class:`GSASIIIO.ImportPhase`,
         :class:`GSASIIIO.ImportStructFactor`,
@@ -1970,6 +1972,120 @@ class GSASII(wx.Frame):
             
         if not newHistList: return # somehow, no new histograms
         return # success
+        
+    def _Add_ImportMenu_reflectometry(self,parent):
+        '''configure the reflectometry Data menus accord to the readers found in _init_Imports
+        '''
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'Reflectometry Data',
+            submenu, help='Import reflectometry data')
+        for reader in self.ImportReflectometryReaderlist:
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
+        # item = submenu.Append(wx.ID_ANY,
+        #     help='Import reflectometry data, use file to try to determine format',
+        #     kind=wx.ITEM_NORMAL,text='guess format from file')
+        # self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
+        
+    def OnImportReflectometry(self,event):
+        '''Called in response to an Import/Small Angle Data/... menu item
+        to read a small angle diffraction data set. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        '''
+        
+        def GetREFDIparm(reader):
+            parm = reader.instdict
+            Iparm = {'Type':[parm['type'],parm['type'],0],'Lam':[parm['wave'],
+                parm['wave'],0],'Azimuth':[0.,0.,0]}           
+            return Iparm,{}
+            
+        # get a list of existing histograms
+        REFDlist = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name.startswith('REFD ') and name not in REFDlist:
+                    REFDlist.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        # look up which format was requested
+        reqrdr = self.ImportMenuId.get(event.GetId())  
+        rdlist = self.OnImportGeneric(
+            reqrdr,self.ImportReflectometryReaderlist,'Reflectometry Data',multiple=True)
+        if len(rdlist) == 0: return
+        self.CheckNotebook()
+        newHistList = []
+        self.EnablePlot = False
+        for rd in rdlist:
+            HistName = rd.idstring
+            HistName = 'REFD '+HistName
+            # make new histogram names unique
+            HistName = G2obj.MakeUniqueLabel(HistName,REFDlist)
+            print 'Read reflectometry data '+HistName+ \
+                ' from file '+self.lastimport
+            # data are read, now store them in the tree
+            Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+            Iparm1,Iparm2 = GetREFDIparm(rd)
+#            if 'T' in Iparm1['Type'][0]:
+#                if not rd.clockWd and rd.GSAS:
+#                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
+#                cw = np.diff(rd.powderdata[0])
+#                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
+#                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
+#                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
+#                if 'Itype' in Iparm2:
+#                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
+#                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
+#                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
+#                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
+#                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
+#                    var = 1./rd.powderdata[2][Ibeg:Ifin]
+#                    var += WYI*rd.powderdata[1]**2
+#                    var /= YI**2
+#                    rd.powderdata[2] = 1./var
+#                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
+#                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
+#                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
+            Tmin = min(rd.reflectometrydata[0])
+            Tmax = max(rd.reflectometrydata[0])
+            valuesdict = {
+                'wtFactor':1.0,
+                'Dummy':False,
+                'ranId':ran.randint(0,sys.maxint),
+                }
+            rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
+            self.PatternTree.SetItemPyData(Id,[valuesdict,rd.reflectometrydata])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Comments'),
+                rd.comments)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Limits'),
+                [(Tmin,Tmax),[Tmin,Tmax]])
+            self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
+                [Iparm1,Iparm2])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Sample Parameters'),
+                rd.Sample)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultREFDModel())
+            newHistList.append(HistName)
+        else:
+            self.EnablePlot = True
+            self.PatternTree.Expand(Id)
+            self.PatternTree.SelectItem(Id)
+            
+        if not newHistList: return # somehow, no new histograms
+        return # success
 
     def OnMacroRecordStatus(self,event,setvalue=None):
         '''Called when the record macro menu item is used which toggles the
@@ -2258,6 +2374,7 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
         self._Add_ImportMenu_smallangle(Import)
+        self._Add_ImportMenu_reflectometry(Import)
 
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
@@ -3144,7 +3261,7 @@ class GSASII(wx.Frame):
         TextList = []
         DelList = []
         DelItemList = []
-        nItems = {'PWDR':0,'SASD':0,'IMG':0,'HKLF':0,'PDF':0}
+        nItems = {'PWDR':0,'SASD':0,'REFD':0,'IMG':0,'HKLF':0,'PDF':0}
         PDFnames = []
         if self.PatternTree.GetCount():
             item, cookie = self.PatternTree.GetFirstChild(self.root)
@@ -3154,6 +3271,7 @@ class GSASII(wx.Frame):
                     'Restraints','Phases','Rigid bodies'] and 'Sequential' not in name:
                     if 'PWDR' in name[:4]: nItems['PWDR'] += 1
                     if 'SASD' in name[:4]: nItems['SASD'] += 1
+                    if 'REFD' in name[:4]: nItems['REFD'] += 1
                     if 'IMG' in name[:3]:  nItems['IMG'] += 1
                     if 'HKLF' in name[:4]: nItems['HKLF'] += 1
                     if 'PDF' in name[:3]:
@@ -3177,6 +3295,7 @@ class GSASII(wx.Frame):
                         if itemName in DelList:
                             if 'PWDR' in itemName[:4]: nItems['PWDR'] -= 1
                             elif 'SASD' in itemName[:4]: nItems['SASD'] -= 1
+                            elif 'REFD' in itemName[:4]: nItems['REFD'] -= 1
                             elif 'IMG' in itemName[:3]: nItems['IMG'] -= 1
                             elif 'HKLF' in itemName[:4]: nItems['HKLF'] -= 1
                             elif 'PDF' in itemName[:3]: nItems['PDF'] -= 1
@@ -3254,7 +3373,7 @@ class GSASII(wx.Frame):
         
     def StartProject(self):
         '''Opens a GSAS-II project file & selects the 1st available data set to 
-        display (PWDR, HKLF or SASD)
+        display (PWDR, HKLF, REFD or SASD)
         '''
         
         Id = 0
@@ -3266,7 +3385,7 @@ class GSASII(wx.Frame):
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         while item and not Id:
             name = self.PatternTree.GetItemText(item)
-            if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD',]:
+            if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD','REFD']:
                 Id = item
             elif name == "Phases":
                 phaseId = item

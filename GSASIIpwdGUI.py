@@ -43,6 +43,7 @@ import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
+GkDelta = unichr(0x0394)
 Pwr10 = unichr(0x0b9)+unichr(0x0b0)
 Pwr20 = unichr(0x0b2)+unichr(0x0b0)
 Pwrm1 = unichr(0x207b)+unichr(0x0b9)
@@ -208,8 +209,20 @@ def SetDefaultSASDModel():
         }
         
 def SetDefaultREFDModel():
-    'Fills in default items for the SASD Models dictionary'    
-    return {'Back':[0.0,False],'Layers':[{'Thickness':[1000.,False],'Name':'vacuum'},],'BackFile':'',}
+    '''Fills in default items for the REFD Models dictionary
+    Defined as follows for each layer:
+        Name: name of substance
+        Thick: thickness of layer in Angstroms
+        Rough: upper surface roughness for layer
+        Penetration: mixing of layer substance into layer above
+        DenMul: multiplier for layer scattering density (default = 1.0)
+    Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance
+    Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance
+    '''
+    return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},
+        {'Name':'vacuum','Thick':[1.e6,False],'Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False]},],
+        'Zero':'Top','DualFitFile':'','FltBack':[0.0,False],'DualFltBack':[0.0,False],
+        'Scale':[1.0,False],'DualScale':[1.0,False],'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.001}
         
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
@@ -1374,7 +1387,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
 ################################################################################           
        
 def UpdateInstrumentGrid(G2frame,data):
-    '''respond to selection of PWDR/SASD Instrument Parameters
+    '''respond to selection of PWDR/SASD/REFD Instrument Parameters
     data tree item.
     '''
     if 'Bank' not in data:  #get it from name; absent for default parms selection 
@@ -1911,7 +1924,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 refFlgElem.append(None)
             else:                                   #time of flight (neutrons)
                 pass                                #for now
-        elif 'L' in insVal['Type']:
+        elif insVal['Type'][0] in ['L','R',]:
             if 'C' in insVal['Type']:        
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
@@ -2451,7 +2464,7 @@ def UpdateSampleGrid(G2frame,data):
         
     mainSizer.Add(parmSizer,1,wx.EXPAND)
     mainSizer.Add((0,5),0)    
-    if 'SASD' in histName:
+    if histName[:4] in ['SASD',]:
         rho = [0.,0.]
         anomrho = [0.,0.]
         mu = 0.
@@ -3603,11 +3616,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
 ################################################################################
-#####  SASD Substances 
+#####  SASD/REFD Substances 
 ################################################################################
            
 def UpdateSubstanceGrid(G2frame,data):
-    '''respond to selection of SASD Substance data tree item.
+    '''respond to selection of SASD/REFD Substance data tree item.
     '''
     import Substances as substFile
     
@@ -4595,6 +4608,110 @@ def UpdateModelsGrid(G2frame,data):
     backSizer.Add(backFile)    
     mainSizer.Add(backSizer)
 
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetAutoLayout(1)
+    G2frame.dataDisplay.SetupScrolling()
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[0] += 25
+    G2frame.dataFrame.setSizePosLeft(Size)    
+    
+################################################################################
+#####  REFD Models 
+################################################################################           
+       
+def UpdateREFDModelsGrid(G2frame,data):
+    '''respond to selection of REFD Models data tree item.
+    '''
+    
+    def ControlSizer():
+        
+        def OnRefPos(event):
+            data['Zero'] = refpos.GetValue()
+            
+        def OnMinSel(event):
+            data['Minimizer'] = minSel.GetValue()
+            
+        controlSizer = wx.BoxSizer(wx.VERTICAL)
+        resol = wx.BoxSizer(wx.HORIZONTAL)
+        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Instrument resolution (%'+GkDelta+'Q/Q): '),0,WACV)
+        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,2),typeHint=float),0,WACV)
+        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Zero position location: '),0,WACV)
+        poslist = ['Top','Bottom']
+        refpos = wx.ComboBox(G2frame.dataDisplay,value=data['Zero'],choices=poslist,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        refpos.Bind(wx.EVT_COMBOBOX, OnRefPos)
+        resol.Add(refpos,0,WACV)
+        controlSizer.Add(resol,0,WACV)
+        minimiz = wx.BoxSizer(wx.HORIZONTAL)
+        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
+        minlist = ['LMLS','Global','BFGS',]
+        minSel = wx.ComboBox(G2frame.dataDisplay,value=data['Minimizer'],choices=minlist,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        minSel.Bind(wx.EVT_COMBOBOX, OnMinSel)
+        minimiz.Add(minSel,0,WACV)
+        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Tolerance: '),0,WACV)
+        minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Toler',nDig=(10,1,'g'),typeHint=float),0,WACV)
+    #Recomb':0.5,  needed??     
+        controlSizer.Add(minimiz,0,WACV)
+        return controlSizer
+    
+    def OverallSizer():
+#'DualFitFile':'', 'DualFltBack':[0.0,False],'DualScale':[1.0,False] future for neutrons - more than one?
+        
+        def OnScaleRef(event):
+            data['Scale'][1] = scaleref.GetValue()
+            
+        def OnBackRef(event):
+            data['FltBack'][1] = backref.GetValue()
+            
+        overall = wx.BoxSizer(wx.HORIZONTAL)
+        overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Scale: '),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Scale'],0,nDig=(10,2),typeHint=float),0,WACV)
+        scaleref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        scaleref.SetValue(data['Scale'][1])
+        scaleref.Bind(wx.EVT_CHECKBOX, OnScaleRef)
+        overall.Add(scaleref,0,WACV)
+        overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat bkg.: '),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['FltBack'],0,nDig=(10,2),typeHint=float),0,WACV)
+        backref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        backref.SetValue(data['FltBack'][1])
+        backref.Bind(wx.EVT_CHECKBOX, OnBackRef)
+        overall.Add(backref,0,WACV)        
+        return overall
+        
+    def LayerSizer():
+    #'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},
+#        {'Name':'vacuum','Thick':[1.e6,False],'Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False]}
+        layerSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        
+        return layerSizer
+        
+    
+    Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
+    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+    Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
+    ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataFrame.SetLabel('Modelling')
+    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Reflectometry fitting for: '+Name),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Controls:'),0,WACV)
+    mainSizer.Add(ControlSizer())
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)   
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Global parameters:'),0,WACV)
+    mainSizer.Add(OverallSizer()) 
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layers:'),0,WACV)
+    mainSizer.Add(LayerSizer())
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetAutoLayout(1)

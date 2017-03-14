@@ -4453,7 +4453,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #end patches
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    if kind in ['PWDR','SASD']:
+    if kind in ['PWDR','SASD','REFD']:
         SetDataMenuBar(G2frame,G2frame.dataFrame.PWDRMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
@@ -4531,7 +4531,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
     G2frame.PatternId = item
-    if kind in ['PWDR','SASD']:
+    if kind in ['PWDR','SASD','REFD',]:
         NewPlot = True
         if 'xylim' in dir(G2frame):
             NewPlot = False
@@ -4743,6 +4743,11 @@ def SelectDataTreeItem(G2frame,item):
             #for i in G2frame.ExportPattern: i.Enable(True)
             if G2frame.EnablePlot:
                 UpdatePWHKPlot(G2frame,'SASD',item)
+        elif G2frame.PatternTree.GetItemText(item).startswith('REFD '):
+            G2frame.PatternId = item
+            #for i in G2frame.ExportPattern: i.Enable(True)
+            if G2frame.EnablePlot:
+                UpdatePWHKPlot(G2frame,'REFD',item)
         elif G2frame.PatternTree.GetItemText(item).startswith('HKLF '):
             G2frame.Sngl = True
             UpdatePWHKPlot(G2frame,'HKLF',item)
@@ -4842,9 +4847,12 @@ def SelectDataTreeItem(G2frame,item):
     elif G2frame.PatternTree.GetItemText(item) == 'Models':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateModelsGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='SASD')
-        if len(data['Size']['Distribution']):
+        if prfx1 == 'SASD':
+            G2pdG.UpdateModelsGrid(G2frame,data)
+        elif prfx1 == 'REFD':
+            G2pdG.UpdateREFDModelsGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType=prfx1)
+        if prfx1 == 'SASD' and len(data['Size']['Distribution']):
             G2plt.PlotSASDSizeDist(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Substances':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)

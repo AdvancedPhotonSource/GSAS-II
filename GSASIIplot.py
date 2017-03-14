@@ -1218,7 +1218,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         return
 #patch
     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
-    if 'Offset' not in data[0] and plotType in ['PWDR','SASD']:     #plot offset data
+    if 'Offset' not in data[0] and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
         data[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
             'refDelt':0.1*Ymax,})
@@ -1236,7 +1236,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
             newPlot = True
-        elif event.key == 'e' and 'SASD' in plottype:
+        elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'b':
             G2frame.SubBack = not G2frame.SubBack
@@ -1303,7 +1303,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 newPlot = True
                 G2frame.plotStyle['qPlot'] = not G2frame.plotStyle['qPlot']
                 G2frame.plotStyle['dPlot'] = False
-            elif 'SASD' in plottype:
+            elif plottype in ['SASD','REFD']:
                 newPlot = True
                 G2frame.plotStyle['sqPlot'] = not G2frame.plotStyle['sqPlot']
         elif event.key == 't' and 'PWDR' in plottype:
@@ -1363,7 +1363,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
                     except ValueError:      #avoid bad value in asin beyond upper limit
                         pass
-                elif 'SASD' in plottype:
+                elif plottype in ['SASD','REFD']:
                     q = xpos
                     dsp = 2.*np.pi/q
                 elif G2frame.plotStyle['dPlot']:
@@ -1389,8 +1389,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                             else:
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
-                        elif 'SASD' in plottype:
+                        elif plottype == 'SASD':
                             G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
+                        elif plottype == 'REFD':
+                            G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                     else:
                         if G2frame.plotStyle['sqrtPlot']:
                             G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
@@ -1807,7 +1809,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if not new:
         G2frame.xylim = limits
     else:
-        if plottype == 'SASD':
+        if plottype in ['SASD','REFD']:
             G2frame.logPlot = True
             G2frame.ErrorBars = True
         newPlot = True
@@ -1854,7 +1856,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot','f: select data',
                         'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
-            elif 'SASD' in plottype:
+            elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
@@ -1874,7 +1876,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                         'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','f: select data',
                         'w: toggle divide by sig','+: no selection')
-            elif 'SASD' in plottype:
+            elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
@@ -1934,7 +1936,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
-    if G2frame.plotStyle['qPlot'] or 'SASD' in plottype and not G2frame.Contour:
+    if G2frame.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
     elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
         Plot.set_xlabel(r'$d, \AA$',fontsize=16)
@@ -1949,7 +1951,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if G2frame.Weight:
         if 'PWDR' in plottype:
             Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
-        elif 'SASD' in plottype:
+        elif plottype in ['SASD','REFD']:
             Plot.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:
@@ -1958,12 +1960,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
                 else:
                     Plot.set_ylabel(r'$Intensity$',fontsize=16)
-            elif 'SASD' in plottype:
-                if G2frame.sqPlot:
+            elif plottype == 'SASD':
+                if G2frame.plotStyle['sqPlot']:
                     Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
                 else:
                     Plot.set_ylabel(r'$Intensity,\ cm^{-1}$',fontsize=16)
-        else:
+            elif plottype == 'REFD':
+                if G2frame.plotStyle['sqPlot']:
+                    Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
+                else:
+                    Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
+        else:       #neutron TOF
             if G2frame.plotStyle['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
             else:
@@ -2001,9 +2008,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 np.seterr(invalid=olderr['invalid'])
             else:
                 Y = xye[1]+offsetY*N*Ymax/100.0
-        elif 'SASD' in plottype:
+        elif plottype in ['SASD','REFD']:
             B = xye[5]
-            if G2frame.sqPlot:
+            if G2frame.plotStyle['sqPlot']:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)*X**4
             else:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)
@@ -2035,7 +2042,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 pP = '+'
             else:
                 pP = ''
-            if 'SASD' in plottype and G2frame.logPlot:
+            if plottype in ['SASD','REFD'] and G2frame.logPlot:
                 X *= (1.01)**(offsetX*N)
             else:
                 xlim = Plot.get_xlim()
@@ -2058,8 +2065,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:
                         W = xye[4]+offsetY*N*Ymax/100.0
                         D = xye[5]-Pattern[0]['delOffset']  #powder background
-                elif 'SASD' in plottype:
-                    if G2frame.sqPlot:
+                elif plottype in ['SASD','REFD']:
+                    if G2frame.plotStyle['sqPlot']:
                         W = xye[4]*X**4
                         Z = xye[3]*X**4
                         B = B*X**4
@@ -2082,7 +2089,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.plot(X,Y,colors[N%6]+pP,picker=3.,clip_on=Clip_on)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)     #background
-                    elif 'SASD' in plottype:
+                    elif plottype in ['SASD','REFD']:
                         Plot.set_xscale("log",nonposx='mask')
                         Ibeg = np.searchsorted(X,limits[1][0])
                         Ifin = np.searchsorted(X,limits[1][1])
@@ -2095,7 +2102,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         else:
                             Plot.set_yscale("log",nonposy='mask')
                             if G2frame.ErrorBars:
-                                if G2frame.sqPlot:
+                                if G2frame.plotStyle['sqPlot']:
                                     Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                         ecolor=colors[N%6],picker=3.,clip_on=Clip_on)
                                 else:
@@ -2165,12 +2172,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
-                    elif 'SASD' in plottype:
+                    elif plottype in ['SASD','REFD']:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
                 else:
                     if 'PWDR' in plottype:
                         Plot.plot(X,Y,colors[N%6],picker=False)
-                    elif 'SASD' in plottype:
+                    elif plottype in ['SASD','REFD']:
                         Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             

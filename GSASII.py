@@ -380,7 +380,8 @@ class GSASII(wx.Frame):
         Uses reader_objects subclassed from :class:`GSASIIIO.ImportPhase`,
         :class:`GSASIIIO.ImportStructFactor`,
         :class:`GSASIIIO.ImportPowderData`,
-        :class:`GSASIIIO.ImportSmallAngleData` or
+        :class:`GSASIIIO.ImportSmallAngleData`
+        :class:`GSASIIIO.ImportReflectometryData` or
         :class:`GSASIIIO.ImportImage`.
         If a specific reader is specified, only that method will be called,
         but if no reader is specified, every one that is potentially
@@ -1944,6 +1945,7 @@ class GSASII(wx.Frame):
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
+                'Offset':[0.0,0.0],
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.smallangledata])
@@ -2058,6 +2060,7 @@ class GSASII(wx.Frame):
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
+                'Offset':[0.0,0.0],
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.reflectometrydata])
@@ -2500,7 +2503,7 @@ class GSASII(wx.Frame):
         self.GSASprojectfile = ''
         self.undofile = ''
         self.TreeItemDelete = False
-        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False}
+        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False}
         self.Weight = False
         self.IfPlot = False
         self.DDShowAll = False
@@ -2522,7 +2525,6 @@ class GSASII(wx.Frame):
         self.Projection = 'equal area'
         self.logPlot = False
         self.plusPlot = True
-        self.sqPlot = False
         self.ErrorBars = False
         self.Contour = False
         self.Legend = False

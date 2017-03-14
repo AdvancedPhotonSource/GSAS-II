@@ -1749,6 +1749,40 @@ class ImportSmallAngleData(ImportBaseclass):
         self.instdict = {} # place items here that will be transferred to the instrument parameters
 
 ######################################################################
+class ImportReflectometryData(ImportBaseclass):
+    '''Defines a base class for the reading of files with small angle data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.reflectometryentry = ['',None,None] #  (filename,Pos,Bank)
+        self.reflectometrydata = [] # SASD dataset
+        '''A small angle data set is a list with items [x,y,w,yc,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yd), # obs-calc profiles
+                np.array(yb), # preset bkg
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = G2pdG.SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+######################################################################
 class ImportImage(ImportBaseclass):
     '''Defines a base class for the reading of images
 

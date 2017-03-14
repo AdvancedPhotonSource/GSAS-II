@@ -3632,7 +3632,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Limits = calcControls[hfx+'Limits']
             x,y,w,yc,yb,yd = Histogram['Data']
             xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])
+            xF = np.searchsorted(x,Limits[1])+1
             dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
         elif 'HKLF' in histogram[:4]:
@@ -3690,7 +3690,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             W = wtFactor*w
             dy = y-yc
             xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])
+            xF = np.searchsorted(x,Limits[1])+1
             dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
@@ -3766,7 +3766,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             yb *= 0.0
             yd *= 0.0
             xB = np.searchsorted(x,Limits[0])
-            xF = np.searchsorted(x,Limits[1])
+            xF = np.searchsorted(x,Limits[1])+1
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]

@@ -336,7 +336,7 @@ def CalcPDF(data,inst,limits,xydata):
     
     qLimits = data['QScaleLim']
     minQ = np.searchsorted(Qpoints,qLimits[0])
-    maxQ = np.searchsorted(Qpoints,qLimits[1])
+    maxQ = np.searchsorted(Qpoints,qLimits[1])+1
     newdata = []
     if len(IofQ) < 3:
         xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],'']
@@ -426,7 +426,7 @@ def PDFPeakFit(peaks,data):
             
     newpeaks = copy.copy(peaks)
     iBeg = np.searchsorted(data[1][0],newpeaks['Limits'][0])
-    iFin = np.searchsorted(data[1][0],newpeaks['Limits'][1])
+    iFin = np.searchsorted(data[1][0],newpeaks['Limits'][1])+1
     X = data[1][0][iBeg:iFin]
     Y = data[1][1][iBeg:iFin]
     parmDict,varyList = MakeParms(peaks)
@@ -476,7 +476,7 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     dq = Qpoints[1]-Qpoints[0]
     nR = len(Qdata)
     R = 0.5*np.pi*np.linspace(0,nR,nR)/(4.*maxQ)
-    iFin = np.searchsorted(R,RDFcontrols['maxR'])
+    iFin = np.searchsorted(R,RDFcontrols['maxR'])+1
     bBut,aBut = signal.butter(4,0.01)
     Qsmooth = signal.filtfilt(bBut,aBut,Qdata)
 #    auxPlot.append([Qpoints,Qdata,'interpolate:'+RDFcontrols['Smooth']])
@@ -1772,7 +1772,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     yd *= 0.
     cw = x[1:]-x[:-1]
     xBeg = np.searchsorted(x,Limits[0])
-    xFin = np.searchsorted(x,Limits[1])
+    xFin = np.searchsorted(x,Limits[1])+1
     bakType,bakDict,bakVary = SetBackgroundParms(Background)
     dataType,insDict,insVary = SetInstParms(Inst)
     peakDict,peakVary = SetPeaksParms(Inst['Type'][0],Peaks)
@@ -1979,7 +1979,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n': 
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
-        iFin = np.searchsorted(x0,limits[1])
+        iFin = np.searchsorted(x0,limits[1])+1
         if iFin-iBeg > 20000:
             iFin = iBeg+20000
         Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
@@ -2116,7 +2116,7 @@ def SetPWDRscan(inst,limits,profile):
     wave = G2mth.getMeanWave(inst)
     x0 = profile[0]
     iBeg = np.searchsorted(x0,limits[0])
-    iFin = np.searchsorted(x0,limits[1])
+    iFin = np.searchsorted(x0,limits[1])+1
     if iFin-iBeg > 20000:
         iFin = iBeg+20000
     Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
@@ -2242,7 +2242,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     profile[4] = np.zeros(len(profile[0]))
     profile[5] = np.zeros(len(profile[0]))
     iBeg = np.searchsorted(x0,limits[0])
-    iFin = np.searchsorted(x0,limits[1])
+    iFin = np.searchsorted(x0,limits[1])+1
     if iFin-iBeg > 20000:
         iFin = iBeg+20000
     Nspec = 20001       

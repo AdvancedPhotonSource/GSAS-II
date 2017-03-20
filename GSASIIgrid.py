@@ -143,8 +143,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-    wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
-] = [wx.NewId() for item in range(12)]
+    wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,wxID_RELOADSUBSTANCES
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,wxID_MERGEHKL,
 ] = [wx.NewId() for item in range(5)]
@@ -2148,6 +2148,8 @@ class DataFrame(wx.Frame):
         self.SubstanceMenu.Append(menu=self.SubstanceEdit, title='Edit substance')
         self.SubstanceEdit.Append(id=wxID_LOADSUBSTANCE, kind=wx.ITEM_NORMAL,text='Load substance',
             help='Load substance from file')
+        self.SubstanceEdit.Append(id=wxID_RELOADSUBSTANCES, kind=wx.ITEM_NORMAL,text='Reload substances',
+            help='Reload all substances from file')
         self.SubstanceEdit.Append(id=wxID_ADDSUBSTANCE, kind=wx.ITEM_NORMAL,text='Add substance',
             help='Add new substance to list')
         self.SubstanceEdit.Append(id=wxID_COPYSUBSTANCE, kind=wx.ITEM_NORMAL,text='Copy substances',
@@ -2180,6 +2182,24 @@ class DataFrame(wx.Frame):
             help='Copy model refinement flags to other histograms')
         self.PostfillDataMenu()
         
+        # REFD/ Models
+        self.REFDModelMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.REFDModelMenu)
+        self.REFDModelEdit = wx.Menu(title='')
+        self.REFDModelMenu.Append(menu=self.REFDModelEdit, title='Models')
+        self.REFDModelEdit.Append(id=wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
+            help='Fit model parameters to data')
+        self.REFDUndo = self.REFDModelEdit.Append(id=wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
+            help='Undo model fit')
+        self.REFDUndo.Enable(False)            
+        self.REFDModelEdit.Append(id=wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Sequential fit',
+            help='Sequential fit of model parameters to all REFD data')
+        self.REFDModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
+            help='Copy model parameters to other histograms')
+        self.REFDModelEdit.Append(id=wxID_MODELCOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
+            help='Copy model refinement flags to other histograms')
+        self.PostfillDataMenu()
+
         # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ImageMenu)

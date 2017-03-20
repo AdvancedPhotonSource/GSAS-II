@@ -13,28 +13,15 @@
 # $Id$
 ########### SVN repository information ###################
 import os
-import sys
 import math
-import time
 
 import numpy as np
-import scipy as sp
-import numpy.linalg as nl
-from numpy.fft import ifft, fft, fftshift
 import scipy.special as scsp
-import scipy.interpolate as si
-import scipy.stats as st
 import scipy.optimize as so
 #import pdb
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-import GSASIIElem as G2elem
-import GSASIIgrid as G2gd
-import GSASIIIO as G2IO
-import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 
 # trig functions in degrees

@@ -59,6 +59,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
 ateln2 = 8.0*math.log(2.0)
+nxs = np.newaxis
 
 ################################################################################
 #### Powder utilities
@@ -1906,6 +1907,122 @@ def calcIncident(Iparm,xdata):
     WYI = np.sum(M*DYI,axis=0)
     WYI = np.where(WYI>0.,WYI,0.)
     return YI,WYI
+    
+################################################################################
+# Reflectometry calculations
+################################################################################
+
+def REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data):
+    
+    Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    iBeg = np.searchsorted(Q,Qmin)
+    iFin = np.searchsorted(Q,Qmax)+1    #include last point
+    Ib[:] = data['FltBack'][0]
+    Ic[:] = 0
+    Scale = data['Scale'][0]
+    Nlayers = len(data['Layers'])
+    depth = np.zeros(Nlayers)
+    rho = np.zeros(Nlayers)
+    irho = np.zeros(Nlayers)
+    sigma = np.zeros(Nlayers)
+    for ilayer,layer in enumerate(data['Layers']):
+        name = layer['Name']
+        if 'Thick' in layer:    #skips first & last layers
+            depth[ilayer] = layer['Thick'][0]
+        if 'Rough' in layer:    #skips first layer
+            sigma[ilayer] = layer['Rough'][0]
+        rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+        irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
+        A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+    Ic[iBeg:iFin] = (A**2+B**2)*Scale+Ib[iBeg:iFin]
+
+def abeles(kz, depth, rho, irho=0, sigma=0):
+    """
+    Optical matrix form of the reflectivity calculation.
+    O.S. Heavens, Optical Properties of Thin Solid Films
+    
+    Reflectometry as a function of kz for a set of slabs.
+
+    :Parameters:
+
+    *kz* : float[n] | |1/Ang|
+        Scattering vector $2\pi\sin(\theta)/\lambda$. This is $\tfrac12 Q_z$.
+    *depth* :  float[m] | |Ang|
+        thickness of each layer.  The thickness of the incident medium
+        and substrate are ignored.
+    *rho*, *irho* :  float[n,k] | |1e-6/Ang^2|
+        real and imaginary scattering length density for each layer for each kz
+        Note: absorption cross section mu = 2 irho/lambda for neutrons
+    *sigma* : float[m-1] | |Ang|
+        interfacial roughness.  This is the roughness between a layer
+        and the previous layer. The sigma array should have m-1 entries.
+
+    Slabs are ordered with the surface SLD at index 0 and substrate at
+    index -1, or reversed if kz < 0.
+    """
+    def calc(kz, depth, rho, irho, sigma):
+        if len(kz) == 0: return kz
+    
+        # Complex index of refraction is relative to the incident medium.
+        # We can get the same effect using kz_rel^2 = kz^2 + 4*pi*rho_o
+        # in place of kz^2, and ignoring rho_o
+        kz_sq = kz**2 + 4e-6*np.pi*rho[:,0]
+        k = kz
+    
+        # According to Heavens, the initial matrix should be [ 1 F; F 1],
+        # which we do by setting B=I and M0 to [1 F; F 1].  An extra matrix
+        # multiply versus some coding convenience.
+        B11 = 1
+        B22 = 1
+        B21 = 0
+        B12 = 0
+        for i in range(0, len(depth)-1):
+            k_next = np.sqrt(kz_sq - 4e-6*np.pi*(rho[:,i+1] + 1j*irho[:,i+1]))
+            F = (k - k_next) / (k + k_next)
+            F *= np.exp(-2*k*k_next*sigma[i]**2)
+            #print "==== layer",i
+            #print "kz:", kz
+            #print "k:", k
+            #print "k_next:",k_next
+            #print "F:",F
+            #print "rho:",rho[:,i+1]
+            #print "irho:",irho[:,i+1]
+            #print "d:",depth[i],"sigma:",sigma[i]
+            M11 = np.exp(1j*k*depth[i]) if i>0 else 1
+            M22 = np.exp(-1j*k*depth[i]) if i>0 else 1
+            M21 = F*M11
+            M12 = F*M22
+            C1 = B11*M11 + B21*M12
+            C2 = B11*M21 + B21*M22
+            B11 = C1
+            B21 = C2
+            C1 = B12*M11 + B22*M12
+            C2 = B12*M21 + B22*M22
+            B12 = C1
+            B22 = C2
+            k = k_next
+    
+        r = B12/B11
+        return np.real(r),np.imag(r)
+
+    if np.isscalar(kz): kz = np.asarray([kz], 'd')
+
+    m = len(depth)
+
+    # Make everything into arrays
+    depth = np.asarray(depth,'d')
+    rho = np.asarray(rho,'d')
+    irho = irho*np.ones_like(rho) if np.isscalar(irho) else np.asarray(irho,'d')
+    sigma = sigma*np.ones(m-1,'d') if np.isscalar(sigma) else np.asarray(sigma,'d')
+
+    # Repeat rho,irho columns as needed
+    if len(rho.shape) == 1:
+        rho = rho[None,:]
+        irho = irho[None,:]
+
+    return calc(kz, depth, rho, irho, sigma)
     
 ################################################################################
 # Stacking fault simulation codes

@@ -875,8 +875,8 @@ def HorizontalLine(sizer,parent):
     '''Draws a horizontal line as wide as the window.
     This shows up on the Mac as a very thin line, no matter what I do
     '''
-    line = wx.StaticLine(parent,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
-    sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+    line = wx.StaticLine(parent, size=(-1,3), style=wx.LI_HORIZONTAL)
+    sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
 
 ################################################################################
 class G2LoggedButton(wx.Button):

@@ -44,11 +44,13 @@ import GSASIIsasd as G2sasd
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 GkDelta = unichr(0x0394)
-Pwr10 = unichr(0x0b9)+unichr(0x0b0)
-Pwr20 = unichr(0x0b2)+unichr(0x0b0)
+Pwr10 = unichr(0x0b9)+unichr(0x2070)
+Pwr20 = unichr(0x0b2)+unichr(0x2070)
 Pwrm1 = unichr(0x207b)+unichr(0x0b9)
 Pwrm2 = unichr(0x207b)+unichr(0x0b2)
-Pwrm4 = unichr(0x207b)+unichr(0x2074)   #really -d but looks like -4 as a superscript
+Pwrm6 = unichr(0x207b)+unichr(0x2076)
+Pwrm4 = unichr(0x207b)+unichr(0x2074)
+Angstr = unichr(0x00c5)   
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
@@ -212,21 +214,23 @@ def SetDefaultREFDModel():
     '''Fills in default items for the REFD Models dictionary
     Defined as follows for each layer:
         Name: name of substance
-        Thick: thickness of layer in Angstroms
-        Rough: upper surface roughness for layer
-        Penetration: mixing of layer substance into layer above
+        Thick: thickness of layer in Angstroms (not present for top & bottom layers)
+        Rough: upper surface roughness for layer (not present for toplayer)
+        Penetration: mixing of layer substance into layer above-is this needed?
         DenMul: multiplier for layer scattering density (default = 1.0)
     Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance
     Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance
     '''
-    return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},
-        {'Name':'vacuum','Thick':[1.e6,False],'Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False]},],
-        'Zero':'Top','DualFitFile':'','FltBack':[0.0,False],'DualFltBack':[0.0,False],
-        'Scale':[1.0,False],'DualScale':[1.0,False],'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.001}
+    return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
+        {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
+        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top',                                 #globals
+        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.001,           #minimizer controls
+        'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
         
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
-    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}}}
+    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0,'XImag density':0.0},
+        'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':0.0}}}
 
 def GetFileList(G2frame,fileType):
     fileList = []
@@ -3624,19 +3628,8 @@ def UpdateSubstanceGrid(G2frame,data):
     '''
     import Substances as substFile
     
-    def OnLoadSubstance(event):
-        names = substFile.Substances.keys()
-        names.sort()
-        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', names, wx.CHOICEDLG_STYLE)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                name = names[dlg.GetSelection()]
-            else:
-                return
-        finally:
-            dlg.Destroy()
-        data['Substances'][name] = {'Elements':{},'Volume':1.0,'Density':1.0,
-            'Scatt density':0.0,'XAnom density':0.0,'XAbsorption':0.0}
+    def LoadSubstance(name):
+        
         subst = substFile.Substances[name]
         ElList = subst['Elements'].keys()
         for El in ElList:
@@ -3655,12 +3648,54 @@ def UpdateSubstanceGrid(G2frame,data):
                 data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
                 data['Substances'][name]['Density'] = \
                     G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
-            data['Substances'][name]['Scatt density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
-            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-            data['Substances'][name]['XAnom density'] = contrst
+            if 'X' in Inst['Type'][0]:
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            elif 'NC' in Inst['Type'][0]:
+                isotopes = Info['Isotopes'].keys()
+                isotopes.sort()
+                data['Substances'][name]['Elements'][El]['Isotope'] = isotopes[-1]
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            data['Substances'][name]['XAnom density'] = recontrst
             data['Substances'][name]['XAbsorption'] = absorb
-                         
+            data['Substances'][name]['XImag density'] = imcontrst
+            
+    def OnReloadSubstances(event):
+        
+        for name in data['Substances'].keys():
+            if name not in ['vacuum','unit scatter']:
+                if 'X' in Inst['Type'][0]:
+                    data['Substances'][name]['Scatt density'] = \
+                        G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                    recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                elif 'NC' in Inst['Type'][0]:
+                    data['Substances'][name]['Scatt density'] = \
+                        G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                    recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                data['Substances'][name]['XAnom density'] = recontrst
+                data['Substances'][name]['XAbsorption'] = absorb
+                data['Substances'][name]['XImag density'] = imcontrst
+        UpdateSubstanceGrid(G2frame,data)
+    
+    def OnLoadSubstance(event):
+        
+        names = substFile.Substances.keys()
+        names.sort()
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', names, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                name = names[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+            
+        data['Substances'][name] = {'Elements':{},'Volume':1.0,'Density':1.0,
+            'Scatt density':0.0,'Real density':0.0,'XAbsorption':0.0,'XImag density':0.0}
+        LoadSubstance(name)            
         UpdateSubstanceGrid(G2frame,data)
         
     def OnCopySubstance(event):
@@ -3686,9 +3721,14 @@ def UpdateSubstanceGrid(G2frame,data):
             wave = G2mth.getWave(Inst)
             ndata = copy.deepcopy(data)
             for name in ndata['Substances'].keys():
-                contrst,absorb = G2mth.XScattDen(ndata['Substances'][name]['Elements'],ndata['Substances'][name]['Volume'],wave)         
-                ndata['Substances'][name]['XAnom density'] = contrst
-                ndata['Substances'][name]['XAbsorption'] = absorb
+                if name not in ['vacuum','unit scatter']:
+                    if 'X' in Inst['Type'][0]:
+                        recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                    elif 'NC' in Inst['Type'][0]:
+                        recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                    ndata['Substances'][name]['XAnom density'] = recontrst
+                    ndata['Substances'][name]['XAbsorption'] = absorb
+                    ndata['Substances'][name]['XImag density'] = imcontrst
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),ndata)
     
     def OnAddSubstance(event):
@@ -3698,14 +3738,14 @@ def UpdateSubstanceGrid(G2frame,data):
             Name = dlg.GetValue()
             data['Substances'][Name] = {'Elements':{},'Volume':1.0,'Density':1.0,
                 'Scatt density':0.0,'XAnom density':0.,'XAbsorption':0.}
+            AddElement(Name)
         dlg.Destroy()
-        AddElement(Name)
         UpdateSubstanceGrid(G2frame,data)
         
     def OnDeleteSubstance(event):
         TextList = []
         for name in data['Substances']:
-            if name != 'vacuum':
+            if name not in ['vacuum','unit scatter']:
                 TextList += [name,]
         if not TextList:
             return
@@ -3723,7 +3763,7 @@ def UpdateSubstanceGrid(G2frame,data):
     def OnAddElement(event):        
         TextList = []
         for name in data['Substances']:
-            if name != 'vacuum':
+            if name not in ['vacuum','unit scatter']:
                 TextList += [name,]
         if not TextList:
             return
@@ -3731,11 +3771,11 @@ def UpdateSubstanceGrid(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 name = TextList[dlg.GetSelection()]
+                AddElement(name)
             else:
                 return
         finally:
             dlg.Destroy()
-        AddElement(name)
         UpdateSubstanceGrid(G2frame,data)
         
     def AddElement(name):
@@ -3747,20 +3787,29 @@ def UpdateSubstanceGrid(G2frame,data):
                 Info = G2elem.GetAtomInfo(El)
                 Info.update({'Num':1})
                 data['Substances'][name]['Elements'][El] = Info
+                isotopes = Info['Isotopes'].keys()
+                isotopes.sort()
+                data['Substances'][name]['Elements'][El]['Isotope'] = isotopes[-1]
             data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
             data['Substances'][name]['Density'] = \
                 G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
-            data['Substances'][name]['Scatt density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
-            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-            data['Substances'][name]['XAnom density'] = contrst
+            if 'X' in Inst['Type'][0]:
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            elif 'NC' in Inst['Type'][0]:
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            data['Substances'][name]['XAnom density'] = recontrst
             data['Substances'][name]['XAbsorption'] = absorb
+            data['Substances'][name]['XImag density'] = imcontrst
         dlg.Destroy()
         
     def OnDeleteElement(event):
         TextList = []
         for name in data['Substances']:
-            if name != 'vacuum':
+            if name not in ['vacuum','unit scatter']:
                 TextList += [name,]
         if not TextList:
             return
@@ -3781,47 +3830,66 @@ def UpdateSubstanceGrid(G2frame,data):
                 data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
                 data['Substances'][name]['Density'] = \
                     G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
-                data['Substances'][name]['Scatt density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
-                contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-                data['Substances'][name]['XAnom density'] = contrst
+                if 'X' in Inst['Type'][0]:
+                    data['Substances'][name]['Scatt density'] = \
+                        G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                    recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                elif 'NC' in Inst['Type'][0]:
+                    data['Substances'][name]['Scatt density'] = \
+                        G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                    recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+                data['Substances'][name]['XAnom density'] = recontrst
                 data['Substances'][name]['XAbsorption'] = absorb
+                data['Substances'][name]['XImag density'] = imcontrst
         UpdateSubstanceGrid(G2frame,data)
                 
     def SubstSizer():
         
-        def OnValueChange(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            if len(Indx[Obj.GetId()]) == 3:
-                name,El,keyId = Indx[Obj.GetId()]
-                try:
-                    value = max(0,float(Obj.GetValue()))
-                except ValueError:
-                    value = 0
-                    Obj.SetValue('%.2f'%(value))
-                data['Substances'][name]['Elements'][El][keyId] = value
-                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
-                data['Substances'][name]['Density'] = \
-                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
-            else:
-                name,keyId = Indx[Obj.GetId()]
-                try:
-                    value = max(0,float(Obj.GetValue()))
-                except ValueError:
-                    value = 1.0
-                data['Substances'][name][keyId] = value
-                if keyId in 'Volume':
-                    data['Substances'][name]['Density'] = \
-                        G2mth.Vol2Den(data['Substances'][name]['Elements'],value)
-                elif keyId in 'Density':
-                    data['Substances'][name]['Volume'] = \
-                        G2mth.Den2Vol(data['Substances'][name]['Elements'],value)
-            data['Substances'][name]['Scatt density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
-            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-            data['Substances'][name]['XAnom density'] = contrst
+        def OnNum(invalid,value,tc):
+            if invalid: return
+            name,El,keyId = Indx[tc.GetId()]
+            data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+            data['Substances'][name]['Density'] = \
+                G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+            if 'X' in Inst['Type'][0]:
+                recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            elif 'NC' in Inst['Type'][0]:
+                recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            data['Substances'][name]['XAnom density'] = recontrst
             data['Substances'][name]['XAbsorption'] = absorb
+            data['Substances'][name]['XImag density'] = imcontrst
+            wx.CallAfter(UpdateSubstanceGrid,G2frame,data)
+            
+        def OnVolDen(invalid,value,tc):
+            if invalid: return
+            name,keyId = Indx[tc.GetId()]
+            if keyId in 'Volume':
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],value)
+            elif keyId in 'Density':
+                data['Substances'][name]['Volume'] = \
+                    G2mth.Den2Vol(data['Substances'][name]['Elements'],value)
+            if 'X' in Inst['Type'][0]:
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            elif 'NC' in Inst['Type'][0]:
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            data['Substances'][name]['XAnom density'] = recontrst
+            data['Substances'][name]['XAbsorption'] = absorb
+            data['Substances'][name]['XImag density'] = imcontrst
+            wx.CallAfter(UpdateSubstanceGrid,G2frame,data)
+            
+        def OnIsotope(event):
+            Obj = event.GetEventObject()
+            El,name = Indx[Obj.GetId()]
+            data['Substances'][name]['Elements'][El]['Isotope'] = Obj.GetValue()
+            recontrst,absorb,imcontrst = G2mth.NCScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)
+            data['Substances'][name]['XAnom density'] = recontrst
+            data['Substances'][name]['XAbsorption'] = absorb
+            data['Substances'][name]['XImag density'] = imcontrst
             wx.CallAfter(UpdateSubstanceGrid,G2frame,data)
         
         Indx = {}
@@ -3835,47 +3903,50 @@ def UpdateSubstanceGrid(G2frame,data):
             if name == 'vacuum':
                 substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='        Not applicable'),
                     0,WACV)
+            elif name == 'unit scatter':
+                substSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Scattering density,f: %.3f *10%scm%s'%(data['Substances'][name]['Scatt density'],Pwr10,Pwrm2)),0,WACV)
             else:    
-                elSizer = wx.FlexGridSizer(0,6,5,5)
+                elSizer = wx.FlexGridSizer(0,8,5,5)
                 Substance = data['Substances'][name]
                 Elems = Substance['Elements']
                 for El in Elems:    #do elements as pull downs for isotopes for neutrons
                     elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
                         0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                    num = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(Elems[El]['Num']),style=wx.TE_PROCESS_ENTER)
+                    num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name]['Elements'][El],'Num',
+                        nDig=(10,2),typeHint=float,OnLeave=OnNum)
                     Indx[num.GetId()] = [name,El,'Num']
-                    num.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-                    num.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
                     elSizer.Add(num,0,WACV)
+                    if 'N' in Inst['Type'][0]:
+                        elSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Isotope: '),0,WACV)
+                        isotopes = Elems[El]['Isotopes'].keys()
+                        isotope = wx.ComboBox(G2frame.dataDisplay,choices=isotopes,value=Elems[El].get('Isotope','Nat. Abund.'),
+                            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                        Indx[isotope.GetId()] = [El,name]
+                        isotope.Bind(wx.EVT_COMBOBOX,OnIsotope)
+                        elSizer.Add(isotope,0,WACV)
                 substSizer.Add(elSizer,0)
                 vdsSizer = wx.FlexGridSizer(0,4,5,5)
                 vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Volume: '),
                     0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                vol = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Volume']),style=wx.TE_PROCESS_ENTER)
+                vol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name],'Volume',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
                 Indx[vol.GetId()] = [name,'Volume']
-                vol.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-                vol.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
                 vdsSizer.Add(vol,0,WACV)                
                 vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Density: '),
                     0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                den = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Density']),style=wx.TE_PROCESS_ENTER)
+                den = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name],'Density',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
                 Indx[den.GetId()] = [name,'Density']
-                den.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-                den.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
                 vdsSizer.Add(den,0,WACV)
                 substSizer.Add(vdsSizer,0)
-                substSizer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' Scattering density  : %.2f *10%scm%s'%(Substance['Scatt density'],Pwr10,Pwrm2)),
-                    0,WACV)                
-                substSizer.Add(wx.StaticText(G2frame.dataDisplay,       #allow neutrons here into NAnom density & NAbsorption
-                    label=' Anomalous density : %.2f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),
-                    0,WACV)                
-                substSizer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' X-ray absorption   : %.2f cm%s'%(Substance['XAbsorption'],Pwrm1)),
-                    0,WACV)                
+                denSizer = wx.FlexGridSizer(0,2,0,0)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Scattering density,f'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3f *10%scm%s'%(Substance['Scatt density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Real density,f+f'"),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Imaginary density,f"'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3g *10%scm%s'%(Substance['XImag density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Absorption'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3g cm%s'%(Substance['XAbsorption'],Pwrm1)),0,WACV)
+                substSizer.Add(denSizer)
         return substSizer
             
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
@@ -3888,6 +3959,7 @@ def UpdateSubstanceGrid(G2frame,data):
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.SetLabel('Substances')
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadSubstances, id=G2gd.wxID_RELOADSUBSTANCES)    
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopySubstance, id=G2gd.wxID_COPYSUBSTANCE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteSubstance, id=G2gd.wxID_DELETESUBSTANCE)    
@@ -4623,6 +4695,50 @@ def UpdateModelsGrid(G2frame,data):
 def UpdateREFDModelsGrid(G2frame,data):
     '''respond to selection of REFD Models data tree item.
     '''
+    def OnCopyModel(event):
+        print 'copy model'
+        event.Skip()
+        
+    def OnCopyFlags(event):
+        print 'copy flags'
+        event.Skip()
+        
+    def OnFitModel(event):
+        
+        print 'fit model'
+#        SaveState()
+        G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        event.Skip()        
+        
+    def OnFitModelAll(event):
+        print 'fit all model'
+        event.Skip()
+        
+    def OnUnDo(event):
+        DoUnDo()
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Models'))
+        G2frame.dataFrame.RefdUndo.Enable(False)
+        UpdateREFDModelsGrid(G2frame,data)
+        G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+
+    def DoUnDo():
+        print 'Undo last refinement'
+        file = open(G2frame.undosasd,'rb')
+        PatternId = G2frame.PatternId
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        print ' Models recovered'
+        file.close()
+        
+    def SaveState():
+        G2frame.undorefd = os.path.join(G2frame.dirname,'GSASIIrefd.save')
+        file = open(G2frame.undorefd,'wb')
+        PatternId = G2frame.PatternId
+        for item in ['Models']:
+            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
+        file.close()
+        G2frame.dataFrame.RefdUndo.Enable(True)
     
     def ControlSizer():
         
@@ -4665,15 +4781,23 @@ def UpdateREFDModelsGrid(G2frame,data):
         def OnBackRef(event):
             data['FltBack'][1] = backref.GetValue()
             
+        def Recalculate(invalid,value,tc):
+            if invalid:
+                return
+            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+
         overall = wx.BoxSizer(wx.HORIZONTAL)
         overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Scale: '),0,WACV)
-        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Scale'],0,nDig=(10,2),typeHint=float),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Scale'],0,
+            nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
         scaleref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
         scaleref.SetValue(data['Scale'][1])
         scaleref.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         overall.Add(scaleref,0,WACV)
         overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat bkg.: '),0,WACV)
-        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['FltBack'],0,nDig=(10,2),typeHint=float),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['FltBack'],0,
+            nDig=(10,2,'g'),typeHint=float,OnLeave=Recalculate),0,WACV)
         backref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
         backref.SetValue(data['FltBack'][1])
         backref.Bind(wx.EVT_CHECKBOX, OnBackRef)
@@ -4681,26 +4805,188 @@ def UpdateREFDModelsGrid(G2frame,data):
         return overall
         
     def LayerSizer():
-    #'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},
-#        {'Name':'vacuum','Thick':[1.e6,False],'Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False]}
+    #'Penetration':[0.,False]?
+
+        def OnSelect(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            Name = Obj.GetValue()
+            data['Layers'][item]['Name'] = Name
+            data['Layers'][item]['Rough'] = [0.,False]
+            data['Layers'][item]['Thick'] = [1.,False]
+            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
+            
+        def OnCheckBox(event):
+            Obj = event.GetEventObject()
+            item,parm = Indx[Obj.GetId()]
+            data['Layers'][item][parm][1] = Obj.GetValue()
+            
+        def OnInsertLayer(event):
+            Obj = event.GetEventObject()
+            ind = Indx[Obj.GetId()]
+            data['Layers'].insert(ind+1,{'Name':'vacuum','DenMul':[1.0,False],})
+            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
+            
+        def OnDeleteLayer(event):
+            Obj = event.GetEventObject()
+            ind = Indx[Obj.GetId()]
+            del data['Layers'][ind]
+            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
+
+        def Recalculate(invalid,value,tc):
+            if invalid:
+                return
+            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
+                       
         layerSizer = wx.BoxSizer(wx.VERTICAL)
+        layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Top layer (superphase):'),0,WACV)
+        toplayer = wx.BoxSizer(wx.HORIZONTAL)
+        toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
+        topName = data['Layers'][0]['Name']
+        topSel = wx.ComboBox(G2frame.dataDisplay,value=topName,
+            choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Indx = {topSel.GetId():0}
+        topSel.Bind(wx.EVT_COMBOBOX,OnSelect)
+        toplayer.Add(topSel,0,WACV)
+        if topName != 'vacuum':
+            toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
+            toplayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][0]['DenMul'],0,
+                nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+            Indx[varBox.GetId()] = [0,'DenMul']
+            varBox.SetValue(data['Layers'][0]['DenMul'][1])
+            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+            toplayer.Add(varBox,0,WACV)
+            toplayer.Add(wx.StaticText(G2frame.dataDisplay,
+                label=' Real scat. den.: %.4g'%(data['Layers'][0]['DenMul'][0]*Substances[topName]['Scatt density'])),0,WACV)
+            if topName != 'unit scatter':
+                toplayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' Imag scat. den.: %.4g'%(data['Layers'][0]['DenMul'][0]*Substances[topName]['XImag density'])),0,WACV)
+        else:
+            toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
+        layerSizer.Add(toplayer)
+        insert = wx.Button(G2frame.dataDisplay,label='Insert')
+        Indx[insert.GetId()] = 0
+        insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
+        layerSizer.Add(insert)
+        G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
         
+        for ilay,layer in enumerate(data['Layers'][1:-1]):
+            layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer no. %d'%(ilay+1)),0,WACV)
+            midlayer = wx.BoxSizer(wx.HORIZONTAL)
+            midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
+            midName = data['Layers'][ilay+1]['Name']
+            midSel = wx.ComboBox(G2frame.dataDisplay,value=midName,
+                choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[midSel.GetId()] = ilay+1
+            midSel.Bind(wx.EVT_COMBOBOX,OnSelect)
+            midlayer.Add(midSel,0,WACV)
+            if midName != 'vacuum':
+                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
+                midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay+1]['DenMul'],0,
+                    nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                Indx[varBox.GetId()] = [ilay+1,'DenMul']
+                varBox.SetValue(data['Layers'][ilay+1]['DenMul'][1])
+                varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+                midlayer.Add(varBox,0,WACV)
+                midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' Real scat. den.: %.4g'%(data['Layers'][ilay+1]['DenMul'][0]*Substances[midName]['Scatt density'])),0,WACV)
+                if midName != 'unit scatter':
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Imag scat. den.: %.4g'%(data['Layers'][ilay+1]['DenMul'][0]*Substances[midName]['XImag density'])),0,WACV)
+            else:
+                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
+            layerSizer.Add(midlayer)
+            if midName != 'vacuum':
+                names = {'Rough':'Upper surface Roughness, '+Angstr,'Thick':'Layer Thickness, '+Angstr}
+                parmsline = wx.BoxSizer(wx.HORIZONTAL)
+                for parm in ['Rough','Thick']:
+                    parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' %s: '%(names[parm])),0,WACV)
+                    parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay+1][parm],0,
+                        nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
+                    varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                    Indx[varBox.GetId()] = [ilay+1,parm]
+                    varBox.SetValue(data['Layers'][ilay+1][parm][1])
+                    varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+                    parmsline.Add(varBox,0,WACV)
+                
+                layerSizer.Add(parmsline)
+            newlayer = wx.BoxSizer(wx.HORIZONTAL)
+            insert = wx.Button(G2frame.dataDisplay,label='Insert')
+            Indx[insert.GetId()] = ilay+1
+            insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
+            newlayer.Add(insert)
+            delet = wx.Button(G2frame.dataDisplay,label='Delete')
+            Indx[delet.GetId()] = ilay+1
+            delet.Bind(wx.EVT_BUTTON,OnDeleteLayer)
+            newlayer.Add(delet)
+            layerSizer.Add(newlayer)
+            G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
         
+        layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Bottom layer (substrate):'),0,WACV)
+        bottomlayer = wx.BoxSizer(wx.HORIZONTAL)
+        bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
+        bottomName = data['Layers'][-1]['Name']
+        bottomSel = wx.ComboBox(G2frame.dataDisplay,value=bottomName,
+            choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Indx[bottomSel.GetId()] = len(data['Layers'])-1
+        bottomSel.Bind(wx.EVT_COMBOBOX,OnSelect)
+        bottomlayer.Add(bottomSel,0,WACV)
+        if bottomName != 'vacuum':
+            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
+            bottomlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][-1]['DenMul'],0,
+                nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+            Indx[varBox.GetId()] = [-1,'DenMul']
+            varBox.SetValue(data['Layers'][-1]['DenMul'][1])
+            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+            bottomlayer.Add(varBox,0,WACV)
+            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                label=' Real scat. den.: %.4g'%(data['Layers'][-1]['DenMul'][0]*Substances[bottomName]['Scatt density'])),0,WACV)
+            if bottomName != 'unit scatter':
+                bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' Imag scat. den.: %.4g'%(data['Layers'][-1]['DenMul'][0]*Substances[bottomName]['XImag density'])),0,WACV)
+        else:
+            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
+        layerSizer.Add(bottomlayer)
+        if bottomName != 'vacuum':
+            parmsline = wx.BoxSizer(wx.HORIZONTAL)
+            parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' Upper surface Roughness, %s: '%(Angstr)),0,WACV)
+            parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][-1]['Rough'],0,
+                nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
+            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+            Indx[varBox.GetId()] = [-1,'Rough']
+            varBox.SetValue(data['Layers'][-1]['Rough'][1])
+            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+            parmsline.Add(varBox,0,WACV)
+            layerSizer.Add(parmsline)        
         return layerSizer
-        
     
-    Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+    Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
+    ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
-    Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
-    ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.REFDModelMenu)
     if not G2frame.dataFrame.GetStatusBar():
         G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.SetLabel('Modelling')
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2gd.wxID_MODELCOPYFLAGS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Reflectometry fitting for: '+Name),0,WACV)
@@ -4710,7 +4996,8 @@ def UpdateREFDModelsGrid(G2frame,data):
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Global parameters:'),0,WACV)
     mainSizer.Add(OverallSizer()) 
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layers:'),0,WACV)
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
     mainSizer.Add(LayerSizer())
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

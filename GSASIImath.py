@@ -967,19 +967,63 @@ def XScattDen(Elements,vol,wave=0.):
     :returns: float rho: scattering density in 10^10cm^-2; 
         if wave > 0 the includes f' contribution
     :returns: float mu: if wave>0 absorption coeff in cm^-1 ; otherwise 0
+    :returns: float fpp: if wave>0 f" in 10^10cm^-2; otherwise 0
     
     '''
     rho = 0
     mu = 0
-    if wave:
+    fpp = 0
+    if wave: 
         Xanom = XAnomAbs(Elements,wave)
     for El in Elements:
         f0 = Elements[El]['Z']
         if wave:
             f0 += Xanom[El][0]
+            fpp += Xanom[El][1]*Elements[El]['Num']
             mu += Xanom[El][2]*Elements[El]['Num']
         rho += Elements[El]['Num']*f0
-    return 28.179*rho/vol,0.1*mu/vol
+    return 28.179*rho/vol,0.1*mu/vol,28.179*fpp/vol
+    
+def NCScattDen(Elements,vol,wave=0.):
+    '''Estimate neutron scattering density from molecular formula & volume;
+    ignores valence, but includes anomalous effects
+    
+    :param dict Elements: elements in molecular formula; 
+        each element must contain 
+        Num: number of atoms in formula
+        Z: atomic number
+    :param float vol: molecular volume in A^3
+    :param float wave: optional wavelength in A
+    
+    :returns: float rho: scattering density in 10^10cm^-2; 
+        if wave > 0 the includes f' contribution
+    :returns: float mu: if wave>0 absorption coeff in cm^-1 ; otherwise 0
+    :returns: float fpp: if wave>0 f" in 10^10cm^-2; otherwise 0
+    
+    '''
+    rho = 0
+    mu = 0
+    bpp = 0
+    for El in Elements:
+        isotope = Elements[El]['Isotope']
+        b0 = Elements[El]['Isotopes'][isotope]['SL'][0]
+        mu += Elements[El]['Isotopes'][isotope].get('SA',0.)*Elements[El]['Num']
+        if wave and 'BW-LS' in Elements[El]['Isotopes'][isotope]:
+            Re,Im,E0,gam,A,E1,B,E2 = Elements[El]['Isotopes'][isotope]['BW-LS'][1:]
+            Emev = 81.80703/wave**2
+            T0 = Emev-E0
+            T1 = Emev-E1
+            T2 = Emev-E2
+            D0 = T0**2+gam**2
+            D1 = T1**2+gam**2
+            D2 = T2**2+gam**2
+            b0 += Re*(T0/D0+A*T1/D1+B*T2/D2)
+            bpp += Im*(1/D0+A/D1+B/D2)
+        else:
+            bpp += Elements[El]['Isotopes'][isotope]['SL'][1]
+        rho += Elements[El]['Num']*b0
+    if wave: mu *= wave
+    return 100.*rho/vol,mu/vol,100.*bpp/vol
     
 def wavekE(wavekE):
     '''Convert wavelength to energy & vise versa
@@ -997,7 +1041,7 @@ def XAnomAbs(Elements,wave):
     for El in Elements:
         Orbs = G2el.GetXsectionCoeff(El)
         Xanom[El] = G2el.FPcalc(Orbs, kE)
-    return Xanom
+    return Xanom        #f',f", mu
     
 ################################################################################
 #### Modulation math

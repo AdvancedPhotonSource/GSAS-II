@@ -3625,24 +3625,30 @@ class GSASII(wx.Frame):
                                 phases = data.keys()
                                 for phase in phases:
                                     peaks = data[phase]
+                                    I100 = peaks['RefList'].T[8]*np.array([refl[11] for refl in peaks['RefList']])
+                                    Imax = np.max(I100)
+                                    if Imax:
+                                        I100 *= 100.0/Imax
                                     file.write("%s %s %s \n" % (name,phase,' Reflection List'))
                                     if 'T' in peaks.get('Type','PXC'):
-                                        file.write('%s \n'%('   h   k   l   m    d-space     TOF         wid        F**2'))
+                                        file.write('%s \n'%('   h   k   l   m   d-space       TOF       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100'))
                                     else:                
-                                        file.write('%s \n'%('   h   k   l   m    d-space   2-theta       wid        F**2'))
-                                    for peak in peaks['RefList']:
+                                        file.write('%s \n'%('   h   k   l   m   d-space   2-theta       wid     Fo**2     Fc**2     Icorr      Prfo     Trans      ExtP      I100'))
+                                    for ipk,peak in enumerate(peaks['RefList']):
                                         if 'T' in peaks.get('Type','PXC'):
                                             sig = np.sqrt(peak[6])
                                             gam = peak[7]
                                             FWHM = G2pwd.getgamFW(gam,sig)
-                                            file.write(" %3d %3d %3d %3d %10.5f %10.2f %10.5f %10.3f \n" % \
-                                                (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM,peak[8]))
+                                            file.write(" %3d %3d %3d %3d%10.5f%10.2f%10.5f%10.3f%10.3f%10.3f%10.3f%10.3f%10.3f%10.3f\n" % \
+                                                (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM,peak[8],
+                                                peak[9],peak[11],peak[12],peak[13],peak[14],I100[ipk]))
                                         else:
                                             sig = np.sqrt(peak[6])
                                             gam = peak[7]
                                             FWHM = G2pwd.getgamFW(gam,sig)
-                                            file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.5f %10.3f \n" % \
-                                                (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM/100.,peak[8]))
+                                            file.write(" %3d %3d %3d %3d%10.5f%10.5f%10.5f%10.3f%10.3f%10.3f%10.3f%10.3f%10.3f%10.3f\n" % \
+                                                (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM/100.,
+                                                peak[8],peak[9],peak[11],peak[12],peak[13],peak[14],I100[ipk]))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()

@@ -280,6 +280,12 @@ def GetTifData(filename):
                 File.seek(8)
                 print 'Read APS scanCCD tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            elif IFD[258][2][0] == 32:
+                tifType = 'PE4k'
+                pixy = [100,100]
+                File.seek(8)
+                print 'Read PE 4Kx4K tiff file: ',filename
+                image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)                
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
             pixy = [73.242,73.242]

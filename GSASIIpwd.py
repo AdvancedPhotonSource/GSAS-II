@@ -1912,7 +1912,137 @@ def calcIncident(Iparm,xdata):
 # Reflectometry calculations
 ################################################################################
 
-def REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data):
+def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
+    print 'fit REFD data'
+    
+    def GetModelParms():
+        parmDict = {}
+        varyList = []
+        values = []
+        for parm in ['Scale','FltBack']:
+            parmDict[parm] = data[parm][0]
+            if data[parm][1]:
+                varyList.append(parm)
+                values.append(data[parm][0])
+        parmDict['nLayers'] = len(data['Layers'])
+        for ilay,layer in enumerate(data['Layers']):
+            name = layer['Name']
+            cid = str(ilay)+';'
+            for parm in ['Thick','Rough','DenMul']:
+                parmDict[cid+parm] = layer.get(parm,[0.,False])[0]
+                if layer.get(parm,[0.,False])[1]:
+                    varyList.append(cid+parm)
+                    values.append(layer[parm][0])
+            parmDict[cid+'rho'] = Substances[name]['Scatt density']
+            parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
+        return parmDict,varyList,values
+    
+    def SetModelParms():
+        line = ' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale'])
+        if 'Scale' in varyList:
+            data['Scale'] = parmDict['Scale']
+            line += ' esd: %.4g'%(sigDict['Scale'])                                                             
+        print line
+        line = ' Flat background: %15.4g'%(parmDict['FltBack'])
+        if 'FltBack' in varyList:
+            data['FltBack'] = parmDict['FltBack']
+            line += ' esd: %15.3g'%(sigDict['FltBack'])
+        print line
+        for ilay,layer in enumerate(data['Layers']):
+            name = layer['Name']
+            print ' Parameters for layer: %d %s'%(ilay,name)
+            cid = str(ilay)+';'
+            line = ' '
+            line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
+            line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)**parmDict[cid+'DenMul'])
+            for parm in ['Thick','Rough','DenMul']:
+                if parm in layer:
+                    layer[parm][0] = parmDict[cid+parm]
+                    line += ' %s: %.3f'%(parm,layer[parm][0])
+                    if cid+parm in varyList:
+                        line += ' esd: %.3g'%(sigDict[cid+parm])
+            print line
+            print line2
+    
+    def calcREFD(values,Q,Io,wt,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        M = np.sqrt(wt)*(getREFD(Q,parmDict)-Io)
+        return M
+    
+    def getREFD(Q,parmDict):
+        Ic = np.ones_like(Q)*parmDict['FltBack']
+        Scale = parmDict['Scale']
+        Nlayers = parmDict['nLayers']
+        depth = np.zeros(Nlayers)
+        rho = np.zeros(Nlayers)
+        irho = np.zeros(Nlayers)
+        sigma = np.zeros(Nlayers)
+        for ilay in range(Nlayers):
+            cid = str(ilay)+';'
+            depth[ilay] = parmDict[cid+'Thick']
+            sigma[ilay] = parmDict[cid+'Rough']
+            rho[ilay] = parmDict[cid+'rho']*parmDict[cid+'DenMul']
+            irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
+            A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+        Ic += (A**2+B**2)*Scale      
+        return Ic
+
+    Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    wtFactor = ProfDict['wtFactor']
+    Ibeg = np.searchsorted(Q,Qmin)
+    Ifin = np.searchsorted(Q,Qmax)+1    #include last point
+    Ic[:] = 0
+    parmDict,varyList,values = GetModelParms()
+    if varyList:
+        result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+            args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
+        parmDict.update(zip(varyList,result[0]))
+        chisq = np.sum(result[2]['fvec']**2)
+        ncalc = result[2]['nfev']
+        covM = result[1]
+    else:   #nothing varied
+        M = calcREFD(values,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)
+        chisq = np.sum(M**2)
+        ncalc = 0
+        covM = []
+        sig = []
+        sigDict = {}
+        result = []
+    Rvals = {}
+    Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
+    Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
+    Ic[Ibeg:Ifin] = getREFD(Q[Ibeg:Ifin],parmDict)
+    Ib[Ibeg:Ifin] = parmDict['FltBack']
+    Msg = 'Failed to converge'
+    try:
+        Nans = np.isnan(result[0])
+        if np.any(Nans):
+            name = varyList[Nans.nonzero(True)[0]]
+            Msg += ' Nan result for '+name+'!'
+            raise ValueError
+        Negs = np.less_equal(result[0],0.)
+        if np.any(Negs):
+            indx = Negs.nonzero()
+            name = varyList[indx[0][0]]
+            if name != 'FltBack':
+                Msg += ' negative coefficient for '+name+'!'
+                raise ValueError
+        if len(covM):
+            sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
+            sigDict = dict(zip(varyList,sig))
+        print ' Results of reflectometry data modelling fit:'
+        print 'Number of function calls:',ncalc,' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
+        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+        SetModelParms()
+        covMatrix = covM*Rvals['GOF']
+        return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
+    except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
+        print Msg
+        return False,0,0,0,0,0,0,Msg
+
+def REFDModelFxn(Profile,Inst,Limits,Substances,data):
     
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
     Qmin = Limits[1][0]

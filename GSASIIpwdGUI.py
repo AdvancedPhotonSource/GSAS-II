@@ -4705,11 +4705,10 @@ def UpdateREFDModelsGrid(G2frame,data):
         
     def OnFitModel(event):
         
-        print 'fit model'
-#        SaveState()
-        G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
-        G2plt.PlotPatterns(G2frame,plotType='REFD')
-        event.Skip()        
+        SaveState()
+        G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
+        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='REFD')
+        wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
         
     def OnFitModelAll(event):
         print 'fit all model'
@@ -4719,26 +4718,25 @@ def UpdateREFDModelsGrid(G2frame,data):
         DoUnDo()
         data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId,'Models'))
-        G2frame.dataFrame.RefdUndo.Enable(False)
+        G2frame.dataFrame.REFDUndo.Enable(False)
         UpdateREFDModelsGrid(G2frame,data)
-        G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+        G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
 
     def DoUnDo():
         print 'Undo last refinement'
-        file = open(G2frame.undosasd,'rb')
+        file = open(G2frame.undorefd,'rb')
         PatternId = G2frame.PatternId
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
-        print ' Models recovered'
+        print ' Model recovered'
         file.close()
         
     def SaveState():
         G2frame.undorefd = os.path.join(G2frame.dirname,'GSASIIrefd.save')
         file = open(G2frame.undorefd,'wb')
         PatternId = G2frame.PatternId
-        for item in ['Models']:
-            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
+        cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Models')),file,1)
         file.close()
-        G2frame.dataFrame.RefdUndo.Enable(True)
+        G2frame.dataFrame.REFDUndo.Enable(True)
     
     def ControlSizer():
         
@@ -4784,7 +4782,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
-            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
 
         overall = wx.BoxSizer(wx.HORIZONTAL)
@@ -4814,7 +4812,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['Layers'][item]['Name'] = Name
             data['Layers'][item]['Rough'] = [0.,False]
             data['Layers'][item]['Thick'] = [1.,False]
-            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
@@ -4827,7 +4825,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             Obj = event.GetEventObject()
             ind = Indx[Obj.GetId()]
             data['Layers'].insert(ind+1,{'Name':'vacuum','DenMul':[1.0,False],})
-            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
             
@@ -4835,14 +4833,14 @@ def UpdateREFDModelsGrid(G2frame,data):
             Obj = event.GetEventObject()
             ind = Indx[Obj.GetId()]
             del data['Layers'][ind]
-            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
 
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
-            G2pwd.REFDModelFxn(Profile,ProfDict,Inst,Limits,Substances,data)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
                        
@@ -5507,6 +5505,15 @@ def UpdatePDFGrid(G2frame,data):
                 data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-subData[1][1]])
                 data['delt-G(R)'][2] += ('-\n'+subData[2])
                 G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
+                wx.CallAfter(UpdatePDFGrid,G2frame,data)
+                
+        def OnMult(invalid,value,tc):
+            if invalid: return
+            id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['diffGRname'])
+            pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
+            subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)']
+            data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-data['diffMult']*subData[1][1]])
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
         
         diffSizer = wx.BoxSizer(wx.HORIZONTAL)
         fileList = [''] + GetFileList(G2frame,'PDF')
@@ -5514,7 +5521,13 @@ def UpdatePDFGrid(G2frame,data):
         grName = wx.ComboBox(G2frame.dataDisplay,value=data['diffGRname'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         grName.Bind(wx.EVT_COMBOBOX,OnSelectGR)        
-        diffSizer.Add(grName,0,)
+        diffSizer.Add(grName,0,WACV)
+        if data['diffGRname']:
+            diffSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Mult: '),0,WACV)
+            mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'diffMult',nDig=(10,3),
+                    typeHint=float,OnLeave=OnMult)
+            diffSizer.Add(mult,0,WACV)
+            OnMult(False,None,None)
         return diffSizer
             
     def SumElementVolumes():
@@ -5759,6 +5772,8 @@ def UpdatePDFGrid(G2frame,data):
         data['Sample Bkg.']['Refine'] = False
     if 'diffGRname' not in data:
         data['diffGRname'] = ''
+    if 'diffMult' not in data:
+        data['diffMult'] = 1.0
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)

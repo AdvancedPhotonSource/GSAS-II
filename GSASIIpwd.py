@@ -1913,17 +1913,19 @@ def calcIncident(Iparm,xdata):
 ################################################################################
 
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
-    print 'fit REFD data'
+    print 'fit REFD data by '+data['Minimizer']
     
     def GetModelParms():
         parmDict = {}
         varyList = []
         values = []
+        bounds = []
         for parm in ['Scale','FltBack']:
             parmDict[parm] = data[parm][0]
             if data[parm][1]:
                 varyList.append(parm)
                 values.append(data[parm][0])
+                bounds.append(Bounds[parm])
         parmDict['nLayers'] = len(data['Layers'])
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
@@ -1933,9 +1935,10 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 if layer.get(parm,[0.,False])[1]:
                     varyList.append(cid+parm)
                     values.append(layer[parm][0])
+                    bounds.append(Bounds[parm])
             parmDict[cid+'rho'] = Substances[name]['Scatt density']
             parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
-        return parmDict,varyList,values
+        return parmDict,varyList,values,bounds
     
     def SetModelParms():
         line = ' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale'])
@@ -1969,6 +1972,11 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         M = np.sqrt(wt)*(getREFD(Q,parmDict)-Io)
         return M
     
+    def sumREFD(values,Q,Io,wt,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        M = np.sqrt(wt)*(getREFD(Q,parmDict)-Io)
+        return np.sum(M**2)
+    
     def getREFD(Q,parmDict):
         Ic = np.ones_like(Q)*parmDict['FltBack']
         Scale = parmDict['Scale']
@@ -1994,14 +2002,33 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
-    parmDict,varyList,values = GetModelParms()
+    Bounds = {'Scale':[data['Scale'][0]*.85,data['Scale'][0]/.85],'FltBack':[None,None],'DenMul':[0.,None],'Thick':[1.,None],'Rough':[0.,None]}
+    parmDict,varyList,values,bounds = GetModelParms()
+    Msg = 'Failed to converge'
     if varyList:
-        result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
-            args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
-        parmDict.update(zip(varyList,result[0]))
-        chisq = np.sum(result[2]['fvec']**2)
-        ncalc = result[2]['nfev']
-        covM = result[1]
+        if data['Minimizer'] == 'LMLS': 
+            result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
+            parmDict.update(zip(varyList,result[0]))
+            chisq = np.sum(result[2]['fvec']**2)
+            ncalc = result[2]['nfev']
+            covM = result[1]
+            newVals = result[0]
+        elif data['Minimizer'] == 'Global':
+            result = so.basinhopping(sumREFD,values,minimizer_kwargs={'method':'L-BFGS-B',
+                'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)})
+            chisq = result.fun
+            ncalc = result.nfev
+            newVals = result.x
+            covM = []
+        elif data['Minimizer'] == 'L-BFGS-B':
+            result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
+                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
+            parmDict.update(zip(varyList,result['x']))
+            chisq = result.fun
+            ncalc = result.nfev
+            newVals = result.x
+            covM = []
     else:   #nothing varied
         M = calcREFD(values,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)
         chisq = np.sum(M**2)
@@ -2015,14 +2042,16 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
     Ic[Ibeg:Ifin] = getREFD(Q[Ibeg:Ifin],parmDict)
     Ib[Ibeg:Ifin] = parmDict['FltBack']
-    Msg = 'Failed to converge'
     try:
-        Nans = np.isnan(result[0])
+        if not len(varyList):
+            Msg += ' - nothing refined'
+            raise ValueError
+        Nans = np.isnan(newVals)
         if np.any(Nans):
             name = varyList[Nans.nonzero(True)[0]]
             Msg += ' Nan result for '+name+'!'
             raise ValueError
-        Negs = np.less_equal(result[0],0.)
+        Negs = np.less_equal(newVals,0.)
         if np.any(Negs):
             indx = Negs.nonzero()
             name = varyList[indx[0][0]]
@@ -2031,12 +2060,15 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 raise ValueError
         if len(covM):
             sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
-            sigDict = dict(zip(varyList,sig))
+            covMatrix = covM*Rvals['GOF']
+        else:
+            sig = np.zeros(len(varyList))
+            covMatrix = []
+        sigDict = dict(zip(varyList,sig))
         print ' Results of reflectometry data modelling fit:'
         print 'Number of function calls:',ncalc,' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
         print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
         SetModelParms()
-        covMatrix = covM*Rvals['GOF']
         return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         print Msg

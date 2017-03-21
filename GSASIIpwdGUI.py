@@ -4759,7 +4759,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         controlSizer.Add(resol,0,WACV)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
         minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
-        minlist = ['LMLS','Global','BFGS',]
+        minlist = ['LMLS','Global','L-BFGS-B',]
         minSel = wx.ComboBox(G2frame.dataDisplay,value=data['Minimizer'],choices=minlist,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         minSel.Bind(wx.EVT_COMBOBOX, OnMinSel)
@@ -4840,8 +4840,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
-            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallAfter(G2pwd.REFDModelFxn,Profile,Inst,Limits,Substances,data)
+            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
                        
         layerSizer = wx.BoxSizer(wx.VERTICAL)

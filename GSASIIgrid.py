@@ -1496,7 +1496,7 @@ class ShowLSParms(wx.Dialog):
         self.globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         self.globVars = list(set([' ',]+[item[2] for item in splitNames if not item[0] and not item[1]]))
         self.globVars.sort()
-        self.hisNames = [':'.join(item) for item in splitNames if not item[0]]
+        self.hisNames = [':'.join(item) for item in splitNames if not item[0] and item[1]]
         self.hisNums = list(set([int(item.split(':')[1]) for item in self.hisNames]))
         self.hisNums.sort()
         self.hisNums = [' ',]+[str(item) for item in self.hisNums]

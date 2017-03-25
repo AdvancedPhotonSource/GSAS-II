@@ -1943,12 +1943,12 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     def SetModelParms():
         line = ' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale'])
         if 'Scale' in varyList:
-            data['Scale'] = parmDict['Scale']
+            data['Scale'][0] = parmDict['Scale']
             line += ' esd: %.4g'%(sigDict['Scale'])                                                             
         print line
         line = ' Flat background: %15.4g'%(parmDict['FltBack'])
         if 'FltBack' in varyList:
-            data['FltBack'] = parmDict['FltBack']
+            data['FltBack'][0] = parmDict['FltBack']
             line += ' esd: %15.3g'%(sigDict['FltBack'])
         print line
         for ilay,layer in enumerate(data['Layers']):

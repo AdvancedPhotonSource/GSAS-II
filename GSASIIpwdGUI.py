@@ -4707,8 +4707,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         SaveState()
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
-        wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='REFD')
-        wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
         
     def OnFitModelAll(event):
         print 'fit all model'
@@ -4719,8 +4719,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId,'Models'))
         G2frame.dataFrame.REFDUndo.Enable(False)
-        UpdateREFDModelsGrid(G2frame,data)
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+        G2plt.PlotPatterns(G2frame,plotType='REFD')
+        wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
     def DoUnDo():
         print 'Undo last refinement'
@@ -4782,6 +4783,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
+            
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
 
@@ -4840,9 +4842,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         def Recalculate(invalid,value,tc):
             if invalid:
                 return
-            wx.CallAfter(G2pwd.REFDModelFxn,Profile,Inst,Limits,Substances,data)
-            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='REFD')
-            wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
+            wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
                        
         layerSizer = wx.BoxSizer(wx.VERTICAL)
         layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Top layer (superphase):'),0,WACV)

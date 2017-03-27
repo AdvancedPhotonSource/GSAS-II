@@ -3846,7 +3846,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # N.B. These Dij vars are missing a histogram #
     newCellDict = {}
     for name in histNames:
-        newCellDict.update(data[name].get('newCellDict',{}))
+        if name in data and 'newCellDict' in data[name]:
+            newCellDict.update(data[name]['newCellDict'])
 #    newCellDict = data[histNames[0]].get('newCellDict',{})
     cellAlist = []
     for item in newCellDict:
@@ -3991,7 +3992,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for i,name in enumerate(histNames):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
     # add unique cell parameters TODO: review this where the cell symmetry changes (when possible)
-    if Controls.get('ShowCell',False):
+    if Controls.get('ShowCell',False) and len(newCellDict):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []

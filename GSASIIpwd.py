@@ -27,6 +27,7 @@ from numpy.fft import ifft, fft, fftshift
 import scipy.interpolate as si
 import scipy.stats as st
 import scipy.optimize as so
+import scipy.special as sp
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1930,7 +1931,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
             cid = str(ilay)+';'
-            for parm in ['Thick','Rough','DenMul']:
+            for parm in ['Thick','Rough','DenMul','Mag SLD']:
                 parmDict[cid+parm] = layer.get(parm,[0.,False])[0]
                 if layer.get(parm,[0.,False])[1]:
                     varyList.append(cid+parm)
@@ -1958,7 +1959,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             line = ' '
             line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
             line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)**parmDict[cid+'DenMul'])
-            for parm in ['Thick','Rough','DenMul']:
+            for parm in ['Thick','Rough','DenMul','Mag SLD']:
                 if parm in layer:
                     layer[parm][0] = parmDict[cid+parm]
                     line += ' %s: %.3f'%(parm,layer[parm][0])
@@ -1990,6 +1991,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             depth[ilay] = parmDict[cid+'Thick']
             sigma[ilay] = parmDict[cid+'Rough']
             rho[ilay] = parmDict[cid+'rho']*parmDict[cid+'DenMul']
+            if cid+'Mag SLD' in parmDict:
+                rho[ilay] += parmDict[cid+'Mag SLD']
             irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
             A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
         Ic += (A**2+B**2)*Scale      
@@ -2002,7 +2005,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
-    Bounds = {'Scale':[data['Scale'][0]*.85,data['Scale'][0]/.85],'FltBack':[None,None],'DenMul':[0.,None],'Thick':[1.,None],'Rough':[0.,None]}
+    Bounds = {'Scale':[data['Scale'][0]*.85,data['Scale'][0]/.85],'FltBack':[None,None],
+              'DenMul':[0.,None],'Thick':[1.,None],'Rough':[0.,None],'Mag SLD':[-10.,10.]}
     parmDict,varyList,values,bounds = GetModelParms()
     Msg = 'Failed to converge'
     if varyList:
@@ -2055,7 +2059,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if np.any(Negs):
             indx = Negs.nonzero()
             name = varyList[indx[0][0]]
-            if name != 'FltBack':
+            if name != 'FltBack' and 'Mag SLD' not in name:
                 Msg += ' negative coefficient for '+name+'!'
                 raise ValueError
         if len(covM):
@@ -2073,6 +2077,38 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         print Msg
         return False,0,0,0,0,0,0,Msg
+        
+def makeSLDprofile(data,Substances):
+    
+    sq2 = np.sqrt(2.)
+    Nlayers = len(data['Layers'])
+    interfaces = np.zeros(Nlayers)
+    rho = np.zeros(Nlayers)
+    irho = np.zeros(Nlayers)
+    sigma = np.zeros(Nlayers)
+    thick = 0.
+    for ilayer,layer in enumerate(data['Layers']):
+        name = layer['Name']
+        if 'Thick' in layer:    #skips first & last layers
+            thick += layer['Thick'][0]
+            interfaces[ilayer] = layer['Thick'][0]+interfaces[ilayer-1]
+        if 'Rough' in layer:    #skips first layer
+            sigma[ilayer] = max(0.001,layer['Rough'][0])
+        rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+        if 'Mag SLD' in layer:
+            rho[ilayer] += layer['Mag SLD'][0]
+        irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
+    x = np.linspace(-0.15*thick,1.15*thick,1000,endpoint=True)
+    xr = np.flipud(x)
+    interfaces[-1] = x[-1]
+    y = np.ones_like(x)*rho[0]
+    iBeg = 0
+    for ilayer in range(Nlayers-1):
+        delt = rho[ilayer+1]-rho[ilayer]
+        iPos = np.searchsorted(x,interfaces[ilayer])
+        y[iBeg:] += (delt/2.)*sp.erfc((interfaces[ilayer]-x[iBeg:])/(sq2*sigma[ilayer+1]))
+        iBeg = iPos
+    return x,xr,y    
 
 def REFDModelFxn(Profile,Inst,Limits,Substances,data):
     
@@ -2096,6 +2132,8 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
         if 'Rough' in layer:    #skips first layer
             sigma[ilayer] = layer['Rough'][0]
         rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+        if 'Mag SLD' in layer:
+            rho[ilayer] += layer['Mag SLD'][0]
         irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
         A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
     Ic[iBeg:iFin] = (A**2+B**2)*Scale+Ib[iBeg:iFin]

@@ -1980,6 +1980,10 @@ def UpdateInstrumentGrid(G2frame,data):
         insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
         insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
         insRef = {}
+    elif 'R' in data['Type'][0]:                               #low angle data
+        insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
+        insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
+        insRef = {}
     RefObj = {}
     waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
         'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
@@ -2016,7 +2020,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
         #G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2gd.wxID_INST1VAL)
-    elif 'L' in insVal['Type']:                   #SASD data menu commands
+    elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SASDInstMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
@@ -2155,6 +2159,22 @@ def UpdateSampleGrid(G2frame,data):
         UpdateSampleGrid(G2frame,data)        
     
     def OnSetScale(event):
+        if histName[:4] in ['REFD','PWDR']:
+            Scale = data['Scale'][0]
+            dlg = wx.MessageDialog(G2frame,'Rescale data by %.2f?'%(Scale),'Rescale data',wx.OK|wx.CANCEL)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histName)
+                    y,w = G2frame.PatternTree.GetItemPyData(pId)[1][1:3]
+                    y *= Scale
+                    w /= Scale**2
+                    data['Scale'][0] = 1.0
+            finally:
+                dlg.Destroy()
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            UpdateSampleGrid(G2frame,data)
+            return
+        #SASD rescaliing                
         histList = []
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
@@ -2351,7 +2371,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2gd.wxID_SAMPLE1VAL)
     G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2gd.wxID_ALLSAMPLELOAD)
-    if 'SASD' in histName:
+    if histName[:4] in ['SASD','REFD','PWDR']:
         G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():
         G2frame.dataFrame.CreateStatusBar()    
@@ -3785,7 +3805,7 @@ def UpdateSubstanceGrid(G2frame,data):
             for El in dlg.Elem:
                 El = El.strip().capitalize()
                 Info = G2elem.GetAtomInfo(El)
-                Info.update({'Num':1})
+                Info.update({'Num':1.})
                 data['Substances'][name]['Elements'][El] = Info
                 isotopes = Info['Isotopes'].keys()
                 isotopes.sort()
@@ -3913,7 +3933,7 @@ def UpdateSubstanceGrid(G2frame,data):
                     elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
                         0,WACV)
                     num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name]['Elements'][El],'Num',
-                        nDig=(10,2),typeHint=float,OnLeave=OnNum)
+                        nDig=(10,2,'f'),typeHint=float,OnLeave=OnNum)
                     Indx[num.GetId()] = [name,El,'Num']
                     elSizer.Add(num,0,WACV)
                     if 'N' in Inst['Type'][0]:
@@ -4696,23 +4716,79 @@ def UpdateREFDModelsGrid(G2frame,data):
     '''respond to selection of REFD Models data tree item.
     '''
     def OnCopyModel(event):
-        print 'copy model'
-        event.Skip()
-        
-    def OnCopyFlags(event):
-        print 'copy flags'
-        event.Skip()
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        copyList = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Copy reflectivity models from\n'+str(hst[5:])+' to...',
+            'Copy parameters', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),copy.copy(data))
         
     def OnFitModel(event):
         
         SaveState()
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
+        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
+        
+    def OnModelPlot(event):
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = [hst,]
+        histList += GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        plotList = []
+        od = {'label_1':'Zero at substrate','value_1':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Plot reflectivity models for:',
+            'Plot SLD models', histList,extraOpts=od)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    plotList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        XY = []
+        for item in plotList:
+            mId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            model = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,mId,'Models'))
+            Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,mId,'Substances'))['Substances']       
+            x,xr,y = G2pwd.makeSLDprofile(model,Substances)
+            if od['value_1']:
+                XY.append([xr,y])
+                disLabel = r'$Distance\ from\ substrate,\ \AA$'
+            else:
+                XY.append([x,y])
+                disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
+        G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=True,   
+                      Title='Scattering length density',lines=True,names=[])
         
     def OnFitModelAll(event):
         print 'fit all model'
         event.Skip()
+        
+    def ModelPlot(data,x,xr,y):
+        if data['Zero']:
+            XY = [[x,y],]
+            disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
+        else:
+            XY = [[xr,y],]
+            disLabel = r'$Distance\ from\ substrate,\ \AA$'
+        G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=False,
+            Title='Scattering length density',lines=True,names=[])
         
     def OnUnDo(event):
         DoUnDo()
@@ -4720,6 +4796,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2frame.PatternId,'Models'))
         G2frame.dataFrame.REFDUndo.Enable(False)
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
@@ -4785,6 +4863,8 @@ def UpdateREFDModelsGrid(G2frame,data):
                 return
             
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
 
         overall = wx.BoxSizer(wx.HORIZONTAL)
@@ -4814,6 +4894,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['Layers'][item]['Name'] = Name
             data['Layers'][item]['Rough'] = [0.,False]
             data['Layers'][item]['Thick'] = [1.,False]
+            if 'N' in Inst['Type'][0]:
+                data['Layers'][item]['Mag SLD'] = [0.,False]
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
@@ -4843,138 +4925,96 @@ def UpdateREFDModelsGrid(G2frame,data):
             if invalid:
                 return
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
-                       
+
+        Indx = {}                       
         layerSizer = wx.BoxSizer(wx.VERTICAL)
-        layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Top layer (superphase):'),0,WACV)
-        toplayer = wx.BoxSizer(wx.HORIZONTAL)
-        toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
-        topName = data['Layers'][0]['Name']
-        topSel = wx.ComboBox(G2frame.dataDisplay,value=topName,
-            choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx = {topSel.GetId():0}
-        topSel.Bind(wx.EVT_COMBOBOX,OnSelect)
-        toplayer.Add(topSel,0,WACV)
-        if topName != 'vacuum':
-            toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
-            toplayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][0]['DenMul'],0,
-                nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
-            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
-            Indx[varBox.GetId()] = [0,'DenMul']
-            varBox.SetValue(data['Layers'][0]['DenMul'][1])
-            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-            toplayer.Add(varBox,0,WACV)
-            toplayer.Add(wx.StaticText(G2frame.dataDisplay,
-                label=' Real scat. den.: %.4g'%(data['Layers'][0]['DenMul'][0]*Substances[topName]['Scatt density'])),0,WACV)
-            if topName != 'unit scatter':
-                toplayer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' Imag scat. den.: %.4g'%(data['Layers'][0]['DenMul'][0]*Substances[topName]['XImag density'])),0,WACV)
-        else:
-            toplayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
-        layerSizer.Add(toplayer)
-        insert = wx.Button(G2frame.dataDisplay,label='Insert')
-        Indx[insert.GetId()] = 0
-        insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
-        layerSizer.Add(insert)
-        G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
         
-        for ilay,layer in enumerate(data['Layers'][1:-1]):
-            layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer no. %d'%(ilay+1)),0,WACV)
+        for ilay,layer in enumerate(data['Layers']):
+            if not ilay:
+                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Top layer (superphase):'),0,WACV)
+            elif ilay < len(data['Layers'])-1:
+                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer no. %d'%(ilay)),0,WACV)
+            else:
+                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Bottom layer (substrate):'),0,WACV)
             midlayer = wx.BoxSizer(wx.HORIZONTAL)
             midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
-            midName = data['Layers'][ilay+1]['Name']
+            midName = data['Layers'][ilay]['Name']
             midSel = wx.ComboBox(G2frame.dataDisplay,value=midName,
                 choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[midSel.GetId()] = ilay+1
+            Indx[midSel.GetId()] = ilay
             midSel.Bind(wx.EVT_COMBOBOX,OnSelect)
             midlayer.Add(midSel,0,WACV)
             if midName != 'vacuum':
                 midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
-                midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay+1]['DenMul'],0,
+                midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
                     nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
                 varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
-                Indx[varBox.GetId()] = [ilay+1,'DenMul']
-                varBox.SetValue(data['Layers'][ilay+1]['DenMul'][1])
+                Indx[varBox.GetId()] = [ilay,'DenMul']
+                varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
                 varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
                 midlayer.Add(varBox,0,WACV)
+                realScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['Scatt density']
                 midlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' Real scat. den.: %.4g'%(data['Layers'][ilay+1]['DenMul'][0]*Substances[midName]['Scatt density'])),0,WACV)
+                    label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
                 if midName != 'unit scatter':
                     midlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                        label=' Imag scat. den.: %.4g'%(data['Layers'][ilay+1]['DenMul'][0]*Substances[midName]['XImag density'])),0,WACV)
+                        label=' Imag scat. den.: %.4g'%(data['Layers'][ilay]['DenMul'][0]*Substances[midName]['XImag density'])),0,WACV)
             else:
                 midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
             layerSizer.Add(midlayer)
             if midName != 'vacuum':
-                names = {'Rough':'Upper surface Roughness, '+Angstr,'Thick':'Layer Thickness, '+Angstr}
-                parmsline = wx.BoxSizer(wx.HORIZONTAL)
-                for parm in ['Rough','Thick']:
-                    parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' %s: '%(names[parm])),0,WACV)
-                    parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay+1][parm],0,
-                        nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
+                if 'N' in Inst['Type'][0] and midName not in ['vacuum','unit scatter']:
+                    magLayer = wx.BoxSizer(wx.HORIZONTAL)
+                    magLayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Magnetic SLD: '),0,WACV)
+                    magLayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['Mag SLD'],0,
+                        nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
                     varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
-                    Indx[varBox.GetId()] = [ilay+1,parm]
-                    varBox.SetValue(data['Layers'][ilay+1][parm][1])
+                    Indx[varBox.GetId()] = [ilay,'Mag SLD']
+                    varBox.SetValue(data['Layers'][ilay]['Mag SLD'][1])
                     varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-                    parmsline.Add(varBox,0,WACV)
-                
-                layerSizer.Add(parmsline)
-            newlayer = wx.BoxSizer(wx.HORIZONTAL)
-            insert = wx.Button(G2frame.dataDisplay,label='Insert')
-            Indx[insert.GetId()] = ilay+1
-            insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
-            newlayer.Add(insert)
-            delet = wx.Button(G2frame.dataDisplay,label='Delete')
-            Indx[delet.GetId()] = ilay+1
-            delet.Bind(wx.EVT_BUTTON,OnDeleteLayer)
-            newlayer.Add(delet)
-            layerSizer.Add(newlayer)
-            G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
+                    magLayer.Add(varBox,0,WACV)
+                    magLayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Real+mag scat. den.: %.4g'%(realScatt+data['Layers'][ilay]['Mag SLD'][0])),0,WACV)
+                    layerSizer.Add(magLayer)
+                if ilay:
+                    names = {'Rough':'Upper surface Roughness, '+Angstr,'Thick':'Layer Thickness, '+Angstr}
+                    parmsline = wx.BoxSizer(wx.HORIZONTAL)
+                    parms= ['Rough','Thick']
+                    if ilay == len(data['Layers'])-1:
+                        parms = ['Rough',]
+                    for parm in parms:
+                        parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' %s: '%(names[parm])),0,WACV)
+                        parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay][parm],0,
+                            nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
+                        varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                        Indx[varBox.GetId()] = [ilay,parm]
+                        varBox.SetValue(data['Layers'][ilay][parm][1])
+                        varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+                        parmsline.Add(varBox,0,WACV)
+                    layerSizer.Add(parmsline)
+            if ilay < len(data['Layers'])-1:
+                newlayer = wx.BoxSizer(wx.HORIZONTAL)
+                insert = wx.Button(G2frame.dataDisplay,label='Insert')
+                Indx[insert.GetId()] = ilay
+                insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
+                newlayer.Add(insert)
+                delet = wx.Button(G2frame.dataDisplay,label='Delete')
+                Indx[delet.GetId()] = ilay
+                delet.Bind(wx.EVT_BUTTON,OnDeleteLayer)
+                newlayer.Add(delet)
+                layerSizer.Add(newlayer)
+                G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
         
-        layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Bottom layer (substrate):'),0,WACV)
-        bottomlayer = wx.BoxSizer(wx.HORIZONTAL)
-        bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
-        bottomName = data['Layers'][-1]['Name']
-        bottomSel = wx.ComboBox(G2frame.dataDisplay,value=bottomName,
-            choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[bottomSel.GetId()] = len(data['Layers'])-1
-        bottomSel.Bind(wx.EVT_COMBOBOX,OnSelect)
-        bottomlayer.Add(bottomSel,0,WACV)
-        if bottomName != 'vacuum':
-            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
-            bottomlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][-1]['DenMul'],0,
-                nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
-            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
-            Indx[varBox.GetId()] = [-1,'DenMul']
-            varBox.SetValue(data['Layers'][-1]['DenMul'][1])
-            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-            bottomlayer.Add(varBox,0,WACV)
-            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                label=' Real scat. den.: %.4g'%(data['Layers'][-1]['DenMul'][0]*Substances[bottomName]['Scatt density'])),0,WACV)
-            if bottomName != 'unit scatter':
-                bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' Imag scat. den.: %.4g'%(data['Layers'][-1]['DenMul'][0]*Substances[bottomName]['XImag density'])),0,WACV)
-        else:
-            bottomlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
-        layerSizer.Add(bottomlayer)
-        if bottomName != 'vacuum':
-            parmsline = wx.BoxSizer(wx.HORIZONTAL)
-            parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' Upper surface Roughness, %s: '%(Angstr)),0,WACV)
-            parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][-1]['Rough'],0,
-                nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
-            varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
-            Indx[varBox.GetId()] = [-1,'Rough']
-            varBox.SetValue(data['Layers'][-1]['Rough'][1])
-            varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-            parmsline.Add(varBox,0,WACV)
-            layerSizer.Add(parmsline)        
         return layerSizer
     
     Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.REFDModelMenu)
@@ -4983,7 +5023,7 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.dataFrame.SetLabel('Modelling')
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2gd.wxID_MODELCOPYFLAGS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnModelPlot, id=G2gd.wxID_MODELPLOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)

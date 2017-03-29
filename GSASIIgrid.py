@@ -143,8 +143,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-    wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,wxID_RELOADSUBSTANCES
-] = [wx.NewId() for item in range(13)]
+    wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,wxID_RELOADSUBSTANCES,
+    wxID_MODELPLOT,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,wxID_MERGEHKL,
 ] = [wx.NewId() for item in range(5)]
@@ -2196,8 +2197,8 @@ class DataFrame(wx.Frame):
             help='Sequential fit of model parameters to all REFD data')
         self.REFDModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy model parameters to other histograms')
-        self.REFDModelEdit.Append(id=wxID_MODELCOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy model refinement flags to other histograms')
+        self.REFDModelEdit.Append(id=wxID_MODELPLOT, kind=wx.ITEM_NORMAL,text='Plot',
+            help='Plot model SDL for selected histograms')
         self.PostfillDataMenu()
 
         # IMG / Image Controls

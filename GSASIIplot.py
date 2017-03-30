@@ -21,7 +21,10 @@ import wx
 import wx.aui
 import wx.glcanvas
 import matplotlib as mpl
-import matplotlib.collections as mplC
+try:  # code not found in readthedocs
+    import matplotlib.collections as mplC
+except:
+    print('matplotlib.collections not present') 
 import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on')

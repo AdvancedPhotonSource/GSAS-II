@@ -474,7 +474,7 @@ load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
 
-.. tabularcolumns:: |l{1in}|l{1in}|p{4in}|
+.. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
 
 ======================  ===============  ====================================================
   key                      sub-key        explanation

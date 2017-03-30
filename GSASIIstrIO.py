@@ -1533,17 +1533,8 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
         
 def getCellEsd(pfx,SGData,A,covData):
     'needs a doc string'
-    dpr = 180./np.pi
     rVsq = G2lat.calc_rVsq(A)
     G,g = G2lat.A2Gmat(A)       #get recip. & real metric tensors
-    cell = np.array(G2lat.Gmat2cell(g))   #real cell
-    cellst = np.array(G2lat.Gmat2cell(G)) #recip. cell
-    scos = cosd(cellst[3:6])
-    ssin = sind(cellst[3:6])
-    scot = scos/ssin
-    rcos = cosd(cell[3:6])
-    rsin = sind(cell[3:6])
-    rcot = rcos/rsin
     RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     varyList = covData['varyList']
     covMatrix = covData['covMatrix']
@@ -1558,54 +1549,35 @@ def getCellEsd(pfx,SGData,A,covData):
         vcov[0:2,0:2] = vcov[0,0]
         vcov[1,2] = vcov[2,1] = vcov[0,2]
     elif SGData['SGLaue'] in ['3R','3mR']:
-        vcov[0:2,0:2] = vcov[0,0]
-        vcov[4,4] = vcov[5,5] = vcov[3,3]
+        vcov[0:3,0:3] = vcov[0,0]
+#        vcov[4,4] = vcov[5,5] = vcov[3,3]
+        vcov[3:6,3:6] = vcov[3,3]
         vcov[0:3,3:6] = vcov[0,3]
         vcov[3:6,0:3] = vcov[3,0]
-    Ax = np.array(A)
-    Ax[3:] /= 2.
-    drVdA = np.array([
-        Ax[1]*Ax[2]-Ax[5]**2,
-        Ax[0]*Ax[2]-Ax[4]**2,
-        Ax[0]*Ax[1]-Ax[3]**2,
-        Ax[4]*Ax[5]-Ax[2]*Ax[3],
-        Ax[3]*Ax[5]-Ax[1]*Ax[4],
-        Ax[3]*Ax[4]-Ax[0]*Ax[5]])
+    delt = 1.e-9
+    drVdA = np.zeros(6)
+    for i in range(6):
+        A[i] += delt
+        drVdA[i] = G2lat.calc_rVsq(A)
+        A[i] -= 2*delt
+        drVdA[i] -= G2lat.calc_rVsq(A)
+        A[i] += delt
+    drVdA /= 2.*delt    
     srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
     
-    R123 = Ax[0]*Ax[1]*Ax[2]
-    dsasdg = np.zeros((3,6))
-    dadg = np.zeros((6,6))
-    for i0 in range(3):         #0  1   2
-        i1 = (i0+1)%3           #1  2   0
-        i2 = (i1+1)%3           #2  0   1
-        i3 = 5-i2               #3  5   4
-        i4 = 5-i1               #4  3   5
-        i5 = 5-i0               #5  4   3
-        dsasdg[i0][i1] = 0.5*scot[i0]*scos[i0]/Ax[i1]
-        dsasdg[i0][i2] = 0.5*scot[i0]*scos[i0]/Ax[i2]
-        dsasdg[i0][i5] = -scot[i0]/np.sqrt(Ax[i1]*Ax[i2])
-        denmsq = Ax[i0]*(R123-Ax[i1]*Ax[i4]**2-Ax[i2]*Ax[i3]**2)+(Ax[i4]*Ax[i3])**2
-        denom = np.sqrt(denmsq)
-        dadg[i5][i0] = -Ax[i5]/denom-rcos[i0]/denmsq*(R123-0.5*Ax[i1]*Ax[i4]**2-0.5*Ax[i2]*Ax[i3]**2)
-        dadg[i5][i1] = -0.5*rcos[i0]/denmsq*(Ax[i0]**2*Ax[i2]-Ax[i0]*Ax[i4]**2)
-        dadg[i5][i2] = -0.5*rcos[i0]/denmsq*(Ax[i0]**2*Ax[i1]-Ax[i0]*Ax[i3]**2)
-        dadg[i5][i3] = Ax[i4]/denom+rcos[i0]/denmsq*(Ax[i0]*Ax[i2]*Ax[i3]-Ax[i3]*Ax[i4]**2)
-        dadg[i5][i4] = Ax[i3]/denom+rcos[i0]/denmsq*(Ax[i0]*Ax[i1]*Ax[i4]-Ax[i3]**2*Ax[i4])
-        dadg[i5][i5] = -Ax[i0]/denom
-    for i0 in range(3):
-        i1 = (i0+1)%3
-        i2 = (i1+1)%3
-        i3 = 5-i2
-        for ij in range(6):
-            dadg[i0][ij] = cell[i0]*(rcot[i2]*dadg[i3][ij]/rsin[i2]-dsasdg[i1][ij]/ssin[i1])
-            if ij == i0:
-                dadg[i0][ij] = dadg[i0][ij]-0.5*cell[i0]/Ax[i0]
-            dadg[i3][ij] = -dadg[i3][ij]*rsin[2-i0]*dpr
-#    GSASIIpath.IPyBreak()
-    sigMat = np.inner(dadg,np.inner(dadg,vcov))
+    dcdA = np.zeros((6,6))
+    for i in range(6):
+        pdcdA =np.zeros(6)
+        A[i] += delt
+        pdcdA += G2lat.A2cell(A)
+        A[i] -= 2*delt
+        pdcdA -= G2lat.A2cell(A)
+        A[i] += delt
+        dcdA[i] = pdcdA/(2.*delt)
+    
+    sigMat = np.inner(dcdA,np.inner(dcdA,vcov))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
     if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm','m3','m3m','4/m','4/mmm']:

@@ -4739,8 +4739,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         SaveState()
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
-        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-        ModelPlot(data,x,xr,y)
+#        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+#        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
         
@@ -4781,14 +4781,18 @@ def UpdateREFDModelsGrid(G2frame,data):
         event.Skip()
         
     def ModelPlot(data,x,xr,y):
+        nLines = len(data['Layers'])-1
+        linePos = np.zeros(nLines)
+        for ilay,layer in enumerate(data['Layers'][1:-1]):
+            linePos[ilay+1:] += layer['Thick'][0]
         if data['Zero']:
             XY = [[x,y],]
             disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
         else:
             XY = [[xr,y],]
             disLabel = r'$Distance\ from\ substrate,\ \AA$'
-        G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=False,
-            Title='Scattering length density',lines=True,names=[])
+        G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=True,
+            Title='Scattering length density',lines=True,names=[],vertLines=[linePos,])
         
     def OnUnDo(event):
         DoUnDo()
@@ -4796,8 +4800,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2frame.PatternId,'Models'))
         G2frame.dataFrame.REFDUndo.Enable(False)
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-        ModelPlot(data,x,xr,y)
+#        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+#        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
@@ -4821,6 +4825,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         def OnRefPos(event):
             data['Zero'] = refpos.GetValue()
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
             
         def OnMinSel(event):
             data['Minimizer'] = minSel.GetValue()
@@ -4925,8 +4931,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             if invalid:
                 return
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-            ModelPlot(data,x,xr,y)
+#            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+#            ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
 
@@ -5045,7 +5051,10 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
-    G2frame.dataFrame.setSizePosLeft(Size)    
+    G2frame.dataFrame.setSizePosLeft(Size)
+    x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+    ModelPlot(data,x,xr,y)
+    
     
 ################################################################################
 #####  PDF controls

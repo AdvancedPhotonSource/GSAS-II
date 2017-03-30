@@ -2819,7 +2819,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ################################################################################
             
 def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
-    Title='',lines=False,names=[],names2=[]):
+    Title='',lines=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
     
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -2832,6 +2832,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
     :param list of str names: legend names for each XY plot
     :param list of str names2: legend names for each XY2 plot
+    :param lists of vertical line x-positions list; can be one for each XY
     :return nothing
     
     '''
@@ -2905,7 +2906,12 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
                 Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
         else:
             Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
-    if XY2 and len(XY2):
+    if len(vertLines):
+        for ixy,X in enumerate(vertLines):
+            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
+            for x in X:
+                Plot.axvline(x+dX,color=colors[ixy%6],dashes=(5,5),picker=False)
+    if XY2 is not None and len(XY2):
         for ixy,xy in enumerate(XY2):
             X,Y = XY2[ixy]
             dX = Page.Offset[0]*(ixy+1)*Xmax/500.

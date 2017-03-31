@@ -2786,7 +2786,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         brav = bravSel.GetString(bravSel.GetSelection())
         controls[5] = brav
         controls[13] = SPGlist[brav][0]       
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnSpcSel(event):
         controls[13] = spcSel.GetString(spcSel.GetSelection())

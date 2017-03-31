@@ -1931,14 +1931,16 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
             cid = str(ilay)+';'
-            for parm in ['Thick','Rough','DenMul','Mag SLD']:
+            parmDict[cid+'Name'] = name
+            for parm in ['Thick','Rough','DenMul','Mag SLD','iDenMul']:
                 parmDict[cid+parm] = layer.get(parm,[0.,False])[0]
                 if layer.get(parm,[0.,False])[1]:
                     varyList.append(cid+parm)
                     values.append(layer[parm][0])
                     bounds.append(Bounds[parm])
-            parmDict[cid+'rho'] = Substances[name]['Scatt density']
-            parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
+            if name not in ['vacuum','unit scatter']:
+                parmDict[cid+'rho'] = Substances[name]['Scatt density']
+                parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
         return parmDict,varyList,values,bounds
     
     def SetModelParms():
@@ -1959,7 +1961,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             line = ' '
             line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
             line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)**parmDict[cid+'DenMul'])
-            for parm in ['Thick','Rough','DenMul','Mag SLD']:
+            for parm in ['Thick','Rough','DenMul','Mag SLD','iDenMul']:
                 if parm in layer:
                     layer[parm][0] = parmDict[cid+parm]
                     line += ' %s: %.3f'%(parm,layer[parm][0])
@@ -1990,11 +1992,15 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             cid = str(ilay)+';'
             depth[ilay] = parmDict[cid+'Thick']
             sigma[ilay] = parmDict[cid+'Rough']
-            rho[ilay] = parmDict[cid+'rho']*parmDict[cid+'DenMul']
+            if parmDict[cid+'Name'] == u'unit scatter':
+                rho[ilay] = parmDict[cid+'DenMul']
+                irho[ilay] = parmDict[cid+'iDenMul']
+            elif 'vacuum' != parmDict[cid+'Name']:
+                rho[ilay] = parmDict[cid+'rho']*parmDict[cid+'DenMul']
+                irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
             if cid+'Mag SLD' in parmDict:
                 rho[ilay] += parmDict[cid+'Mag SLD']
-            irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
-            A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+        A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
         Ic += (A**2+B**2)*Scale      
         return Ic
 
@@ -2006,7 +2012,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
     Bounds = {'Scale':[data['Scale'][0]*.85,data['Scale'][0]/.85],'FltBack':[None,None],
-              'DenMul':[0.,None],'Thick':[1.,None],'Rough':[0.,None],'Mag SLD':[-10.,10.]}
+              'DenMul':[None,None],'Thick':[1.,None],'Rough':[0.,None],'Mag SLD':[-10.,10.],'iDenMul':[None,None]}
     parmDict,varyList,values,bounds = GetModelParms()
     Msg = 'Failed to converge'
     if varyList:
@@ -2131,11 +2137,15 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
             depth[ilayer] = layer['Thick'][0]
         if 'Rough' in layer:    #skips first layer
             sigma[ilayer] = layer['Rough'][0]
-        rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+        if 'unit scatter' == name:
+            rho[ilayer] = layer['DenMul'][0]
+            irho[ilayer] = layer['iDenMul'][0]
+        else:
+            rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+            irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
         if 'Mag SLD' in layer:
             rho[ilayer] += layer['Mag SLD'][0]
-        irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
-        A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+    A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
     Ic[iBeg:iFin] = (A**2+B**2)*Scale+Ib[iBeg:iFin]
 
 def abeles(kz, depth, rho, irho=0, sigma=0):

@@ -230,7 +230,7 @@ def SetDefaultREFDModel():
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
     return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0,'XImag density':0.0},
-        'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':0.0}}}
+        'unit scatter':{'Elements':None,'Volume':None,'Density':None,'Scatt density':1.0,'XImag density':1.0}}}
 
 def GetFileList(G2frame,fileType):
     fileList = []
@@ -4739,15 +4739,16 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         SaveState()
         G2pwd.REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data)
-#        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-#        ModelPlot(data,x,xr,y)
+        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
         
     def OnModelPlot(event):
         hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        histList = [hst,]
-        histList += GetHistsLikeSelected(G2frame)
+        histList = GetFileList(G2frame,'REFD')
+#        histList = [hst,]
+#        histList += GetHistsLikeSelected(G2frame)
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
@@ -4784,7 +4785,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         nLines = len(data['Layers'])-1
         linePos = np.zeros(nLines)
         for ilay,layer in enumerate(data['Layers'][1:-1]):
-            linePos[ilay+1:] += layer['Thick'][0]
+            linePos[ilay+1:] += layer.get('Thick',[0.,False])[0]
         if data['Zero']:
             XY = [[x,y],]
             disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
@@ -4800,8 +4801,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2frame.PatternId,'Models'))
         G2frame.dataFrame.REFDUndo.Enable(False)
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-#        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-#        ModelPlot(data,x,xr,y)
+        x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+        ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
 
@@ -4902,6 +4903,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['Layers'][item]['Thick'] = [1.,False]
             if 'N' in Inst['Type'][0]:
                 data['Layers'][item]['Mag SLD'] = [0.,False]
+            if Name == 'unit scatter':
+                data['Layers'][item]['iDenMul'] = [0.,False]
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
@@ -4931,8 +4934,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             if invalid:
                 return
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
-#            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-#            ModelPlot(data,x,xr,y)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
 
@@ -4955,23 +4958,50 @@ def UpdateREFDModelsGrid(G2frame,data):
             midSel.Bind(wx.EVT_COMBOBOX,OnSelect)
             midlayer.Add(midSel,0,WACV)
             if midName != 'vacuum':
-                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
-                midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
+                if midName != 'unit scatter':
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
+                    midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
+                        nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                    varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                    Indx[varBox.GetId()] = [ilay,'DenMul']
+                    varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
+                    varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+                    midlayer.Add(varBox,0,WACV)
+                    realScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['Scatt density']
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
+                    imagScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['XImag density']
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Imag scat. den.: %.4g'%(imagScatt)),0,WACV)
+                else:
+                    realScatt = data['Layers'][ilay]['DenMul'][0]
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
+                    imagScatt = data['Layers'][ilay]['iDenMul'][0]
+                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                        label=' Imag scat. den.: %.4g'%(imagScatt)),0,WACV)                    
+            else:
+                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
+            layerSizer.Add(midlayer)
+            if midName == 'unit scatter':
+                nxtlayer = wx.BoxSizer(wx.HORIZONTAL)
+                nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Real Den. : '),0,WACV)                
+                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
                     nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
                 varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                 Indx[varBox.GetId()] = [ilay,'DenMul']
                 varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
                 varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-                midlayer.Add(varBox,0,WACV)
-                realScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['Scatt density']
-                midlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                    label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
-                if midName != 'unit scatter':
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
-                        label=' Imag scat. den.: %.4g'%(data['Layers'][ilay]['DenMul'][0]*Substances[midName]['XImag density'])),0,WACV)
-            else:
-                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
-            layerSizer.Add(midlayer)
+                nxtlayer.Add(varBox,0,WACV)
+                nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Imag Den. : '),0,WACV)                
+                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['iDenMul'],0,
+                    nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                Indx[varBox.GetId()] = [ilay,'iDenMul']
+                varBox.SetValue(data['Layers'][ilay]['iDenMul'][1])
+                varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+                nxtlayer.Add(varBox,0,WACV)
+                layerSizer.Add(nxtlayer)
             if midName != 'vacuum':
                 if 'N' in Inst['Type'][0] and midName not in ['vacuum','unit scatter']:
                     magLayer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5052,8 +5082,8 @@ def UpdateREFDModelsGrid(G2frame,data):
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
     G2frame.dataFrame.setSizePosLeft(Size)
-    x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-    ModelPlot(data,x,xr,y)
+#    x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+#    ModelPlot(data,x,xr,y)
     
     
 ################################################################################

@@ -25,31 +25,14 @@ import wx.aui
 import wx.lib.scrolledpanel as wxscroll
 import time
 import copy
-# import cPickle
-# import numpy as np
-# import numpy.ma as ma
-# import scipy.optimize as so
 import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
-# import GSASIImath as G2mth
-# import GSASIIIO as G2IO
-# import GSASIIstrIO as G2stIO
-# import GSASIIlattice as G2lat
-# import GSASIIplot as G2plt
 import GSASIIpwdGUI as G2pdG
-# import GSASIIimgGUI as G2imG
-# import GSASIIphsGUI as G2phG
-# import GSASIIspc as G2spc
-# import GSASIImapvars as G2mv
-# import GSASIIconstrGUI as G2cnstG
-# import GSASIIrestrGUI as G2restG
 import GSASIIpy3 as G2py3
-# import GSASIIobj as G2obj
-# import GSASIIexprGUI as G2exG
 import GSASIIlog as log
 
 # Define a short names for convenience

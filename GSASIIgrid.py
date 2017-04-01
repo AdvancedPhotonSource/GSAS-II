@@ -160,19 +160,19 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
-commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1,0,0],[0,0,-1],[0,1,0]]),
-    'ba-c':np.array([[0,1,0],[1,0,0],[0,0,-1]]),'-cba':np.array([[0,0,-1],[0,1,0],[1,0,0]]),
-    'bca':np.array([[0,1,0],[0,0,1],[1,0,0]]),'cab':np.array([[0,0,1],[1,0,0],[0,1,0]]),
-    'R->H':np.array([[1,-1,0],[0,1,-1],[1,1,1]]),'H->R':np.array([[2./3,1./3,1./3],[-1./3,1./3,1./3],[-1./3,-2./3,1./3]]),
-    'P->A':np.array([[-1,0,0],[0,-1,1],[0,1,1]]),'R->O':np.array([[-1,0,0],[0,-1,0],[0,0,1]]),
-    'P->B':np.array([[-1,0,1],[0,-1,0],[1,0,1]]),'B->P':np.array([[-.5,0,.5],[0,-1,0],[.5,0,.5]]),
-    'P->C':np.array([[1,1,0],[1,-1,0],[0,0,-1]]),'C->P':np.array([[.5,.5,0],[.5,-.5,0],[0,0,-1]]),
-    'P->F':np.array([[-1,1,1],[1,-1,1],[1,1,-1]]),'F->P':np.array([[0,.5,.5],[.5,0,.5],[.5,.5,0]]),   
-    'P->I':np.array([[0,1,1],[1,0,1],[1,1,0]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
-    'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), 
+commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.]]),
+    'ba-c':np.array([[0.,1.,0.],[1.,0.,0.],[0.,0.,-1.]]),'-cba':np.array([[0.,0.,-1.],[0.,1.,0.],[1.,0.,0.]]),
+    'bca':np.array([[0.,1.,0.],[0.,0.,1.],[1.,0.,0.]]),'cab':np.array([[0.,0.,1.],[1.,0.,0.],[0.,1.,0.]]),
+    'R->H':np.array([[1.,-1.,0.],[0.,1.,-1.],[1.,1.,1.]]),'H->R':np.array([[2./3,1./3,1./3],[-1./3,1./3,1./3],[-1./3,-2./3,1./3]]),
+    'P->A':np.array([[-1.,0.,0.],[0.,-1.,1.],[0.,1.,1.]]),'R->O':np.array([[-1.,0.,0.],[0.,-1.,0.],[0.,0.,1.]]),
+    'P->B':np.array([[-1.,0.,1.],[0.,-1.,0.],[1.,0.,1.]]),'B->P':np.array([[-.5,0.,.5],[0.,-1.,0.],[.5,0.,.5]]),
+    'P->C':np.array([[1.,1.,0.],[1.,-1.,0.],[0.,0.,-1.]]),'C->P':np.array([[.5,.5,0.],[.5,-.5,0.],[0.,0.,-1.]]),
+    'P->F':np.array([[-1.,1.,1.],[1.,-1.,1.],[1.,1.,-1.]]),'F->P':np.array([[0.,.5,.5],[.5,0.,.5],[.5,.5,0.]]),   
+    'P->I':np.array([[0.,1.,1.],[1.,0.,1.],[1.,1.,0.]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
+    'A->P':np.array([[-1.,0.,0.],[0.,-.5,.5],[0.,.5,.5]]),'O->R':np.array([[-1.,0.,0.],[0.,-1.,0.],[0.,0.,1.]]), 
     'abc*':np.eye(3), }
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
-    'P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R','abc*',]
+    'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*',]
 
 # Should SGMessageBox, SymOpDialog, DisAglDialog be moved? 
 
@@ -420,17 +420,17 @@ class SphereEnclosure(wx.Dialog):
         
     def Draw(self):
         
-        def OnRadius(event):
-            event.Skip()
-            try:
-                val = float(radius.GetValue())
-                if val < 0.5:
-                    raise ValueError
-                self.Sphere = val
-            except ValueError:
-                pass
-            radius.SetValue('%.3f'%(self.Sphere))
-            
+#        def OnRadius(event):
+#            event.Skip()
+#            try:
+#                val = float(radius.GetValue())
+#                if val < 0.5:
+#                    raise ValueError
+#                self.Sphere = val
+#            except ValueError:
+#                pass
+#            radius.SetValue('%.3f'%(self.Sphere))
+#            
         def OnAtomType(event):
             Obj = event.GetEventObject()
             id = Ind[Obj.GetId()]
@@ -458,9 +458,10 @@ class SphereEnclosure(wx.Dialog):
         mainSizer.Add(topSizer,0,WACV)
         sphereSizer = wx.BoxSizer(wx.HORIZONTAL)
         sphereSizer.Add(wx.StaticText(self.panel,label=' Sphere radius: '),0,WACV)
-        radius = wx.TextCtrl(self.panel,value='%.3f'%(self.Sphere),style=wx.TE_PROCESS_ENTER)
-        radius.Bind(wx.EVT_TEXT_ENTER,OnRadius)
-        radius.Bind(wx.EVT_KILL_FOCUS,OnRadius)
+        radius = G2G.ValidatedTxtCtrl(self.panel,self.Sphere,nDig=(10,3),typeHint=float,size=(65,25))
+#        radius = wx.TextCtrl(self.panel,value='%.3f'%(self.Sphere),style=wx.TE_PROCESS_ENTER)
+#        radius.Bind(wx.EVT_TEXT_ENTER,OnRadius)
+#        radius.Bind(wx.EVT_KILL_FOCUS,OnRadius)
         sphereSizer.Add(radius,0,WACV)
         mainSizer.Add(sphereSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Target selected atoms:'),0,WACV)
@@ -540,36 +541,6 @@ class TransformDialog(wx.Dialog):
 
     def Draw(self):
                 
-        def OnMatValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            ix,iy = Ind[Obj.GetId()]
-            val = Obj.GetValue()
-            try:
-                if '/' in val:
-                    vals = val.split('/')
-                    self.Trans[iy,ix] = float(vals[0])/float(vals[1])
-                else:    
-                    self.Trans[iy,ix] = float(Obj.GetValue())
-            except ValueError:
-                pass
-            Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
-            
-        def OnVecValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            iy = Ind[Obj.GetId()]
-            val = Obj.GetValue()
-            try:
-                if '/' in val:
-                    vals = val.split('/')
-                    self.Vec[iy] = float(vals[0])/float(vals[1])
-                else:    
-                    self.Vec[iy] = float(Obj.GetValue())
-            except ValueError:
-                pass
-            Obj.SetValue('%5.3f'%(self.Vec[iy]))
-                
         def OnCommon(event):
             Obj = event.GetEventObject()
             self.Common = Obj.GetValue()
@@ -583,6 +554,11 @@ class TransformDialog(wx.Dialog):
                 self.Phase['General']['SGData'] = SGData
             else:
                 self.Trans = commonTrans[self.Common]
+                if 'R' == self.Common[-1]:
+                    self.newSpGrp += ' r'
+                    SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
+                    self.Phase['General']['SGData'] = SGData
+                    SGTxt.SetValue(self.newSpGrp)
             OnTest(event)
        
         def OnSpaceGroup(event):
@@ -635,7 +611,7 @@ class TransformDialog(wx.Dialog):
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
-        Ind = {}
+#        Ind = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
@@ -653,18 +629,10 @@ class TransformDialog(wx.Dialog):
         Trmat = wx.FlexGridSizer(3,5,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
-                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
-                    size=(50,25),style=wx.TE_PROCESS_ENTER)
-                Ind[item.GetId()] = [ix,iy]
-                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
-                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),typeHint=float,size=(65,25))
                 Trmat.Add(item)
             Trmat.Add((25,0),0)
-            vec = wx.TextCtrl(self.panel,value='%5.3f'%(self.Vec[iy]),
-                    size=(50,25),style=wx.TE_PROCESS_ENTER)
-            Ind[vec.GetId()] = [iy]       
-            vec.Bind(wx.EVT_TEXT_ENTER,OnVecValue)
-            vec.Bind(wx.EVT_KILL_FOCUS,OnVecValue)
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vec,iy,nDig=(10,3),typeHint=float,size=(65,25))
             Trmat.Add(vec)
         transSizer.Add(Trmat)
         MatSizer.Add((10,0),0)
@@ -833,31 +801,31 @@ class RotationDialog(wx.Dialog):
 
     def Draw(self):
 
-        def OnMatValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            ix,iy = Ind[Obj.GetId()]
-            val = Obj.GetValue()
-            if '/' in val:
-                vals = val.split('/')
-                self.Trans[iy,ix] = float(vals[0])/float(vals[1])
-            else:    
-                self.Trans[iy,ix] = float(Obj.GetValue())
-            Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
-            
-            
-        def OnVecValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            iy = Ind[Obj.GetId()]
-            val = Obj.GetValue()
-            if '/' in val:
-                vals = val.split('/')
-                self.Vec[iy] = float(vals[0])/float(vals[1])
-            else:    
-                self.Vec[iy] = float(Obj.GetValue())
-            Obj.SetValue('%5.3f'%(self.Vec[iy]))
-            
+#        def OnMatValue(event):
+#            event.Skip()
+#            Obj = event.GetEventObject()
+#            ix,iy = Ind[Obj.GetId()]
+#            val = Obj.GetValue()
+#            if '/' in val:
+#                vals = val.split('/')
+#                self.Trans[iy,ix] = float(vals[0])/float(vals[1])
+#            else:    
+#                self.Trans[iy,ix] = float(Obj.GetValue())
+#            Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
+#            
+#            
+#        def OnVecValue(event):
+#            event.Skip()
+#            Obj = event.GetEventObject()
+#            iy = Ind[Obj.GetId()]
+#            val = Obj.GetValue()
+#            if '/' in val:
+#                vals = val.split('/')
+#                self.Vec[iy] = float(vals[0])/float(vals[1])
+#            else:    
+#                self.Vec[iy] = float(Obj.GetValue())
+#            Obj.SetValue('%5.3f'%(self.Vec[iy]))
+#            
         def OnExpand(event):
             self.Expand = expand.GetValue()
             
@@ -881,7 +849,7 @@ class RotationDialog(wx.Dialog):
             
         self.panel.Destroy()
         self.panel = wx.Panel(self)
-        Ind = {}
+#        Ind = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
@@ -890,18 +858,20 @@ class RotationDialog(wx.Dialog):
         Trmat = wx.FlexGridSizer(3,5,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
-                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
-                    size=(50,25),style=wx.TE_PROCESS_ENTER)
-                Ind[item.GetId()] = [ix,iy]
-                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
-                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),typeHint=float,size=(65,25))
+#                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
+#                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+#                Ind[item.GetId()] = [ix,iy]
+#                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
+#                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
                 Trmat.Add(item)
             Trmat.Add((25,0),0)
-            vec = wx.TextCtrl(self.panel,value='%5.3f'%(self.Vec[iy]),
-                    size=(50,25),style=wx.TE_PROCESS_ENTER)
-            Ind[vec.GetId()] = [iy]       
-            vec.Bind(wx.EVT_TEXT_ENTER,OnVecValue)
-            vec.Bind(wx.EVT_KILL_FOCUS,OnVecValue)
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vec,iy,nDig=(10,3),typeHint=float,size=(65,25))
+#            vec = wx.TextCtrl(self.panel,value='%5.3f'%(self.Vec[iy]),
+#                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+#            Ind[vec.GetId()] = [iy]       
+#            vec.Bind(wx.EVT_TEXT_ENTER,OnVecValue)
+#            vec.Bind(wx.EVT_KILL_FOCUS,OnVecValue)
             Trmat.Add(vec)
         transSizer.Add(Trmat)
         MatSizer.Add((10,0),0)
@@ -1132,12 +1102,12 @@ class MergeDialog(wx.Dialog):
         
     def Draw(self):
                 
-        def OnMatValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            ix,iy = Ind[Obj.GetId()]
-            self.Trans[ix,iy] = float(Obj.GetValue())
-                
+#        def OnMatValue(event):
+#            event.Skip()
+#            Obj = event.GetEventObject()
+#            ix,iy = Ind[Obj.GetId()]
+#            self.Trans[ix,iy] = float(Obj.GetValue())
+#                
         def OnCent(event):
             Obj = event.GetEventObject()
             self.Cent = Obj.GetValue()
@@ -1163,7 +1133,7 @@ class MergeDialog(wx.Dialog):
        
         self.panel.Destroy()
         self.panel = wx.Panel(self)
-        Ind = {}
+#        Ind = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1181,11 +1151,12 @@ class MergeDialog(wx.Dialog):
             Trmat = wx.FlexGridSizer(3,3,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
-                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
-                    size=(50,25),style=wx.TE_PROCESS_ENTER)
-                Ind[item.GetId()] = [ix,iy]
-                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
-                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),typeHint=float,size=(65,25))
+#                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
+#                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+#                Ind[item.GetId()] = [ix,iy]
+#                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
+#                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
                 Trmat.Add(item)
         transSizer.Add(Trmat)
         MatSizer.Add((10,0),0)
@@ -2882,15 +2853,15 @@ def UpdateControls(G2frame,data):
             derivSel.SetValue(data['deriv type'])
             wx.CallAfter(UpdateControls,G2frame,data)
             
-        def OnConvergence(event):
-            event.Skip()
-            try:
-                value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
-            except ValueError:
-                value = 0.0001
-            data['min dM/M'] = value
-            Cnvrg.SetValue('%.2g'%(value))
-            
+#        def OnConvergence(event):
+#            event.Skip()
+#            try:
+#                value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
+#            except ValueError:
+#                value = 0.0001
+#            data['min dM/M'] = value
+#            Cnvrg.SetValue('%.2g'%(value))
+#            
         def OnMaxCycles(event):
             data['max cyc'] = int(maxCyc.GetValue())
             maxCyc.SetValue(str(data['max cyc']))
@@ -2914,17 +2885,17 @@ def UpdateControls(G2frame,data):
 #        def OnHatomFix(event):
 #            data['HatomFix'] = Hfix.GetValue()
         
-        def OnUsrRej(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            item,limits = Indx[Obj]
-            try:
-                value = min(max(float(Obj.GetValue()),limits[0]),limits[1])
-            except ValueError:
-                value = data['UsrReject'][item]
-            data['UsrReject'][item] = value
-            Obj.SetValue('%.2f'%(value))
-
+#        def OnUsrRej(event):
+#            event.Skip()
+#            Obj = event.GetEventObject()
+#            item,limits = Indx[Obj]
+#            try:
+#                value = min(max(float(Obj.GetValue()),limits[0]),limits[1])
+#            except ValueError:
+#                value = data['UsrReject'][item]
+#            data['UsrReject'][item] = value
+#            Obj.SetValue('%.2f'%(value))
+#
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,WACV)
         Choice=['analytic Jacobian','numeric','analytic Hessian']
@@ -2935,11 +2906,12 @@ def UpdateControls(G2frame,data):
             
         LSSizer.Add(derivSel,0,WACV)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min delta-M/M: '),0,WACV)
-        Cnvrg = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
-        Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
-        Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
+        Cnvrg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'min dM/M',nDig=(10,2,'g'),min=1.e-9,max=1.,typeHint=float)
+#        Cnvrg = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
+#        Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
+#        Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
         LSSizer.Add(Cnvrg,0,WACV)
-        Indx = {}
+#        Indx = {}
         if 'Hessian' in data['deriv type']:
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
@@ -2956,9 +2928,10 @@ def UpdateControls(G2frame,data):
             LSSizer.Add(marqLam,0,WACV)
         else:
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,WACV)
-            Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
-            Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
-            Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
+            Factr = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'shift factor',nDig=(10,5),min=1.e-5,max=100.,typeHint=float)
+#            Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
+#            Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
+#            Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
             LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
             userReject = data['UsrReject']
@@ -2973,10 +2946,12 @@ def UpdateControls(G2frame,data):
             LSSizer.Add((1,0),)
             for item in usrRej:
                 LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=usrRej[item][0]),0,WACV)
-                usrrej = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(userReject[item]),style=wx.TE_PROCESS_ENTER)
-                Indx[usrrej] = [item,usrRej[item][1]]
-                usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
-                usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
+                usrrej = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,userReject,item,nDig=(10,2),
+                    min=usrRej[item][1][0],max=usrRej[item][1][1],typeHint=float)
+#                usrrej = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(userReject[item]),style=wx.TE_PROCESS_ENTER)
+#                Indx[usrrej] = [item,usrRej[item][1]]
+#                usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
+#                usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
                 LSSizer.Add(usrrej,0,WACV)
 #        Hfix = wx.CheckBox(G2frame.dataDisplay,-1,label='Regularize H atoms? ')
 #        Hfix.SetValue(data['HatomFix'])
@@ -4432,15 +4407,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
         
-    def OnWtFactor(event):
-        event.Skip()
-        try:
-            val = float(wtval.GetValue())
-        except ValueError:
-            val = data[0]['wtFactor']
-        data[0]['wtFactor'] = val
-        wtval.SetValue('%.3f'%(val))
-        
+#    def OnWtFactor(event):
+#        event.Skip()
+#        try:
+#            val = float(wtval.GetValue())
+#        except ValueError:
+#            val = data[0]['wtFactor']
+#        data[0]['wtFactor'] = val
+#        wtval.SetValue('%.3f'%(val))
+#        
 #    def OnCompression(event):
 #        data[0] = int(comp.GetValue())
         
@@ -4493,9 +4468,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Weight factor: '),0,WACV)
-    wtval = wx.TextCtrl(G2frame.dataDisplay,-1,'%.3f'%(data[0]['wtFactor']),style=wx.TE_PROCESS_ENTER)
-    wtval.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
-    wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
+    wtval = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[0],'wtFactor',nDig=(10,3),min=1.e-9,typeHint=float)
+#    wtval = wx.TextCtrl(G2frame.dataDisplay,-1,'%.3f'%(data[0]['wtFactor']),style=wx.TE_PROCESS_ENTER)
+#    wtval.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
+#    wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
     wtSizer.Add(wtval,0,WACV)
 #    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
 #        wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Compression factor: '),0,WACV)

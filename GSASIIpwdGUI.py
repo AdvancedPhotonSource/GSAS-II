@@ -2872,6 +2872,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:                       #bad angle
                 value = 90.
         SetCellValue(Obj,ObjId/2,value)
+        OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnHklShow(event):

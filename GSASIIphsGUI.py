@@ -5555,7 +5555,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
             refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'LeBail':False,'newLeBail':True,
+                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
                 'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        

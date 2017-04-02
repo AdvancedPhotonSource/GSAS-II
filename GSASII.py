@@ -664,8 +664,7 @@ class GSASII(wx.Frame):
             self.PatternTree.Expand(self.root) # make sure phases are seen
             self.PatternTree.Expand(sub) 
             self.PatternTree.Expand(psub)
-            self.PatternTree.SelectItem(psub) # show the page to complete the initialization (yuk!)
-            wx.Yield() # make sure call of GSASII.OnDataTreeSelChanged happens before we go on
+            wx.CallAfter(G2gd.SelectDataTreeItem,self,psub) #bring up new phase General tab
 
             if rd.Constraints:
                 sub = G2gd.GetPatternTreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
@@ -692,7 +691,8 @@ class GSASII(wx.Frame):
                     HKLFlist.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         TextList = PWDRlist + HKLFlist
-        if not len(TextList): return # no data loaded yet
+        if not TextList:
+            return          #no histograms
         header = 'Select histogram(s) to add to new phase(s):'
         for phaseName in newPhaseList:
             header += '\n  '+str(phaseName)
@@ -770,6 +770,7 @@ class GSASII(wx.Frame):
                     raise Exception('Unexpected histogram '+histoName)
         wx.EndBusyCursor()
         self.EnableRefineCommand()
+        
         return # success
         
     def _Add_ImportMenu_Image(self,parent):

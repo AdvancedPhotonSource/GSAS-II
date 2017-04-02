@@ -4734,7 +4734,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),copy.copy(data))
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),copy.deepcopy(data))
         
     def OnFitModel(event):
         

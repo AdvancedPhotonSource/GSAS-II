@@ -1914,13 +1914,14 @@ def calcIncident(Iparm,xdata):
 ################################################################################
 
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
-    print 'fit REFD data by '+data['Minimizer']
+    print 'fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0])
     
     def GetModelParms():
         parmDict = {}
         varyList = []
         values = []
         bounds = []
+        parmDict['Res'] = data['Resolution'][0]/100.       #%-->decimal
         for parm in ['Scale','FltBack']:
             parmDict[parm] = data[parm][0]
             if data[parm][1]:
@@ -1984,6 +1985,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         Ic = np.ones_like(Q)*parmDict['FltBack']
         Scale = parmDict['Scale']
         Nlayers = parmDict['nLayers']
+        Res = parmDict['Res']
+        Gaus = np.zeros((9,len(Q)))
         depth = np.zeros(Nlayers)
         rho = np.zeros(Nlayers)
         irho = np.zeros(Nlayers)
@@ -2005,6 +2008,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         return Ic
 
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    if data.get('2% weight'):
+        wt = 1./(0.02*Io)**2
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']

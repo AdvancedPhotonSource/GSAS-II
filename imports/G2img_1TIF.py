@@ -22,6 +22,7 @@ import struct as st
 import GSASIIIO as G2IO
 import GSASIIpath
 import numpy as np
+import time
 DEBUG = False
 GSASIIpath.SetVersionNumber("$Revision$")
 class TIF_ReaderClass(G2IO.ImportImage):
@@ -151,6 +152,7 @@ def GetTifData(filename):
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
+    time0 = time.time()
     if 34710 in IFD:
         print 'Read MAR CCD tiff file: ',filename
         marFrame = rmf.marFrame(File,byteOrd,IFD)
@@ -205,7 +207,8 @@ def GetTifData(filename):
                 pixy = [200,200]
                 File.seek(8)
                 print 'Read GE-detector tiff file: ',filename
-                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
+#                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 tifType = 'CHESS'
                 pixy = [200,200]
@@ -230,13 +233,15 @@ def GetTifData(filename):
         pixy = [158,158]
         File.seek(512)
         print 'Read DND SAX/WAX-detector tiff file: ',filename
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [1536,1536]:
         tifType = 'APS Gold'
         pixy = [150,150]
         File.seek(64)
         print 'Read Gold tiff file:',filename
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
@@ -245,9 +250,11 @@ def GetTifData(filename):
                 File.seek(8)
                 print 'Read APS PE-detector tiff file: ',filename
                 if dataType == 5:
-                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
+                    image = np.fromfile(File,dtype=np.float32,count=4*Npix)[:Npix]
+#                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
                 else:
-                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
+                    image = np.fromfile(File,dtype=np.int,count=4*Npix)[:Npix]
+#                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 16: 
                 tifType = 'MedOptics D1'
                 pixy = [46.9,46.9]
@@ -264,7 +271,8 @@ def GetTifData(filename):
                 tifType = 'MAR325'            
             File.seek(4096)
             print 'Read MAR CCD tiff file: ',filename
-            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
+#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 512:
             tifType = '11-ID-C'
             pixy = [200,200]
@@ -285,13 +293,20 @@ def GetTifData(filename):
                 pixy = [100,100]
                 File.seek(8)
                 print 'Read PE 4Kx4K tiff file: ',filename
-                image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)                
+                image = np.fromfile(File,dtype=np.uint,count=4*Npix)[:Npix]
+                if np.max(image) > 2**31:
+                    image = np.array(image-2**30,dtype=np.int32)
+                else:
+                    image = np.array(image,dtype=np.int32)
+#                arry = ar.array('I',File.read(4*Npix))
+#                image = np.array(arry)/2**16            
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
             pixy = [73.242,73.242]
             File.seek(4096)
             print 'Read Rayonix MX300HE tiff file: ',filename
-            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
+#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)
@@ -307,7 +322,7 @@ def GetTifData(filename):
     if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
         lines = ['not a known detector tiff file',]
         return lines,0,0,0
-        
+    print 'image read time: %.3f'%(time.time()-time0)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
     wavelength = (not wavelength) and 0.10 or wavelength

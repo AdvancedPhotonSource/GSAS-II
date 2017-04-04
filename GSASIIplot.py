@@ -2836,6 +2836,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
     :return nothing
     
     '''
+    global xylim
     def OnKeyPress(event):
         if event.key == 'u':
             if Page.Offset[1] < 100.:
@@ -2854,11 +2855,9 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
                 G2IO.XYsave(G2frame,XY,labelX,labelY,names)
             if XY2 != None:
                 G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
-        else:
-#            print 'no binding for key',event.key
-            #GSASIIpath.IPyBreak()
-            return
-        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,lines,names)
+#        else:
+#            return
+        Draw()
 
     def OnMotion(event):
         xpos = event.xdata
@@ -2869,8 +2868,60 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
                 G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+                
+    def Draw():
+        global xylim
+        print Page.Offset
+        Plot.clear()
+        Plot.set_title(Title)
+        Plot.set_xlabel(r''+labelX,fontsize=14)
+        Plot.set_ylabel(r''+labelY,fontsize=14)
+        colors=['b','r','g','c','m','k']
+        Page.keyPress = OnKeyPress
+        Xmax = 0.
+        Ymax = 0.    
+        for ixy,xy in enumerate(XY):
+            X,Y = XY[ixy]
+            Xmax = max(Xmax,max(X))
+            Ymax = max(Ymax,max(Y))
+            if lines:
+                dX = Page.Offset[0]*(ixy)*Xmax/500.
+                dY = Page.Offset[1]*(ixy)*Ymax/100.
+                if len(names):
+                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
+                else:
+                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+            else:
+                Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
+        if len(vertLines):
+            for ixy,X in enumerate(vertLines):
+                dX = Page.Offset[0]*(ixy)*Xmax/500.
+                for x in X:
+                    Plot.axvline(x+dX,color=colors[ixy%6],dashes=(5,5),picker=False)
+        if XY2 is not None and len(XY2):
+            for ixy,xy in enumerate(XY2):
+                X,Y = XY2[ixy]
+                dX = Page.Offset[0]*(ixy+1)*Xmax/500.
+                dY = Page.Offset[1]*(ixy+1)*Ymax/100.
+                if len(names2):
+                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names2[ixy])
+                else:
+                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+        if len(names):
+            Plot.legend(loc='best')
+        if not newPlot:
+            Page.toolbar.push_current()
+            Plot.set_xlim(xylim[0])
+            Plot.set_ylim(xylim[1])
+            xylim = []
+            Page.toolbar.push_current()
+            Page.toolbar.draw()
+            Page.canvas.draw()
+        else:
+            Page.canvas.draw()
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
+    Page.Offset = [0,0]
     if not new:
         if not newPlot:
             xylim = lim
@@ -2885,52 +2936,8 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
             'u: offset up','o: reset offset','s: save data as csv file')
     else:
         Page.Choice = None
-    G2frame.G2plotNB.status.DestroyChildren()
-    Plot.set_title(Title)
-    Plot.set_xlabel(r''+labelX,fontsize=14)
-    Plot.set_ylabel(r''+labelY,fontsize=14)
-    colors=['b','g','r','c','m','k']
-    Page.keyPress = OnKeyPress
-    Xmax = 0.
-    Ymax = 0.    
-    for ixy,xy in enumerate(XY):
-        X,Y = XY[ixy]
-        Xmax = max(Xmax,max(X))
-        Ymax = max(Ymax,max(Y))
-        if lines:
-            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
-            dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-            if len(names):
-                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
-            else:
-                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
-        else:
-            Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
-    if len(vertLines):
-        for ixy,X in enumerate(vertLines):
-            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
-            for x in X:
-                Plot.axvline(x+dX,color=colors[ixy%6],dashes=(5,5),picker=False)
-    if XY2 is not None and len(XY2):
-        for ixy,xy in enumerate(XY2):
-            X,Y = XY2[ixy]
-            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
-            dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-            if len(names2):
-                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names2[ixy])
-            else:
-                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
-    if len(names):
-        Plot.legend(loc='best')
-    if not newPlot:
-        Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
-        xylim = []
-        Page.toolbar.push_current()
-        Page.toolbar.draw()
-    else:
-        Page.canvas.draw()
+    Draw()
+    
         
 ################################################################################
 ##### PlotXYZ

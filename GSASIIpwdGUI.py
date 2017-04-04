@@ -4754,16 +4754,20 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         plotList = []
-        od = {'label_1':'Zero at substrate','value_1':False}
+        od = {'label_1':'Zero at substrate','value_1':False,'label_2':'Show layer transitions','value_2':True}
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Plot reflectivity models for:',
             'Plot SLD models', histList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for i in dlg.GetSelections():
                     plotList.append(histList[i])
+            else:
+                dlg.Destroy()
+                return
         finally:
             dlg.Destroy()
         XY = []
+        LinePos = []
         for item in plotList:
             mId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             model = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,mId,'Models'))
@@ -4775,8 +4779,16 @@ def UpdateREFDModelsGrid(G2frame,data):
             else:
                 XY.append([x,y])
                 disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
+            if od['value_2']:
+                nLines = len(model['Layers'])-1
+                linePos = np.zeros(nLines)
+                for ilay,layer in enumerate(model['Layers'][1:-1]):
+                    linePos[ilay+1:] += layer.get('Thick',[0.,False])[0]
+                if od['value_1']:
+                    linePos = linePos[-1]-linePos
+                LinePos.append(linePos)
         G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=True,   
-                      Title='Scattering length density',lines=True,names=[])
+                      Title='Scattering length density',lines=True,names=[],vertLines=LinePos)
         
     def OnFitModelAll(event):
         print 'fit all model'
@@ -4787,11 +4799,12 @@ def UpdateREFDModelsGrid(G2frame,data):
         linePos = np.zeros(nLines)
         for ilay,layer in enumerate(data['Layers'][1:-1]):
             linePos[ilay+1:] += layer.get('Thick',[0.,False])[0]
-        if data['Zero']:
+        if data['Zero'] == 'Top':
             XY = [[x,y],]
             disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
         else:
             XY = [[xr,y],]
+            linePos = linePos[-1]-linePos
             disLabel = r'$Distance\ from\ substrate,\ \AA$'
         G2plt.PlotXY(G2frame,XY,labelX=disLabel,labelY=r'$SLD,\ 10^{10}cm^{-2}$',newPlot=True,
             Title='Scattering length density',lines=True,names=[],vertLines=[linePos,])
@@ -4833,6 +4846,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         def OnMinSel(event):
             data['Minimizer'] = minSel.GetValue()
             
+        def OnWeight(event):
+            data['2% weight'] = weight.GetValue()
+            
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
         resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Instrument resolution (%'+GkDelta+'Q/Q): '),0,WACV)
@@ -4853,6 +4869,11 @@ def UpdateREFDModelsGrid(G2frame,data):
         minimiz.Add(minSel,0,WACV)
         minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Tolerance: '),0,WACV)
         minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Toler',nDig=(10,1,'g'),typeHint=float),0,WACV)
+        weight = wx.CheckBox(G2frame.dataDisplay,label='Use 2% sig. weights')
+        weight.SetValue(data.get('2% weight',False))
+        weight.Bind(wx.EVT_CHECKBOX, OnWeight)
+        minimiz.Add(weight,0,WACV)
+        
     #Recomb':0.5,  needed??     
         controlSizer.Add(minimiz,0,WACV)
         return controlSizer

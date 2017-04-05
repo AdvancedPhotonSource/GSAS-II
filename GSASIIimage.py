@@ -379,7 +379,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     dist = data['distance']/cosd(tilt)
     x0 = dist*tand(tilt)
     phi = data['rotation']
-    dep = data['DetDepth']
+    dep = data.get('DetDepth',0.)
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)

@@ -116,14 +116,15 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     '''
     import struct as st
     import cPickle
+    import time
     more = False
+    time0 = time.time()
     File = open(filename,'rb')
     if filename.split('.')[-1] in ['sum',]:
         head = ['GE detector sum  data from APS 1-ID',]
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
         image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32),dtype=np.int32)
-#        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
     elif filename.split('.')[-1] in ['avg','cor']:
         File.seek(0,2)
         last = File.tell()
@@ -133,7 +134,6 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     else:
         head = ['GE detector raw data',]
         File.seek(18)
@@ -153,7 +153,6 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         pos = 8192 + (imagenum-1)*2*Npix
         File.seek(pos)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         if len(image) != sizexy[1]*sizexy[0]:
             print('not enough images while reading GE file: '+filename+'image #'+str(imagenum))
             return 0,0,0,0,False            
@@ -163,7 +162,6 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             while nframes > 1: #OK, this will sum the frames.
                 try:
                     image += np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
-#                    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                 except ValueError:
                     break
                 nframes -= 1
@@ -182,6 +180,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()
+    print 'Image read time %.2fs'%(time.time()-time0)
     if GSASIIpath.GetConfigValue('debug'):
         print 'Read GE file: '+filename+' image #'+'%04d'%(imagenum)
     return head,data,Npix,image,more

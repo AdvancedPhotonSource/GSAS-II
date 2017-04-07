@@ -1916,12 +1916,29 @@ def calcIncident(Iparm,xdata):
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     print 'fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0])
     
+    class RandomDisplacementBounds(object):
+        """random displacement with bounds"""
+        def __init__(self, xmin, xmax, stepsize=0.5):
+            self.xmin = xmin
+            self.xmax = xmax
+            self.stepsize = stepsize
+    
+        def __call__(self, x):
+            """take a random step but ensure the new position is within the bounds"""
+            while True:
+                # this could be done in a much more clever way, but it will work for example purposes
+                steps = self.xmax-self.xmin
+                xnew = x + np.random.uniform(-self.stepsize*steps, self.stepsize*steps, np.shape(x))
+                if np.all(xnew < self.xmax) and np.all(xnew > self.xmin):
+                    break
+            return xnew
+    
     def GetModelParms():
         parmDict = {}
         varyList = []
         values = []
         bounds = []
-        parmDict['Res'] = data['Resolution'][0]/100.       #%-->decimal
+        parmDict['Res'] = data['Resolution'][0]/(100.*np.sqrt(ateln2))     #% FWHM-->decimal sig
         for parm in ['Scale','FltBack']:
             parmDict[parm] = data[parm][0]
             if data[parm][1]:
@@ -1937,8 +1954,13 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 parmDict[cid+parm] = layer.get(parm,[0.,False])[0]
                 if layer.get(parm,[0.,False])[1]:
                     varyList.append(cid+parm)
-                    values.append(layer[parm][0])
-                    bounds.append(Bounds[parm])
+                    value = layer[parm][0]
+                    values.append(value)
+                    if value:
+                        bound = [value*Bfac,value/Bfac]
+                    else:
+                        bound = [0.,10.]
+                    bounds.append(bound)
             if name not in ['vacuum','unit scatter']:
                 parmDict[cid+'rho'] = Substances[name]['Scatt density']
                 parmDict[cid+'irho'] = Substances[name].get('XImag density',0.)
@@ -2006,6 +2028,16 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
         Ic += (A**2+B**2)*Scale      
         return Ic
+        
+    def estimateT0(takestep):
+        Mmax = -1.e-10
+        Mmin = 1.e10
+        for i in range(100):
+            x0 = takestep(values)
+            M = sumREFD(x0,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)
+            Mmin = min(M,Mmin)
+            MMax = max(M,Mmax)
+        return 1.5*(MMax-Mmin)
 
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
     if data.get('2% weight'):
@@ -2013,11 +2045,12 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']
+    Bfac = data['Toler']
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
-    Bounds = {'Scale':[data['Scale'][0]*.85,data['Scale'][0]/.85],'FltBack':[None,None],
-              'DenMul':[None,None],'Thick':[1.,None],'Rough':[0.,None],'Mag SLD':[-10.,10.],'iDenMul':[None,None]}
+    Bounds = {'Scale':[data['Scale'][0]*Bfac,data['Scale'][0]/Bfac],'FltBack':[0.,1.e-6],
+              'DenMul':[0.,1.],'Thick':[1.,500.],'Rough':[0.,10.],'Mag SLD':[-10.,10.],'iDenMul':[-1.,1.]}
     parmDict,varyList,values,bounds = GetModelParms()
     Msg = 'Failed to converge'
     if varyList:
@@ -2029,13 +2062,30 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             ncalc = result[2]['nfev']
             covM = result[1]
             newVals = result[0]
-        elif data['Minimizer'] == 'Global':
-            result = so.basinhopping(sumREFD,values,minimizer_kwargs={'method':'L-BFGS-B',
+        elif data['Minimizer'] == 'Basin Hopping':
+            xyrng = np.array(bounds).T
+            take_step = RandomDisplacementBounds(xyrng[0], xyrng[1])
+            T0 = estimateT0(take_step)
+            print ' Estimated temperature: %.3g'%(T0)
+            result = so.basinhopping(sumREFD,values,take_step=take_step,disp=True,T=T0,stepsize=Bfac,
+                interval=20,niter=200,minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
                 'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)})
             chisq = result.fun
             ncalc = result.nfev
             newVals = result.x
             covM = []
+        elif data['Minimizer'] == 'MC/SA Anneal':
+            xyrng = np.array(bounds).T
+            result = G2mth.anneal(sumREFD, values, args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList),
+                schedule='log', full_output=True,maxeval=None, maxaccept=None, maxiter=10,dwell=1000,
+                boltzmann=10.0, feps=1e-6,lower=xyrng[0], upper=xyrng[1], slope=0.9,ranStart=True,
+                ranRange=0.20,autoRan=False,dlg=None)
+            newVals = result[0]
+            parmDict.update(zip(varyList,newVals))
+            chisq = result[1]
+            ncalc = result[3]
+            covM = []
+            print ' MC/SA final temperature: %.4g'%(result[2])
         elif data['Minimizer'] == 'L-BFGS-B':
             result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))

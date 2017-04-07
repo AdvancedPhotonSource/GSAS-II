@@ -2871,7 +2871,6 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
                 
     def Draw():
         global xylim
-        print Page.Offset
         Plot.clear()
         Plot.set_title(Title)
         Plot.set_xlabel(r''+labelX,fontsize=14)

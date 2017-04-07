@@ -224,7 +224,7 @@ def SetDefaultREFDModel():
     return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
         {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
         'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top',                                 #globals
-        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.001,           #minimizer controls
+        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,           #minimizer controls
         'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
         
 def SetDefaultSubstances():
@@ -4852,7 +4852,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
         resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Instrument resolution (%'+GkDelta+'Q/Q): '),0,WACV)
-        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,2),typeHint=float),0,WACV)
+        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,2),min=0.,max=0.2),0,WACV)
         resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Zero position location: '),0,WACV)
         poslist = ['Top','Bottom']
         refpos = wx.ComboBox(G2frame.dataDisplay,value=data['Zero'],choices=poslist,
@@ -4862,13 +4862,13 @@ def UpdateREFDModelsGrid(G2frame,data):
         controlSizer.Add(resol,0,WACV)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
         minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
-        minlist = ['LMLS','Global','L-BFGS-B',]
+        minlist = ['LMLS','Basin Hopping','MC/SA Anneal','L-BFGS-B',]
         minSel = wx.ComboBox(G2frame.dataDisplay,value=data['Minimizer'],choices=minlist,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         minSel.Bind(wx.EVT_COMBOBOX, OnMinSel)
         minimiz.Add(minSel,0,WACV)
-        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Tolerance: '),0,WACV)
-        minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Toler',nDig=(10,1,'g'),typeHint=float),0,WACV)
+        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Bounds factor: '),0,WACV)
+        minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Toler',nDig=(10,2),max=0.99,min=0.1),0,WACV)
         weight = wx.CheckBox(G2frame.dataDisplay,label='Use 2% sig. weights')
         weight.SetValue(data.get('2% weight',False))
         weight.Bind(wx.EVT_CHECKBOX, OnWeight)

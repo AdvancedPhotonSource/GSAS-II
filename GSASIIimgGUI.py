@@ -1220,7 +1220,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         if G2frame.autoIntFrame: # ensure only one open at a time
             G2frame.autoIntFrame.Raise()
             return
-        G2frame.autoIntFrame = AutoIntFrame(G2frame,PollTime=10.0)
+        PollTime = GSASIIpath.GetConfigValue('Autoint_PollTime',30.)
+        G2frame.autoIntFrame = AutoIntFrame(G2frame,PollTime=PollTime)
         G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close 
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoInt, id=G2gd.wxID_IMAUTOINTEG)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
@@ -2294,10 +2295,10 @@ class AutoIntFrame(wx.Frame):
 
     :param wx.Frame G2frame: main GSAS-II frame
     :param float PollTime: frequency in seconds to repeat calling the
-      processing loop. (Default is 3.0 seconds.)
+      processing loop. (Default is 30.0 seconds.)
     '''
 
-    def __init__(self,G2frame,PollTime=60.0):
+    def __init__(self,G2frame,PollTime=30.0):
         def OnStart(event):
             '''Called when the start button is pressed. Changes button label 
             to Pause. When Pause is pressed the label changes to Resume.

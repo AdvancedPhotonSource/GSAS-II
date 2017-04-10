@@ -1205,17 +1205,15 @@ def LaueUnique2(SGData,refList):
 def LaueUnique(Laue,HKLF):
     ''' Impose Laue symmetry on hkl
     
-    :param Laue: str Laue symbol
+    :param str Laue: Laue symbol, as below
+    
       centrosymmetric Laue groups::
        
-     ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3','-31m','-3m1',
-     '6/m','6/mmm','m3','m3m']
+     ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3','-31m','-3m1','6/m','6/mmm','m3','m3m']
      
       noncentrosymmetric Laue groups::
      
-     ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm',
-     '4','-4','422','4mm','3','312','321','31m','3m1',
-     '6','-6','622','6mm','-62m','-6m2','23','432','-43m']
+     ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm','4','-4','422','4mm','3','312','321','31m','3m1','6','-6','622','6mm','-62m','-6m2','23','432','-43m']
      
     :param HKLF: np.array([[h,k,l,...]]) reflection set to be converted
     

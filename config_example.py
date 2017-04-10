@@ -119,3 +119,8 @@ Arc_mask_azimuth = 10.0
 '''Specifies the default azimuthal range for creation of arc masks.
 Default is 10.0 degrees 2-theta.
 '''
+
+Autoint_PollTime = 30.
+'''Specifies the frequency, in seconds that AutoInt checks for new files.
+Default is 30 seconds
+'''

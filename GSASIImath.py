@@ -51,7 +51,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
     values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`    
-    where :math:`x = arg min(\sum_{y=0}^{N_{obs}} (func(y)**2,axis=0))`
+    where :math:`x = arg min(\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
 
     :param function func: callable method or function
         should take at least one (possibly length N vector) argument and

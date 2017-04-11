@@ -1945,7 +1945,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 varyList.append(parm)
                 values.append(data[parm][0])
                 bounds.append(Bounds[parm])
-        parmDict['nLayers'] = len(data['Layers'])
+        parmDict['Layer Seq'] = np.array(['0',]+data['Layer Seq'].split()+[str(len(data['Layers'])-1),],dtype=int)
+        parmDict['nLayers'] = len(parmDict['Layer Seq'])
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
             cid = str(ilay)+';'
@@ -2008,13 +2009,12 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         Scale = parmDict['Scale']
         Nlayers = parmDict['nLayers']
         Res = parmDict['Res']
-        Gaus = np.zeros((9,len(Q)))
         depth = np.zeros(Nlayers)
         rho = np.zeros(Nlayers)
         irho = np.zeros(Nlayers)
         sigma = np.zeros(Nlayers)
-        for ilay in range(Nlayers):
-            cid = str(ilay)+';'
+        for ilay,lay in enumerate(parmDict['Layer Seq']):
+            cid = str(lay)+';'
             depth[ilay] = parmDict[cid+'Thick']
             sigma[ilay] = parmDict[cid+'Rough']
             if parmDict[cid+'Name'] == u'unit scatter':
@@ -2028,6 +2028,18 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
         Ic += (A**2+B**2)*Scale      
         return Ic
+        
+        def Smear(f,w,z,dq):
+            y = f(w,z)
+            s = dq/ateln2
+            y += 0.1354*(f(w,z+2*s)+f(w,z-2*s))
+            y += 0.24935*(f(w,z-1.666667*s)+f(w,z+1.666667*s)) 
+            y += 0.4111*(f(w,z-1.333333*s)+f(w,z+1.333333*s)) 
+            y += 0.60653*(f(w,z-s) +f(w,z+s))
+            y += 0.80074*(f(w,z-0.6666667*s)+f(w,z+0.6666667*s))
+            y += 0.94596*(f(w,z-0.3333333*s)+f(w,z+0.3333333*s))
+            y *= 0.137023
+            return y
         
     def estimateT0(takestep):
         Mmax = -1.e-10
@@ -2142,23 +2154,27 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
 def makeSLDprofile(data,Substances):
     
     sq2 = np.sqrt(2.)
-    Nlayers = len(data['Layers'])
+    laySeq = ['0',]+data['Layer Seq'].split()+[str(len(data['Layers'])-1),]
+    Nlayers = len(laySeq)
+    laySeq = np.array(laySeq,dtype=int)
     interfaces = np.zeros(Nlayers)
     rho = np.zeros(Nlayers)
-    irho = np.zeros(Nlayers)
     sigma = np.zeros(Nlayers)
+    name = data['Layers'][0]['Name']
     thick = 0.
-    for ilayer,layer in enumerate(data['Layers']):
+    for ilay,lay in enumerate(laySeq):
+        layer = data['Layers'][lay]
         name = layer['Name']
-        if 'Thick' in layer:    #skips first & last layers
+        if 'Thick' in layer:
             thick += layer['Thick'][0]
-            interfaces[ilayer] = layer['Thick'][0]+interfaces[ilayer-1]
-        if 'Rough' in layer:    #skips first layer
-            sigma[ilayer] = max(0.001,layer['Rough'][0])
-        rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
+            interfaces[ilay] = layer['Thick'][0]+interfaces[ilay-1]
+        if 'Rough' in layer:
+            sigma[ilay] = max(0.001,layer['Rough'][0])
+        if name != 'vacuum':
+            rho[ilay] = Substances[name]['Scatt density']*layer['DenMul'][0]
         if 'Mag SLD' in layer:
-            rho[ilayer] += layer['Mag SLD'][0]
-        irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
+            rho[ilay] += layer['Mag SLD'][0]
+    name = data['Layers'][-1]['Name']
     x = np.linspace(-0.15*thick,1.15*thick,1000,endpoint=True)
     xr = np.flipud(x)
     interfaces[-1] = x[-1]
@@ -2181,25 +2197,27 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
     Ib[:] = data['FltBack'][0]
     Ic[:] = 0
     Scale = data['Scale'][0]
-    Nlayers = len(data['Layers'])
+    laySeq = ['0',]+data['Layer Seq'].split()+[str(len(data['Layers'])-1),]
+    Nlayers = len(laySeq)
     depth = np.zeros(Nlayers)
     rho = np.zeros(Nlayers)
     irho = np.zeros(Nlayers)
     sigma = np.zeros(Nlayers)
-    for ilayer,layer in enumerate(data['Layers']):
+    for ilay,lay in enumerate(np.array(laySeq,dtype=int)):
+        layer = data['Layers'][lay]
         name = layer['Name']
         if 'Thick' in layer:    #skips first & last layers
-            depth[ilayer] = layer['Thick'][0]
+            depth[ilay] = layer['Thick'][0]
         if 'Rough' in layer:    #skips first layer
-            sigma[ilayer] = layer['Rough'][0]
+            sigma[ilay] = layer['Rough'][0]
         if 'unit scatter' == name:
-            rho[ilayer] = layer['DenMul'][0]
-            irho[ilayer] = layer['iDenMul'][0]
+            rho[ilay] = layer['DenMul'][0]
+            irho[ilay] = layer['iDenMul'][0]
         else:
-            rho[ilayer] = Substances[name]['Scatt density']*layer['DenMul'][0]
-            irho[ilayer] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
+            rho[ilay] = Substances[name]['Scatt density']*layer['DenMul'][0]
+            irho[ilay] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
         if 'Mag SLD' in layer:
-            rho[ilayer] += layer['Mag SLD'][0]
+            rho[ilay] += layer['Mag SLD'][0]
     A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
     Ic[iBeg:iFin] = (A**2+B**2)*Scale+Ib[iBeg:iFin]
 

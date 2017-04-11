@@ -4780,10 +4780,11 @@ def UpdateREFDModelsGrid(G2frame,data):
                 XY.append([x,y])
                 disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
             if od['value_2']:
-                nLines = len(model['Layers'])-1
+                laySeq = model['Layer Seq'].split()
+                nLines = len(laySeq)+1
                 linePos = np.zeros(nLines)
-                for ilay,layer in enumerate(model['Layers'][1:-1]):
-                    linePos[ilay+1:] += layer.get('Thick',[0.,False])[0]
+                for ilay,lay in enumerate(np.fromstring(data['Layer Seq'],dtype=int,sep=' ')):
+                    linePos[ilay+1:] += model['Layers'][lay].get('Thick',[0.,False])[0]
                 if od['value_1']:
                     linePos = linePos[-1]-linePos
                 LinePos.append(linePos)
@@ -4795,10 +4796,11 @@ def UpdateREFDModelsGrid(G2frame,data):
         event.Skip()
         
     def ModelPlot(data,x,xr,y):
-        nLines = len(data['Layers'])-1
+        laySeq = data['Layer Seq'].split()
+        nLines = len(laySeq)+1
         linePos = np.zeros(nLines)
-        for ilay,layer in enumerate(data['Layers'][1:-1]):
-            linePos[ilay+1:] += layer.get('Thick',[0.,False])[0]
+        for ilay,lay in enumerate(np.fromstring(data['Layer Seq'],dtype=int,sep=' ')):
+            linePos[ilay+1:] += data['Layers'][lay].get('Thick',[0.,False])[0]
         if data['Zero'] == 'Top':
             XY = [[x,y],]
             disLabel = r'$Distance\ from\ top\ surface,\ \AA$'
@@ -4921,8 +4923,10 @@ def UpdateREFDModelsGrid(G2frame,data):
             item = Indx[Obj.GetId()]
             Name = Obj.GetValue()
             data['Layers'][item]['Name'] = Name
-            data['Layers'][item]['Rough'] = [0.,False]
-            data['Layers'][item]['Thick'] = [1.,False]
+            if 'Rough' not in data['Layers'][item]:
+                data['Layers'][item]['Rough'] = [0.,False]
+            if 'Thick' not in data['Layers'][item]:
+                data['Layers'][item]['Thick'] = [10.,False]
             if 'N' in Inst['Type'][0]:
                 data['Layers'][item]['Mag SLD'] = [0.,False]
             if Name == 'unit scatter':
@@ -4940,6 +4944,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             Obj = event.GetEventObject()
             ind = Indx[Obj.GetId()]
             data['Layers'].insert(ind+1,{'Name':'vacuum','DenMul':[1.0,False],})
+            data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
@@ -4948,6 +4953,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             Obj = event.GetEventObject()
             ind = Indx[Obj.GetId()]
             del data['Layers'][ind]
+            data['Layer Seq'] = ' '.join([str(i+1) for i in range(len(data['Layers'])-2)])
             G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
             wx.CallAfter(UpdateREFDModelsGrid,G2frame,data) 
@@ -5068,6 +5074,55 @@ def UpdateREFDModelsGrid(G2frame,data):
                 G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
         
         return layerSizer
+        
+    def OnRepSeq(event):
+        event.Skip()
+        stack = repseq.GetValue()
+        nstar = stack.count('*')
+        if nstar:
+            try:
+                newstack = ''
+                Istar = 0
+                for star in range(nstar):
+                    Istar = stack.index('*',Istar+1)
+                    iB = stack[:Istar].rfind(' ')
+                    if iB == -1:
+                        mult = int(stack[:Istar])
+                    else:
+                        mult = int(stack[iB:Istar])
+                    pattern = stack[Istar+2:stack.index(')',Istar)]+' '
+                    newstack += mult*pattern
+                stack = newstack
+            except ValueError:
+                stack += ' Error in string'
+                wx.MessageBox(stack,'Error',style=wx.ICON_EXCLAMATION)
+                repseq.SetValue(data['Layer Seq'])
+                return
+        try:
+            Slist = np.array(stack.split(),dtype=int)
+        except ValueError:
+            stack += ' Error in string'
+            repseq.SetValue(data['Layer Seq'])
+            wx.MessageBox(stack,'Error',style=wx.ICON_EXCLAMATION)
+            return
+        if len(Slist) < 1:
+            stack += ' Error in sequence - too short!'
+        Stest = np.arange(1,Nlayers-1)
+        if not np.all(np.array([item in Stest for item in Slist])):
+            stack += ' Error: invalid layer selection'
+        elif not np.all(np.ediff1d(Slist)):
+            stack += ' Error: Improbable sequence or bad string'
+        if 'Error' in stack:
+            repseq.SetValue(data['Layer Seq'])
+            wx.MessageBox(stack,'Error',style=wx.ICON_EXCLAMATION)
+            return
+        else:
+            data['Layer Seq'] = stack
+            repseq.SetValue(stack)
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
     
     Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
@@ -5093,7 +5148,23 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)   
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Global parameters:'),0,WACV)
     mainSizer.Add(OverallSizer()) 
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    Nlayers = len(data['Layers'])
+    if Nlayers > 2:
+        if 'Layer Seq' not in data:
+            data['Layer Seq'] = ' '.join([str(i+1) for i in range(Nlayers-2)])
+        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+        lineSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer sequence: '),0,WACV)
+        repseq = wx.TextCtrl(G2frame.dataDisplay,value = data['Layer Seq'],style=wx.TE_PROCESS_ENTER,size=(500,25))
+        repseq.Bind(wx.EVT_TEXT_ENTER,OnRepSeq)        
+        repseq.Bind(wx.EVT_KILL_FOCUS,OnRepSeq)
+        lineSizer.Add(repseq,0,WACV)
+        mainSizer.Add(lineSizer)
+        Str = ' Use sequence nos. from:'
+        for ilay,layer in enumerate(data['Layers'][1:-1]):
+            Str += ' %d: %s'%(ilay+1,layer['Name'])
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=Str),0,WACV)
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' NB: Repeat sequence by e.g. 6*(1 2) '),0,WACV)
     G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
     mainSizer.Add(LayerSizer())
@@ -5103,6 +5174,7 @@ def UpdateREFDModelsGrid(G2frame,data):
     G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
     Size[0] += 25
+    Size[1] = min(700,Size[1])
     G2frame.dataFrame.setSizePosLeft(Size)
 #    x,xr,y = G2pwd.makeSLDprofile(data,Substances)
 #    ModelPlot(data,x,xr,y)

@@ -39,6 +39,23 @@ Substances = {
 'Cr2O3':{'Elements':{'Cr':{'Num':2.},'O':{'Num':3.}},'Density':5.206,},
 'ZrO2':{'Elements':{'Zr':{'Num':1.},'O':{'Num':3,}},'Density':6.134,},
 'Y(0.16)Zr(0.84)O2':{'Elements':{'Y':{'Num':0.16},'Zr':{'Num':0.84},'O':{'Num':2.}},'Density':6.01,},
+'Ag':{'Elements':{'Ag':{'Num':1}},'Volume':17.066},
+'Al':{'Elements':{'Al':{'Num':1}},'Volume':16.582},
+'Au':{'Elements':{'Au':{'Num':1}},'Volume':16.953},
+'Co':{'Elements':{'Co':{'Num':1}},'Volume':11.0177},
+'FeF2':{'Elements':{'Fe':{'Num':1},'F':{'Num':2}},'Volume':36.352},
+'GaAs':{'Elements':{'Ga':{'Num':1},'As':{'Num':1}},'Volume':45.173},
+'LaAlO3':{'Elements':{'La':{'Num':1},'Al':{'Num':1},'O':{'Num':3}},'Volume':54.503},
+'LaFeO3':{'Elements':{'La':{'Num':1},'Al':{'Num':1},'O':{'Num':3}},'Volume':50.355},
+'LaMnO3':{'Elements':{'La':{'Num':1},'Mn':{'Num':1},'o':{'Num':3}},'Volume':58.413},
+'MgF2':{'Elements':{'Mg':{'Num':1},'F':{'Num':2}},'Volume':32.58},
+'MgO':{'Elements':{'Mg':{'Num':1},'O':{'Num':1}},'Volume':17.977},
+'MnF2':{'Elements':{'Mn':{'Num':1},'F':{'Num':2}},'Volume':38.56},
+'NiO':{'Elements':{'Ni':{'Num':1},'O':{'Num':1}},'Volume':18.22},
+'Pd':{'Elements':{'Pd':{'Num':1}},'Volume':14.738},
+'Pt':{'Elements':{'Pt':{'Num':1}},'Volume':15.14},
+'SrTiO3':{'Elements':{'Sr':{'Num':1},'Ti':{'Num':1},'O':{'Num':1}},'Volume':26.71},
+'V':{'Elements':{'V':{'Num':1}},'Volume':19.26},
 }
 # they should not be duplicated in the UserSubstances.py file:
 try:

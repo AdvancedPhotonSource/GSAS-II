@@ -1750,7 +1750,7 @@ class ImportSmallAngleData(ImportBaseclass):
 
 ######################################################################
 class ImportReflectometryData(ImportBaseclass):
-    '''Defines a base class for the reading of files with small angle data.
+    '''Defines a base class for the reading of files with reflectometry data.
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
     '''
@@ -1781,6 +1781,32 @@ class ImportReflectometryData(ImportBaseclass):
         self.clockWd = None  # used in TOF
         self.numbanks = 1
         self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+######################################################################
+class ImportPDFData(ImportBaseclass):
+    '''Defines a base class for the reading of files with PDF G(R) data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.pdfentry = ['',None,None] #  (filename,Pos,Bank)
+        self.pdfdata = [] # PDF G(R) dataset
+        '''A pdf g(r) data set is a list with items [x,y]:
+                np.array(x), # r-axis values
+                np.array(y), # pdf g(r)
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.numbanks = 1
 
 ######################################################################
 class ImportImage(ImportBaseclass):

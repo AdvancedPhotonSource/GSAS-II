@@ -23,7 +23,7 @@ import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
 import random as rand
-from numpy.fft import ifft, fft, fftshift
+import numpy.fft as fft
 import scipy.interpolate as si
 import scipy.stats as st
 import scipy.optimize as so
@@ -288,7 +288,6 @@ def CalcPDF(data,inst,limits,xydata):
     The return value is at present an empty list.
     '''
     auxPlot = []
-    import scipy.fftpack as ft
     Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
     Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
@@ -370,7 +369,7 @@ def CalcPDF(data,inst,limits,xydata):
     nR = len(xydata['GofR'][1][1])
     mul = int(round(2.*np.pi*nR/(data.get('Rmax',100.)*qLimits[1])))
     xydata['GofR'][1][0] = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
-    xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
+    xydata['GofR'][1][1] = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
     if data.get('noRing',True):
         xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
     return auxPlot
@@ -451,7 +450,6 @@ def PDFPeakFit(peaks,data):
     return newpeaks,result[0],varyList,sigList,parmDict,Rvals    
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):
-    import scipy.fftpack as ft
     import scipy.signal as signal
     auxPlot = []
     if 'C' in inst['Type'][0]:
@@ -483,7 +481,8 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     Qsmooth = signal.filtfilt(bBut,aBut,Qdata)
 #    auxPlot.append([Qpoints,Qdata,'interpolate:'+RDFcontrols['Smooth']])
 #    auxPlot.append([Qpoints,Qsmooth,'interpolate:'+RDFcontrols['Smooth']])
-    DofR = dq*np.imag(ft.fft(Qsmooth,16*nR)[:nR])
+    DofR = dq*np.imag(fft.fft(Qsmooth,16*nR)[:nR])
+#    DofR = dq*np.imag(ft.fft(Qsmooth,16*nR)[:nR])
     auxPlot.append([R[:iFin],DofR[:iFin],'D(R)'])    
     return auxPlot
 
@@ -691,12 +690,12 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     FCJ = fcjde.pdf(x,*arg,loc=pos)
     if len(np.nonzero(FCJ)[0])>5:
         z = np.column_stack([Norm,Cauchy,FCJ]).T
-        Z = fft(z)
-        Df = ifft(Z.prod(axis=0)).real
+        Z = fft.fft(z)
+        Df = fft.ifft(Z.prod(axis=0)).real
     else:
         z = np.column_stack([Norm,Cauchy]).T
-        Z = fft(z)
-        Df = fftshift(ifft(Z.prod(axis=0))).real
+        Z = fft.fft(z)
+        Df = fft.fftshift(fft.ifft(Z.prod(axis=0))).real
     Df /= np.sum(Df)
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
@@ -2026,7 +2025,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             if cid+'Mag SLD' in parmDict:
                 rho[ilay] += parmDict[cid+'Mag SLD']
         A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
-        Ic += (A**2+B**2)*Scale      
+        Ic += (A**2+B**2)*Scale
+        #TODO: smear Ic by instrument resolution Qsig
         return Ic
         
         def Smear(f,w,z,dq):
@@ -2051,7 +2051,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             MMax = max(M,Mmax)
         return 1.5*(MMax-Mmin)
 
-    Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    Q,Io,wt,Ic,Ib,Qsig = Profile[:6]
     if data.get('2% weight'):
         wt = 1./(0.02*Io)**2
     Qmin = Limits[1][0]
@@ -2189,7 +2189,7 @@ def makeSLDprofile(data,Substances):
 
 def REFDModelFxn(Profile,Inst,Limits,Substances,data):
     
-    Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    Q,Io,wt,Ic,Ib,Qsig = Profile[:6]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
     iBeg = np.searchsorted(Q,Qmin)
@@ -2306,6 +2306,21 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
         irho = irho[None,:]
 
     return calc(kz, depth, rho, irho, sigma)
+    
+def makeRefdFFT(Limits,Profile):
+    print 'make fft'
+    Q,Io = Profile[:2]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    iBeg = np.searchsorted(Q,Qmin)
+    iFin = np.searchsorted(Q,Qmax)+1    #include last point
+    Qf = np.linspace(0.,Q[iFin-1],5000)
+    QI = si.interp1d(Q[iBeg:iFin],Io[iBeg:iFin],bounds_error=False,fill_value=0.0)
+    If = QI(Qf)*Qf**4
+    R = np.linspace(0.,5000.,5000)
+    F = fft.rfft(If)
+    return R,F
+
     
 ################################################################################
 # Stacking fault simulation codes

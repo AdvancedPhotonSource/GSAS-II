@@ -4851,6 +4851,18 @@ def UpdateREFDModelsGrid(G2frame,data):
         def OnWeight(event):
             data['2% weight'] = weight.GetValue()
             
+        def OnSLDplot(event):
+            sld.SetValue(False)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
+            
+        def OnQ4fftplot(event):
+            q4fft.SetValue(False)
+            R,F = G2pwd.makeRefdFFT(Limits,Profile)
+            XY = [[R[:2500],F[:2500]],]
+            G2plt.PlotXY(G2frame,XY,labelX='thickness',labelY='F(R)',newPlot=True,
+                Title='Fourier transform',lines=True)  
+            
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
         resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Instrument resolution (%'+GkDelta+'Q/Q): '),0,WACV)
@@ -4875,9 +4887,16 @@ def UpdateREFDModelsGrid(G2frame,data):
         weight.SetValue(data.get('2% weight',False))
         weight.Bind(wx.EVT_CHECKBOX, OnWeight)
         minimiz.Add(weight,0,WACV)
-        
-    #Recomb':0.5,  needed??     
         controlSizer.Add(minimiz,0,WACV)
+        plotSizer = wx.BoxSizer(wx.HORIZONTAL)
+        plotSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Plot controls: '),0,WACV)
+        sld = wx.CheckBox(G2frame.dataDisplay,label='Plot SLD?')
+        sld.Bind(wx.EVT_CHECKBOX, OnSLDplot)
+        plotSizer.Add(sld,0,WACV)
+#        q4fft = wx.CheckBox(G2frame.dataDisplay,label='Plot fft?')
+#        q4fft.Bind(wx.EVT_CHECKBOX, OnQ4fftplot)
+#        plotSizer.Add(q4fft,0,WACV)
+        controlSizer.Add(plotSizer,0,WACV)
         return controlSizer
     
     def OverallSizer():
@@ -5909,51 +5928,53 @@ def UpdatePDFGrid(G2frame,data):
     dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
     powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
-    if not powId: # skip if no matching PWDR entry
-        G2G.G2MessageBox(G2frame,'matching PWDR record not found. PDF can not be used.')
-        return
-    fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
-    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
-    if 'C' in inst['Type'][0]:
-        wave = G2mth.getWave(inst)
-        keV = 12.397639/wave
-        qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
-        polariz = inst['Polariz.'][1]
-    else:   #'T'of
-        qLimits = [tof2q(fullLimits[1],inst['difC'][1]),tof2q(fullLimits[0],inst['difC'][1])]
-        polariz = 1.0
-    data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
-    if data['QScaleLim'][0]:
-        data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
-    else:                                #initial setting at 90% of max Q
-        data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
-    itemDict = {}
-    #patch
-    if 'BackRatio' not in data:
-        data['BackRatio'] = 0.
-    if 'noRing' not in data:
-        data['noRing'] = False
-    if 'Rmax' not in data:
-        data['Rmax'] = 100.
-    if 'Flat Bkg' not in data:
-        data['Flat Bkg'] = 0.
-    if 'IofQmin' not in data:
-        data['IofQmin'] = 1.0        
-    if 'Rmin' not in data:
-        data['Rmin'] = 1.5
-    if data['DetType'] == 'Image plate':
-        data['DetType'] = 'Area detector'
-    if 'Refine' not in data['Sample Bkg.']:
-        data['Sample Bkg.']['Refine'] = False
-    if 'diffGRname' not in data:
-        data['diffGRname'] = ''
-    if 'diffMult' not in data:
-        data['diffMult'] = 1.0
+    if powId: # skip if no matching PWDR entry
+        fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
+        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
+        if 'C' in inst['Type'][0]:
+            wave = G2mth.getWave(inst)
+            keV = 12.397639/wave
+            qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
+            polariz = inst['Polariz.'][1]
+        else:   #'T'of
+            qLimits = [tof2q(fullLimits[1],inst['difC'][1]),tof2q(fullLimits[0],inst['difC'][1])]
+            polariz = 1.0
+        data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
+        if data['QScaleLim'][0]:
+            data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
+        else:                                #initial setting at 90% of max Q
+            data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
+        itemDict = {}
+        #patch
+        if 'BackRatio' not in data:
+            data['BackRatio'] = 0.
+        if 'noRing' not in data:
+            data['noRing'] = False
+        if 'Rmax' not in data:
+            data['Rmax'] = 100.
+        if 'Flat Bkg' not in data:
+            data['Flat Bkg'] = 0.
+        if 'IofQmin' not in data:
+            data['IofQmin'] = 1.0        
+        if 'Rmin' not in data:
+            data['Rmin'] = 1.5
+        if data['DetType'] == 'Image plate':
+            data['DetType'] = 'Area detector'
+        if 'Refine' not in data['Sample Bkg.']:
+            data['Sample Bkg.']['Refine'] = False
+        if 'diffGRname' not in data:
+            data['diffGRname'] = ''
+        if 'diffMult' not in data:
+            data['diffMult'] = 1.0
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)
     if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
+        Status = G2frame.dataFrame.CreateStatusBar()
+    if powId:
+        G2frame.dataFrame.PDFMenu.EnableTop(0,enable=True)
+    else:
+        G2frame.dataFrame.PDFMenu.EnableTop(0,enable=False)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
@@ -5963,14 +5984,15 @@ def UpdatePDFGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
 
-    ElList = data['ElList']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(PDFFileSizer(),0,WACV)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    mainSizer.Add(SampleSizer(),0,WACV)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
-    mainSizer.Add(SFGctrlSizer(),0,WACV)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    if powId:
+        ElList = data['ElList']
+        mainSizer.Add(PDFFileSizer(),0,WACV)
+        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+        mainSizer.Add(SampleSizer(),0,WACV)
+        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+        mainSizer.Add(SFGctrlSizer(),0,WACV)
+        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
     mainSizer.Add(DiffSizer(),0,WACV)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
@@ -6036,11 +6058,19 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                 dlg.Destroy()
                 wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
                 
+        def ElTypeSelect(event):
+            r,c =  event.GetRow(),event.GetCol()
+            if 'Atom' in PDFPeaks.GetColLabelValue(c):
+                PE = G2elemGUI.PickElement(G2frame)
+                if PE.ShowModal() == wx.ID_OK:
+                    el = PE.Elem.strip()
+                    peaks['Peaks'][r][c] = el
+                    PDFPeaks.SetCellValue(r,c,el)
+                PE.Destroy()                
         
-        atms = ','.join(data['ElList'].keys())
         colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Bond No.']
         Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,S,PM,PS,MS,PMS',]+     \
-            2*[wg.GRID_VALUE_CHOICE+':'+atms,]+[wg.GRID_VALUE_FLOAT+':10,3',]
+            2*[wg.GRID_VALUE_STRING,]+[wg.GRID_VALUE_FLOAT+':10,3',]
         rowLabels = range(len(peaks['Peaks']))
         peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         PDFPeaks = G2G.GSGrid(G2frame.dataDisplay)
@@ -6049,6 +6079,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         PDFPeaks.SetRowLabelSize(40)
         PDFPeaks.AutoSizeColumns(False)
         PDFPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PeaksRefine)
+        PDFPeaks.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, ElTypeSelect)
 
         peakBox = wx.BoxSizer(wx.VERTICAL)
         peakBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Peaks:'),0,WACV)
@@ -6109,6 +6140,10 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Controls'))
                     peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'PDF Peaks'))
                     newpeaks,vals,varyList,sigList,parmDict,Rvals = G2pwd.PDFPeakFit(peaks,data['G(R)'])
+                    if vals is None:
+                        print 'Nothing varied!'
+                        dlg.Destroy()
+                        return
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':Rvals,
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Peaks'),newpeaks)

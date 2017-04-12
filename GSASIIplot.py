@@ -2503,8 +2503,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             pick.set_linestyle('--') # back to dashed
         else:       # a profile point, e.g. a peak
             if mouse.button == 1:
-                El = data['ElList'].keys()[0]
-                Peaks['Peaks'].append([xy[0],(xy[1]-Peaks['Background'][1][1]*xy[0])/4.7,.085,'',El,El,0.])
+#                El = data['ElList'].keys()[0]
+                Peaks['Peaks'].append([xy[0],(xy[1]-Peaks['Background'][1][1]*xy[0])/4.7,.085,'','O','O',0.])
                 Peaks['Peaks'] = G2mth.sortArray(Peaks['Peaks'],0,reverse=False)
                 PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
                 G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
@@ -2569,8 +2569,13 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         G2frame.cid = None
         Page.Choice = ()
     PatternId = G2frame.PatternId
-    PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
-    numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
+    if not PatternId:  return
+    pId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls')
+    if not pId:  return
+    PDFdata = G2frame.PatternTree.GetItemPyData(pId)
+    numbDen = 0.
+    if 'ElList' in PDFdata:
+        numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     if G2frame.SinglePlot:
         if 'G(R)' not in data:
             return
@@ -2690,7 +2695,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     line = mplC.LineCollection(XYlist,color=colors[0])
                     Plot.add_collection(line)
             wx.EndBusyCursor()
-            if plotType == 'G(R)':
+            if plotType == 'G(R)' and numbDen:
                 Xb = [0.,2.5]
                 Yb = [0.,-10.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))

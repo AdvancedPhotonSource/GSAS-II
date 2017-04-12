@@ -281,6 +281,8 @@ class GSASII(wx.Frame):
         self._init_Import_routines('sad',self.ImportSmallAngleReaderlist,'SmallAngle_Data')
         self.ImportReflectometryReaderlist = []
         self._init_Import_routines('rfd',self.ImportReflectometryReaderlist,'Reflectometry_Data')
+        self.ImportPDFReaderlist = []
+        self._init_Import_routines('pdf',self.ImportPDFReaderlist,'PDF_Data')
         self.ImportImageReaderlist = []
         self._init_Import_routines('img',self.ImportImageReaderlist,'Images')
         self.ImportMenuId = {}
@@ -1993,8 +1995,8 @@ class GSASII(wx.Frame):
         # self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         
     def OnImportReflectometry(self,event):
-        '''Called in response to an Import/Small Angle Data/... menu item
-        to read a small angle diffraction data set. 
+        '''Called in response to an Import/Reflectometry Data/... menu item
+        to read a reflectometry data set. 
         dict self.ImportMenuId is used to look up the specific
         reader item associated with the menu item, which will be
         None for the last menu item, which is the "guess" option
@@ -2090,6 +2092,81 @@ class GSASII(wx.Frame):
             
         if not newHistList: return # somehow, no new histograms
         return # success
+
+    def _Add_ImportMenu_PDF(self,parent):
+        '''configure the PDF Data menus accord to the readers found in _init_Imports
+        '''
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'PDF G(R) Data',
+            submenu, help='Import PDF G(R) data')
+        for reader in self.ImportPDFReaderlist:
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
+        # item = submenu.Append(wx.ID_ANY,
+        #     help='Import reflectometry data, use file to try to determine format',
+        #     kind=wx.ITEM_NORMAL,text='guess format from file')
+        # self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
+        
+    def OnImportPDF(self,event):
+        '''Called in response to an Import/PDF G(R) Data/... menu item
+        to read a PDF G(R) data set. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        '''
+        
+        # get a list of existing histograms
+        PDFlist = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name.startswith('PDF ') and name not in PDFlist:
+                    PDFlist.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        # look up which format was requested
+        reqrdr = self.ImportMenuId.get(event.GetId())  
+        rdlist = self.OnImportGeneric(
+            reqrdr,self.ImportPDFReaderlist,'PDF G(R) Data',multiple=True)
+        if len(rdlist) == 0: return
+        self.CheckNotebook()
+        newHistList = []
+        self.EnablePlot = False
+        for rd in rdlist:
+            HistName = rd.idstring
+            HistName = 'PDF '+HistName
+            # make new histogram names unique
+            HistName = G2obj.MakeUniqueLabel(HistName,PDFlist)
+            print 'Read PDF G(R) data '+HistName+ \
+                ' from file '+self.lastimport
+            # data are read, now store them in the tree
+            Id = self.PatternTree.AppendItem(self.root,text=HistName)
+            Ymin = np.min(rd.pdfdata[1])                 
+            Ymax = np.max(rd.pdfdata[1])                 
+            valuesdict = {
+                'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),
+                'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
+                'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
+                }
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='PDF Controls'),{'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':''})
+            self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Peaks'),
+                {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
+        else:
+            self.EnablePlot = True
+            self.PatternTree.Expand(Id)
+            self.PatternTree.SelectItem(Id)
+            
+        if not newHistList: return # somehow, no new histograms
+        return # success
+        
+###############################################################################
+#Command logging
+###############################################################################
 
     def OnMacroRecordStatus(self,event,setvalue=None):
         '''Called when the record macro menu item is used which toggles the
@@ -2324,6 +2401,10 @@ class GSASII(wx.Frame):
         # # #self.ExportLookup[item.GetId()] = 'image'
         # self.ExportLookup[item.GetId()] = 'powder'
 
+###############################################################################
+# Exporters
+###############################################################################
+                            
     def _Add_ExportMenuItems(self,parent):
         # item = parent.Append(
         #     help='Select PWDR item to enable',id=wx.ID_ANY,
@@ -2379,6 +2460,7 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_Sfact(Import)
         self._Add_ImportMenu_smallangle(Import)
         self._Add_ImportMenu_reflectometry(Import)
+        self._Add_ImportMenu_PDF(Import)
 
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below

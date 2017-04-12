@@ -3065,16 +3065,18 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if 'PDF' in name:
                     name = 'PWDR' + name[4:]
                 Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
-                sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-                for item in sampleParmDict:
-                    sampleParmDict[item].append(sampleData.get(item,0))
+                if Id:
+                    sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    for item in sampleParmDict:
+                        sampleParmDict[item].append(sampleData.get(item,0))
         for item in sampleParmDict:
-            frstValue = sampleParmDict[item][0]
-            if np.any(np.array(sampleParmDict[item])-frstValue):
-                if item.startswith('FreePrm'):
-                    sampleParm[Controls[item]] = sampleParmDict[item]
-                else:
-                    sampleParm[item] = sampleParmDict[item]
+            if sampleParmDict[item]:
+                frstValue = sampleParmDict[item][0]
+                if np.any(np.array(sampleParmDict[item])-frstValue):
+                    if item.startswith('FreePrm'):
+                        sampleParm[Controls[item]] = sampleParmDict[item]
+                    else:
+                        sampleParm[item] = sampleParmDict[item]
         return sampleParm
 
     def GetColumnInfo(col):
@@ -4774,9 +4776,9 @@ def SelectDataTreeItem(G2frame,item):
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
         if len(data['G(R)']):
-            G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
-            G2plt.PlotISFG(G2frame,data,plotType='S(Q)')
-            G2plt.PlotISFG(G2frame,data,plotType='F(Q)')
+            if 'I(Q)' in data:  G2plt.PlotISFG(G2frame,data,plotType='I(Q)')
+            if 'S(Q)' in data:  G2plt.PlotISFG(G2frame,data,plotType='S(Q)')
+            if 'F(Q)' in data:  G2plt.PlotISFG(G2frame,data,plotType='F(Q)')
             G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         data = G2frame.PatternTree.GetItemPyData(item)

@@ -2153,7 +2153,8 @@ class GSASII(wx.Frame):
                 'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                 }
             self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='PDF Controls'),{'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':''})
+                self.PatternTree.AppendItem(Id,text='PDF Controls'),
+                    {'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':'','diffMult':1.0})
             self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
         else:

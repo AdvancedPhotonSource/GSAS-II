@@ -2171,7 +2171,7 @@ def UpdateSampleGrid(G2frame,data):
                     data['Scale'][0] = 1.0
             finally:
                 dlg.Destroy()
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
             UpdateSampleGrid(G2frame,data)
             return
         #SASD rescaliing                
@@ -2202,7 +2202,39 @@ def UpdateSampleGrid(G2frame,data):
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
         G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
-        UpdateSampleGrid(G2frame,data)       
+        UpdateSampleGrid(G2frame,data)
+        
+    def OnRescaleAll(event):
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        x0,y0,w0 = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1][:3]
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        od = {'label_1':'Scaling range min','value_1':0.0,'label_2':'Scaling range max','value_2':10.}
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+            'Do scaling from\n'+str(hst[5:])+' to...','Rescale histograms', histList,extraOpts=od)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Xmin = od['value_1']
+                Xmax = od['value_2']
+                iBeg = np.searchsorted(x0,Xmin)
+                iFin = np.searchsorted(x0,Xmax)
+                sum0 = np.sum(y0[iBeg:iFin])
+                result = dlg.GetSelections()
+                for i in result: 
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    xi,yi,wi = G2frame.PatternTree.GetItemPyData(Id)[1][:3]
+                    sumi = np.sum(yi[iBeg:iFin])
+                    if sumi:
+                        Scale = sum0/sumi
+                        yi *= Scale
+                        wi /= Scale**2
+        finally:
+            dlg.Destroy()
+        G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
+            
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],
@@ -2215,8 +2247,7 @@ def UpdateSampleGrid(G2frame,data):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
             'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
         try:
@@ -2371,6 +2402,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2gd.wxID_SAMPLE1VAL)
     G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2gd.wxID_ALLSAMPLELOAD)
+    G2frame.Bind(wx.EVT_MENU, OnRescaleAll, id=G2gd.wxID_RESCALEALL)
     if histName[:4] in ['SASD','REFD','PWDR']:
         G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():

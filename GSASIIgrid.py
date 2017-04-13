@@ -108,8 +108,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
-    wxID_MAKEBACKRDF,
-] = [wx.NewId() for item in range(13)]
+    wxID_MAKEBACKRDF,wxID_RESCALEALL,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,wxID_INSTSAVEALL,
@@ -2018,6 +2018,9 @@ class DataFrame(wx.Frame):
             help='Set one sample parameter value across multiple histograms')
         self.SampleEdit.Append(id=wxID_ALLSAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load all',
             help='Load sample parmameters over multiple histograms')
+        self.SampleEdit.Append(id=wxID_RESCALEALL, kind=wx.ITEM_NORMAL,text='Rescale all',
+            help='Rescale all data with selected range')
+        
 
         self.PostfillDataMenu()
         self.SetScale.Enable(False)

@@ -20,13 +20,13 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 class xye_ReaderClass(G2IO.ImportPowderData):
-    'Routines to import powder data from a .xye file'
+    'Routines to import powder data from a .xye/.chi file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xye',),
+            extensionlist=('.xye','.chi',),
             strictExtension=False,
-            formatName = 'Topas xye',
-            longFormatName = 'Topas .xye powder data file'
+            formatName = 'Topas xye & Fit2D chi',
+            longFormatName = 'Topas .xye & Fit2D .chi powder data file'
             )
 
     # Validate the contents -- make sure we only have valid lines
@@ -35,21 +35,30 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         gotCcomment = False
         begin = True
         self.GSAS = False
+        self.Chi = False
+        if '.chi' in filepointer.name:
+            self.Chi = True
         for i,S in enumerate(filepointer):
             if not S:
                 break
             if i > 1000: break
             if begin:
-                if gotCcomment and S.find('*/') > -1:
-                    begin = False
-                    continue
-                if S.strip().startswith('/*'):
-                    gotCcomment = True
-                    continue   
-                if S[0] in ["'",'#']:
-                    continue       #ignore comments, if any
+                if self.Chi:
+                    if i < 4:
+                        continue
+                    else:
+                        begin = False
                 else:
-                    begin = False
+                    if gotCcomment and S.find('*/') > -1:
+                        begin = False
+                        continue
+                    if S.strip().startswith('/*'):
+                        gotCcomment = True
+                        continue   
+                    if S[0] in ["'",'#']:
+                        continue       #ignore comments, if any
+                    else:
+                        begin = False
                 # valid line to read? 
             #vals = S.split()
             vals = S.replace(',',' ').replace(';',' ').split()
@@ -76,19 +85,25 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#'
             if begin:
-                if gotCcomment and S.find('*/') > -1:
-                    self.comments.append(S[:-1])
-                    begin = False
-                    continue
-                if S.strip().startswith('/*'):
-                    self.comments.append(S[:-1])
-                    gotCcomment = True
-                    continue   
-                if S[0] in ["'",'#']:
-                    self.comments.append(S[:-1])
-                    continue       #ignore comments, if any
-                else:
-                    begin = False
+                if self.Chi:
+                    if i < 4:
+                        continue
+                    else:
+                        begin = False
+                else:        
+                    if gotCcomment and S.find('*/') > -1:
+                        self.comments.append(S[:-1])
+                        begin = False
+                        continue
+                    if S.strip().startswith('/*'):
+                        self.comments.append(S[:-1])
+                        gotCcomment = True
+                        continue   
+                    if S[0] in ["'",'#']:
+                        self.comments.append(S[:-1])
+                        continue       #ignore comments, if any
+                    else:
+                        begin = False
             # valid line to read
             #vals = S.split()
             vals = S.replace(',',' ').replace(';',' ').split()

@@ -64,7 +64,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
                 i = self.Phases[phasenam]['pId']
                 self.filename = os.path.splitext(filename)[1] + "_" + mapData['MapType'] + str(i) + self.extension
             self.OpenFile()
-            self.Write("Map of Phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile))
+            self.Write(u"Map of Phase "+phasenam+u" from "+self.G2frame.GSASprojectfile)
             # get cell parameters & print them
             cellList,cellSig = self.GetCell(phasenam)
             fmt = 3*" {:9.5f}" + 3*" {:9.3f}"
@@ -76,7 +76,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
                     for k in range(nz):
                         self.Write(str(rho[i,j,k]))
             self.CloseFile()
-            print('map from Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)
 
 class ExportMapCCP4(G2IO.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -145,4 +145,4 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
             for x in rho.flatten('F'):
                 self.Write(x,'f')
             self.CloseFile()
-            print('map from Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print(u'map from Phase '+phasenam+u' written to file '+self.fullpath)

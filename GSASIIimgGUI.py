@@ -2297,7 +2297,6 @@ class AutoIntFrame(wx.Frame):
     :param float PollTime: frequency in seconds to repeat calling the
       processing loop. (Default is 30.0 seconds.)
     '''
-
     def __init__(self,G2frame,PollTime=30.0):
         def OnStart(event):
             '''Called when the start button is pressed. Changes button label 
@@ -2463,6 +2462,14 @@ class AutoIntFrame(wx.Frame):
         def scanPDFprm(**kw):
             fInp4.invalid = not os.path.exists(fInp4.GetValue())
             fInp4._IndicateValidity()
+            
+        def OnAutoScale(event):
+            self.AutoScale = autoscale.GetValue()
+            
+        def OnAutoScaleName(event):
+            self.AutoScaleName = scalename.GetValue()
+            self.Scale[0] = self.AutoScales[self.AutoScaleName]
+            scaleval.SetValue(self.Scale[0])
                 
         ##################################################
         # beginning of __init__ processing
@@ -2488,10 +2495,27 @@ class AutoIntFrame(wx.Frame):
         self.params['pdfprm'] = ''
         self.params['optPDF'] = True
         self.pdfControls = {}
+        self.AutoScale = False
+        self.Scale = [1.0,]
 
         G2frame.PatternTree.GetSelection()
-        size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(self.imageBase)        
+        size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(self.imageBase) 
         self.imagedir,fileroot = os.path.split(imagefile)
+        Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,self.imageBase, 'Comments'))
+        DefaultAutoScaleNames = GSASIIpath.GetConfigValue('Autoscale_ParmNames')
+        self.AutoScaleName = GSASIIpath.GetConfigValue('DefaultAutoScale')
+        self.AutoScales = {}
+        for comment in Comments:
+            if '=' in comment:
+                name,val = comment.split('=',1) 
+                if name in DefaultAutoScaleNames:
+                    try:
+                        self.AutoScales[name] = float(val)
+                        if name == self.AutoScaleName:
+                            self.Scale[0] = float(val)
+                    except ValueError:
+                        continue
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
         wx.Frame.__init__(self, G2frame, title='Automatic Integration',
@@ -2556,6 +2580,20 @@ class AutoIntFrame(wx.Frame):
         self.params['SeparateDir'] = False
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'SeparateDir'))
         lblsizr.Add(sizer)
+        if self.AutoScales:
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            autoscale = wx.CheckBox(mnpnl,label='Do autoscaling with:')
+            autoscale.Bind(wx.EVT_CHECKBOX,OnAutoScale)
+            sizer.Add(autoscale,0,WACV)
+            scalename = wx.ComboBox(mnpnl,value=self.AutoScaleName,choices=self.AutoScales.keys(),
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            scalename.Bind(wx.EVT_COMBOBOX,OnAutoScaleName)
+            sizer.Add(scalename,0,WACV)
+            sizer.Add(wx.StaticText(mnpnl,label=' to '),0,WACV)
+            scaleval = G2G.ValidatedTxtCtrl(mnpnl,self.Scale,0,nDig=(10,2),min=1.)
+            sizer.Add(scaleval,0,WACV)
+            lblsizr.Add(sizer,0)
+        #ToDO: Autonormalize, parm name?, scaling value?
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Autocompute PDF:'),0,wx.ALIGN_CENTER_VERTICAL)
         sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'ComputePDF',OnChange=showPDFctrls))
@@ -2715,6 +2753,17 @@ class AutoIntFrame(wx.Frame):
         G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
         # do integration
         size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
+        if self.AutoScale:
+            Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                G2frame,imgId, 'Comments'))
+            for comment in Comments:
+                if '=' in comment:
+                    name,val = comment.split('=',1) 
+                    if name == self.AutoScaleName:
+                        val = float(val)
+                        if val > 0.:
+                            Scale = self.Scale[0]/val
+                        break
         masks = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
@@ -2736,6 +2785,11 @@ class AutoIntFrame(wx.Frame):
             G2frame.AutointPWDRnames.append(treename)
             # write out the images in the selected formats
             Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
+            if self.AutoScale:
+                print 'Rescale by %.4f'%(Scale)
+                y,w = G2frame.PatternTree.GetItemPyData(Id)[1][1:3]
+                y *= Scale
+                w /= Scale**2
             # determine the name for the current file
             fileroot = namepre
             if len(G2frame.IntgOutList) > 1:

@@ -124,3 +124,10 @@ Autoint_PollTime = 30.
 '''Specifies the frequency, in seconds that AutoInt checks for new files.
 Default is 30 seconds
 '''
+
+Autoscale_ParmNames = ['userComment2',r'extraInputs\1\extraInputs','Ion_Chamber_I0',]
+DefaultAutoScale = "userComment2"
+'''Gives the possible selection of incident monitor names as found in an image metadata file.
+DefaultAutoScale must be one of the AutoScale_ParmNames
+Used in AutoIntegration
+'''

@@ -2220,21 +2220,23 @@ def UpdateSampleGrid(G2frame,data):
                 Xmax = od['value_2']
                 iBeg = np.searchsorted(x0,Xmin)
                 iFin = np.searchsorted(x0,Xmax)
-                sum0 = np.sum(y0[iBeg:iFin])
-                result = dlg.GetSelections()
-                for i in result: 
-                    item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    xi,yi,wi = G2frame.PatternTree.GetItemPyData(Id)[1][:3]
-                    sumi = np.sum(yi[iBeg:iFin])
-                    if sumi:
-                        Scale = sum0/sumi
-                        yi *= Scale
-                        wi /= Scale**2
+                if iBeg > iFin:
+                    wx.MessageBox('Wrong order for Xmin, Xmax','Error',style=wx.ICON_EXCLAMATION)
+                else:
+                    sum0 = np.sum(y0[iBeg:iFin])
+                    result = dlg.GetSelections()
+                    for i in result: 
+                        item = histList[i]
+                        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                        xi,yi,wi = G2frame.PatternTree.GetItemPyData(Id)[1][:3]
+                        sumi = np.sum(yi[iBeg:iFin])
+                        if sumi:
+                            Scale = sum0/sumi
+                            yi *= Scale
+                            wi /= Scale**2
         finally:
             dlg.Destroy()
         G2plt.PlotPatterns(G2frame,plotType=histName[:4],newPlot=True)
-            
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],

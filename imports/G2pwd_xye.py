@@ -25,8 +25,8 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.xye','.chi',),
             strictExtension=False,
-            formatName = 'Topas xye & Fit2D chi',
-            longFormatName = 'Topas .xye & Fit2D .chi powder data file'
+            formatName = 'Topas xye or 2th Fit2D chi',
+            longFormatName = 'Topas .xye or 2th Fit2D .chi powder data file'
             )
 
     # Validate the contents -- make sure we only have valid lines
@@ -38,6 +38,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         self.Chi = False
         if '.chi' in filepointer.name:
             self.Chi = True
+        if2theta = False
         for i,S in enumerate(filepointer):
             if not S:
                 break
@@ -45,10 +46,13 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             if begin:
                 if self.Chi:
                     if i < 4:
+                        if  '2-theta' in S.lower():
+                            if2theta = True
                         continue
                     else:
                         begin = False
                 else:
+                    if2theta = True
                     if gotCcomment and S.find('*/') > -1:
                         begin = False
                         continue
@@ -61,6 +65,9 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         begin = False
                 # valid line to read? 
             #vals = S.split()
+            if not if2theta:
+                self.errors = 'Not a 2-theta chi file'
+                return False
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) == 2 or len(vals) == 3:
                 continue

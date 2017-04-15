@@ -223,8 +223,8 @@ def SetDefaultREFDModel():
     '''
     return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
         {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
-        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top',                                 #globals
-        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,           #minimizer controls
+        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top','dQ type':'None',                #globals
+        'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,             #minimizer controls
         'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
         
 def SetDefaultSubstances():
@@ -4895,18 +4895,23 @@ def UpdateREFDModelsGrid(G2frame,data):
             R,F = G2pwd.makeRefdFFT(Limits,Profile)
             XY = [[R[:2500],F[:2500]],]
             G2plt.PlotXY(G2frame,XY,labelX='thickness',labelY='F(R)',newPlot=True,
-                Title='Fourier transform',lines=True)  
+                Title='Fourier transform',lines=True)
+            
+        def OndQSel(event):
+            data['dQ type'] = dQSel.GetStringSelection()
             
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
-        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Instrument resolution (%'+GkDelta+'Q/Q): '),0,WACV)
-        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,2),min=0.,max=0.2),0,WACV)
-        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' Zero position location: '),0,WACV)
-        poslist = ['Top','Bottom']
-        refpos = wx.ComboBox(G2frame.dataDisplay,value=data['Zero'],choices=poslist,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        refpos.Bind(wx.EVT_COMBOBOX, OnRefPos)
-        resol.Add(refpos,0,WACV)
+        choice = ['None','const '+GkDelta+'Q/Q',]
+        if ProfDict['ifDQ']:
+            choice += [GkDelta+'Q/Q in data']
+        dQSel = wx.RadioBox(G2frame.dataDisplay,wx.ID_ANY,'Instrument resolution type:',choices=choice,
+            majorDimension=0,style=wx.RA_SPECIFY_COLS)
+        dQSel.SetStringSelection(data['dQ type'])
+        dQSel.Bind(wx.EVT_RADIOBOX,OndQSel)
+        resol.Add(dQSel,0,WACV)
+        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' (FWHM %): '),0,WACV)
+        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,3),min=0.,max=5.),0,WACV)
         controlSizer.Add(resol,0,WACV)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
         minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
@@ -4927,6 +4932,12 @@ def UpdateREFDModelsGrid(G2frame,data):
         sld = wx.CheckBox(G2frame.dataDisplay,label='Plot SLD?')
         sld.Bind(wx.EVT_CHECKBOX, OnSLDplot)
         plotSizer.Add(sld,0,WACV)
+        plotSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Zero position location: '),0,WACV)
+        poslist = ['Top','Bottom']
+        refpos = wx.ComboBox(G2frame.dataDisplay,value=data['Zero'],choices=poslist,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        refpos.Bind(wx.EVT_COMBOBOX, OnRefPos)
+        plotSizer.Add(refpos,0,WACV)
 #        q4fft = wx.CheckBox(G2frame.dataDisplay,label='Plot fft?')
 #        q4fft.Bind(wx.EVT_CHECKBOX, OnQ4fftplot)
 #        plotSizer.Add(q4fft,0,WACV)
@@ -5179,6 +5190,9 @@ def UpdateREFDModelsGrid(G2frame,data):
     
     Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
     ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
+    if 'ifDQ' not in ProfDict:
+        ProfDict['ifDQ'] = np.any(Profile[5])
+        data['dQ type'] = 'None'
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     if G2frame.dataDisplay:

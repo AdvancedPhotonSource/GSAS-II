@@ -2059,11 +2059,13 @@ class GSASII(wx.Frame):
 #                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.reflectometrydata[0])
             Tmax = max(rd.reflectometrydata[0])
+            ifDQ = np.any(rd.reflectometrydata[5])
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
                 'Offset':[0.0,0.0],
+                'ifDQ':ifDQ
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.reflectometrydata])

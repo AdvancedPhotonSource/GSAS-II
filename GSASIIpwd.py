@@ -60,6 +60,7 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
 ateln2 = 8.0*math.log(2.0)
+sateln2 = np.sqrt(ateln2)
 nxs = np.newaxis
 
 ################################################################################
@@ -1937,7 +1938,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         varyList = []
         values = []
         bounds = []
-        parmDict['Res'] = data['Resolution'][0]/(100.*np.sqrt(ateln2))     #% FWHM-->decimal sig
+        parmDict['dQ type'] = data['dQ type']
+        parmDict['Res'] = data['Resolution'][0]/(100.*sateln2)     #% FWHM-->decimal sig
         for parm in ['Scale','FltBack']:
             parmDict[parm] = data[parm][0]
             if data[parm][1]:
@@ -1993,17 +1995,17 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             print line
             print line2
     
-    def calcREFD(values,Q,Io,wt,parmDict,varyList):
+    def calcREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
-        M = np.sqrt(wt)*(getREFD(Q,parmDict)-Io)
+        M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return M
     
-    def sumREFD(values,Q,Io,wt,parmDict,varyList):
+    def sumREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
-        M = np.sqrt(wt)*(getREFD(Q,parmDict)-Io)
+        M = np.sqrt(wt)*(getREFD(Q,Qsig,parmDict)-Io)
         return np.sum(M**2)
     
-    def getREFD(Q,parmDict):
+    def getREFD(Q,Qsig,parmDict):
         Ic = np.ones_like(Q)*parmDict['FltBack']
         Scale = parmDict['Scale']
         Nlayers = parmDict['nLayers']
@@ -2024,29 +2026,21 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                 irho[ilay] = parmDict[cid+'irho']*parmDict[cid+'DenMul']
             if cid+'Mag SLD' in parmDict:
                 rho[ilay] += parmDict[cid+'Mag SLD']
-        A,B = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
-        Ic += (A**2+B**2)*Scale
-        #TODO: smear Ic by instrument resolution Qsig
+        if parmDict['dQ type'] == 'None':
+            AB = abeles(0.5*Q,depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+        elif 'const' in parmDict['dQ type']:
+            AB = SmearAbeles(0.5*Q,Q*Res,depth,rho,irho,sigma[1:])
+        else:       #dQ/Q in data
+            AB = SmearAbeles(0.5*Q,Qsig,depth,rho,irho,sigma[1:])
+        Ic += AB*Scale
         return Ic
-        
-        def Smear(f,w,z,dq):
-            y = f(w,z)
-            s = dq/ateln2
-            y += 0.1354*(f(w,z+2*s)+f(w,z-2*s))
-            y += 0.24935*(f(w,z-1.666667*s)+f(w,z+1.666667*s)) 
-            y += 0.4111*(f(w,z-1.333333*s)+f(w,z+1.333333*s)) 
-            y += 0.60653*(f(w,z-s) +f(w,z+s))
-            y += 0.80074*(f(w,z-0.6666667*s)+f(w,z+0.6666667*s))
-            y += 0.94596*(f(w,z-0.3333333*s)+f(w,z+0.3333333*s))
-            y *= 0.137023
-            return y
         
     def estimateT0(takestep):
         Mmax = -1.e-10
         Mmin = 1.e10
         for i in range(100):
             x0 = takestep(values)
-            M = sumREFD(x0,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)
+            M = sumREFD(x0,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList)
             Mmin = min(M,Mmin)
             MMax = max(M,Mmax)
         return 1.5*(MMax-Mmin)
@@ -2068,7 +2062,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     if varyList:
         if data['Minimizer'] == 'LMLS': 
             result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
-                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
+                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
             parmDict.update(zip(varyList,result[0]))
             chisq = np.sum(result[2]['fvec']**2)
             ncalc = result[2]['nfev']
@@ -2081,14 +2075,15 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             print ' Estimated temperature: %.3g'%(T0)
             result = so.basinhopping(sumREFD,values,take_step=take_step,disp=True,T=T0,stepsize=Bfac,
                 interval=20,niter=200,minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
-                'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)})
+                'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList)})
             chisq = result.fun
             ncalc = result.nfev
             newVals = result.x
             covM = []
         elif data['Minimizer'] == 'MC/SA Anneal':
             xyrng = np.array(bounds).T
-            result = G2mth.anneal(sumREFD, values, args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList),
+            result = G2mth.anneal(sumREFD, values, 
+                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList),
                 schedule='log', full_output=True,maxeval=None, maxaccept=None, maxiter=10,dwell=1000,
                 boltzmann=10.0, feps=1e-6,lower=xyrng[0], upper=xyrng[1], slope=0.9,ranStart=True,
                 ranRange=0.20,autoRan=False,dlg=None)
@@ -2100,14 +2095,14 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             print ' MC/SA final temperature: %.4g'%(result[2])
         elif data['Minimizer'] == 'L-BFGS-B':
             result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
-                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList))
+                args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
             parmDict.update(zip(varyList,result['x']))
             chisq = result.fun
             ncalc = result.nfev
             newVals = result.x
             covM = []
     else:   #nothing varied
-        M = calcREFD(values,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],parmDict,varyList)
+        M = calcREFD(values,Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList)
         chisq = np.sum(M**2)
         ncalc = 0
         covM = []
@@ -2117,7 +2112,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Rvals = {}
     Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
     Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
-    Ic[Ibeg:Ifin] = getREFD(Q[Ibeg:Ifin],parmDict)
+    Ic[Ibeg:Ifin] = getREFD(Q[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict)
     Ib[Ibeg:Ifin] = parmDict['FltBack']
     try:
         if not len(varyList):
@@ -2218,8 +2213,14 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
             irho[ilay] = Substances[name].get('XImag density',0.)*layer['DenMul'][0]
         if 'Mag SLD' in layer:
             rho[ilay] += layer['Mag SLD'][0]
-    A,B = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
-    Ic[iBeg:iFin] = (A**2+B**2)*Scale+Ib[iBeg:iFin]
+    if data['dQ type'] == 'None':
+        AB = abeles(0.5*Q[iBeg:iFin],depth,rho,irho,sigma[1:])     #Q --> k, offset roughness for abeles
+    elif 'const' in data['dQ type']:
+        res = data['Resolution'][0]/(100.*sateln2)
+        AB = SmearAbeles(0.5*Q[iBeg:iFin],res*Q[iBeg:iFin],depth,rho,irho,sigma[1:])
+    else:       #dQ/Q in data
+        AB = SmearAbeles(0.5*Q[iBeg:iFin],Qsig[iBeg:iFin],depth,rho,irho,sigma[1:])
+    Ic[iBeg:iFin] = AB*Scale+Ib[iBeg:iFin]
 
 def abeles(kz, depth, rho, irho=0, sigma=0):
     """
@@ -2288,7 +2289,7 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
             k = k_next
     
         r = B12/B11
-        return np.real(r),np.imag(r)
+        return np.absolute(r)**2
 
     if np.isscalar(kz): kz = np.asarray([kz], 'd')
 
@@ -2307,6 +2308,18 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
 
     return calc(kz, depth, rho, irho, sigma)
     
+def SmearAbeles(kz,dq, depth, rho, irho=0, sigma=0):
+    y = abeles(kz, depth, rho, irho, sigma)
+    s = dq/2.
+    y += 0.1354*(abeles(kz+2*s, depth, rho, irho, sigma)+abeles(kz-2*s, depth, rho, irho, sigma))
+    y += 0.24935*(abeles(kz-5*s/3., depth, rho, irho, sigma)+abeles(kz+5*s/3., depth, rho, irho, sigma)) 
+    y += 0.4111*(abeles(kz-4*s/3., depth, rho, irho, sigma)+abeles(kz+4*s/3., depth, rho, irho, sigma)) 
+    y += 0.60653*(abeles(kz-s, depth, rho, irho, sigma) +abeles(kz+s, depth, rho, irho, sigma))
+    y += 0.80074*(abeles(kz-2*s/3., depth, rho, irho, sigma)+abeles(kz-2*s/3., depth, rho, irho, sigma))
+    y += 0.94596*(abeles(kz-s/3., depth, rho, irho, sigma)+abeles(kz-s/3., depth, rho, irho, sigma))
+    y *= 0.137023
+    return y
+        
 def makeRefdFFT(Limits,Profile):
     print 'make fft'
     Q,Io = Profile[:2]

@@ -1988,7 +1988,10 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)**parmDict[cid+'DenMul'])
             for parm in ['Thick','Rough','DenMul','Mag SLD','iDenMul']:
                 if parm in layer:
-                    layer[parm][0] = parmDict[cid+parm]
+                    if parm == 'Rough':
+                        layer[parm][0] = abs(parmDict[cid+parm])    #make positive
+                    else:
+                        layer[parm][0] = parmDict[cid+parm]
                     line += ' %s: %.3f'%(parm,layer[parm][0])
                     if cid+parm in varyList:
                         line += ' esd: %.3g'%(sigDict[cid+parm])
@@ -2061,7 +2064,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
     Msg = 'Failed to converge'
     if varyList:
         if data['Minimizer'] == 'LMLS': 
-            result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+            result = so.leastsq(calcREFD,values,full_output=True,epsfcn=1.e-8,ftol=1.e-6,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
             parmDict.update(zip(varyList,result[0]))
             chisq = np.sum(result[2]['fvec']**2)
@@ -2127,7 +2130,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if np.any(Negs):
             indx = Negs.nonzero()
             name = varyList[indx[0][0]]
-            if name != 'FltBack' and name.split(';')[1] in ['Thick','Rough']:
+            if name != 'FltBack' and name.split(';')[1] in ['Thick',]:
                 Msg += ' negative coefficient for '+name+'!'
                 raise ValueError
         if len(covM):

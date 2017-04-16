@@ -3957,7 +3957,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    if histNames[0][:4] not in ['SASD','IMG '] and Controls.get('ShowCell'):
+    if histNames[0][:4] not in ['SASD','IMG ','REFD'] and Controls.get('ShowCell'):
         G2frame.colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         G2frame.colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
@@ -4217,7 +4217,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     else:
         G2frame.dataFrame.setSizePosLeft([700,350])
     # highlight unconverged shifts 
-    if histNames[0][:4] not in ['SASD','IMG ']:
+    if histNames[0][:4] not in ['SASD','IMG ','REFD',]:
         for row,name in enumerate(histNames):
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             if deltaChi > 10.:
@@ -4670,9 +4670,9 @@ def SelectDataTreeItem(G2frame,item):
         # save name of calling tree item for help. N.B. may want to override this later
         prfx = G2frame.PatternTree.GetItemText(item).split()[0]
         prfx1 = G2frame.PatternTree.GetItemText(parentID).split()[0]
-        if prfx in ('IMG','PKS','PWDR','SASD','HKLF','PDF',):
+        if prfx in ('IMG','PKS','PWDR','SASD','HKLF','PDF','refd',):
             G2frame.dataFrame.helpKey = prfx
-        elif prfx1 in ('IMG','PKS','PWDR','SASD','HKLF','PDF',):
+        elif prfx1 in ('IMG','PKS','PWDR','SASD','HKLF','PDF','REFD',):
             suffix = G2frame.PatternTree.GetItemText(item)
             suffix1 = suffix.split()[0]
             if '(Q)' in suffix1 or '(R)' in suffix1: suffix = suffix1

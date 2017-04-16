@@ -558,6 +558,7 @@ def UpdatePeakGrid(G2frame, data):
             SeqResult = {}
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
         SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+        SeqResult['histNames'] = names
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.',]
@@ -4170,7 +4171,7 @@ def UpdateModelsGrid(G2frame,data):
             else:
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
-            SeqResult['histNames'] = choices
+            SeqResult['histNames'] = names
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         else:
             dlg.Destroy()
@@ -4839,8 +4840,8 @@ def UpdateREFDModelsGrid(G2frame,data):
             else:
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential REFD results')
-            SeqResult['histNames'] = choices
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+            SeqResult['histNames'] = names
         else:
             dlg.Destroy()
             return
@@ -4871,9 +4872,9 @@ def UpdateREFDModelsGrid(G2frame,data):
                 sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
-                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
+                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(sId)[:2]
                 IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
-                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Substances'))
+                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Substances'))['Substances']
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2pwd.REFDRefine(IProfile,IProfDict,Inst,ILimits,ISubstances,IModel)
                 JModel = copy.deepcopy(IModel)

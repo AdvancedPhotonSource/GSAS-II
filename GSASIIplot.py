@@ -2012,7 +2012,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             else:
                 Y = xye[1]+offsetY*N*Ymax/100.0
         elif plottype in ['SASD','REFD']:
-            B = xye[5]
+            if plottype == 'SASD':
+                B = xye[5]
+            else:
+                B = np.zeros_like(xye[5])
             if G2frame.plotStyle['sqPlot']:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)*X**4
             else:

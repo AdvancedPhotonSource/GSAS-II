@@ -121,14 +121,14 @@ class txt_XRayReaderClass(G2IO.ImportReflectometryData):
 
         return True
 
-class txt_nmXRayReaderClass(G2IO.ImportReflectometryData):
-    'Routines to import X-ray q REFD data from a .xrfd or .xdat file, q in nm-1'
+class txt_NeutronReaderClass(G2IO.ImportReflectometryData):
+    'Routines to import neutron q REFD data from a .nrfd or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xrfd','.xdat'),
+            extensionlist=('.nrfd','.ndat'),
             strictExtension=False,
-            formatName = 'q (nm-1) step X-ray QRE data',
-            longFormatName = 'q (nm-1) stepped X-ray text data file in Q,R,E order; E optional'
+            formatName = 'q (A-1) step neutron QRE data',
+            longFormatName = 'q (A-1) stepped neutron text data file in Q,R,E order; E optional'
             )
 
     # Validate the contents -- make sure we only have valid lines
@@ -175,10 +175,10 @@ class txt_nmXRayReaderClass(G2IO.ImportReflectometryData):
             if len(vals) >= 2:
                 try:
                     data = [float(val) for val in vals]
-                    x.append(float(data[0])/10.)        #convert nm-1 to A-1
+                    x.append(float(data[0]))
                     f = float(data[1])
                     if f <= 0.0:
-                        x.pop()
+                        del x[-1]
                         continue
                     elif len(vals) > 2:
                         y.append(float(data[1]))
@@ -202,7 +202,7 @@ class txt_nmXRayReaderClass(G2IO.ImportReflectometryData):
                 except:
                     pass
         self.instdict['wave'] = wave
-        self.instdict['type'] = 'RXC'
+        self.instdict['type'] = 'RNC'
         x = np.array(x)
         self.reflectometrydata = [
             x, # x-axis values q
@@ -210,7 +210,7 @@ class txt_nmXRayReaderClass(G2IO.ImportReflectometryData):
             np.array(w), # 1/sig(intensity)^2 values (weights)
             np.zeros(N), # calc. intensities (zero)
             np.zeros(N), # obs-calc profiles
-            np.array(sq), # fix bkg
+            np.array(sq), # Q FWHM
             ]
         self.reflectometryentry[0] = filename
         self.reflectometryentry[2] = 1 # xye file only has one bank
@@ -219,3 +219,4 @@ class txt_nmXRayReaderClass(G2IO.ImportReflectometryData):
         self.Sample['Temperature'] = Temperature
 
         return True
+

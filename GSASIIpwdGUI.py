@@ -4826,9 +4826,77 @@ def UpdateREFDModelsGrid(G2frame,data):
                       Title='Scattering length density',lines=True,names=[],vertLines=LinePos)
         
     def OnFitModelAll(event):
-        print 'fit all model'
-        event.Skip()
-        
+        choices = G2gd.GetPatternTreeDataNames(G2frame,['REFD',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential REFD refinement',
+             'Select dataset to include',choices)
+        names = []
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                names.append(choices[sel])
+            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential REFD results')
+            if Id:
+                SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+            else:
+                SeqResult = {}
+                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential REFD results')
+            SeqResult['histNames'] = choices
+            SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+        else:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        Reverse = False
+        CopyForward = False
+        choice = ['Reverse sequence','Copy from prev.']
+        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                if sel:
+                    CopyForward = True
+                else:
+                    Reverse = True
+        dlg.Destroy()
+        dlg = wx.ProgressDialog('REFD Sequential fit','Data set name = '+names[0],len(names), 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        wx.BeginBusyCursor()
+        if Reverse:
+            names.reverse()
+        JModel = None
+        try:
+            for i,name in enumerate(names):
+                print ' Sequential fit for ',name
+                GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
+                if not GoOn:
+                    break
+                sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                if i and CopyForward:
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
+                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
+                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
+                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Substances'))
+                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))
+                IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2pwd.REFDRefine(IProfile,IProfDict,Inst,ILimits,ISubstances,IModel)
+                JModel = copy.deepcopy(IModel)
+                if not IfOK:
+                    G2frame.ErrorDialog('Failed sequential refinement for data '+name,
+                        ' Msg: '+Msg+'\nYou need to rethink your selection of parameters\n'+    \
+                        ' Model restored to previous version for'+name)
+                    SeqResult['histNames'] = names[:i]
+                    dlg.Destroy()
+                    break
+                else:
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
+                
+                SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                    'covMatrix':covMatrix,'title':name,'parmDict':parmDict}
+            else:
+                dlg.Destroy()
+                print ' ***** Small angle sequential refinement successful *****'
+        finally:
+            wx.EndBusyCursor()    
+        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        G2frame.PatternTree.SelectItem(Id)
+                
     def ModelPlot(data,x,xr,y):
         laySeq = data['Layer Seq'].split()
         nLines = len(laySeq)+1
@@ -5053,7 +5121,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                 if midName != 'unit scatter':
                     midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
                     midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
-                        nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                        nDig=(10,4),OnLeave=Recalculate),0,WACV)
                     varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                     Indx[varBox.GetId()] = [ilay,'DenMul']
                     varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
@@ -5079,7 +5147,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                 nxtlayer = wx.BoxSizer(wx.HORIZONTAL)
                 nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Real Den. : '),0,WACV)                
                 nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
-                    nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                    nDig=(10,4),OnLeave=Recalculate),0,WACV)
                 varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                 Indx[varBox.GetId()] = [ilay,'DenMul']
                 varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
@@ -5087,7 +5155,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                 nxtlayer.Add(varBox,0,WACV)
                 nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Imag Den. : '),0,WACV)                
                 nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['iDenMul'],0,
-                    nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                    nDig=(10,4),OnLeave=Recalculate),0,WACV)
                 varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                 Indx[varBox.GetId()] = [ilay,'iDenMul']
                 varBox.SetValue(data['Layers'][ilay]['iDenMul'][1])
@@ -5099,7 +5167,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                     magLayer = wx.BoxSizer(wx.HORIZONTAL)
                     magLayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Magnetic SLD: '),0,WACV)
                     magLayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['Mag SLD'],0,
-                        nDig=(10,4),typeHint=float,OnLeave=Recalculate),0,WACV)
+                        nDig=(10,4),OnLeave=Recalculate),0,WACV)
                     varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                     Indx[varBox.GetId()] = [ilay,'Mag SLD']
                     varBox.SetValue(data['Layers'][ilay]['Mag SLD'][1])
@@ -5117,7 +5185,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                     for parm in parms:
                         parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' %s: '%(names[parm])),0,WACV)
                         parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay][parm],0,
-                            nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
+                            nDig=(10,2),OnLeave=Recalculate),0,WACV)
                         varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
                         Indx[varBox.GetId()] = [ilay,parm]
                         varBox.SetValue(data['Layers'][ilay][parm][1])

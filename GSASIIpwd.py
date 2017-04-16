@@ -2127,7 +2127,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if np.any(Negs):
             indx = Negs.nonzero()
             name = varyList[indx[0][0]]
-            if name != 'FltBack' and 'Mag SLD' not in name:
+            if name != 'FltBack' and name.split(';')[1] in ['Thick','Rough']:
                 Msg += ' negative coefficient for '+name+'!'
                 raise ValueError
         if len(covM):

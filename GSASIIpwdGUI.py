@@ -4171,8 +4171,8 @@ def UpdateModelsGrid(G2frame,data):
             else:
                 SeqResult = {}
                 Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
-            SeqResult['histNames'] = names
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
+            SeqResult['histNames'] = names
         else:
             dlg.Destroy()
             return
@@ -4203,7 +4203,7 @@ def UpdateModelsGrid(G2frame,data):
                 sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
-                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
+                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(sId)[:2]
                 IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
                 ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Sample Parameters'))
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))

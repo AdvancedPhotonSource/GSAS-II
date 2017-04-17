@@ -2687,7 +2687,7 @@ class GSASII(wx.Frame):
             self.TreeItemDelete = False
         else:
             if self.ExpandingAll:
-                #if GSASIIpath.GetConfigValue('debug'): print('Skipping Tree selection due to ExpandAll')
+                if GSASIIpath.GetConfigValue('debug'): print('Skipping Tree selection due to ExpandAll')
                 return
             pltNum = self.G2plotNB.nb.GetSelection()
             if pltNum >= 0:                         #to avoid the startup with no plot!

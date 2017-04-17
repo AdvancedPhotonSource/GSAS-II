@@ -884,10 +884,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     if '2-theta' in data.get('binType','2-theta'):
         lutth = LUtth                
-    elif 'Q' == data['binType']:
-        lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
     elif 'log(q)' in data['binType']:
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
+    elif 'q' == data['binType'].lower():
+        lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
     dtth = (lutth[1]-lutth[0])/numChans
     muT = data.get('SampleAbs',[0.0,''])[0]
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
@@ -924,7 +924,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
                     tabs = G2pwd.Absorb('Fixed',muT,tay)
             if 'log(q)' in data.get('binType',''):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
-            elif 'Q' == data.get('binType',''):
+            elif 'q' == data.get('binType','').lower():
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             t0 = time.time()
             taz = np.array((taz*tad/tabs),dtype='float32')
@@ -940,7 +940,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
     if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
-    elif 'Q' == data.get('binType',''):
+    elif 'q' == data.get('binType','').lower():
         H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
     if Dazm:        
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])

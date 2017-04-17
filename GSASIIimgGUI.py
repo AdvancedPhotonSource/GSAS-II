@@ -810,7 +810,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             Utth = float(G2frame.OuterTth.GetValue())
             if Ltth > Utth:
                 Ltth,Utth = Utth,Ltth
-            if 'Q' in data['binType']:
+            if 'q' in data['binType'].lower():
                 data['IOtth'] = [2.*asind(Ltth*wave/(4.*math.pi)),2.*asind(Utth*wave/(4.*math.pi))]
             else:
                 data['IOtth'] = [Ltth,Utth]
@@ -894,7 +894,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             binType = 'Q'
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer '+binType),0,WACV)            
         IOtth = data['IOtth'][:]
-        if 'Q' in data['binType']:
+        if 'q' in data['binType'].lower():
             wave = data['wavelength']
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1096,7 +1096,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
-        cutOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'cutoff',nDig=(10,1),typeHint=float,min=0.1)
+        cutOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'cutoff',nDig=(10,2),min=0.1)
         comboSizer.Add(cutOff,0,WACV)
         calibSizer.Add(comboSizer,0)
         
@@ -1184,11 +1184,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     
     colorList = sorted([m for m in mpl.cm.datad.keys() if not m.endswith("_r")],key=lambda s: s.lower())
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
-    typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',
-        'REFL - reflectometry data']
+    typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',]
     if not data.get('type'):                        #patch for old project files
         data['type'] = 'PWDR'
-    typeDict = {'PWDR':typeList[0],'SASD':typeList[1],'REFL':typeList[2]}
+    typeDict = {'PWDR':typeList[0],'SASD':typeList[1],}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ImageMenu)

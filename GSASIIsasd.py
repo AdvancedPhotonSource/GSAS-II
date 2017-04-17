@@ -1389,15 +1389,34 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
     if 'LogNormal' in DistName:
         distFxn = 'LogNormalDist'
         cumeFxn = 'LogNormalCume'
+        pos = distDict['MinSize']
+        args = [distDict['Mean'],distDict['StdDev']]
+        step = 4.*np.sqrt(np.exp(distDict['StdDev']**2)*(np.exp(distDict['StdDev']**2)-1.))
+        mode = distDict['MinSize']+distDict['Mean']/np.exp(distDict['StdDev']**2)
+        minX = 1. #pos
+        maxX = 1.e4 #np.min([mode+nPoints*step*40,1.e5])
     elif 'Gauss' in DistName:
         distFxn = 'GaussDist'
         cumeFxn = 'GaussCume'
+        pos = distDict['Mean']
+        args = [distDict['StdDev']]
+        step = 0.02*distDict['StdDev']
+        mode = distDict['Mean']
+        minX = np.max([mode-4.*distDict['StdDev'],1.])
+        maxX = np.min([mode+4.*distDict['StdDev'],1.e5])
     elif 'LSW' in DistName:
         distFxn = 'LSWDist'
         cumeFxn = 'LSWCume'
+        pos = distDict['Mean']
+        args = []
+        minX,maxX = [0.,2.*pos]
     elif 'Schulz' in DistName:
         distFxn = 'SchulzZimmDist'
         cumeFxn = 'SchulzZimmCume'
+        pos = distDict['Mean']
+        args = [distDict['StdDev']]
+        minX = np.max([1.,pos-4.*distDict['StdDev']])
+        maxX = np.min([pos+4.*distDict['StdDev'],1.e5])
     nP = 500
     Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')

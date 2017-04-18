@@ -67,46 +67,38 @@ def GetImageZ(G2frame,data,newRange=False):
     sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName)
     if sumImg is None:
         return []
-    if not 'dark image' in data:
-        return sumImg
-    darkImg,darkScale = data['dark image']
-    if darkImg:
-        Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
-        if Did:
-            Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
-            dformatName = Ddata.get('formatName','')
-            Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-            darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
-            if darkImg is not None:                
-                sumImg += np.array(darkImage*darkScale,dtype='int32')
-    if not 'background image' in data:
-        return sumImg
-    backImg,backScale = data['background image']            
-    if backImg:     #ignores any transmission effect in the background image
-        Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-        if Bid:
-            Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
-            Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
-            bformatName = Bdata.get('formatName','')
-            backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
-            if darkImg and backImage is not None:
-                Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
-                if Did:
-                    Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
-                    dformatName = Ddata.get('formatName','')
-                    Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
-                    darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
-                    if darkImage is not None:
-                        backImage += np.array(darkImage*darkScale,dtype='int32')
-            if backImage is not None:
-                sumImg += np.array(backImage*backScale,dtype='int32')
+    darkImg = False
+    if 'dark image' in data:
+        darkImg,darkScale = data['dark image']
+        if darkImg:
+            Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
+            if Did:
+                Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
+                dformatName = Ddata.get('formatName','')
+                Npix,darkfile,imagetag = G2IO.GetCheckImageFile(G2frame,Did)
+                darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
+                if darkImg is not None:                
+                    sumImg += np.array(darkImage*darkScale,dtype='int32')
+    if 'background image' in data:
+        backImg,backScale = data['background image']            
+        if backImg:     #ignores any transmission effect in the background image
+            Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
+            if Bid:
+                Npix,backfile,imagetag = G2IO.GetCheckImageFile(G2frame,Bid)
+                Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
+                bformatName = Bdata.get('formatName','')
+                backImage = G2IO.GetImageData(G2frame,backfile,True,ImageTag=imagetag,FormatName=bformatName)
+                if darkImg and backImage is not None:
+                    backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
+                if backImage is not None:
+                    sumImg += np.array(backImage*backScale,dtype='int32')
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     if 'range' not in data or newRange:
         data['range'] = [(0,Imax),[0,Imax]]
-    return sumImg
+    return np.asarray(sumImg,dtype='int32')
 
 def UpdateImageData(G2frame,data):
     
@@ -988,13 +980,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         global oldFlat
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()
-            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
-            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
@@ -1006,7 +998,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
 
         def OnMult(invalid,value,tc):
-            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
             ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
         
@@ -1279,6 +1271,9 @@ def UpdateMasks(G2frame,data):
 
     def Replot(*args,**kwargs):
         wx.CallAfter(G2plt.PlotExposedImage,G2frame)
+
+    def newReplot(*args,**kwargs):
+        wx.CallAfter(G2plt.PlotExposedImage,G2frame,newPlot=True)
 
     def onDeleteMask(event):
         Obj = event.GetEventObject()
@@ -1628,10 +1623,10 @@ def UpdateMasks(G2frame,data):
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper thresholds '),0,WACV)
     lowerThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=0,
-        min=thresh[0][0],OnLeave=Replot,typeHint=int)
+        min=thresh[0][0],OnLeave=newReplot,typeHint=int)
     littleSizer.Add(lowerThreshold,0,WACV)
     upperThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=1,
-        max=thresh[0][1],OnLeave=Replot,typeHint=int)
+        max=thresh[0][1],OnLeave=newReplot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     if len(Spots):

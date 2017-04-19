@@ -1805,8 +1805,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:       #1st row of refl ticks
                         data[0]['refOffset'] = event.ydata
         PlotPatterns(G2frame,plotType=plottype)
-        G2frame.itemPicked = None    
+        G2frame.itemPicked = None
 
+    #=====================================================================================
     # beginning PlotPatterns execution
     new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl')
     if not new:
@@ -2216,6 +2217,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            l = GSASIIpath.GetConfigValue('Tick_length',8.0)
+            w = GSASIIpath.GetConfigValue('Tick_width',1.)
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue
@@ -2228,11 +2231,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
                 if G2frame.plotStyle['qPlot']:
-                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
                 elif G2frame.plotStyle['dPlot']:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
                 else:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
             if len(Phases):
                 handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
                 if handles:

@@ -131,3 +131,10 @@ DefaultAutoScale = "userComment2"
 DefaultAutoScale must be one of the AutoScale_ParmNames
 Used in AutoIntegration
 '''
+
+Tick_length = 8.0
+'''Specifies the length of phase tick marks in pixels. Default is 8.'''
+
+Tick_width = 1.0
+'''Specifies the width of phase tick marks in pixels.
+Fractional values do seem to produce an effect. Default is 1.'''

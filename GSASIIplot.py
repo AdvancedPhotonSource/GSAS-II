@@ -3143,12 +3143,13 @@ def PlotSASDSizeDist(G2frame):
     if data['Size']['logBins']:
         Plot.set_xscale("log",nonposy='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
-    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white')       #plot diameters
+    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='green')       #plot diameters
+    colors=['b','r','c','m','k']
     if 'Size Calc' in data:
         Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
             if len(Rbins[i]):
-                Plot.plot(2.*Rbins[i],Dist[i])       #plot diameters
+                Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%5])       #plot diameters
     Page.canvas.draw()
 
 ################################################################################

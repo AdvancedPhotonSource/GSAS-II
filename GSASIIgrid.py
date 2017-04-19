@@ -1607,13 +1607,13 @@ class ShowLSParms(wx.Dialog):
                 subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
             if name in self.varyList:
-                subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'R'))
+                subSizer.Add(wx.StaticText(self.panel,label='R'))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
             elif name in self.fullVaryList:
-                subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'C'))
+                subSizer.Add(wx.StaticText(self.panel,label='C'))
                 explainRefine = True
             else:
                 subSizer.Add((-1,-1))
-            subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            subSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
 
         mainSizer.Add(subSizer,0)
         if explainRefine:

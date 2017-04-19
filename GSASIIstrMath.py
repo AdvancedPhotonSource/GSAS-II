@@ -3771,8 +3771,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 varylist,Histogram,Phases,calcControls,pawleyLookup)
             yc[xB:xF] += yb[xB:xF]
             if not np.any(y):                   #fill dummy data
-                rv = st.poisson(yc[xB:xF])
-                y[xB:xF] = rv.rvs()
+                try:
+                    rv = st.poisson(yc[xB:xF])
+                    y[xB:xF] = rv.rvs()
+                except ValueError:
+                    y[xB:xF] = yc[xB:xF]
                 Z = np.ones_like(yc[xB:xF])
                 Z[1::2] *= -1
                 y[xB:xF] = yc[xB:xF]+np.abs(y[xB:xF]-yc[xB:xF])*Z

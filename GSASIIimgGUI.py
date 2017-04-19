@@ -2500,16 +2500,17 @@ class AutoIntFrame(wx.Frame):
         DefaultAutoScaleNames = GSASIIpath.GetConfigValue('Autoscale_ParmNames')
         self.AutoScaleName = GSASIIpath.GetConfigValue('DefaultAutoScale')
         self.AutoScales = {}
-        for comment in Comments:
-            if '=' in comment:
-                name,val = comment.split('=',1) 
-                if name in DefaultAutoScaleNames:
-                    try:
-                        self.AutoScales[name] = float(val)
-                        if name == self.AutoScaleName:
-                            self.Scale[0] = float(val)
-                    except ValueError:
-                        continue
+        if DefaultAutoScaleNames is not None:
+            for comment in Comments:
+                if '=' in comment:
+                    name,val = comment.split('=',1) 
+                    if name in DefaultAutoScaleNames:
+                        try:
+                            self.AutoScales[name] = float(val)
+                            if name == self.AutoScaleName:
+                                self.Scale[0] = float(val)
+                        except ValueError:
+                            continue
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
         wx.Frame.__init__(self, G2frame, title='Automatic Integration',

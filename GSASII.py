@@ -1823,8 +1823,8 @@ class GSASII(wx.Frame):
             {})
         self.PatternTree.Expand(Id)
         self.PatternTree.SelectItem(Id)
-        print(u'Added simulation powder data {}'++ 
-              ' with parameters from {}'.format(HistName,rd.instmsg))
+        print(u'Added simulation powder data {}'.format(HistName)+
+              ' with parameters from {}'.format(rd.instmsg))
 
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()

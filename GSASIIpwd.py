@@ -2547,7 +2547,7 @@ def SetPWDRscan(inst,limits,profile):
     wave = G2mth.getMeanWave(inst)
     x0 = profile[0]
     iBeg = np.searchsorted(x0,limits[0])
-    iFin = np.searchsorted(x0,limits[1])+1
+    iFin = np.searchsorted(x0,limits[1])
     if iFin-iBeg > 20000:
         iFin = iBeg+20000
     Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
@@ -2701,8 +2701,11 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
     profile[3][iBeg:iFin] = BrdSpec*scale+profile[4][iBeg:iFin]
     if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
-        rv = st.poisson(profile[3][iBeg:iFin])
-        profile[1][iBeg:iFin] = rv.rvs()
+        try:
+            rv = st.poisson(profile[3][iBeg:iFin])
+            profile[1][iBeg:iFin] = rv.rvs()
+        except ValueError:
+            profile[1][iBeg:iFin] = profile[3][iBeg:iFin]
         Z = np.ones_like(profile[3][iBeg:iFin])
         Z[1::2] *= -1
         profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z

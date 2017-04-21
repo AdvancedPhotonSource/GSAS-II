@@ -2819,7 +2819,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pName = Layers['seqCodes'][0]
             G2plt.PlotXY(G2frame,resultXY,XY2=resultXY2,labelX=r'$\mathsf{2\theta}$',
                 labelY='Intensity',newPlot=True,Title='Sequential simulations on '+pName,
-                lines=False,names=seqNames)
+                lines=True,names=seqNames)
             
         def CellSizer():
             
@@ -2996,11 +2996,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnNameChange(event):
                 event.Skip()
                 Layer['Name'] = layerName.GetValue()                
-                UpdateLayerData()
+                wx.CallAfter(UpdateLayerData)
                 
             def OnAddAtom(event):
                 Layer['Atoms'].append(['Unk','Unk',0.,0.,0.,1.,0.01])
-                UpdateLayerData()
+                wx.CallAfter(UpdateLayerData)
                 
             def OnSymm(event):
                 Layer['Symm'] = symm.GetValue()
@@ -3021,7 +3021,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if atType not in data['Layers']['AtInfo']:
                                 data['Layers']['AtInfo'][atType] = G2elem.GetAtomInfo(atType)
                     PE.Destroy()
-                    UpdateLayerData()
+                    wx.CallAfter(UpdateLayerData)
                 else:
                     event.Skip()
                     

@@ -306,7 +306,7 @@ class ExpressionDialog(wx.Dialog):
             val =  resDict.get(varname)
             if val:
                 self.varValue[v] = val
-        wx.CallAfter(self.ShowVars)
+        wx.CallAfter(self.Repaint)
 
     def Show(self,mode=True):
         '''Call to use the dialog after it is created.
@@ -406,7 +406,135 @@ class ExpressionDialog(wx.Dialog):
             return '('+msg+')'        
         return
 
-    def ShowVars(self):
+    def OnDepChoice(self,event):
+        '''Respond to a selection of a variable type for a label in
+        an expression
+        '''
+        if event: event.Skip()
+        sel = self.depChoices[event.GetEventObject().GetSelection()]
+        var = self.SelectG2var(sel,'Dependent variable',self.depParmLists[sel])
+        if var is None:
+            self.dependentVar = None
+            self.OnValidate(None)
+            event.GetEventObject().SetSelection(wx.NOT_FOUND)
+            return
+        self.dependentVar = var
+        self.depLabel.SetLabel(var)
+        self.OnValidate(None)
+        self.Layout()
+
+    def GetDepVar(self):
+        '''Returns the name of the dependent variable, when depVarDict is used.
+        '''
+        return self.dependentVar
+        
+    def OnChoice(self,event):
+        '''Respond to a selection of a variable type for a label in
+        an expression
+        '''
+        if event: event.Skip()
+        v = event.GetEventObject().label
+        sel = self.AllowedChoices[event.GetEventObject().GetSelection()]
+        if sel == 0:
+            sv = G2obj.MakeUniqueLabel(v,self.usedVars)
+            self.varSelect[v] = sel
+            self.varName[v] = sv
+            self.varValue[v] = self.varValue.get(v,0.0)
+        else:
+            var = self.SelectG2var(sel,v,self.parmLists[sel])
+            if var is None:
+                self.OnValidate(None)
+                return
+            self.varSelect[v] = sel
+            self.varName[v] = var
+        self.OnValidate(None)
+
+    def SelectG2var(self,sel,var,parmList):
+        '''Offer a selection of a GSAS-II variable. 
+
+        :param int sel: Determines the type of variable to be selected.
+          where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
+          3 for Histogram vars and 4 for Global vars.
+        :returns: a variable name or None (if Cancel is pressed)
+        '''
+        if not parmList:
+            return None
+        l2 = l1 = 1
+        for i in parmList:
+            l1 = max(l1,len(i))
+            loc,desc = G2obj.VarDescr(i)
+            l2 = max(l2,len(loc))
+        fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
+        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in parmList]
+
+        dlg = G2G.G2SingleChoiceDialog(
+            self,'Select GSAS-II variable for '+str(var)+':',
+            'Select variable',
+            varListlbl,monoFont=True)
+        dlg.SetSize((625,250))
+        dlg.CenterOnParent()
+        var = None
+        if dlg.ShowModal() == wx.ID_OK:
+            i = dlg.GetSelection()
+            var = parmList[i]
+        dlg.Destroy()
+        return var
+
+    def showError(self,msg1,msg2='',msg3=''):
+        '''Show an error message of 1 to 3 sections. The second
+        section is shown in an equally-spaced font. 
+        
+        :param str msg1: msg1 is shown in a the standard font
+        :param str msg2: msg2 is shown in a equally-spaced (wx.MODERN) font
+        :param str msg3: msg3 is shown in a the standard font
+        '''
+        self.varSizer.Clear(True)
+        self.OKbtn.Disable()
+        if self.ExtraBtn: self.ExtraBtn.Disable()
+        self.varSizer.Clear(True)
+        self.errbox = wxscroll.ScrolledPanel(self,style=wx.HSCROLL)
+        self.errbox.SetMinSize((200,130))
+        self.varSizer.Add(self.errbox,1,wx.ALL|wx.EXPAND,1)
+        Siz = wx.BoxSizer(wx.VERTICAL)
+        errMsg1 = wx.StaticText(self.errbox, wx.ID_ANY,"")
+        Siz.Add(errMsg1, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        errMsg2 = wx.StaticText(self.errbox, wx.ID_ANY,"\n\n")
+        font1 = wx.Font(errMsg2.GetFont().GetPointSize(),
+                        wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+        errMsg2.SetFont(font1)
+        Siz.Add(errMsg2, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        errMsg3 = wx.StaticText(self.errbox, wx.ID_ANY,"")
+        Siz.Add(errMsg3, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
+        self.errbox.SetSizer(Siz,True)
+        Siz.Fit(self.errbox)
+        errMsg1.SetLabel(msg1)
+        errMsg2.SetLabel("  "+msg2)
+        errMsg2.Wrap(-1)
+        errMsg3.SetLabel(msg3)
+        self.Layout()
+
+    def OnValidate(self,event):
+        '''Respond to a press of the Validate button or when a variable
+        is associated with a label (in :meth:`OnChoice`)
+        '''
+        if event: event.Skip()
+        self.setEvalResult('(expression cannot be evaluated)')
+        self.timer.Stop()
+        self.expr = self.exCtrl.GetValue().strip()
+        if not self.expr: 
+            wx.CallAfter(self.showError,
+                "Invalid Expression:","","      (an expression must be entered)")
+            return
+        exprObj = G2obj.ExpressionObj()
+        ret = exprObj.ParseExpression(self.expr)
+        if not ret:
+            wx.CallAfter(self.showError,*exprObj.lastError)
+            return
+        self.exprVarLst,pkgdict = ret
+        wx.CallLater(100,self.Repaint,exprObj)
+
+    def Repaint(self,exprObj):
+        'Redisplay the variables and continue the validation'
         # create widgets to associate vars with labels and/or show messages
         self.varSizer.Clear(True)
         self.errbox = wxscroll.ScrolledPanel(self,style=wx.HSCROLL)
@@ -503,178 +631,51 @@ class ExpressionDialog(wx.Dialog):
 
         Siz.Add(GridSiz)
         self.varbox.SetSizer(Siz,True)
-        xwid,yhgt = Siz.Fit(self.varbox)
-        self.varbox.SetMinSize((xwid,130))
-        self.varbox.SetAutoLayout(1)
-        self.varbox.SetupScrolling()
-        self.varbox.Refresh()
-        self.Layout()
-        #self.mainsizer.Fit(self)
-        self.SendSizeEvent() # force repaint
-        return
 
-    def OnDepChoice(self,event):
-        '''Respond to a selection of a variable type for a label in
-        an expression
-        '''
-        sel = self.depChoices[event.GetEventObject().GetSelection()]
-        var = self.SelectG2var(sel,'Dependent variable',self.depParmLists[sel])
-        if var is None:
-            self.dependentVar = None
-            self.OnValidate(None)
-            event.GetEventObject().SetSelection(wx.NOT_FOUND)
-            return
-        self.dependentVar = var
-        self.depLabel.SetLabel(var)
-        self.OnValidate(None)
-        self.Layout()
-
-    def GetDepVar(self):
-        '''Returns the name of the dependent variable, when depVarDict is used.
-        '''
-        return self.dependentVar
-        
-    def OnChoice(self,event):
-        '''Respond to a selection of a variable type for a label in
-        an expression
-        '''
-        v = event.GetEventObject().label
-        sel = self.AllowedChoices[event.GetEventObject().GetSelection()]
-        if sel == 0:
-            sv = G2obj.MakeUniqueLabel(v,self.usedVars)
-            self.varSelect[v] = sel
-            self.varName[v] = sv
-            self.varValue[v] = self.varValue.get(v,0.0)
-        else:
-            var = self.SelectG2var(sel,v,self.parmLists[sel])
-            if var is None:
-                self.OnValidate(None)
-                return
-            self.varSelect[v] = sel
-            self.varName[v] = var
-        self.OnValidate(None)
-
-    def SelectG2var(self,sel,var,parmList):
-        '''Offer a selection of a GSAS-II variable. 
-
-        :param int sel: Determines the type of variable to be selected.
-          where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
-          3 for Histogram vars and 4 for Global vars.
-        :returns: a variable name or None (if Cancel is pressed)
-        '''
-        if not parmList:
-            return None
-        l2 = l1 = 1
-        for i in parmList:
-            l1 = max(l1,len(i))
-            loc,desc = G2obj.VarDescr(i)
-            l2 = max(l2,len(loc))
-        fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in parmList]
-
-        dlg = G2G.G2SingleChoiceDialog(
-            self,'Select GSAS-II variable for '+str(var)+':',
-            'Select variable',
-            varListlbl,monoFont=True)
-        dlg.SetSize((625,250))
-        dlg.CenterOnParent()
-        var = None
-        if dlg.ShowModal() == wx.ID_OK:
-            i = dlg.GetSelection()
-            var = parmList[i]
-        dlg.Destroy()
-        return var
-
-    def showError(self,msg1,msg2='',msg3=''):
-        '''Show an error message of 1 to 3 sections. The second
-        section is shown in an equally-spaced font. 
-        
-        :param str msg1: msg1 is shown in a the standard font
-        :param str msg2: msg2 is shown in a equally-spaced (wx.MODERN) font
-        :param str msg3: msg3 is shown in a the standard font
-        '''
-        self.OKbtn.Disable()
-        if self.ExtraBtn: self.ExtraBtn.Disable()
-        self.varSizer.Clear(True)
-        self.errbox = wxscroll.ScrolledPanel(self,style=wx.HSCROLL)
-        self.errbox.SetMinSize((200,130))
-        self.varSizer.Add(self.errbox,1,wx.ALL|wx.EXPAND,1)
-        Siz = wx.BoxSizer(wx.VERTICAL)
-        errMsg1 = wx.StaticText(self.errbox, wx.ID_ANY,"")
-        Siz.Add(errMsg1, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
-        errMsg2 = wx.StaticText(self.errbox, wx.ID_ANY,"\n\n")
-        font1 = wx.Font(errMsg2.GetFont().GetPointSize(),
-                        wx.MODERN, wx.NORMAL, wx.NORMAL, False)
-        errMsg2.SetFont(font1)
-        Siz.Add(errMsg2, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
-        errMsg3 = wx.StaticText(self.errbox, wx.ID_ANY,"")
-        Siz.Add(errMsg3, 0, wx.ALIGN_LEFT|wx.LEFT|wx.EXPAND, 5)
-        self.errbox.SetSizer(Siz,True)
-        Siz.Fit(self.errbox)
-        errMsg1.SetLabel(msg1)
-        errMsg2.SetLabel("  "+msg2)
-        errMsg2.Wrap(-1)
-        errMsg3.SetLabel(msg3)
-        self.Layout()
-
-    def OnValidate(self,event):
-        '''Respond to a press of the Validate button or when a variable
-        is associated with a label (in :meth:`OnChoice`)
-        '''
-        self.setEvalResult('(expression cannot be evaluated)')
-        self.timer.Stop()
-        self.expr = self.exCtrl.GetValue().strip()
-        self.varSizer.Clear(True)
-        if not self.expr: 
-            self.showError(
-                "Invalid Expression:","",
-                "(an expression must be entered)")
-            return
-        exprObj = G2obj.ExpressionObj()
-        ret = exprObj.ParseExpression(self.expr)
-        if not ret:
-            self.showError(*exprObj.lastError)
-            return
-        self.exprVarLst,pkgdict = ret
-        wx.CallAfter(self.Repaint,exprObj)
-            
-    def Repaint(self,exprObj):
-        'Redisplay the variables and continue the validation'
-        self.ShowVars() # show widgets to set vars
-        msg = self.CheckVars() 
-        if msg:
-            self.setEvalResult(msg)
-            return
-        exprObj.LoadExpression(
-            self.expr,
-            self.exprVarLst,
-            self.varSelect,
-            self.varName,
-            self.varValue,
-            self.varRefflag,
-            )
+        # evaluate the expression, displaying errors or the expression value
         try:
-            calcobj = G2obj.ExpressionCalcObj(exprObj)
-            calcobj.SetupCalc(self.parmDict)
-            val = calcobj.EvalExpression()
-        except Exception as msg:
-            self.setEvalResult("Error in evaluation: "+str(msg))
-            return
-        if not np.isfinite(val):
-            self.setEvalResult("Expression value is infinite or out-of-bounds")
-            return
-        s = G2py3.FormatSigFigs(val).rstrip('0')
-        depVal = ""
-        if self.depVarDict:
-            if not self.dependentVar:
-                self.setEvalResult("A dependent variable must be selected.")
+            msg = self.CheckVars() 
+            if msg:
+                self.setEvalResult(msg)
                 return
-            depVal = '; Variable "' + self.dependentVar + '" = ' + str(
-                self.depVarDict.get(self.dependentVar,'?')
+            exprObj.LoadExpression(
+                self.expr,
+                self.exprVarLst,
+                self.varSelect,
+                self.varName,
+                self.varValue,
+                self.varRefflag,
                 )
-        self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
-        self.OKbtn.Enable()
-        if self.ExtraBtn: self.ExtraBtn.Enable()
+            try:
+                calcobj = G2obj.ExpressionCalcObj(exprObj)
+                calcobj.SetupCalc(self.parmDict)
+                val = calcobj.EvalExpression()
+            except Exception as msg:
+                self.setEvalResult("Error in evaluation: "+str(msg))
+                return
+            if not np.isfinite(val):
+                self.setEvalResult("Expression value is infinite or out-of-bounds")
+                return
+            s = G2py3.FormatSigFigs(val).rstrip('0')
+            depVal = ""
+            if self.depVarDict:
+                if not self.dependentVar:
+                    self.setEvalResult("A dependent variable must be selected.")
+                    return
+                depVal = '; Variable "' + self.dependentVar + '" = ' + str(
+                    self.depVarDict.get(self.dependentVar,'?')
+                    )
+            self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
+            self.OKbtn.Enable()
+            if self.ExtraBtn: self.ExtraBtn.Enable()
+        finally:  
+            xwid,yhgt = Siz.Fit(self.varbox)
+            self.varbox.SetMinSize((xwid,130))
+            self.varbox.SetAutoLayout(1)
+            self.varbox.SetupScrolling()
+            self.varbox.Refresh()
+            self.Layout()
+            self.SendSizeEvent() # force repaint
             
 #==========================================================================
 class BondDialog(wx.Dialog):

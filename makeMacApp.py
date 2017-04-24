@@ -41,7 +41,7 @@ AppleScript = ''
 GSAS-II python script
 '''
 
-AppleScript += '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
+if __name__ == '__main__': AppleScript += '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
      It can launch GSAS-II by double clicking or by dropping a data file
      or folder over the app.
      It runs GSAS-II in a terminal window.

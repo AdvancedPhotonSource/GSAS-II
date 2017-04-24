@@ -148,7 +148,7 @@ copyright = u'2013-2017, Von Dreele and Toby for Argonne National Laboratory'
 # built documents.
 #
 # The short X.Y version.
-#version = '0.2.0'
+version = '{}'.format(version)
 # The full version, including alpha/beta/rc tags.
 release = 'version {}'.format(version)
 

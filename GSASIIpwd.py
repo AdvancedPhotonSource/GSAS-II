@@ -69,11 +69,11 @@ nxs = np.newaxis
 
 def PhaseWtSum(G2frame,histo):
     '''
-    Calculate sum of phase mass*shase fraction for PWDR data (exclude magnetic phases)
+    Calculate sum of phase mass*phase fraction for PWDR data (exclude magnetic phases)
     
     :param G2frame: GSASII main frame structure
     :param str histo: histogram name
-    :returns sum(scale*mass) for phases in histo
+    :returns: sum(scale*mass) for phases in histo
     '''
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     wtSum = 0.0
@@ -2232,17 +2232,17 @@ def abeles(kz, depth, rho, irho=0, sigma=0):
     
     Reflectometry as a function of kz for a set of slabs.
 
-    :Parameters:
-
-    *kz* : float[n] | |1/Ang|
-        Scattering vector $2\pi\sin(\theta)/\lambda$. This is $\tfrac12 Q_z$.
-    *depth* :  float[m] | |Ang|
+    :param kz: float[n] (1/Ang). Scattering vector, :math:`2\pi\sin(\\theta)/\lambda`.
+        This is :math:`\\tfrac12 Q_z`.        
+    :param depth:  float[m] (Ang).
         thickness of each layer.  The thickness of the incident medium
         and substrate are ignored.
-    *rho*, *irho* :  float[n,k] | |1e-6/Ang^2|
-        real and imaginary scattering length density for each layer for each kz
+    :param rho:  float[n,k] (1e-6/Ang^2)
+        Real scattering length density for each layer for each kz
+    :param irho:  float[n,k] (1e-6/Ang^2)
+        Imaginary scattering length density for each layer for each kz
         Note: absorption cross section mu = 2 irho/lambda for neutrons
-    *sigma* : float[m-1] | |Ang|
+    :param sigma: float[m-1] (Ang)
         interfacial roughness.  This is the roughness between a layer
         and the previous layer. The sigma array should have m-1 entries.
 
@@ -2367,17 +2367,22 @@ def GetStackParms(Layers):
 def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     '''Simulate powder or selected area diffraction pattern from stacking faults using DIFFaX
     
-    param: Layers dict: 'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
-                        'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
-                        'Layers':[],'Stacking':[],'Transitions':[]}
-    param: ctrls string: controls string to be written on DIFFaX controls.dif file
-    param: scale float: scale factor
-    param: background dict: background parameters
-    param: limits list: min/max 2-theta to be calculated
-    param: inst dict: instrument parameters dictionary
-    param: profile list: powder pattern data
+    :param dict Layers: dict with following items
+
+      ::
+
+       {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
+       'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
+       'Layers':[],'Stacking':[],'Transitions':[]}
+        
+    :param str ctrls: controls string to be written on DIFFaX controls.dif file
+    :param float scale: scale factor
+    :param dict background: background parameters
+    :param list limits: min/max 2-theta to be calculated
+    :param dict inst: instrument parameters dictionary
+    :param list profile: powder pattern data
     
-    all updated in place    
+    Note that parameters all updated in place    
     '''
     import atmdata
     path = sys.path

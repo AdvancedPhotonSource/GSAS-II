@@ -368,8 +368,9 @@ def GetDetXYfromThAzm(Th,Azm,data):
     return GetDetectorXY(dsp,Azm,data)
                     
 def GetTthAzmDsp(x,y,data): #expensive
-    '''Computes a 2theta, etc. from a detector position and calibration constants
-    - checked OK for ellipses & hyperbola
+    '''Computes a 2theta, etc. from a detector position and calibration constants - checked
+    OK for ellipses & hyperbola.
+
     :returns: np.array(tth,azm,G,dsp) where tth is 2theta, azm is the azimutal angle,
        G is ? and dsp is the d-space
     '''

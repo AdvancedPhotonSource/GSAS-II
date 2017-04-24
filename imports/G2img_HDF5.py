@@ -8,7 +8,7 @@
 ########### SVN repository information ###################
 '''
 *Module G2img_HDF5: summed HDF5 image file*
----------------------------------------
+-------------------------------------------
 
 Reads all images found in a HDF5 file.
 
@@ -24,8 +24,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 
 class HDF5_Reader(G2IO.ImportImage):
     '''Routine to read a HD5 image, typically from APS Sector 6.
-    B. Frosik/SDM. Initial version.
-                   Refactored.        
+    B. Frosik/SDM.
     '''
     dsetlist = []
     buffer = {}

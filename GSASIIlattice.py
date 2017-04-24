@@ -792,7 +792,7 @@ def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
     :param HKLd: a list of [h,k,l,d,...];
     :param ifreverse: True for largest d first
     :param ifdup: True if duplicate d-spacings allowed
-    :return sorted reflection list
+    :return: sorted reflection list
     '''
     T = []
     N = 3
@@ -908,22 +908,22 @@ def GenHBravais(dmin,Bravais,A):
     """Generate the positionally unique powder diffraction reflections
      
     :param dmin: minimum d-spacing in A
-    :param Bravais: lattice type (see GetBraviasNum). Bravais is one of::
+    :param Bravais: lattice type (see GetBraviasNum). Bravais is one of:
     
-             0 F cubic
-             1 I cubic
-             2 P cubic
-             3 R hexagonal (trigonal not rhombohedral)
-             4 P hexagonal
-             5 I tetragonal
-             6 P tetragonal
-             7 F orthorhombic
-             8 I orthorhombic
-             9 C orthorhombic
-             10 P orthorhombic
-             11 C monoclinic
-             12 P monoclinic
-             13 P triclinic
+            * 0 F cubic
+            * 1 I cubic
+            * 2 P cubic
+            * 3 R hexagonal (trigonal not rhombohedral)
+            * 4 P hexagonal
+            * 5 I tetragonal
+            * 6 P tetragonal
+            * 7 F orthorhombic
+            * 8 I orthorhombic
+            * 9 C orthorhombic
+            * 10 P orthorhombic
+            * 11 C monoclinic
+            * 12 P monoclinic
+            * 13 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
@@ -1207,17 +1207,24 @@ def LaueUnique(Laue,HKLF):
     
     :param str Laue: Laue symbol, as below
     
-      centrosymmetric Laue groups::
+      centrosymmetric Laue groups
+      
+         ::
        
-     ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3','-31m','-3m1','6/m','6/mmm','m3','m3m']
+            ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3',
+            '-31m','-3m1','6/m','6/mmm','m3','m3m']
      
-      noncentrosymmetric Laue groups::
+      noncentrosymmetric Laue groups
+
+         ::
      
-     ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm','4','-4','422','4mm','3','312','321','31m','3m1','6','-6','622','6mm','-62m','-6m2','23','432','-43m']
+           ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm',
+           '4','-4','422','4mm','3','312','321','31m','3m1','6','-6',
+           '622','6mm','-62m','-6m2','23','432','-43m']
      
     :param HKLF: np.array([[h,k,l,...]]) reflection set to be converted
     
-    :return: HKLF new reflection array with imposed Laue symmetry
+    :returns: HKLF new reflection array with imposed Laue symmetry
     '''
     
     HKLFT = HKLF.T
@@ -2067,7 +2074,7 @@ def test0():
         assert np.allclose(cell,tcell),msg
         tcell = Gmat2cell(G)
         assert np.allclose(tcell,trcell),msg
-selftestlist.append(test0)
+if __name__ == '__main__': selftestlist.append(test0)
 
 def test1():
     'test cell2A and A2Gmat'
@@ -2078,7 +2085,7 @@ def test1():
         G, g = A2Gmat(cell2A(cell))
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
-selftestlist.append(test1)
+if __name__ == '__main__': selftestlist.append(test1)
 
 def test2():
     'test Gmat2A, A2cell, A2Gmat, Gmat2cell'
@@ -2089,7 +2096,7 @@ def test2():
         G, g = cell2Gmat(cell)
         tcell = A2cell(Gmat2A(G))
         assert np.allclose(cell,tcell),msg
-selftestlist.append(test2)
+if __name__ == '__main__': selftestlist.append(test2)
 
 def test3():
     'test invcell2Gmat'
@@ -2100,7 +2107,7 @@ def test3():
         G, g = invcell2Gmat(trcell)
         assert np.allclose(G,tG),msg
         assert np.allclose(g,tg),msg
-selftestlist.append(test3)
+if __name__ == '__main__': selftestlist.append(test3)
 
 def test4():
     'test calc_rVsq, calc_rV, calc_V'
@@ -2110,7 +2117,7 @@ def test4():
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         assert np.allclose(calc_rV(cell2A(cell)),trV), msg
         assert np.allclose(calc_V(cell2A(cell)),tV), msg
-selftestlist.append(test4)
+if __name__ == '__main__': selftestlist.append(test4)
 
 def test5():
     'test A2invcell'
@@ -2120,7 +2127,7 @@ def test5():
     for (cell, tg, tG, trcell, tV, trV) in CellTestData:
         rcell = A2invcell(cell2A(cell))
         assert np.allclose(rcell,trcell),msg
-selftestlist.append(test5)
+if __name__ == '__main__': selftestlist.append(test5)
 
 def test6():
     'test cell2AB'
@@ -2138,7 +2145,7 @@ def test6():
             tf = np.sum(B*to,axis=1)
             assert np.allclose(ortho,to), msg
             assert np.allclose(frac,tf), msg
-selftestlist.append(test6)
+if __name__ == '__main__': selftestlist.append(test6)
 
 def test7():
     'test GetBraviasNum(...) and GenHBravais(...)'
@@ -2188,7 +2195,7 @@ def test7():
                         break
             else:
                 assert 0,'No match for %s at %s (%s)' % ((h,k,l),d,key)
-selftestlist.append(test7)
+if __name__ == '__main__': selftestlist.append(test7)
 
 def test8():
     'test GenHLaue'
@@ -2250,7 +2257,7 @@ def test8():
         #if not match: 
             #for hkllist,dref in sgtbxlattinp.sgtbx8[key][1]: print '  ',hkllist,dref
             #print center, Laue, Axis, system
-selftestlist.append(test8)
+if __name__ == '__main__': selftestlist.append(test8)
             
 def test9():
     'test GenHLaue'
@@ -2275,7 +2282,7 @@ def test9():
                 print H,' missing from hkl from GSASII'
                 err = False
         assert(err)
-selftestlist.append(test9)
+if __name__ == '__main__': selftestlist.append(test9)
         
         
     

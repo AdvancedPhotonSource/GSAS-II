@@ -222,6 +222,11 @@ The distributed routines are:
     :members: 
     :synopsis: Reads phase information from a CIF
 
+.. automodule:: G2phase_INS
+    :members: 
+
+
+
 Powder Data Import Routines
 ---------------------------------------------
 Powder data import routines are classes derived from
@@ -247,6 +252,24 @@ The distributed routines are:
 .. automodule:: G2pwd_CIF
     :members: 
     :synopsis: Reads powder data from a CIF
+
+.. automodule:: G2pwd_BrukerRAW
+    :members: 
+    :synopsis: Reads powder data from a Brucker .raw file
+
+.. automodule:: G2pwd_FP
+    :members: 
+
+.. automodule:: G2pwd_Panalytical
+    :members: 
+
+.. automodule:: G2pwd_csv
+    :members: 
+
+.. automodule:: G2pwd_rigaku
+    :members: 
+
+
 
 Single Crystal Data Import Routines
 -----------------------------------------------------
@@ -314,3 +337,33 @@ The distributed routines are:
 
 .. automodule:: G2img_CheMin
     :members: 
+
+.. automodule:: G2img_CBF
+    :members: 
+
+.. automodule:: G2img_HDF5
+    :members: 
+
+PDF Import Routines
+-----------------------------------------------------
+PDF import routines are classes derived from
+:class:`GSASIIIO.ImportPDFData`. 
+See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
+
+The distributed routines are:
+
+.. automodule:: G2pdf_gr
+    :members: 
+
+Reflectometry Import Routines
+-----------------------------------------------------
+Reflectometry import routines are classes derived from
+:class:`GSASIIIO.ImportReflectometryData`. 
+See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
+
+The distributed routines are:
+
+.. automodule:: G2rfd_xye
+    :members: 
+
+

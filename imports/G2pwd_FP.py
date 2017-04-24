@@ -8,7 +8,7 @@
 ########### SVN repository information ###################
 '''
 *Module G2pwd_FP: FullProf .dat data*
-------------------------------------
+-------------------------------------
 
 Routine to read in powder data from a FullProf .dat file
 

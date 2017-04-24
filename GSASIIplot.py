@@ -21,10 +21,7 @@ import wx
 import wx.aui
 import wx.glcanvas
 import matplotlib as mpl
-try:  # code not found in readthedocs
-    import matplotlib.collections as mplC
-except:
-    print('matplotlib.collections not present') 
+import matplotlib.collections as mplC
 import mpl_toolkits.mplot3d.axes3d as mp3d
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on')
@@ -1205,7 +1202,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
 
     Note that plotting information will be found in:
        G2frame.PatternId (contains the tree item for the current histogram)
+       
        G2frame.PickId (contains the actual selected tree item (can be child of histogram)
+
        G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
     global exclLines
@@ -2841,10 +2840,10 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
     :param bool newPlot: =True if new plot is to be made
     :param str Title: title for plot
     :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
-    :param list of str names: legend names for each XY plot
-    :param list of str names2: legend names for each XY2 plot
-    :param lists of vertical line x-positions list; can be one for each XY
-    :return nothing
+    :param list names: legend names for each XY plot as list a of str values
+    :param list names2: legend names for each XY2 plot as list a of str values
+    :param list vertLines: lists of vertical line x-positions; can be one for each XY 
+    :returns: nothing
     
     '''
     global xylim
@@ -2963,7 +2962,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title=''):
     :param str labelY: label for Y-axis
     :param bool newPlot: =True if new plot is to be made
     :param str Title: title for plot
-    :return nothing
+    :returns: nothing
     
     '''
     def OnKeyPress(event):
@@ -4331,7 +4330,7 @@ def OnStartMask(G2frame):
     '''Initiate the start of a Frame or Polygon map, etc.
     Called from a menu command (GSASIIimgGUI) or from OnImPlotKeyPress. 
     Variable G2frame.MaskKey contains a single letter ('f' or 'p', etc.) that
-      determines what type of mask is created.    
+    determines what type of mask is created.    
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
     '''

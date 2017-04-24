@@ -211,15 +211,18 @@ def SetDefaultSASDModel():
         }
         
 def SetDefaultREFDModel():
-    '''Fills in default items for the REFD Models dictionary
-    Defined as follows for each layer:
-        Name: name of substance
-        Thick: thickness of layer in Angstroms (not present for top & bottom layers)
-        Rough: upper surface roughness for layer (not present for toplayer)
-        Penetration: mixing of layer substance into layer above-is this needed?
-        DenMul: multiplier for layer scattering density (default = 1.0)
-    Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance
-    Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance
+    '''Fills in default items for the REFD Models dictionary which are 
+    defined as follows for each layer:
+    
+    * Name: name of substance
+    * Thick: thickness of layer in Angstroms (not present for top & bottom layers)
+    * Rough: upper surface roughness for layer (not present for toplayer)
+    * Penetration: mixing of layer substance into layer above-is this needed?
+    * DenMul: multiplier for layer scattering density (default = 1.0)
+        
+    Top layer defaults to vacuum (or air/any gas); can be substituted for some other substance.
+    
+    Bottom layer default: infinitely thisck Silicon; can be substituted for some other substance.
     '''
     return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
         {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer

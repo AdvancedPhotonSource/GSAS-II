@@ -13,6 +13,9 @@
 .. automodule:: makeMacApp
     :members: 
 
+.. automodule:: makeBat
+    :members: 
+
 .. automodule:: unit_tests
     :members: 
 

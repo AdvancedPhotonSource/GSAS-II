@@ -271,16 +271,17 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       have value None. If None, the type for the element is taken from
       :obj:`typeHint` and the value for the control is set initially
       blank (and thus invalid.) This is a way to specify a field without a
-      default value: a user must set a valid value. 
+      default value: a user must set a valid value.
+       
       If the value is not None, it must have a base
       type of int, float, str or unicode; the TextCrtl will be initialized
       from this value.
       
     :param list nDig: number of digits, places and optionally the format 
-     ([nDig,nPlc,fmt]) after decimal to use for display of float. The format 
-     is either 'f' (default) or 'g'. Alternately, None can be specified which 
-     causes numbers to be displayed with approximately 5 significant figures
-      (Default=None).
+       ([nDig,nPlc,fmt]) after decimal to use for display of float. The format 
+       is either 'f' (default) or 'g'. Alternately, None can be specified which 
+       causes numbers to be displayed with approximately 5 significant figures
+       (Default=None).
 
     :param bool notBlank: if True (default) blank values are invalid
       for str inputs.
@@ -294,7 +295,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       NB: test in NumberValidator is val <= max not val < max
       
     :param list exclLim: if True exclude min/max value ([exclMin,exclMax]); 
-     (Default=[False,False]) 
+      (Default=[False,False]) 
 
     :param function OKcontrol: specifies a function or method that will be
       called when the input is validated. The called function is supplied
@@ -309,9 +310,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       called when the focus for the control is lost.
       The called function is supplied with (at present) three keyword arguments:
 
-         * invalid: (*bool*) True if the value for the TextCtrl is invalid
-         * value:   (*int/float/str*)  the value contained in the TextCtrl
-         * tc:      (*wx.TextCtrl*)  the TextCtrl object
+      * invalid: (*bool*) True if the value for the TextCtrl is invalid
+      * value:   (*int/float/str*)  the value contained in the TextCtrl
+      * tc:      (*wx.TextCtrl*)  the TextCtrl object
 
       The number of keyword arguments may be increased in the future should needs arise,
       so it is best to code these functions with a \*\*kwargs argument so they will
@@ -338,7 +339,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
 
     :param (other): other optional keyword parameters for the
       wx.TextCtrl widget such as size or style may be specified.
-
     '''
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
         OKcontrol=None,OnLeave=None,typeHint=None,CIFinput=False,exclLim=[False,False],

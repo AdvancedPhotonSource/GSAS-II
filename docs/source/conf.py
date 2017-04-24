@@ -35,18 +35,26 @@ class wx(MagicMock):
         class gridmovers(MagicMock): pass
         class colourselect(MagicMock): pass
         class resizewidget(MagicMock): pass
+        class mixins(MagicMock):
+            class listctrl(MagicMock):
+                ListCtrlAutoWidthMixin = object
+                TextEditMixin = object
 
-sys.modules.update({'wx':wx()})
-sys.modules.update({'wx.aui':wx.aui()})
-sys.modules.update({'wx.html':wx.html()})
-sys.modules.update({'wx.grid':wx.grid()})
-sys.modules.update({'wx.lib':wx.lib()})
-sys.modules.update({'wx.wizard':wx.grid()})
-sys.modules.update({'wx.glcanvas':wx.lib()})
-sys.modules.update({'wx.lib.scrolledpanel':wx.lib.scrolledpanel()})
-sys.modules.update({'wx.lib.gridmovers':wx.lib.gridmovers()})
-sys.modules.update({'wx.lib.colourselect':wx.lib.gridmovers()})
-sys.modules.update({'wx.lib.resizewidget':wx.lib.resizewidget()})
+sys.modules.update({'wx':wx(),
+    'wx.aui':wx.aui(),
+    'wx.html':wx.html(),
+	'wx.grid':wx.grid(),
+	'wx.lib':wx.lib(),
+	'wx.wizard':wx.grid(),
+	'wx.glcanvas':wx.lib(),
+	'wx.lib.scrolledpanel':wx.lib.scrolledpanel(),
+	'wx.lib.gridmovers':wx.lib.gridmovers(),
+	'wx.lib.colourselect':wx.lib.gridmovers(),
+	'wx.lib.resizewidget':wx.lib.resizewidget(),
+	'wx.lib.mixins':wx.lib.mixins(),
+	'wx.lib.mixins.listctrl':wx.lib.mixins.listctrl()})
+wx.aui.AUI_NB_TOP = 0
+wx.aui.AUI_NB_SCROLL_BUTTONS = 0
 
 class numpy(MagicMock):
     pi = 3.0
@@ -67,6 +75,9 @@ sys.modules.update({'scipy.stats':scipy.optimize()})
 sys.modules.update({'scipy.interpolate':scipy.optimize()})
 sys.modules.update({'scipy.special':scipy.optimize()})
 sys.modules.update({'scipy.misc':scipy.optimize()})
+sys.modules.update({'scipy.signal':scipy.optimize()})
+sys.modules.update({'scipy.cluster':scipy.optimize()})
+sys.modules.update({'scipy.cluster.vq':scipy.optimize()})
 
 class OpenGL(MagicMock):
     class GL(MagicMock):pass
@@ -83,9 +94,11 @@ class Mock(MagicMock):
 
 MOCK_MODULES = [
                 'pypowder', 'pyspg', 'pytexture', 'polymask', 'fellipse',
-                'matplotlib', 'matplotlib.backends', 'matplotlib.backends.backend_wx', 
-                'matplotlib.backends.backend_wxagg','pylab',
+                'matplotlib', 'matplotlib.backends', 'matplotlib.backends.backend_wx',
+                'matplotlib.colors',
+                'matplotlib.backends.backend_wxagg','pylab','matplotlib.collections',
                 'mpl_toolkits', 'mpl_toolkits.mplot3d', 'mpl_toolkits.mplot3d.axes3d',
+                'winreg','unpack_cbf','h5py'
                 ]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 

@@ -50,20 +50,21 @@ npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
 
 def SphereFF(Q,R,args=()):
     ''' Compute hard sphere form factor - can use numpy arrays
-    param float Q: Q value array (usually in A-1)
-    param float R: sphere radius (Usually in A - must match Q-1 units)
-    param array args: ignored
-    returns float: form factors as array as needed
+    :param float Q: Q value array (usually in A-1)
+    :param float R: sphere radius (Usually in A - must match Q-1 units)
+    :param array args: ignored
+    :returns: form factors as array as needed (float)
     '''
     QR = Q[:,np.newaxis]*R
     return (3./(QR**3))*(np.sin(QR)-(QR*np.cos(QR)))
     
 def SphericalShellFF(Q,R,args=()):
     ''' Compute spherical shell form factor - can use numpy arrays
-    param float Q: Q value array (usually in A-1)
-    param float R: sphere radius (Usually in A - must match Q-1 units)
-    param array args: [float r]: controls the shell thickness: R_inner = min(r*R,R), R_outer = max(r*R,R)
-    returns float: form factors as array as needed
+    :param float Q: Q value array (usually in A-1)
+    :param float R: sphere radius (Usually in A - must match Q-1 units)
+    :param array args: [float r]: controls the shell thickness: R_inner = min(r*R,R), R_outer = max(r*R,R)
+    :returns float: form factors as array as needed
+    
 	Contributed by: L.A. Avakyan, Southern Federal University, Russia
     '''
     r = args[0]

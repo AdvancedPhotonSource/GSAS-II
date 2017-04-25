@@ -226,7 +226,7 @@ def SetDefaultREFDModel():
     '''
     return {'Layers':[{'Name':'vacuum','DenMul':[1.0,False],},                                  #top layer
         {'Name':'vacuum','Rough':[0.,False],'Penetration':[0.,False],'DenMul':[1.0,False],}],   #bottom layer
-        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top','dQ type':'None',                #globals
+        'Scale':[1.0,False],'FltBack':[0.0,False],'Zero':'Top','dQ type':'None','Layer Seq':[],               #globals
         'Minimizer':'LMLS','Resolution':[0.,'Const dq/q'],'Recomb':0.5,'Toler':0.5,             #minimizer controls
         'DualFitFiles':['',],'DualFltBacks':[[0.0,False],],'DualScales':[[1.0,False],]}         #optional stuff for multidat fits?
         
@@ -4971,6 +4971,16 @@ def UpdateREFDModelsGrid(G2frame,data):
             
         def OndQSel(event):
             data['dQ type'] = dQSel.GetStringSelection()
+            Recalculate()
+            
+        def NewRes(invalid,value,tc):
+            Recalculate()
+            
+        def Recalculate():
+            G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
+            x,xr,y = G2pwd.makeSLDprofile(data,Substances)
+            ModelPlot(data,x,xr,y)
+            G2plt.PlotPatterns(G2frame,plotType='REFD')
             
         controlSizer = wx.BoxSizer(wx.VERTICAL)
         resol = wx.BoxSizer(wx.HORIZONTAL)
@@ -4983,7 +4993,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         dQSel.Bind(wx.EVT_RADIOBOX,OndQSel)
         resol.Add(dQSel,0,WACV)
         resol.Add(wx.StaticText(G2frame.dataDisplay,label=' (FWHM %): '),0,WACV)
-        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,3),min=0.,max=5.),0,WACV)
+        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,3),min=0.,max=5.,OnLeave=NewRes),0,WACV)
         controlSizer.Add(resol,0,WACV)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
         minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
@@ -5101,7 +5111,7 @@ def UpdateREFDModelsGrid(G2frame,data):
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
-            wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
+#            wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data) 
 
         Indx = {}                       
         layerSizer = wx.BoxSizer(wx.VERTICAL)

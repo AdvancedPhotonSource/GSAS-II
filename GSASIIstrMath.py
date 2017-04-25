@@ -3732,7 +3732,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
-        Vec += np.sum(dpdv*pWt*pVals,axis=1)
+        Vec -= np.sum(dpdv*pWt*pVals,axis=1)
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 

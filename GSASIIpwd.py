@@ -1985,7 +1985,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             cid = str(ilay)+';'
             line = ' '
             line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
-            line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)**parmDict[cid+'DenMul'])
+            line2 += ' Imag %.5g'%(Substances[name].get('XImag density',0.)*parmDict[cid+'DenMul'])
             for parm in ['Thick','Rough','DenMul','Mag SLD','iDenMul']:
                 if parm in layer:
                     if parm == 'Rough':
@@ -2169,7 +2169,12 @@ def makeSLDprofile(data,Substances):
         if 'Rough' in layer:
             sigma[ilay] = max(0.001,layer['Rough'][0])
         if name != 'vacuum':
-            rho[ilay] = Substances[name]['Scatt density']*layer['DenMul'][0]
+            if name == 'unit scatter':
+                rho[ilay] = np.sqrt(layer['DenMul'][0]**2+layer['iDenMul'][0]**2)
+            else:
+                rrho = Substances[name]['Scatt density']
+                irho = Substances[name]['XImag density']
+                rho[ilay] = np.sqrt(rrho**2+irho**2)*layer['DenMul'][0]
         if 'Mag SLD' in layer:
             rho[ilay] += layer['Mag SLD'][0]
     name = data['Layers'][-1]['Name']

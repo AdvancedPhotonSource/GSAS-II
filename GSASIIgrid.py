@@ -626,7 +626,7 @@ class TransformDialog(wx.Dialog):
         commonSizer = wx.BoxSizer(wx.HORIZONTAL)
         commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
         if self.oldSpGrp not in G2spc.spg2origins:
-            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[-1],
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[:-1],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         else:
             common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,

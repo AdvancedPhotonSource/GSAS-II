@@ -549,11 +549,12 @@ class TransformDialog(wx.Dialog):
                 self.newCell[2:5] = [A[2,2],90.,90.]
                 a,b = G2lat.cell2AB(self.newCell[:6])
                 self.Trans = np.inner(a.T,B)    #correct!
+                self.ifConstr = False
                 self.newSpGrp = 'P 1'
                 SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
                 self.Phase['General']['SGData'] = SGData
             else:
-                if self.Common == commonNames[-1]:
+                if self.Common == commonNames[-1]:      #change setting
                     self.Vec = G2spc.spg2origins[self.oldSpGrp]
                     self.newSpGrp = self.oldSpGrp
                 else:

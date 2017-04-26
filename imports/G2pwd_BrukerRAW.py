@@ -127,11 +127,13 @@ class raw_ReaderClass(G2IO.ImportPowderData):
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
                     headLen = int(st.unpack('<i',File.read(4))[0])
-#                    if nBlock > 1:
-#                        headLen += 40
                     nSteps = int(st.unpack('<i',File.read(4))[0])
                     if not nSteps: break
+                    if nBlock > 1:
+                        File.seek(pos+256)
+                        headLen += st.unpack('<i',File.read(4))[0]
                     if iBlock+1 == blockNum:
+                        File.seek(pos+8)
                         st.unpack('<d',File.read(8))[0]
                         start2Th = st.unpack('<d',File.read(8))[0]
                         File.seek(pos+212)

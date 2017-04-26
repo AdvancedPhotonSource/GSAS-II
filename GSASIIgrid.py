@@ -172,7 +172,7 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
     'A->P':np.array([[-1.,0.,0.],[0.,-.5,.5],[0.,.5,.5]]),'O->R':np.array([[-1.,0.,0.],[0.,-1.,0.],[0.,0.,1.]]), 
     'abc*':np.eye(3), }
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
-    'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*',]
+    'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
 
 # Should SGMessageBox, SymOpDialog, DisAglDialog be moved? 
 
@@ -553,12 +553,16 @@ class TransformDialog(wx.Dialog):
                 SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
                 self.Phase['General']['SGData'] = SGData
             else:
-                self.Trans = commonTrans[self.Common]
-                if 'R' == self.Common[-1]:
-                    self.newSpGrp += ' r'
-                    SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
-                    self.Phase['General']['SGData'] = SGData
-                    SGTxt.SetValue(self.newSpGrp)
+                if self.Common == commonNames[-1]:
+                    self.Vec = G2spc.spg2origins[self.oldSpGrp]
+                    self.newSpGrp = self.oldSpGrp
+                else:
+                    self.Trans = commonTrans[self.Common]
+                    if 'R' == self.Common[-1]:
+                        self.newSpGrp += ' r'
+                        SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
+                        self.Phase['General']['SGData'] = SGData
+                        SGTxt.SetValue(self.newSpGrp)
             OnTest(event)
        
         def OnSpaceGroup(event):
@@ -621,8 +625,12 @@ class TransformDialog(wx.Dialog):
 #        else:
         commonSizer = wx.BoxSizer(wx.HORIZONTAL)
         commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
-        common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        if self.oldSpGrp not in G2spc.spg2origins:
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[-1],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        else:
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
         common.Bind(wx.EVT_COMBOBOX,OnCommon)
         commonSizer.Add(common,0,WACV)
         transSizer.Add(commonSizer)
@@ -696,7 +704,7 @@ class TransformDialog(wx.Dialog):
         else:
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-        return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr
+        return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr,self.Common
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -1143,7 +1151,7 @@ class MergeDialog(wx.Dialog):
         else:
             commonSizer = wx.BoxSizer(wx.HORIZONTAL)
             commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
-            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[:-1], #not the last one!
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[:-2], #not the last two!
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             common.Bind(wx.EVT_COMBOBOX,OnCommon)
             commonSizer.Add(common,0,WACV)

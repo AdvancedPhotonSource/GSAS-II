@@ -2944,6 +2944,25 @@ spglist = {
         'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }
 
+spg2origins = {}
+''' A dictionary of all space groups with two alternative origin settings.
+each entry is symbol: atom transpation vector for setting #1 --> setting #2
+'''
+spg2origins = {"P n n n":[-.25,-.25,-.25],"P b a n":[-.25,-.25 ,0],      
+    "P n c b":[0,-.25,-.25],"P c n a":[-.25,0,-.25],"P m m n":[-.25,-.25 ,0],       
+    "P n m m":[0,-.25,-.25],"P m n m":[-.25,0,-.25],"C c c a":[0,-.25,-.25],         
+    "C c c b":[-.25,0,-.25],"A b a a":[-.25,0,-.25],"A c a a":[-.25,-.25,0],       
+    "B b c b":[-.25,-.25,0],"B b a b":[0,-.25,-.25],"F d d d":[.125,.125,.125],     
+    "P 4/n":[.25,-.2, 0],"P 42/n":[.25,.25,.25],"I 41/a":[0,.25,.125],         
+    "P 4/n b m":[.25,.25,0],"P 4/n n c":[.25,.25,.25],"P 4/n m m":[.25,-.25,0],         
+    "P 4/n c c":[.25,-.25,0],"P 42/n b c":[.25,-.25,.25],"P 42/n n m":[.25,-.25,.25],       
+    "P 42/n m c":[.25,-.25,.25],"P 42/n c m":[.25,-.25,.25],       
+    "I 41/a m d":[0,-.25,.125],"I 41/a c d":[0,-.25,.125],        
+    "P n 3":[.25,.25,.25],"F d 3":[.125,.125,.125],"P n 3 n":[.25,.25,.25],               
+    "P n 3 m":[.25,.25,.25],"F d 3 m":[.125,.125,.125],"F d 3 c":[.375,.375,.375],            
+    "P n -3":[.25,.25,.25],"F d -3":[.125,.125,.125],"P n -3 n":[.25,.25,.25],               
+    "P n -3 m":[.25,.25,.25],"F d -3 m":[.125,.125,.125],"F d -3 c":[.375,.375,.375]}            
+
 ssdict = {}
 '''A dictionary of superspace group symbols allowed for each entry in spglist
 (except cubics). Monoclinics are all b-unique setting.

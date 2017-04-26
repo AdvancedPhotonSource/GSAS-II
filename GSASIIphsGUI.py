@@ -1399,47 +1399,59 @@ entered the right symbol for your structure.
         dlg = G2gd.TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Vec,ifMag,ifConstr = dlg.GetSelection()
+                newPhase,Trans,Vec,ifMag,ifConstr,Common = dlg.GetSelection()
             else:
                 return
         finally:
             dlg.Destroy()
-        phaseName = newPhase['General']['Name']
-        newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
-        detTrans = np.abs(nl.det(Trans))
-
-        generalData = newPhase['General']
-        SGData = generalData['SGData']
-        Atoms = newPhase['Atoms']
-        if ifMag:
-            dlg = G2gd.UseMagAtomDialog(G2frame,Atoms,atCodes)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    newPhase['Atoms'],atCodes = dlg.GetSelection()
-            finally:
-                dlg.Destroy()
-            SGData['GenSym'],SGData['GenFlg'] = G2spc.GetGenSym(SGData)
-            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
-            SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
-            generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
-            
-        NShkl = len(G2spc.MustrainNames(SGData))
-        NDij = len(G2spc.HStrainNames(SGData))
-        UseList = newPhase['Histograms']
-        for hist in UseList:
-            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
-            UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-            UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-        newPhase['General']['Map'] = mapDefault.copy()
-        sub = G2frame.PatternTree.AppendItem(parent=
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
-        G2frame.PatternTree.SetItemPyData(sub,newPhase)
-        newPhase['Drawing'] = []
+        if 'setting' in Common:         #don't make new phase, Just move atoms!
+            generalData = data['General']
+            cx,ct,cs,cia = generalData['AtomPtrs']
+            SGData = generalData['SGData']
         
-        if ifMag and ifConstr:
-            G2frame.GetUsedHistogramsAndPhasesfromTree()
-            G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
-        G2frame.PatternTree.SelectItem(sub)
+            Atoms = data['Atoms']
+            for atom in Atoms:
+                for i in range(3):
+                    atom[cx+i] += Vec[i]
+                atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
+            data['Drawing'] = []
+        else:
+            phaseName = newPhase['General']['Name']
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
+            detTrans = np.abs(nl.det(Trans))
+    
+            generalData = newPhase['General']
+            SGData = generalData['SGData']
+            Atoms = newPhase['Atoms']
+            if ifMag:
+                dlg = G2gd.UseMagAtomDialog(G2frame,Atoms,atCodes)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        newPhase['Atoms'],atCodes = dlg.GetSelection()
+                finally:
+                    dlg.Destroy()
+                SGData['GenSym'],SGData['GenFlg'] = G2spc.GetGenSym(SGData)
+                SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
+                generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
+                
+            NShkl = len(G2spc.MustrainNames(SGData))
+            NDij = len(G2spc.HStrainNames(SGData))
+            UseList = newPhase['Histograms']
+            for hist in UseList:
+                UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+                UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+            newPhase['General']['Map'] = mapDefault.copy()
+            sub = G2frame.PatternTree.AppendItem(parent=
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+            G2frame.PatternTree.SetItemPyData(sub,newPhase)
+            newPhase['Drawing'] = []
+            
+            if ifMag and ifConstr:
+                G2frame.GetUsedHistogramsAndPhasesfromTree()
+                G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
+            G2frame.PatternTree.SelectItem(sub)
         
 ################################################################################
 #####  Atom routines

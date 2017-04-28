@@ -377,7 +377,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                         ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
                         R,P,Z = G2mth.getRestPolefig(ODFln,SamSym[textureData['Model']],grid)
-                        Z1 = -ma.masked_greater(Z,0.0)
+                        Z1 = ma.masked_greater(Z,0.0)           #is this + or -?
                         IndZ1 = np.array(ma.nonzero(Z1))
                         for ind in IndZ1.T:
                             pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
@@ -388,7 +388,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             Z2 = 1.-Z
                             for ind in np.ndindex(grid,grid):
                                 pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
-                                pVals.append(Z1[ind[0]][ind[1]])
+                                pVals.append(Z2[ind[0]][ind[1]])
                                 pWt.append(wt/esd2**2)
                                 pWsum[name] += wt*(Z2/esd2)**2
         
@@ -419,7 +419,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             SH3Coef['C%d,0,%d'%(L,N)] = SHcof[item]                        
                         ODFln = G2lat.Flnh(False,SH3Coef,phi,beta,SGData)
                         X = np.linspace(0,90.0,26)
-                        Y = -ma.masked_greater(G2lat.polfcal(ODFln,'0',X,0.0),0.0)
+                        Y = ma.masked_greater(G2lat.polfcal(ODFln,'0',X,0.0),0.0)       #+ or -?
                         IndY = ma.nonzero(Y)
                         for ind in IndY[0]:
                             pNames.append('%d:%d:%s:%d:%.2f'%(pId,hId,name,i,X[ind]))
@@ -432,9 +432,9 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
             pId = int(item.split(':')[0])
             if negWt[pId]:
                 pNames.append(item)
-                pVals.append(-parmDict[item])
+                pVals.append(parmDict[item])
                 pWt.append(negWt[pId])
-                pWsum['PWLref'] += negWt[pId]*(-parmDict[item])**2
+                pWsum['PWLref'] += negWt[pId]*(parmDict[item])**2
     pVals = np.array(pVals)
     pWt = np.array(pWt)         #should this be np.sqrt?
     return pNames,pVals,pWt,pWsum

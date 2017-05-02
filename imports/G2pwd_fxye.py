@@ -13,14 +13,14 @@ Routine to read in powder data in a variety of formats
 that are defined for GSAS.
 
 '''
-import sys
 import os.path as ospath
 import numpy as np
+import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
-class GSAS_ReaderClass(G2IO.ImportPowderData):
+class GSAS_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a GSAS files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -322,7 +322,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             if self.repeatcount >= len(self.selections): self.repeat = False
         else:                       # choose from options
             if not len(self.selections):    #use previous selection, otherwise...
-                self.selections = self.MultipleBlockSelector(
+                self.selections = G2IO.MultipleBlockSelector(
                     Banks,
                     ParentFrame=ParentFrame,
                     title='Select Bank(s) to read from the list below',

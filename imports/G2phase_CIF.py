@@ -32,7 +32,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 
-class CIFPhaseReader(G2IO.ImportPhase):
+class CIFPhaseReader(G2obj.ImportPhase):
     'Implements a phase importer from a possibly multi-block CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -47,7 +47,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
 
     def Reader(self,filename,filepointer, ParentFrame=None, usedRanIdList=[], **unused):
         self.isodistort_warnings = ''
-        self.Phase = G2IO.SetNewPhase(Name='new phase',SGData=G2IO.P1SGData) # create a new empty phase dict
+        self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         # make sure the ranId is really unique!
         while self.Phase['ranId'] in usedRanIdList:
             self.Phase['ranId'] = ran.randint(0,sys.maxint)
@@ -68,9 +68,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
             '_pd_phase_name',
             '_chemical_formula_sum'
             )
-        self.ShowBusy() # this can take a while
-        cf = G2IO.ReadCIF(filename)
-        self.DoneBusy()
+        cf = G2obj.ReadCIF(filename)
         # scan blocks for structural info
         self.errors = 'Error during scan of blocks for datasets'
         str_blklist = []
@@ -112,7 +110,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
-            selblk = self.PhaseSelector(
+            selblk = G2IO.PhaseSelector(
                 choice,
                 ParentFrame=ParentFrame,
                 title= 'Select a phase from one the CIF data_ blocks below',
@@ -153,7 +151,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                     self.warnings += "Change this in phase's General tab."
                     self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
                     self.warnings += G2spc.SGErrors(E)
-                SGData = G2IO.SGData # P 1
+                SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
             # cell parameters
             cell = []

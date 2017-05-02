@@ -18,10 +18,10 @@ import sys
 import os.path as ospath
 import struct as st
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1620 $")
-class raw_ReaderClass(G2IO.ImportPowderData):
+class raw_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference

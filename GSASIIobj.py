@@ -862,8 +862,10 @@ import re
 import imp
 import random as ran
 import sys
+import os.path as ospath
 import GSASIIpath
 import GSASIImath as G2mth
+import GSASIIspc as G2spc
 import numpy as np
 
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -976,6 +978,83 @@ reVarDesc = {}
 the same values as :attr:`VarDesc` except that keys have been compiled as
 regular expressions. Initialized in :func:`CompileVarDesc`.
 '''
+P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
+
+def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
+    '''Create a new phase dict with default values for various parameters
+
+    :param str Name: Name for new Phase
+
+    :param dict SGData: space group data from :func:`GSASIIspc:SpcGroup`;
+      defaults to data for P 1
+
+    :param list cell: unit cell parameter list; defaults to
+      [1.0,1.0,1.0,90.,90,90.,1.]
+
+    '''
+    if SGData is None: SGData = P1SGData
+    if cell is None: cell=[1.0,1.0,1.0,90.,90,90.,1.]
+    phaseData = {
+        'ranId':ran.randint(0,sys.maxint),
+        'General':{
+            'Name':Name,
+            'Type':'nuclear',
+            'Modulated':False,
+            'AtomPtrs':[3,1,7,9],
+            'SGData':SGData,
+            'Cell':[False,]+cell,
+            'Pawley dmin':1.0,
+            'Data plot type':'None',
+            'SH Texture':{
+                'Order':0,
+                'Model':'cylindrical',
+                'Sample omega':[False,0.0],
+                'Sample chi':[False,0.0],
+                'Sample phi':[False,0.0],
+                'SH Coeff':[False,{}],
+                'SHShow':False,
+                'PFhkl':[0,0,1],
+                'PFxyz':[0,0,1],
+                'PlotType':'Pole figure',
+                'Penalty':[['',],0.1,False,1.0]}},
+        'Atoms':[],
+        'Drawing':{},
+        'Histograms':{},
+        'Pawley ref':[],
+        'RBModels':{},
+        }
+    if Super and Super.get('Use',False):
+        phaseData['General'].update({'Modulated':True,'Super':True,'SuperSg':Super['ssSymb']})
+        phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
+        phaseData['General']['SuperVec'] = [Super['ModVec'],False,Super['maxH']]
+
+    return phaseData
+               
+def ReadCIF(URLorFile):
+    '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
+    (from James Hester).
+    The open routine gets confused with DOS names that begin with a letter and colon
+    "C:\dir\" so this routine will try to open the passed name as a file and if that
+    fails, try it as a URL
+
+    :param str URLorFile: string containing a URL or a file name. Code will try first
+      to open it as a file and then as a URL.
+
+    :returns: a PyCifRW CIF object.
+    '''
+    import CifFile as cif # PyCifRW from James Hester
+
+    # alternate approach:
+    #import urllib
+    #ciffile = 'file:'+urllib.pathname2url(filename)
+   
+    try:
+        fp = open(URLorFile,'r')
+        cf = cif.ReadCif(fp)
+        fp.close()
+        return cf
+    except IOError:
+        return cif.ReadCif(URLorFile)
 
 def IndexAllIds(Histograms,Phases):
     '''Scan through the used phases & histograms and create an index
@@ -1646,6 +1725,433 @@ class G2VarObj(object):
         print 'atomDict', self.IDdict['atoms']
 
 #==========================================================================
+def SetDefaultSample():
+    'Fills in default items for the Sample dictionary for Debye-Scherrer & SASD'
+    return {
+        'InstrName':'',
+        'ranId':ran.randint(0,sys.maxint),
+        'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
+        'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
+        'Temperature':300.,'Pressure':0.1,'Time':0.0,
+        'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
+        'Gonio. radius':200.0,
+        'Omega':0.0,'Chi':0.0,'Phi':0.0,'Azimuth':0.0,
+#SASD items
+        'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
+        'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
+        'Trans':1.0,                            #measured transmission
+        'SlitLen':0.0,                          #Slit length - in Q(A-1)
+        }
+######################################################################
+class ImportBaseclass(object):
+    '''Defines a base class for the reading of input files (diffraction
+    data, coordinates,...). See :ref:`Writing a Import Routine<Import_routines>`
+    for an explanation on how to use a subclass of this class. 
+    '''
+    class ImportException(Exception):
+        '''Defines an Exception that is used when an import routine hits an expected error,
+        usually in .Reader.
+
+        Good practice is that the Reader should define a value in self.errors that
+        tells the user some information about what is wrong with their file.         
+        '''
+        pass
+    
+    UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
+    def __init__(self,formatName,longFormatName=None,
+                 extensionlist=[],strictExtension=False,):
+        self.formatName = formatName # short string naming file type
+        if longFormatName: # longer string naming file type
+            self.longFormatName = longFormatName
+        else:
+            self.longFormatName = formatName
+        # define extensions that are allowed for the file type
+        # for windows, remove any extensions that are duplicate, as case is ignored
+        if sys.platform == 'windows' and extensionlist:
+            extensionlist = list(set([s.lower() for s in extensionlist]))
+        self.extensionlist = extensionlist
+        # If strictExtension is True, the file will not be read, unless
+        # the extension matches one in the extensionlist
+        self.strictExtension = strictExtension
+        self.errors = ''
+        self.warnings = ''
+        self.SciPy = False          #image reader needed scipy
+        # used for readers that will use multiple passes to read
+        # more than one data block
+        self.repeat = False
+        self.selections = []
+        self.repeatcount = 0
+        self.readfilename = '?'
+        #print 'created',self.__class__
+
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        self.errors = ''
+        self.warnings = ''
+        self.SciPy = False          #image reader needed scipy
+        self.repeat = False
+        self.repeat = False
+        self.repeatcount = 0
+        self.readfilename = '?'
+
+        
+#    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
+#        '''This method must be supplied in the child class to read the file. 
+#        if the read fails either return False or raise an Exception
+#        preferably of type ImportException. 
+#        '''
+#        #start reading
+#        raise ImportException("Error occurred while...")
+#        self.errors += "Hint for user on why the error occur
+#        return False # if an error occurs
+#        return True # if read OK
+
+    def ExtensionValidator(self, filename):
+        '''This methods checks if the file has the correct extension
+        Return False if this filename will not be supported by this reader
+        Return True if the extension matches the list supplied by the reader
+        Return None if the reader allows un-registered extensions
+        '''
+        if filename:
+            ext = ospath.splitext(filename)[1]
+            if sys.platform == 'windows': ext = ext.lower()
+            if ext in self.extensionlist: return True
+            if self.strictExtension: return False
+        return None
+
+    def ContentsValidator(self, filepointer):
+        '''This routine will attempt to determine if the file can be read
+        with the current format.
+        This will typically be overridden with a method that 
+        takes a quick scan of [some of]
+        the file contents to do a "sanity" check if the file
+        appears to match the selected format. 
+        Expected to be called via self.Validator()
+        '''
+        #filepointer.seek(0) # rewind the file pointer
+        return True
+
+    def CIFValidator(self, filepointer):
+        '''A :meth:`ContentsValidator` for use to validate CIF files.
+        '''
+        for i,l in enumerate(filepointer):
+            if i >= 1000: return True
+            '''Encountered only blank lines or comments in first 1000
+            lines. This is unlikely, but assume it is CIF anyway, since we are
+            even less likely to find a file with nothing but hashes and
+            blank lines'''
+            line = l.strip()
+            if len(line) == 0: # ignore blank lines
+                continue 
+            elif line.startswith('#'): # ignore comments
+                continue 
+            elif line.startswith('data_'): # on the right track, accept this file
+                return True
+            else: # found something invalid
+                self.errors = 'line '+str(i+1)+' contains unexpected data:\n'
+                if all([ord(c) < 128 and ord(c) != 0 for c in str(l)]): # show only if ASCII
+                    self.errors += '  '+str(l)
+                else: 
+                    self.errors += '  (binary)'
+                self.errors += '\n  Note: a CIF should only have blank lines or comments before'
+                self.errors += '\n        a data_ statement begins a block.'
+                return False 
+
+######################################################################
+class ImportPhase(ImportBaseclass):
+    '''Defines a base class for the reading of files with coordinates
+
+    Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
+    in :meth:`GSASII.GSASII.OnImportPhase`. 
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        # call parent __init__
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+        self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
+        self.Constraints = None
+
+######################################################################
+class ImportStructFactor(ImportBaseclass):
+    '''Defines a base class for the reading of files with tables
+    of structure factors.
+
+    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportSfact`
+    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
+    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
+    :meth:`Reader`.
+
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use import classes in general. The specifics 
+    for reading a structure factor histogram require that
+    the ``Reader()`` routine in the import
+    class need to do only a few things: It
+    should load :attr:`RefDict` item ``'RefList'`` with the reflection list,
+    and set :attr:`Parameters` with the instrument parameters
+    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+
+        # define contents of Structure Factor entry
+        self.Parameters = []
+        'self.Parameters is a list with two dicts for data parameter settings'
+        self.InitParameters()
+        self.RefDict = {'RefList':[],'FF':{},'Super':0}
+        self.Banks = []             #for multi bank data (usually TOF)
+        '''self.RefDict is a dict containing the reflection information, as read from the file.
+        Item 'RefList' contains the reflection information. See the
+        :ref:`Single Crystal Reflection Data Structure<XtalRefl_table>`
+        for the contents of each row. Dict element 'FF'
+        contains the form factor values for each element type; if this entry
+        is left as initialized (an empty list) it will be initialized as needed later. 
+        '''
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.InitParameters()
+        self.Banks = []             #for multi bank data (usually TOF)
+        self.RefDict = {'RefList':[],'FF':{},'Super':0}
+        
+    def InitParameters(self):
+        'initialize the instrument parameters structure'
+        Lambda = 0.70926
+        HistType = 'SXC'
+        self.Parameters = [{'Type':[HistType,HistType], # create the structure
+                            'Lam':[Lambda,Lambda]
+                            }, {}]
+        'Parameters is a list with two dicts for data parameter settings'
+
+    def UpdateParameters(self,Type=None,Wave=None):
+        'Revise the instrument parameters'
+        if Type is not None:
+            self.Parameters[0]['Type'] = [Type,Type]
+        if Wave is not None:
+            self.Parameters[0]['Lam'] = [Wave,Wave]           
+                       
+######################################################################
+class ImportPowderData(ImportBaseclass):
+    '''Defines a base class for the reading of files with powder data.
+
+    Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
+    in :meth:`GSASII.GSASII.OnImportPowder`. 
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,
+        extensionlist=[],strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+        self.clockWd = None  # used in TOF
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
+        self.powderdata = [] # Powder dataset
+        '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yb), # calc. background (zero)
+                np.array(yd), # obs-calc profiles
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = SetDefaultSample() # default sample parameters
+        self.Controls = {}  # items to be placed in top-level Controls 
+        self.GSAS = None     # used in TOF
+        self.repeat_instparm = True # Should a parm file be
+        #                             used for multiple histograms? 
+        self.instparm = None # name hint from file of instparm to use
+        self.instfile = '' # full path name to instrument parameter file
+        self.instbank = '' # inst parm bank number
+        self.instmsg = ''  # a label that gets printed to show
+                           # where instrument parameters are from
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+        self.pwdparms = {} # place parameters that are transferred directly to the tree
+                           # here (typically from an existing GPX file)
+######################################################################
+class ImportSmallAngleData(ImportBaseclass):
+    '''Defines a base class for the reading of files with small angle data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.smallangleentry = ['',None,None] #  (filename,Pos,Bank)
+        self.smallangledata = [] # SASD dataset
+        '''A small angle data set is a list with items [x,y,w,yc,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yd), # obs-calc profiles
+                np.array(yb), # preset bkg
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+######################################################################
+class ImportReflectometryData(ImportBaseclass):
+    '''Defines a base class for the reading of files with reflectometry data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.reflectometryentry = ['',None,None] #  (filename,Pos,Bank)
+        self.reflectometrydata = [] # SASD dataset
+        '''A small angle data set is a list with items [x,y,w,yc,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yd), # obs-calc profiles
+                np.array(yb), # preset bkg
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+######################################################################
+class ImportPDFData(ImportBaseclass):
+    '''Defines a base class for the reading of files with PDF G(R) data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
+        self.pdfentry = ['',None,None] #  (filename,Pos,Bank)
+        self.pdfdata = [] # PDF G(R) dataset
+        '''A pdf g(r) data set is a list with items [x,y]:
+                np.array(x), # r-axis values
+                np.array(y), # pdf g(r)
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.numbanks = 1
+
+######################################################################
+class ImportImage(ImportBaseclass):
+    '''Defines a base class for the reading of images
+
+    Images are read in only these places:
+    
+      * Initial reading is typically done from a menu item
+        with a call to :meth:`GSASII.GSASII.OnImportImage`
+        which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`. That calls
+        methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
+        :meth:`Reader`. This returns a list of reader objects for each read image. 
+
+      * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
+        directly into the data tree.
+
+      * Images are reloaded with :func:`GSASIIIO.GetImageData`.
+
+    .. _Image_import_routines:
+
+    When reading an image, the ``Reader()`` routine in the ImportImage class
+    should set:
+    
+      * :attr:`Comments`: a list of strings (str),
+      * :attr:`Npix`: the number of pixels in the image (int),
+      * :attr:`Image`: the actual image as a numpy array (np.array)
+      * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
+        data items are needed:
+        
+         * 'pixelSize': size of each pixel in microns (such as ``[200,200]``.
+         * 'wavelength': wavelength in Angstoms.
+         * 'distance': distance of detector from sample in cm.
+         * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
+         * 'size': size of image (such as ``[2048,2048]``).
+         * 'ImageTag': image number or other keyword used to retrieve image from
+           a multi-image data file (defaults to ``1`` if not specified).
+         * 'sumfile': holds sum image file name if a sum was produced from a multi image file
+
+    optional data items:
+    
+      * :attr:`repeat`: set to True if there are additional images to
+        read in the file, False otherwise
+      * :attr:`repeatcount`: set to the number of the image.
+      
+    Note that the above is initialized with :meth:`InitParameters`.
+    (Also see :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use import classes in general.)
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+        self.InitParameters()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings -- not used at present'
+        ImportBaseclass.ReInitialize(self)
+        self.InitParameters()
+        
+    def InitParameters(self):
+        'initialize the instrument parameters structure'
+        self.Comments = ['No comments']
+        self.Data = {}
+        self.Npix = 0
+        self.Image = None
+        self.repeat = False
+        self.repeatcount = 1
+        self.sumfile = ''
+
+    def LoadImage(self,ParentFrame,imagefile,imagetag=None):
+        '''Optionally, call this after reading in an image to load it into the tree.
+        This saves time by preventing a reread of the same information.
+        '''
+        if ParentFrame:
+            ParentFrame.ImageZ = self.Image   # store the image for plotting
+            ParentFrame.oldImagefile = imagefile # save the name of the last image file read
+            ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read            
+
+#################################################################################################
 # shortcut routines
 exp = np.exp
 sind = sin = s = lambda x: np.sin(x*np.pi/180.)

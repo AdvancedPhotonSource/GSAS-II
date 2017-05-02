@@ -222,53 +222,47 @@ def EditImageParms(parent,Data,Comments,Image,filename):
         dlg.EndModal(wx.ID_OK)
     mainsizer = wx.BoxSizer(wx.VERTICAL)
     h,w = Image.shape[:2]
-    mainsizer.Add(wx.StaticText(dlg,wx.ID_ANY,
-                                'File '+str(filename)+'\nImage size: '+str(h)+' x '+str(w)),
-                  0,wx.ALIGN_LEFT|wx.ALL, 2)
+    mainsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'File '+str(filename)+'\nImage size: '+str(h)+' x '+str(w)),
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
     
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
-               0,wx.ALIGN_LEFT|wx.ALL, 2)
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'wavelength')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
-               0,wx.ALIGN_LEFT|wx.ALL, 2)
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,
                                  size=(50,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),
-               wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,
-                                 size=(50,-1))
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,size=(50,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Sample to detector (mm) '),
-               0,wx.ALIGN_LEFT|wx.ALL, 2)
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'distance')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Beam center (pixels). X = '),
-               0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],0,
-                                 size=(75,-1))
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],0,size=(75,-1))
     vsizer.Add(wdgt)
-    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),
-               wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],1,
-                                 size=(75,-1))
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],1,size=(75,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Comments '),
-               0,wx.ALIGN_LEFT|wx.ALL, 2)
+        0,wx.ALIGN_LEFT|wx.ALL, 2)
     wdgt = G2G.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
@@ -548,205 +542,6 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
     
-# should get moved to importer when ready to test
-def GetEdfData(filename,imageOnly=False):    
-    'Read European detector data edf file'
-    if not imageOnly:
-        print 'Read European detector data edf file: ',filename
-    File = open(filename,'rb')
-    fileSize = os.stat(filename).st_size
-    head = File.read(3072)
-    lines = head.split('\n')
-    sizexy = [0,0]
-    pixSize = [154,154]     #Pixium4700?
-    cent = [0,0]
-    wave = 1.54187  #default <CuKa>
-    dist = 1000.
-    head = ['European detector data',]
-    for line in lines:
-        line = line.replace(';',' ').strip()
-        fields = line.split()
-        if 'Dim_1' in line:
-            sizexy[0] = int(fields[2])
-        elif 'Dim_2' in line:
-            sizexy[1] = int(fields[2])
-        elif 'DataType' in line:
-            dType = fields[2]
-        elif 'wavelength' in line:
-            wave = float(fields[2])
-        elif 'Size' in line:
-            imSize = int(fields[2])
-#        elif 'DataType' in lines:
-#            dType = fields[2]
-        elif 'pixel_size_x' in line:
-            pixSize[0] = float(fields[2])
-        elif 'pixel_size_y' in line:
-            pixSize[1] = float(fields[2])
-        elif 'beam_center_x' in line:
-            cent[0] = float(fields[2])
-        elif 'beam_center_y' in line:
-            cent[1] = float(fields[2])
-        elif 'refined_distance' in line:
-            dist = float(fields[2])
-        if line:
-            head.append(line)
-        else:   #blank line at end of header
-            break  
-    File.seek(fileSize-imSize)
-    if dType == 'UnsignedShort':        
-        image = np.array(np.frombuffer(File.read(imSize),dtype=np.int16),dtype=np.int32)
-    else:
-        image = np.array(np.frombuffer(File.read(imSize),dtype=np.int32),dtype=np.int32)
-    image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
-    Npix = sizexy[0]*sizexy[1]
-    File.close()    
-    if imageOnly:
-        return image
-    else:
-        return head,data,Npix,image
-        
-# should get moved to importer when ready to test
-def GetRigaku(filename,imageOnly=False):
-    'Read Rigaku R-Axis IV image file'
-    import array as ar
-    if not imageOnly:
-        print 'Read Rigaku R-Axis IV file: ',filename    
-    File = open(filename,'rb')
-    fileSize = os.stat(filename).st_size
-    Npix = (fileSize-6000)/2
-    File.read(6000)
-    head = ['Rigaku R-Axis IV detector data',]
-    image = np.array(ar.array('H',File.read(fileSize-6000)),dtype=np.int32)
-    print fileSize,image.shape
-    print head
-    if Npix == 9000000:
-        sizexy = [3000,3000]
-        pixSize = [100.,100.]        
-    elif Npix == 2250000:
-        sizexy = [1500,1500]
-        pixSize = [200.,200.]
-    else:
-        sizexy = [6000,6000]
-        pixSize = [50.,50.] 
-    image = np.reshape(image,(sizexy[1],sizexy[0]))        
-    data = {'pixelSize':pixSize,'wavelength':1.5428,'distance':250.0,'center':[150.,150.],'size':sizexy}  
-    File.close()    
-    if imageOnly:
-        return image
-    else:
-        return head,data,Npix,image
-    
-# should get moved to importer when ready to test        
-def GetImgData(filename,imageOnly=False):
-    'Read an ADSC image file'
-    import array as ar
-    if not imageOnly:
-        print 'Read ADSC img file: ',filename
-    File = open(filename,'rb')
-    head = File.read(511)
-    lines = head.split('\n')
-    head = []
-    center = [0,0]
-    for line in lines[1:-2]:
-        line = line.strip()[:-1]
-        if line:
-            if 'SIZE1' in line:
-                size = int(line.split('=')[1])
-                Npix = size*size
-            elif 'WAVELENGTH' in line:
-                wave = float(line.split('=')[1])
-            elif 'BIN' in line:
-                if line.split('=')[1] == '2x2':
-                    pixel=(102,102)
-                else:
-                    pixel = (51,51)
-            elif 'DISTANCE' in line:
-                distance = float(line.split('=')[1])
-            elif 'CENTER_X' in line:
-                center[0] = float(line.split('=')[1])
-            elif 'CENTER_Y' in line:
-                center[1] = float(line.split('=')[1])
-            head.append(line)
-    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center,'size':[size,size]}
-    image = []
-    pos = 512
-    File.seek(pos)
-    image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-    image = np.reshape(image,(size,size))
-#    image = np.zeros(shape=(size,size),dtype=np.int32)    
-#    while row < size:
-#        File.seek(pos)
-#        line = ar.array('H',File.read(2*size))
-#        image[row] = np.asarray(line)
-#        row += 1
-#        pos += 2*size
-    File.close()
-    if imageOnly:
-        return image
-    else:
-        return lines[1:-2],data,Npix,image
-       
-# should get moved to importer when ready to test
-def GetMAR345Data(filename,imageOnly=False):
-    'Read a MAR-345 image plate image'
-    try:
-        import pack_f as pf
-    except:
-        msg = wx.MessageDialog(None, message="Unable to load the GSAS MAR image decompression, pack_f",
-                               caption="Import Error",
-                               style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
-        msg.ShowModal()
-        return None,None,None,None
-
-    if not imageOnly:
-        print 'Read Mar345 file: ',filename
-    File = open(filename,'rb')
-    head = File.read(4095)
-    lines = head[128:].split('\n')
-    head = []
-    for line in lines:
-        line = line.strip()
-        if 'PIXEL' in line:
-            values = line.split()
-            pixel = (int(values[2]),int(values[4]))     #in microns
-        elif 'WAVELENGTH' in line:
-            wave = float(line.split()[1])
-        elif 'DISTANCE' in line:
-            distance = float(line.split()[1])           #in mm
-            if not distance:
-                distance = 500.
-        elif 'CENTER' in line:
-            values = line.split()
-            center = [float(values[2])/10.,float(values[4])/10.]    #make in mm from pixels
-        if line: 
-            head.append(line)
-    data = {'pixelSize':pixel,'wavelength':wave,'distance':distance,'center':center}
-    for line in head:
-        if 'FORMAT' in line[0:6]:
-            items = line.split()
-            sizex = int(items[1])
-            Npix = int(items[3])
-            sizey = int(Npix/sizex)
-    pos = 4096
-    data['size'] = [sizex,sizey]
-    File.seek(pos)
-    line = File.read(8)
-    while 'CCP4' not in line:       #get past overflow list for now
-        line = File.read(8)
-        pos += 8
-    pos += 37
-    File.seek(pos)
-    raw = File.read()
-    File.close()
-    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)
-    
-    image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
-    if imageOnly:
-        return image
-    else:
-        return head,data,Npix,image
-        
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
     if not os.path.exists(G2frame.GSASprojectfile):
@@ -912,7 +707,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             if nOcc:
                 Aname += '(%d)'%(nOcc)
-        Sample = G2pdG.SetDefaultSample()       #set as Debye-Scherrer
+        Sample = G2obj.SetDefaultSample()       #set as Debye-Scherrer
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
@@ -1115,9 +910,6 @@ def PDFSave(G2frame,exports,PDFsaves):
                 grfile.write("%15.2F %15.6F\n" % (r,gr))
             grfile.close()
             print ' G(R) saved to: ',grfilename
-            
-            
-            
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'
@@ -1154,56 +946,6 @@ def IndexPeakListSave(G2frame,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
-def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
-    '''Create a new phase dict with default values for various parameters
-
-    :param str Name: Name for new Phase
-
-    :param dict SGData: space group data from :func:`GSASIIspc:SpcGroup`;
-      defaults to data for P 1
-
-    :param list cell: unit cell parameter list; defaults to
-      [1.0,1.0,1.0,90.,90,90.,1.]
-
-    '''
-    if SGData is None: SGData = G2spc.SpcGroup('P 1')[1]
-    if cell is None: cell=[1.0,1.0,1.0,90.,90,90.,1.]
-    phaseData = {
-        'ranId':ran.randint(0,sys.maxint),
-        'General':{
-            'Name':Name,
-            'Type':'nuclear',
-            'Modulated':False,
-            'AtomPtrs':[3,1,7,9],
-            'SGData':SGData,
-            'Cell':[False,]+cell,
-            'Pawley dmin':1.0,
-            'Data plot type':'None',
-            'SH Texture':{
-                'Order':0,
-                'Model':'cylindrical',
-                'Sample omega':[False,0.0],
-                'Sample chi':[False,0.0],
-                'Sample phi':[False,0.0],
-                'SH Coeff':[False,{}],
-                'SHShow':False,
-                'PFhkl':[0,0,1],
-                'PFxyz':[0,0,1],
-                'PlotType':'Pole figure',
-                'Penalty':[['',],0.1,False,1.0]}},
-        'Atoms':[],
-        'Drawing':{},
-        'Histograms':{},
-        'Pawley ref':[],
-        'RBModels':{},
-        }
-    if Super and Super.get('Use',False):
-        phaseData['General'].update({'Modulated':True,'Super':True,'SuperSg':Super['ssSymb']})
-        phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
-        phaseData['General']['SuperVec'] = [Super['ModVec'],False,Super['maxH']]
-
-    return phaseData
-       
 class MultipleChoicesDialog(wx.Dialog):
     '''A dialog that offers a series of choices, each with a
     title and a wx.Choice widget. Intended to be used Modally. 
@@ -1394,497 +1136,86 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
 # base classes for reading various types of data files
 #   not used directly, only by subclassing
 ######################################################################
-try:
-    E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
-except: # errors on doc build
-    SGData = None
-P1SGData = SGData
-######################################################################
-class ImportBaseclass(object):
-    '''Defines a base class for the reading of input files (diffraction
-    data, coordinates,...). See :ref:`Writing a Import Routine<Import_routines>`
-    for an explanation on how to use a subclass of this class. 
+def BlockSelector(ChoiceList, ParentFrame=None,title='Select a block',
+    size=None, header='Block Selector',useCancel=True):
+    ''' Provide a wx dialog to select a block if the file contains more
+    than one set of data and one must be selected
     '''
-    class ImportException(Exception):
-        '''Defines an Exception that is used when an import routine hits an expected error,
-        usually in .Reader.
+    if useCancel:
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header,ChoiceList)
+    else:
+        dlg = wx.SingleChoiceDialog(
+            ParentFrame,title, header,ChoiceList,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    if size: dlg.SetSize(size)
+    dlg.CenterOnParent()
+    if dlg.ShowModal() == wx.ID_OK:
+        sel = dlg.GetSelection()
+        return sel
+    else:
+        return None
+    dlg.Destroy()
 
-        Good practice is that the Reader should define a value in self.errors that
-        tells the user some information about what is wrong with their file.         
-        '''
-        pass
+def MultipleBlockSelector(ChoiceList, ParentFrame=None,
+    title='Select a block',size=None, header='Block Selector'):
+    '''Provide a wx dialog to select a block of data if the
+    file contains more than one set of data and one must be
+    selected.
+
+    :returns: a list of the selected blocks
+    '''
+    dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
+        wx.CHOICEDLG_STYLE)
+    dlg.CenterOnScreen()
+    if size: dlg.SetSize(size)
+    if dlg.ShowModal() == wx.ID_OK:
+        sel = dlg.GetSelections()
+    else:
+        return []
+    dlg.Destroy()
+    selected = []
+    if len(ChoiceList) in sel:
+        return range(len(ChoiceList))
+    else:
+        return sel
+    return selected
+
+def MultipleChoicesSelector(choicelist, headinglist, ParentFrame=None, **kwargs):
+    '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
+    widget. Typical input:
     
-    UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
-    def __init__(self,formatName,longFormatName=None,
-                 extensionlist=[],strictExtension=False,):
-        self.formatName = formatName # short string naming file type
-        if longFormatName: # longer string naming file type
-            self.longFormatName = longFormatName
-        else:
-            self.longFormatName = formatName
-        # define extensions that are allowed for the file type
-        # for windows, remove any extensions that are duplicate, as case is ignored
-        if sys.platform == 'windows' and extensionlist:
-            extensionlist = list(set([s.lower() for s in extensionlist]))
-        self.extensionlist = extensionlist
-        # If strictExtension is True, the file will not be read, unless
-        # the extension matches one in the extensionlist
-        self.strictExtension = strictExtension
-        self.errors = ''
-        self.warnings = ''
-        # used for readers that will use multiple passes to read
-        # more than one data block
-        self.repeat = False
-        self.selections = []
-        self.repeatcount = 0
-        self.readfilename = '?'
-        #print 'created',self.__class__
+       * choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
+       
+       * headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
+       
+    optional keyword parameters are: head (window title) and title
+    returns a list of selected indicies for each choice (or None)
+    '''
+    result = None
+    dlg = MultipleChoicesDialog(choicelist,headinglist,
+        parent=ParentFrame, **kwargs)          
+    dlg.CenterOnParent()
+    if dlg.ShowModal() == wx.ID_OK:
+        result = dlg.chosen
+    dlg.Destroy()
+    return result
 
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        self.errors = ''
-        self.warnings = ''
-        self.repeat = False
-        self.repeatcount = 0
-        self.readfilename = '?'
+def PhaseSelector(self, ChoiceList, ParentFrame=None,
+    title='Select a phase', size=None,header='Phase Selector'):
+    ''' Provide a wx dialog to select a phase if the file contains more
+    than one phase
+    '''
+    return BlockSelector(ChoiceList,ParentFrame,title,
+        size,header)
 
-    def BlockSelector(self, ChoiceList, ParentFrame=None,title='Select a block',
-        size=None, header='Block Selector',useCancel=True):
-        ''' Provide a wx dialog to select a block if the file contains more
-        than one set of data and one must be selected
-        '''
-        if useCancel:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header,ChoiceList)
-        else:
-            dlg = wx.SingleChoiceDialog(
-                ParentFrame,title, header,ChoiceList,
-                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-        if size: dlg.SetSize(size)
-        dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            return sel
-        else:
-            return None
-        dlg.Destroy()
-
-    def MultipleBlockSelector(self, ChoiceList, ParentFrame=None,
-        title='Select a block',size=None, header='Block Selector'):
-        '''Provide a wx dialog to select a block of data if the
-        file contains more than one set of data and one must be
-        selected.
-
-        :returns: a list of the selected blocks
-        '''
-        dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
-            wx.CHOICEDLG_STYLE)
-        dlg.CenterOnScreen()
-        if size: dlg.SetSize(size)
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelections()
-        else:
-            return []
-        dlg.Destroy()
-        selected = []
-        if len(ChoiceList) in sel:
-            return range(len(ChoiceList))
-        else:
-            return sel
-        return selected
-
-    def MultipleChoicesDialog(self, choicelist, headinglist, ParentFrame=None, **kwargs):
-        '''A modal dialog that offers a series of choices, each with a title and a wx.Choice
-        widget. Typical input:
-        
-           * choicelist=[ ('a','b','c'), ('test1','test2'),('no choice',)]
-           
-           * headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
-           
-        optional keyword parameters are: head (window title) and title
-        returns a list of selected indicies for each choice (or None)
-        '''
-        result = None
-        dlg = MultipleChoicesDialog(choicelist,headinglist,
-            parent=ParentFrame, **kwargs)          
-        dlg.CenterOnParent()
-        if dlg.ShowModal() == wx.ID_OK:
-            result = dlg.chosen
-        dlg.Destroy()
-        return result
-
-    def ShowBusy(self):
-        wx.BeginBusyCursor()
+def ShowBusy():
+    wx.BeginBusyCursor()
 #        wx.Yield() # make it happen now!
 
-    def DoneBusy(self):
-        wx.EndBusyCursor()
-        wx.Yield() # make it happen now!
-        
-#    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
-#        '''This method must be supplied in the child class to read the file. 
-#        if the read fails either return False or raise an Exception
-#        preferably of type ImportException. 
-#        '''
-#        #start reading
-#        raise ImportException("Error occurred while...")
-#        self.errors += "Hint for user on why the error occur
-#        return False # if an error occurs
-#        return True # if read OK
-
-    def ExtensionValidator(self, filename):
-        '''This methods checks if the file has the correct extension
-        Return False if this filename will not be supported by this reader
-        Return True if the extension matches the list supplied by the reader
-        Return None if the reader allows un-registered extensions
-        '''
-        if filename:
-            ext = os.path.splitext(filename)[1]
-            if sys.platform == 'windows': ext = ext.lower()
-            if ext in self.extensionlist: return True
-            if self.strictExtension: return False
-        return None
-
-    def ContentsValidator(self, filepointer):
-        '''This routine will attempt to determine if the file can be read
-        with the current format.
-        This will typically be overridden with a method that 
-        takes a quick scan of [some of]
-        the file contents to do a "sanity" check if the file
-        appears to match the selected format. 
-        Expected to be called via self.Validator()
-        '''
-        #filepointer.seek(0) # rewind the file pointer
-        return True
-
-    def CIFValidator(self, filepointer):
-        '''A :meth:`ContentsValidator` for use to validate CIF files.
-        '''
-        for i,l in enumerate(filepointer):
-            if i >= 1000: return True
-            '''Encountered only blank lines or comments in first 1000
-            lines. This is unlikely, but assume it is CIF anyway, since we are
-            even less likely to find a file with nothing but hashes and
-            blank lines'''
-            line = l.strip()
-            if len(line) == 0: # ignore blank lines
-                continue 
-            elif line.startswith('#'): # ignore comments
-                continue 
-            elif line.startswith('data_'): # on the right track, accept this file
-                return True
-            else: # found something invalid
-                self.errors = 'line '+str(i+1)+' contains unexpected data:\n'
-                if all([ord(c) < 128 and ord(c) != 0 for c in str(l)]): # show only if ASCII
-                    self.errors += '  '+str(l)
-                else: 
-                    self.errors += '  (binary)'
-                self.errors += '\n  Note: a CIF should only have blank lines or comments before'
-                self.errors += '\n        a data_ statement begins a block.'
-                return False 
-
-######################################################################
-class ImportPhase(ImportBaseclass):
-    '''Defines a base class for the reading of files with coordinates
-
-    Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
-    in :meth:`GSASII.GSASII.OnImportPhase`. 
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
-
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-        # call parent __init__
-        ImportBaseclass.__init__(self,formatName,longFormatName,
-            extensionlist,strictExtension)
-        self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
-        self.Constraints = None
-
-    def PhaseSelector(self, ChoiceList, ParentFrame=None,
-        title='Select a phase', size=None,header='Phase Selector'):
-        ''' Provide a wx dialog to select a phase if the file contains more
-        than one phase
-        '''
-        return self.BlockSelector(ChoiceList,ParentFrame,title,
-            size,header)
-
-######################################################################
-class ImportStructFactor(ImportBaseclass):
-    '''Defines a base class for the reading of files with tables
-    of structure factors.
-
-    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportSfact`
-    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
-    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
-    :meth:`Reader`.
-
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use import classes in general. The specifics 
-    for reading a structure factor histogram require that
-    the ``Reader()`` routine in the import
-    class need to do only a few things: It
-    should load :attr:`RefDict` item ``'RefList'`` with the reflection list,
-    and set :attr:`Parameters` with the instrument parameters
-    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-        ImportBaseclass.__init__(self,formatName,longFormatName,
-            extensionlist,strictExtension)
-
-        # define contents of Structure Factor entry
-        self.Parameters = []
-        'self.Parameters is a list with two dicts for data parameter settings'
-        self.InitParameters()
-        self.RefDict = {'RefList':[],'FF':{},'Super':0}
-        self.Banks = []             #for multi bank data (usually TOF)
-        '''self.RefDict is a dict containing the reflection information, as read from the file.
-        Item 'RefList' contains the reflection information. See the
-        :ref:`Single Crystal Reflection Data Structure<XtalRefl_table>`
-        for the contents of each row. Dict element 'FF'
-        contains the form factor values for each element type; if this entry
-        is left as initialized (an empty list) it will be initialized as needed later. 
-        '''
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        ImportBaseclass.ReInitialize(self)
-        self.InitParameters()
-        self.Banks = []             #for multi bank data (usually TOF)
-        self.RefDict = {'RefList':[],'FF':{},'Super':0}
-        
-    def InitParameters(self):
-        'initialize the instrument parameters structure'
-        Lambda = 0.70926
-        HistType = 'SXC'
-        self.Parameters = [{'Type':[HistType,HistType], # create the structure
-                            'Lam':[Lambda,Lambda]
-                            }, {}]
-        'Parameters is a list with two dicts for data parameter settings'
-
-    def UpdateParameters(self,Type=None,Wave=None):
-        'Revise the instrument parameters'
-        if Type is not None:
-            self.Parameters[0]['Type'] = [Type,Type]
-        if Wave is not None:
-            self.Parameters[0]['Lam'] = [Wave,Wave]           
-                       
-######################################################################
-class ImportPowderData(ImportBaseclass):
-    '''Defines a base class for the reading of files with powder data.
-
-    Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
-    in :meth:`GSASII.GSASII.OnImportPowder`. 
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
-    '''
-    def __init__(self,formatName,longFormatName=None,
-        extensionlist=[],strictExtension=False,):
-        ImportBaseclass.__init__(self,formatName,longFormatName,
-            extensionlist,strictExtension)
-        self.clockWd = None  # used in TOF
-        self.ReInitialize()
-        
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        ImportBaseclass.ReInitialize(self)
-        self.powderentry = ['',None,None] #  (filename,Pos,Bank)
-        self.powderdata = [] # Powder dataset
-        '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
-                np.array(x), # x-axis values
-                np.array(y), # powder pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.array(yc), # calc. intensities (zero)
-                np.array(yb), # calc. background (zero)
-                np.array(yd), # obs-calc profiles
-        '''                            
-        self.comments = []
-        self.idstring = ''
-        self.Sample = G2pdG.SetDefaultSample() # default sample parameters
-        self.Controls = {}  # items to be placed in top-level Controls 
-        self.GSAS = None     # used in TOF
-        self.repeat_instparm = True # Should a parm file be
-        #                             used for multiple histograms? 
-        self.instparm = None # name hint from file of instparm to use
-        self.instfile = '' # full path name to instrument parameter file
-        self.instbank = '' # inst parm bank number
-        self.instmsg = ''  # a label that gets printed to show
-                           # where instrument parameters are from
-        self.numbanks = 1
-        self.instdict = {} # place items here that will be transferred to the instrument parameters
-        self.pwdparms = {} # place parameters that are transferred directly to the tree
-                           # here (typically from an existing GPX file)
-######################################################################
-class ImportSmallAngleData(ImportBaseclass):
-    '''Defines a base class for the reading of files with small angle data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-            
-        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
-            strictExtension)
-        self.ReInitialize()
-        
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        ImportBaseclass.ReInitialize(self)
-        self.smallangleentry = ['',None,None] #  (filename,Pos,Bank)
-        self.smallangledata = [] # SASD dataset
-        '''A small angle data set is a list with items [x,y,w,yc,yd]:
-                np.array(x), # x-axis values
-                np.array(y), # powder pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.array(yc), # calc. intensities (zero)
-                np.array(yd), # obs-calc profiles
-                np.array(yb), # preset bkg
-        '''                            
-        self.comments = []
-        self.idstring = ''
-        self.Sample = G2pdG.SetDefaultSample()
-        self.GSAS = None     # used in TOF
-        self.clockWd = None  # used in TOF
-        self.numbanks = 1
-        self.instdict = {} # place items here that will be transferred to the instrument parameters
-
-######################################################################
-class ImportReflectometryData(ImportBaseclass):
-    '''Defines a base class for the reading of files with reflectometry data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-            
-        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
-            strictExtension)
-        self.ReInitialize()
-        
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        ImportBaseclass.ReInitialize(self)
-        self.reflectometryentry = ['',None,None] #  (filename,Pos,Bank)
-        self.reflectometrydata = [] # SASD dataset
-        '''A small angle data set is a list with items [x,y,w,yc,yd]:
-                np.array(x), # x-axis values
-                np.array(y), # powder pattern intensities
-                np.array(w), # 1/sig(intensity)^2 values (weights)
-                np.array(yc), # calc. intensities (zero)
-                np.array(yd), # obs-calc profiles
-                np.array(yb), # preset bkg
-        '''                            
-        self.comments = []
-        self.idstring = ''
-        self.Sample = G2pdG.SetDefaultSample()
-        self.GSAS = None     # used in TOF
-        self.clockWd = None  # used in TOF
-        self.numbanks = 1
-        self.instdict = {} # place items here that will be transferred to the instrument parameters
-
-######################################################################
-class ImportPDFData(ImportBaseclass):
-    '''Defines a base class for the reading of files with PDF G(R) data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-            
-        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
-            strictExtension)
-        self.ReInitialize()
-        
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings'
-        ImportBaseclass.ReInitialize(self)
-        self.pdfentry = ['',None,None] #  (filename,Pos,Bank)
-        self.pdfdata = [] # PDF G(R) dataset
-        '''A pdf g(r) data set is a list with items [x,y]:
-                np.array(x), # r-axis values
-                np.array(y), # pdf g(r)
-        '''                            
-        self.comments = []
-        self.idstring = ''
-        self.numbanks = 1
-
-######################################################################
-class ImportImage(ImportBaseclass):
-    '''Defines a base class for the reading of images
-
-    Images are read in only these places:
-    
-      * Initial reading is typically done from a menu item
-        with a call to :meth:`GSASII.GSASII.OnImportImage`
-        which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`. That calls
-        methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
-        :meth:`Reader`. This returns a list of reader objects for each read image. 
-
-      * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
-        directly into the data tree.
-
-      * Images are reloaded with :func:`GSASIIIO.GetImageData`.
-
-    .. _Image_import_routines:
-
-    When reading an image, the ``Reader()`` routine in the ImportImage class
-    should set:
-    
-      * :attr:`Comments`: a list of strings (str),
-      * :attr:`Npix`: the number of pixels in the image (int),
-      * :attr:`Image`: the actual image as a numpy array (np.array)
-      * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
-        data items are needed:
-        
-         * 'pixelSize': size of each pixel in microns (such as ``[200,200]``.
-         * 'wavelength': wavelength in Angstoms.
-         * 'distance': distance of detector from sample in cm.
-         * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
-         * 'size': size of image (such as ``[2048,2048]``).
-         * 'ImageTag': image number or other keyword used to retrieve image from
-           a multi-image data file (defaults to ``1`` if not specified).
-         * 'sumfile': holds sum image file name if a sum was produced from a multi image file
-
-    optional data items:
-    
-      * :attr:`repeat`: set to True if there are additional images to
-        read in the file, False otherwise
-      * :attr:`repeatcount`: set to the number of the image.
-      
-    Note that the above is initialized with :meth:`InitParameters`.
-    (Also see :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use import classes in general.)
-    '''
-    def __init__(self,formatName,longFormatName=None,extensionlist=[],
-        strictExtension=False,):
-        ImportBaseclass.__init__(self,formatName,longFormatName,
-            extensionlist,strictExtension)
-        self.InitParameters()
-        
-    def ReInitialize(self):
-        'Reinitialize the Reader to initial settings -- not used at present'
-        ImportBaseclass.ReInitialize(self)
-        self.InitParameters()
-        
-    def InitParameters(self):
-        'initialize the instrument parameters structure'
-        self.Comments = ['No comments']
-        self.Data = {}
-        self.Npix = 0
-        self.Image = None
-        self.repeat = False
-        self.repeatcount = 1
-        self.sumfile = ''
-
-    def LoadImage(self,ParentFrame,imagefile,imagetag=None):
-        '''Optionally, call this after reading in an image to load it into the tree.
-        This saves time by preventing a reread of the same information.
-        '''
-        if ParentFrame:
-            ParentFrame.ImageZ = self.Image   # store the image for plotting
-            ParentFrame.oldImagefile = imagefile # save the name of the last image file read
-            ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read            
-
+def DoneBusy():
+    wx.EndBusyCursor()
+    wx.Yield() # make it happen now!
 ######################################################################
 def striphist(var,insChar=''):
     'strip a histogram number from a var name'
@@ -2785,32 +2116,6 @@ def ReadDIFFaX(DIFFaXfile):
             for stack in Stack[2:]:
                 Layer['Stacking'][2] += ' '+stack
     return Layer
-
-def ReadCIF(URLorFile):
-    '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
-    (from James Hester).
-    The open routine gets confused with DOS names that begin with a letter and colon
-    "C:\dir\" so this routine will try to open the passed name as a file and if that
-    fails, try it as a URL
-
-    :param str URLorFile: string containing a URL or a file name. Code will try first
-      to open it as a file and then as a URL.
-
-    :returns: a PyCifRW CIF object.
-    '''
-    import CifFile as cif # PyCifRW from James Hester
-
-    # alternate approach:
-    #import urllib
-    #ciffile = 'file:'+urllib.pathname2url(filename)
-   
-    try:
-        fp = open(URLorFile,'r')
-        cf = cif.ReadCif(fp)
-        fp.close()
-        return cf
-    except IOError:
-        return cif.ReadCif(URLorFile)
 
 if __name__ == '__main__':
     import GSASII

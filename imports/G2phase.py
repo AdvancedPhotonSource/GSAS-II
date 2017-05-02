@@ -20,17 +20,16 @@ import sys
 import os.path
 import math
 import random as ran
-import traceback
 import numpy as np
 import wx
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 R2pisq = 1./(2.*np.pi**2)
 
-class PDB_ReaderClass(G2IO.ImportPhase):
+class PDB_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a PDB file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -105,7 +104,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
                         SpGrp = dlg.GetValue()
                         E,SGData = G2spc.SpcGroup(SpGrp)
                     else:
-                        SGData = G2IO.SGData # P 1
+                        SGData = G2obj.P1SGData # P 1
                         self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
@@ -118,7 +117,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
                 if not SGData:
                     self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
                     self.warnings += "Change this in phase's General tab."
-                    SGData = G2IO.SGData # P 1
+                    SGData = G2obj.P1SGData # P 1
                 XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
                 XYZ = np.inner(AB,XYZ)
                 XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
@@ -154,13 +153,13 @@ class PDB_ReaderClass(G2IO.ImportPhase):
             raise self.ImportException("No space group (CRYST entry) found")
         if not cell:
             raise self.ImportException("No cell (CRYST entry) found")
-        Phase = G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell+[Volume,])
+        Phase = G2obj.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell+[Volume,])
         Phase['General']['Type'] = 'macromolecular'
         Phase['General']['AtomPtrs'] = [6,4,10,12]
         Phase['Atoms'] = Atoms
         return Phase
 
-class EXP_ReaderClass(G2IO.ImportPhase):
+class EXP_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from GSAS .EXP files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -245,7 +244,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                 SpGrp = EXPphase[key][:15].strip()
                 E,SGData = G2spc.SpcGroup(SpGrp)
                 if E:
-                    SGData = G2IO.SGData # P 1 -- unlikely to need this!
+                    SGData = G2obj.P1SGData # P 1 -- unlikely to need this!
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
 #            elif 'SPNFLP' in key:
@@ -329,7 +328,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
             raise self.ImportException("No cell angles found in phase")
         if not Atoms:
             raise self.ImportException("No atoms found in phase")
-        Phase = G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=abc+angles+[Volume,])
+        Phase = G2obj.SetNewPhase(Name=PhaseName,SGData=SGData,cell=abc+angles+[Volume,])
         general = Phase['General']
         general['Type'] = Ptype
         if general['Type'] =='macromolecular':
@@ -344,7 +343,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         Phase['Atoms'] = Atoms
         return Phase
 
-class JANA_ReaderClass(G2IO.ImportPhase):
+class JANA_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a JANA2006 file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -429,7 +428,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                         SpGrp = dlg.GetValue()
                         E,SGData = G2spc.SpcGroup(SpGrp)
                     else:
-                        SGData = G2IO.SGData # P 1
+                        SGData = G2obj.P1SGData # P 1
                         self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
@@ -449,7 +448,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         if not SGData:
             self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
             self.warnings += "Change this in phase's General tab."
-            SGData = G2IO.SGData # P 1
+            SGData = G2obj.P1SGData # P 1
         waveTypes = ['Fourier','Sawtooth','ZigZag',]
         filename2 = os.path.splitext(filename)[0]+'.m40'
         file2 = open(filename2,'Ur')
@@ -543,7 +542,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             raise self.ImportException("No space group (spcgroup entry) found")
         if not cell:
             raise self.ImportException("No cell found")
-        Phase = G2IO.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
+        Phase = G2obj.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
         Phase['General']['Type'] = Type
         Phase['General']['Modulated'] = True
         Phase['General']['Super'] = nqi

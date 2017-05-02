@@ -17,10 +17,10 @@ more than a single image.
 
 import os
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-class GE_ReaderClass(G2IO.ImportImage):
+class GE_ReaderClass(G2obj.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         
         The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
@@ -66,7 +66,7 @@ class GE_ReaderClass(G2IO.ImportImage):
         self.repeat = more
         return True
 
-class GEsum_ReaderClass(G2IO.ImportImage):
+class GEsum_ReaderClass(G2obj.ImportImage):
     '''Routine to read multiple GE images & sum them, typically from APS Sector 1.
         
         The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),

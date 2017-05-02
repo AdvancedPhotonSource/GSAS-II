@@ -15,7 +15,7 @@ provided to read from files containing F or F\ :sup:`2` values.
 '''
 import sys
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
@@ -42,7 +42,7 @@ def ColumnValidator(parent, filepointer,nCol=5):
     return True
 
 
-class HKLF_ReaderClass(G2IO.ImportStructFactor):
+class HKLF_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F, sig(F) reflections from a HKLF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -76,7 +76,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=None) # histogram type
         return True
 
-class HKLMF_ReaderClass(G2IO.ImportStructFactor):
+class HKLMF_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F, reflections from a REMOS HKLMF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -112,7 +112,7 @@ class HKLMF_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=None) # histogram type
         return True
 
-class SHELX4_ReaderClass(G2IO.ImportStructFactor):
+class SHELX4_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a Shelx HKLF 4 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -155,7 +155,7 @@ class SHELX4_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=None) # histogram type
         return True
             
-class SHELX5_ReaderClass(G2IO.ImportStructFactor):
+class SHELX5_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) twin/incommensurate reflections from a fixed format SHELX HKLF5 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -251,7 +251,7 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=None) # histogram type
         return True
 
-class SHELX6_ReaderClass(G2IO.ImportStructFactor):
+class SHELX6_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) twin/incommensurate reflections from a fixed format SHELX HKLF6 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -336,7 +336,7 @@ class SHELX6_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=None) # histogram type
         return True
 
-class M90_ReaderClass(G2IO.ImportStructFactor):
+class M90_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a JANA M90 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -401,7 +401,7 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
         self.UpdateParameters(Type='SXC',Wave=wave) # histogram type
         return True
             
-class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
+class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -466,7 +466,7 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
         return True
 
-class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
+class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a JANA2000 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
@@ -529,7 +529,7 @@ class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
         return True
 
-class ISIS_SXD_INT_ReaderClass(G2IO.ImportStructFactor):
+class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a ISIS int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus

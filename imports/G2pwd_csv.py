@@ -17,10 +17,10 @@ column-oriented variable
 
 import os.path as ospath
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-class csv_ReaderClass(G2IO.ImportPowderData):
+class csv_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference

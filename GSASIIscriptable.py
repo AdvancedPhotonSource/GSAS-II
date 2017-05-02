@@ -12,6 +12,9 @@
 import os.path as ospath
 import sys
 import cPickle
+import GSASIIpath
+import GSASIIobj as G2obj
+
 def LoadDictFromProjFile(ProjFile):
     ''''Read a GSAS-II project file and load items to dictionary
     :param: str ProjFile: GSAS-II project (name.gpx) full file name
@@ -91,6 +94,10 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
         cPickle.dump(data,file,1)
     file.close()
     print('project save successful')
+    
+def ImportPowder(filename,reader):
+    print 'importer'
+    
 
 def main():
     'Needs a doc string'

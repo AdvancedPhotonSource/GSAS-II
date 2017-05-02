@@ -17,10 +17,10 @@ Routine to read in powder data from a FullProf .dat file
 import sys
 import os.path as ospath
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1620 $")
-class xye_ReaderClass(G2IO.ImportPowderData):
+class xye_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a FullProf 1-10 column .dat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference

@@ -2,10 +2,10 @@
 ====================================
 
 Imports are implemented by deriving a class from 
-:class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`,
-:class:`GSASIIIO.ImportPowderData`
+:class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
+:class:`GSASIIobj.ImportPowderData`
 or :class:`GSASIIIO.ImportPowderData` (which are in turn 
-derived from :class:`GSASIIIO.ImportBaseclass`)
+derived from :class:`GSASIIobj.ImportBaseclass`)
 to implement import of 
 a phase, a single crystal or a powder dataset, respectively. 
 Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`, etc.) are used to
@@ -146,17 +146,16 @@ histograms or multiple images from a single file. Variable
 *support routines*
 _________________________
 
-Note that the base class (:class:`GSASIIIO.ImportBaseclass`) supplies two routines, 
-:meth:`~GSASIIIO.ImportBaseclass.BlockSelector` and 
-:meth:`~GSASIIIO.ImportBaseclass.MultipleBlockSelector` that are useful for 
-selecting amongst one or more datasets (and perhaps phases) for 
+Note that GSASIIIO supplies three routines, 
+:meth:`~GSASIIIO.BlockSelector` 
+:meth:`~GSASIIIO.MultipleBlockSelector` and 
+:meth:`~GSASIIIO.MultipleChoiceSelector` that are useful for 
+selecting amongst one or more datasets (and perhaps phases) or data items for 
 ``Reader()`` routines that may encounter more than one set of information
 in a file. 
 Likewise, when an operation will take some time to complete, 
-use :meth:`~GSASIIIO.ImportBaseclass.ShowBusy` and 
-:meth:`~GSASIIIO.ImportBaseclass.DoneBusy` to show the user
-that something is happening. 
-
+use :meth:`~GSASIIIO.ShowBusy` and 
+:meth:`~GSASIIIO.DoneBusy` to show the user that something is happening. 
 
 ContentsValidator()
 ~~~~~~~~~~~~~~~~~~~~
@@ -204,7 +203,7 @@ to give the user information on what went wrong during the reading.
 Phase Import Routines
 ----------------------------------------
 Phase import routines are classes derived from
-:class:`GSASIIIO.ImportPhase`.  
+:class:`GSASIIobj.ImportPhase`.  
 They must be found in files named `G2phase*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
 The distributed routines are:
@@ -230,7 +229,7 @@ The distributed routines are:
 Powder Data Import Routines
 ---------------------------------------------
 Powder data import routines are classes derived from
-:class:`GSASIIIO.ImportPowderData`. 
+:class:`GSASIIobj.ImportPowderData`. 
 They must be found in files named `G2pwd*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a
 ``Reader`` method. 
@@ -274,7 +273,7 @@ The distributed routines are:
 Single Crystal Data Import Routines
 -----------------------------------------------------
 Single crystal data import routines are classes derived from
-, :class:`GSASIIIO.ImportStructFactor`.
+, :class:`GSASIIobj.ImportStructFactor`.
 They must be found in files named `G2sfact*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
 The distributed routines are:
@@ -291,7 +290,7 @@ The distributed routines are:
 Small Angle Scattering Data Import Routines
 -----------------------------------------------------
 Small angle scattering data import routines are classes derived from
-, :class:`GSASIIIO.ImportSmallAngle`.
+, :class:`GSASIIobj.ImportSmallAngle`.
 They must be found in files named `G2sad*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a ``Reader`` method.
 The distributed routines are:
@@ -347,7 +346,7 @@ The distributed routines are:
 PDF Import Routines
 -----------------------------------------------------
 PDF import routines are classes derived from
-:class:`GSASIIIO.ImportPDFData`. 
+:class:`GSASIIobj.ImportPDFData`. 
 See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
 
 The distributed routines are:
@@ -358,7 +357,7 @@ The distributed routines are:
 Reflectometry Import Routines
 -----------------------------------------------------
 Reflectometry import routines are classes derived from
-:class:`GSASIIIO.ImportReflectometryData`. 
+:class:`GSASIIobj.ImportReflectometryData`. 
 See :ref:`Writing a Import Routine<Import_Routines>` for general information on importers. 
 
 The distributed routines are:

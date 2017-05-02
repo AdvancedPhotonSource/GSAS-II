@@ -148,23 +148,6 @@ def IsHistogramInAnyPhase(G2frame,histoName):
     else:
         return False
 
-def SetDefaultSample():
-    'Fills in default items for the Sample dictionary for Debye-Scherrer & SASD'
-    return {
-        'InstrName':'',
-        'ranId':ran.randint(0,sys.maxint),
-        'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
-        'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-        'Temperature':300.,'Pressure':0.1,'Time':0.0,
-        'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
-        'Gonio. radius':200.0,
-        'Omega':0.0,'Chi':0.0,'Phi':0.0,'Azimuth':0.0,
-#SASD items
-        'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
-        'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
-        'Trans':1.0,                            #measured transmission
-        'SlitLen':0.0,                          #Slit length - in Q(A-1)
-        }
 def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.

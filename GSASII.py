@@ -379,12 +379,12 @@ class GSASII(wx.Frame):
         :meth:`GSASII.OnImportSfact`, :meth:`GSASII.OnImportPowder`,
         :meth:`GSASII.OnImportSmallAngle` and :meth:'GSASII.OnImportReflectometry`
 
-        Uses reader_objects subclassed from :class:`GSASIIIO.ImportPhase`,
-        :class:`GSASIIIO.ImportStructFactor`,
-        :class:`GSASIIIO.ImportPowderData`,
-        :class:`GSASIIIO.ImportSmallAngleData`
-        :class:`GSASIIIO.ImportReflectometryData` or
-        :class:`GSASIIIO.ImportImage`.
+        Uses reader_objects subclassed from :class:`GSASIIobj.ImportPhase`,
+        :class:`GSASIIobj.ImportStructFactor`,
+        :class:`GSASIIobj.ImportPowderData`,
+        :class:`GSASIIobj.ImportSmallAngleData`
+        :class:`GSASIIobj.ImportReflectometryData` or
+        :class:`GSASIIobj.ImportImage`.
         If a specific reader is specified, only that method will be called,
         but if no reader is specified, every one that is potentially
         compatible (by file extension) will be tried on the file(s)
@@ -551,6 +551,9 @@ class GSASII(wx.Frame):
                             rd.errors += "\n  Unhandled read exception: "+str(detail)
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
                     if flag: # this read succeeded
+                        if rd.SciPy:        #was default read by scipy; needs 1 time fixes
+                            G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,filename)
+                            rd.SciPy = False
                         rd.readfilename = filename
                         if load2Tree:   #images only
                             if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
@@ -1121,7 +1124,7 @@ class GSASII(wx.Frame):
             choices = []
             for i in range(1,1+ibanks):
                 choices.append('Bank '+str(i))
-            bank = 1 + rd.BlockSelector(
+            bank = 1 + G2IO.BlockSelector(
                 choices, self,
                 title='Select an instrument parameter bank for '+
                 os.path.split(rd.powderentry[0])[1]+' BANK '+str(bank)+
@@ -1328,7 +1331,7 @@ class GSASII(wx.Frame):
     
                 for l in dI.defaultIparm_lbl:
                     choices.append('Defaults for '+l)
-                res = rd.BlockSelector(choices,ParentFrame=self,title=head,
+                res = G2IO.BlockSelector(choices,ParentFrame=self,title=head,
                     header='Select default inst parms',useCancel=True)
                 if res is None: return None
                 rd.instfile = ''
@@ -1708,7 +1711,7 @@ class GSASII(wx.Frame):
                     PWDRlist.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         # Initialize a base class reader
-        rd = G2IO.ImportPowderData(
+        rd = G2obj.ImportPowderData(
             extensionlist=tuple(),
             strictExtension=False,
             formatName = 'Simulate dataset',
@@ -3100,7 +3103,7 @@ class GSASII(wx.Frame):
                             dlg2.Destroy()
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
-                        Sample = G2pdG.SetDefaultSample()
+                        Sample = G2obj.SetDefaultSample()
                         Ymin = np.min(Ysum)
                         Ymax = np.max(Ysum)
                         valuesdict = {

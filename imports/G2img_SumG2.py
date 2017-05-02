@@ -12,13 +12,11 @@
 
 '''
 
-import sys
-import os
 import cPickle
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-class G2_ReaderClass(G2IO.ImportImage):
+class G2_ReaderClass(G2obj.ImportImage):
     '''Routine to read an image that has been pickled in Python. Images
     in this format are created by the "Sum image data" command. At least for
     now, only one image is permitted per file.
@@ -43,7 +41,6 @@ class G2_ReaderClass(G2IO.ImportImage):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         '''Read using cPickle
         '''
-        import scipy.misc
         Fp = open(filename,'rb')
         self.Comments,self.Data,self.Npix,self.Image = cPickle.load(Fp)
         Fp.close()

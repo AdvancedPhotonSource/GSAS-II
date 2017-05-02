@@ -17,14 +17,14 @@ two-theta or Q steps.
 
 import os.path as ospath
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 2738 $")
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npsind = lambda x: np.sin(np.pi*x/180.)
 fourpi = 4.0*np.pi
 
-class txt_XRayReaderClass(G2IO.ImportReflectometryData):
+class txt_XRayReaderClass(G2obj.ImportReflectometryData):
     'Routines to import X-ray q REFD data from a .xrfd or .xdat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -124,7 +124,7 @@ class txt_XRayReaderClass(G2IO.ImportReflectometryData):
 
         return True
 
-class txt_NeutronReaderClass(G2IO.ImportReflectometryData):
+class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
     'Routines to import neutron q REFD data from a .nrfd or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -224,7 +224,7 @@ class txt_NeutronReaderClass(G2IO.ImportReflectometryData):
 
         return True
 
-class txt_XRayThetaReaderClass(G2IO.ImportReflectometryData):
+class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
     'Routines to import X-ray theta REFD data from a .xtrfd or .xtdat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference

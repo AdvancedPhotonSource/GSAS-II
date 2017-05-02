@@ -15,12 +15,13 @@ Routine to read in powder data from a CIF.
 '''
 import numpy as np
 import os.path
+import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
-class CIFpwdReader(G2IO.ImportPowderData):
+class CIFpwdReader(G2obj.ImportPowderData):
     'Routines to import powder data from a CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -92,10 +93,8 @@ class CIFpwdReader(G2IO.ImportPowderData):
             print 'debug: Reuse previously parsed CIF'
             selections = rdbuffer.get('selections')
         if cf is None:
-            self.ShowBusy() # this can take a while
             print "Starting parse of CIF file"
-            cf = G2IO.ReadCIF(filename)
-            self.DoneBusy()
+            cf = G2obj.ReadCIF(filename)
             print "CIF file parsed"
         # scan all blocks for sets of data
         if choicelist is None:
@@ -178,7 +177,7 @@ class CIFpwdReader(G2IO.ImportPowderData):
                 choices.append(
                     'Block '+str(blk)+', '+str(l)+' points. X='+sx+' & Y='+sy
                     )
-            selections = self.MultipleBlockSelector(
+            selections = G2IO.MultipleBlockSelector(
                 choices,
                 ParentFrame=ParentFrame,
                 title='Select dataset(s) to read from the list below',
@@ -217,14 +216,13 @@ class CIFpwdReader(G2IO.ImportPowderData):
             choices.append(such)
             chlbls.append('Divide intensities by data item')
             choices.append(['none']+modch)
-            res = self.MultipleChoicesDialog(choices,chlbls)
+            res = G2IO.MultipleChoicesSelector(choices,chlbls)
             if not res:
                 self.errors = "Abort: data items not selected"
                 return False
             xi,yi,sui,modi = res
 
         # now read in the values
-        self.ShowBusy() # this can also take a while
         # x-values
         xcf = xch[xi]
         if type(xcf) is tuple:
@@ -299,7 +297,6 @@ class CIFpwdReader(G2IO.ImportPowderData):
             y /= np.array(vl)
             w /= np.array(vl)
         N = len(x)
-        self.DoneBusy()
         print "CIF file, read from selected block"
 
         self.errors = "Error while storing read values"

@@ -15,15 +15,14 @@ two-theta or Q steps.
 
 '''
 
-import sys
 import os.path as ospath
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 
-class txt_XRayReaderClass(G2IO.ImportSmallAngleData):
+class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
     'Routines to import X-ray q SAXD data from a .xsad or .xdat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -113,7 +112,7 @@ class txt_XRayReaderClass(G2IO.ImportSmallAngleData):
 
         return True
 
-class txt_nmXRayReaderClass(G2IO.ImportSmallAngleData):
+class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
     'Routines to import X-ray q SAXD data from a .xsad or .xdat file, q in nm-1'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -203,7 +202,7 @@ class txt_nmXRayReaderClass(G2IO.ImportSmallAngleData):
 
         return True
 
-class txt_CWNeutronReaderClass(G2IO.ImportSmallAngleData):
+class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
     'Routines to import neutron CW q SAXD data from a .nsad or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -295,7 +294,7 @@ class txt_CWNeutronReaderClass(G2IO.ImportSmallAngleData):
 
         return True
 
-class txt_nmCWNeutronReaderClass(G2IO.ImportSmallAngleData):
+class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
     'Routines to import neutron CW q in nm-1 SAXD data from a .nsad or .ndat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference

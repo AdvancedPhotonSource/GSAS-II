@@ -13,11 +13,11 @@
 '''
 
 import time
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 import unpack_cbf as cbf
 GSASIIpath.SetVersionNumber("$Revision: 2133 $")
-class CBF_ReaderClass(G2IO.ImportImage):
+class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
     This is used by Pilatus. 
     '''

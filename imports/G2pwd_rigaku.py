@@ -6,13 +6,13 @@
 # $URL: $
 # $Id: $
 ########### SVN repository information ###################
-import sys
+
 import os
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
-class Rigaku_ReaderClass(G2IO.ImportPowderData):
+class Rigaku_ReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
     then 1 or 11(!) intensity values on the line. The example file is proceeded
     with 10 of blank lines, but I have assumed they could be any sort of text.

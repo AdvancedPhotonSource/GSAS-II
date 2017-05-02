@@ -17,13 +17,13 @@ current project.
 import sys
 import numpy as np
 import random as ran
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1812 $")
 
-class PhaseReaderClass(G2IO.ImportPhase):
+class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .INS file and pulls out a selected phase'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -86,7 +86,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
                     float(angles[0]),float(angles[1]),float(angles[2])]
                 Volume = G2lat.calc_V(G2lat.cell2A(cell))
                 AA,AB = G2lat.cell2AB(cell)
-                SGData = G2IO.SGData # P 1
+                SGData = G2obj.P1SGData # P 1
                 self.warnings += '\nThe space group is not given in an ins file and has been set to "P 1".'
                 self.warnings += "\nChange this in phase's General tab; NB: it might be in the Phase name."
             elif S[:4].upper() in 'SFAC':
@@ -138,7 +138,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
             line += 1
         file.close()
         self.errors = 'Error after read complete'
-        Phase = G2IO.SetNewPhase(Name='ShelX phase',SGData=SGData,cell=cell+[Volume,])
+        Phase = G2obj.SetNewPhase(Name='ShelX phase',SGData=SGData,cell=cell+[Volume,])
         Phase['General']['Name'] = Title
         Phase['General']['Type'] = 'nuclear'
         Phase['General']['AtomPtrs'] = [3,1,7,9]

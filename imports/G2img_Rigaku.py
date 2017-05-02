@@ -12,12 +12,12 @@
 
 '''
 
-import sys
 import os
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
+import numpy as np
 GSASIIpath.SetVersionNumber("$Revision$")
-class Rigaku_ReaderClass(G2IO.ImportImage):
+class Rigaku_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Rigaku R-Axis IV image file.
     '''
     def __init__(self):
@@ -38,12 +38,39 @@ class Rigaku_ReaderClass(G2IO.ImportImage):
         return False # not valid size
         
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read using Bob's routine :func:`GSASIIIO.GetRigaku`
-        (to be moved to this file, eventually)
-        '''
-
-        self.Comments,self.Data,self.Npix,self.Image = G2IO.GetRigaku(filename)
+        self.Comments,self.Data,self.Npix,self.Image = GetRigaku(filename)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename)
         return True
+
+def GetRigaku(filename,imageOnly=False):
+    'Read Rigaku R-Axis IV image file'
+    import array as ar
+    if not imageOnly:
+        print 'Read Rigaku R-Axis IV file: ',filename    
+    File = open(filename,'rb')
+    fileSize = os.stat(filename).st_size
+    Npix = (fileSize-6000)/2
+    File.read(6000)
+    head = ['Rigaku R-Axis IV detector data',]
+    image = np.array(ar.array('H',File.read(fileSize-6000)),dtype=np.int32)
+    print fileSize,image.shape
+    print head
+    if Npix == 9000000:
+        sizexy = [3000,3000]
+        pixSize = [100.,100.]        
+    elif Npix == 2250000:
+        sizexy = [1500,1500]
+        pixSize = [200.,200.]
+    else:
+        sizexy = [6000,6000]
+        pixSize = [50.,50.] 
+    image = np.reshape(image,(sizexy[1],sizexy[0]))        
+    data = {'pixelSize':pixSize,'wavelength':1.5428,'distance':250.0,'center':[150.,150.],'size':sizexy}  
+    File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,Npix,image
+    

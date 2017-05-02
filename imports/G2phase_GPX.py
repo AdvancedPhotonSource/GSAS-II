@@ -17,12 +17,13 @@ current project.
 import sys
 import cPickle
 import random as ran
+import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
-class PhaseReaderClass(G2IO.ImportPhase):
+class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .GPX file and pulls out a selected phase'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
@@ -55,7 +56,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
         elif len(phasenames) == 1: # one block, no choices
             selblk = 0
         else:                       # choose from options                
-            selblk = self.PhaseSelector(
+            selblk = G2IO.PhaseSelector(
                 phasenames,
                 ParentFrame=ParentFrame,
                 title= 'Select a phase from the list below',

@@ -19,13 +19,13 @@ sort to the top of the image formats and thus show up first in the menu.
 '''
 
 import struct as st
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
 import time
 DEBUG = False
 GSASIIpath.SetVersionNumber("$Revision$")
-class TIF_ReaderClass(G2IO.ImportImage):
+class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
     for files that can be identified from known instruments and will
     correct for slightly incorrect TIF usage. If that routine fails,
@@ -57,7 +57,6 @@ class TIF_ReaderClass(G2IO.ImportImage):
         use :func:`scipy.misc.imread` and give the user a chance to
         edit the likely wrong default image parameters. 
         '''
-        
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:
             print("GetTifData failed to read "+str(filename)+" Trying SciPy")
@@ -65,11 +64,11 @@ class TIF_ReaderClass(G2IO.ImportImage):
             self.Image = scipy.misc.imread(filename,flatten=True)
             self.Npix = self.Image.size
             if ParentFrame:
+                self.SciPy = True
                 self.Comments = ['no metadata']
                 self.Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
                 self.Data['size'] = list(self.Image.shape)
                 self.Data['center'] = [int(i/2) for i in self.Image.shape]
-                G2IO.EditImageParms(ParentFrame,self.Data,self.Comments,self.Image,filename)
         if self.Npix == 0:
             return False
         self.LoadImage(ParentFrame,filename)

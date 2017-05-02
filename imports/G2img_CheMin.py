@@ -16,12 +16,10 @@ tif files, so default parameters are for that.
 
 '''
 
-import sys
-import os
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-class png_ReaderClass(G2IO.ImportImage):
+class png_ReaderClass(G2obj.ImportImage):
     '''Reads standard PNG images; parameters are set to those of the
     Mars Rover (CheMin) diffractometer.
     '''
@@ -42,16 +40,16 @@ class png_ReaderClass(G2IO.ImportImage):
         '''Reads using standard scipy PNG reader
         '''
         import scipy.misc
-        self.Image = scipy.misc.imread(filename,flatten=True)
+        self.Image = scipy.misc.imread(filename,flatten=True).T
         self.Npix = self.Image.size
         if self.Npix == 0:
             return False
         if ParentFrame:
+            self.SciPy = True
             self.Comments = ['no metadata']
             pixy = list(self.Image.shape)
             sizexy = [40,40]
             self.Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
-            self.Data['center'] = [pixy[0]*sizexy[0]/1000,pixy[1]*sizexy[1]/2000]
-            G2IO.EditImageParms(ParentFrame,self.Data,self.Comments,self.Image,filename)
+            self.Data['center'] = [pixy[0]*sizexy[0]/1000.,pixy[1]*sizexy[1]/2000.]
         self.LoadImage(ParentFrame,filename)
         return True

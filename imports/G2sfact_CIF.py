@@ -14,15 +14,15 @@ Read structure factors from a CIF reflection table.
 '''
 # routines to read in structure factors from a CIF
 # 
-import sys
 import numpy as np
 import os.path
+import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
 
-class CIFhklReader(G2IO.ImportStructFactor):
+class CIFhklReader(G2obj.ImportStructFactor):
     'Routines to import Phase information from a CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -93,9 +93,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             cf = rdbuffer.get('lastcif')
             print 'Reusing previously parsed CIF'
         if cf is None:
-            self.ShowBusy() # this can take a while
-            cf = G2IO.ReadCIF(filename)
-            self.DoneBusy()
+            cf = G2obj.ReadCIF(filename)
         # scan blocks for reflections
         self.errors = 'Error during scan of blocks for datasets'
         blklist = []
@@ -161,7 +159,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 self.repeatcount += 1
                 if self.repeatcount >= len(blklist): self.repeat = False
             else:
-                selblk = self.BlockSelector(
+                selblk = G2IO.BlockSelector(
                     choice,
                     ParentFrame=ParentFrame,
                     title='Select a dataset from one the CIF data_ blocks below',

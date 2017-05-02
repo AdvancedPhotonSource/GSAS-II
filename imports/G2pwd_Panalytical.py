@@ -6,14 +6,14 @@
 # $URL: $
 # $Id: $
 ########### SVN repository information ###################
-import os
+
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
-class Panalytical_ReaderClass(G2IO.ImportPowderData):
+class Panalytical_ReaderClass(G2obj.ImportPowderData):
     '''Routines to import powder data from a Pananalytical.xrdm (xml) file. 
     
     '''

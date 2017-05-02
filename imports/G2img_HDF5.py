@@ -18,11 +18,11 @@ try:
     import h5py
 except ImportError:
     h5py = None
-import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
-class HDF5_Reader(G2IO.ImportImage):
+class HDF5_Reader(G2obj.ImportImage):
     '''Routine to read a HD5 image, typically from APS Sector 6.
     B. Frosik/SDM.
     '''

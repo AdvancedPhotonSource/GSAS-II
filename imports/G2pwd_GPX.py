@@ -12,14 +12,14 @@
 Routine to import powder data from GSAS-II .gpx files
 
 '''
-import sys
 import cPickle
 import numpy as np
+import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
-class GSAS2_ReaderClass(G2IO.ImportPowderData):
+class GSAS2_ReaderClass(G2obj.ImportPowderData):
     """Routines to import powder data from a GSAS-II file
     This should work to pull data out from a out of date .GPX file
     as long as the details of the histogram data itself don't change
@@ -81,7 +81,7 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             self.repeatcount += 1
             if self.repeatcount >= len(selections): self.repeat = False
         else:                       # choose from options                
-            selections = self.MultipleBlockSelector(
+            selections = G2IO.MultipleBlockSelector(
                 histnames,
                 ParentFrame=ParentFrame,
                 title='Select histogram(s) to read from the list below',

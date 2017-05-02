@@ -32,7 +32,6 @@ import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
-import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
@@ -1201,7 +1200,7 @@ def MultipleChoicesSelector(choicelist, headinglist, ParentFrame=None, **kwargs)
     dlg.Destroy()
     return result
 
-def PhaseSelector(self, ChoiceList, ParentFrame=None,
+def PhaseSelector(ChoiceList, ParentFrame=None,
     title='Select a phase', size=None,header='Phase Selector'):
     ''' Provide a wx dialog to select a phase if the file contains more
     than one phase
@@ -1209,13 +1208,6 @@ def PhaseSelector(self, ChoiceList, ParentFrame=None,
     return BlockSelector(ChoiceList,ParentFrame,title,
         size,header)
 
-def ShowBusy():
-    wx.BeginBusyCursor()
-#        wx.Yield() # make it happen now!
-
-def DoneBusy():
-    wx.EndBusyCursor()
-    wx.Yield() # make it happen now!
 ######################################################################
 def striphist(var,insChar=''):
     'strip a histogram number from a var name'

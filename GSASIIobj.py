@@ -863,6 +863,7 @@ import imp
 import random as ran
 import sys
 import os.path as ospath
+import cPickle
 import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
@@ -979,6 +980,26 @@ the same values as :attr:`VarDesc` except that keys have been compiled as
 regular expressions. Initialized in :func:`CompileVarDesc`.
 '''
 P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
+
+def GetPhaseNames(fl):
+    ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
+    NB: there is another one of these in GSASIIstrIO.py that uses the gpx filename
+
+    :param file fl: opened .gpx file
+    :return: list of phase names
+    '''
+    PhaseNames = []
+    while True:
+        try:
+            data = cPickle.load(fl)
+        except EOFError:
+            break
+        datum = data[0]
+        if 'Phases' == datum[0]:
+            for datus in data[1:]:
+                PhaseNames.append(datus[0])
+    fl.seek(0)          #reposition file
+    return PhaseNames
 
 def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
     '''Create a new phase dict with default values for various parameters

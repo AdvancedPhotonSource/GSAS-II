@@ -153,9 +153,6 @@ Note that GSASIIIO supplies three routines,
 selecting amongst one or more datasets (and perhaps phases) or data items for 
 ``Reader()`` routines that may encounter more than one set of information
 in a file. 
-Likewise, when an operation will take some time to complete, 
-use :meth:`~GSASIIIO.ShowBusy` and 
-:meth:`~GSASIIIO.DoneBusy` to show the user that something is happening. 
 
 ContentsValidator()
 ~~~~~~~~~~~~~~~~~~~~

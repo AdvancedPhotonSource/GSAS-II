@@ -635,6 +635,8 @@ class GSASII(wx.Frame):
             for h in usedHistograms[p]:
                 if h.startswith('HKLF ') and h not in usedHKLFhists:
                     usedHKLFhists.append(h)
+                    
+                    
         rdlist = self.OnImportGeneric(reqrdr,self.ImportPhaseReaderlist,
             'phase',usedRanIdList=phaseRIdList)
         if len(rdlist) == 0: return

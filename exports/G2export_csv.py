@@ -96,7 +96,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
             self.Write(line)
 
         if mode == 'w':
-            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to file '+self.fullpath)
         self.CloseFile()
     
     def Exporter(self,event=None):
@@ -153,7 +153,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
                         line += G2mth.ValEsd(val,-abs(sig))
                         line += ","
                 self.Write(line)
-            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to file '+self.fullpath)
         self.CloseFile()
 
 class ExportPowderCSV(G2IO.ExportBaseclass):
@@ -209,7 +209,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             # create an instrument parameter file
             self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
-            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
+            print('Histogram '+hist+' written to file '+self.fullpath)
 
 class ExportMultiPowderCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file for a stack of powder data sets suitable for display 
@@ -252,7 +252,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
                 csvData.append(histblk['Data'][0])
             digitList += [(13,3),]
             csvData.append(histblk['Data'][1])
-            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
+            print('Histogram '+hist+' written to file '+self.fullpath)
         self.OpenFile()
         WriteList(self,headList)
         for vallist in np.array(csvData).T:
@@ -337,7 +337,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         FWHM = G2pwd.getgamFW(g,s)
                         self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
         self.CloseFile()
-        print(str(hist)+'reflections written to file '+str(self.fullpath))
+        print(hist+'reflections written to file '+self.fullpath)
 
 class ExportSingleCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
@@ -383,7 +383,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
                     h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
                     self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.fullname))                        
+        print(hist+' written to file '+self.fullname)                        
 
 class ExportStrainCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
@@ -426,4 +426,4 @@ class ExportStrainCSV(G2IO.ExportBaseclass):
             for dat in ring.T:
                 self.Write(fmt2.format(dat[1],dat[0],dat[2]))            
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.fullpath))
+        print(hist+' written to file '+self.fullpath)

@@ -113,7 +113,7 @@ class ExportPhaseText(G2IO.ExportBaseclass):
                     for val,sig in td:
                         vals.append(G2mth.ValEsd(val,sig))
                     self.Write(fmt.format(*vals))
-            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to file '+self.fullpath)
         self.CloseFile()
 
 class ExportPowderText(G2IO.ExportBaseclass):
@@ -163,7 +163,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
             ): return 
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         self.Writer(hist)
-        print(str(hist)+' written to file '+str(self.fullpath))
+        print(hist+' written to file '+self.fullpath)
         
 class ExportPowderReflText(G2IO.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set
@@ -243,7 +243,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                         self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,   \
                             s,g,FWHM,prfo))
         self.CloseFile()
-        print(str(hist)+'reflections written to file '+str(self.fullpath))                        
+        print(hist+'reflections written to file '+self.fullpath)                        
 
 class ExportSingleText(G2IO.ExportBaseclass):
     '''Used to create a text file with single crystal reflection data
@@ -286,5 +286,5 @@ class ExportSingleText(G2IO.ExportBaseclass):
             if twin > 0:
                 self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,twin))
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.fullpath))                        
+        print(hist+' written to file '+self.fullpath)                        
 

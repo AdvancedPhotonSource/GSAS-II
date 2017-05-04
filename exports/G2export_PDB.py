@@ -133,7 +133,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
             if General['Type'] != 'macromolecular':
-                print 'phase '+str(phasenam)+' not macromolecular, skipping'
+                print 'phase '+phasenam+' not macromolecular, skipping'
                 continue
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
@@ -196,7 +196,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             self.Write(fmt.format(*vals))
             self.Write('END')
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to PDB file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to PDB file '+self.fullpath)
 
 class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
     '''Used to create a Cartesian XYZ file for a phase
@@ -231,7 +231,7 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
             i = self.Phases[phasenam]['pId']
             Atoms = phasedict['Atoms']
             if not len(Atoms):
-                print('**** ERROR - Phase '+str(phasenam)+' has no atoms! ****')
+                print('**** ERROR - Phase '+phasenam+' has no atoms! ****')
                 continue
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
@@ -246,5 +246,5 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 self.Write(fmt.format(atom[ct],*xyz))
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to XYZ file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to XYZ file '+self.fullpath)
     

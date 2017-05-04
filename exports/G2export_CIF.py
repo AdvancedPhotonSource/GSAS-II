@@ -2177,7 +2177,7 @@ def PickleCIFdict(fil):
         fp.close()
     except IOError:
         dictobj = cif.CifDic(fil)
-    if DEBUG: print('loaded '+str(fil))
+    if DEBUG: print('loaded '+fil)
     for item in dictobj.keys():
         cifdic[item] = {}
         for j in (
@@ -2192,9 +2192,9 @@ def PickleCIFdict(fil):
         fp = open(fil,'w')
         cPickle.dump(cifdic,fp)
         fp.close()
-        if DEBUG: print('wrote '+str(fil))
+        if DEBUG: print('wrote '+fil)
     except:
-        print ('Unable to write '+str(fil))
+        print ('Unable to write '+fil)
     return cifdic
 
 def LoadCIFdic():
@@ -2215,7 +2215,7 @@ def LoadCIFdic():
             fp = open(fil,'r')
             try:
                 cifdic.update(cPickle.load(fp))
-                if DEBUG: print('reloaded '+str(fil))
+                if DEBUG: print('reloaded '+fil)
                 break
             finally:
                 fp.close()

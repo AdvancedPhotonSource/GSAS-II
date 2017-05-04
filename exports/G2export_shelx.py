@@ -120,4 +120,4 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
                 self.Write(l)
             self.Write('END')
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+            print('Phase '+phasenam+' written to file '+self.fullpath)

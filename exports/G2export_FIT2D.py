@@ -69,7 +69,7 @@ class ExportPowderCHI(G2IO.ExportBaseclass):
             # create an instrument parameter file
             self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
-            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
+            print('Histogram '+hist+' written to file '+self.fullpath)
 
 class ExportPowderQCHI(G2IO.ExportBaseclass):
     '''Used to create a q-binned CHI file for a powder data set
@@ -118,4 +118,4 @@ class ExportPowderQCHI(G2IO.ExportBaseclass):
             # create an instrument parameter file
             self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
-            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
+            print('Histogram '+hist+' written to file '+self.fullpath)

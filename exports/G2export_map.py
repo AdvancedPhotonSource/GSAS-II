@@ -58,7 +58,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             rho = phasedict['General']['Map'].get('rho',[])
             if not len(rho):
-                print "There is no map for phase "+str(phasenam)
+                print "There is no map for phase "+phasenam
                 continue
             if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
                 i = self.Phases[phasenam]['pId']
@@ -117,7 +117,7 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
             rho = mapData.get('rho',[])
             
             if not len(rho):
-                print "There is no map for phase "+str(phasenam)
+                print "There is no map for phase "+phasenam
                 continue
             if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
                 i = self.Phases[phasenam]['pId']

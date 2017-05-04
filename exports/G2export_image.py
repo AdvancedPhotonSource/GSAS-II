@@ -19,7 +19,6 @@ import scipy.misc
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIImath as G2mth
 
 class ExportImagePNG(G2IO.ExportBaseclass):
     '''Used to create a PNG file for a GSAS-II image
@@ -52,5 +51,5 @@ class ExportImagePNG(G2IO.ExportBaseclass):
             imgFile = self.Histograms[i].get('Data',(None,None))
             Comments,Data,Npix,Image = G2IO.GetImageData(self.G2frame,imgFile)
             scipy.misc.imsave(filename,Image)
-            print('Image '+str(imgFile)+' written to file '+str(filename))
+            print('Image '+imgFile+' written to file '+filename)
             

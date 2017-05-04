@@ -12,6 +12,7 @@
 import os.path as ospath
 import sys
 import cPickle
+import imp
 import GSASIIpath
 import GSASIIobj as G2obj
 
@@ -95,8 +96,18 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     file.close()
     print('project save successful')
     
-def ImportPowder(filename,reader):
-    print 'importer'
+def ImportPowder(reader,filename,bankNo=0):
+    rdfile,rdpath,descr = imp.find_module(reader)
+    rdclass = imp.load_module(reader,rdfile,rdpath,descr)
+    rd = rdclass.GSAS_ReaderClass()    
+    fl = open(filename)
+    if rd.ContentsValidator(fl):
+        fl.seek(0)
+        rd.selections = [bankNo,]
+        if rd.Reader(filename,fl):
+            return rd
+    print rd.errors
+    return None
     
 
 def main():

@@ -16,7 +16,6 @@ that are defined for GSAS.
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
@@ -31,11 +30,14 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             )
         self.clockWd = {}
         self.TimeMap = {}
+        self.dnames = []
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filepointer):
-        'Validate by checking to see if the file has BANK lines'
+        'Validrate by checking to see if the file has BANK lines & count them'
         #print 'ContentsValidator: '+self.formatName
+        nBanks= 0
+        fname = ospath.basename(filepointer.name)
         for i,line in enumerate(filepointer):
             self.GSAS = True
             if i==0: # first line is always a comment
@@ -45,17 +47,22 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 continue
             if line[0] == '#': continue
             if line[:4] == 'BANK':
-                return True
+                self.dnames.append(fname+' '+''.join(line.split()[:2]))
+                nBanks += 1
+                continue
             elif line[:7] == 'Monitor': continue
             elif line [:8] == 'TIME_MAP':          #LANSCE TOF data
-                return True
-            else:
-                self.errors = 'Unexpected information in line: '+str(i+1)
-                if all([ord(c) < 128 and ord(c) != 0 for c in str(line)]): # show only if ASCII
-                    self.errors += '  '+str(line)
-                else: 
-                    self.errors += '  (binary)'
-                return False
+                continue
+#            else:
+#                if not all(c in ' 0123456789.eE+-' for c in line[:-1]):
+#                    self.errors = 'Unexpected information in line: '+str(i+1)
+#                    self.errors += '  '+str(line)
+#                    return False
+        if nBanks:
+            if not len(self.selections):
+                self.selections = range(nBanks)
+            return True
+        self.errors = 'No BANK records found'
         return False # no bank records
 
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
@@ -321,16 +328,6 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             self.repeatcount += 1
             if self.repeatcount >= len(self.selections): self.repeat = False
         else:                       # choose from options
-            if not len(self.selections):    #use previous selection, otherwise...
-                self.selections = G2IO.MultipleBlockSelector(
-                    Banks,
-                    ParentFrame=ParentFrame,
-                    title='Select Bank(s) to read from the list below',
-                    size=(600,300),
-                    header='Dataset Selector')
-            if len(self.selections) == 0:
-                self.errors = 'No banks selected'
-                return False
             selblk = self.selections[0] # select first in list
             if len(self.selections) > 1: # prepare to loop through again
                 self.repeat = True

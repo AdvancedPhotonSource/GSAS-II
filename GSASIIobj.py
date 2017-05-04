@@ -1811,7 +1811,6 @@ class ImportBaseclass(object):
         self.warnings = ''
         self.SciPy = False          #image reader needed scipy
         self.repeat = False
-        self.repeat = False
         self.repeatcount = 0
         self.readfilename = '?'
 

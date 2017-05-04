@@ -32,6 +32,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIIO as G2IO
+import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
@@ -3157,7 +3158,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 sub = G2frame.PatternTree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(controls[13])
                 G2frame.PatternTree.SetItemPyData(sub, \
-                    G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:],Super=ssopt))
+                    G2obj.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:],Super=ssopt))
                 Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
         finally:
             dlg.Destroy()

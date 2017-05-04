@@ -15,7 +15,6 @@ Routine to import powder data from GSAS-II .gpx files
 import cPickle
 import numpy as np
 import GSASIIobj as G2obj
-import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
@@ -39,7 +38,22 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
         except:
             self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
             return False
-        return True
+        filepointer.seek(0)
+        nhist = 0
+        while True:
+            try:
+                data = cPickle.load(filepointer)
+            except EOFError:
+                break
+            if data[0][0][:4] == 'PWDR':
+                nhist += 1
+                self.dnames.append(data[0][0])
+        if nhist:
+            if not len(self.selections):    #no PWDR entries
+                self.selections = range(nhist)
+                return True
+        self.errors = 'No powder entries found'
+        return False
 
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         '''Read a dataset from a .GPX file.
@@ -50,7 +64,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         # reload previously saved values
         if self.repeat and rdbuffer is not None:
-            selections = rdbuffer.get('selections')
+            self.selections = rdbuffer.get('selections')
             poslist = rdbuffer.get('poslist')
             histnames = rdbuffer.get('histnames')
         else:
@@ -74,30 +88,21 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             return False            # no blocks with powder data
         elif len(histnames) == 1: # one block, no choices
             selblk = 0
-        elif self.repeat and selections is not None:
+        elif self.repeat and self.selections is not None:
             # we were called to repeat the read
             #print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
-            selblk = selections[self.repeatcount]
+            selblk = self.selections[self.repeatcount]
             self.repeatcount += 1
-            if self.repeatcount >= len(selections): self.repeat = False
+            if self.repeatcount >= len(self.selections): self.repeat = False
         else:                       # choose from options                
-            selections = G2IO.MultipleBlockSelector(
-                histnames,
-                ParentFrame=ParentFrame,
-                title='Select histogram(s) to read from the list below',
-                size=(600,250),
-                header='Dataset Selector')
-            if len(selections) == 0:
-                self.errors = 'No histogram selected'
-                return False
-            selblk = selections[0] # select first in list
-            if len(selections) > 1: # prepare to loop through again
+            selblk = self.selections[0] # select first in list
+            if len(self.selections) > 1: # prepare to loop through again
                 self.repeat = True
                 self.repeatcount = 1
                 if rdbuffer is not None:
                     rdbuffer['poslist'] = poslist
                     rdbuffer['histnames'] = histnames
-                    rdbuffer['selections'] = selections
+                    rdbuffer['selections'] = self.selections
 
         fl = open(filename,'rb')
         fl.seek(poslist[selblk])

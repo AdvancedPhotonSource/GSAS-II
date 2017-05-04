@@ -519,7 +519,7 @@ class GSASII(wx.Frame):
             for rd in primaryReaders+secondaryReaders:
                 if Start:   #clear old bank selections to allow new ones to be selected by user
                     rd.selections = []
-                    Start = False
+                    rd.dnames = []
                 rd.ReInitialize() # purge anything from a previous read
                 fp.seek(0)  # rewind
                 rd.errors = "" # clear out any old errors
@@ -527,7 +527,13 @@ class GSASII(wx.Frame):
                     errorReport += "\n  "+rd.formatName + ' validator error'
                     if rd.errors: 
                         errorReport += ': '+rd.errors
-                    continue 
+                    continue
+                if len(rd.selections)>1 and Start:
+                    dlg = G2G.G2MultiChoiceDialog(self,'Dataset Selector','Select data to read from the list below',rd.dnames)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        rd.selections = dlg.GetSelections()
+                    Start = False
+                    dlg.Destroy()
                 repeat = True
                 rdbuffer = {} # create temporary storage for file reader
                 block = 0
@@ -561,9 +567,6 @@ class GSASII(wx.Frame):
                             else:
                                 rd.Data['ImageTag'] = rd.repeatcount
                             rd.Data['formatName'] = rd.formatName
-#                            print rd.readfilename
-#                            print rd.sumfile
-#                            print rd.Image.shape,rd.Image.dtype
                             if rd.sumfile:
                                 rd.readfilename = rd.sumfile
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
@@ -702,7 +705,7 @@ class GSASII(wx.Frame):
             return          #no histograms
         header = 'Select histogram(s) to add to new phase(s):'
         for phaseName in newPhaseList:
-            header += '\n  '+str(phaseName)
+            header += '\n  '+phaseName
 
         notOK = True
         while notOK:
@@ -1091,8 +1094,8 @@ class GSASII(wx.Frame):
         :param int databanks: the number of banks in the raw data file.
           If the number of banks in the data and instrument parameter files
           agree, then the sets of banks are assumed to match up and bank
-          is used to select the instrument parameter file. If not, the user
-          is asked to make a selection.
+          is used to select the instrument parameter file. If not and not TOF, 
+          the user is asked to make a selection.
         :param obj rd: the raw data (histogram) data object. This
           sets rd.instbank.
 
@@ -1117,12 +1120,9 @@ class GSASII(wx.Frame):
             rd.instbank = 1
             rd.powderentry[2] = 1
             return Iparm
-#        if 'PNT' in hType:  # not sure what this is about
-#            rd.instbank = bank
-#        elif ibanks != databanks or bank is None:
-        if (ibanks != databanks and databanks != 1) or bank is None:
-            # number of banks in data and prm file not not agree, need a
-            # choice from a human here
+        if 'PNT' in Iparm['INS   HTYPE ']:      #allow mismatch between banks in data  iparm file for TOF
+            rd.instbank = bank
+        elif ibanks != databanks or bank is None:
             choices = []
             for i in range(1,1+ibanks):
                 choices.append('Bank '+str(i))
@@ -1189,7 +1189,7 @@ class GSASII(wx.Frame):
                     wave1 = G2IO.sfloat(s[:10])
                     wave2 = G2IO.sfloat(s[10:20])
                 v = (wave1,wave2,
-                     G2IO.sfloat(s[20:30]),G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
+                     G2IO.sfloat(s[20:30])/100.,G2IO.sfloat(s[55:65]),G2IO.sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
                 if not v[1]:
                     names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
                     v = (v[0],v[2],v[4])
@@ -1434,9 +1434,8 @@ class GSASII(wx.Frame):
                     rd.instmsg = instParmList   #an error message
                     return GetDefaultParms(self,rd)
             else:
-                self.ErrorDialog('Open Error',
-                                 u'Error opening instrument parameter file '
-                                +'{} requested by file '.format(instfile,filename))
+                self.ErrorDialog('Open Error',u'Error opening instrument parameter file '   \
+                    +'{} requested by file '.format(instfile,filename))
         #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
@@ -1524,16 +1523,16 @@ class GSASII(wx.Frame):
         lastIparmfile = ''
         lastdatafile = ''
         newHistList = []
-        lastVals = []
+#        lastVals = []
         self.EnablePlot = False
         for rd in rdlist:
             if 'Instrument Parameters' in rd.pwdparms:
                 Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
             else:
                 # get instrument parameters for each dataset, unless already set
-                if lastIparmfile:  # is this histogram like previous?
-                    if lastVals != (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0])):
-                        lastIparmfile = ''
+#                if lastIparmfile:  # is this histogram like previous?
+#                    if lastVals != (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0])):
+#                        lastIparmfile = ''
                 Iparms = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
                 if not Iparms:  #may have bailed out
                     Id = 0
@@ -1541,7 +1540,7 @@ class GSASII(wx.Frame):
                 Iparm1,Iparm2 = Iparms
                 if rd.repeat_instparm: 
                     lastIparmfile = rd.instfile
-                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
+#                    lastVals = (rd.powderdata[0].min(),rd.powderdata[0].max(),len(rd.powderdata[0]))
                 # override any keys in read instrument parameters with ones set in import
                 for key in Iparm1:  
                     if key in rd.instdict:
@@ -3252,7 +3251,7 @@ class GSASII(wx.Frame):
         dlg.Destroy()
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
-        self.PatternTree.SetItemPyData(sub,G2IO.SetNewPhase(Name=PhaseName,SGData=SGData))
+        self.PatternTree.SetItemPyData(sub,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
         G2gd.SelectDataTreeItem(self,sub) #bring up new phase General tab
         
     def OnDeletePhase(self,event):

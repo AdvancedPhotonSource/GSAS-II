@@ -92,8 +92,8 @@ def GetImageZ(G2frame,data,newRange=False):
                     backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
                 if backImage is not None:
                     sumImg += np.array(backImage*backScale,dtype='int32')
-    if darkImg: del darkImg         #force cleanup
-    if backImg: del backImg
+#    if darkImg: del darkImg         #force cleanup
+#    if backImg: del backImg
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     if 'range' not in data or newRange:

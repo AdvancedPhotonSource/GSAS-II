@@ -13,6 +13,7 @@ import os.path as ospath
 import sys
 import cPickle
 import imp
+import copy
 import GSASIIpath
 import GSASIIobj as G2obj
 
@@ -96,16 +97,32 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     file.close()
     print('project save successful')
     
-def ImportPowder(reader,filename,bankNo=0):
+def ImportPowder(reader,filename):
+    readerlist = ['G2pwd_fxye','G2pwd_xye','G2pwd_BrukerRAW','G2pwd_csv','G2pwd_FP',
+        'G2pwd_Panalytical','G2pwd_rigaku']
+    if reader not in readerlist:
+        print '**** ERROR: unrecognized reader ',reader
+        return None
     rdfile,rdpath,descr = imp.find_module(reader)
     rdclass = imp.load_module(reader,rdfile,rdpath,descr)
     rd = rdclass.GSAS_ReaderClass()    
-    fl = open(filename)
+    fl = open(filename,'rb')
+    rdlist = []
     if rd.ContentsValidator(fl):
         fl.seek(0)
-        rd.selections = [bankNo,]
-        if rd.Reader(filename,fl):
-            return rd
+        repeat = True
+        rdbuffer = {} # create temporary storage for file reader
+        block = 0
+        while repeat: # loop if the reader asks for another pass on the file
+            block += 1
+            repeat = False
+            rd.objname = ospath.basename(filename)
+            flag = rd.Reader(filename,fl,None,buffer=rdbuffer,blocknum=block,)
+            if flag:
+                rdlist.append(copy.deepcopy(rd)) # save the result before it is written over
+                if rd.repeat:
+                    repeat = True
+        return rdlist
     print rd.errors
     return None
     

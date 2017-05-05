@@ -537,10 +537,10 @@ class GSASII(wx.Frame):
                 repeat = True
                 rdbuffer = {} # create temporary storage for file reader
                 block = 0
+                fp.seek(0)  # rewind
                 while repeat: # loop if the reader asks for another pass on the file
                     block += 1
                     repeat = False
-                    fp.seek(0)  # rewind
                     rd.objname = os.path.basename(filename)
                     flag = False
                     if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging

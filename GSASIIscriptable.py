@@ -82,7 +82,12 @@ def LoadDictFromProjFile(ProjFile):
     return Project,nameList
     
 def SaveDictToProjFile(Project,nameList,ProjFile):
-    'Save a GSAS-II project file from dictionary/nameList created by LoadDictFromProjFile'
+    '''Save a GSAS-II project file from dictionary/nameList created by LoadDictFromProjFile
+    param: dict Project: representation of gpx file following the GSAS-II 
+        tree struture as described for LoadDictFromProjFile
+    param: list nameList: names of main tree entries & subentries used to reconstruct project file
+    param: str ProjFile: full file name for output project.gpx file (including extension)
+    '''
     file = open(ProjFile,'wb')
     print 'save to file: ',ProjFile
     for name in nameList:
@@ -98,6 +103,19 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     print('project save successful')
     
 def ImportPowder(reader,filename):
+    '''Use a reader to import a powder diffraction data file
+    param: str reader: one of 'G2pwd_fxye','G2pwd_xye','G2pwd_BrukerRAW','G2pwd_csv','G2pwd_FP',
+        'G2pwd_Panalytical','G2pwd_rigaku'
+    param: str filename: full name of powder data file; can be "multi-Bank" data
+    returns: list rdlist: list of rrader objects containing powder data, one for each
+        "Bank" of data encountered in file
+        items in reader object of interest are:
+            rd.comments: list of str: comments found on powder file
+            rd.dnames: list of str: data nammes suitable for use in GSASII data tree
+                NB: duplicated in all rd entries in rdlist
+            rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed 
+                for a PWDR entry in  GSASII data tree.        
+    '''
     readerlist = ['G2pwd_fxye','G2pwd_xye','G2pwd_BrukerRAW','G2pwd_csv','G2pwd_FP',
         'G2pwd_Panalytical','G2pwd_rigaku']
     if reader not in readerlist:

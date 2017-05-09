@@ -1757,7 +1757,7 @@ def UpdateStressStrain(G2frame,data):
     
     def OnAppendDzero(event):
         data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
-            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
+            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'fixDset':True})
         UpdateStressStrain(G2frame,data)
         
     def OnUpdateDzero(event):
@@ -1820,7 +1820,7 @@ def UpdateStressStrain(G2frame,data):
                 filename = dlg.GetPath()
                 File = open(filename,'w')
                 keys = ['Type','Sample phi','Sample z','Sample load']
-                keys2 = ['Dset','Dcalc','pixLimit','cutoff','Emat']
+                keys2 = ['Dset','Dcalc','pixLimit','cutoff','Emat','fixDset']
                 File.write('{\n\t')
                 for key in keys:
                     if key in 'Type':
@@ -2096,6 +2096,10 @@ def UpdateStressStrain(G2frame,data):
             G2plt.PlotExposedImage(G2frame,event=event)
             G2plt.PlotStrain(G2frame,data,newPlot=True)
             
+        def OnFixDset(event):
+            Obj = event.GetEventObject()
+            data['d-zero'][Indx[Obj.GetId()]]['fixDset'] = Obj.GetValue()
+            
         Indx = {}
         delIndx = []    
         dzeroSizer = wx.FlexGridSizer(0,8,5,5)
@@ -2105,6 +2109,11 @@ def UpdateStressStrain(G2frame,data):
                 min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=OnDzero)
             dzeroSizer.Add(dZero,0,WACV)
             Indx[dZero.GetId()] = id
+            dfix = wx.CheckBox(G2frame.dataDisplay,label='Hold?')
+            dfix.SetValue(dzero.get('fixDset',True))
+            dfix.Bind(wx.EVT_CHECKBOX,OnFixDset)
+            Indx[dfix.GetId()] = id
+            dzeroSizer.Add(dfix,0,WACV)
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),0,WACV)
                 
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
@@ -2120,11 +2129,6 @@ def UpdateStressStrain(G2frame,data):
             Indx[pixLimit.GetId()] = id
             dzeroSizer.Add(pixLimit,0,WACV)                
                 
-            dzeroDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
-            dzeroDelete.Bind(wx.EVT_CHECKBOX,OnDeleteDzero)
-            delIndx.append(dzeroDelete)
-            dzeroSizer.Add(dzeroDelete,0,WACV)
-            
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' Strain tensor:')),WACV)
             names = ['e11','e12','e22']
             for i in range(3):
@@ -2132,7 +2136,11 @@ def UpdateStressStrain(G2frame,data):
                 tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(dzero['Emat'][i]),style=wx.TE_READONLY)
                 tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
                 dzeroSizer.Add(tensorElem,0,WACV)
-            dzeroSizer.Add((5,5),0)             
+            dzeroDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+            dzeroDelete.Bind(wx.EVT_CHECKBOX,OnDeleteDzero)
+            delIndx.append(dzeroDelete)
+            dzeroSizer.Add(dzeroDelete,0,WACV)
+            
         return dzeroSizer
         
 # patches

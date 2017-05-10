@@ -126,7 +126,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return IfOK,Rvals,result,covMatrix,sig
 
-def Refine(GPXfile,dlg):
+def Refine(GPXfile,dlg=None):
     'Global refinement -- refines to minimize against all histograms'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics

@@ -1757,7 +1757,7 @@ def UpdateStressStrain(G2frame,data):
     
     def OnAppendDzero(event):
         data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
-            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'fixDset':True})
+            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0],'fixDset':False})
         UpdateStressStrain(G2frame,data)
         
     def OnUpdateDzero(event):
@@ -2109,8 +2109,8 @@ def UpdateStressStrain(G2frame,data):
                 min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=OnDzero)
             dzeroSizer.Add(dZero,0,WACV)
             Indx[dZero.GetId()] = id
-            dfix = wx.CheckBox(G2frame.dataDisplay,label='Hold?')
-            dfix.SetValue(dzero.get('fixDset',True))
+            dfix = wx.CheckBox(G2frame.dataDisplay,label='Use Poisson mean?')
+            dfix.SetValue(dzero.get('fixDset',False))
             dfix.Bind(wx.EVT_CHECKBOX,OnFixDset)
             Indx[dfix.GetId()] = id
             dzeroSizer.Add(dfix,0,WACV)

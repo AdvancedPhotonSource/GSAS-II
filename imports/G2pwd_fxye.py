@@ -47,7 +47,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 continue
             if line[0] == '#': continue
             if line[:4] == 'BANK':
-                self.dnames.append(fname+' '+''.join(line.split()[:2]))
+                self.dnames.append(fname+' '+' '.join(line.split()[:2]))
                 nBanks += 1
                 continue
             elif line[:7] == 'Monitor': continue

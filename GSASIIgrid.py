@@ -3071,6 +3071,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         sampleParm = {}
         for name in histNames:
             if 'IMG' in name:
+                if name not in data:
+                    continue
                 for item in sampleParmDict:
                     sampleParmDict[item].append(data[name]['parmDict'].get(item,0))
             else:

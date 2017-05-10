@@ -91,10 +91,8 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     file = open(ProjFile,'wb')
     print 'save to file: ',ProjFile
     for name in nameList:
-        print name
         data = []
         item = Project[name[0]]
-        print item
         data.append([name[0],item['data']])
         for item2 in name[1:]:
             data.append([item2,item[item2]])

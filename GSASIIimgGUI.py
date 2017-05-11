@@ -2013,7 +2013,8 @@ def UpdateStressStrain(G2frame,data):
                 G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                 parmDict = {'Sample load':StaCtrls['Sample load'],}
                 varyNames = ['e11','e12','e22']
-                coVar = np.eye(4*len(StaCtrls['d-zero']))
+                Nvar = 5*len(StaCtrls['d-zero'])
+                coVar = np.zeros((Nvar,Nvar))
                 for j,item in enumerate(StaCtrls['d-zero']):
                     variables += item['Emat']
                     sig += item['Esig']
@@ -2021,11 +2022,14 @@ def UpdateStressStrain(G2frame,data):
                     varyList += varylist
                     parmDict.update(dict(zip(varylist,item['Emat'])))
                     parmDict['%d;Dcalc'%(j)] = item['Dcalc']
+                    variables.append(item['Dcalc']-item['Dset'])
+                    varyList.append('%d;delt-d'%(j))
+                    sig.append(0)
                     parmDict['%d;Ivar'%(j)] = item['Ivar']
                     variables.append(item['Ivar'])
                     varyList.append('%d;Ivar'%(j))
-                    sig.append(None)
-                    j4 = j*4
+                    sig.append(0)
+                    j4 = j*5
                     coVar[j4:j4+3,j4:j4+3] = item['covMat']
                 SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
                     'covMatrix':coVar,'title':name,'parmDict':parmDict}

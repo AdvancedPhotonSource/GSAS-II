@@ -2022,8 +2022,8 @@ def UpdateStressStrain(G2frame,data):
                     varyList += varylist
                     parmDict.update(dict(zip(varylist,item['Emat'])))
                     parmDict['%d;Dcalc'%(j)] = item['Dcalc']
-                    variables.append(item['Dcalc']-item['Dset'])
-                    varyList.append('%d;delt-d'%(j))
+                    variables.append(1.e6*(item['Dcalc']/item['Dset']-1.))
+                    varyList.append('%d;h-mstrain'%(j))
                     sig.append(0)
                     parmDict['%d;Ivar'%(j)] = item['Ivar']
                     variables.append(item['Ivar'])

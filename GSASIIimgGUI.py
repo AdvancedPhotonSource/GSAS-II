@@ -2013,6 +2013,7 @@ def UpdateStressStrain(G2frame,data):
                 G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                 parmDict = {'Sample load':StaCtrls['Sample load'],}
                 varyNames = ['e11','e12','e22']
+                coVar = np.eye(4*len(StaCtrls['d-zero']))
                 for j,item in enumerate(StaCtrls['d-zero']):
                     variables += item['Emat']
                     sig += item['Esig']
@@ -2024,8 +2025,10 @@ def UpdateStressStrain(G2frame,data):
                     variables.append(item['Ivar'])
                     varyList.append('%d;Ivar'%(j))
                     sig.append(None)
+                    j4 = j*4
+                    coVar[j4:j4+3,j4:j4+3] = item['covMat']
                 SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
-                    'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
+                    'covMatrix':coVar,'title':name,'parmDict':parmDict}
             else:
                 SeqResult['histNames'] = goodnames
                 dlg.Destroy()

@@ -1004,7 +1004,7 @@ def FitStrSta(Image,StrSta,Controls):
         if len(Ring):
             ring.update(R)
             p0 = ring['Emat']
-            val,esd = FitStrain(Ring,p0,dset,wave,phi,StaType)
+            val,esd,covMat = FitStrain(Ring,p0,dset,wave,phi,StaType)
             ring['Emat'] = val
             ring['Esig'] = esd
             ellipse = FitEllipse(R['ImxyObs'].T)
@@ -1013,6 +1013,7 @@ def FitStrSta(Image,StrSta,Controls):
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
+            ring['covMat'] = covMat
             print 'Variance in normalized ring intensity: %.3f'%(ring['Ivar'])
     CalcStrSta(StrSta,Controls)
     
@@ -1115,10 +1116,12 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi,StaType),full_output=True)
     vals = list(result[0])
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[1]-3)     #reduced chi^2 = M/(Nobs-Nvar)
+    covM = result[1]
+    covMatrix = covM*chisq
     sig = list(np.sqrt(chisq*np.diag(result[1])))
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig,dset)
-    return vals,sig
+    return vals,sig,covMatrix
     
 def AutoSpotMasks(Image,Masks,Controls):
     print 'auto spot search'

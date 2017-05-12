@@ -166,6 +166,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             S = File.readline()
             j = 0
             while S and S[:4] != 'BANK' and S[0] != '#':
+                if 'TIME_MAP' in S or '\x1a' in S:
+                    break
                 for i in range(0,80,8):
                     if S[i:i+10] == 10*' ':
                         break

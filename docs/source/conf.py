@@ -141,7 +141,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GSAS-II'
-copyright = u'2013-2017, Von Dreele and Toby for Argonne National Laboratory'
+copyright = u'2013-2017, R.B. Von Dreele and B.H. Toby for Argonne National Laboratory'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -29,12 +29,16 @@ GSAS-II Developer's Documentation
 Note that GSAS-II requires the Python extension packages 
 
 * wxPython (http://wxpython.org/docs/api/), 
+  * note that GSAS-II has been tested with wxPython 2.x and 3.0.x; It
+    it expected to have problems with wxPython 4.x at present. 
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
 * matplotlib (http://matplotlib.org/contents.html)  and
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation)
 
-Two packages are used by some parts of the code, but are not required:
+Two packages are used by some parts of the code, but are not
+required. If these packages are not present warning messages may be
+generated but the vast bulk of GSAS-II will function normally. 
 
 * PIL (http://www.pythonware.com/products/pil/) or Pillow (https://pillow.readthedocs.org). This is used to save
   and read certain types of images.
@@ -45,8 +49,8 @@ Two packages are used by some parts of the code, but are not required:
 
 Note that the packages listed above are not distributed as part of the Python standard
 library and must be obtained separately (or in a bundled Python
-package such as the Enthought Inc.'s Canopy or
-Continuum.io's anaconda; we also use the older Enthought Python
+package such as Continuum.io's Anaconda or Enthought Inc.'s Canopy; 
+we also do some testing using the older Enthought Python
 Distribution).  
 One exception is the PyOpenGL package. This will be installed into
 Python by GSAS-II if not found, so it does not need to be included in

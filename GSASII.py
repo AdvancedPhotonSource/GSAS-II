@@ -1233,6 +1233,7 @@ class GSASII(wx.Frame):
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
+                rd.Sample['Azimuth'] = azm
                 fltPath0 = 20.                      #arbitrary
                 if 'INS   FPATH1' in Iparm:                    
                     s = Iparm['INS   FPATH1'].split()

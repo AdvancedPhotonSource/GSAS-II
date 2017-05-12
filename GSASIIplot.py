@@ -4488,7 +4488,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xpix = int(xpos*scalex)
                 ypix = int(ypos*scaley)
                 Int = 0
-                if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
+                if (0 <= xpix < sizexy[1]) and (0 <= ypix < sizexy[0]):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp

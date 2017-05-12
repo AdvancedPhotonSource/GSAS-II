@@ -225,10 +225,12 @@ def GetTifData(filename):
             File.seek(IFD[273][2][0])
             print 'Read ImageJ tiff file: ',filename
 #            image = ar.array('H',File.read(2*Npix))
-            image = File.read(2*Npix,dtype=np.uint16)
-            if '>' in byteOrd:
-                image.byteswap()
-            image = np.array(np.frombuffer(image),dtype=np.int32)
+#            image = File.read(2*Npix,dtype=np.uint16)
+            image = File.read(4*Npix)
+#            if '>' in byteOrd:
+#                image.byteswap()
+            image = np.array(np.frombuffer(image,dtype=np.int),dtype=np.int32)
+#            image = np.array(np.frombuffer(image),dtype=np.int32)
 #            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
@@ -318,6 +320,22 @@ def GetTifData(filename):
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
 #            image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
 #            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    elif sizexy == [391,380]:
+        pixy = [109.92,109.92]
+        File.seek(8)
+        image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
+    elif sizexy == [380,391]:
+        File.seek(110)
+        pixy = [109.92,109.92]
+        image = np.array(np.frombuffer(File.read(Npix),dtype=np.uint8),dtype=np.int32)
+    elif sizexy ==  [825,830]:
+        pixy = [109.92,109.92]
+        File.seek(8)
+        image = np.array(np.frombuffer(File.read(Npix),dtype=np.uint8),dtype=np.int32)
+    elif sizexy ==  [1800,1800]:
+        pixy = [109.92,109.92]
+        File.seek(110)
+        image = np.array(np.frombuffer(File.read(Npix),dtype=np.uint8),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)

@@ -4488,7 +4488,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xpix = int(xpos*scalex)
                 ypix = int(ypos*scaley)
                 Int = 0
-                if (0 <= xpix < sizexy[1]) and (0 <= ypix < sizexy[0]):
+                if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
@@ -4570,6 +4570,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
                 Data['invert_y'] = not Data['invert_y']
+            else:
+                return
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
             
     def OnImPick(event):
@@ -4837,7 +4839,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
+                    if event.key == 'shift':                #force selection at cursor position
+                        xpos = Xpix
+                        ypos = Ypix
+                        I = J = 10
+                    else:
+                        xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5

@@ -318,8 +318,10 @@ def GetEllipse(dsp,data):
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
         
 def GetDetectorXY(dsp,azm,data):
-    'Needs a doc string'
-    
+    '''Get detector x,y position from d-spacing (dsp), azimuth (azm,deg) 
+    & image controls dictionary (data)
+    it seems to be only used in plotting 
+    '''    
     elcent,phi,radii = GetEllipse(dsp,data)
     phi = data['rotation']-90.          #to give rotation of major axis
     tilt = data['tilt']
@@ -362,7 +364,7 @@ def GetDetectorXY(dsp,azm,data):
     
 def GetDetXYfromThAzm(Th,Azm,data):
     '''Computes a detector position from a 2theta angle and an azimultal
-    angle (both in degrees)
+    angle (both in degrees) - apparently not used!
     '''
     dsp = data['wavelength']/(2.0*npsind(Th))    
     return GetDetectorXY(dsp,Azm,data)

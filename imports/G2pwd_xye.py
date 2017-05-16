@@ -28,6 +28,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             formatName = 'Topas xye or 2th Fit2D chi',
             longFormatName = 'Topas .xye or 2th Fit2D .chi powder data file'
             )
+        self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filepointer):

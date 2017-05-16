@@ -29,6 +29,7 @@ class csv_ReaderClass(G2obj.ImportPowderData):
             formatName = 'comma/tab/semicolon separated',
             longFormatName = 'Worksheet-type .csv powder data file'
             )
+        self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filepointer):

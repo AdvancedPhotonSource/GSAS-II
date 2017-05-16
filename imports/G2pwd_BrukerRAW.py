@@ -30,6 +30,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             formatName = 'Bruker RAW',
             longFormatName = 'Bruker .RAW powder data file'
             )
+        self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filepointer):

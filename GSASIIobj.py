@@ -1803,6 +1803,7 @@ class ImportBaseclass(object):
         self.selections = []
         self.repeatcount = 0
         self.readfilename = '?'
+        self.scriptable = False
         #print 'created',self.__class__
 
     def ReInitialize(self):

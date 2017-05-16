@@ -28,6 +28,7 @@ class Rigaku_ReaderClass(G2obj.ImportPowderData):
             formatName = 'Rigaku .txt exported',
             longFormatName = 'Rigaku powder data exported as .txt'
             )
+        self.scriptable = True
         self.vals = None
         self.stepsize = None
         self.skip = 0

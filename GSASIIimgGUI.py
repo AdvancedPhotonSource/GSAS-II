@@ -172,7 +172,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 # Menu items
             
     def OnCalibrate(event):
-        G2frame.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick (shift key to force pick), RB on point to delete else RB to finish')
         G2frame.ifGetRing = True
                 
     def OnRecalibrate(event):

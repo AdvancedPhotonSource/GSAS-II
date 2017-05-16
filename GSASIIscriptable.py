@@ -114,10 +114,8 @@ def ImportPowder(reader,filename):
             rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed 
                 for a PWDR entry in  GSASII data tree.        
     '''
-    readerlist = ['G2pwd_fxye','G2pwd_xye','G2pwd_BrukerRAW','G2pwd_csv','G2pwd_FP',
-        'G2pwd_Panalytical','G2pwd_rigaku']
-    if reader not in readerlist:
-        print '**** ERROR: unrecognized reader ',reader
+    if not reader.scriptable:
+        print '**** ERROR: not a scriptable reader ',reader
         return None
     rdfile,rdpath,descr = imp.find_module(reader)
     rdclass = imp.load_module(reader,rdfile,rdpath,descr)

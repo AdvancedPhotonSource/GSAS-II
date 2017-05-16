@@ -24,6 +24,7 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
             formatName = 'Panalytical xrdml (xml)',
             longFormatName = 'Panalytical powder data as *.xrdml'
             )
+        self.scriptable = True
         self.vals = None
         self.stepsize = None
         self.skip = 0

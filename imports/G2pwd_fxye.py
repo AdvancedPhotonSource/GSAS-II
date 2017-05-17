@@ -31,6 +31,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         self.clockWd = {}
         self.TimeMap = {}
         self.dnames = []
+        self.scriptable = True
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filepointer):

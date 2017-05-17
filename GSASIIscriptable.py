@@ -102,8 +102,7 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     
 def ImportPowder(reader,filename):
     '''Use a reader to import a powder diffraction data file
-    param: str reader: one of 'G2pwd_fxye','G2pwd_xye','G2pwd_BrukerRAW','G2pwd_csv','G2pwd_FP',
-        'G2pwd_Panalytical','G2pwd_rigaku'
+    param: str reader: a scriptable reader
     param: str filename: full name of powder data file; can be "multi-Bank" data
     returns: list rdlist: list of rrader objects containing powder data, one for each
         "Bank" of data encountered in file
@@ -114,12 +113,12 @@ def ImportPowder(reader,filename):
             rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed 
                 for a PWDR entry in  GSASII data tree.        
     '''
-    if not reader.scriptable:
-        print '**** ERROR: not a scriptable reader ',reader
-        return None
     rdfile,rdpath,descr = imp.find_module(reader)
     rdclass = imp.load_module(reader,rdfile,rdpath,descr)
     rd = rdclass.GSAS_ReaderClass()    
+    if not rd.scriptable:
+        print '**** ERROR: ',reader,' is not a scriptable reader'
+        return None
     fl = open(filename,'rb')
     rdlist = []
     if rd.ContentsValidator(fl):

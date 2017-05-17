@@ -354,10 +354,10 @@ def GetDetectorXY(dsp,azm,data):
         R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm))
         if tilt > 0.:
             offset = 2.*radii[1]*ecc+f      #select other branch
-            xy = [-R*cosd(azm)-offset,R*sind(azm)]
+            xy = [-R*cosd(azm)-offset,-R*sind(azm)]
         else:
             offset = -f
-            xy = [-R*cosd(azm)-offset,-R*sind(azm)]
+            xy = [-R*cosd(azm)-offset,R*sind(azm)]
         xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     return xy

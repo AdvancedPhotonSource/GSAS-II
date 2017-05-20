@@ -950,9 +950,9 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
@@ -1096,9 +1096,9 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
 #    GSASIIpath.IPyBreak()
     return dFdvDict
         
@@ -1257,9 +1257,9 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU11:'+str(i)] = np.sum(dFdua.T[0][i]*TwinFr[:,nxs],axis=0)
         dFdvDict[pfx+'AU22:'+str(i)] = np.sum(dFdua.T[1][i]*TwinFr[:,nxs],axis=0)
         dFdvDict[pfx+'AU33:'+str(i)] = np.sum(dFdua.T[2][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*np.sum(dFdua.T[3][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*np.sum(dFdua.T[4][i]*TwinFr[:,nxs],axis=0)
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*np.sum(dFdua.T[5][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU12:'+str(i)] = np.sum(dFdua.T[3][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU13:'+str(i)] = np.sum(dFdua.T[4][i]*TwinFr[:,nxs],axis=0)
+        dFdvDict[pfx+'AU23:'+str(i)] = np.sum(dFdua.T[5][i]*TwinFr[:,nxs],axis=0)
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     for i in range(nTwin):
@@ -1715,9 +1715,9 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(FSSdata.shape[1]):        #loop over waves Fzero & Fwid?
             dFdvDict[pfx+'Fsin:'+str(i)+':'+str(j)] = dFdGf.T[0][j][i]
             dFdvDict[pfx+'Fcos:'+str(i)+':'+str(j)] = dFdGf.T[1][j][i]
@@ -1740,15 +1740,15 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dFdvDict[pfx+'U11sin:'+str(i)+':'+str(j)] = dFdGu.T[0][j][i]
             dFdvDict[pfx+'U22sin:'+str(i)+':'+str(j)] = dFdGu.T[1][j][i]
             dFdvDict[pfx+'U33sin:'+str(i)+':'+str(j)] = dFdGu.T[2][j][i]
-            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[3][j][i]
-            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[4][j][i]
-            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[5][j][i]
+            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = dFdGu.T[3][j][i]
+            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = dFdGu.T[4][j][i]
+            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = dFdGu.T[5][j][i]
             dFdvDict[pfx+'U11cos:'+str(i)+':'+str(j)] = dFdGu.T[6][j][i]
             dFdvDict[pfx+'U22cos:'+str(i)+':'+str(j)] = dFdGu.T[7][j][i]
             dFdvDict[pfx+'U33cos:'+str(i)+':'+str(j)] = dFdGu.T[8][j][i]
-            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[9][j][i]
-            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[10][j][i]
-            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[11][j][i]
+            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = dFdGu.T[9][j][i]
+            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = dFdGu.T[10][j][i]
+            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = dFdGu.T[11][j][i]
             
 #        GSASIIpath.IPyBreak()
     dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
@@ -1939,9 +1939,9 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(FSSdata.shape[1]):        #loop over waves Fzero & Fwid?
             dFdvDict[pfx+'Fsin:'+str(i)+':'+str(j)] = dFdGf.T[0][j][i]
             dFdvDict[pfx+'Fcos:'+str(i)+':'+str(j)] = dFdGf.T[1][j][i]
@@ -1964,15 +1964,15 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
             dFdvDict[pfx+'U11sin:'+str(i)+':'+str(j)] = dFdGu.T[0][j][i]
             dFdvDict[pfx+'U22sin:'+str(i)+':'+str(j)] = dFdGu.T[1][j][i]
             dFdvDict[pfx+'U33sin:'+str(i)+':'+str(j)] = dFdGu.T[2][j][i]
-            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[3][j][i]
-            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[4][j][i]
-            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[5][j][i]
+            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = dFdGu.T[3][j][i]
+            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = dFdGu.T[4][j][i]
+            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = dFdGu.T[5][j][i]
             dFdvDict[pfx+'U11cos:'+str(i)+':'+str(j)] = dFdGu.T[6][j][i]
             dFdvDict[pfx+'U22cos:'+str(i)+':'+str(j)] = dFdGu.T[7][j][i]
             dFdvDict[pfx+'U33cos:'+str(i)+':'+str(j)] = dFdGu.T[8][j][i]
-            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[9][j][i]
-            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[10][j][i]
-            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[11][j][i]
+            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = dFdGu.T[9][j][i]
+            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = dFdGu.T[10][j][i]
+            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = dFdGu.T[11][j][i]
             
 #        GSASIIpath.IPyBreak()
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
@@ -2142,9 +2142,9 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(FSSdata.shape[1]):        #loop over waves Fzero & Fwid?
             dFdvDict[pfx+'Fsin:'+str(i)+':'+str(j)] = dFdGf.T[0][j][i]
             dFdvDict[pfx+'Fcos:'+str(i)+':'+str(j)] = dFdGf.T[1][j][i]
@@ -2167,15 +2167,15 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
             dFdvDict[pfx+'U11sin:'+str(i)+':'+str(j)] = dFdGu.T[0][j][i]
             dFdvDict[pfx+'U22sin:'+str(i)+':'+str(j)] = dFdGu.T[1][j][i]
             dFdvDict[pfx+'U33sin:'+str(i)+':'+str(j)] = dFdGu.T[2][j][i]
-            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[3][j][i]
-            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[4][j][i]
-            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = 2.*dFdGu.T[5][j][i]
+            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = dFdGu.T[3][j][i]
+            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = dFdGu.T[4][j][i]
+            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = dFdGu.T[5][j][i]
             dFdvDict[pfx+'U11cos:'+str(i)+':'+str(j)] = dFdGu.T[6][j][i]
             dFdvDict[pfx+'U22cos:'+str(i)+':'+str(j)] = dFdGu.T[7][j][i]
             dFdvDict[pfx+'U33cos:'+str(i)+':'+str(j)] = dFdGu.T[8][j][i]
-            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[9][j][i]
-            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[10][j][i]
-            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = 2.*dFdGu.T[11][j][i]
+            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = dFdGu.T[9][j][i]
+            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = dFdGu.T[10][j][i]
+            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = dFdGu.T[11][j][i]
             
 #        GSASIIpath.IPyBreak()
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]

@@ -4473,7 +4473,7 @@ def AV2Q(A,V):
     Q = np.zeros(4)
     d = nl.norm(np.array(V))
     if d:
-        V /= d
+        V = V/d
         if not A:       #==0.
             A = 2.*np.pi
         p = A/2.
@@ -4492,7 +4492,7 @@ def AVdeg2Q(A,V):
     if not A:       #== 0.!
         A = 360.
     if d:
-        V /= d
+        V = V/d
         p = A/2.
         Q[0] = cosd(p)
         Q[1:4] = V*sind(p)
@@ -4506,7 +4506,7 @@ def Q2AVdeg(Q):
     '''
     A = 2.*acosd(Q[0])
     V = np.array(Q[1:])
-    V /= sind(A/2.)
+    V = V/sind(A/2.)
     return A,V
     
 def Q2AV(Q):
@@ -4515,7 +4515,7 @@ def Q2AV(Q):
     '''
     A = 2.*np.arccos(Q[0])
     V = np.array(Q[1:])
-    V /= np.sin(A/2.)
+    V = V/np.sin(A/2.)
     return A,V
     
 def randomQ(r0,r1,r2,r3):
@@ -4547,15 +4547,15 @@ def makeQuat(A,B,C):
     V1 = np.cross(A,C)
     V2 = np.cross(B,C)
     if nl.norm(V1)*nl.norm(V2):
-        V1 /= nl.norm(V1)
-        V2 /= nl.norm(V2)
+        V1 = V1/nl.norm(V1)
+        V2 = V2/nl.norm(V2)
         V3 = np.cross(V1,V2)
     else:
         V3 = np.zeros(3)
     Q = np.array([0.,0.,0.,1.])
     D = 0.
     if nl.norm(V3):
-        V3 /= nl.norm(V3)
+        V3 = V3/nl.norm(V3)
         D1 = min(1.0,max(-1.0,np.vdot(V1,V2)))
         D = np.arccos(D1)/2.0
         V1 = C-V3

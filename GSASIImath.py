@@ -119,6 +119,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
         Anorm = np.outer(Adiag,Adiag)
         Yvec /= Adiag
         Amat /= Anorm
+        if Print:
+            print 'initial chi^2 %.5g'%(chisq0)
         while True:
             Lam = np.eye(Amat.shape[0])*lam
             Amatlam = Amat*(One+Lam)
@@ -135,7 +137,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
             if chisq1 > chisq0*(1.+ftol):
                 lam *= 10.
                 if Print:
-                    print 'matrix modification needed; lambda now %.1e'%(lam)
+                    print 'new chi^2 %.5g; matrix modification needed; lambda now %.1e'%(chisq1,lam)
             else:
                 x0 += Xvec
                 lam /= 10.
@@ -159,9 +161,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
     Adiag = np.sqrt(np.diag(Amat))
     Anorm = np.outer(Adiag,Adiag)
     Lam = np.eye(Amat.shape[0])*lam
-    Amatlam = Amat/Anorm  #*(One+Lam)              #don't scale Amat to Marquardt array        
+    Amatlam = Amat/Anorm        
+#    Amatlam = Amat*(One+Lam)                #scale Amat to Marquardt array?        
     try:
-        Bmat = nl.inv(Amatlam)/Anorm  #*(One+Lam)      #don't rescale Bmat to Marquardt array
+        Bmat = nl.inv(Amatlam)/Anorm
+#        Bmat = Bmat*(One+Lam)               #rescale Bmat to Marquardt array?
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in making v-cov matrix'

@@ -953,7 +953,6 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
     'needs a doc string'
-    
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     Df /= np.sum(Df)

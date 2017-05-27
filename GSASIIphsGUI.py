@@ -2511,6 +2511,9 @@ entered the right symbol for your structure.
         msg = 'Density of phase {:s} = {:.3f} g/cc'.format(data['General']['Name'],density)
         print(msg)
         G2G.G2MessageBox(G2frame.dataFrame,msg,'Density')
+        
+    def OnValidProtein(event):
+        G2mth.validProtein(data)
 
     def OnSetAll(event):
         'set refinement flags for all atoms in table'
@@ -2767,9 +2770,8 @@ entered the right symbol for your structure.
         for atom in rd.Phase['Atoms']:
             try:
                 idx = atomNames.index(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
-                atId = atom[cia+8]
-                atomData[idx][:-1] = atom[:-1]
-                atomData[idx][cia+8] = atId
+                atId = atomData[idx][cia+8]                                 #save old Id
+                atomData[idx][:cia+8] = atom[:cia+8]+[atId,]
             except ValueError:
                 if All:
                     atomData.append(atom)
@@ -6008,8 +6010,7 @@ entered the right symbol for your structure.
             return topSizer
                          
         def ResrbSizer(RBObj):
-            G2frame.dataFrame.SetStatusText('NB: Rotation vector is in crystallographic space')
-             
+            
             def OnTorsionRef(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
@@ -6126,6 +6127,26 @@ entered the right symbol for your structure.
                 vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
             return vecrbSizer                
         
+        def OnSelect(event):
+            rbId = select.GetSelection()
+            wx.CallLater(100,RepaintRBInfo,rbId)
+           
+        def RepaintRBInfo(rbId,Scroll=0):
+            oldFocus = wx.Window.FindFocus()
+            G2frame.bottomSizer.DeleteWindows()
+            Indx.clear()
+            rbObj = data['RBModels']['Residue'][rbId]
+            data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            G2frame.bottomSizer =  ResrbSizer(rbObj)
+            mainSizer.Add(G2frame.bottomSizer)
+            mainSizer.Layout()
+            G2frame.dataFrame.Refresh()
+            RigidBodies.SetVirtualSize(mainSizer.GetMinSize())
+            RigidBodies.Scroll(0,Scroll)
+            G2frame.dataFrame.SendSizeEvent()
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            oldFocus.SetFocus()
+        
         # FillRigidBodyGrid executable code starts here
         if refresh:
             #RigidBodies.DestroyChildren() # bad, deletes scrollbars on Mac!
@@ -6149,13 +6170,27 @@ entered the right symbol for your structure.
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'No rigid body models:'),0,WACV)
             mainSizer.Add((5,5),0)
-        if 'Residue' in data['RBModels']:
+        if 'Residue' in data['RBModels'] and len(data['RBModels']['Residue']):
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
+            RBnames = []
             for RBObj in data['RBModels']['Residue']:
-                mainSizer.Add(ResrbSizer(RBObj))
-        if 'Vector' in data['RBModels']:
+                RBnames.append(RBObj['RBname'].split(':')[0]+RBObj['numChain'])
+            rbName = RBnames[0]
+            rbObj = data['RBModels']['Residue'][0]
+            data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
+            select.SetSelection(RBnames.index(rbName))
+            select.SetFirstItem(RBnames.index(rbName))
+            select.Bind(wx.EVT_LISTBOX,OnSelect)
+            mainSizer.Add(select,0,WACV)
+            G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
+            G2frame.bottomSizer.Add(ResrbSizer(rbObj))
+            mainSizer.Add(G2frame.bottomSizer)
+            G2frame.dataFrame.SetStatusText('NB: Rotation vector is in crystallographic space')
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+        if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
@@ -6192,7 +6227,7 @@ entered the right symbol for your structure.
             for x in sel:
                 RBObjs[x].update(copy.copy(sourceRB))
         G2plt.PlotStructure(G2frame,data)
-        wx.CallAfter(FillRigidBodyGrid(True))
+        wx.CallAfter(FillRigidBodyGrid,True)
                 
     def OnRBAssign(event):
         
@@ -8070,8 +8105,9 @@ entered the right symbol for your structure.
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDensity, id=G2gd.wxID_ATOMSDENSITY)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnValidProtein, id=G2gd.wxID_VALIDPROTEIN)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
         if 'HydIds' in data['General']:
             G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
         else:
@@ -8229,7 +8265,8 @@ entered the right symbol for your structure.
     G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     Pages.append('Pawley reflections')
-    G2frame.dataFrame.AtomCompute.ISOcalc.Enable('ISODISTORT' in data)
+    G2frame.dataFrame.AtomCompute.Enable(G2gd.wxID_ISODISP,'ISODISTORT' in data)
+    G2frame.dataFrame.AtomCompute.Enable(G2gd.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if oldPage is None or oldPage == 0:

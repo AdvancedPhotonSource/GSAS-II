@@ -67,9 +67,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
-    wxID_WAVEVARY,wxID_ATOMSROTATE, wxID_ATOMSDENSITY,
+    wxID_WAVEVARY,wxID_ATOMSROTATE, wxID_ATOMSDENSITY, wxID_VALIDPROTEIN,
     wxID_ATOMSSETALL, wxID_ATOMSSETSEL,
-] = [wx.NewId() for item in range(21)]
+] = [wx.NewId() for item in range(22)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -2442,13 +2442,13 @@ class DataFrame(wx.Frame):
             help='Compute distances & angles for selected atoms')
         self.AtomCompute.Append(id=wxID_ATOMSPDISAGL, kind=wx.ITEM_NORMAL,text='Save Distances && Angles',
             help='Compute distances & angles for selected atoms')
-        self.AtomCompute.ISOcalc = self.AtomCompute.Append(
-            id=wxID_ISODISP, kind=wx.ITEM_NORMAL,
-            text='ISODISTORT mode values',
-            help='Compute values of ISODISTORT modes from atom parameters')
         self.AtomCompute.Append(id=wxID_ATOMSDENSITY, kind=wx.ITEM_NORMAL,
-            text='Density',
-            help='Compute density for current phase')
+            text='Density',help='Compute density for current phase')
+        self.AtomCompute.Append(id=wxID_VALIDPROTEIN, kind=wx.ITEM_NORMAL,
+            text='Protein quality',help='Protein quality analysis')
+        self.AtomCompute.ISOcalc = self.AtomCompute.Append(id=wxID_ISODISP, kind=wx.ITEM_NORMAL,
+            text='ISODISTORT mode values',help='Compute values of ISODISTORT modes from atom parameters')
+        
         self.PostfillDataMenu()
         
         # Phase / Imcommensurate "waves" tab 
@@ -2865,15 +2865,6 @@ def UpdateControls(G2frame,data):
             derivSel.SetValue(data['deriv type'])
             wx.CallAfter(UpdateControls,G2frame,data)
             
-#        def OnConvergence(event):
-#            event.Skip()
-#            try:
-#                value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
-#            except ValueError:
-#                value = 0.0001
-#            data['min dM/M'] = value
-#            Cnvrg.SetValue('%.2g'%(value))
-#            
         def OnMaxCycles(event):
             data['max cyc'] = int(maxCyc.GetValue())
             maxCyc.SetValue(str(data['max cyc']))
@@ -2894,23 +2885,9 @@ def UpdateControls(G2frame,data):
         def OnFsqRef(event):
             data['F**2'] = fsqRef.GetValue()
             
-#        def OnHatomFix(event):
-#            data['HatomFix'] = Hfix.GetValue()
-        
-#        def OnUsrRej(event):
-#            event.Skip()
-#            Obj = event.GetEventObject()
-#            item,limits = Indx[Obj]
-#            try:
-#                value = min(max(float(Obj.GetValue()),limits[0]),limits[1])
-#            except ValueError:
-#                value = data['UsrReject'][item]
-#            data['UsrReject'][item] = value
-#            Obj.SetValue('%.2f'%(value))
-#
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,WACV)
-        Choice=['analytic Jacobian','numeric','analytic Hessian']
+        Choice=['analytic Jacobian','numeric','analytic Hessian']   #TODO +'SVD refine' - what flags will it need?
         derivSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         derivSel.SetValue(data['deriv type'])
@@ -2919,17 +2896,12 @@ def UpdateControls(G2frame,data):
         LSSizer.Add(derivSel,0,WACV)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min delta-M/M: '),0,WACV)
         Cnvrg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'min dM/M',nDig=(10,2,'g'),min=1.e-9,max=1.,typeHint=float)
-#        Cnvrg = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
-#        Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
-#        Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
         LSSizer.Add(Cnvrg,0,WACV)
-#        Indx = {}
         if 'Hessian' in data['deriv type']:
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
             maxCyc = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['max cyc']),choices=Choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-#            maxCyc.SetValue(str(data['max cyc']))
             maxCyc.Bind(wx.EVT_COMBOBOX, OnMaxCycles)
             LSSizer.Add(maxCyc,0,WACV)
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial lambda = 10**'),0,WACV)
@@ -2938,12 +2910,9 @@ def UpdateControls(G2frame,data):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
             LSSizer.Add(marqLam,0,WACV)
-        else:
+        else:       #TODO what for SVD refine?
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,WACV)
             Factr = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'shift factor',nDig=(10,5),min=1.e-5,max=100.,typeHint=float)
-#            Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
-#            Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
-#            Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
             LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
             userReject = data['UsrReject']
@@ -2960,15 +2929,7 @@ def UpdateControls(G2frame,data):
                 LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=usrRej[item][0]),0,WACV)
                 usrrej = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,userReject,item,nDig=(10,2),
                     min=usrRej[item][1][0],max=usrRej[item][1][1],typeHint=float)
-#                usrrej = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(userReject[item]),style=wx.TE_PROCESS_ENTER)
-#                Indx[usrrej] = [item,usrRej[item][1]]
-#                usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
-#                usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
                 LSSizer.Add(usrrej,0,WACV)
-#        Hfix = wx.CheckBox(G2frame.dataDisplay,-1,label='Regularize H atoms? ')
-#        Hfix.SetValue(data['HatomFix'])
-#        Hfix.Bind(wx.EVT_CHECKBOX,OnHatomFix)
-#        LSSizer.Add(Hfix,0,WACV)   #for now
         return LSSizer
         
     def AuthSizer():
@@ -4517,8 +4478,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
-            ' Durbin-Watson statistic: %.3f'%(data[0].get('Durbin-Watson',0.))))
+        if kind == 'PWDR':
+            mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+                ' Durbin-Watson statistic: %.3f'%(data[0].get('Durbin-Watson',0.))))
         for value in data[0]:
             if 'Nref' in value:
                 pfx = value.split('Nref')[0]

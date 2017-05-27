@@ -2394,6 +2394,28 @@ def ValEsd(value,esd=0,nTZ=False):
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out
     
+###############################################################################
+##### Protein validation - "ERRATV2" analysis
+###############################################################################
+
+    def validProtein(Phase):
+        resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+            'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
+        print 'Do VALIDPROTEIN analysis - TBD'
+        General = Phase['General']
+        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+        cx,ct,cs,cia = General['AtomPtrs']
+        Atoms = Phase['Atoms']
+        cartAtoms = []
+        chains = []
+        for atom in Atoms:
+            if atom[2] in resNames:
+                cartAtoms.append(atom[:cx+3])
+                if atom[2] not in chains:
+                    chains.append(atom[2])
+                cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
+            
+    
 ################################################################################
 ##### Texture fitting stuff
 ################################################################################

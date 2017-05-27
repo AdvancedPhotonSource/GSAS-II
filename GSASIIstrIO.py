@@ -1455,7 +1455,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
             ['ChemComp','Sites'],['Texture','HKLs']]
         for name,rest in names:
             itemRest = phaseRest[name]
-            if itemRest[rest] and itemRest['Use']:
+            if rest in itemRest and itemRest[rest] and itemRest['Use']:
                 print >>pFile,'\n  %s %10.3f Use: %s'%(name+' restraint weight factor',itemRest['wtFactor'],str(itemRest['Use']))
                 if name in ['Bond','Angle','Plane','Chiral']:
                     print >>pFile,'     calc       obs      sig   delt/sig  atoms(symOp): '

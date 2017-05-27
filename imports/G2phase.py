@@ -129,16 +129,15 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                 Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
                     S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
-                S = file.readline()
-                line += 1
-                if 'ANISOU' in S[:6]:
-                    Uij = S[30:72].split()
-                    Uij = [float(Uij[0])/10000.,float(Uij[1])/10000.,float(Uij[2])/10000.,
-                        float(Uij[3])/10000.,float(Uij[4])/10000.,float(Uij[5])/10000.]
-                    Atom = Atom[:14]+Uij
-                    Atom[12] = 'A'
                 Atom.append(ran.randint(0,sys.maxint))
                 Atoms.append(Atom)
+            elif 'ANISOU' in S[:6]:
+                Uij = S[30:72].split()
+                Uij = [float(Uij[0])/10000.,float(Uij[1])/10000.,float(Uij[2])/10000.,
+                    float(Uij[3])/10000.,float(Uij[4])/10000.,float(Uij[5])/10000.]
+                Atoms[-1] = Atoms[-1][:14]+Uij
+                Atoms[-1][12] = 'A'
+                Atoms[-1].append(ran.randint(0,sys.maxint))
             S = file.readline()
             line += 1
         file.close()

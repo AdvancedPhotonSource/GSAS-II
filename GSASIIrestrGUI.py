@@ -119,6 +119,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
             style=wx.OPEN | wx.CHANGE_DIR)
         try:
+            macro = ''
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
                 macro = open(macfile,'Ur')
@@ -906,23 +907,26 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del bondList[ibad]
-            bondTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Bonds = G2G.GSGrid(BondRestr)
-            Bonds.SetTable(bondTable, True)
-            Bonds.AutoSizeColumns(False)
-            for r in range(len(bondList)):
-                for c in [0,1,4]:
-                    Bonds.SetReadOnly(r,c,True)
-                    Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(BondRestr,-1,
-                'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(bondList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(Bonds,0,)
+            if len(bondList):
+                bondTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                Bonds = G2G.GSGrid(BondRestr)
+                Bonds.SetTable(bondTable, True)
+                Bonds.AutoSizeColumns(False)
+                for r in range(len(bondList)):
+                    for c in [0,1,4]:
+                        Bonds.SetReadOnly(r,c,True)
+                        Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(BondRestr,-1,
+                    'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(bondList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(Bonds,0,)
+            else:
+                mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
 
@@ -1035,23 +1039,26 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del angleList[ibad]
-            angleTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Angles = G2G.GSGrid(AngleRestr)
-            Angles.SetTable(angleTable, True)
-            Angles.AutoSizeColumns(False)
-            for r in range(len(angleList)):
-                for c in [0,1,4]:
-                    Angles.SetReadOnly(r,c,True)
-                    Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(AngleRestr,-1,
-                'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(angleList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(Angles,0,)
+            if len(angleList):
+                angleTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                Angles = G2G.GSGrid(AngleRestr)
+                Angles.SetTable(angleTable, True)
+                Angles.AutoSizeColumns(False)
+                for r in range(len(angleList)):
+                    for c in [0,1,4]:
+                        Angles.SetReadOnly(r,c,True)
+                        Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(AngleRestr,-1,
+                    'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(angleList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(Angles,0,)
+            else:
+                mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
 
@@ -1160,23 +1167,26 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del planeList[ibad]
-            planeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Planes = G2G.GSGrid(PlaneRestr)
-            Planes.SetTable(planeTable, True)
-            Planes.AutoSizeColumns(False)
-            Planes.AutoSizeRows(False)
-            for r in range(len(planeList)):
-                for c in range(3):
-                    Planes.SetReadOnly(r,c,True)
-                    Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(PlaneRestr,-1,
-                'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(planeList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(Planes,0,)
+            if len(planeList):
+                planeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                Planes = G2G.GSGrid(PlaneRestr)
+                Planes.SetTable(planeTable, True)
+                Planes.AutoSizeColumns(False)
+                Planes.AutoSizeRows(False)
+                for r in range(len(planeList)):
+                    for c in range(3):
+                        Planes.SetReadOnly(r,c,True)
+                        Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(PlaneRestr,-1,
+                    'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(planeList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(Planes,0,)
+            else:
+                mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
 
@@ -1289,23 +1299,26 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del volumeList[ibad]
-            volumeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Volumes = G2G.GSGrid(ChiralRestr)
-            Volumes.SetTable(volumeTable, True)
-            Volumes.AutoSizeColumns(False)
-            for r in range(len(volumeList)):
-                for c in [0,1,4]:
-                    Volumes.SetReadOnly(r,c,True)
-                    Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(ChiralRestr,-1,
-                'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(volumeList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(Volumes,0,)
+            if len(volumeList):
+                volumeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                Volumes = G2G.GSGrid(ChiralRestr)
+                Volumes.SetTable(volumeTable, True)
+                Volumes.AutoSizeColumns(False)
+                for r in range(len(volumeList)):
+                    for c in [0,1,4]:
+                        Volumes.SetReadOnly(r,c,True)
+                        Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(ChiralRestr,-1,
+                    'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(volumeList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(Volumes,0,)
+            else:
+                mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
 
@@ -1390,41 +1403,44 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del torsionList[ibad]
-            torsionTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            TorsionRestr.Torsions = G2G.GSGrid(TorsionRestr)
-            TorsionRestr.Torsions.SetTable(torsionTable, True)
-            TorsionRestr.Torsions.AutoSizeColumns(False)
-            for r in range(len(torsionList)):
-                for c in range(5):
-                    TorsionRestr.Torsions.SetReadOnly(r,c,True)
-                    TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(TorsionRestr,-1,
-                'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(torsionList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(TorsionRestr.Torsions,0,)
-            
-            mainSizer.Add((5,5))
-            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
-            table = []
-            rowLabels = []
-            Types = 9*[wg.GRID_VALUE_FLOAT+':10,4',]
-            colLabels = ['Mag A','Pos A','Width A','Mag B','Pos B','Width B','Mag C','Pos C','Width C']
-            for item in coeffDict:
-                rowLabels.append(item)
-                table.append(coeffDict[item])
-            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Coeff = G2G.GSGrid(TorsionRestr)
-            Coeff.SetTable(coeffTable, True)
-            Coeff.AutoSizeColumns(False)
-            for r in range(len(coeffDict)):
-                for c in range(9):
-                    Coeff.SetReadOnly(r,c,True)
-                    Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            mainSizer.Add(Coeff,0,)
+            if len(torsionList):
+                torsionTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                TorsionRestr.Torsions = G2G.GSGrid(TorsionRestr)
+                TorsionRestr.Torsions.SetTable(torsionTable, True)
+                TorsionRestr.Torsions.AutoSizeColumns(False)
+                for r in range(len(torsionList)):
+                    for c in range(5):
+                        TorsionRestr.Torsions.SetReadOnly(r,c,True)
+                        TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(TorsionRestr,-1,
+                    'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(torsionList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(TorsionRestr.Torsions,0,)
+                
+                mainSizer.Add((5,5))
+                mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
+                table = []
+                rowLabels = []
+                Types = 9*[wg.GRID_VALUE_FLOAT+':10,4',]
+                colLabels = ['Mag A','Pos A','Width A','Mag B','Pos B','Width B','Mag C','Pos C','Width C']
+                for item in coeffDict:
+                    rowLabels.append(item)
+                    table.append(coeffDict[item])
+                coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                Coeff = G2G.GSGrid(TorsionRestr)
+                Coeff.SetTable(coeffTable, True)
+                Coeff.AutoSizeColumns(False)
+                for r in range(len(coeffDict)):
+                    for c in range(9):
+                        Coeff.SetReadOnly(r,c,True)
+                        Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                mainSizer.Add(Coeff,0,)
+            else:
+                mainSizer.Add(wx.StaticText(TorsionRestr,-1,'No torsion restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,'No torsion restraints for this phase'),0,)
 
@@ -1510,22 +1526,25 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del ramaList[ibad]
-            ramaTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            RamaRestr.Ramas = G2G.GSGrid(RamaRestr)
-            RamaRestr.Ramas.SetTable(ramaTable, True)
-            RamaRestr.Ramas.AutoSizeColumns(False)
-            for r in range(len(ramaList)):
-                for c in range(6):
-                    RamaRestr.Ramas.SetReadOnly(r,c,True)
-                    RamaRestr.Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            RamaRestr.Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
-            mainSizer.Add(wx.StaticText(RamaRestr,-1,
-                'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(ramaList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(RamaRestr.Ramas,0,)
+            if len(ramaList):
+                ramaTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                RamaRestr.Ramas = G2G.GSGrid(RamaRestr)
+                RamaRestr.Ramas.SetTable(ramaTable, True)
+                RamaRestr.Ramas.AutoSizeColumns(False)
+                for r in range(len(ramaList)):
+                    for c in range(6):
+                        RamaRestr.Ramas.SetReadOnly(r,c,True)
+                        RamaRestr.Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                RamaRestr.Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2gd.wxID_RESTCHANGEESD)
+                mainSizer.Add(wx.StaticText(RamaRestr,-1,
+                    'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(ramaList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(RamaRestr.Ramas,0,)
+            else:
+                mainSizer.Add(wx.StaticText(RamaRestr,-1,'No Ramachandran restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(RamaRestr,-1,'No Ramachandran restraints for this phase'),0,)
         mainSizer.Add((5,5))
@@ -1648,35 +1667,38 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del chemcompList[ibad]
-            chemcompTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            ChemComps = G2G.GSGrid(ChemCompRestr)
-            ChemComps.SetTable(chemcompTable, True)
-            ChemComps.AutoSizeColumns(False)
-            for r in range(chemcompTable.GetNumberRows()):
-                for c in range(2):
-                    ChemComps.SetReadOnly(r,c,True)
-                    ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                if 'Restr' in ChemComps.GetRowLabelValue(r):
-                    for c in range(4):
+            if len(chemcompList):
+                chemcompTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+                ChemComps = G2G.GSGrid(ChemCompRestr)
+                ChemComps.SetTable(chemcompTable, True)
+                ChemComps.AutoSizeColumns(False)
+                for r in range(chemcompTable.GetNumberRows()):
+                    for c in range(2):
                         ChemComps.SetReadOnly(r,c,True)
                         ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                    for c in [1,2]:
-                        ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
-                else:
-                    for c in [3,4,5]:
-                        ChemComps.SetReadOnly(r,c,True)
-                        ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                    for c in [4,5]:
-                        ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
-                        
-            ChemComps.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
-            mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
-                'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                %(chisq,chisq/len(chemcompList))),0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(ChemComps,0,)
+                    if 'Restr' in ChemComps.GetRowLabelValue(r):
+                        for c in range(4):
+                            ChemComps.SetReadOnly(r,c,True)
+                            ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                        for c in [1,2]:
+                            ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
+                    else:
+                        for c in [3,4,5]:
+                            ChemComps.SetReadOnly(r,c,True)
+                            ChemComps.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+                        for c in [4,5]:
+                            ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
+                            
+                ChemComps.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+                ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2gd.wxID_RESTDELETE)
+                G2frame.dataFrame.Bind(wx.EVT_MENU, OnChangeValue, id=G2gd.wxID_RESRCHANGEVAL)
+                mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
+                    'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                    %(chisq,chisq/len(chemcompList))),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(ChemComps,0,)
+            else:
+                mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
 

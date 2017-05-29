@@ -5651,7 +5651,8 @@ entered the right symbol for your structure.
     def OnDataCopy(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = G2frame.GetHistogramNames(hist[:4])
+        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        if hist in keyList: keyList.remove(hist)
         sourceDict = UseList[hist]
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
@@ -5661,8 +5662,9 @@ entered the right symbol for your structure.
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
         if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                'Copy parameters to which histograms?',keyList)
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                    u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+                    'Copy phase/hist parameters', keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for sel in dlg.GetSelections():
@@ -5704,11 +5706,12 @@ entered the right symbol for your structure.
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = G2frame.GetHistogramNames(hist[:4])
+        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        if hist in keyList: keyList.remove(hist)
         if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                'Copy parameters to which histograms?', 
-                keyList)
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                    u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+                    'Copy phase/hist flags', keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for sel in dlg.GetSelections():
@@ -5748,7 +5751,8 @@ entered the right symbol for your structure.
     def OnSelDataCopy(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = G2frame.GetHistogramNames(hist[:4])
+        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        if hist in keyList: keyList.remove(hist)
         sourceDict = UseList[hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
@@ -5768,8 +5772,9 @@ entered the right symbol for your structure.
         for parm in selectedItems:
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
         if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                    'Copy parameters to which histograms?',keyList)
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                    u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+                    'Copy selected phase/hist parameters', keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for sel in dlg.GetSelections():

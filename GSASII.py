@@ -4062,7 +4062,11 @@ class GSASII(wx.Frame):
         '''Displays a window showing all parameters in the refinement.
         Called from the Calculate/View LS Parms menu.
         '''
-        parmDict,varyList = self.MakeLSParmDict()
+        try:
+            parmDict,varyList = self.MakeLSParmDict()
+        except:
+            print('Error retrieving parameters')
+            return
         parmValDict = {}
         for i in parmDict:
             parmValDict[i] = parmDict[i][0]

@@ -3157,7 +3157,7 @@ class MyHelp(wx.Menu):
             if GSASIIpath.GetConfigValue('debug'):
                 print('No helpKey for current dataFrame!')
         helpType = self.HelpById.get(event.GetId(),helpKey)
-        if helpType == 'Tutorials': 
+        if helpType == 'Tutorials':
             dlg = OpenTutorial(self.frame)
             dlg.ShowModal()
             dlg.Destroy()
@@ -3996,18 +3996,20 @@ tutorialCatalog = (
     )
 
 class OpenTutorial(wx.Dialog):
-    '''Open a tutorial, optionally copying it to the local disk. Always copy
-    the data files locally.
-
-    For now tutorials will always be copied into the source code tree, but it
-    might be better to have an option to copy them somewhere else, for people
-    who don't have write access to the GSAS-II source code location. 
+    '''Open a tutorial web page, optionally copying the web page, screen images and
+    data file(s) to the local disk.
     '''
     
-    def __init__(self,parent=None):
+    def __init__(self,parent):
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Open Tutorial', style=style)
         self.frame = parent
+        # self.frame can be the tree window frame or the data editing window frame, set G2frame to the
+        # tree either way
+        if hasattr(self.frame,'G2frame'):
+            self.G2frame = self.frame.G2frame
+        else:
+            self.G2frame = self.frame
         pnl = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer1 = wx.BoxSizer(wx.HORIZONTAL)        
@@ -4116,6 +4118,7 @@ class OpenTutorial(wx.Dialog):
         else:
             G2MessageBox(self,'Error downloading tutorial','Download error')
         self.EndModal(wx.ID_OK)
+        self.G2frame.TutorialImportDir = os.path.join(self.tutorialPath,tutorialCatalog[j][0],'data')
 
     def onSelectDownloaded(self,event):
         '''Select a previously downloaded tutorial
@@ -4134,7 +4137,8 @@ class OpenTutorial(wx.Dialog):
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
         self.EndModal(wx.ID_OK)
         ShowWebPage(fullpath,self.frame)
-
+        self.G2frame.TutorialImportDir = os.path.join(self.tutorialPath,tutorialCatalog[j][0],'data')
+        
     def onWebBrowse(self,event):
         '''Make a list of all tutorials on web and allow user to view one.
         '''
@@ -4182,6 +4186,7 @@ class OpenTutorial(wx.Dialog):
             return
         selected = listbox.GetSelection()
         dlg.Destroy()
+        wx.Yield() # close window right away so user sees something happen
         if selected < 0: return
         return selected
 

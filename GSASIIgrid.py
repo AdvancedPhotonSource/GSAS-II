@@ -1461,7 +1461,7 @@ class ShowLSParms(wx.Dialog):
     '''Create frame to show least-squares parameters
     '''
     def __init__(self,parent,title,parmDict,varyList,fullVaryList,
-                 size=(300,430)):
+                 size=(375,430)):
         
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -1492,8 +1492,8 @@ class ShowLSParms(wx.Dialog):
         self.hapNames = [':'.join(item) for item in splitNames if item[0] and item[1]]
         self.hapVars = list(set([' ',]+[item[2] for item in splitNames if item[0] and item[1]]))
         self.hapVars.sort()
-        self.hisNum = '0'
-        self.phasNum = '0'
+        self.hisNum = ' '
+        self.phasNum = ' '
         self.varName = ' '
         self.listSel = 'Refined'
         self.DrawPanel()
@@ -1504,32 +1504,35 @@ class ShowLSParms(wx.Dialog):
         def _OnParmSel(event):
             self.parmChoice = parmSel.GetStringSelection()
             self.varName = ' '
-            wx.CallAfter(self.DrawPanel)
+            wx.CallLater(100,self.DrawPanel)
             
         def OnPhasSel(event):
             event.Skip()
             self.phasNum = phasSel.GetValue()
             self.varName = ' '
-            wx.CallAfter(self.DrawPanel)
+            wx.CallLater(100,self.DrawPanel)
 
         def OnHistSel(event):
             event.Skip()
             self.hisNum = histSel.GetValue()
             self.varName = ' '
-            wx.CallAfter(self.DrawPanel)
+            wx.CallLater(100,self.DrawPanel)
             
         def OnVarSel(event):
             self.varName = varSel.GetValue()
             self.phasNum = ' '
             self.hisNum = ' '
-            wx.CallAfter(self.DrawPanel)
+            wx.CallLater(100,self.DrawPanel)
             
         def OnListSel(event):
             self.listSel = listSel.GetStringSelection()
-            wx.CallAfter(self.DrawPanel)
+            wx.CallLater(100,self.DrawPanel)
 
         if self.panel:
-            self.panel.DestroyChildren()
+            #self.panel.DestroyChildren() # Bad on Mac: deletes scroll bars
+            sizer = self.panel.GetSizer()
+            if sizer: sizer.DeleteWindows()
+
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         num = len(self.varyList)
         mainSizer.Add(wx.StaticText(self.panel,label=' Number of refined variables: '+str(num)),0)
@@ -1565,7 +1568,6 @@ class ShowLSParms(wx.Dialog):
             numSizer.Add(histSel,0)
         parmSizer.Add(numSizer)
         varSizer = wx.BoxSizer(wx.VERTICAL)
-        varSizer.Add(wx.StaticText(self.panel,label='Parameter'))
         if self.parmChoice in ['Phase',]:
             varSel = wx.ComboBox(self.panel,choices=self.phasVars,value=self.varName,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -1579,8 +1581,9 @@ class ShowLSParms(wx.Dialog):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
         if self.parmChoice != 'Global': 
+            varSizer.Add(wx.StaticText(self.panel,label='Parameter'))
             varSizer.Add(varSel,0)
-            parmSizer.Add(varSizer,0)
+        parmSizer.Add(varSizer,0)
         mainSizer.Add(parmSizer,0)
         listChoice = ['All','Refined']
         listSel = wx.RadioBox(self.panel,wx.ID_ANY,'Parameter type:',choices=listChoice,
@@ -1597,7 +1600,9 @@ class ShowLSParms(wx.Dialog):
         for name in choiceDict[self.parmChoice]:
             # skip entries without numerical values
             if isinstance(self.parmDict[name],basestring): continue
-            if 'Refined' in self.listSel and (name not in self.fullVaryList): continue
+            if 'Refined' in self.listSel and (name not in self.fullVaryList
+                                              ) and (name not in self.varyList):
+                continue
             if 'Phase' in self.parmChoice:
                 if self.phasNum != ' ' and name.split(':')[0] != self.phasNum: continue
             if 'Histo' in self.parmChoice:

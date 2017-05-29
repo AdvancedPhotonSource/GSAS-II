@@ -6137,6 +6137,7 @@ entered the right symbol for your structure.
             Indx.clear()
             rbObj = data['RBModels']['Residue'][rbId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            data['Drawing']['Quaternion'] = rbObj['Orient'][0]
             G2frame.bottomSizer =  ResrbSizer(rbObj)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
@@ -6144,7 +6145,7 @@ entered the right symbol for your structure.
             RigidBodies.SetVirtualSize(mainSizer.GetMinSize())
             RigidBodies.Scroll(0,Scroll)
             G2frame.dataFrame.SendSizeEvent()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            G2plt.PlotStructure(G2frame,data)
             oldFocus.SetFocus()
         
         # FillRigidBodyGrid executable code starts here
@@ -6180,6 +6181,7 @@ entered the right symbol for your structure.
             rbName = RBnames[0]
             rbObj = data['RBModels']['Residue'][0]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
+            data['Drawing']['Quaternion'] = rbObj['Orient'][0]
             select = wx.ListBox(RigidBodies,choices=RBnames,style=wx.LB_SINGLE,size=(-1,120))
             select.SetSelection(RBnames.index(rbName))
             select.SetFirstItem(RBnames.index(rbName))
@@ -6189,7 +6191,7 @@ entered the right symbol for your structure.
             G2frame.bottomSizer.Add(ResrbSizer(rbObj))
             mainSizer.Add(G2frame.bottomSizer)
             G2frame.dataFrame.SetStatusText('NB: Rotation vector is in crystallographic space')
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            G2plt.PlotStructure(G2frame,data)
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)

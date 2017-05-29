@@ -796,8 +796,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2frame.hist = keyList[select.GetSelection()]
         oldFocus = wx.Window.FindFocus()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
-        oldFocus.SetFocus()
         wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallAfter(oldFocus.SetFocus)
        
     def RepaintHistogramInfo(Scroll=0):
         G2frame.bottomSizer.DeleteWindows()

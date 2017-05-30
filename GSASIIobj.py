@@ -983,7 +983,7 @@ regular expressions. Initialized in :func:`CompileVarDesc`.
 try: 
     P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
 except TypeError:
-    continue
+    pass
 
 def GetPhaseNames(fl):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file

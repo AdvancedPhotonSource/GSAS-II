@@ -6151,7 +6151,7 @@ entered the right symbol for your structure.
             RigidBodies.Scroll(0,Scroll)
             G2frame.dataFrame.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
-            oldFocus.SetFocus()
+            wx.CallAfter(oldFocus.SetFocus)
         
         # FillRigidBodyGrid executable code starts here
         if refresh:

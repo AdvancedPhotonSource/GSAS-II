@@ -2700,7 +2700,7 @@ class GSASII(wx.Frame):
             item = event.GetItem()
             wx.CallAfter(G2gd.SelectDataTreeItem,self,item)
             if self.oldFocus: # Why do this?
-                self.oldFocus.SetFocus()
+                wx.CallAfter(self.oldFocus.SetFocus)
         
     def OnPatternTreeItemCollapsed(self, event):
         'Called when a tree item is collapsed - all children will be collapsed'

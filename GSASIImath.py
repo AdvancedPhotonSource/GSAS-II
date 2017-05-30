@@ -46,7 +46,64 @@ nxs = np.newaxis
 ##### Hessian least-squares Levenberg-Marquardt routine
 ################################################################################
 
-def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,lamda=-3,Print=False):
+def pinv(a, rcond=1e-15 ):
+    """
+    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+    Modified from numpy.linalg.pinv; assumes a is Hessian & returns no. zeros found
+    Calculate the generalized inverse of a matrix using its
+    singular-value decomposition (SVD) and including all
+    *large* singular values.
+
+    Parameters
+    ----------
+    a : (M, M) array_like - here assumed to be LS Hessian
+      Matrix to be pseudo-inverted.
+    rcond : float
+      Cutoff for small singular values.
+      Singular values smaller (in modulus) than
+      `rcond` * largest_singular_value (again, in modulus)
+      are set to zero.
+
+    Returns
+    -------
+    B : (M, M) ndarray
+      The pseudo-inverse of `a`
+
+    Raises
+    ------
+    LinAlgError
+      If the SVD computation does not converge.
+
+    Notes
+    -----
+    The pseudo-inverse of a matrix A, denoted :math:`A^+`, is
+    defined as: "the matrix that 'solves' [the least-squares problem]
+    :math:`Ax = b`," i.e., if :math:`\\bar{x}` is said solution, then
+    :math:`A^+` is that matrix such that :math:`\\bar{x} = A^+b`.
+
+    It can be shown that if :math:`Q_1 \\Sigma Q_2^T = A` is the singular
+    value decomposition of A, then
+    :math:`A^+ = Q_2 \\Sigma^+ Q_1^T`, where :math:`Q_{1,2}` are
+    orthogonal matrices, :math:`\\Sigma` is a diagonal matrix consisting
+    of A's so-called singular values, (followed, typically, by
+    zeros), and then :math:`\\Sigma^+` is simply the diagonal matrix
+    consisting of the reciprocals of A's singular values
+    (again, followed by zeros). [1]_
+
+    References
+    ----------
+    .. [1] G. Strang, *Linear Algebra and Its Applications*, 2nd Ed., Orlando,
+           FL, Academic Press, Inc., 1980, pp. 139-142.
+
+    """
+    u, s, vt = nl.svd(a, 0)
+    cutoff = rcond*np.maximum.reduce(s)
+    s = np.where(s>cutoff,1./s,0.)
+    nzero = s.shape[0]-np.count_nonzero(s)
+    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis], np.transpose(u)))
+    return res,nzero
+
+def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False):
     
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
@@ -62,7 +119,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
         It must be a symmetric NxN array
     :param tuple args: Any extra arguments to func are placed in this tuple.
     :param float ftol: Relative error desired in the sum of squares.
-    :param float xtol: Relative error desired in the approximate solution.
+    :param float xtol: Relative tolerance of zeros in the SVD solution in nl.pinv.
     :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
         until other limits are met (ftol, xtol)
     :param int lamda: initial Marquardt lambda=10**lamda 
@@ -104,7 +161,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
     lamMax = lam
     nfev = 0
     if Print:
-        print ' Hessian refinement on %d variables:'%(n)
+        print ' Hessian SVD refinement on %d variables:'%(n)
     Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()
@@ -125,7 +182,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
             Lam = np.eye(Amat.shape[0])*lam
             Amatlam = Amat*(One+Lam)
             try:
-                Xvec = nl.solve(Amatlam,Yvec)
+                Ainv = pinv(Amatlam,xtol)[0]    #do Moore-Penrose inversion (via SVD)
+                Xvec = np.inner(Ainv,Yvec)      #solve
             except nl.LinAlgError:
                 print 'ouch #1'
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
@@ -162,18 +220,18 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,la
     Anorm = np.outer(Adiag,Adiag)
     Lam = np.eye(Amat.shape[0])*lam
     Amatlam = Amat/Anorm        
-#    Amatlam = Amat*(One+Lam)                #scale Amat to Marquardt array?        
     try:
-        Bmat = nl.inv(Amatlam)/Anorm
-#        Bmat = Bmat*(One+Lam)               #rescale Bmat to Marquardt array?
+        Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
+        print 'Found %d SVD zeros'%(Nzero)
+        Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in making v-cov matrix'
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
-        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
-   
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]          
+            
 def getVCov(varyNames,varyList,covMatrix):
     '''obtain variance-covariance terms for a set of variables. NB: the varyList 
     and covMatrix were saved by the last least squares refinement so they must match.

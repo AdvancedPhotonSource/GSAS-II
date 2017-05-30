@@ -979,7 +979,11 @@ reVarDesc = {}
 the same values as :attr:`VarDesc` except that keys have been compiled as
 regular expressions. Initialized in :func:`CompileVarDesc`.
 '''
-P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
+# create a default space group object for P1; N.B. fails when building documentation
+try: 
+    P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
+except TypeError:
+    continue
 
 def GetPhaseNames(fl):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file

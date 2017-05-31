@@ -23,7 +23,7 @@ import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
 import time
-DEBUG = True
+DEBUG = False
 GSASIIpath.SetVersionNumber("$Revision$")
 class TIF_ReaderClass(G2obj.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks

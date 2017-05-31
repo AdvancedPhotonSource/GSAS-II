@@ -99,7 +99,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
-            if np.any(np.isnan(sig)):
+            if np.any(np.isnan(sig)) or not sig.shape:
                 print '*** Least squares aborted - some invalid esds possible ***'
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?

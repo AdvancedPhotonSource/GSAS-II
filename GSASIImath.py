@@ -183,11 +183,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             Amatlam = Amat*(One+Lam)
             try:
                 Ainv = pinv(Amatlam,xtol)[0]    #do Moore-Penrose inversion (via SVD)
-                Xvec = np.inner(Ainv,Yvec)      #solve
             except nl.LinAlgError:
-                print 'ouch #1'
+                print 'ouch #1 bad SVD inversion; change parameterization'
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
+            Xvec = np.inner(Ainv,Yvec)      #solve
             Xvec /= Adiag
             M2 = func(x0+Xvec,*args)
             nfev += 1

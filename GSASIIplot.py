@@ -6861,7 +6861,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     '''Layer plotting package. Can show layer structures as balls & sticks
     '''
 
-    global AtNames,AtTypes,XYZ,Bonds
+    global AtNames,AtTypes,XYZ,Bonds,Faces
+
     def FindBonds(atTypes,XYZ):
         Radii = []
         for Atype in atTypes:
@@ -6879,9 +6880,28 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 Bonds[i].append(Dx[j]*Radii[i]/sumR[j])
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
+
+    def FindFaces(Bonds):
+        Faces = []
+        for bonds in Bonds:
+            faces = []
+            if len(bonds) > 2:
+                FaceGen = G2lat.uniqueCombinations(bonds,3)     #N.B. this is a generator
+                for face in FaceGen:
+                    vol = nl.det(face)
+                    if abs(vol) > .5 or len(bonds) == 3:
+                        if vol < 0.:
+                            face = [face[0],face[2],face[1]]
+                        face = 1.8*np.array(face)
+                        if not np.array([np.array(nl.det(face-bond))+0.0001 < 0 for bond in bonds]).any():
+                            norm = np.cross(face[1]-face[0],face[2]-face[0])
+                            norm /= np.sqrt(np.sum(norm**2))
+                            faces.append([face,norm])
+            Faces.append(faces)
+        return Faces    
         
     def getAtoms():
-        global AtNames,AtTypes,XYZ,Bonds
+        global AtNames,AtTypes,XYZ,Bonds,Faces
         AtNames = []
         AtTypes = []
         newXYZ = np.zeros((0,3))
@@ -6921,6 +6941,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
 #        GSASIIpath.IPyBreak()
         
         Bonds = FindBonds(AtTypes,XYZ)
+        Faces = FindFaces(Bonds)
                         
     def OnKeyBox(event):
         mode = cb.GetValue()
@@ -6950,7 +6971,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             print ' Drawing saved to: '+Fname
-        elif mode[0] in ['L','F']:
+        elif mode[0] in ['L','F','P']:
             event.key = cb.GetValue()[0]
             wx.CallAfter(OnPlotKeyPress,event)
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
@@ -6973,6 +6994,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             return
         elif keyCode =='F' and len(laySeq) == 2:
             Page.fade = not Page.fade
+        elif keyCode == 'P':
+            Page.poly = not Page.poly
         if len(laySeq) != 2:
             return
         Trans = Layers['Transitions']
@@ -7144,6 +7167,24 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             GL.glPopMatrix()            
         GL.glPopMatrix()
                 
+    def RenderPolyhedra(x,y,z,Faces,color):
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glMultMatrixf(B4mat.T)
+        for face,norm in Faces:
+            GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
+            GL.glFrontFace(GL.GL_CW)
+            GL.glNormal3fv(norm)
+            GL.glBegin(GL.GL_TRIANGLES)
+            for vert in face:
+                GL.glVertex3fv(vert)
+            GL.glEnd()
+        GL.glPopMatrix()
+        GL.glShadeModel(GL.GL_SMOOTH)
+
     def RenderLabel(x,y,z,label,matRot):       
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
@@ -7162,7 +7203,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
 #        if caller:
 #            print caller
 # end of useful debug
-        global AtNames,AtTypes,XYZ,Bonds
+        global AtNames,AtTypes,XYZ,Bonds,Faces
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
@@ -7199,8 +7240,12 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             color = np.array(CL)/255.
             if len(laySeq) == 2 and AtTypes[iat][1] and Page.fade:
                 color *= .5
-            RenderSphere(x,y,z,atomRad,color)
-            RenderBonds(x,y,z,Bonds[iat],bondRad,color)
+            if Page.poly:
+                if len(Faces[iat])>16:
+                    RenderPolyhedra(x,y,z,Faces[iat],color)
+            else:
+                RenderSphere(x,y,z,atomRad,color)
+                RenderBonds(x,y,z,Bonds[iat],bondRad,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
         try:
@@ -7239,7 +7284,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Page.views = False
         Page.labels = False
         Page.fade = False
-    choice = [' save as:','jpeg','tiff','bmp','use keys for:','L - toggle labels']
+        Page.poly = False
+    choice = [' save as:','jpeg','tiff','bmp','use keys for:','L - toggle labels',
+              'F - fade 2nd layer','P - polyhedra']
     if len(laySeq) == 2:
         choice += ['F - toggle fade','X/shift-X move Dx','Y/shift-Y move Dy','Z/shift-Z move Dz']
     Page.keyPress = OnPlotKeyPress

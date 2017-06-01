@@ -7241,7 +7241,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             if len(laySeq) == 2 and AtTypes[iat][1] and Page.fade:
                 color *= .5
             if Page.poly:
-                if len(Faces[iat])>16:
+                if len(Faces[iat])>16:  #allows tetrahedra but not stray triangles
                     RenderPolyhedra(x,y,z,Faces[iat],color)
             else:
                 RenderSphere(x,y,z,atomRad,color)

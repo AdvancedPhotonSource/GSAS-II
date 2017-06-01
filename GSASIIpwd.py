@@ -1457,7 +1457,8 @@ def DoCalibInst(IndexPeaks,Inst):
         if peak[2] and peak[3] and sig > 0.:
             peakPos.append(peak[0])
             peakDsp.append(peak[-1])    #d-calc
-            peakWt.append(peak[-1]**2/sig**2)   #weight by d**2
+#            peakWt.append(peak[-1]**2/sig**2)   #weight by d**2
+            peakWt.append(1./(sig*peak[-1]))   #
     peakPos = np.array(peakPos)
     peakDsp = np.array(peakDsp)
     peakWt = np.array(peakWt)

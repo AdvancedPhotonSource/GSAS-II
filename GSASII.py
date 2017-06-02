@@ -2698,9 +2698,9 @@ class GSASII(wx.Frame):
             if pltNum >= 0:                         #to avoid the startup with no plot!
                 self.G2plotNB.nb.GetPage(pltNum)
             item = event.GetItem()
-            wx.CallAfter(G2gd.SelectDataTreeItem,self,item)
-            if self.oldFocus: # Why do this?
-                wx.CallAfter(self.oldFocus.SetFocus)
+            wx.CallAfter(G2gd.SelectDataTreeItem,self,item,self.oldFocus)
+            #if self.oldFocus: # Why do this?
+            #    wx.CallAfter(self.oldFocus.SetFocus)
         
     def OnPatternTreeItemCollapsed(self, event):
         'Called when a tree item is collapsed - all children will be collapsed'
@@ -2773,8 +2773,8 @@ class GSASII(wx.Frame):
                 else:
                     wx.CallAfter(self.PatternTree.SelectItem,item)
             else:    
-                self.PatternTree.GetPrevSibling(item)
-                self.PatternTree.SelectItem(item)
+                item = self.PatternTree.GetPrevSibling(item)
+                if item.IsOk(): self.PatternTree.SelectItem(item)
         elif key == wx.WXK_DOWN:
             if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
                 next = self.PatternTree.GetNextSibling(parent)
@@ -2787,8 +2787,8 @@ class GSASII(wx.Frame):
                 else:
                     wx.CallAfter(self.PatternTree.SelectItem,item)
             else:    
-                self.PatternTree.GetNextSibling(item)
-                self.PatternTree.SelectItem(item)
+                item = self.PatternTree.GetNextSibling(item)
+                if item.IsOk(): self.PatternTree.SelectItem(item)
                 
     def OnReadPowderPeaks(self,event):
         'Bound to menu Data/Read Powder Peaks'

@@ -4509,7 +4509,7 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
         item, cookie = G2frame.PatternTree.GetNextChild(parentId, cookie)
     return 0                
 
-def SelectDataTreeItem(G2frame,item):
+def SelectDataTreeItem(G2frame,item,oldFocus=None):
     '''Called from :meth:`GSASII.GSASII.OnDataTreeSelChanged` when a item is selected on the tree.
     Also called from GSASII.OnPatternTreeEndDrag, OnAddPhase -- might be better to select item, triggering
     the the bind to SelectDataTreeItem
@@ -4557,7 +4557,6 @@ def SelectDataTreeItem(G2frame,item):
         G2frame.dataFrame.PhaseUserSize = None
         
     SetDataMenuBar(G2frame)
-    G2frame.dataFrame.Raise()            
     G2frame.dataFrame.currentGrids = [] # this will contain pointers to a grid placed in the frame
     G2frame.PickId = item
     G2frame.PickIdText = None
@@ -4569,6 +4568,7 @@ def SelectDataTreeItem(G2frame,item):
         G2frame.dataFrame.setSizePosLeft(defWid)
         wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                     value='Select an item from the tree to see/edit parameters')        
+        G2frame.dataFrame.Raise()            
         return
     else:
         parentID = G2frame.PatternTree.GetItemParent(item)
@@ -4831,7 +4831,10 @@ def SelectDataTreeItem(G2frame,item):
     if G2frame.PickId:
         G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.dataFrame.Raise()
-
+    if oldFocus:
+        oldFocus.GetTopLevelParent().Raise()
+        oldFocus.SetFocus()
+        
 def SetDataMenuBar(G2frame,menu=None):
     '''Set the menu for the data frame. On the Mac put this
     menu for the data tree window instead.

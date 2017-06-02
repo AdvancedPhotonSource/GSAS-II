@@ -2699,7 +2699,7 @@ class GSASII(wx.Frame):
                 self.G2plotNB.nb.GetPage(pltNum)
             item = event.GetItem()
             wx.CallAfter(G2gd.SelectDataTreeItem,self,item,self.oldFocus)
-            #if self.oldFocus: # Why do this?
+            #if self.oldFocus: # now done via last parameter on SelectDataTreeItem
             #    wx.CallAfter(self.oldFocus.SetFocus)
         
     def OnPatternTreeItemCollapsed(self, event):
@@ -2772,7 +2772,10 @@ class GSASII(wx.Frame):
                     wx.CallAfter(self.PatternTree.SelectItem,NewId)
                 else:
                     wx.CallAfter(self.PatternTree.SelectItem,item)
-            else:    
+            elif sys.platform == "win32":    
+                self.PatternTree.GetPrevSibling(item)
+                self.PatternTree.SelectItem(item)
+            else:
                 item = self.PatternTree.GetPrevSibling(item)
                 if item.IsOk(): self.PatternTree.SelectItem(item)
         elif key == wx.WXK_DOWN:
@@ -2786,6 +2789,9 @@ class GSASII(wx.Frame):
                     wx.CallAfter(self.PatternTree.SelectItem,NewId)
                 else:
                     wx.CallAfter(self.PatternTree.SelectItem,item)
+            elif sys.platform == "win32":    
+                self.PatternTree.GetNextSibling(item)
+                self.PatternTree.SelectItem(item)
             else:    
                 item = self.PatternTree.GetNextSibling(item)
                 if item.IsOk(): self.PatternTree.SelectItem(item)

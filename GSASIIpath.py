@@ -19,6 +19,7 @@ Accesses configuration options, as defined in config.py
 import os
 import sys
 import platform
+import glob
 # see if a directory for local modifications is defined. If so, stick that in the path
 if os.path.exists(os.path.expanduser('~/.G2local/')):
     sys.path.insert(0,os.path.expanduser('~/.G2local/'))
@@ -61,18 +62,35 @@ elif sys.platform == "linux2":
         bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
     else:
         bindir = 'binlinux%d.%d' % sys.version_info[0:2]
-for loc in sys.path[0],os.path.abspath(os.path.split(__file__)[0]):
-    if bindir:
-        if os.path.exists(os.path.join(loc,bindir)) and os.path.join(loc,bindir) not in sys.path: 
-            sys.path.insert(0,os.path.join(loc,bindir))
-        # is there a bin directory? (created by a local compile), if so put
-        # that at the top of the path
-    if os.path.exists(os.path.join(loc,'bin')) and os.path.getsize(os.path.join(loc,'bin')):
-        bindir = 'bin'
-        if os.path.join(loc,'bin') not in sys.path: 
-            sys.path.insert(0,os.path.join(loc,bindir))
-print 'GSAS-II binary directory: ',os.path.join(loc,bindir)
-if bindir == None:
+binpath = None
+# scan the first directory in path as well as the location of current file
+# for location of GSAS-II shared libraries (binaries: .so or .pyd files)
+for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+    # Look at bin directory (created by a local compile) before standard dist
+    # that at the top of the path
+    for d in 'bin',bindir:
+        if not d: continue
+        fpth = os.path.join(loc,d)
+        if not os.path.exists(fpth): continue
+        if not glob.glob(os.path.join(fpth,'pyspg.*')): continue
+        savpath = sys.path[:]
+        sys.path.insert(0,fpth)
+        # test to see if a shared library can be used
+        try:
+            import pyspg
+            pyspg.sgforpy('P -1')
+        except Exception as err:
+            print(70*'=')
+            print('Failed to run pyspg in {}\nerror: {}'.format(fpth,err))
+            print(70*'=')
+            sys.path = savpath
+            continue
+        binpath = fpth
+        break
+    if binpath: break
+if binpath: 
+    print('GSAS-II binary directory: {}'.format(binpath))
+else:
     raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****"
 # add the data import and export directory to the search path
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd

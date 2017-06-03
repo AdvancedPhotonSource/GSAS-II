@@ -231,7 +231,7 @@ class G2TreeCtrl(wx.TreeCtrl):
             name = self.GetItemText(item)
             if self.IsExpanded(item): self.ExposedItems.append(name)
             item, cookie = self.GetNextChild(self.root, cookie)
-        print 'exposed:',self.ExposedItems
+#        print 'exposed:',self.ExposedItems
 
     def RestoreExposedItems(self):
         '''Traverse the top level tree items and restore exposed (expanded) tree items

@@ -6142,7 +6142,8 @@ entered the right symbol for your structure.
             Indx.clear()
             rbObj = data['RBModels']['Residue'][rbId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
-            data['Drawing']['Quaternion'] = rbObj['Orient'][0]
+            Quad = rbObj['Orient'][0]
+            data['Drawing']['Quaternion'] = G2mth.invQ(Quad)
             G2frame.bottomSizer =  ResrbSizer(rbObj)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()

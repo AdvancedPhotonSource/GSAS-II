@@ -169,6 +169,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         nfev += 1
         chisq0 = np.sum(M**2)
         Yvec,Amat = Hess(x0,*args)
+#        print 'unscaled SVD zeros',pinv(Amat)[1]
         Adiag = np.sqrt(np.diag(Amat))
         psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
         if np.any(psing):                #hard singularity in matrix
@@ -182,7 +183,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             Lam = np.eye(Amat.shape[0])*lam
             Amatlam = Amat*(One+Lam)
             try:
-                Ainv = pinv(Amatlam,xtol)[0]    #do Moore-Penrose inversion (via SVD)
+                Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
+#                Ainv = nl.inv(Amatlam); Nzeros = 0
             except nl.LinAlgError:
                 print 'ouch #1 bad SVD inversion; change parameterization'
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
@@ -195,7 +197,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             if chisq1 > chisq0*(1.+ftol):
                 lam *= 10.
                 if Print:
-                    print 'new chi^2 %.5g; matrix modification needed; lambda now %.1e'%(chisq1,lam)
+                    print 'new chi^2 %.5g, %d SVD zeros ; matrix modification needed; lambda now %.1e'%(chisq1,Nzeros,lam)
             else:
                 x0 += Xvec
                 lam /= 10.
@@ -223,6 +225,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     try:
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
         print 'Found %d SVD zeros'%(Nzero)
+#        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:

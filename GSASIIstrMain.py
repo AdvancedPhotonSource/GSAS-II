@@ -65,7 +65,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
-        elif 'Hessian' in Controls['deriv type']:
+        elif 'analytic Hessian' in Controls['deriv type']:
             Lamda = Controls.get('Marquardt',-3)
             maxCyc = Controls['max cyc']
             result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,lamda=Lamda,
@@ -73,6 +73,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
             Controls['Marquardt'] = -3  #reset to default
+        elif 'Hessian SVD' in Controls['deriv type']:
+            maxCyc = Controls['max cyc']
+            result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            ncyc = result[2]['num cyc']+1
         else:           #'numeric'
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -82,6 +87,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
+        Rvals['SVD0'] = result[2].get('SVD0',0)
         Rvals['converged'] = result[2].get('Converged')
         Rvals['DelChi2'] = result[2].get('DelChi2',-1.)
         Rvals['chisq'] = np.sum(result[2]['fvec']**2)
@@ -104,7 +110,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
-        except TypeError:          #result[1] is None on singular matrix
+        except TypeError:          #result[1] is None on singular matrix or LinAlgError
             IfOK = False
             if not len(varyList):
                 covMatrix = []

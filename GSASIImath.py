@@ -145,6 +145,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
          * 'nfev':
          * 'lamMax':
          * 'psing':
+         * 'SVD0':
             
     """
                 
@@ -161,7 +162,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     lamMax = lam
     nfev = 0
     if Print:
-        print ' Hessian SVD refinement on %d variables:'%(n)
+        print ' Hessian Levenburg-Marquardt SVD refinement on %d variables:'%(n)
     Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()
@@ -169,11 +170,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         nfev += 1
         chisq0 = np.sum(M**2)
         Yvec,Amat = Hess(x0,*args)
-#        print 'unscaled SVD zeros',pinv(Amat)[1]
         Adiag = np.sqrt(np.diag(Amat))
         psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
         if np.any(psing):                #hard singularity in matrix
-            return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
+            return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
         Anorm = np.outer(Adiag,Adiag)
         Yvec /= Adiag
         Amat /= Anorm
@@ -184,11 +184,10 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             Amatlam = Amat*(One+Lam)
             try:
                 Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
-#                Ainv = nl.inv(Amatlam); Nzeros = 0
             except nl.LinAlgError:
                 print 'ouch #1 bad SVD inversion; change parameterization'
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
-                return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]
+                return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
             Xvec = np.inner(Ainv,Yvec)      #solve
             Xvec /= Adiag
             M2 = func(x0+Xvec,*args)
@@ -227,13 +226,124 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         print 'Found %d SVD zeros'%(Nzero)
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
-        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
+        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in making v-cov matrix'
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
-        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing}]          
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]          
+            
+def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False):
+    
+    """
+    Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
+    values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`    
+    where :math:`x = arg min(\sum_{y=0}^{N_{obs}} (func(y)^2,axis=0))`
+
+    :param function func: callable method or function
+        should take at least one (possibly length N vector) argument and
+        returns M floating point numbers.
+    :param np.ndarray x0: The starting estimate for the minimization of length N
+    :param function Hess: callable method or function
+        A required function or method to compute the weighted vector and Hessian for func.
+        It must be a symmetric NxN array
+    :param tuple args: Any extra arguments to func are placed in this tuple.
+    :param float ftol: Relative error desired in the sum of squares.
+    :param float xtol: Relative tolerance of zeros in the SVD solution in nl.pinv.
+    :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
+        until other limits are met (ftol, xtol)
+    :param bool Print: True for printing results (residuals & times) by cycle
+
+    :returns: (x,cov_x,infodict) where
+
+      * x : ndarray
+        The solution (or the result of the last iteration for an unsuccessful
+        call).
+      * cov_x : ndarray
+        Uses the fjac and ipvt optional outputs to construct an
+        estimate of the jacobian around the solution.  ``None`` if a
+        singular matrix encountered (indicates very flat curvature in
+        some direction).  This matrix must be multiplied by the
+        residual standard deviation to get the covariance of the
+        parameter estimates -- see curve_fit.
+      * infodict : dict
+        a dictionary of optional outputs with the keys:
+
+         * 'fvec' : the function evaluated at the output
+         * 'num cyc':
+         * 'nfev':
+         * 'lamMax':0.
+         * 'psing':
+         * 'SVD0':
+            
+    """
+                
+    ifConverged = False
+    deltaChi2 = -10.
+    x0 = np.array(x0, ndmin=1)      #might be redundant?
+    n = len(x0)
+    if type(args) != type(()):
+        args = (args,)
+        
+    icycle = 0
+    nfev = 0
+    if Print:
+        print ' Hessian SVD refinement on %d variables:'%(n)
+    while icycle < maxcyc:
+        time0 = time.time()
+        M = func(x0,*args)
+        nfev += 1
+        chisq0 = np.sum(M**2)
+        Yvec,Amat = Hess(x0,*args)
+        Adiag = np.sqrt(np.diag(Amat))
+        psing = np.where(np.abs(Adiag) < 1.e-14,True,False)
+        if np.any(psing):                #hard singularity in matrix
+            return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
+        Anorm = np.outer(Adiag,Adiag)
+        Yvec /= Adiag
+        Amat /= Anorm
+        if Print:
+            print 'initial chi^2 %.5g'%(chisq0)
+        try:
+            Ainv,Nzeros = pinv(Amat,xtol)    #do Moore-Penrose inversion (via SVD)
+        except nl.LinAlgError:
+            print 'ouch #1 bad SVD inversion; change parameterization'
+            psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
+            return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
+        Xvec = np.inner(Ainv,Yvec)      #solve
+        Xvec /= Adiag
+        M2 = func(x0+Xvec,*args)
+        nfev += 1
+        chisq1 = np.sum(M2**2)
+        deltaChi2 = (chisq0-chisq1)/chisq0
+        if Print:
+            print ' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
+                icycle,time.time()-time0,chisq1,deltaChi2)
+        if deltaChi2 < ftol:
+            ifConverged = True
+            if Print: print "converged"
+            break
+        icycle += 1
+    M = func(x0,*args)
+    nfev += 1
+    Yvec,Amat = Hess(x0,*args)
+    Adiag = np.sqrt(np.diag(Amat))
+    Anorm = np.outer(Adiag,Adiag)
+    Amat = Amat/Anorm        
+    try:
+        Bmat,Nzero = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
+        print 'Found %d SVD zeros'%(Nzero)
+#        Bmat = nl.inv(Amatlam); Nzeros = 0
+        Bmat = Bmat/Anorm
+        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':[],
+            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
+    except nl.LinAlgError:
+        print 'ouch #2 linear algebra error in making v-cov matrix'
+        psing = []
+        if maxcyc:
+            psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]          
             
 def getVCov(varyNames,varyList,covMatrix):
     '''obtain variance-covariance terms for a set of variables. NB: the varyList 

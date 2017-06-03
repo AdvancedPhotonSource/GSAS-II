@@ -2830,7 +2830,7 @@ def UpdateControls(G2frame,data):
             
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,WACV)
-        Choice=['analytic Jacobian','numeric','analytic Hessian']   #TODO +'SVD refine' - what flags will it need?
+        Choice=['analytic Jacobian','numeric','analytic Hessian','Hessian SVD']   #TODO +'SVD refine' - what flags will it need?
         derivSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         derivSel.SetValue(data['deriv type'])
@@ -2846,12 +2846,13 @@ def UpdateControls(G2frame,data):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             maxCyc.Bind(wx.EVT_COMBOBOX, OnMaxCycles)
             LSSizer.Add(maxCyc,0,WACV)
-            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial lambda = 10**'),0,WACV)
-            MarqChoice = ['-3','-2','-1','0','1','2','3','4']
-            marqLam = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['Marquardt']),choices=MarqChoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
-            LSSizer.Add(marqLam,0,WACV)
+            if 'SVD' not in data['deriv type']:
+                LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial lambda = 10**'),0,WACV)
+                MarqChoice = ['-3','-2','-1','0','1','2','3','4']
+                marqLam = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['Marquardt']),choices=MarqChoice,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
+                LSSizer.Add(marqLam,0,WACV)
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' SVD zero tolerance:'),0,WACV)
             LSSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'SVDtol',nDig=(10,1,'g'),min=1.e-9,max=.01),0,WACV)
         else:       #TODO what for SVD refine?
@@ -2896,6 +2897,11 @@ def UpdateControls(G2frame,data):
         G2frame.dataDisplay.Destroy()
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
+    else:
+        Status = G2frame.dataFrame.GetStatusBar()
+    if 'SVD' in data['deriv type']:
+        Status.SetStatusText('Hessian SVD not recommended for initial refinements; use analytic Hessian or Jacobian')
+    else:
         Status.SetStatusText('')
     G2frame.dataFrame.SetLabel('Controls')
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
@@ -4611,8 +4617,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if 'Rvals' in data:
                 Nvars = len(data['varyList'])
                 Rvals = data['Rvals']
-                text = '\nFinal residuals: \nwR = %.3f%% \nchi**2 = %.1f \nGOF = %.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
-                text += '\nNobs = %d \nNvals = %d'%(Rvals['Nobs'],Nvars)
+                text = '\nFinal residuals: \nwR = %.3f%% \nchi**2 = %.1f \nGOF = %.2f ' \
+                    %(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+                text += '\nNobs = %d \nNvals = %d \nSVD zeros = %d'%(Rvals['Nobs'],Nvars,Rvals.get('SVD0',0.))
                 if 'lamMax' in Rvals:
                     text += '\nlog10 MaxLambda = %.1f'%(np.log10(Rvals['lamMax']))
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),

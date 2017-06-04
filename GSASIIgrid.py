@@ -412,7 +412,7 @@ class SphereEnclosure(wx.Dialog):
         self.General = general
         self.Drawing = drawing
         self.indx = indx
-        self.Sphere = 1.0
+        self.Sphere = [1.0,]
         self.centers = []
         self.atomTypes = [[item,True] for item in self.General['AtomTypes']]
         
@@ -446,7 +446,7 @@ class SphereEnclosure(wx.Dialog):
         mainSizer.Add(topSizer,0,WACV)
         sphereSizer = wx.BoxSizer(wx.HORIZONTAL)
         sphereSizer.Add(wx.StaticText(self.panel,label=' Sphere radius: '),0,WACV)
-        radius = G2G.ValidatedTxtCtrl(self.panel,self.Sphere,nDig=(10,3),size=(65,25))
+        radius = G2G.ValidatedTxtCtrl(self.panel,self.Sphere,0,nDig=(10,3),size=(65,25))
         sphereSizer.Add(radius,0,WACV)
         mainSizer.Add(sphereSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Target selected atoms:'),0,WACV)
@@ -481,7 +481,7 @@ class SphereEnclosure(wx.Dialog):
         for atm in self.atomTypes:
             if atm[1]:
                 used.append(str(atm[0]))
-        return self.centers,self.Sphere,used
+        return self.centers,self.Sphere[0],used
 
     def OnOk(self,event):
         parent = self.GetParent()

@@ -3751,7 +3751,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for name in histNames:
         if name in data and 'newCellDict' in data[name]:
             newCellDict.update(data[name]['newCellDict'])
-#    newCellDict = data[histNames[0]].get('newCellDict',{})
     cellAlist = []
     for item in newCellDict:
         cellAlist.append(newCellDict[item][0])
@@ -3905,7 +3904,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             Types += (len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT+':10,5',]
             Types += [wg.GRID_VALUE_FLOAT+':10,3',]
             Albls = [pfx+'A'+str(i) for i in range(6)]
-            for hId,name in enumerate(histNames):
+            for name in histNames:
+                hId = Histograms[name]['hId']
                 phfx = '%d:%d:'%(pId,hId)
                 esdLookUp = {}
                 dLookup = {}

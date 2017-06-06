@@ -2608,16 +2608,24 @@ def validProtein(Phase):
     for ib,box in enumerate(iBox):  #put in a try for too many atoms in box (IndexError)?
         Boxes[box[0],box[1],box[2],0] += 1
         Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
-    pstat = 0.
-    stat = 0.
-    mtrxstat = 0.
-    for ia,atom in cartAtoms:
-        if not i:   #skip 1st atom
+    indices = (-1,0,1)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
+    dsmax = 3.75**2
+    for ia,atom in enumerate(cartAtoms):
+        if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
             continue
-        if atom[0] != cartAtom[ia-1][0]:    #new residue - start analysis
-            c = np.zeros((3,3))
-            s = 1
-    
+        ibox = iBox[ia]         #box location of atom
+        tgts = []
+        for unit in Units:
+            jbox = ibox+unit
+            if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
+                tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
+        tgts = list(set(tgts))
+        tgts = [tgt for tgt in tgts if atom[1:3] != cartAtoms[tgt][1:3]]    #exclude same residue
+        tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['C','N']]  #exclude main chain
+        tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) <= dsmax]
+            
+        
     print 'Do VALIDPROTEIN analysis - TBD'
             
     

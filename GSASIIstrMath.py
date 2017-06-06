@@ -436,7 +436,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             pWsum[name] += wt*(Y[ind])**2
                             pWnum[name] += 1
     pWsum['PWLref'] = 0.
-    pWnum[name] = 0
+    pWnum['PWLref'] = 0
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
             pId = int(item.split(':')[0])
@@ -445,7 +445,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                 pVals.append(parmDict[item])
                 pWt.append(negWt[pId])
                 pWsum['PWLref'] += negWt[pId]*(parmDict[item])**2
-                pWnum[name] += 1
+                pWnum['PWLref'] += 1
     pVals = np.array(pVals)
     pWt = np.array(pWt)         #should this be np.sqrt?
     return pNames,pVals,pWt,pWsum,pWnum

@@ -100,7 +100,8 @@ def pinv(a, rcond=1e-15 ):
     cutoff = rcond*np.maximum.reduce(s)
     s = np.where(s>cutoff,1./s,0.)
     nzero = s.shape[0]-np.count_nonzero(s)
-    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis], np.transpose(u)))
+#    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis], np.transpose(u)))
+    res = np.dot(vt.T,s[:,nxs]*u.T)
     return res,nzero
 
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False):
@@ -223,7 +224,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Amatlam = Amat/Anorm        
     try:
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-        print 'Found %d SVD zeros'%(Nzero)
+        if Print:
+            print 'Found %d SVD zeros'%(Nzero)
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
@@ -2569,22 +2571,54 @@ def ValEsd(value,esd=0,nTZ=False):
 ##### Protein validation - "ERRATV2" analysis
 ###############################################################################
 
-    def validProtein(Phase):
-        resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
-            'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
-        print 'Do VALIDPROTEIN analysis - TBD'
-        General = Phase['General']
-        Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
-        cx,ct,cs,cia = General['AtomPtrs']
-        Atoms = Phase['Atoms']
-        cartAtoms = []
-        chains = []
-        for atom in Atoms:
-            if atom[2] in resNames:
-                cartAtoms.append(atom[:cx+3])
-                if atom[2] not in chains:
-                    chains.append(atom[2])
-                cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
+def validProtein(Phase):
+    resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
+        'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
+# data taken from erratv2.ccp
+    lmt = np.array([17.190823041860433,11.526684477428809])
+    b1 = np.array([	[0,0,0,0,0,0],
+          [0,	5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],	
+          [0,	3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],	
+          [0,	4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],	
+          [0,	4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],	
+          [0,	5054.781210204625500,	4304.078200827220800,	5287.691183798409800,	4050.797811118806700,	6666.856740479164700]])
+    avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
+    General = Phase['General']
+    Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
+    cx,ct,cs,cia = General['AtomPtrs']
+    Atoms = Phase['Atoms']
+    cartAtoms = []
+    chains = []
+    chainBeg = []
+    xyzmin = 999.*np.ones(3)
+    xyzmax = -999.*np.ones(3)
+    for atom in Atoms:
+        if atom[1] in resNames:
+            cartAtoms.append(atom[:cx+3])
+            if atom[2] not in chains:
+                chains.append(atom[2])
+                chainBeg.append(len(cartAtoms)-1)
+            cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
+    XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
+    xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
+    xyzmax = np.array([np.max(XYZ.T[i]) for i in [0,1,2]])
+    nbox = list(np.array(np.ceil((xyzmax-xyzmin)/4.),dtype=int))+[15,]
+    Boxes = np.zeros(nbox,dtype=int)
+    iBox = np.array([np.trunc((XYZ.T[i]-xyzmin[i])/4.) for i in [0,1,2]],dtype=int).T
+    for ib,box in enumerate(iBox):  #put in a try for too many atoms in box (IndexError)?
+        Boxes[box[0],box[1],box[2],0] += 1
+        Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
+    pstat = 0.
+    stat = 0.
+    mtrxstat = 0.
+    for ia,atom in cartAtoms:
+        if not i:   #skip 1st atom
+            continue
+        if atom[0] != cartAtom[ia-1][0]:    #new residue - start analysis
+            c = np.zeros((3,3))
+            s = 1
+    
+    print 'Do VALIDPROTEIN analysis - TBD'
             
     
 ################################################################################

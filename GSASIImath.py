@@ -2616,7 +2616,7 @@ def validProtein(Phase):
             continue
         ibox = iBox[ia]         #box location of atom
         tgts = []
-        for unit in Units:
+        for unit in Units:      #assemble list of all possible target atoms
             jbox = ibox+unit
             if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])

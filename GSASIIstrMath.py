@@ -3955,7 +3955,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
-    GetFobsSq(Histograms,Phases,parmDict,calcControls)
+#    GetFobsSq(Histograms,Phases,parmDict,calcControls)
     Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs
     Histograms['Nrej'] = Nrej

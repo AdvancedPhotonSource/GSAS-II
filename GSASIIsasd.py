@@ -443,8 +443,8 @@ def SchulzZimmCume(x,pos,args):
     '''
     scale = args[0]
     nP = 500
-    xMin = np.max([0.,pos-4.*scale])
-    xMax = np.min([pos+4.*scale,1.e5])
+    xMin = np.fmax([0.,pos-4.*scale])
+    xMax = np.fmin([pos+4.*scale,1.e5])
     X = np.linspace(xMin,xMax,nP,True)
     fxn = LSWDist(X,pos)
     mat = np.outer(np.ones(nP),fxn)
@@ -1002,8 +1002,8 @@ def SetScale(Data,refData):
     refProfile,refLimits,refSample = refData
     x,y = Profile[:2]
     rx,ry = refProfile[:2]
-    Beg = np.max([rx[0],x[0],Limits[1][0],refLimits[1][0]])
-    Fin = np.min([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
+    Beg = np.fmax([rx[0],x[0],Limits[1][0],refLimits[1][0]])
+    Fin = np.fmin([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
     iBeg = np.searchsorted(x,Beg)
     iFin = np.searchsorted(x,Fin)+1        #include last point
     sum = np.sum(y[iBeg:iFin])
@@ -1403,8 +1403,8 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
         args = [distDict['StdDev']]
         step = 0.02*distDict['StdDev']
         mode = distDict['Mean']
-        minX = np.max([mode-4.*distDict['StdDev'],1.])
-        maxX = np.min([mode+4.*distDict['StdDev'],1.e5])
+        minX = np.fmax([mode-4.*distDict['StdDev'],1.])
+        maxX = np.fmin([mode+4.*distDict['StdDev'],1.e5])
     elif 'LSW' in DistName:
         distFxn = 'LSWDist'
         cumeFxn = 'LSWCume'
@@ -1416,8 +1416,8 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
         cumeFxn = 'SchulzZimmCume'
         pos = distDict['Mean']
         args = [distDict['StdDev']]
-        minX = np.max([1.,pos-4.*distDict['StdDev']])
-        maxX = np.min([pos+4.*distDict['StdDev'],1.e5])
+        minX = np.fmax([1.,pos-4.*distDict['StdDev']])
+        maxX = np.fmin([pos+4.*distDict['StdDev'],1.e5])
     nP = 500
     Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')

@@ -77,7 +77,7 @@ class scanCCD(wx.Frame):
         self.itemPicked = None
         self.Image = []
         self.Hxyw = []
-        self.data = {'color':'Paired','range':[[0,1000],[0,1000]]}
+        self.data = {'color':'gist_ncar','range':[[0,1000],[0,1000]]}
 
     def ExitMain(self, event):
         sys.exit()

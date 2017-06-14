@@ -1254,14 +1254,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
             if G2frame.Contour:
-                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+                choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
                 choice.sort()
                 dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelection()
                     G2frame.ContourColor = choice[sel]
                 else:
-                    G2frame.ContourColor = 'Paired'
+                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
                 dlg.Destroy()
             elif G2frame.SinglePlot:
                 G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
@@ -1373,7 +1373,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     q = 2.*np.pi/dsp
                     xpos = G2lat.Dsp2pos(Parms,xpos)
                 elif G2frame.Contour and 'T' in Parms['Type'][0]:
-                    xpos = X[xpos]                    
+                    xpos = X[int(xpos)]                   
                     dsp = G2lat.Pos2dsp(Parms,xpos)
                     q = 2.*np.pi/dsp
                 else:
@@ -2438,14 +2438,14 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     G2frame.PDFselections = None
             dlg.Destroy()
         elif event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = 'Paired'
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
             dlg.Destroy()
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
@@ -2986,14 +2986,14 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title=''):
             dlg.Destroy()
             
         elif event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = 'Paired'
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
             dlg.Destroy()
         wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
     
@@ -3624,7 +3624,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.clabel(CS,fontsize=9,inline=1)
         except ValueError:
             pass
-        Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
+        acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+        Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
         Plot.plot(-x,y,'+',picker=3)
         Page.figure.colorbar(Img)
         Plot.axis('off')
@@ -3745,7 +3746,8 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
+            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
             x,y,z = SHData['PFxyz']
             Plot.axis('off')
@@ -3793,7 +3795,8 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
-            Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
+            acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
             h,k,l = SHData['PFhkl']
             Plot.axis('off')
@@ -3936,7 +3939,7 @@ def PlotCovariance(G2frame,Data):
 
     def OnPlotKeyPress(event):
         if event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:
@@ -4095,7 +4098,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 
     def OnPlotKeyPress(event):
         if event.key == 's':
-            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
             choice.sort()
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
             if dlg.ShowModal() == wx.ID_OK:

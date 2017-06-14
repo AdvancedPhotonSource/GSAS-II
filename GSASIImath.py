@@ -2572,6 +2572,12 @@ def ValEsd(value,esd=0,nTZ=False):
 ###############################################################################
 
 def validProtein(Phase):
+    
+    def sumintact(intact):
+        return {'CC':intact['CC'],'NN':intact['NN'],'OO':intact['OO'],
+        'CN':(intact['CN']+intact['NC']),'CO':(intact['CO']+intact['OC']),
+        'NO':(intact['NO']+intact['ON'])}
+        
     resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
         'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
 # data taken from erratv2.ccp
@@ -2582,22 +2588,22 @@ def validProtein(Phase):
           [0,	4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],	
           [0,	4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],	
           [0,	5054.781210204625500,	4304.078200827220800,	5287.691183798409800,	4050.797811118806700,	6666.856740479164700]])
-    avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
+    avg = np.array([0.,0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
     Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
     cx,ct,cs,cia = General['AtomPtrs']
     Atoms = Phase['Atoms']
     cartAtoms = []
-    chains = []
-    chainBeg = []
     xyzmin = 999.*np.ones(3)
     xyzmax = -999.*np.ones(3)
+    #select residue atoms, skipping main chain C & N; make cartesian
     for atom in Atoms:
         if atom[1] in resNames:
+            if atom[4].strip() in ['S','Se']:
+                atom[4] = 'O'
+            if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
+                continue
             cartAtoms.append(atom[:cx+3])
-            if atom[2] not in chains:
-                chains.append(atom[2])
-                chainBeg.append(len(cartAtoms)-1)
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
@@ -2611,9 +2617,28 @@ def validProtein(Phase):
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
     dsmax = 3.75**2
+    chains = []
+    resIntAct = []
+    chainIntAct = []
+    res = []
+    newChain = True
+    intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
     for ia,atom in enumerate(cartAtoms):
-        if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
-            continue
+        if atom[2] not in chains:   #get chain id & save residue sequence from last chain
+            chains.append(atom[2])
+            if len(resIntAct):
+                resIntAct.append(sumintact(intact))
+                chainIntAct.append(resIntAct)
+                res = []
+                resIntAct = []
+                intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
+                newChain = True
+        if atom[0] not in res:  #new residue, get residue no.
+            res.append(atom[0])
+            if not newChain:
+                resIntAct.append(sumintact(intact))
+            intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
+            newChain = False
         ibox = iBox[ia]         #box location of atom
         tgts = []
         for unit in Units:      #assemble list of all possible target atoms
@@ -2624,6 +2649,35 @@ def validProtein(Phase):
         tgts = [tgt for tgt in tgts if atom[1:3] != cartAtoms[tgt][1:3]]    #exclude same residue
         tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['C','N']]  #exclude main chain
         tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) <= dsmax]
+        for tgt in tgts:
+            dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
+            mult = 1.0
+            if dsqt > 3.25:
+                mult = 2.*(3.75-dsqt)
+            intype = atom[4].strip()+cartAtoms[tgt][4].strip()
+            intact[intype] += mult            
+    resIntAct.append(sumintact(intact))
+    chainIntAct.append(resIntAct)
+    chainProb = []
+    for ich,chn in enumerate(chains):
+        IntAct = chainIntAct[ich]
+        nRes = len(IntAct)
+        Probs = []
+        for i in range(4,nRes-4):
+            mtrx = np.zeros(6)
+            summ = 0.
+            for j in range(i-4,i+4):
+                summ += np.sum(np.array(IntAct[j].values()))
+                mtrx[1] += IntAct[j]['CC']
+                mtrx[2] += IntAct[j]['CN']
+                mtrx[3] += IntAct[j]['CO']
+                mtrx[4] += IntAct[j]['NN']
+                mtrx[5] += IntAct[j]['NO']
+            mtrx /= summ
+            mtrx -= avg
+            prob = np.inner(np.inner(mtrx,b1),mtrx)
+            Probs.append(prob)
+        chainProb.append(Probs)
             
         
     print 'Do VALIDPROTEIN analysis - TBD'
@@ -2696,7 +2750,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         for hist in Gangls.keys():
             Refs = refData[hist]
             Refs[:,5] = np.where(Refs[:,5]>0.,Refs[:,5],0.)
-            wt = 1./np.sqrt(np.max(Refs[:,4],.25))
+            wt = 1./np.sqrt(np.fmax(Refs[:,4],.25))
 #            wt = 1./np.max(Refs[:,4],.25)
             sumObs += np.sum(wt*Refs[:,5])
             Refs[:,6] = 1.
@@ -2725,7 +2779,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             mat = np.zeros((len(varyList),len(refData[hist])))
             Refs = refData[hist]
             H = Refs[:,:3]
-            wt = 1./np.sqrt(np.max(Refs[:,4],.25))
+            wt = 1./np.sqrt(np.fmax(Refs[:,4],.25))
 #            wt = 1./np.max(Refs[:,4],.25)
             phi,beta = G2lat.CrsAng(H,cell,SGData)
             psi,gam,dPdA,dGdA = G2lat.SamAng(Refs[:,3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!

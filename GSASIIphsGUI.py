@@ -5496,7 +5496,7 @@ entered the right symbol for your structure.
         PTSizer.Add(pfVal,0,WACV)
         if 'Axial' not in textureData['PlotType'] and '3D' not in textureData['PlotType']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,WACV)
-            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice = [m for m in mpl.cm.datad.keys()]       #if not m.endswith("_r")
             choice.sort()
             colorSel = wx.ComboBox(Texture,-1,value=G2frame.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -7641,7 +7641,7 @@ entered the right symbol for your structure.
     def OnPeaksMove(event):
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
-            peakMax = np.max(mapPeaks.T[0])
+            peakMax = np.fmax(mapPeaks.T[0])
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
                 mag,x,y,z = mapPeaks[ind][:4]

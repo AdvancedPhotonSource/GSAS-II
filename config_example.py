@@ -138,3 +138,6 @@ Tick_length = 8.0
 Tick_width = 1.0
 '''Specifies the width of phase tick marks in pixels.
 Fractional values do seem to produce an effect. Default is 1.'''
+Contour_color = 'Paired'
+''' Specifies the color map to be used for contour plots (images, pole figures, etc.)
+'''

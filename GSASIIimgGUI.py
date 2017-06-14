@@ -1174,7 +1174,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         OnIntegrate(None)
         return
     
-    colorList = sorted([m for m in mpl.cm.datad.keys() if not m.endswith("_r")],key=lambda s: s.lower())
+    colorList = sorted([m for m in mpl.cm.datad.keys() ],key=lambda s: s.lower())   #if not m.endswith("_r")
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',]
     if not data.get('type'):                        #patch for old project files

@@ -23,6 +23,7 @@ import wx.grid as wg
 # import wx.wizard as wz
 import wx.aui
 import wx.lib.scrolledpanel as wxscroll
+import matplotlib as mpl
 import time
 import copy
 import wx.html        # could postpone this for quicker startup
@@ -3620,8 +3621,7 @@ class SelectConfigSetting(wx.Dialog):
         self.sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         self.choice = {}
         btn = G2ChoiceButton(self, sorted(self.vars.keys(),key=lambda s: s.lower()),
-                                 strLoc=self.choice,strKey=0,
-                                 onChoice=self.OnSelection)
+            strLoc=self.choice,strKey=0,onChoice=self.OnSelection)
         btn.SetLabel("")
         self.sizer.Add(btn)
 
@@ -3650,7 +3650,7 @@ class SelectConfigSetting(wx.Dialog):
         self.SetSizer(self.sizer)
         self.sizer.Fit(self)
         self.CenterOnParent()
-
+        
     def OnChange(self,event=None):
         ''' Check if anything been changed. Turn the save button on/off.
         '''
@@ -3704,6 +3704,10 @@ class SelectConfigSetting(wx.Dialog):
         
     def OnSelection(self):
         'show a selected variable'
+        def OnNewColorBar(event):
+            self.vars['Contour_color'][1] = self.colSel.GetValue()
+            self.OnChange(event)
+
         self.varsizer.DeleteWindows()
         var = self.choice[0]
         showdef = True
@@ -3725,10 +3729,8 @@ class SelectConfigSetting(wx.Dialog):
                     defopt = i
                     s += ' (default)'
                 ch += [s]
-            rb = wx.RadioBox(
-                    self, wx.ID_ANY, lbl, wx.DefaultPosition, wx.DefaultSize,
-                    ch, 1, wx.RA_SPECIFY_COLS
-            )
+            rb = wx.RadioBox(self, wx.ID_ANY, lbl, wx.DefaultPosition, wx.DefaultSize,
+                ch, 1, wx.RA_SPECIFY_COLS)
             # set initial value
             if self.vars[var][1] is None:
                 rb.SetSelection(defopt)
@@ -3745,11 +3747,18 @@ class SelectConfigSetting(wx.Dialog):
             else:
                 btn = None
                 sz = (250,-1)
-            self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,OKcontrol=self.OnChange,
-                                              size=sz)
-            if self.vars[var][1] is not None:
-                self.strEd.SetValue(self.vars[var][1])
-            self.varsizer.Add(self.strEd, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            if var == 'Contour_color':
+                colorList = sorted([m for m in mpl.cm.datad.keys() ],key=lambda s: s.lower())   #if not m.endswith("_r")
+                self.colSel = wx.ComboBox(self,value=self.vars[var][1],choices=colorList,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                self.colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
+                self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            else:
+                self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,
+                    OKcontrol=self.OnChange,size=sz)
+                if self.vars[var][1] is not None:
+                    self.strEd.SetValue(self.vars[var][1])
+                self.varsizer.Add(self.strEd, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
             if btn:
                 btn.Bind(wx.EVT_BUTTON,self.onSelDir)
                 self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5) 

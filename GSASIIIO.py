@@ -309,7 +309,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['DetDepthRef'] = False
     else:
         Data['type'] = 'PWDR'
-        Data['color'] = 'Paired'
+        Data['color'] = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
         Data['tilt'] = 0.0
         Data['rotation'] = 0.0
         Data['showLines'] = False

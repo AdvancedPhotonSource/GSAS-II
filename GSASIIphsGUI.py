@@ -5825,27 +5825,23 @@ entered the right symbol for your structure.
                 
     def OnDataDelete(event):
         UseList = data['Histograms']
-        keyList = ['All',]+UseList.keys()
+        keyList = UseList.keys()
         keyList.sort()
-        DelList = []
         if UseList:
             DelList = []
-            dlg = wx.MultiChoiceDialog(G2frame, 
-                'Which histogram to delete from this phase?', 'Delete histogram', 
-                keyList, wx.CHOICEDLG_STYLE)
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Delete histogram', 
+                'Which histogram to delete from this phase?',keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
                     for i in result: 
                         DelList.append(keyList[i])
-                    if 'All' in DelList:
-                        DelList = keyList[1:]
                     for i in DelList:
                         del UseList[i]
                     data['Histograms'] = UseList
-                    wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
                 
 ################################################################################
 ##### Rigid bodies

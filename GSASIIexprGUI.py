@@ -24,6 +24,7 @@ Default expressions are read from file DefaultExpressions.txt using
 '''
 import re
 import wx
+import math
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
@@ -306,7 +307,7 @@ class ExpressionDialog(wx.Dialog):
             val =  resDict.get(varname)
             if val:
                 self.varValue[v] = val
-        wx.CallAfter(self.Repaint)
+        wx.CallLater(100,self.Repaint,exprObj)
 
     def Show(self,mode=True):
         '''Call to use the dialog after it is created.

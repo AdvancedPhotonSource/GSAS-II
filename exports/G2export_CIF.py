@@ -64,9 +64,14 @@ class ExportCIF(G2IO.ExportBaseclass):
                              'Unicode not valid for CIF')
             return True
                       
-    def _Exporter(self,event=None,phaseOnly=None,histOnly=None):
+    def _Exporter(self,event=None,phaseOnly=None,histOnly=None,IncludeOnlyHist=None):
         '''Basic code to export a CIF. Export can be full or simple, as set by
         phaseOnly and histOnly which skips distances & angles, etc.
+
+          phaseOnly: used to export only one phase
+          histOnly: used to export only one histogram
+          IncludeOnlyHist: used for a full CIF that includes only one of the
+            histograms (from a sequential fit) TODO: needs lots of work!
         '''
 
 #***** define functions for export method =======================================
@@ -1651,7 +1656,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         #=================================================================
         if phaseOnly: #====Phase only CIF ================================
             print('Writing CIF output to file '+self.filename)
-            self.OpenFile()
+            #self.OpenFile()
             oneblock = True
             self.quickmode = True
             self.Write(' ')
@@ -1660,13 +1665,13 @@ class ExportCIF(G2IO.ExportBaseclass):
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             WritePhaseInfo(phaseOnly)
-            self.CloseFile()
+            #self.CloseFile()
             return
         elif histOnly: #====Histogram only CIF ================================
             print('Writing CIF output to file '+self.filename)
-            self.OpenFile()
+            #self.OpenFile()
             hist = histOnly
-            histname = histOnly.replace(' ','')
+            #histname = histOnly.replace(' ','')
             oneblock = True
             self.quickmode = True
             self.ifHKLF = False
@@ -1703,8 +1708,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             histblk = self.Histograms[hist]["Sample Parameters"]
             #writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
             WritePowderData(hist)
-            self.CloseFile()
+            #self.CloseFile()
             return
+        #elif IncludeOnlyHist is not None: # truncate histogram list to only selected (for sequential export)
+        #    self.Histograms = {IncludeOnlyHist:self.Histograms[IncludeOnlyHist]}
+        
         #===============================================================================
         # the export process for a full CIF starts here
         #===============================================================================
@@ -1759,12 +1767,12 @@ class ExportCIF(G2IO.ExportBaseclass):
             elif instrname.strip() == '':
                 invalid += 1
         if invalid:
-            msg = ""
-            if invalid > 3: msg = (
-                "\n\nNote: it may be faster to set the name for\n"
-                "one histogram for each instrument and use the\n"
-                "File/Copy option to duplicate the name"
-                )
+            #msg = ""
+            #if invalid > 3: msg = (
+            #    "\n\nNote: it may be faster to set the name for\n"
+            #    "one histogram for each instrument and use the\n"
+            #    "File/Copy option to duplicate the name"
+            #    )
             if not EditInstNames(): return
             
         # check for a distance-angle range search range for each phase
@@ -1840,7 +1848,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # Start writing the CIF - single block
         #======================================================================
         print('Writing CIF output to file '+self.filename+"...")
-        self.OpenFile()
+        #self.OpenFile()
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======Data only CIF (powder/xtal) ====================================
             hist = self.histnam[0]
@@ -2016,7 +2024,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.Destroy()
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
-        self.CloseFile()
+        #self.CloseFile()
         print("...export completed")
         print('file '+self.fullpath)
         # end of CIF export
@@ -2036,19 +2044,24 @@ class ExportProjectCIF(ExportCIF):
         self.exporttype = ['project']
         
     def Exporter(self,event=None):
+        self.OpenFile()
         self._Exporter(event=event)
-
-    def Writer(self,hist,mode='w'):
-        # set the project file name
-        self.CIFname = os.path.splitext(
-            os.path.split(self.G2frame.GSASprojectfile)[1]
-            )[0]+'_'+hist
-        self.CIFname = self.CIFname.replace(' ','')
-        self.OpenFile(mode=mode)
-        self._Exporter(histOnly=hist)
-        if mode == 'w':
-            print('CIF written to file '+self.fullpath)
         self.CloseFile()
+
+    # def Writer(self,hist,mode='w'):
+    #     '''Used for full project CIF export of a sequential fit.
+    #     TODO: Needs extensive work
+    #     '''
+    #     # set the project file name
+    #     self.CIFname = os.path.splitext(
+    #         os.path.split(self.G2frame.GSASprojectfile)[1]
+    #         )[0]+'_'+hist
+    #     self.CIFname = self.CIFname.replace(' ','')
+    #     self.OpenFile(mode=mode)
+    #     self._Exporter(IncludeOnlyHist=hist)
+    #     if mode == 'w':
+    #         print('CIF written to file '+self.fullpath)
+    #     self.CloseFile()
         
 class ExportPhaseCIF(ExportCIF):
     '''Used to create a simple CIF with one phase. Uses exact same code as
@@ -2079,7 +2092,9 @@ class ExportPhaseCIF(ExportCIF):
         self.multiple = False
         self.currentExportType = 'phase'
         if self.ExportSelect('ask'): return
+        self.OpenFile()
         self._Exporter(event=event,phaseOnly=self.phasenam[0])
+        self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):
         # set the project file name
@@ -2123,6 +2138,20 @@ class ExportPwdrCIF(ExportCIF):
             ): return
         self._Exporter(event=event,histOnly=self.histnam[0])
 
+    def Writer(self,hist,mode='w'):
+        '''Used for histogram CIF export of a sequential fit.
+        '''
+        # set the project file name
+        self.CIFname = os.path.splitext(
+            os.path.split(self.G2frame.GSASprojectfile)[1]
+            )[0]+'_'+hist
+        self.CIFname = self.CIFname.replace(' ','')
+        self.OpenFile(mode=mode)
+        self._Exporter(histOnly=hist)
+        if mode == 'w':
+            print('CIF written to file '+self.fullpath)
+        self.CloseFile()
+        
 class ExportHKLCIF(ExportCIF):
     '''Used to create a simple CIF containing diffraction data only. Uses exact same code as
     :class:`ExportCIF` except that `histOnly` is set for the Exporter

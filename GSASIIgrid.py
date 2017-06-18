@@ -1812,11 +1812,16 @@ class DataFrame(wx.Frame):
             id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to equation(s)',
             help='Perform a parametric minimization')
         # fill sequential Export menu
+        # for an exporter to be used for sequential exports, it must have a Writer method and
+        # that Writer method must offer a mode argument. 
         self.SeqExportLookup = {}
         self.SequentialEx = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
+        import inspect
         for lbl,txt in (('Phase','Export selected phase(s)'),
-                        ('Project','Export entire sequential fit')):
+                        ('Project','Export entire sequential fit'),
+                        ('Powder','Export selected powder histogram(s)')
+                        ):
             objlist = []
             for obj in self.G2frame.exporterlist:
                 if lbl.lower() in obj.exporttype:
@@ -1824,7 +1829,8 @@ class DataFrame(wx.Frame):
                         obj.Writer
                     except AttributeError:
                         continue
-                    objlist.append(obj)
+                    if 'mode' in inspect.getargspec(obj.Writer)[0]:
+                        objlist.append(obj)
             if objlist:
                 submenu = wx.Menu()
                 item = self.SequentialEx.AppendMenu(

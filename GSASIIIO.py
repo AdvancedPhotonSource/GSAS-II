@@ -1734,7 +1734,7 @@ class ExportBaseclass(object):
         if fp is None:
             fp = self.fp
             self.fp = None
-        fp.close()
+        if fp is not None: fp.close()
         
     def SetSeqRef(self,data,hist):
         '''Set the exporter to retrieve results from a sequential refinement
@@ -1972,7 +1972,19 @@ def ExportSequential(G2frame,data,obj,exporttype):
                 obj.Writer(h,phasenam=p,mode=mode)
                 mode = 'a'
         print('...done')
-    elif exporttype == 'Project':
+    elif exporttype == 'Project':  # note that the CIF exporter is not yet ready for this
+        filename = obj.askSaveFile()
+        if not filename: return True
+        obj.dirname,obj.filename = os.path.split(filename)
+        print('Writing output to file '+str(obj.filename)+"...")
+        mode = 'w'
+        for h in histlist:
+            obj.SetSeqRef(data,h)
+            obj.Writer(h,mode=mode)
+            print('\t'+str(h)+' written')
+            mode = 'a'
+        print('...done')
+    elif exporttype == 'Powder':
         filename = obj.askSaveFile()
         if not filename: return True
         obj.dirname,obj.filename = os.path.split(filename)

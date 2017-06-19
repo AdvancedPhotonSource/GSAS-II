@@ -4273,7 +4273,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         if Page.fitvals: # TODO: deal with fitting of None values
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
-            Plot.plot(X,Page.fitvals,label='Fit')
+            Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%6])
             
         Plot.legend(loc='best')
         if Title:

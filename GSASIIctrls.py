@@ -2469,6 +2469,8 @@ def ItemSelector(ChoiceList, ParentFrame=None,
     :param bool multiple: If True then multiple items can be selected (default False)
     
     :returns: the selection index or None or a selection list if multiple is true
+
+    Called by GSASIIgrid.OnReOrgSelSeq() which is not fully implemented. 
     '''
     if multiple:
         if useCancel:
@@ -2574,7 +2576,10 @@ class OrderBox(wxscroll.ScrolledPanel):
                 wid.Bind(wx.EVT_CHOICE,self.OnChoice)
                 wid = wx.StaticText(pnl,wx.ID_ANY,lbl)
                 insize.Add(wid,0,flag=wx.EXPAND)
-                val = G2py3.FormatSigFigs(self.vallookup[nam][lbl],maxdigits=8)
+                try:
+                    val = G2py3.FormatSigFigs(self.vallookup[nam][lbl],maxdigits=8)
+                except KeyError:
+                    val = '?'
                 wid = wx.StaticText(pnl,wx.ID_ANY,'('+val+')')
                 insize.Add(wid,0,flag=wx.EXPAND)
                 pnl.SetSizer(insize)

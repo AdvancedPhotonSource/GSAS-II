@@ -138,8 +138,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_SAVESEQCSV,wxID_PLOTSEQSEL,
   wxID_ORGSEQSEL,wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,wxID_AVESEQSEL,
-  wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,wxADDSEQDIST,wxADDSEQANGLE
-] = [wx.NewId() for item in range(17)]
+  wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,wxADDSEQDIST,wxADDSEQANGLE,wxID_ORGSEQINC,
+] = [wx.NewId() for item in range(18)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1774,8 +1774,10 @@ class DataFrame(wx.Frame):
             help='Plot selected sequential refinement results')
         self.SequentialFile.Append(id=wxID_AVESEQSEL, kind=wx.ITEM_NORMAL,text='Compute average',
             help='Compute average for selected parameter')            
-        self.SequentialFile.Append(id=wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
-            help='Reorganize variables where variables change')
+#        self.SequentialFile.Append(id=wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
+#            help='Reorganize variables where variables change')
+        self.SequentialFile.Append(id=wxID_ORGSEQINC, kind=wx.ITEM_NORMAL,text='Hide columns...',
+            help='Select columns to remove from displayed table')
         self.SequentialPvars = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
         self.SequentialPvars.Append(
@@ -3088,7 +3090,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
             
     def OnReOrgSelSeq(event):
-        'Reorder the columns'
+        'Reorder the columns -- probably not fully implemented'
         G2G.GetItemOrder(G2frame,VaryListChanges,vallookup,posdict)    
         UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
@@ -3705,6 +3707,17 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if vals is None:
             print('Error: Id not found. This should not happen!')
         G2IO.ExportSequential(G2frame,data,*vals)
+
+    def onSelectSeqVars(event):
+        '''Select which variables will be shown in table'''
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Select columns to hide',
+                'Hide columns',colLabels[1:])
+        if dlg.ShowModal() == wx.ID_OK:
+            G2frame.SeqTblHideList = [colLabels[1:][sel] for sel in dlg.GetSelections()]
+            dlg.Destroy()
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        else:
+            dlg.Destroy()
     
     #def GridRowLblToolTip(row): return 'Row ='+str(row)
     
@@ -3806,7 +3819,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=wxID_SAVESEQCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAveSelSeq, id=wxID_AVESEQSEL)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=wxID_ORGSEQSEL)
+    #G2frame.dataFrame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=wxID_ORGSEQSEL)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, onSelectSeqVars, id=wxID_ORGSEQINC)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=wxADDSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewDistPseudoVar, id=wxADDSEQDIST)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewAnglePseudoVar, id=wxADDSEQANGLE)
@@ -3865,10 +3879,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             VaryListChanges.append(name)
     if missing:
         print ' Warning: Total of %d data sets missing from sequential results'%(missing)
-    if len(VaryListChanges) > 1:
-        G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,True)
-    else:
-        G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,False)
+    #if len(VaryListChanges) > 1:
+    #    G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,True)
+    #else:
+    #    G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,False)
     #-----------------------------------------------------------------------------------
     # build up the data table by columns -----------------------------------------------
     histNames = foundNames
@@ -4124,6 +4138,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             VarDict[var] = val
     # add recip cell coeff. values
     VarDict.update({var:val for var,val in newCellDict.values()})
+
+    # remove items to be hidden from table
+    for l in reversed(range(len(colLabels))):
+        if colLabels[l] in G2frame.SeqTblHideList:
+            del colLabels[l]
+            del G2frame.colList[l]
+            del G2frame.colSigs[l]
 
     G2frame.dataFrame.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)

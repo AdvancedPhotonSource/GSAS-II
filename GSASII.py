@@ -2653,6 +2653,7 @@ class GSASII(wx.Frame):
         self.dataDisplayPhaseText = ''
         self.lastTreeSetting = []
         self.ExpandingAll = False
+        self.SeqTblHideList = []
                 
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
@@ -4278,6 +4279,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.SelectItem(Id)
             finally:
                 dlg.Destroy()
+            self.SeqTblHideList = []
         else:
             self.ErrorDialog('Sequential refinement error',Msg)
         

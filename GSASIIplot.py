@@ -1261,7 +1261,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     sel = dlg.GetSelection()
                     G2frame.ContourColor = choice[sel]
                 else:
-                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
+                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
                 dlg.Destroy()
             elif G2frame.SinglePlot:
                 G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
@@ -2445,7 +2445,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
             dlg.Destroy()
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
@@ -2993,7 +2993,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title=''):
                 sel = dlg.GetSelection()
                 G2frame.ContourColor = choice[sel]
             else:
-                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
             dlg.Destroy()
         wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
     

@@ -202,7 +202,6 @@ c
         do k=ngt/2+1,ngt
           delta = emin + (TTHETAD - emin) * xp(k+it) ! Delta in degrees
           CALL PSVOIGT(DTT+TTHETA-delta*100.,SIG,GAM,R,dRdT,dRdS,dRdG)
-
           dDELTAdA = (1. - xp(k+it))*dEmindA ! N. B. symm w/r A,B
           sinDELTA = sind(Delta)
           cosDELTA = cosd(Delta)

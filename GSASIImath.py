@@ -4035,7 +4035,7 @@ class log_sa(base_schedule):        #OK
     def init(self,**options):
         self.__dict__.update(options)
         
-    def update_guess(self,x0):     #same as default
+    def update_guess(self,x0):     #same as default #TODO - is this a reasonable update procedure?
         return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
         
     def update_temp(self):
@@ -4052,7 +4052,7 @@ class _state(object):
 #     in that case use update given by alpha and omega and
 #     variation of all previous updates and temperature?
 
-# Simulated annealing
+# Simulated annealing   #TODO - should we switch to scipy basinhopping?
 
 def anneal(func, x0, args=(), schedule='fast', full_output=0,
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,

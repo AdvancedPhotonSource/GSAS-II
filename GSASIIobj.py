@@ -751,7 +751,7 @@ Image Controls              azmthOff            (float) The offset to be applied
                                                 does not have to be within the limits of the detector boundaries. 
 \                           centerAzm           (bool) If True then the azimuth reported for the integrated slice
                                                 of the image is at the center line otherwise it is at the leading edge.
-\                           color               (str) The name of the colormap used to display the image. Default = 'gist_ncar'.
+\                           color               (str) The name of the colormap used to display the image. Default = 'Paired'.
 \                           cutoff              (float) The minimum value of I/Ib for a point selected in a diffraction ring for 
                                                 calibration calculations. See pixLimit for details as how point is found.           
 \                           DetDepth            (float) Coefficient for penetration correction to distance; accounts for diffraction

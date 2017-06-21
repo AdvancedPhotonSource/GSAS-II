@@ -2610,7 +2610,7 @@ class GSASII(wx.Frame):
         self.itemPicked = None
         self.dataFrame = None
         self.Interpolate = 'nearest'
-        self.ContourColor = GSASIIpath.GetConfigValue('Contour_color','gist_ncar')
+        self.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
         self.VcovColor = 'RdYlGn'
         self.RamaColor = 'Blues'
         self.Projection = 'equal area'

@@ -505,10 +505,9 @@ entered the right symbol for your structure.
                     atom[cs+1] = Mult
                 NShkl = len(G2spc.MustrainNames(SGData))
                 NDij = len(G2spc.HStrainNames(SGData))
-                UseList = data['Histograms']
-                for hist in UseList:
-                    UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-                    UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+                for hist in data['Histograms']:
+                    data['Histograms'][hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                    data['Histograms'][hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):
@@ -5555,8 +5554,7 @@ entered the right symbol for your structure.
 ################################################################################
         
     def OnHklfAdd(event):
-        UseList = data['Histograms']
-        keyList = UseList.keys()
+        keyList = data['Histograms'].keys()
         TextList = []
         if not G2frame.PatternTree.GetCount():
             return
@@ -5604,43 +5602,60 @@ entered the right symbol for your structure.
             histoName = TextList[i]
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
             refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
-            UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+            data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                 'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
                 'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
             if 'TwMax' in reflData:     #nonmerohedral twins present
-                UseList[histoName]['Twins'] = []
+                data['Histograms'][histoName]['Twins'] = []
                 for iT in range(reflData['TwMax'][0]+1):
                     if iT in reflData['TwMax'][1]:
-                        UseList[histoName]['Twins'].append([False,0.0])
+                        data['Histograms'][histoName]['Twins'].append([False,0.0])
                     else:
-                        UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
+                        data['Histograms'][histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
             else:   #no nonmerohedral twins
-                UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
+                data['Histograms'][histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
             UpdateHKLFdata(histoName)
-            data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
         wx.EndBusyCursor()
         
     def OnDataUse(event):
-        UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = sorted(UseList.keys())
-        if UseList:
+        if data['Histograms']:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Use histograms', 
-                'Use which histograms?',keyList)
+                'Use which histograms?',G2frame.dataFrame.HistsInPhase)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelections()
-                    for id,item in enumerate(keyList):
+                    for id,item in enumerate(G2frame.dataFrame.HistsInPhase):
                         if id in sel:
-                            UseList[item]['Use'] = True
+                            data['Histograms'][item]['Use'] = True
                         else:
-                            UseList[item]['Use'] = False                        
+                            data['Histograms'][item]['Use'] = False                        
             finally:
                 dlg.Destroy()
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
+
+    # Note: function replaced by one with identical name, below
+    # def UpdateHKLFdata(histoName):
+    #     generalData = data['General']
+    #     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
+    #     refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
+    #     SGData = generalData['SGData']
+    #     Cell = generalData['Cell'][1:7]
+    #     G,g = G2lat.cell2Gmat(Cell))
+    #         try:
+    #             if dlg.ShowModal() == wx.ID_OK:
+    #                 sel = dlg.GetSelections()
+    #                 for id,item in enumerate(keyList):  # <<<<< something is likely wrong here
+    #                     if id in sel:
+    #                         data['Histograms'][item]['Use'] = True
+    #                     else:
+    #                         data['Histograms'][item]['Use'] = False                        
+    #         finally:
+    #             dlg.Destroy()
+    #     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
                 
     def UpdateHKLFdata(histoName):
         generalData = data['General']
@@ -5655,11 +5670,13 @@ entered the right symbol for your structure.
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
         
     def OnDataCopy(event):
-        UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = sorted(UseList.keys())
+        keyList = G2frame.dataFrame.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
-        sourceDict = UseList[hist]
+        if not keyList:
+            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            return
+        sourceDict = data['Histograms'][hist]
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
@@ -5667,21 +5684,19 @@ entered the right symbol for your structure.
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                    u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
-                    'Copy phase/hist parameters', keyList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    for sel in dlg.GetSelections():
-                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
-            finally:
-                dlg.Destroy()
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+                'Copy phase/hist parameters', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()
         
     def OnDataCopyFlags(event):
-        UseList = data['Histograms']
         hist = G2frame.hist
-        sourceDict = UseList[hist]
+        sourceDict = data['Histograms'][hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
@@ -5712,54 +5727,57 @@ entered the right symbol for your structure.
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = sorted(UseList.keys())
+        keyList = G2frame.dataFrame.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
-        if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                    u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
-                    'Copy phase/hist flags', keyList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    for sel in dlg.GetSelections():
-                        item = keyList[sel]
-                        UseList[item]
-                        for name in copyNames:
-                            if name in ['Scale','Extinction','HStrain','Flack','Twins']:
-                                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                                    UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
-                                    for itm in ['Eg','Es','Ep']:
-                                        UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
-                                elif name == 'Twins':
-                                    UseList[item]['Twins'][0][1][1] = copyDict['Twins']
-                                else:
-                                    try:
-                                        UseList[item][name][1] = copy.deepcopy(copyDict[name])
-                                    except KeyError:
-                                        continue
-                            elif name in ['Size','Mustrain']:
-                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
-                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
-                                UseList[item][name][4] = copy.deepcopy(copyDict[name][2])
-                            elif name == 'Pref.Ori.':
-                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
-                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
-                                if sourceDict[name][0] == 'SH':
-                                   SHflags = copy.deepcopy(copyDict[name][2])
-                                   SHterms = copy.deepcopy(sourceDict[name][5])
-                                   UseList[item][name][6] = copy.deepcopy(sourceDict[name][6])
-                                   UseList[item][name][7] = copy.deepcopy(sourceDict[name][7])
-                            elif name == 'Babinet':
-                                for bab in babNames:
-                                    UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
-            finally:
-                dlg.Destroy()
+        if not keyList:
+            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+                'Copy phase/hist flags', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    item = keyList[sel]
+                    for name in copyNames:
+                        if name in ['Scale','Extinction','HStrain','Flack','Twins']:
+                            if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                                data['Histograms'][item][name][:2] = copy.deepcopy(sourceDict[name][:2])
+                                for itm in ['Eg','Es','Ep']:
+                                    data['Histograms'][item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
+                            elif name == 'Twins':
+                                data['Histograms'][item]['Twins'][0][1][1] = copyDict['Twins']
+                            else:
+                                try:
+                                    data['Histograms'][item][name][1] = copy.deepcopy(copyDict[name])
+                                except KeyError:
+                                    continue
+                        elif name in ['Size','Mustrain']:
+                            data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
+                            data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])
+                            data['Histograms'][item][name][4] = copy.deepcopy(copyDict[name][2])
+                        elif name == 'Pref.Ori.':
+                            data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
+                            data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])
+                            if sourceDict[name][0] == 'SH':
+                               SHflags = copy.deepcopy(copyDict[name][2])
+                               SHterms = copy.deepcopy(sourceDict[name][5])
+                               data['Histograms'][item][name][6] = copy.deepcopy(sourceDict[name][6])
+                               data['Histograms'][item][name][7] = copy.deepcopy(sourceDict[name][7])
+                        elif name == 'Babinet':
+                            for bab in babNames:
+                                data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
+        finally:
+            dlg.Destroy()
         
     def OnSelDataCopy(event):
-        UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = sorted(UseList.keys())
+        sourceDict = data['Histograms'][hist]
+        keyList = G2frame.dataFrame.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
-        sourceDict = UseList[hist]
+        if not keyList:
+            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            return
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
@@ -5777,25 +5795,23 @@ entered the right symbol for your structure.
         copyDict = {}
         for parm in selectedItems:
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
-        if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                    u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
-                    'Copy selected phase/hist parameters', keyList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    for sel in dlg.GetSelections():
-                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
-            finally:
-                dlg.Destroy()            
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+                        u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+                        'Copy selected phase/hist parameters', keyList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()            
         
     def OnPwdrAdd(event):
         generalData = data['General']
         SGData = generalData['SGData']
-        UseList = data['Histograms']
         newList = []
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
-        keyList = UseList.keys()
+        keyList = data['Histograms'].keys()
         TextList = []
         if G2frame.PatternTree.GetCount():
             item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -5817,7 +5833,7 @@ entered the right symbol for your structure.
                         newList = TextList[1:]
                     for histoName in newList:
                         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-                        UseList[histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
+                        data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
@@ -5827,27 +5843,20 @@ entered the right symbol for your structure.
                             'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
                         refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
-                    data['Histograms'] = UseList
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
                 
     def OnDataDelete(event):
-        UseList = data['Histograms']
-        keyList = sorted(UseList.keys())
-        keyList.sort()
-        if UseList:
+        if G2frame.dataFrame.HistsInPhase:
             DelList = []
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Delete histogram', 
-                'Which histogram to delete from this phase?',keyList)
+                'Which histogram to delete from this phase?',G2frame.dataFrame.HistsInPhase)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: 
-                        DelList.append(keyList[i])
+                    DelList = [G2frame.dataFrame.HistsInPhase[i] for i in dlg.GetSelections()]
                     for i in DelList:
-                        del UseList[i]
-                    data['Histograms'] = UseList
+                        del data['Histograms'][i]
             finally:
                 dlg.Destroy()
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

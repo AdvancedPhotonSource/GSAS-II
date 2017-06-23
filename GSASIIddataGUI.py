@@ -49,30 +49,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     :param int Scroll: previous scroll position
 
     '''
-    G2frame.dataFrame.SetStatusText('')
-    keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
-    UseList = data['Histograms']
-    if UseList:
-        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
-        for item in G2frame.Refine: item.Enable(True)
-    else:
-        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
-        for item in G2frame.Refine: item.Enable(False)
-    generalData = data['General']
-    PhaseName = generalData['Name']       
-    SGData = generalData['SGData']
-    if len(UseList) == 0: # no associated, don't display anything
-        G2frame.hist = '' 
-    elif hist: # something was input as a selection
-        G2frame.hist = hist
-    elif not G2frame.hist or G2frame.hist not in UseList: # no or bad selection but have data, take the first
-        for key in keyList:
-            if key in UseList:
-                    G2frame.hist = key
-                    break
-    PWDR = any(['PWDR' in item for item in keyList])
-    Indx = {}
-    
     def PlotSizer():
 
         def OnPlotSel(event):
@@ -793,7 +769,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return twinsizer
         
     def OnSelect(event):
-        G2frame.hist = keyList[select.GetSelection()]
+        G2frame.hist = G2frame.dataFrame.HistsInPhase[select.GetSelection()]
         oldFocus = wx.Window.FindFocus()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
         wx.CallLater(100,RepaintHistogramInfo)
@@ -811,6 +787,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2frame.dataFrame.SendSizeEvent()
         
     def ShowHistogramInfo():
+        '''This creates a sizer with all the information pulled out from the Phase/data dict
+        '''
         
         def OnUseData(event):
             Obj = event.GetEventObject()
@@ -978,25 +956,47 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
                 bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(twinSizer(),0,WACV|wx.BOTTOM,5)
         return bottomSizer
-                
+
+    ######################################################################
+    # Beginning of UpdateDData execution here
+    ######################################################################
+    G2frame.dataFrame.SetStatusText('')
+    keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
+    UseList = data['Histograms']
+    if UseList:
+        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+        for item in G2frame.Refine: item.Enable(True)
+    else:
+        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
+        for item in G2frame.Refine: item.Enable(False)
+    # make a list of histograms (any type) used in this phase, ordered as in tree
+    G2frame.dataFrame.HistsInPhase = [name for name in keyList if name in UseList]
+    generalData = data['General']
+    PhaseName = generalData['Name']       
+    SGData = generalData['SGData']
+    if len(G2frame.dataFrame.HistsInPhase) == 0: # no associated histograms, nothing to display here
+        G2frame.hist = ''
+    elif hist and hist in G2frame.dataFrame.HistsInPhase: # something was input as a selection as an argument
+        G2frame.hist = hist
+    elif (not G2frame.hist) or (G2frame.hist not in G2frame.dataFrame.HistsInPhase): # no or bad selection but have data, take the first
+        G2frame.hist = G2frame.dataFrame.HistsInPhase[0]
+    Indx = {}
+    
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
-    useList = []
-    for name in keyList:
-        if name in UseList:
-            useList.append(name)
     if not G2frame.dataFrame.GetStatusBar():
         G2frame.dataFrame.CreateStatusBar()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)
-    if G2frame.hist != '':
+    if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
-        select = wx.ListBox(DData,choices=useList,style=wx.LB_SINGLE,size=(-1,120))
-        select.SetSelection(useList.index(G2frame.hist))
-        select.SetFirstItem(useList.index(G2frame.hist))
+        select = wx.ListBox(DData,choices=G2frame.dataFrame.HistsInPhase,
+                            style=wx.LB_SINGLE,size=(-1,120))
+        select.SetSelection(G2frame.dataFrame.HistsInPhase.index(G2frame.hist))
+        select.SetFirstItem(G2frame.dataFrame.HistsInPhase.index(G2frame.hist))
         select.Bind(wx.EVT_LISTBOX,OnSelect)
         topSizer.Add(select,0,WACV|wx.LEFT,5)
-        if PWDR:
+        if any(['PWDR' in item for item in keyList]):
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       
         G2frame.bottomSizer = ShowHistogramInfo()
@@ -1004,7 +1004,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     elif not keyList:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This project has no data; use Import to read it)'),
                       0,WACV|wx.TOP,10)
-    elif not UseList:
+    elif not UseListG2frame.dataFrame.HistsInPhase:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This phase has no associated data; use appropriate Edit/Add... menu item)'),
                       0,WACV|wx.TOP,10)
     else:

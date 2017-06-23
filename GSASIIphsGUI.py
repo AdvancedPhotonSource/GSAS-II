@@ -973,6 +973,9 @@ entered the right symbol for your structure.
                 Map['MapType'] = mapType.GetValue()
                 
             def OnRefList(event):
+                if not refsList: 
+                    G2G.G2MessageBox(G2frame.dataFrame,'No reflections')
+                    return
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
                     'Use data',refsList)
                 try:
@@ -5564,6 +5567,9 @@ entered the right symbol for your structure.
             if name not in keyList and 'HKLF' in name:
                 TextList.append(name)
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
+            if not TextList: 
+                G2G.G2MessageBox(G2frame.dataFrame,'No reflections')
+                return
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
             'Use data',TextList)
         try:
@@ -5620,7 +5626,7 @@ entered the right symbol for your structure.
     def OnDataUse(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = G2frame.GetHistogramNames(hist[:4])
+        keyList = sorted(UseList.keys())
         if UseList:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Use histograms', 
                 'Use which histograms?',keyList)
@@ -5651,7 +5657,7 @@ entered the right symbol for your structure.
     def OnDataCopy(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        keyList = sorted(UseList.keys())
         if hist in keyList: keyList.remove(hist)
         sourceDict = UseList[hist]
         if 'HKLF' in sourceDict['Histogram']:
@@ -5706,7 +5712,7 @@ entered the right symbol for your structure.
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        keyList = sorted(UseList.keys())
         if hist in keyList: keyList.remove(hist)
         if UseList:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
@@ -5751,7 +5757,7 @@ entered the right symbol for your structure.
     def OnSelDataCopy(event):
         UseList = data['Histograms']
         hist = G2frame.hist
-        keyList = G2frame.GetHistogramNames(hist[:4])[:]
+        keyList = sorted(UseList.keys())
         if hist in keyList: keyList.remove(hist)
         sourceDict = UseList[hist]
         copyDict = {}
@@ -5798,7 +5804,10 @@ entered the right symbol for your structure.
                 if name not in keyList and 'PWDR' in name:
                     TextList.append(name)
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+            if not TextList: 
+                G2G.G2MessageBox(G2frame.dataFrame,'No histograms')
+                return
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select powder histograms to use',
                     'Use data',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -5825,7 +5834,7 @@ entered the right symbol for your structure.
                 
     def OnDataDelete(event):
         UseList = data['Histograms']
-        keyList = UseList.keys()
+        keyList = sorted(UseList.keys())
         keyList.sort()
         if UseList:
             DelList = []

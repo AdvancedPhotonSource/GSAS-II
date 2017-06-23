@@ -1297,7 +1297,7 @@ class G2MultiChoiceDialog(wx.Dialog):
     :param wx.Frame ParentFrame: reference to parent frame
     :param str title: heading above list of choices
     :param str header: Title to place on window frame 
-    :param list ChoiceList: a list of choices where one will be selected
+    :param list ChoiceList: a list of choices where one more will be selected
     :param bool toggle: If True (default) the toggle and select all buttons
       are displayed
     :param bool monoFont: If False (default), use a variable-spaced font;

@@ -250,6 +250,7 @@ def phaseCheck(phaseVary,Phases,histogram):
     '''
     pIds = []
     for phase in Phases:
+        if histogram not in Phases[phase]['Histograms']: continue
         if Phases[phase]['Histograms'][histogram]['Use']:
             pIds.append(str(Phases[phase]['pId']))
     return [item for item in phaseVary if item.split(':')[0] in pIds]

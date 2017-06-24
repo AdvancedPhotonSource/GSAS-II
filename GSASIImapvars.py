@@ -627,12 +627,16 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                 msg += "\nSome (but not all) variables in constraint are not defined:\n\t"
                 msg += _FormatConstraint(constrDict[rel],fixedList[rel])
                 msg += '\nNot used: ' + notused + '\n'
-            if varied > 0 and varied != len(VarKeys(constrDict[rel])):
+            elif varied > 0 and varied != len(VarKeys(constrDict[rel])):
                 msg += "\nNot all variables refined in constraint:\n\t"
                 msg += _FormatConstraint(constrDict[rel],fixedList[rel])
                 msg += '\nNot refined: ' + notvaried + '\n'
     # if there were errors found, go no farther
-    if msg:
+    if msg and SeqHist is not None:
+        print ' *** Sequential refinement: ignoring constraint definition(s): ***'
+        print msg
+        msg = ''
+    elif msg:
         print ' *** ERROR in constraint definitions! ***'
         print msg
         raise Exception

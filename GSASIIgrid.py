@@ -174,64 +174,11 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1.,0.,0.],[0.,0.,-1.],[0.,1.,0.
 commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
     'P->I','I->P','P->F','F->P','H->R','R->H','R->O','O->R','abc*','setting 1->2']          #don't put any new ones after the setting one!
 
-# Should SGMessageBox, SymOpDialog, DisAglDialog be moved? 
-
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
 
-class SGMessageBox(wx.Dialog):
-    ''' Special version of MessageBox that displays space group & super space group text
-    in two blocks
-    '''
-    def __init__(self,parent,title,text,table,):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.text = text
-        self.table = table
-        self.panel = wx.Panel(self)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add((0,10))
-        for line in text:
-            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
-        ncol = self.table[0].count(',')+1
-        tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-        for j,item in enumerate(self.table):
-            num,flds = item.split(')')
-            tableSizer.Add(wx.StaticText(self.panel,label='     %s  '%(num+')')),0,WACV|wx.ALIGN_LEFT)            
-            flds = flds.replace(' ','').split(',')
-            for i,fld in enumerate(flds):
-                if i < ncol-1:
-                    tableSizer.Add(wx.StaticText(self.panel,label='%s, '%(fld)),0,WACV|wx.ALIGN_RIGHT)
-                else:
-                    tableSizer.Add(wx.StaticText(self.panel,label='%s'%(fld)),0,WACV|wx.ALIGN_RIGHT)
-            if not j%2:
-                tableSizer.Add((20,0))
-        mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
-        btnsizer = wx.StdDialogButtonSizer()
-        OKbtn = wx.Button(self.panel, wx.ID_OK)
-        OKbtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        OKbtn.SetDefault()
-        btnsizer.AddButton(OKbtn)
-        btnsizer.Realize()
-        mainSizer.Add((0,10))
-        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
-        self.panel.SetSizer(mainSizer)
-        self.panel.Fit()
-        self.Fit()
-        size = self.GetSize()
-        self.SetSize([size[0]+20,size[1]])
-
-    def Show(self):
-        '''Use this method after creating the dialog to post it
-        '''
-        self.ShowModal()
-        return
-
-    def OnOk(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_OK)
+# Should SymOpDialog, DisAglDialog etc. be moved to GSASIIctrls? 
 
 class SGMagSpinBox(wx.Dialog):
     ''' Special version of MessageBox that displays magnetic spin text
@@ -579,7 +526,7 @@ class TransformDialog(wx.Dialog):
                 self.newSpGrp = SpcGp
                 SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
-                SGMessageBox(self.panel,msg,text,table).Show()
+                G2G.SGMessageBox(self.panel,msg,text,table).Show()
             if self.Phase['General']['Type'] == 'magnetic':
                 Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
                 if SGData['SGInv']:

@@ -3,6 +3,7 @@ import sys
 import wx
 import GSASIIspc as G2spc
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import numpy as np
 import copy
 
@@ -54,7 +55,7 @@ class testSSymbols(wx.Frame):
                     Data['SSGData'] = SSGData
                     Data['SuperSg'] = SSymbol
                     msg = 'Superspace Group Information'
-                    G2gd.SGMessageBox(self,msg,text,table).Show()
+                    G2G.SGMessageBox(self,msg,text,table).Show()
                 else:
                     msg = 'Superspace Group Error for'+SSymbol
                     Style = wx.ICON_EXCLAMATION
@@ -84,7 +85,7 @@ class testSSymbols(wx.Frame):
                 Data['SGData'] = SGData
                 SGTxt.SetValue(Data['SGData']['SpGrp'])
                 msg = 'Space Group Information'
-                G2gd.SGMessageBox(self,msg,text,table).Show()
+                G2G.SGMessageBox(self,msg,text,table).Show()
             SSChoice = G2spc.ssdict.get(Data['SGData']['SpGrp'],['',])
             Data['SuperSg'] = SSChoice[0]
             self.UpdateData(Data)
@@ -97,7 +98,7 @@ class testSSymbols(wx.Frame):
                 Data['SSGData'] = SSGData
                 Data['SuperSg'] = SSymbol
                 msg = 'Superspace Group Information'
-                G2gd.SGMessageBox(self,msg,text,table).Show()
+                G2G.SGMessageBox(self,msg,text,table).Show()
                 print 'Super spacegroup operators for '+SSGData['SSpGrp']
                 for Op in SSGData['SSGOps']:
                     print G2spc.SSMT2text(Op).replace(' ','')

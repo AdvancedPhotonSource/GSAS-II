@@ -2723,6 +2723,60 @@ def GetExportPath(G2frame):
         return G2frame.LastGPXdir
     else:
         return '.'
+################################################################################
+class SGMessageBox(wx.Dialog):
+    ''' Special version of MessageBox that displays space group & super space group text
+    in two blocks
+    '''
+    def __init__(self,parent,title,text,table,):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.text = text
+        self.table = table
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((0,10))
+        for line in text:
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+        ncol = self.table[0].count(',')+1
+        tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+        for j,item in enumerate(self.table):
+            num,flds = item.split(')')
+            tableSizer.Add(wx.StaticText(self.panel,label='     %s  '%(num+')')),0,WACV|wx.ALIGN_LEFT)            
+            flds = flds.replace(' ','').split(',')
+            for i,fld in enumerate(flds):
+                if i < ncol-1:
+                    tableSizer.Add(wx.StaticText(self.panel,label='%s, '%(fld)),0,WACV|wx.ALIGN_RIGHT)
+                else:
+                    tableSizer.Add(wx.StaticText(self.panel,label='%s'%(fld)),0,WACV|wx.ALIGN_RIGHT)
+            if not j%2:
+                tableSizer.Add((20,0))
+        mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        mainSizer.Add((0,10))
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        size = self.GetSize()
+        self.SetSize([size[0]+20,size[1]])
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        '''
+        self.CenterOnParent()
+        self.ShowModal()
+        return
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
 
 ################################################################################
 #####  Customized Grid Support

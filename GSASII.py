@@ -4258,7 +4258,7 @@ class GSASII(wx.Frame):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
         try:
-            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg)     #Msg is Rvals dict if Ok=True
+            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg,G2plt.SequentialPlotPattern,self)     #Msg is Rvals dict if Ok=True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()

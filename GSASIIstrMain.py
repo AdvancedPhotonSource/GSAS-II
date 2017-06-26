@@ -255,7 +255,7 @@ def phaseCheck(phaseVary,Phases,histogram):
             pIds.append(str(Phases[phase]['pId']))
     return [item for item in phaseVary if item.split(':')[0] in pIds]
 
-def SeqRefine(GPXfile,dlg):
+def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
     one at a time
     '''
@@ -409,6 +409,8 @@ def SeqRefine(GPXfile,dlg):
         try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
+            if PlotFunction:
+                PlotFunction(G2frame,Histo[histogram]['Data'],histogram)
     
             print '  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'])

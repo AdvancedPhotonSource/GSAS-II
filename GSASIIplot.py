@@ -1180,6 +1180,18 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 ################################################################################
 ##### PlotPatterns
 ################################################################################
+def SequentialPlotPattern(G2frame,refdata,histogram):
+    '''This is passed into :func:`GSASIIstrMain.SeqRefine` where it is used to
+    provide a plot of the current powder histogram just after a refinement. It
+    takes the old refinement information (Rfactors, curve locations, etc.) and
+    combines it with the refinement results in refdata and passes that to
+    :func:`PlotPatterns`
+    '''
+    if not histogram.startswith('PWDR'): return 
+    G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, histogram)
+    treedata = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+    PlotPatterns(G2frame,newPlot=True,plotType='PWDR',data=[treedata[0],refdata])
+
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     '''This does the same as PlotPatterns except that it expects the information
     to be plotted (pattern name, item picked in tree + eventually the reflection list)
@@ -1195,7 +1207,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.HKL = [] # TODO
     PlotPatterns(G2frame,newPlot,plotType)
 
-def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
+def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
@@ -1219,7 +1231,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         PlotPowderLines(G2frame)
         return
 #patch
-    data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+    if data is None:
+        data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     if 'Offset' not in data[0] and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
         data[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,

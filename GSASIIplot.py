@@ -1187,12 +1187,14 @@ def SequentialPlotPattern(G2frame,refdata,histogram):
     combines it with the refinement results in refdata and passes that to
     :func:`PlotPatterns`
     '''
-    if not histogram.startswith('PWDR'): return 
-    G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, histogram)
+    if not histogram.startswith('PWDR'): return
+    pickId = G2frame.PickId
+    G2frame.PickId = G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, histogram)
     treedata = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     PlotPatterns(G2frame,newPlot=True,plotType='PWDR',data=[treedata[0],refdata])
     wx.Yield() # force a plot update (needed on Windows?)
-
+    G2frame.PickId = pickId
+    
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     '''This does the same as PlotPatterns except that it expects the information
     to be plotted (pattern name, item picked in tree + eventually the reflection list)

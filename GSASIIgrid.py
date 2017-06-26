@@ -2967,13 +2967,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         plotName = variableLabels.get(colName,colName)
         plotName = plotSpCharFix(plotName)
         return plotName,G2frame.colList[col],G2frame.colSigs[col]
-            
-    def PlotSelect(event):
-        'Plots a row (covariance) or column on double-click'
+
+    def PlotSelectedColRow(calltyp=''):
+        '''Called to plot a selected column or row. This is called after the event is processed
+        so that the column or row gets selected.
+        Single click on row: plots histogram
+        Double click on row: plots V-C matrix
+        Single or double click on column: plots values in column
+        '''
         cols = G2frame.dataDisplay.GetSelectedCols()
         rows = G2frame.dataDisplay.GetSelectedRows()
         if cols:
             G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows and calltyp == 'single':
+            name = histNames[rows[0]]       #only does 1st one selected
+            if not name.startswith('PWDR'): return 
+            pickId = G2frame.PickId
+            G2frame.PickId = G2frame.PatternId = GetPatternTreeItemId(G2frame, G2frame.root, name)
+            G2plt.PlotPatterns(G2frame,newPlot=True,plotType='PWDR')
+            G2frame.PickId = pickId
         elif rows:
             name = histNames[rows[0]]       #only does 1st one selected
             G2plt.PlotCovariance(G2frame,data[name])
@@ -2982,6 +2994,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 'Select row or columns',
                 'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
                 )
+        
+    def PlotSSelect(event):
+        'Called by a single click on a row or column label. '
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'single')
+        
+    def PlotSelect(event):
+        'Called by a double-click on a row or column label'
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'double')
             
     def OnPlotSelSeq(event):
         'plot the selected columns or row from menu command'
@@ -4108,6 +4130,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for c in range(1,len(colLabels)):
         for r in range(nRows):
             G2frame.dataDisplay.SetCellReadOnly(r,c)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8

@@ -303,7 +303,7 @@ def SeqRefine(GPXfile,dlg):
     Histo = {}
     NewparmDict = {}
     for ihst,histogram in enumerate(histNames):
-        print('Refining with '+str(histogram))
+        print('\nRefining with '+str(histogram))
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -342,7 +342,10 @@ def SeqRefine(GPXfile,dlg):
         parmDict.update(hapDict)
         parmDict.update(histDict)
         if Controls['Copy2Next']:
-            parmDict.update(NewparmDict)
+            #parmDict.update(NewparmDict) # don't use in case extra entries would cause a problem
+            for parm in NewparmDict:
+                if parm in parmDict:
+                    parmDict[parm] = NewparmDict[parm]
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         #reload(G2mv) # debug
@@ -380,34 +383,25 @@ def SeqRefine(GPXfile,dlg):
                 newVaryList.append(item)
         if newVaryList != firstVaryList and Controls['Copy2Next']:
             # variable lists are expected to match between sequential refinements when Copy2Next is on
-            print '**** ERROR - variable list for this histogram does not match previous'
-            print '     Copy of variables is not possible'
-            print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
+            #print '**** ERROR - variable list for this histogram does not match previous'
+            #print '     Copy of variables is not possible'
+            #print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
             combined = list(set(firstVaryList+newVaryList))
             c = [var for var in combined if var not in newVaryList]
             p = [var for var in combined if var not in firstVaryList]
-            line = 'Variables in previous but not in current: '
-            if c:
-                for var in c:
-                    if len(line) > 100:
-                        print line
-                        line = '    '
-                    line += var + ', '
-            else:
-                line += 'none'
-            print line
-            print '\nPrevious refinement has',len(firstVaryList),'variables'
-            line = 'Variables in current but not in previous: '
-            if p:
-                for var in p:
-                    if len(line) > 100:
-                        print line
-                        line = '    '
-                    line += var + ', '
-            else:
-                line += 'none'
-            print line
-            return False,line
+            print('*** Variables change ***')
+            for typ,vars in [('Removed',c),('Added',p)]:
+                line = '  '+typ+': '
+                if vars:
+                    for var in vars:
+                        if len(line) > 70:
+                            print(line)
+                            line = '    '
+                        line += var + ', '
+                else:
+                        line += 'none, '
+                print(line[:-2])
+            firstVaryList = newVaryList
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram

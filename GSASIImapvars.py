@@ -537,6 +537,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     msg = ''
+    shortmsg = ''
 
     # process fixed (held) variables
     for cdict in constrDict:
@@ -624,19 +625,27 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     msg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
             #if unused > 0:# and unused != len(VarKeys(constrDict[rel])):
             if unused > 0 and unused != len(VarKeys(constrDict[rel])):
-                msg += "\nSome (but not all) variables in constraint are not defined:\n\t"
-                msg += _FormatConstraint(constrDict[rel],fixedList[rel])
-                msg += '\nNot used: ' + notused + '\n'
+                #msg += "\nSome (but not all) variables in constraint are not defined:\n\t"
+                #msg += _FormatConstraint(constrDict[rel],fixedList[rel])
+                #msg += '\nNot used: ' + notused + '\n'
+                shortmsg += notused+" not used in constraint "+_FormatConstraint(constrDict[rel],fixedList[rel])
             elif varied > 0 and varied != len(VarKeys(constrDict[rel])):
-                msg += "\nNot all variables refined in constraint:\n\t"
-                msg += _FormatConstraint(constrDict[rel],fixedList[rel])
-                msg += '\nNot refined: ' + notvaried + '\n'
+                #msg += "\nNot all variables refined in constraint:\n\t"
+                #msg += _FormatConstraint(constrDict[rel],fixedList[rel])
+                #msg += '\nNot refined: ' + notvaried + '\n'
+                shortmsg += notvaried+" not varied in constraint "+_FormatConstraint(constrDict[rel],fixedList[rel])
     # if there were errors found, go no farther
-    if msg and SeqHist is not None:
-        print ' *** Sequential refinement: ignoring constraint definition(s): ***'
-        print msg
+    if shortmsg and SeqHist is not None:
+        if msg:
+            print ' *** ERROR in constraint definitions! ***'
+            print msg
+            raise Exception
+        print '*** Sequential refinement: ignoring constraint definition(s): ***'
+        print shortmsg
         msg = ''
-    elif msg:
+    elif shortmsg:
+        msg += shortmsg
+    if msg:
         print ' *** ERROR in constraint definitions! ***'
         print msg
         raise Exception

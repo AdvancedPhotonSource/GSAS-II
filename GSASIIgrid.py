@@ -3947,8 +3947,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         wtFrList = []
         sigwtFrList = []
         for i,name in enumerate(histNames):
+            if name not in Phases[phase]['Histograms']:
+                wtFrList.append(None)
+                sigwtFrList.append(0.0)
+                continue
             wtFrSum = 0.
             for phase1 in Phases:
+                if name not in Phases[phase1]['Histograms']: continue
                 wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
             var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
             wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum

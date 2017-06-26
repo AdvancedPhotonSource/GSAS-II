@@ -1191,6 +1191,7 @@ def SequentialPlotPattern(G2frame,refdata,histogram):
     G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, histogram)
     treedata = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     PlotPatterns(G2frame,newPlot=True,plotType='PWDR',data=[treedata[0],refdata])
+    wx.Yield() # force a plot update (needed on Windows?)
 
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     '''This does the same as PlotPatterns except that it expects the information

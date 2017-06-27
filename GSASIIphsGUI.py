@@ -5729,7 +5729,7 @@ entered the right symbol for your structure.
                 else:
                     copyDict[name] = sourceDict[name][1]
             elif name in ['Size','Mustrain']:
-                copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][4]]
+                copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][5]]
             elif name == 'Pref.Ori.':
                 copyDict[name] = [sourceDict[name][0],sourceDict[name][2]]
                 if sourceDict[name][0] == 'SH':
@@ -5770,7 +5770,7 @@ entered the right symbol for your structure.
                         elif name in ['Size','Mustrain']:
                             data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
                             data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])
-                            data['Histograms'][item][name][4] = copy.deepcopy(copyDict[name][2])
+                            data['Histograms'][item][name][5] = copy.deepcopy(copyDict[name][2])
                         elif name == 'Pref.Ori.':
                             data['Histograms'][item][name][0] = copy.deepcopy(copyDict[name][0])
                             data['Histograms'][item][name][2] = copy.deepcopy(copyDict[name][1])

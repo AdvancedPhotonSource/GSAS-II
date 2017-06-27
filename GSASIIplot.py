@@ -1839,6 +1839,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
     if 'PWDR' in G2frame.PatternTree.GetItemText(G2frame.PickId):
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        refColors=['b','r','c','g','m','k']
+        Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
         Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Reflection Lists'))
         Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
         G2frame.dataFrame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataFrame.moveDiffCurve.GetId())
@@ -2230,7 +2233,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
         elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists'] or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
-            refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
@@ -2245,12 +2247,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
+                plsym = Page.phaseColors.get(phase,'y')+'|' # yellow should never happen!
                 if G2frame.plotStyle['qPlot']:
-                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
                 elif G2frame.plotStyle['dPlot']:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
                 else:
-                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=w,ms=l,picker=3.,label=phase)
+                    Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
             if len(Phases):
                 handles,legends = Plot.get_legend_handles_labels()  #got double entries in the legends for some reason
                 if handles:

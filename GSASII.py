@@ -4146,7 +4146,8 @@ class GSASII(wx.Frame):
         if OK:
             Rw = Msg['Rwp']
             lamMax = Msg.get('lamMax',0.001)
-            text = 'Load new result?'
+            lst = os.path.splitext(os.path.abspath(self.GSASprojectfile))[0]
+            text = u'Detailed results are in '+lst+'.lst\n\nLoad new result?'
             if lamMax >= 10.:
                 text += '\nWARNING: Steepest descents dominates;'+   \
                 ' minimum may not have been reached\nor result may be false minimum.'+  \

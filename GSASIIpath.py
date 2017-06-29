@@ -20,98 +20,14 @@ import os
 import sys
 import platform
 import glob
-# see if a directory for local modifications is defined. If so, stick that in the path
-if os.path.exists(os.path.expanduser('~/.G2local/')):
-    sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-    import glob
-    fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
-    files = ""
-    prev = None
-    for f in sorted(fl): # make a list of files, dropping .pyc files where a .py exists
-        f = os.path.split(f)[1]
-        if os.path.splitext(f)[0] == prev: continue
-        prev = os.path.splitext(f)[0]
-        if files: files += ", "
-        files += f
-    if files:
-        print("*"*75)
-        print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
-        print("  "+files)
-        print("*"*75)
-            
+import subprocess
+import numpy as np
 
-# determine a binary path for the pyd files based on the host OS and the python version,  
-# path is relative to location of the script that is called as well as this file
-# this must be imported before anything that imports any .pyd/.so file for GSASII
-bindir = None
-if sys.platform == "win32":
-    if platform.architecture()[0] == '64bit':
-        bindir = 'binwin64-%d.%d' % sys.version_info[0:2]
-    else:
-        bindir = 'binwin%d.%d' % sys.version_info[0:2]
-elif sys.platform == "darwin":
-    import platform
-    if platform.architecture()[0] == '64bit':
-        bindir = 'binmac64-%d.%d' % sys.version_info[0:2]
-    else:
-        bindir = 'binmac%d.%d' % sys.version_info[0:2]
-    if platform.mac_ver()[0].startswith('10.5.'):
-        bindir += '_10.5'
-elif sys.platform == "linux2":
-    if platform.architecture()[0] == '64bit':
-        bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
-    else:
-        bindir = 'binlinux%d.%d' % sys.version_info[0:2]
-binpath = None
-# scan the first directory in path as well as the location of current file
-# for location of GSAS-II shared libraries (binaries: .so or .pyd files)
-for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
-    # Look at bin directory (created by a local compile) before standard dist
-    # that at the top of the path
-    for d in 'bin',bindir:
-        if not d: continue
-        fpth = os.path.join(loc,d)
-        if not os.path.exists(fpth): continue
-        if not glob.glob(os.path.join(fpth,'pyspg.*')): continue
-        savpath = sys.path[:]
-        sys.path.insert(0,fpth)
-        # test to see if a shared library can be used
-        try:
-            import pyspg
-            pyspg.sgforpy('P -1')
-        except Exception as err:
-            print(70*'=')
-            print('Failed to run pyspg in {}\nerror: {}'.format(fpth,err))
-            print(70*'=')
-            sys.path = savpath
-            continue
-        binpath = fpth
-        break
-    if binpath: break
-if binpath: 
-    print('GSAS-II binary directory: {}'.format(binpath))
-else:
-    raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II fails ****"
-# add the data import and export directory to the search path
-path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd
-newpath = os.path.join(path2GSAS2,'imports')
-if newpath not in sys.path: sys.path.append(newpath)
-newpath = os.path.join(path2GSAS2,'exports')
-if newpath not in sys.path: sys.path.append(newpath)
-
-# setup read of config.py, if present
-try:
-    import config
-    configDict = config.__dict__
-    import inspect
-    vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
-    print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
-except ImportError:
-    configDict = {'Clip_on':True}
-except Exception as err:
-    print("Error importing config.py file: "+str(err))
-    configDict = {'Clip_on':True}
+g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS'
+'Define the location of the GSAS-II subversion repository'
     
+path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd
+
 def GetConfigValue(key,default=None):
     '''Return the configuration file value for key or a default value if not present
     
@@ -189,6 +105,11 @@ def LoadConfigFile(filename):
 
 
 # routines to interface with subversion
+proxycmds = []
+'Used to hold proxy information for subversion, set if needed in whichsvn'
+svnLocCache = None
+'Cached location of svn to avoid multiple searches for it'
+
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
     Searches the current path after adding likely places where GSAS-II
@@ -197,31 +118,57 @@ def whichsvn():
     :returns: None if svn is not found or an absolute path to the subversion
       executable file.
     '''
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    # use a previosuly cached svn location
+    global svnLocCache
+    if svnLocCache: return svnLocCache
+    # prepare to find svn
+    is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     svnprog = 'svn'
-    if sys.platform == "win32": svnprog += '.exe'
-    pathlist = os.environ["PATH"].split(os.pathsep)
+    if sys.platform.startswith('win'): svnprog += '.exe'
+    gsaspath = os.path.split(__file__)[0]
+    # check for a proxy
+    proxyinfo = os.path.join(gsaspath,"proxyinfo.txt")
+    if os.path.exists(proxyinfo):
+        global proxycmds
+        proxycmds = []
+        fp = open(proxyinfo,'r')
+        host = fp.readline().strip()
+        port = fp.readline().strip()
+        fp.close()
+        proxycmds.append('--config-option')
+        proxycmds.append('servers:global:http-proxy-host='+host)
+        proxycmds.append('--config-option')
+        proxycmds.append('servers:global:http-proxy-port='+port)
     # add likely places to find subversion when installed with GSAS-II
-    for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',):
-        pt = os.path.normpath(os.path.join(os.path.split(__file__)[0],*rpt))
+    pathlist = os.environ["PATH"].split(os.pathsep)
+    pathlist.append(os.path.split(sys.executable)[0])
+    pathlist.append(gsaspath)
+    for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
+        pt = os.path.normpath(os.path.join(gsaspath,*rpt))
         if os.path.exists(pt):
-            pathlist.insert(0,pt)
+            pathlist.insert(0,pt)    
     # search path for svn or svn.exe
     for path in pathlist:
         exe_file = os.path.join(path, svnprog)
         if is_exe(exe_file):
-            return os.path.abspath(exe_file)
+            try:
+                p = subprocess.Popen([exe_file,'help'],stdout=subprocess.PIPE)
+                res = p.stdout.read()
+                p.communicate()
+                svnLocCache = os.path.abspath(exe_file)
+                return svnLocCache
+            except:
+                pass        
+    svnLocCache = None
 
-def svnVersion():
+def svnVersion(svn=None):
     '''Get the version number of the current subversion executable
 
     :returns: a string with a version number such as "1.6.6" or None if
       subversion is not found.
 
     '''
-    import subprocess
-    svn = whichsvn()
+    if not svn: svn = whichsvn()
     if not svn: return
 
     cmd = [svn,'--version','--quiet']
@@ -234,16 +181,16 @@ def svnVersion():
         return None
     return out.strip()
 
-def svnVersionNumber():
+def svnVersionNumber(svn=None):
     '''Get the version number of the current subversion executable
 
     :returns: a fractional version number such as 1.6 or None if
       subversion is not found.
 
     '''
-    ver = svnVersion()
+    ver = svnVersion(svn)
     if not ver: return 
-    M,m = svnVersion().split('.')[:2]
+    M,m = ver.split('.')[:2]
     return int(M)+int(m)/10.
 
 def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
@@ -257,7 +204,6 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
     :returns: a dictionary with keys (one hopes) 'author', 'date', 'msg', and 'revision'
 
     '''
-    import subprocess
     import xml.etree.ElementTree as ET
     svn = whichsvn()
     if not svn: return
@@ -267,6 +213,7 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
         vstr = '-rHEAD'
 
     cmd = [svn,'log',fpath,'--xml',vstr]
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
@@ -298,7 +245,6 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
        not a repository or svn is not found)
     '''
 
-    import subprocess
     import xml.etree.ElementTree as ET
     svn = whichsvn()
     if not svn: return
@@ -308,6 +254,7 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
         cmd = [svn,'info',fpath,'--xml','-rHEAD']
     if svnVersionNumber() >= 1.6:
         cmd += ['--non-interactive', '--trust-server-cert']
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
@@ -330,11 +277,11 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
        not a repository or svn is not found)
 
     '''
-    import subprocess
     import xml.etree.ElementTree as ET
     svn = whichsvn()
     if not svn: return
     cmd = [svn,'status',fpath,'--xml']
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
@@ -356,7 +303,6 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
        string representation of an integer value when cast. A value of None (default)
        causes the latest version on the server to be used.
     '''
-    import subprocess
     svn = whichsvn()
     if not svn: return
     if version:
@@ -368,6 +314,7 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
            '--accept','theirs-conflict','--force']
     if svnVersionNumber() >= 1.6:
         cmd += ['--trust-server-cert']
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
@@ -384,10 +331,10 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located
     '''
-    import subprocess
     svn = whichsvn()
     if not svn: return
     cmd = [svn,'upgrade',fpath,'--non-interactive']
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
@@ -396,7 +343,6 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
             
 def svnUpdateProcess(version=None,projectfile=None):
     '''perform an update of GSAS-II in a separate python process'''
-    import subprocess
     if not projectfile:
         projectfile = ''
     else:
@@ -410,19 +356,17 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
-def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
+def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
     '''This performs a switch command to move files between subversion trees.
     Note that if the files were previously downloaded, 
     the switch command will update the files to the newest version.
-    
-    This routine is no longer used.
     
     :param str rpath: path to locate files, relative to the GSAS-II
       installation path (defaults to path2GSAS2)
     :param str URL: the repository URL
     :param str loadpath: the prefix for the path, if specified. Defaults to path2GSAS2
+    :param bool verbose: if True (default) diagnostics are printed
     '''
-    import subprocess
     svn = whichsvn()
     if not svn: return
     URL = baseURL[:]
@@ -437,8 +381,9 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
     cmd = [svn,'switch',URL,fpath,
            '--non-interactive','--trust-server-cert',
            '--accept','theirs-conflict','--force']
-    if svnVersionNumber() > 1.6: cmd += ['--ignore-ancestry']
-    print("Loading files from "+URL+'\n  to '+fpath)
+    if svnVersionNumber(svn) > 1.6: cmd += ['--ignore-ancestry']
+    if proxycmds: cmd += proxycmds
+    if verbose: print(u"Loading files to "+fpath+u"\n  from "+URL)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
@@ -448,6 +393,10 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
         print 'out=',out
         print 'err=',err
         return False
+    if verbose:
+        print('=== Output from svn switch'+(43*'='))
+        print(out.strip())
+        print((70*'=')+'\n')
     return True
 
 def svnInstallDir(URL,loadpath):
@@ -457,12 +406,12 @@ def svnInstallDir(URL,loadpath):
     :param str loadpath: path to locate files
 
     '''
-    import subprocess
     svn = whichsvn()
     if not svn: return
     cmd = [svn,'co',URL,loadpath,'--non-interactive']
     if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
     print("Loading files from "+URL)
+    if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()   #this fails too easily
     if err:
@@ -474,6 +423,76 @@ def svnInstallDir(URL,loadpath):
     print ("Files installed at: "+loadpath)
     return True
             
+def DownloadG2Binaries(g2home,verbose=True):
+    '''Download GSAS-II binaries from appropriate section of the
+    GSAS-II svn repository based on the platform, numpy and Python
+    version
+    '''
+    # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
+    fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
+    intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
+    
+    if sys.platform == "win32":
+        prefix = 'win'
+    elif sys.platform == "darwin":
+        prefix = 'mac'
+    elif sys.platform == "linux2":
+        prefix = 'linux'
+    else:
+        print(u'Unknown platform: '+sys.platform)
+        raise Exception('Unknown platform')
+    if platform.architecture()[0] == '64bit':
+        bits = '64'
+    else:
+        bits = '32'
+
+    # format current python & numpy versions
+    pyver = 'p{}.{}'.format(*sys.version_info[0:2])
+    npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
+    inpver = intver(np.__version__)
+
+    items = [prefix,bits,pyver]
+    bindir = '_'.join(items)
+
+    svn = whichsvn()
+    if not svn:
+        print('**** unable to load files: svn not found ****')
+        return ''
+    # get binaries matching the required type -- other than for the numpy version
+    cmd = [svn, 'list', g2home + '/Binaries/']
+    if proxycmds: cmd += proxycmds
+    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    res,err = p.communicate()
+    versions = {}
+    for d in res.split():
+        if d.startswith(bindir):
+            v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
+            versions[v] = d
+    intVersionsList = sorted(versions.keys())
+    if inpver < min(intVersionsList):
+        vsel = min(intVersionsList)
+        print('Warning: The current numpy version, {}, is older than\n\tthe oldest dist version, {}'
+              .format(np.__version__,fmtver(vsel)))
+    elif inpver >= max(intVersionsList):
+        vsel = max(intVersionsList)
+        if verbose: print(
+                'FYI: The current numpy version, {}, is newer than the newest dist version {}'
+                .format(np.__version__,fmtver(vsel)))
+    else:
+        vsel = min(intVersionsList)
+        for v in intVersionsList:
+            if v <= inpver:
+                vsel = v
+            else:
+                if verbose: print(
+                        'FYI: Selecting dist version {} as the current numpy version, {},\n\tis older than the next dist version {}'
+                        .format(fmtver(vsel),np.__version__,fmtver(v)))
+                break
+    distdir = g2home + '/Binaries/' + versions[vsel]
+    # switch reset command: distdir = g2home + '/trunk/bindist'
+    svnSwitchDir('bindist','',distdir,verbose=verbose)
+    return os.path.join(path2GSAS2,'bindist')
+
 def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py
@@ -548,11 +567,133 @@ def InvokeDebugOpts():
         pdbBreak = pdb.set_trace
         global IPyBreak
         IPyBreak = IPyBreak_base
+
+def TestSPG(fpth):
+    '''Test if pyspg.[so,.pyd] can be run from a location in the path
+    '''
+    if not os.path.exists(fpth): return False
+    if not glob.glob(os.path.join(fpth,'pyspg.*')): return False
+    savpath = sys.path[:]
+    sys.path = [fpth]
+    # test to see if a shared library can be used
+    try:
+        import pyspg
+        pyspg.sgforpy('P -1')
+    except Exception as err:
+        print(70*'=')
+        print('Failed to run pyspg in {}\nerror: {}'.format(fpth,err))
+        print(70*'=')
+        sys.path = savpath
+        return False
+    sys.path = savpath
+    return True
     
+# see if a directory for local modifications is defined. If so, stick that in the path
+if os.path.exists(os.path.expanduser('~/.G2local/')):
+    sys.path.insert(0,os.path.expanduser('~/.G2local/'))
+    import glob
+    fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
+    files = ""
+    prev = None
+    for f in sorted(fl): # make a list of files, dropping .pyc files where a .py exists
+        f = os.path.split(f)[1]
+        if os.path.splitext(f)[0] == prev: continue
+        prev = os.path.splitext(f)[0]
+        if files: files += ", "
+        files += f
+    if files:
+        print("*"*75)
+        print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
+        print("  "+files)
+        print("*"*75)
+################################################################################
+# commands below are executed during the first import of this file
+################################################################################
+# Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
+binpath = None
+for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+    # Look at bin directory (created by a local compile) before standard dist
+    # that at the top of the path
+    for d in 'bin','bindist':
+        if not d: continue
+        fpth = os.path.join(loc,d)
+        if TestSPG(fpth):
+            binpath = fpth
+            break        
+    if binpath: break
+if binpath:                                            # were GSAS-II binaries found
+    sys.path.insert(0,binpath)
+    print('GSAS-II binary directory: {}'.format(binpath))
+else:                                                  # try loading them 
+    print('Attempting to download GSAS-II binary files...')
+    binpath = DownloadG2Binaries(g2home)
+    if TestSPG(binpath):
+        print('GSAS-II binary directory: {}'.format(binpath))
+        sys.path.insert(0,binpath)
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # patch: use old location based on the host OS and the python version,  
+    # path is relative to location of the script that is called as well as this file
+    # this must be imported before anything that imports any .pyd/.so file for GSASII
+    else:
+        print('\n'+75*'*')
+        print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')
+        print('  and will break in future GSAS-II versions. Please contact toby@anl.gov')
+        print('  so we can learn what is not working on your installation.')
+        bindir = None
+        if sys.platform == "win32":
+            if platform.architecture()[0] == '64bit':
+                bindir = 'binwin64-%d.%d' % sys.version_info[0:2]
+            else:
+                bindir = 'binwin%d.%d' % sys.version_info[0:2]
+        elif sys.platform == "darwin":
+            if platform.architecture()[0] == '64bit':
+                bindir = 'binmac64-%d.%d' % sys.version_info[0:2]
+            else:
+                bindir = 'binmac%d.%d' % sys.version_info[0:2]
+            #if platform.mac_ver()[0].startswith('10.5.'):
+            #    bindir += '_10.5'
+        elif sys.platform == "linux2":
+            if platform.architecture()[0] == '64bit':
+                bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
+            else:
+                bindir = 'binlinux%d.%d' % sys.version_info[0:2]
+        for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+        # Look at bin directory (created by a local compile) before standard dist
+        # that at the top of the path
+            fpth = os.path.join(loc,bindir)
+            if TestSPG(fpth):
+                binpath = fpth
+                sys.path.insert(0,binpath)
+                print('GSAS-II binary directory: {}'.format(binpath))
+                print(75*'*')
+                break
+        else:
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****"
+
+# add the data import and export directory to the search path
+newpath = os.path.join(path2GSAS2,'imports')
+if newpath not in sys.path: sys.path.append(newpath)
+newpath = os.path.join(path2GSAS2,'exports')
+if newpath not in sys.path: sys.path.append(newpath)
+
+# setup read of config.py, if present
+try:
+    import config
+    configDict = config.__dict__
+    import inspect
+    vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
+    print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
+except ImportError:
+    configDict = {'Clip_on':True}
+except Exception as err:
+    print("Error importing config.py file: "+str(err))
+    configDict = {'Clip_on':True}
+
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''
-    import subprocess
     import time
     time.sleep(1) # delay to give the main process a chance to exit
     # perform an update and restart GSAS-II
@@ -572,4 +713,3 @@ if __name__ == '__main__':
         subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
     print 'exiting update process'
     sys.exit()
-    

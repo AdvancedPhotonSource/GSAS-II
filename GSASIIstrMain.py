@@ -752,6 +752,7 @@ def BestPlane(PlaneData):
             
 def main():
     'Needs a doc string'
+    starttime = time.time()
     arg = sys.argv
     if len(arg) > 1:
         GPXfile = arg[1]
@@ -762,7 +763,7 @@ def main():
     else:
         print 'ERROR - missing filename'
         exit()
-    print "Done"
+    print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
          
 if __name__ == '__main__':
     main()

@@ -1851,7 +1851,6 @@ class ImportBaseclass(object):
         takes a quick scan of [some of]
         the file contents to do a "sanity" check if the file
         appears to match the selected format. 
-        Expected to be called via self.Validator()
         '''
         #filepointer.seek(0) # rewind the file pointer
         return True

@@ -2922,7 +2922,8 @@ def GetDij(phfx,SGData,parmDict):
     return G2spc.HStrainVals(HSvals,SGData)
                 
 def GetFobsSq(Histograms,Phases,parmDict,calcControls):
-    'Needs a doc string'
+    'Compute the observed structure factors for Powder histograms'
+    #starttime = time.time(); print 'start GetFobsSq'
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:
@@ -3031,9 +3032,12 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
+    #print 'end GetFobsSq t=',time.time()-starttime
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
-    'Needs a doc string'
+    'Computes the powder pattern for a histogram based on contributions from all used phases'
+    
+    #starttime = time.time(); print 'start getPowderProfile'
     
     def GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
@@ -3190,10 +3194,14 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
     if badPeak:
         print 'ouch #4 bad profile coefficients yield negative peak width; some reflections skipped' 
+    #print 'end getPowderProfile t=',time.time()-starttime
     return yc,yb
     
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
-    'Needs a doc string'
+    '''Computes the derivatives of the computed powder pattern with respect to all
+    refined parameters
+    '''
+    #starttime = time.time(); print 'start getPowderProfileDerv'
     
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
@@ -3227,7 +3235,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
-    dMdv = ma.array(dMdv,mask=np.outer(np.ones(len(varylist)),ma.getmaskarray(x)))      #x is a MaskedArray!
+    # do not need dMdv to be a masked array at this point. Moved conversion to later in this routine.
+    #dMdv = ma.array(dMdv,mask=np.outer(np.ones(len(varylist)),ma.getmaskarray(x)))      #x is a MaskedArray!
     dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     if hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
         bBpos = varylist.index(hfx+'Back;0')
@@ -3259,6 +3268,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             kRatio = parmDict[hfx+'I(L2)/I(L1)']
         else:
             wave = parmDict[hfx+'Lam']
+    #print '#1 getPowderProfileDerv t=',time.time()-starttime
     for phase in Histogram['Reflection Lists']:
         refDict = Histogram['Reflection Lists'][phase]
         if phase not in Phases:     #skips deleted or renamed phases silently!
@@ -3288,7 +3298,34 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf-derv time %.3fs'%(time.time()-time0)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
+        #print '#2 getPowderProfileDerv t=',time.time()-starttime
+        # determine the parameters that will have derivatives computed only at end
+        nonatomvarylist = []
+        for name in varylist:
+            if '::RBV;' not in name:
+                try:
+                    aname = name.split(pfx)[1][:2]
+                    if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
+                        'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
+                except IndexError:
+                    continue
+            nonatomvarylist.append(name)
+        nonatomdependentVars = []
+        for name in dependentVars:
+            if '::RBV;' not in name:
+                try:
+                    aname = name.split(pfx)[1][:2]
+                    if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
+                        'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
+                except IndexError:
+                    continue
+            nonatomdependentVars.append(name)
+        #timelist =  10*[0.0]
+        #timestart = 10*[0.0]
+        #==========================================================================================
+        #==========================================================================================
         for iref,refl in enumerate(refDict['RefList']):
+            #timestart[0] = time.time()
             if im:
                 h,k,l,m = refl[:4]
             else:
@@ -3308,6 +3345,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             elif not iBeg-iFin:     #peak above high limit - done
                 break
             pos = refl[5+im]
+            #itim=0;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             if 'C' in calcControls[hfx+'histType']:
                 tanth = tand(pos/2.0)
                 costh = cosd(pos/2.0)
@@ -3338,6 +3376,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 for i in range(6):
                     dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]      #cw[iBeg:iFin]*
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
+            #itim=1;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))
                 try:
@@ -3374,6 +3413,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     hfx+'beta-q':[1./refl[4+im]**2,'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4+im]**2,'sig'],
                     hfx+'sig-2':[refl[4+im]**4,'sig'],hfx+'sig-q':[1./refl[4+im]**2,'sig'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
+            #itim=2;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             for name in names:
                 item = names[name]
                 if name in varylist:
@@ -3393,6 +3433,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     depDerivDict[iPO][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
                     if Ka2 and iFin2-iBeg2:
                         depDerivDict[iPO][iBeg2:iFin2] += dIdPO[iPO]*dervDict2['int']
+            #itim=3;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             for i,name in enumerate(['omega','chi','phi']):
                 aname = pfx+'SH '+name
                 if aname in varylist:
@@ -3432,6 +3473,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
                     if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
+            #itim=4;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             for i,name in enumerate([pfx+'mV0',pfx+'mV1',pfx+'mV2']):
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dpdV[i]*dervDict['pos']
@@ -3473,35 +3515,33 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
                         if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
+            #itim=5;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
             if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
                 #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
                 corr = 0.
                 corr2 = 0.
                 if refl[9+im]:             
                     corr = dervDict['int']/refl[9+im]
+                    #if Ka2 and iFin2-iBeg2:
+                    #    corr2 = dervDict2['int']/refl[9+im]
+                #itim=6;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
+                for name in nonatomvarylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
                     if Ka2 and iFin2-iBeg2:
-                        corr2 = dervDict2['int']/refl[9+im]
-                for name in varylist+dependentVars:
-                    if '::RBV;' in name:
-                        pass
-                    else:
-                        try:
-                            aname = name.split(pfx)[1][:2]
-                            if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
-                                'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
-                        except IndexError:
-                            continue
-                    if name in varylist:
-                        dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
-                        if Ka2 and iFin2-iBeg2:
-                            dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
-                    elif name in dependentVars:
-                        depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
-                        if Ka2 and iFin2-iBeg2:
-                            depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+                       dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+                #itim=7;timelist[itim] += time.time()-timestart[itim]; timestart[itim+1] = time.time() 
+                for name in nonatomdependentVars:
+                   depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
+                   if Ka2 and iFin2-iBeg2:
+                       depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+                #itim=8;timelist[itim] += time.time()-timestart[itim]    
     #        print 'profile derv time: %.3fs'%(time.time()-time0)
     # now process derivatives in constraints
+    #print '#3 getPowderProfileDerv t=',time.time()-starttime
+    #print timelist,sum(timelist)
+    dMdv = ma.array(dMdv,mask=np.outer(np.ones(len(varylist)),ma.getmaskarray(x)))      #x is a MaskedArray!
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
+    #print 'end getPowderProfileDerv t=',time.time()-starttime
     return dMdv
     
 def UserRejectHKL(ref,im,userReject):

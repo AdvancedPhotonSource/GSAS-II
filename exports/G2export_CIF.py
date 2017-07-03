@@ -1722,6 +1722,10 @@ class ExportCIF(G2IO.ExportBaseclass):
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
         if self.ExportSelect('ask'): return
+        if not self.filename:
+            print('No name supplied')
+            return
+        self.OpenFile()
         #if self.ExportSelect('default'): return
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
@@ -2044,7 +2048,6 @@ class ExportProjectCIF(ExportCIF):
         self.exporttype = ['project']
         
     def Exporter(self,event=None):
-        self.OpenFile()
         self._Exporter(event=event)
         self.CloseFile()
 

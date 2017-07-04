@@ -446,6 +446,9 @@ def DownloadG2Binaries(g2home,verbose=True):
     else:
         bits = '32'
 
+    # if np.__version__ is None we must be in Read The Docs
+    if np.__version__ is None: return
+    
     # format current python & numpy versions
     pyver = 'p{}.{}'.format(*sys.version_info[0:2])
     npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])

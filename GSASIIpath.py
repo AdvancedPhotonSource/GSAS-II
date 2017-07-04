@@ -630,7 +630,7 @@ else:                                                  # try loading them
         binpath = DownloadG2Binaries(g2home)
     except AttributeError:
         print('Problem with download')
-    if TestSPG(binpath):
+    if binpath and TestSPG(binpath):
         print('GSAS-II binary directory: {}'.format(binpath))
         sys.path.insert(0,binpath)
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -446,9 +446,6 @@ def DownloadG2Binaries(g2home,verbose=True):
     else:
         bits = '32'
 
-    # if np.__version__ is not defined we must be in Read The Docs
-    if not hasattr(np,'__version_'): return
-    
     # format current python & numpy versions
     pyver = 'p{}.{}'.format(*sys.version_info[0:2])
     npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
@@ -629,7 +626,10 @@ if binpath:                                            # were GSAS-II binaries f
     print('GSAS-II binary directory: {}'.format(binpath))
 else:                                                  # try loading them 
     print('Attempting to download GSAS-II binary files...')
-    binpath = DownloadG2Binaries(g2home)
+    try:
+        binpath = DownloadG2Binaries(g2home)
+    except AttributeError:
+        print('Problem with download')
     if TestSPG(binpath):
         print('GSAS-II binary directory: {}'.format(binpath))
         sys.path.insert(0,binpath)

@@ -3425,7 +3425,7 @@ For DIFFaX use cite:
         testbranch = '/branch/2frame'
         if not GSASIIpath.svnTestBranch():
             dlg = wx.MessageDialog(self.frame,
-                                   'Switching from test to standard GSAS-II version',
+                                   'Switching to test version of GSAS-II',
                                    'Confirm Switch',
                                    wx.OK|wx.CANCEL)
             if dlg.ShowModal() != wx.ID_OK: return

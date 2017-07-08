@@ -20,6 +20,7 @@ import numpy as np
 import numpy.linalg as nl
 import scipy.optimize as so
 import GSASIIpath
+GSASIIpath.SetBinaryPath()
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc

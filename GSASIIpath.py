@@ -230,6 +230,7 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
         break # only need the first
     return d
 
+svnLastError = ''
 def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     '''Obtain the version number for the either the last update of the local version
     or contacts the subversion server to get the latest update version (# of Head).
@@ -242,7 +243,8 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
 
     :Returns: the version number as an str or 
        None if there is a subversion error (likely because the path is
-       not a repository or svn is not found)
+       not a repository or svn is not found). The error message is placed in
+       global variable svnLastError
     '''
 
     import xml.etree.ElementTree as ET
@@ -260,6 +262,8 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     if err:
         print 'svn failed\n',out
         print 'err=',err
+        global svnLastError
+        svnLastError = err
         return None
     x = ET.fromstring(out)
     for i in x.iter('entry'):
@@ -341,14 +345,16 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
         print("svn upgrade did not happen (this is probably OK). Messages:")
         print err
             
-def svnUpdateProcess(version=None,projectfile=None):
+def svnUpdateProcess(version=None,projectfile=None,branch=None):
     '''perform an update of GSAS-II in a separate python process'''
     if not projectfile:
         projectfile = ''
     else:
         projectfile = os.path.realpath(projectfile)
         print 'restart using',projectfile
-    if not version:
+    if branch:
+        version = branch
+    elif not version:
         version = ''
     else:
         version = str(version)
@@ -493,6 +499,44 @@ def DownloadG2Binaries(g2home,verbose=True):
     svnSwitchDir('bindist','',distdir,verbose=verbose)
     return os.path.join(path2GSAS2,'bindist')
 
+def svnTestBranch(loc=None):
+    '''Returns the name of the branch directory if the installation has been switched.
+    Returns none, if not a branch
+    the test 2frame branch. False otherwise
+    '''
+    if loc is None: loc = path2GSAS2
+    svn = whichsvn()
+    if not svn:
+        print('**** unable to load files: svn not found ****')
+        return ''
+    cmd = [svn, 'info', loc]
+    if proxycmds: cmd += proxycmds
+    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    res,err = p.communicate()
+    for l in res.split('\n'):
+        if "Relative URL:" in l: break
+    if "/branch/" in l:
+        return l[l.find("/branch/")+8:].strip()
+    else:
+        return None
+    
+def svnSwitch2branch(branch=None,loc=None,svnHome=None):
+    '''Switch to a subversion branch if specified. Switches to trunk otherwise.
+    '''
+    if svnHome is None: svnHome = g2home
+    svnURL = svnHome + '/trunk'
+    if branch:
+        if svnHome.endswith('/'):
+            svnURL = svnHome[:-1]
+        else:
+            svnURL = svnHome
+        if branch.startswith('/'):
+            svnURL += branch
+        else:
+            svnURL += '/' + branch
+    svnSwitchDir('','',svnURL,loadpath=loc)
+    
+
 def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py
@@ -606,93 +650,108 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
         print("  "+files)
         print("*"*75)
-################################################################################
-# commands below are executed during the first import of this file
-################################################################################
-# Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
-binpath = None
-for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
-    # Look at bin directory (created by a local compile) before standard dist
-    # that at the top of the path
-    for d in 'bin','bindist':
-        if not d: continue
-        fpth = os.path.join(loc,d)
-        if TestSPG(fpth):
-            binpath = fpth
-            break        
-    if binpath: break
-if binpath:                                            # were GSAS-II binaries found
-    sys.path.insert(0,binpath)
-    print('GSAS-II binary directory: {}'.format(binpath))
-else:                                                  # try loading them 
-    print('Attempting to download GSAS-II binary files...')
-    try:
-        binpath = DownloadG2Binaries(g2home)
-    except AttributeError:
-        print('Problem with download')
-    if binpath and TestSPG(binpath):
-        print('GSAS-II binary directory: {}'.format(binpath))
-        sys.path.insert(0,binpath)
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # patch: use old location based on the host OS and the python version,  
-    # path is relative to location of the script that is called as well as this file
-    # this must be imported before anything that imports any .pyd/.so file for GSASII
-    else:
-        print('\n'+75*'*')
-        print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')
-        print('  and will break in future GSAS-II versions. Please contact toby@anl.gov')
-        print('  so we can learn what is not working on your installation.')
-        bindir = None
-        if sys.platform == "win32":
-            if platform.architecture()[0] == '64bit':
-                bindir = 'binwin64-%d.%d' % sys.version_info[0:2]
-            else:
-                bindir = 'binwin%d.%d' % sys.version_info[0:2]
-        elif sys.platform == "darwin":
-            if platform.architecture()[0] == '64bit':
-                bindir = 'binmac64-%d.%d' % sys.version_info[0:2]
-            else:
-                bindir = 'binmac%d.%d' % sys.version_info[0:2]
-            #if platform.mac_ver()[0].startswith('10.5.'):
-            #    bindir += '_10.5'
-        elif sys.platform == "linux2":
-            if platform.architecture()[0] == '64bit':
-                bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
-            else:
-                bindir = 'binlinux%d.%d' % sys.version_info[0:2]
-        for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+
+BinaryPathLoaded = False
+def SetBinaryPath():
+    '''
+    Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
+    
+    This routine must be executed after GSASIIpath is imported and before any other
+    GSAS-II imports are done.
+    '''
+    # do this only once no matter how many times it is called
+    global BinaryPathLoaded
+    if BinaryPathLoaded: return
+    BinaryPathLoaded = True
+    binpath = None
+    for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
         # Look at bin directory (created by a local compile) before standard dist
         # that at the top of the path
-            fpth = os.path.join(loc,bindir)
+        for d in 'bin','bindist':
+            if not d: continue
+            fpth = os.path.join(loc,d)
             if TestSPG(fpth):
                 binpath = fpth
-                sys.path.insert(0,binpath)
-                print('GSAS-II binary directory: {}'.format(binpath))
-                print(75*'*')
-                break
+                break        
+        if binpath: break
+    if binpath:                                            # were GSAS-II binaries found
+        sys.path.insert(0,binpath)
+        print('GSAS-II binary directory: {}'.format(binpath))
+    else:                                                  # try loading them 
+        print('Attempting to download GSAS-II binary files...')
+        try:
+            binpath = DownloadG2Binaries(g2home)
+        except AttributeError:   # this happens when building in Read The Docs
+            print('Problem with download')
+        if binpath and TestSPG(binpath):
+            print('GSAS-II binary directory: {}'.format(binpath))
+            sys.path.insert(0,binpath)
+        # this must be imported before anything that imports any .pyd/.so file for GSASII
         else:
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****"
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            # patch: use old location based on the host OS and the python version,  
+            # path is relative to location of the script that is called as well as this file
+            bindir = None
+            if sys.platform == "win32":
+                if platform.architecture()[0] == '64bit':
+                    bindir = 'binwin64-%d.%d' % sys.version_info[0:2]
+                else:
+                    bindir = 'binwin%d.%d' % sys.version_info[0:2]
+            elif sys.platform == "darwin":
+                if platform.architecture()[0] == '64bit':
+                    bindir = 'binmac64-%d.%d' % sys.version_info[0:2]
+                else:
+                    bindir = 'binmac%d.%d' % sys.version_info[0:2]
+                #if platform.mac_ver()[0].startswith('10.5.'):
+                #    bindir += '_10.5'
+            elif sys.platform == "linux2":
+                if platform.architecture()[0] == '64bit':
+                    bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
+                else:
+                    bindir = 'binlinux%d.%d' % sys.version_info[0:2]
+            for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
+            # Look at bin directory (created by a local compile) before standard dist
+            # that at the top of the path
+                fpth = os.path.join(loc,bindir)
+                binpath = fpth
+                if TestSPG(fpth):
+                    sys.path.insert(0,binpath)
+                    print('\n'+75*'*')
+                    print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')
+                    print('  and will break in future GSAS-II versions. Please contact toby@anl.gov')
+                    print('  so we can learn what is not working on your installation.')
+                    print('GSAS-II binary directory: {}'.format(binpath))
+                    print(75*'*')
+                    break
+            else:
+            # end patch
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                print(75*'*')
+                print('Use of GSAS-II binary directory {} failed!'.format(binpath))
+                print(75*'*')
+                raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****"
 
-# add the data import and export directory to the search path
-newpath = os.path.join(path2GSAS2,'imports')
-if newpath not in sys.path: sys.path.append(newpath)
-newpath = os.path.join(path2GSAS2,'exports')
-if newpath not in sys.path: sys.path.append(newpath)
+    # add the data import and export directory to the search path
+    newpath = os.path.join(path2GSAS2,'imports')
+    if newpath not in sys.path: sys.path.append(newpath)
+    newpath = os.path.join(path2GSAS2,'exports')
+    if newpath not in sys.path: sys.path.append(newpath)
 
-# setup read of config.py, if present
-try:
-    import config
-    configDict = config.__dict__
-    import inspect
-    vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
-    print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
-except ImportError:
-    configDict = {'Clip_on':True}
-except Exception as err:
-    print("Error importing config.py file: "+str(err))
-    configDict = {'Clip_on':True}
+    # setup read of config.py, if present
+    global configDict
+    try:
+        import config
+        configDict = config.__dict__
+        import inspect
+        vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
+        print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
+    except ImportError:
+        configDict = {'Clip_on':True}
+    except Exception as err:
+        print("Error importing config.py file: "+str(err))
+        configDict = {'Clip_on':True}
 
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
@@ -702,17 +761,24 @@ if __name__ == '__main__':
     # perform an update and restart GSAS-II
     project,version = sys.argv[1:3]
     loc = os.path.dirname(__file__)
-    if version:
+    if version == 'trunk':
+        svnSwitch2branch('')
+    elif '/' in version:
+        svnSwitch2branch(version)
+    elif version:
         print("Regress to version "+str(version))
         svnUpdateDir(loc,version=version)
     else:
         print("Update to current version")
         svnUpdateDir(loc)
+    ex = sys.executable
+    if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
+        if os.path.exists(ex+'w'): ex += 'w'
     if project:
         print("Restart GSAS-II with project file "+str(project))
-        subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py'),project])
+        subprocess.Popen([ex,os.path.join(loc,'GSASII.py'),project])
     else:
         print("Restart GSAS-II without a project file ")
-        subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
+        subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
     print 'exiting update process'
     sys.exit()

@@ -3181,6 +3181,13 @@ class MyHelp(wx.Menu):
                 help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
                 text='&Regress to an old GSAS-II version')
             frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
+            if GSASIIpath.svnTestBranch():
+                msg = "&Switch back to standard GSAS-II version"
+            else:
+                msg = "&Switch to test (2frame) GSAS-II version"
+            helpobj = self.Append(
+                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=msg)
+            frame.Bind(wx.EVT_MENU, self.OnSelectBranch, helpobj)
         for lbl,indx in morehelpitems:
             helpobj = self.Append(text=lbl,
                 id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
@@ -3410,6 +3417,34 @@ For DIFFaX use cite:
             GPX = self.frame.G2frame.GSASprojectfile
         GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
         return
+
+    def OnSelectBranch(self,event):
+        '''Allow the user to select branch of GSAS-II or return to trunk
+        N.B. Name of branch to use is hard-coded here. Must contain a slash
+        '''
+        testbranch = '/branch/2frame'
+        if not GSASIIpath.svnTestBranch():
+            dlg = wx.MessageDialog(self.frame,
+                                   'Switching from test to standard GSAS-II version',
+                                   'Confirm Switch',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return
+            branch = testbranch
+        else:
+            dlg = wx.MessageDialog(self.frame,
+                                   'Switching back to standard GSAS-II version',
+                                   'Confirm Switch',
+                                   wx.OK|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return
+            branch = 'trunk'
+        print('start switch')
+        try:
+            self.frame.OnFileSave(event)
+            GPX = self.frame.GSASprojectfile
+        except AttributeError:
+            self.frame.G2frame.OnFileSave(event)
+            GPX = self.frame.G2frame.GSASprojectfile
+        GSASIIpath.svnUpdateProcess(projectfile=GPX,branch=branch)
 
 ################################################################################
 class HelpButton(wx.Button):

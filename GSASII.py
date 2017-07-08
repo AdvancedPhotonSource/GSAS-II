@@ -70,6 +70,7 @@ except ImportError:
     
 # load the GSAS routines
 import GSASIIpath
+GSASIIpath.SetBinaryPath()
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIElem as G2elem

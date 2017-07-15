@@ -46,10 +46,13 @@ def SetConfigValue(parmdict):
     for var in parmdict:
         if var in configDict:
             del configDict[var]
-        if parmdict[var][1] is None: continue
-        if parmdict[var][1] == '': continue
-        if parmdict[var][0] == parmdict[var][1]: continue
-        configDict[var] = parmdict[var][1]
+        if isinstance(parmdict[var],tuple):
+            configDict[var] = parmdict[var]
+        else:
+            if parmdict[var][1] is None: continue
+            if parmdict[var][1] == '': continue
+            if parmdict[var][0] == parmdict[var][1]: continue
+            configDict[var] = parmdict[var][1]
 
 # routines for looking a version numbers in files
 version = -1
@@ -475,7 +478,10 @@ def DownloadG2Binaries(g2home,verbose=True):
             v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
             versions[v] = d
     intVersionsList = sorted(versions.keys())
-    if inpver < min(intVersionsList):
+    if not intVersionsList:
+        print('No binaries located')
+        return
+    elif inpver < min(intVersionsList):
         vsel = min(intVersionsList)
         print('Warning: The current numpy version, {}, is older than\n\tthe oldest dist version, {}'
               .format(np.__version__,fmtver(vsel)))

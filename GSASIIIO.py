@@ -17,6 +17,7 @@ Includes support for image reading.
 
 Also includes base classes for data import routines.
 
+This module needs some work to separate wx from non-wx routines
 '''
 """GSASIIIO: functions for IO of data
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
@@ -31,7 +32,7 @@ import re
 import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIgrid as G2gd
+import GSASIIdataGUI as G2gd
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
@@ -41,7 +42,7 @@ import GSASIIimage as G2img
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
-import GSASIIctrls as G2G
+import GSASIIctrlGUI as G2G
 import os
 import os.path as ospath
 
@@ -77,12 +78,6 @@ def trim(val):
     :returns: the (usually) shortened version of the string
     '''
     return re.sub('\s+', ' ', val).strip()
-
-def makeInstDict(names,data,codes):
-    inst = dict(zip(names,zip(data,data,codes)))
-    for item in inst:
-        inst[item] = list(inst[item])
-    return inst
 
 def FileDlgFixExt(dlg,file):
     'this is needed to fix a problem in linux wx.FileDialog'
@@ -152,7 +147,7 @@ def GetCheckImageFile(G2frame,treeId):
        and (imagetag) an optional image number
 
     '''
-    Npix,Imagefile,imagetag = G2frame.PatternTree.GetImageLoc(treeId)
+    Npix,Imagefile,imagetag = G2frame.GPXtree.GetImageLoc(treeId)
     if isinstance(Imagefile,list):
         imagefile,imagetag = Imagefile
     else:
@@ -168,7 +163,7 @@ def GetCheckImageFile(G2frame,treeId):
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
                 print 'found image file '+os.path.join(G2frame.dirname,fil)
                 imagefile = os.path.join(G2frame.dirname,fil)
-                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
+                G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
             fil = os.path.join(enddir,fil)
@@ -176,7 +171,7 @@ def GetCheckImageFile(G2frame,treeId):
         #    if image was .../A/B/C/imgs/ima.ge
         #      & GPX was  .../A/B/C/refs/fil.gpx but is now .../NEW/TEST/TEST1
         #    will look for .../NEW/TEST/TEST1/imgs/ima.ge, .../NEW/TEST/imgs/ima.ge, .../NEW/imgs/ima.ge and so on
-        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         gpxPath = Controls.get('LastSavedAs','').replace('\\','/').split('/') # blank in older .GPX files
         imgPath = imagefile.replace('\\','/').split('/')
         for p1,p2 in zip(gpxPath,imgPath):
@@ -192,7 +187,7 @@ def GetCheckImageFile(G2frame,treeId):
             if os.path.exists(os.path.join(pth,fil)):
                 print 'found image file '+os.path.join(pth,fil)
                 imagefile = os.path.join(pth,fil)
-                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
+                G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
             pth,enddir = os.path.split(pth)
         #GSASIIpath.IPyBreak()
@@ -207,7 +202,7 @@ def GetCheckImageFile(G2frame,treeId):
             dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
                 imagefile = dlg.GetPath()
-                G2frame.PatternTree.UpdateImageLoc(treeId,imagefile)
+                G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
             else:
                 imagefile = False
         finally:
@@ -281,7 +276,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     '''Load an image into the tree. Saves the location of the image, as well as the
     ImageTag (where there is more than one image in the file), if defined.
     '''
-    ImgNames = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+    ImgNames = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
     TreeLbl = 'IMG '+os.path.basename(imagefile)
     ImageTag = Data.get('ImageTag')
     if ImageTag:
@@ -290,8 +285,8 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     else:
         imageInfo = imagefile
     TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
-    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
+    Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=TreeName)
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)
     Imax = np.amax(Image)
     if G2frame.imageDefault:
         Data = copy.copy(G2frame.imageDefault)
@@ -338,12 +333,12 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['Flat Bkg'] = 0.0
     Data['setDefault'] = False
     Data['range'] = [(0,Imax),[0,Imax]]
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Image Controls'),Data)
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Image Controls'),Data)
     Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(0,Imax),[0,Imax]]}
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Masks'),Masks)
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Stress/Strain'),
         {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
-    G2frame.PatternTree.SetItemPyData(Id,[Npix,imageInfo])
+    G2frame.GPXtree.SetItemPyData(Id,[Npix,imageInfo])
     G2frame.PickId = Id
     G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.Image = Id
@@ -494,10 +489,10 @@ def ReadImages(G2frame,imagefile):
         #raise Exception('No image read')    
 
 def SaveMultipleImg(G2frame):
-    if not G2frame.PatternTree.GetCount():
+    if not G2frame.GPXtree.GetCount():
         print 'no images!'
         return
-    choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+    choices = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
     if len(choices) == 1:
         names = choices
     else:
@@ -509,12 +504,12 @@ def SaveMultipleImg(G2frame):
         dlg.Destroy()
     if not names: return
     for name in names:
-        Id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
-        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
+        Id = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, name)
+        Npix,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(Id)
         imroot = os.path.splitext(imagefile)[0]
         if imagetag:
             imroot += '_' + str(imagetag)
-        Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
+        Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Image Controls'))
         print('Writing '+imroot+'.imctrl')
         File = open(imroot+'.imctrl','w')
         keys = ['type','wavelength','calibrant','distance','center',
@@ -526,7 +521,7 @@ def SaveMultipleImg(G2frame):
             if key not in Data: continue    #uncalibrated!
             File.write(key+':'+str(Data[key])+'\n')
         File.close()
-        mask = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Masks'))
+        mask = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Masks'))
         G2imG.CleanupMasks(mask)
         print('Writing '+imroot+'.immask')
         File = open(imroot+'.immask','w')
@@ -550,8 +545,10 @@ def ProjFileOpen(G2frame,showProvenance=True):
     LastSavedUsing = None
     file = open(G2frame.GSASprojectfile,'rb')
     if showProvenance: print 'loading from file: ',G2frame.GSASprojectfile
+    #G2frame.SetTitle("GSAS-II data tree: "+
+    #                 os.path.split(G2frame.GSASprojectfile)[1])
     G2frame.SetTitle("GSAS-II data tree: "+
-                     os.path.split(G2frame.GSASprojectfile)[1])
+                     os.path.split(G2frame.GSASprojectfile)[1],1)
     wx.BeginBusyCursor()
     try:
         while True:
@@ -561,17 +558,17 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 break
             datum = data[0]
             
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=datum[0])
+            Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
             if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
-                G2frame.PatternTree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
+                G2frame.GPXtree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
             elif datum[0].startswith('HKLF'): 
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
-                G2frame.PatternTree.SetItemPyData(Id,datum[1])
+                G2frame.GPXtree.SetItemPyData(Id,datum[1])
             else:
-                G2frame.PatternTree.SetItemPyData(Id,datum[1])             
+                G2frame.GPXtree.SetItemPyData(Id,datum[1])             
                 if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
                     LastSavedUsing = datum[1]['LastSavedUsing']
                 if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug') and showProvenance:
@@ -590,7 +587,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     data[1][1][datus[0][:4]] = copy.deepcopy(datus[1][:2])
                     continue
 #end PDF cleanup
-                sub = G2frame.PatternTree.AppendItem(Id,datus[0])
+                sub = G2frame.GPXtree.AppendItem(Id,datus[0])
 #patch
                 if datus[0] == 'Instrument Parameters' and len(datus[1]) == 1:
                     if datum[0].startswith('PWDR'):
@@ -600,12 +597,12 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     for item in datus[1][0]:               #zip makes tuples - now make lists!
                         datus[1][0][item] = list(datus[1][0][item])
 #end patch
-                G2frame.PatternTree.SetItemPyData(sub,datus[1])
+                G2frame.GPXtree.SetItemPyData(sub,datus[1])
             if 'PDF ' in datum[0][:4] and oldPDF:
-                sub = G2frame.PatternTree.AppendItem(Id,'PDF Peaks')
-                G2frame.PatternTree.SetItemPyData(sub,{'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
+                sub = G2frame.GPXtree.AppendItem(Id,'PDF Peaks')
+                G2frame.GPXtree.SetItemPyData(sub,{'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
             if datum[0].startswith('IMG'):                   #retrieve image default flag & data if set
-                Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
+                Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
         file.close()
@@ -621,18 +618,18 @@ def ProjFileOpen(G2frame,showProvenance=True):
         msg.ShowModal()
     finally:
         wx.EndBusyCursor()
-        G2frame.Status.SetStatusText('Mouse RB click item to refresh/raise; RB drag/drop to reorder')
+        G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
-    if not G2frame.PatternTree.IsEmpty():
+    if not G2frame.GPXtree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
         print 'save to file: ',G2frame.GSASprojectfile
         # stick the file name into the tree and version info into tree so they are saved.
         # (Controls should always be created at this point)
         try:
-            Controls = G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+            Controls = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
             Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
             Controls['PythonVersions'] = G2frame.PackageVersions
@@ -640,17 +637,17 @@ def ProjFileSave(G2frame):
             pass
         wx.BeginBusyCursor()
         try:
-            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:
                 data = []
-                name = G2frame.PatternTree.GetItemText(item)
-                data.append([name,G2frame.PatternTree.GetItemPyData(item)])
-                item2, cookie2 = G2frame.PatternTree.GetFirstChild(item)
+                name = G2frame.GPXtree.GetItemText(item)
+                data.append([name,G2frame.GPXtree.GetItemPyData(item)])
+                item2, cookie2 = G2frame.GPXtree.GetFirstChild(item)
                 while item2:
-                    name = G2frame.PatternTree.GetItemText(item2)
-                    data.append([name,G2frame.PatternTree.GetItemPyData(item2)])
-                    item2, cookie2 = G2frame.PatternTree.GetNextChild(item, cookie2)                            
-                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                            
+                    name = G2frame.GPXtree.GetItemText(item2)
+                    data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
+                    item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
                 cPickle.dump(data,file,1)
             file.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
@@ -665,10 +662,10 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     azms = G2frame.Integrate[1]
     X = G2frame.Integrate[2][:-1]
     N = len(X)
-    Id = G2frame.PatternTree.GetItemParent(PickId)
-    name = G2frame.PatternTree.GetItemText(Id)
+    Id = G2frame.GPXtree.GetItemParent(PickId)
+    name = G2frame.GPXtree.GetItemText(Id)
     name = name.replace('IMG ',data['type']+' ')
-    Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'))
+    Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Comments'))
     if 'PWDR' in name:
         names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
         codes = [0 for i in range(11)]
@@ -691,19 +688,19 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     G2frame.IntgOutList = []
     for i,azm in enumerate(azms[:-1]):
         Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         # if Overwrite delete any duplicate
-        if Overwrite and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,Aname):
+        if Overwrite and G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Aname):
             print('Replacing '+Aname)
-            item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,Aname)
-            G2frame.PatternTree.Delete(item)
+            item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Aname)
+            G2frame.GPXtree.Delete(item)
         else:
             nOcc = 0
             while item:
-                Name = G2frame.PatternTree.GetItemText(item)
+                Name = G2frame.GPXtree.GetItemText(item)
                 if Aname in Name:
                     nOcc += 1
-                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
             if nOcc:
                 Aname += '(%d)'%(nOcc)
         Sample = G2obj.SetDefaultSample()       #set as Debye-Scherrer
@@ -728,27 +725,27 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Ymin = np.min(Y)
         Ymax = np.max(Y)
         W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
-        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=Aname)
+        Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Aname)
         G2frame.IntgOutList.append(Id)
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)                    
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
         if 'PWDR' in Aname:
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
         inst = [dict(zip(names,zip(parms,parms,codes))),{}]
         for item in inst[0]:
             inst[0][item] = list(inst[0][item])
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),inst)
         if 'PWDR' in Aname:
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),{'sigDict':{},'peaks':[]})
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[[],[]])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Peak List'),{'sigDict':{},'peaks':[]})
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Index Peak List'),[[],[]])
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Unit Cells List'),[])
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Reflection Lists'),{})
         elif 'SASD' in Aname:             
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
+            G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':False,
@@ -756,7 +753,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
             }
-        G2frame.PatternTree.SetItemPyData(
+        G2frame.GPXtree.SetItemPyData(
             Id,[valuesdict,
                 [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
@@ -793,8 +790,8 @@ def PDFSave(G2frame,exports,PDFsaves):
     'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
     import scipy.interpolate as scintp
     for export in exports:
-        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-        PDFControls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, PickId,'PDF Controls'))
+        PickId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, export)
+        PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, PickId,'PDF Controls'))
         if PDFsaves[0]:     #I(Q)
             iqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.iq')
             iqdata = PDFControls['I(Q)'][0]
@@ -852,9 +849,9 @@ def PDFSave(G2frame,exports,PDFsaves):
             print ' G(R) saved to: ',grfilename
         
         if PDFsaves[4]: #pdfGUI file for G(R)
-            pId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
-            Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, pId,'Instrument Parameters'))[0]
-            Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, pId,'Limits'))
+            pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Instrument Parameters'))[0]
+            Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Limits'))
             grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
             grdata = PDFControls['G(R)'][1]
             qdata = PDFControls['I(Q)'][1][0]
@@ -955,7 +952,7 @@ class MultipleChoicesDialog(wx.Dialog):
         
     selections are placed in self.chosen when OK is pressed
 
-    Also see GSASIIctrls
+    Also see GSASIIctrlGUI
     '''
     def __init__(self,choicelist,headinglist,
                  head='Select options',
@@ -1220,7 +1217,7 @@ class ExportBaseclass(object):
     '''Defines a base class for the exporting of GSAS-II results.
 
     This class is subclassed in the various exports/G2export_*.py files. Those files
-    are imported in :meth:`GSASII.GSASII._init_Exports` which defines the
+    are imported in :meth:`GSASIIdataGUI.GSASII._init_Exports` which defines the
     appropriate menu items for each one and the .Exporter method is called
     directly from the menu item.
 
@@ -1462,17 +1459,17 @@ class ExportBaseclass(object):
         covDict = {}
         consDict = {}
         Histograms,Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
-        if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
-        item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
+        if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
+        item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
         while item:
-            name = self.G2frame.PatternTree.GetItemText(item)
+            name = self.G2frame.GPXtree.GetItemText(item)
             if name == 'Rigid bodies':
-                 rigidbodyDict = self.G2frame.PatternTree.GetItemPyData(item)
+                 rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(item)
             elif name == 'Covariance':
-                 covDict = self.G2frame.PatternTree.GetItemPyData(item)
+                 covDict = self.G2frame.GPXtree.GetItemPyData(item)
             elif name == 'Constraints':
-                 consDict = self.G2frame.PatternTree.GetItemPyData(item)
-            item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+                 consDict = self.G2frame.GPXtree.GetItemPyData(item)
+            item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
         rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         self.parmDict.update(rbDict)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -1542,19 +1539,19 @@ class ExportBaseclass(object):
         self.Histograms = {}
         self.SeqRefdata = None
         self.SeqRefhist = None
-        if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
+        if self.G2frame.GPXtree.IsEmpty(): return # nothing to do
         histType = None        
         if self.currentExportType == 'phase':
             # if exporting phases load them here
-            sub = G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.root,'Phases')
+            sub = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Phases')
             if not sub:
                 print 'no phases found'
                 return True
-            item, cookie = self.G2frame.PatternTree.GetFirstChild(sub)
+            item, cookie = self.G2frame.GPXtree.GetFirstChild(sub)
             while item:
-                phaseName = self.G2frame.PatternTree.GetItemText(item)
-                self.Phases[phaseName] =  self.G2frame.PatternTree.GetItemPyData(item)
-                item, cookie = self.G2frame.PatternTree.GetNextChild(sub, cookie)
+                phaseName = self.G2frame.GPXtree.GetItemText(item)
+                self.Phases[phaseName] =  self.G2frame.GPXtree.GetItemPyData(item)
+                item, cookie = self.G2frame.GPXtree.GetNextChild(sub, cookie)
             return
         elif self.currentExportType == 'single':
             histType = 'HKLF'
@@ -1564,9 +1561,9 @@ class ExportBaseclass(object):
             histType = 'IMG'
 
         if histType: # Loading just one kind of tree entry
-            item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
+            item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
             while item:
-                name = self.G2frame.PatternTree.GetItemText(item)
+                name = self.G2frame.GPXtree.GetItemText(item)
                 if name.startswith(histType):
                     if self.Histograms.get(name): # there is already an item with this name
                         print('Histogram name '+str(name)+' is repeated. Renaming')
@@ -1580,14 +1577,14 @@ class ExportBaseclass(object):
                     # the main info goes into Data, but the 0th
                     # element contains refinement results, carry
                     # that over too now. 
-                    self.Histograms[name]['Data'] = self.G2frame.PatternTree.GetItemPyData(item)[1]
-                    self.Histograms[name][0] = self.G2frame.PatternTree.GetItemPyData(item)[0]
-                    item2, cookie2 = self.G2frame.PatternTree.GetFirstChild(item)
+                    self.Histograms[name]['Data'] = self.G2frame.GPXtree.GetItemPyData(item)[1]
+                    self.Histograms[name][0] = self.G2frame.GPXtree.GetItemPyData(item)[0]
+                    item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
                     while item2: 
-                        child = self.G2frame.PatternTree.GetItemText(item2)
-                        self.Histograms[name][child] = self.G2frame.PatternTree.GetItemPyData(item2)
-                        item2, cookie2 = self.G2frame.PatternTree.GetNextChild(item, cookie2)
-                item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+                        child = self.G2frame.GPXtree.GetItemText(item2)
+                        self.Histograms[name][child] = self.G2frame.GPXtree.GetItemPyData(item2)
+                        item2, cookie2 = self.G2frame.GPXtree.GetNextChild(item, cookie2)
+                item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
             # index powder and single crystal histograms by number
             for hist in self.Histograms:
                 if hist.startswith("PWDR"): 
@@ -1605,13 +1602,13 @@ class ExportBaseclass(object):
             return
         # else standard load: using all interlinked phases and histograms
         self.Histograms,self.Phases = self.G2frame.GetUsedHistogramsAndPhasesfromTree()
-        item, cookie = self.G2frame.PatternTree.GetFirstChild(self.G2frame.root)
+        item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
         while item:
-            name = self.G2frame.PatternTree.GetItemText(item)
-            item2, cookie2 = self.G2frame.PatternTree.GetFirstChild(item)
+            name = self.G2frame.GPXtree.GetItemText(item)
+            item2, cookie2 = self.G2frame.GPXtree.GetFirstChild(item)
             if not item2: 
-                self.OverallParms[name] = self.G2frame.PatternTree.GetItemPyData(item)
-            item, cookie = self.G2frame.PatternTree.GetNextChild(self.G2frame.root, cookie)
+                self.OverallParms[name] = self.G2frame.GPXtree.GetItemPyData(item)
+            item, cookie = self.G2frame.GPXtree.GetNextChild(self.G2frame.root, cookie)
         # index powder and single crystal histograms
         for hist in self.Histograms:
             i = self.Histograms[hist]['hId']
@@ -2122,8 +2119,8 @@ def ReadDIFFaX(DIFFaXfile):
     return Layer
 
 if __name__ == '__main__':
-    import GSASII
-    application = GSASII.GSASIImain(0)
+    import GSASIIdataGUI
+    application = GSASIIdataGUI.GSASIImain(0)
     G2frame = application.main
     #app = wx.PySimpleApp()
     #G2frame = wx.Frame(None) # create a frame

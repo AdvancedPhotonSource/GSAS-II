@@ -468,7 +468,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
     '''Compute and return distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
-       :func:`GSASIIgrid.DisAglDialog`
+       :func:`GSASIIctrlGUI.DisAglDialog`
     :param dict DisAglData: contains phase data: 
        Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
        for distance/angle origins and atoms to be used as targets.
@@ -585,7 +585,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
     '''Print distances and angles
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
-       :func:`GSASIIgrid.DisAglDialog`
+       :func:`GSASIIctrlGUI.DisAglDialog`
     :param dict DisAglData: contains phase data: 
        Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
        for distance/angle origins and atoms to be used as targets.

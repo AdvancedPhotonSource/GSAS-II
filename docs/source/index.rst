@@ -29,8 +29,7 @@ GSAS-II Developer's Documentation
 Note that GSAS-II requires the Python extension packages 
 
 * wxPython (http://wxpython.org/docs/api/), 
-  * note that GSAS-II has been tested with wxPython 2.x and 3.0.x; It
-    it expected to have problems with wxPython 4.x at present. 
+  * note that GSAS-II has been tested with wxPython 2.x and 3.0.x; It it expected to have problems with wxPython 4.x at present. 
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
 * matplotlib (http://matplotlib.org/contents.html)  and

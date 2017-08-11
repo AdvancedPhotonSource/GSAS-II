@@ -3072,7 +3072,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     bakType = calcControls[hfx+'bakType']
     yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     yc = np.zeros_like(yb)
-    cw = np.diff(x)
+    cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
         
     if 'C' in calcControls[hfx+'histType']:    
@@ -3163,11 +3163,11 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             elif 'T' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction
 #                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
-                refl[12+im:14+im] = GetReflAlpBet(refl,im,hfx,parmDict)
+                refl[12+im:14+im] = GetReflAlpBet(refl,im,hfx,parmDict)             #TODO - skip if alp, bet tabulated?
                 refl[11+im],refl[15+im],refl[16+im],refl[17+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11+im] *= Vst*Lorenz
                 if Phase['General'].get('doPawley'):
@@ -3201,7 +3201,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     '''Computes the derivatives of the computed powder pattern with respect to all
     refined parameters
     '''
-    #starttime = time.time(); print 'start getPowderProfileDerv'
+    #if GSASIIpath.GetConfigValue('debug'):
+    #    starttime = time.time()
+    #    print 'starting getPowderProfileDerv'
     
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
@@ -3240,7 +3242,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     if hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
         bBpos = varylist.index(hfx+'Back;0')
-        dMdv[bBpos:bBpos+len(dMdb)] += dMdb
+        dMdv[bBpos:bBpos+len(dMdb)] += dMdb     #TODO crash if bck parms tossed
     names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
     for name in varylist:
         if 'Debye' in name:
@@ -3256,7 +3258,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             if parm in names:
                 ip = names.index(parm)
                 dMdv[varylist.index(name)] += dMdpk[4*id+ip]
-    cw = np.diff(x)
+    cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!
     if 'C' in calcControls[hfx+'histType']:    
@@ -3539,9 +3541,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     # now process derivatives in constraints
     #print '#3 getPowderProfileDerv t=',time.time()-starttime
     #print timelist,sum(timelist)
+    dMdv[:,ma.getmaskarray(x)] = 0.  # instead of masking, zero out masked values
     dMdv = ma.array(dMdv,mask=np.outer(np.ones(len(varylist)),ma.getmaskarray(x)))      #x is a MaskedArray!
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
-    #print 'end getPowderProfileDerv t=',time.time()-starttime
+    #if GSASIIpath.GetConfigValue('debug'):
+    #    print 'end getPowderProfileDerv t=',time.time()-starttime
     return dMdv
     
 def UserRejectHKL(ref,im,userReject):
@@ -3743,6 +3747,11 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             xF = np.searchsorted(x,Limits[1])+1
             dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
+            # print 'HessRefine getPowderProfileDerv'
+            # import cPickle
+            # fp = open('/tmp/hess.pkl','w')
+            # cPickle.dump(dMdvh,fp,1)
+            # fp.close()
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt

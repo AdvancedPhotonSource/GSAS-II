@@ -38,7 +38,7 @@ import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIddataGUI as G2ddG
 import GSASIIplot as G2plt
-import GSASIIgrid as G2gd
+import GSASIIdataGUI as G2gd
 import GSASIIIO as G2IO
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2strIO
@@ -46,7 +46,7 @@ import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
-import GSASIIctrls as G2G
+import GSASIIctrlGUI as G2G
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
@@ -66,22 +66,931 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
-def SetPhaseWindow(mainFrame,phasePage,mainSizer=None,size=None,Scroll=0):
-    if not mainSizer is None: 
+################################################################################
+#### phase class definitions
+################################################################################
+class SGMagSpinBox(wx.Dialog):
+    ''' Special version of MessageBox that displays magnetic spin text
+    '''
+    def __init__(self,parent,title,text,table,names,spins,):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(420,350))
+        self.text = text
+        self.table = table
+        self.names = names
+        self.spins = spins
+        self.panel = wxscroll.ScrolledPanel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((0,10))
+        first = text[0].split(':')[-1].strip()
+        cents = [0,]
+        if 'P' != first[0]:
+            cents = text[-1].split(';')
+        for line in text:
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+        ncol = self.table[0].count(',')+2
+        for ic,cent in enumerate(cents):
+            if cent:
+                cent = cent.strip(' (').strip(')+\n') 
+                mainSizer.Add(wx.StaticText(self.panel,label=' for (%s)+'%(cent)),0,WACV)
+            tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+            for j,item in enumerate(self.table):
+                flds = item.split(')')[1]
+                tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV|wx.ALIGN_LEFT)            
+                flds = flds.replace(' ','').split(',')
+                for i,fld in enumerate(flds):
+                    if i < ncol-1:
+                        text = wx.StaticText(self.panel,label='%s, '%(fld))
+                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                    else:
+                        text = wx.StaticText(self.panel,label='%s '%(fld))
+                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
+                if self.spins[j+ic*len(self.table)] < 0:
+                    text.SetForegroundColour('Red')
+                tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                if not j%2:
+                    tableSizer.Add((20,0))
+            mainSizer.Add(tableSizer,0,wx.ALIGN_CENTER)
+            
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        mainSizer.Add((0,10))
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        self.panel.SetAutoLayout(1)
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        '''
+        self.ShowModal()
+        return
+
+################################################################################
+class SymOpDialog(wx.Dialog):
+    '''Class to select a symmetry operator
+    '''
+    def __init__(self,parent,SGData,New=True,ForceUnit=False):
+        wx.Dialog.__init__(self,parent,-1,'Select symmetry operator',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        panel = wx.Panel(self)
+        self.SGData = SGData
+        self.New = New
+        self.Force = ForceUnit
+        self.OpSelected = [0,0,0,[0,0,0],False,False]
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if ForceUnit:
+            choice = ['No','Yes']
+            self.force = wx.RadioBox(panel,-1,'Force to unit cell?',choices=choice)
+            self.force.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.force,0,WACV|wx.TOP,5)
+#        if SGData['SGInv']:
+        choice = ['No','Yes']
+        self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
+        self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+        mainSizer.Add(self.inv,0,WACV)
+        if SGData['SGLatt'] != 'P':
+            LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
+            self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
+            self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.latt,0,WACV)
+        if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
+            Ncol = 2
+        else:
+            Ncol = 3
+        OpList = []
+        for Opr in SGData['SGOps']:
+            OpList.append(G2spc.MT2text(Opr))
+        self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
+            majorDimension=Ncol)
+        self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+        mainSizer.Add(self.oprs,0,WACV|wx.BOTTOM,5)
+        mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,WACV)
+        cellSizer = wx.BoxSizer(wx.HORIZONTAL)
+        cellName = ['X','Y','Z']
+        self.cell = []
+        for i in range(3):
+            self.cell.append(wx.SpinCtrl(panel,-1,cellName[i],size=wx.Size(50,20)))
+            self.cell[-1].SetRange(-3,3)
+            self.cell[-1].SetValue(0)
+            self.cell[-1].Bind(wx.EVT_SPINCTRL, self.OnOpSelect)
+            cellSizer.Add(self.cell[-1],0,WACV)
+        mainSizer.Add(cellSizer,0,WACV|wx.BOTTOM,5)
+        if self.New:
+            choice = ['No','Yes']
+            self.new = wx.RadioBox(panel,-1,'Generate new positions?',choices=choice)
+            self.new.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+            mainSizer.Add(self.new,0,WACV)
+
+        OkBtn = wx.Button(panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+
+    def OnOpSelect(self,event):
+#        if self.SGData['SGInv']:
+        self.OpSelected[0] = self.inv.GetSelection()
+        if self.SGData['SGLatt'] != 'P':
+            self.OpSelected[1] = self.latt.GetSelection()
+        self.OpSelected[2] = self.oprs.GetSelection()
+        for i in range(3):
+            self.OpSelected[3][i] = float(self.cell[i].GetValue())
+        if self.New:
+            self.OpSelected[4] = self.new.GetSelection()
+        if self.Force:
+            self.OpSelected[5] = self.force.GetSelection()
+
+    def GetSelection(self):
+        return self.OpSelected
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+################################################################################
+class SphereEnclosure(wx.Dialog):
+    ''' Add atoms within sphere of enclosure to drawing
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param general: general data (includes drawing data)
+    :param atoms: drawing atoms data
+    :param indx: list of selected atoms (may be empty)
+    
+    '''
+    def __init__(self,parent,general,drawing,indx):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.General = general
+        self.Drawing = drawing
+        self.indx = indx
+        self.Sphere = [1.0,]
+        self.centers = []
+        self.atomTypes = [[item,True] for item in self.General['AtomTypes']]
+        
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnAtomType(event):
+            Obj = event.GetEventObject()
+            id = Ind[Obj.GetId()]
+            self.atomTypes[id][1] = Obj.GetValue()
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Sphere of enclosure controls:'),0,WACV)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        atoms = []
+        if len(self.indx):
+            topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at atoms: '),0,WACV)
+            cx,ct,cs = self.Drawing['atomPtrs'][:3]
+            for id in self.indx:
+                atom = self.Drawing['Atoms'][id]
+                self.centers.append(atom[cx:cx+3])
+                atoms.append('%s(%s)'%(atom[ct-1],atom[cs-1]))
+            topSizer.Add(wx.ComboBox(self.panel,choices=atoms,value=atoms[0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN),0,WACV)
+        else:
+            topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at drawing view point'),0,WACV)
+            self.centers.append(self.Drawing['viewPoint'][0])
+        mainSizer.Add(topSizer,0,WACV)
+        sphereSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sphereSizer.Add(wx.StaticText(self.panel,label=' Sphere radius: '),0,WACV)
+        radius = G2G.ValidatedTxtCtrl(self.panel,self.Sphere,0,nDig=(10,3),size=(65,25))
+        sphereSizer.Add(radius,0,WACV)
+        mainSizer.Add(sphereSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Target selected atoms:'),0,WACV)
+        atSizer = wx.BoxSizer(wx.HORIZONTAL)
+        Ind = {}
+        for i,item in enumerate(self.atomTypes):
+            atm = wx.CheckBox(self.panel,label=item[0])
+            atm.SetValue(item[1])
+            atm.Bind(wx.EVT_CHECKBOX, OnAtomType)
+            Ind[atm.GetId()] = i
+            atSizer.Add(atm,0,WACV)
+        mainSizer.Add(atSizer,0,WACV)
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        used = []
+        for atm in self.atomTypes:
+            if atm[1]:
+                used.append(str(atm[0]))
+        return self.centers,self.Sphere[0],used
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
+class TransformDialog(wx.Dialog):
+    ''' Phase transformation
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param phase: phase data
+    
+    #NB: commonNames & commonTrans defined in GSASIIdataGUI = G2gd 
+    '''
+    def __init__(self,parent,phase):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Phase = copy.deepcopy(phase)   #will be a new phase!
+#        self.Super = phase['General']['Super']
+#        if self.Super:
+#            self.Trans = np.eye(4)
+#            self.Vec = np.zeros(4)
+#        else:
+        self.Trans = np.eye(3)
+        self.Vec = np.zeros(3)
+        self.oldSpGrp = phase['General']['SGData']['SpGrp']
+        self.oldSGdata = phase['General']['SGData']
+        self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
+        self.oldCell = phase['General']['Cell'][1:8]
+        self.newCell = self.Phase['General']['Cell'][1:8]
+        self.Common = 'abc'
+        self.ifMag = False
+        self.ifConstr = True
+        self.Draw()
+
+    def Draw(self):
+                
+        def OnCommon(event):
+            Obj = event.GetEventObject()
+            self.Common = Obj.GetValue()
+            if '*' in self.Common:
+                A,B = G2lat.cell2AB(self.oldCell[:6])
+                self.newCell[2:5] = [A[2,2],90.,90.]
+                a,b = G2lat.cell2AB(self.newCell[:6])
+                self.Trans = np.inner(a.T,B)    #correct!
+                self.ifConstr = False
+                self.newSpGrp = 'P 1'
+                SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
+                self.Phase['General']['SGData'] = SGData
+            else:
+                if self.Common == G2gd.commonNames[-1]:      #change setting
+                    self.Vec = G2spc.spg2origins[self.oldSpGrp]
+                    self.newSpGrp = self.oldSpGrp
+                else:
+                    self.Trans = G2gd.commonTrans[self.Common]
+                    if 'R' == self.Common[-1]:
+                        self.newSpGrp += ' r'
+                        SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
+                        self.Phase['General']['SGData'] = SGData
+                        SGTxt.SetValue(self.newSpGrp)
+            OnTest(event)
+       
+        def OnSpaceGroup(event):
+            event.Skip()
+            Flds = SGTxt.GetValue().split()
+            Flds[0] = Flds[0].upper()
+            #get rid of extra spaces between fields first
+            for fld in Flds: fld = fld.strip()
+            SpcGp = ' '.join(Flds)
+            if SpcGp == self.newSpGrp: #didn't change it!
+                return
+            # try a lookup on the user-supplied name
+            SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
+            if SpGrpNorm:
+                SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)
+            else:
+                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+            if SGErr:
+                text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
+                SGTxt.SetValue(self.newSpGrp)
+                msg = 'Space Group Error'
+                Style = wx.ICON_EXCLAMATION
+                Text = '\n'.join(text)
+                wx.MessageBox(Text,caption=msg,style=Style)
+            else:
+                text,table = G2spc.SGPrint(SGData)
+                self.Phase['General']['SGData'] = SGData
+                self.newSpGrp = SpcGp
+                SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
+                msg = 'Space Group Information'
+                G2G.SGMessageBox(self.panel,msg,text,table).Show()
+            if self.Phase['General']['Type'] == 'magnetic':
+                Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
+                if SGData['SGInv']:
+                    Nops *= 2
+                SGData['SpnFlp'] = Nops*[1,]
+#            if self.Phase['General']['Type'] in ['modulated',]:
+#                self.Phase['General']['SuperSg'] = SetDefaultSSsymbol()
+#                self.Phase['General']['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+
+        def OnTest(event):
+            self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans)
+            wx.CallAfter(self.Draw)
+            
+        def OnMag(event):
+            self.ifMag = mag.GetValue()
+            
+        def OnConstr(event):
+            self.ifConstr = constr.GetValue()
+
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix & vector: M*X+V = X'"))
+#        if self.Super:
+#            Trmat = wx.FlexGridSizer(4,4,0,0)
+#        else:
+        commonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
+        if self.oldSpGrp not in G2spc.spg2origins:
+            common = wx.ComboBox(self.panel,value=self.Common,choices=G2gd.commonNames[:-1],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        else:
+            common = wx.ComboBox(self.panel,value=self.Common,choices=G2gd.commonNames,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        common.Bind(wx.EVT_COMBOBOX,OnCommon)
+        commonSizer.Add(common,0,WACV)
+        transSizer.Add(commonSizer)
+        Trmat = wx.FlexGridSizer(3,5,0,0)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
+                Trmat.Add(item)
+            Trmat.Add((25,0),0)
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vec,iy,nDig=(10,3),size=(65,25))
+            Trmat.Add(vec)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Old lattice parameters:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=
+            ' a = %.5f       b = %.5f      c = %.5f'%(self.oldCell[0],self.oldCell[1],self.oldCell[2])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' alpha = %.3f beta = %.3f gamma = %.3f'%
+            (self.oldCell[3],self.oldCell[4],self.oldCell[5])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.oldCell[6])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' New lattice parameters:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=
+            ' a = %.5f       b = %.5f      c = %.5f'%(self.newCell[0],self.newCell[1],self.newCell[2])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' alpha = %.3f beta = %.3f gamma = %.3f'%
+            (self.newCell[3],self.newCell[4],self.newCell[5])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.newCell[6])),0,WACV)
+        sgSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sgSizer.Add(wx.StaticText(self.panel,label='  Space group: '),0,WACV)
+        SGTxt = wx.TextCtrl(self.panel,value=self.newSpGrp,style=wx.TE_PROCESS_ENTER)
+        SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
+        SGTxt.Bind(wx.EVT_KILL_FOCUS,OnSpaceGroup)
+        sgSizer.Add(SGTxt,0,WACV)
+        mainSizer.Add(sgSizer,0,WACV)
+        if 'magnetic' not in self.Phase['General']['Type']:
+            mag = wx.CheckBox(self.panel,label=' Make new phase magnetic?')
+            mag.Bind(wx.EVT_CHECKBOX,OnMag)
+            mainSizer.Add(mag,0,WACV)
+            mainSizer.Add(wx.StaticText(self.panel, \
+                label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
+            constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
+            mainSizer.Add(wx.StaticText(self.panel, \
+                label=' Constraints not correct for non-diagonal transforms'),0,WACV)
+            constr.SetValue(self.ifConstr)
+            constr.Bind(wx.EVT_CHECKBOX,OnConstr)
+            mainSizer.Add(constr,0,WACV)
+
+        TestBtn = wx.Button(self.panel,-1,"Test")
+        TestBtn.Bind(wx.EVT_BUTTON, OnTest)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(TestBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        if self.ifMag:
+            self.Phase['General']['Name'] += ' mag'
+        else:
+            self.Phase['General']['Name'] += ' %s'%(self.Common)
+        self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
+        return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr,self.Common
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
+################################################################################
+class UseMagAtomDialog(wx.Dialog):
+    '''Get user selected magnetic atoms after cell transformation
+    '''
+    def __init__(self,parent,Atoms,atCodes):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Atoms = Atoms
+        self.atCodes = atCodes
+        self.Use = len(self.Atoms)*[True,]
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnUseChk(event):
+            Obj = event.GetEventObject()
+            iuse = Indx[Obj.GetId()]
+            self.Use[iuse] = not self.Use[iuse]
+            Obj.SetValue(self.Use[iuse])
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Indx = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        mainSizer.Add(wx.StaticText(self.panel,label=' Name, x, y, z:'),0,WACV)
+        atmSizer = wx.FlexGridSizer(0,2,5,5)
+        for iuse,[use,atom] in enumerate(zip(self.Use,self.Atoms)):
+            useChk = wx.CheckBox(self.panel,label='Use?')
+            Indx[useChk.GetId()] = iuse
+            useChk.SetValue(use)
+            useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
+            atmSizer.Add(useChk,0,WACV)
+            text = ' %s %10.5f %10.5f %10.5f'%(atom[0],atom[3],atom[4],atom[5])
+            atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
+        mainSizer.Add(atmSizer)
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Use All")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        useAtoms = []
+        useatCodes = []
+        for use,atom,code in zip(self.Use,self.Atoms,self.atCodes):
+            if use:
+                useAtoms.append(atom)
+                useatCodes.append(code)
+        return useAtoms,useatCodes
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+            
+                
+################################################################################
+class RotationDialog(wx.Dialog):
+    ''' Get Rotate & translate matrix & vector - currently not used
+    needs rethinking - possible use to rotate a group of atoms about some
+    vector/origin + translation
+    
+    '''
+    def __init__(self,parent):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Atom group rotation/translation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Trans = np.eye(3)
+        self.Vec = np.zeros(3)
+        self.rotAngle = 0.
+        self.rotVec = np.array([0.,0.,1.])
+        self.Expand = ''
+        self.Draw()
+
+    def Draw(self):
+
+        def OnExpand(event):
+            self.Expand = expand.GetValue()
+            
+        def OnRotAngle(event):
+            event.Skip()
+            self.rotAngle = float(rotangle.GetValue())
+            rotangle.SetValue('%5.3f'%(self.rotAngle))
+            Q = G2mth.AVdeg2Q(self.rotAngle,self.rotVec)
+            self.Trans = G2mth.Q2Mat(Q)
+            self.Draw()
+            
+        def OnRotVec(event):
+            event.Skip()
+            vals = rotvec.GetValue()
+            vals = vals.split()
+            self.rotVec = np.array([float(val) for val in vals])
+            rotvec.SetValue('%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]))
+            Q = G2mth.AVdeg2Q(self.rotAngle,self.rotVec)
+            self.Trans = G2mth.Q2Mat(Q)
+            self.Draw()
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix && vector: "+ \
+            "\n B*M*A*(X-V)+V = X'\n A,B: Cartesian transformation matrices"))
+        Trmat = wx.FlexGridSizer(3,5,0,0)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
+                Trmat.Add(item)
+            Trmat.Add((25,0),0)
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vec,iy,nDig=(10,3),size=(65,25))
+            Trmat.Add(vec)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        rotationBox = wx.BoxSizer(wx.HORIZONTAL)
+        rotationBox.Add(wx.StaticText(self.panel,label=' Rotation angle: '),0,WACV)
+        rotangle = wx.TextCtrl(self.panel,value='%5.3f'%(self.rotAngle),
+            size=(50,25),style=wx.TE_PROCESS_ENTER)
+        rotangle.Bind(wx.EVT_TEXT_ENTER,OnRotAngle)
+        rotangle.Bind(wx.EVT_KILL_FOCUS,OnRotAngle)
+        rotationBox.Add(rotangle,0,WACV)
+        rotationBox.Add(wx.StaticText(self.panel,label=' about vector: '),0,WACV)
+        rotvec = wx.TextCtrl(self.panel,value='%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]),
+            size=(100,25),style=wx.TE_PROCESS_ENTER)
+        rotvec.Bind(wx.EVT_TEXT_ENTER,OnRotVec)
+        rotvec.Bind(wx.EVT_KILL_FOCUS,OnRotVec)
+        rotationBox.Add(rotvec,0,WACV)
+        mainSizer.Add(rotationBox,0,WACV)
+        expandChoice = ['','xy','xz','yz','xyz']
+        expandBox = wx.BoxSizer(wx.HORIZONTAL)
+        expandBox.Add(wx.StaticText(self.panel,label=' Expand -1 to +1 on: '),0,WACV)
+        expand = wx.ComboBox(self.panel,value=self.Expand,choices=expandChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        expand.Bind(wx.EVT_COMBOBOX,OnExpand)
+        expandBox.Add(expand,0,WACV)
+        expandBox.Add(wx.StaticText(self.panel,label=' and find unique atoms '),0,WACV)        
+        mainSizer.Add(expandBox)
+                
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetSelection(self):
+        return self.Trans,self.Vec,self.Expand
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)    
+        
+################################################################################
+class DIFFaXcontrols(wx.Dialog):
+    ''' Solicit items needed to prepare DIFFaX control.dif file
+    '''
+    def __init__(self,parent,ctrls,parms=None):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'DIFFaX controls', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.ctrls = ctrls
+        self.calcType = 'powder pattern'
+        self.plane = 'h0l'
+        self.planeChoice = ['h0l','0kl','hhl','h-hl',]
+        self.lmax = '2'
+        self.lmaxChoice = [str(i+1) for i in range(6)]
+        self.Parms = parms
+        self.Parm = None
+        if self.Parms != None:
+            self.Parm = self.Parms[0]
+        self.parmRange = [0.,1.]
+        self.parmStep = 2
+        self.Inst = 'Gaussian'
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnCalcType(event):
+            self.calcType = calcType.GetValue()
+            wx.CallAfter(self.Draw)
+            
+        def OnPlane(event):
+            self.plane = plane.GetValue()
+            
+        def OnMaxL(event):
+            self.lmax = lmax.GetValue()
+            
+        def OnParmSel(event):
+            self.Parm = parmsel.GetValue()
+            
+        def OnNumStep(event):
+            self.parmStep = int(numStep.GetValue())
+            
+        def OnParmRange(event):
+            event.Skip()
+            vals = parmrange.GetValue().split()
+            try:
+                vals = [float(vals[0]),float(vals[1])]
+            except ValueError:
+                vals = self.parmRange
+            parmrange.SetValue('%.3f %.3f'%(vals[0],vals[1]))
+            self.parmRange = vals
+            
+        def OnInstSel(event):
+            self.Inst = instsel.GetValue()
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Controls for DIFFaX'),0,WACV)
+        if self.Parms:
+            mainSizer.Add(wx.StaticText(self.panel,label=' Sequential powder pattern simulation'),0,WACV)
+        else:
+            calcChoice = ['powder pattern','selected area']
+            calcSizer = wx.BoxSizer(wx.HORIZONTAL)
+            calcSizer.Add(wx.StaticText(self.panel,label=' Select calculation type: '),0,WACV)
+            calcType = wx.ComboBox(self.panel,value=self.calcType,choices=calcChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            calcType.Bind(wx.EVT_COMBOBOX,OnCalcType)
+            calcSizer.Add(calcType,0,WACV)
+            mainSizer.Add(calcSizer)
+        if self.Parms:
+            parmSel = wx.BoxSizer(wx.HORIZONTAL)
+            parmSel.Add(wx.StaticText(self.panel,label=' Select parameter to vary: '),0,WACV)
+            parmsel = wx.ComboBox(self.panel,value=self.Parm,choices=self.Parms,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            parmsel.Bind(wx.EVT_COMBOBOX,OnParmSel)
+            parmSel.Add(parmsel,0,WACV)
+            mainSizer.Add(parmSel)
+            mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '),0,WACV)
+            parmRange =  wx.BoxSizer(wx.HORIZONTAL)
+            numChoice = [str(i+1) for i in range(10)]
+            parmrange = wx.TextCtrl(self.panel,value='%.3f %.3f'%(self.parmRange[0],self.parmRange[1]),
+                style=wx.TE_PROCESS_ENTER)
+            parmrange.Bind(wx.EVT_TEXT_ENTER,OnParmRange)
+            parmrange.Bind(wx.EVT_KILL_FOCUS,OnParmRange)
+            parmRange.Add(parmrange,0,WACV)
+            numStep = wx.ComboBox(self.panel,value=str(self.parmStep),choices=numChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            numStep.Bind(wx.EVT_COMBOBOX,OnNumStep)
+            parmRange.Add(numStep,0,WACV)
+            mainSizer.Add(parmRange)            
+        if 'selected' in self.calcType:
+            planeSizer = wx.BoxSizer(wx.HORIZONTAL)
+            planeSizer.Add(wx.StaticText(self.panel,label=' Select plane: '),0,WACV)
+            plane = wx.ComboBox(self.panel,value=self.plane,choices=self.planeChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            plane.Bind(wx.EVT_COMBOBOX,OnPlane)
+            planeSizer.Add(plane,0,WACV)
+            planeSizer.Add(wx.StaticText(self.panel,label=' Max. l index: '),0,WACV)
+            lmax = wx.ComboBox(self.panel,value=self.lmax,choices=self.lmaxChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            lmax.Bind(wx.EVT_COMBOBOX,OnMaxL)
+            planeSizer.Add(lmax,0,WACV)            
+            mainSizer.Add(planeSizer)
+        else:
+            instChoice = ['None','Mean Gaussian','Gaussian',]
+            instSizer = wx.BoxSizer(wx.HORIZONTAL)
+            instSizer.Add(wx.StaticText(self.panel,label=' Select instrument broadening: '),0,WACV)
+            instsel = wx.ComboBox(self.panel,value=self.Inst,choices=instChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            instsel.Bind(wx.EVT_COMBOBOX,OnInstSel)
+            instSizer.Add(instsel,0,WACV)
+            mainSizer.Add(instSizer)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        if 'powder' in self.calcType:
+            return 'PWDR',self.Inst,self.Parm,self.parmRange,self.parmStep
+        elif 'selected' in self.calcType:
+            return 'SADP',self.plane,self.lmax
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
+class AddHatomDialog(wx.Dialog):
+    '''H atom addition dialog. After :meth:`ShowModal` returns, the results 
+    are found in dict :attr:`self.data`, which is accessed using :meth:`GetData`.
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param dict Neigh: a dict of atom names with list of atom name, dist pairs for neighboring atoms
+    :param dict phase: a dict containing the phase as defined by
+      :ref:`Phase Tree Item <Phase_table>`    
+    '''
+    def __init__(self,parent,Neigh,phase):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'H atom add', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+        self.Neigh = Neigh
+        self.phase = phase
+        self.Hatoms = []
+        self.Draw(self.Neigh,self.phase)
+            
+    def Draw(self,Neigh,phase):
+        '''Creates the contents of the dialog. Normally called
+        by :meth:`__init__`.
+        '''
+        def OnHSelect(event):
+            Obj = event.GetEventObject()
+            item,i = Indx[Obj.GetId()]
+            for obj in Indx[item]:
+                obj.SetValue(False)
+            Obj.SetValue(True)
+            self.Neigh[item][2] = i
+            
+        def OnBond(event):
+            Obj = event.GetEventObject()
+            inei,ibond = Indx[Obj.GetId()]
+            self.Neigh[inei][1][0][ibond][2] = Obj.GetValue()
+            
+        self.panel.Destroy()
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'H atom add controls for phase %s:'%(phase['General']['Name'])),
+            0,wx.LEFT|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'NB: Check selections as they may not be correct'),0,WACV|wx.LEFT,10)
+        mainSizer.Add(wx.StaticText(self.panel,-1," Atom:  Add # H's          Use: Neighbors, dist"),0,wx.TOP|wx.LEFT,5)
+        nHatms = ['0','1','2','3']
+        dataSizer = wx.FlexGridSizer(0,3,0,0)
+        Indx = {}
+        for inei,neigh in enumerate(Neigh):
+            dataSizer.Add(wx.StaticText(self.panel,-1,' %s:  '%(neigh[0])),0,WACV)
+            nH = 1      #for O atom
+            if 'C' in neigh[0] or 'N' in neigh[0]:
+                nH = 4-len(neigh[1][0])
+            checks = wx.BoxSizer(wx.HORIZONTAL)
+            Ids = []
+            for i in range(nH+1):
+                nHs = wx.CheckBox(self.panel,-1,label=nHatms[i])
+                if i == neigh[2]:
+                    nHs.SetValue(True)
+                Indx[nHs.GetId()] = [inei,i]
+                Ids.append(nHs)
+                nHs.Bind(wx.EVT_CHECKBOX, OnHSelect)
+                checks.Add(nHs,0,WACV)
+            Indx[inei] = Ids
+            dataSizer.Add(checks,0,WACV)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            for ib,bond in enumerate(neigh[1][0]):
+                Bond = wx.CheckBox(self.panel,-1,label=': %s, %.3f'%(bond[0],bond[1]))
+                Bond.SetValue(bond[2])
+                Indx[Bond.GetId()] = [inei,ib]
+                Bond.Bind(wx.EVT_CHECKBOX,OnBond)                
+                lineSizer.Add(Bond,0,WACV)                
+            dataSizer.Add(lineSizer,0,WACV|wx.RIGHT,10)
+        mainSizer.Add(dataSizer,0,wx.LEFT,5)
+
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        OkBtn = wx.Button(self.panel,-1,'Ok')
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        self.panel.SetAutoLayout(1)
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        
+    def GetData(self):
+        'Returns the values from the dialog'
+        for neigh in self.Neigh:
+            for ibond,bond in enumerate(neigh[1][0]):
+                if not bond[2]:
+                    neigh[1][1][1][ibond] = 0   #deselected bond
+            neigh[1][1][1] = [a for a in  neigh[1][1][1] if a]
+        return self.Neigh       #has #Hs to add for each entry
+        
+    def OnOk(self,event):
+        'Called when the OK button is pressed'
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
+################################################################################
+################################################################################
+    
+    
+def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
+    if mainSizer is not None: 
         phasePage.SetSizer(mainSizer)
-        Size = mainSizer.GetMinSize()
-    else:
-        Size = phasePage.GetBestSize()
-    Size[0] += 40
-    phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+    phasePage.SetAutoLayout(True)
+    phasePage.SetScrollRate(1,1)
+    phasePage.SendSizeEvent()
     phasePage.Scroll(0,Scroll)
-    if size is None:
-        Size[1] = min(Size[1]+ 150,500) 
-#        Size[1] = min(500,Size[1])
-        mainFrame.setSizePosLeft(Size)
-    else:
-        size[1] = min(500,size[1])
-        mainFrame.setSizePosLeft(size)
+
     
 def FindBondsDraw(data):    
     '''uses numpy & masks - very fast even for proteins!
@@ -154,8 +1063,8 @@ def FindBondsDraw(data):
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
-    Called only from :meth:`GSASIIgrid.SelectDataTreeItem`,
-    which in turn is called from :meth:`GSASII.GSASII.OnDataTreeSelChanged`
+    Called only from :meth:`GSASIIdataGUI.SelectDataTreeItem`,
+    which in turn is called from :meth:`GSASIIdataGUI.GSASII.OnDataTreeSelChanged`
     when a Phase tree item is selected. This creates all tabs on the page and fills
     their contents. Routine OnPageChanged is called each time a tab is pressed
     and updates the contents of the tab's page.
@@ -176,12 +1085,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return None
         for reflName in reflNames:
             if 'PWDR' in reflName:
-                PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-                reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+                PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+                reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
                 reflData = reflSets[phaseName]
             elif 'HKLF' in reflName:
-                PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+                PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+                reflData = G2frame.GPXtree.GetItemPyData(PatternId)[1]
                 if 'Type' not in reflData:
                     reflData['Type'] = 'SXC'
             if ReflData['Type'] and reflData['Type'] != ReflData['Type']:
@@ -219,9 +1128,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Pawley neg wt'] = 0.0
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
-            generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50],
-            'dmin':2.0,'Algorithm':'log','Jump coeff':[0.95,0.5],'boltzmann':1.0,
-            'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[],'newDmin':True}
+            generalData['MCSA controls'] = {'Data source':'','Annealing':[0.7,0.1,250],
+            'dmin':2.8,'Algorithm':'log','fast parms':[0.8,0.6],'log slope':0.9,
+            'Cycles':1,'Results':[],'newDmin':True}
         if 'AtomPtrs' not in generalData:
             generalData['AtomPtrs'] = [3,1,7,9]
             if generalData['Type'] == 'macromolecular':
@@ -333,9 +1242,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         'Drawing':{}
         """        
         # UpdateGeneral execution starts here
-        #General.DestroyChildren() # bad, deletes scrollbars on Mac!
-        if General.GetSizer():
-            General.GetSizer().Clear(True)
+        if General.GetSizer(): General.GetSizer().Clear(True)
         phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
         SetupGeneral()
         generalData = data['General']
@@ -370,14 +1277,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     newName = G2obj.MakeUniqueLabel(newName,phaseNameList)             
                     generalData['Name'] = newName
                     G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-                    G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
-                    G2frame.PatternTree.SetItemText(Item,generalData['Name'])
+                    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Phase Data for '+generalData['Name'])
+                    G2frame.SetTitle('Phase Data for '+generalData['Name'])                    
+                    G2frame.GPXtree.SetItemText(Item,generalData['Name'])
                     # change phase name key in Reflection Lists for each histogram
                     for hist in data['Histograms']:
-                        ht = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
-                        rt = G2gd.GetPatternTreeItemId(G2frame,ht,'Reflection Lists')
+                        ht = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                        rt = G2gd.GetGPXtreeItemId(G2frame,ht,'Reflection Lists')
                         if not rt: continue
-                        RfList = G2frame.PatternTree.GetItemPyData(rt)
+                        RfList = G2frame.GPXtree.GetItemPyData(rt)
                         if oldName not in RfList:
                             print('Warning: '+oldName+' not in Reflection List for '+
                                   hist)
@@ -389,28 +1297,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
-                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
+                    pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
                     if generalData['Type'] == 'faulted':
-                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
-                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
-                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
-                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitLayers, id=G2gd.wxID_LAYERSFIT)                        
+                        G2frame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2G.wxID_LOADDIFFAX)
+                        G2frame.Bind(wx.EVT_MENU, OnSimulate, id=G2G.wxID_LAYERSIMULATE)
+                        G2frame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2G.wxID_SEQUENCESIMULATE)
+                        G2frame.Bind(wx.EVT_MENU, OnFitLayers, id=G2G.wxID_LAYERSFIT)                        
                         if 'Wave Data' in pages:
                             pass
-#                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+#                            G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
                         if 'MC/SA' in pages:
                             pass
-#                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))
+#                            G2frame.phaseDisplay.DeletePage(pages.index('MC/SA'))
                         if 'RB Models' in pages:
                             pass
-#                            G2frame.dataDisplay.DeletePage(pages.index('RB Models'))
+#                            G2frame.phaseDisplay.DeletePage(pages.index('RB Models'))
                         if 'Layers' not in pages:
                             if 'Layers' not in data:
                                 data['Layers'] = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
                                     'Width':[[1.,1.],[False,False]],'Toler':0.01,'AtInfo':{},
                                     'Layers':[],'Stacking':[],'Transitions':[]}
-                            G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
-                            G2frame.dataDisplay.InsertPage(3,G2frame.layerData,'Layers')
+                            G2frame.layerData = wx.ScrolledWindow(G2frame.phaseDisplay)
+                            G2frame.phaseDisplay.InsertPage(3,G2frame.layerData,'Layers')
                             Id = wx.NewId()
                             TabSelectionIdDict[Id] = 'Layers'
                         wx.CallAfter(UpdateGeneral)
@@ -422,10 +1330,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         SGData['SpnFlp'] = Nops*[1,]
                     else:
                         if 'Wave Data' in pages:
-                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+                            G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
                         if 'MC/SA' not in pages:
-                            G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
-                            G2frame.dataDisplay.InsertPage(7,G2frame.MCSA,'MC/SA')
+                            G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
+                            G2frame.phaseDisplay.InsertPage(7,G2frame.MCSA,'MC/SA')
                             Id = wx.NewId()
                             TabSelectionIdDict[Id] = 'MC/SA'
                         wx.CallAfter(UpdateGeneral)
@@ -527,7 +1435,7 @@ entered the right symbol for your structure.
                 
             def OnModulated(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
-                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
+                    pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
                     if generalData['Type'] in ['nuclear','magnetic']:
                         generalData['Modulated'] = modulated.GetValue()
                         if generalData['Modulated']:
@@ -543,18 +1451,18 @@ entered the right symbol for your structure.
                                 generalData['4DmapData'].update({'MapType':'Fobs'})
                             if 'MC/SA' in pages:
                                 pass
-    #                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
+    #                            G2frame.phaseDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
                             if 'Layers' in pages:
                                 pass
-    #                            G2frame.dataDisplay.DeletePage(pages.index('Layers'))
+    #                            G2frame.phaseDisplay.DeletePage(pages.index('Layers'))
                             if 'Wave Data' not in pages:
-                                G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
-                                G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
+                                G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
+                                G2frame.phaseDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
                                 Id = wx.NewId()
                                 TabSelectionIdDict[Id] = 'Wave Data'
                         else:
                             if 'Wave Data' in pages:
-                                G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+                                G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
                         wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
@@ -699,7 +1607,6 @@ entered the right symbol for your structure.
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(General,label=txt),0,WACV)
                 if ifEdit:          #a,b,c,etc.
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                     cellVal = wx.TextCtrl(General,value=(fmt%(cell[Id+1])),
                         style=wx.TE_PROCESS_ENTER)
                     cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -782,7 +1689,7 @@ entered the right symbol for your structure.
                         elemSizer.Add((5,0),)
                     else:
                         gfacTxt = G2G.ValidatedTxtCtrl(General,generalData['Lande g'],ig,
-                            min=0.5,max=3.0,nDig=(10,2),typeHint=float)
+                            min=0.5,max=3.0,nDig=(10,2))
                         elemSizer.Add(gfacTxt,0,WACV)
             return elemSizer
         
@@ -820,18 +1727,8 @@ entered the right symbol for your structure.
                 text,table = G2spc.SGPrint(SGData,AddInv=True)
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
                 text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
-                G2gd.SGMagSpinBox(General,msg,text,table,OprNames,SpnFlp).Show()
-                
-            def OnDminVal(event):
-                event.Skip()
-                try:
-                    val = float(dminVal.GetValue())
-                    if val > 0.7:
-                        generalData['MagDmin'] = val
-                except ValueError:
-                    pass
-                dminVal.SetValue("%.4f"%(generalData['MagDmin']))
-                
+                SGMagSpinBox(General,msg,text,table,OprNames,SpnFlp).Show()
+                               
             SGData = generalData['SGData']            
             Indx = {}
             MagSym = generalData['SGData']['SpGrp'].split()
@@ -862,10 +1759,7 @@ entered the right symbol for your structure.
             magSizer.Add(spinSizer)
             dminSizer = wx.BoxSizer(wx.HORIZONTAL)
             dminSizer.Add(wx.StaticText(General,label=' Magnetic reflection d-min: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            dminVal = wx.TextCtrl(General,value='%.4f'%(generalData['MagDmin']),style=wx.TE_PROCESS_ENTER)
-            dminVal.Bind(wx.EVT_TEXT_ENTER,OnDminVal)        
-            dminVal.Bind(wx.EVT_KILL_FOCUS,OnDminVal)
+            dminVal = G2G.ValidatedTxtCtrl(General,generalData,'MagDmin',nDig=(10,4),min=0.7)
             dminSizer.Add(dminVal,0,WACV)
             magSizer.Add(dminSizer,0,WACV)
             return magSizer
@@ -883,11 +1777,11 @@ entered the right symbol for your structure.
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
             pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
-                min=0.25,max=20.,nDig=(10,5),typeHint=float)
+                min=0.25,max=20.,nDig=(10,5))
             pawleySizer.Add(pawlVal,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
-                min=0.,max=1.,nDig=(10,4),typeHint=float)
+                min=0.,max=1.,nDig=(10,4))
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             
@@ -914,19 +1808,7 @@ entered the right symbol for your structure.
                     Text = '\n'.join(text)
                     wx.MessageBox(Text,caption=msg,style=Style)
                 wx.CallAfter(UpdateGeneral)                
-            
-            def OnVec(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                ind = Indx[Obj.GetId()]
-                val = Obj.GetValue()
-                try:
-                    val = min(2.0,max(-1.0,float(val)))
-                except ValueError:
-                    val = generalData['SuperVec'][0][ind]
-                generalData['SuperVec'][0][ind] = val
-                Obj.SetValue('%.4f'%(generalData['SuperVec'][0][ind])) 
-                
+                            
             def OnVecRef(event):
                 generalData['SuperVec'][1] = Ref.GetValue()
                 
@@ -961,11 +1843,7 @@ entered the right symbol for your structure.
             generalData['SuperVec'][0],ifShow = G2spc.SSGModCheck(generalData['SuperVec'][0],modS)
             for i,[val,show] in enumerate(zip(generalData['SuperVec'][0],ifShow)):
                 if show:
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                    modVal = wx.TextCtrl(General,value=('%.4f'%(val)),
-                        size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
-                    modVal.Bind(wx.EVT_TEXT_ENTER,OnVec)        
-                    modVal.Bind(wx.EVT_KILL_FOCUS,OnVec)
+                    modVal = G2G.ValidatedTxtCtrl(General,generalData['SuperVec'][0],i,nDig=(10,4),min=-1.,max=2.)
                     vecSizer.Add(modVal,0,WACV)
                     Indx[modVal.GetId()] = i
                 else:
@@ -988,7 +1866,7 @@ entered the right symbol for your structure.
                 
             def OnRefList(event):
                 if not refsList: 
-                    G2G.G2MessageBox(G2frame.dataFrame,'No reflections')
+                    G2G.G2MessageBox(G2frame,'No reflections')
                     return
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
                     'Use data',refsList)
@@ -1004,27 +1882,7 @@ entered the right symbol for your structure.
                 finally:
                     dlg.Destroy()
                 wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))                
-                
-            def OnResVal(event):
-                event.Skip()
-                try:
-                    res = float(mapRes.GetValue())
-                    if 0.25 <= res <= 20.:
-                        Map['Resolution'] = res
-                except ValueError:
-                    pass
-                mapRes.SetValue("%.2f"%(Map['Resolution']))          #reset in case of error
-            
-            def OnCutOff(event):
-                event.Skip()
-                try:
-                    res = float(cutOff.GetValue())
-                    if 1.0 <= res <= 100.:
-                        Map['cutOff'] = res
-                except ValueError:
-                    pass
-                cutOff.SetValue("%.1f"%(Map['cutOff']))          #reset in case of error
-            
+                            
             #patch
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
@@ -1051,16 +1909,10 @@ entered the right symbol for your structure.
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            mapRes =  wx.TextCtrl(General,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
-            mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
-            mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
+            mapRes = G2G.ValidatedTxtCtrl(General,Map,'Resolution',nDig=(10,2),min=0.25,max=20.)
             line2Sizer.Add(mapRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            cutOff =  wx.TextCtrl(General,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
-            cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
-            cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
+            cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),min=1.0,max=100.)
             line2Sizer.Add(cutOff,0,WACV)
             mapSizer.Add(line2Sizer,0,WACV)
             return mapSizer
@@ -1090,37 +1942,7 @@ entered the right symbol for your structure.
                     Flip['Norm element'] = PE.Elem.strip()
                     normElem.SetLabel(Flip['Norm element'])
                 PE.Destroy()                
-                
-            def OnResVal(event):
-                event.Skip()
-                try:
-                    res = float(flipRes.GetValue())
-                    if 0.25 <= res <= 20.:
-                        Flip['Resolution'] = res
-                except ValueError:
-                    pass
-                flipRes.SetValue("%.2f"%(Flip['Resolution']))          #reset in case of error
-            
-            def OnkFactor(event):
-                event.Skip()
-                try:
-                    res = float(kFactor.GetValue())
-                    if 0.1 <= res <= 1.2:
-                        Flip['k-factor'] = res
-                except ValueError:
-                    pass
-                kFactor.SetValue("%.3f"%(Flip['k-factor']))          #reset in case of error
-            
-            def OnkMax(event):
-                event.Skip()
-                try:
-                    res = float(kMax.GetValue())
-                    if res >= 10.:
-                        Flip['k-Max'] = res
-                except ValueError:
-                    pass
-                kMax.SetValue("%.1f"%(Flip['k-Max']))          #reset in case of error
-                
+                                        
             def OnTestHKL(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -1152,22 +1974,13 @@ entered the right symbol for your structure.
             flipSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            flipRes =  wx.TextCtrl(General,value='%.2f'%(Flip['Resolution']),style=wx.TE_PROCESS_ENTER)
-            flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
-            flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
+            flipRes = G2G.ValidatedTxtCtrl(General,Flip,'Resolution',nDig=(10,2),min=0.25,max=2.)
             line2Sizer.Add(flipRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            kFactor =  wx.TextCtrl(General,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
-            kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
-            kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
+            kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),min=0.1,max=1.2)
             line2Sizer.Add(kFactor,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            kMax = wx.TextCtrl(General,value='%.1f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
-            kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
-            kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
+            kMax = G2G.ValidatedTxtCtrl(General,Flip,'k-Max',nDig=(10,1),min=10.)
             line2Sizer.Add(kMax,0,WACV)
             flipSizer.Add(line2Sizer,0,WACV)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1189,45 +2002,13 @@ entered the right symbol for your structure.
             def OnRefList(event):
                 MCSAdata['Data source'] = refList.GetValue()
             
-            def OnDmin(event):
-                event.Skip()
-                try:
-                    val = float(dmin.GetValue())
-                    if 1.0 <= val < 5.0:
-                        MCSAdata['dmin'] = val
-                except ValueError:
-                    pass
-                dmin.SetValue("%.3f"%(MCSAdata['dmin']))          #reset in case of error
-                MCSAdata['newDmin'] = True
-
             def OnCycles(event):
                 MCSAdata['Cycles'] = int(cycles.GetValue())
                                
             def OnAlist(event):
                 MCSAdata['Algorithm'] = Alist.GetValue()
+                OnShowTsched()                
                 wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
-                
-            def OnSlope(event):
-                event.Skip()
-                try:
-                    val = float(slope.GetValue())
-                    if .25 <= val < 1.0:
-                        MCSAdata['log slope'] = val
-                except ValueError:
-                    pass
-                slope.SetValue("%.3f"%(MCSAdata['log slope']))          #reset in case of error                
-            
-            def OnAjump(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                name,ind = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    if .0 <= val <= 1.0:
-                        MCSAdata[name][ind] = val
-                except ValueError:
-                    pass
-                Obj.SetValue("%.3f"%(MCSAdata[name][ind]))
                 
             def OnRanStart(event):
                 MCSAdata['ranStart'] = ranStart.GetValue()
@@ -1235,16 +2016,6 @@ entered the right symbol for your structure.
 #            def OnAutoRan(event):
 #                MCSAdata['autoRan'] = autoRan.GetValue()
                 
-            def OnRanRange(event):
-                event.Skip()
-                try:
-                    val = float(ranRange.GetValue())/100
-                    if 0.01 <= val <= 0.99:
-                        MCSAdata['ranRange'] = val
-                except ValueError:
-                    pass
-                ranRange.SetValue('%.1f'%(MCSAdata['ranRange']*100.))
-            
             def OnAnneal(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -1265,7 +2036,17 @@ entered the right symbol for your structure.
                     except ValueError:
                         MCSAdata['Annealing'][ind] = None                    
                         Obj.SetValue(str(MCSAdata['Annealing'][ind]))
+                        
+            def ShowTsched(invalid,value,tc):
+                OnShowTsched()
+                
+            def OnShowTsched():
+                if MCSAdata['Algorithm'] in ['fast','log']:
+                    Y = G2mth.makeTsched(MCSAdata)
+                    XY = [np.arange(len(Y)),np.log10(Y)]
+                    G2plt.PlotXY(G2frame,[XY,],labelX='T-step',labelY='log(T)',newPlot=True,lines=True,Title='Annealing schedule')
                        
+#            OnShowTsched()
             refList = []
             if len(data['Pawley ref']):
                 refList = ['Pawley reflections']
@@ -1280,16 +2061,13 @@ entered the right symbol for your structure.
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
             lineSizer.Add(refList,0,WACV)
             lineSizer.Add(wx.StaticText(General,label=' d-min: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            dmin = wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['dmin']),style=wx.TE_PROCESS_ENTER)
-            dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
-            dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
+            dmin = G2G.ValidatedTxtCtrl(General,MCSAdata,'dmin',nDig=(10,3),min=1.,max=5.)
             lineSizer.Add(dmin,0,WACV)
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,WACV)
-            Cchoice = ['1','2','4','8','16','32','64','128','256']
+            Cchoice = [str(2**i) for i in range(13)]
             cycles = wx.ComboBox(General,-1,value=str(MCSAdata.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
@@ -1299,66 +2077,46 @@ entered the right symbol for your structure.
             ranStart.Bind(wx.EVT_CHECKBOX, OnRanStart)
             ranStart.SetValue(MCSAdata.get('ranStart',False))
             line2Sizer.Add(ranStart,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            ranRange = wx.TextCtrl(General,-1,value='%.1f'%(MCSAdata.get('ranRange',0.10)*100),style=wx.TE_PROCESS_ENTER)
-            ranRange.Bind(wx.EVT_TEXT_ENTER,OnRanRange)        
-            ranRange.Bind(wx.EVT_KILL_FOCUS,OnRanRange)
+            MCSAdata['ranRange'] = MCSAdata.get('ranRange',10.)  #patch for old gpx files
+            ranRange = G2G.ValidatedTxtCtrl(General,MCSAdata,'ranRange',nDig=(10,1),min=1.,max=99.)
             line2Sizer.Add(ranRange,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label='% of ranges. '),0,WACV)
-#            autoRan = wx.CheckBox(General,-1,label=' Do auto range reduction? ')
-#            autoRan.Bind(wx.EVT_CHECKBOX, OnAutoRan)
-#            autoRan.SetValue(MCSAdata.get('autoRan',False))
-#            line2Sizer.Add(autoRan,0,WACV)
             mcsaSizer.Add(line2Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            Achoice = ['log','fast']                #these work
-#            Achoice = ['log','fast','cauchy','boltzmann']
+            Achoice = ['log','fast','Basin Hopping']                #these work not 'boltzmann','cauchy',
             line3Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,WACV)
             Alist = wx.ComboBox(General,-1,value=MCSAdata['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
             line3Sizer.Add(Alist,0,WACV)
-            if MCSAdata['Algorithm'] in ['fast','boltzmann','cauchy']:
-                Names = [' A-jump: ',' B-jump: ']
-                parms = 'Jump coeff'
-                if MCSAdata['Algorithm'] in ['boltzmann','cauchy']:
-                    Names = [' A-jump: ']
-                elif 'fast' in MCSAdata['Algorithm']:
-                    Names = [' quench: ',' m-factor: ',' n-factor: ']
-                    parms = 'fast parms'
+            if MCSAdata['Algorithm'] in ['fast',]:
+                Names = [' quench: ',' c-factor: ']
+                parms = 'fast parms'
                 for i,name in enumerate(Names):
                     line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                    Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata[parms][i]),style=wx.TE_PROCESS_ENTER)
-                    Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
-                    Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
-                    Indx[Ajump.GetId()] = [parms,i]
+                    Ajump = G2G.ValidatedTxtCtrl(General,MCSAdata[parms],i,nDig=(10,2),min=0.1,max=1.,OnLeave=ShowTsched)
                     line3Sizer.Add(Ajump,0,WACV)
             elif 'log' in MCSAdata['Algorithm']:
                 line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                slope =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['log slope']),style=wx.TE_PROCESS_ENTER)
-                slope.Bind(wx.EVT_TEXT_ENTER,OnSlope)        
-                slope.Bind(wx.EVT_KILL_FOCUS,OnSlope)
+                slope = G2G.ValidatedTxtCtrl(General,MCSAdata,'log slope',nDig=(10,3),min=0.25,max=1.0,OnLeave=ShowTsched)
                 line3Sizer.Add(slope,0,WACV)
+            elif 'Basin Hopping' in MCSAdata['Algorithm']:
+                pass        #TODO basinhopping controls here?
             mcsaSizer.Add(line3Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,WACV)
-            names = [' Start temp: ',' Final temp: ',' No. trials: ']
-            fmts = ['%.1f','%.5f','%d']
-            for i,[name,fmt] in enumerate(zip(names,fmts)):
-                if MCSAdata['Annealing'][i]:
-                    text = fmt%(MCSAdata['Annealing'][i])
-                else:
-                    text = 'None'
-                line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
-                anneal =  wx.TextCtrl(General,-1,value=text,style=wx.TE_PROCESS_ENTER)
-                anneal.Bind(wx.EVT_TEXT_ENTER,OnAnneal)        
-                anneal.Bind(wx.EVT_KILL_FOCUS,OnAnneal)
-                Indx[anneal.GetId()] = [i,fmt]
-                line3Sizer.Add(anneal,0,WACV)
+            if 'Basin Hopping' in MCSAdata['Algorithm']:
+                line3Sizer.Add(wx.StaticText(General,label=' Test temp: '),0,WACV)
+                line3Sizer.Add(G2G.ValidatedTxtCtrl(General,MCSAdata['Annealing'],0,nDig=(10,5)),0,WACV)                
+            else:
+                line3Sizer.Add(wx.StaticText(General,label=' Start temp: '),0,WACV)
+                line3Sizer.Add(G2G.ValidatedTxtCtrl(General,MCSAdata['Annealing'],0,nDig=(10,5),OnLeave=ShowTsched),0,WACV)
+                line3Sizer.Add(wx.StaticText(General,label=' Final temp: '),0,WACV)
+                line3Sizer.Add(G2G.ValidatedTxtCtrl(General,MCSAdata['Annealing'],1,nDig=(10,5),OnLeave=ShowTsched),0,WACV)
+            line3Sizer.Add(wx.StaticText(General,label=' No. trials: '),0,WACV)
+            line3Sizer.Add(G2G.ValidatedTxtCtrl(General,MCSAdata['Annealing'],2),0,WACV)
             mcsaSizer.Add(line3Sizer)            
             return mcsaSizer
 
@@ -1389,15 +2147,15 @@ entered the right symbol for your structure.
             G2G.HorizontalLine(mainSizer,General)
 
         if generalData['Modulated']:
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,False)
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,False)
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,True)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,False)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,False)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,True)
             mainSizer.Add(ModulatedSizer(generalData['Type']))
             G2G.HorizontalLine(mainSizer,General)
         else:
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,True)
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,True)
-            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,False)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,True)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
 
         mainSizer.Add(PawleySizer())
         G2G.HorizontalLine(mainSizer,General)
@@ -1409,11 +2167,11 @@ entered the right symbol for your structure.
         if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
-        G2frame.dataFrame.SetStatusText('')
-        SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll=Scroll)
+        G2frame.GetStatusBar().SetStatusText('',1)
+        SetPhaseWindow(General,mainSizer,Scroll=Scroll)
         
     def OnTransform(event):
-        dlg = G2gd.TransformDialog(G2frame,data)
+        dlg = TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 newPhase,Trans,Vec,ifMag,ifConstr,Common = dlg.GetSelection()
@@ -1441,7 +2199,7 @@ entered the right symbol for your structure.
             SGData = generalData['SGData']
             Atoms = newPhase['Atoms']
             if ifMag:
-                dlg = G2gd.UseMagAtomDialog(G2frame,Atoms,atCodes)
+                dlg = UseMagAtomDialog(G2frame,Atoms,atCodes)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         newPhase['Atoms'],atCodes = dlg.GetSelection()
@@ -1460,15 +2218,15 @@ entered the right symbol for your structure.
                 UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                 UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
             newPhase['General']['Map'] = mapDefault.copy()
-            sub = G2frame.PatternTree.AppendItem(parent=
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
-            G2frame.PatternTree.SetItemPyData(sub,newPhase)
+            sub = G2frame.GPXtree.AppendItem(parent=
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+            G2frame.GPXtree.SetItemPyData(sub,newPhase)
             newPhase['Drawing'] = []
             
             if ifMag and ifConstr:
                 G2frame.GetUsedHistogramsAndPhasesfromTree()
                 G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
-            G2frame.PatternTree.SelectItem(sub)
+            G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################
 #####  Atom routines
@@ -1709,7 +2467,7 @@ entered the right symbol for your structure.
             r,c =  event.GetRow(),event.GetCol()
             if not (event.AltDown() or (event.ShiftDown() and event.ControlDown())):
                 Atoms.frm = -1
-                G2frame.dataFrame.SetStatusText('')                    
+                G2frame.GetStatusBar().SetStatusText('',1)                    
             if r < 0 and c < 0:
                 if Atoms.IsSelection():
                     Atoms.ClearSelection()
@@ -1738,12 +2496,14 @@ entered the right symbol for your structure.
                             Atoms.frm = r
                             Atoms.SelectRow(r,True)
                             n = colLabels.index('Name')
-                            G2frame.dataFrame.SetStatusText('Atom '+atomData[r][n]+' is to be moved')
+                            G2frame.GetStatusBar().SetStatusText('Atom '+atomData[r][n]+' is to be moved',1)
                         else:                       #move it
                             item = atomData.pop(Atoms.frm)
                             atomData.insert(r,item)
                             Atoms.frm = -1
-                            G2frame.dataFrame.SetStatusText('')
+                            G2frame.GetStatusBar().SetStatusText('',1)
+                            data['Drawing']['Atoms'] = []           #clear & rebuild Draw atoms table
+                            UpdateDrawAtoms()
                             wx.CallAfter(Paint)
                 else:
                     Atoms.ClearSelection()
@@ -1847,7 +2607,7 @@ entered the right symbol for your structure.
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
             Atoms.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,Atoms,size=[700,300])
+            SetPhaseWindow(Atoms)
 
         # FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -1869,22 +2629,22 @@ entered the right symbol for your structure.
                 for id in rbObj['Ids']:
                     rbAtmDict[id] += 'U'            
         # exclList will be 'x' or 'xu' if TLS used in RB
-        Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE, 
-            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_MAKEMOLECULE,
-            G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE,G2gd.wxID_ADDHATOM]
+        Items = [G2G.wxID_ATOMSEDITINSERT,G2G.wxID_ATOMSEDITDELETE, 
+            G2G.wxID_ATOMSMODIFY,G2G.wxID_ATOMSTRANSFORM,G2G.wxID_MAKEMOLECULE,
+            G2G.wxID_ATOMVIEWINSERT,G2G.wxID_ATOMMOVE,G2G.wxID_ADDHATOM]
         if atomData:
             for item in Items:    
-                G2frame.dataFrame.AtomsMenu.Enable(item,True)
+                G2frame.dataWindow.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,False)
-        Items = [G2gd.wxID_ATOMVIEWINSERT, G2gd.wxID_ATOMSVIEWADD,G2gd.wxID_ATOMMOVE]
+                G2frame.dataWindow.AtomsMenu.Enable(item,False)
+        Items = [G2G.wxID_ATOMVIEWINSERT, G2G.wxID_ATOMSVIEWADD,G2G.wxID_ATOMMOVE]
         if 'showABC' in data['Drawing']:
             for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,True)
+                G2frame.dataWindow.AtomsMenu.Enable(item,True)
         else:
             for item in Items:
-                G2frame.dataFrame.AtomsMenu.Enable(item,False)
+                G2frame.dataWindow.AtomsMenu.Enable(item,False)
         parmChoice = ': ,X,XU,U,F,FX,FXU,FU'
         if generalData['Type'] == 'magnetic':
             parmChoice += ',M,MX,MXU,MU,MF,MFX,MFXU,MFU'
@@ -1905,9 +2665,9 @@ entered the right symbol for your structure.
             colLabels = colLabels[:7]+['Mx','My','Mz']+colLabels[7:]
             Types = Types[:7]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[7:]
         SGData = data['General']['SGData']
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         if SGData['SGPolax']:
-            G2frame.dataFrame.SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'])
+            G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
         Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
         Atoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
@@ -2000,13 +2760,13 @@ entered the right symbol for your structure.
         generalData = data['General']
         if 'DisAglCtls' in generalData:
             DisAglCtls = generalData['DisAglCtls']
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            DisAglCtls = dlg.GetData()
             if 'H' not in DisAglCtls['AtomTypes']:
                 DisAglCtls['AtomTypes'].append('H')
                 DisAglCtls['AngleRadii'].append(0.5)
                 DisAglCtls['BondRadii'].append(0.5)
-        dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
-        if dlg.ShowModal() == wx.ID_OK:
-            DisAglCtls = dlg.GetData()
         else:
             dlg.Destroy()
             return
@@ -2056,7 +2816,7 @@ entered the right symbol for your structure.
             letters = ['A','B','C']
             HydIds = {}
             mapError = False
-            dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
+            dlg = AddHatomDialog(G2frame,Neigh,data)
             if dlg.ShowModal() == wx.ID_OK:
                 Nat = len(atomData)
                 Neigh = dlg.GetData()
@@ -2079,7 +2839,7 @@ entered the right symbol for your structure.
                 G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
             SetupGeneral()
             data['General']['HydIds'].update(HydIds)
-            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
+            G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
             data['Drawing']['Atoms'] = []
             UpdateDrawAtoms()
             FillAtomsGrid(Atoms)
@@ -2087,7 +2847,7 @@ entered the right symbol for your structure.
             G2plt.PlotStructure(G2frame,data)
         else:
             wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
-                
+        
     def OnHydAtomUpdate(event):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2110,7 +2870,7 @@ entered the right symbol for your structure.
         for HId in delList: #clear out deleted H-atom pointers
             del HydIds[HId]
         if not len(HydIds):
-            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
+            G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         FillAtomsGrid(Atoms)
@@ -2218,7 +2978,7 @@ entered the right symbol for your structure.
         for ind in indx:
             atom = atomData[ind]
             if atom[ci+8] in rbAtmDict:
-                G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
+                G2frame.GetStatusBar().SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****',1)
             else:
                 if atom[ci+8] in HydIds:    #remove Hs from Hatom update dict
                     del HydIds[atom[ci+8]]
@@ -2233,7 +2993,7 @@ entered the right symbol for your structure.
             G2plt.PlotStructure(G2frame,data)
         SetupGeneral()
         if not len(HydIds):
-            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
+            G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
         event.StopPropagation()
 
     def GetSelectedAtoms():
@@ -2394,7 +3154,7 @@ entered the right symbol for your structure.
             cmx = colLabels.index('Mx')
         atomData = data['Atoms']
         SGData = generalData['SGData']
-        dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
+        dlg = SymOpDialog(G2frame,SGData,True,True)
         New = False
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2499,7 +3259,7 @@ entered the right symbol for your structure.
             generalData = data['General']
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
-            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
+            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
             else:
@@ -2527,10 +3287,12 @@ entered the right symbol for your structure.
         density,mattCoeff = G2mth.getDensity(data['General'])
         msg = 'Density of phase {:s} = {:.3f} g/cc'.format(data['General']['Name'],density)
         print(msg)
-        G2G.G2MessageBox(G2frame.dataFrame,msg,'Density')
+        G2G.G2MessageBox(G2frame,msg,'Density')
         
     def OnValidProtein(event):
-        G2mth.validProtein(data)
+        resNames,Probs = G2mth.validProtein(data)
+        G2plt.PlotAAProb(G2frame,resNames,Probs,Title='Error score for %s'%(data['General']['Name']),
+            thresh=[17.190823041860433,11.526684477428809])
 
     def OnSetAll(event):
         'set refinement flags for all atoms in table'
@@ -2555,7 +3317,7 @@ entered the right symbol for your structure.
             DisAglData['OrigIndx'] = indx
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
-            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
+            dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
             else:
@@ -2578,7 +3340,7 @@ entered the right symbol for your structure.
             DisAglData['Cell'] = generalData['Cell'][1:] #+ volume
             if 'pId' in data:
                 DisAglData['pId'] = data['pId']
-                DisAglData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+                DisAglData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
             try:
                 if fp:
                     G2stMn.PrintDistAngle(DisAglCtls,DisAglData,fp)
@@ -2633,8 +3395,8 @@ entered the right symbol for your structure.
             return
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # init for constraint
         # make a lookup table for constraints
-        sub = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
-        Constraints = G2frame.PatternTree.GetItemPyData(sub)
+        sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.GPXtree.GetItemPyData(sub)
         constDict = {}
         for item in Constraints:
             if item.startswith('_'): continue
@@ -2769,7 +3531,7 @@ entered the right symbol for your structure.
     def OnReImport(event):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
-        reqrdr = G2frame.dataFrame.ReImportMenuId.get(event.GetId())
+        reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
         rdlist = G2frame.OnImportGeneric(reqrdr,
             G2frame.ImportPhaseReaderlist,'phase')
         if len(rdlist) == 0: return
@@ -2856,15 +3618,6 @@ entered the right symbol for your structure.
             data['Layers']['Laue'] = Obj.GetValue()
             wx.CallAfter(UpdateLayerData)
         
-        def OnToler(event): #used when Laue = unknown
-            event.Skip()
-            try:
-                val = float(toler.GetValue())
-            except ValueError:
-                val = Layers['Toler']
-            Layers['Toler'] = val
-            toler.SetValue('%.3f'%(Layers['Toler']))
-            
         def OnSadpPlot(event):
             sadpPlot.SetValue(False)
             labels = Layers['Sadp']['Plane']
@@ -2945,7 +3698,6 @@ entered the right symbol for your structure.
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(layerData,label=txt),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 cellVal = wx.TextCtrl(layerData,value=(fmt%(cell[Id+1])),
                     style=wx.TE_PROCESS_ENTER)
                 cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -2958,31 +3710,16 @@ entered the right symbol for your structure.
             
         def WidthSizer():
             
-            def OnWidthChange(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                id = Indx[Obj]
-                try:
-                    Layers['Width'][0][id] = max(0.005,min(1.0,float(Obj.GetValue())))
-                except ValueError:
-                    pass
-                Obj.SetValue('%.3f'%(Layers['Width'][0][id]))
-                
             def OnRefWidth(event):
                 id = Indx[event.GetEventObject()]
                 Layers['Width'][1][id] = not Layers['Width'][1][id]
             
             Labels = ['a','b']
-            widths = Layers['Width'][0]
             flags = Layers['Width'][1]
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
                 widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
-                widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
-                widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
-                Indx[widthVal] = i
+                widthVal = G2G.ValidatedTxtCtrl(layerData,Layers['Width'][0],i,nDig=(10,3),min=0.005,max=1.0)
                 widthSizer.Add(widthVal,0,WACV)
                 widthRef = wx.CheckBox(layerData,label='Refine?')
                 widthRef.SetValue(flags[i])
@@ -3133,7 +3870,7 @@ entered the right symbol for your structure.
             atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=colTypes)
             atomGrid = G2G.GSGrid(layerData)
             atomGrid.SetTable(atomTable,True)
-            atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
+#            atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
             for c in range(2,5):
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
@@ -3219,7 +3956,7 @@ entered the right symbol for your structure.
                 transTable = G2G.Table(table,rowLabels=rowLabels,colLabels=transLabels,types=transTypes)
                 transGrid = G2G.GSGrid(layerData)
                 transGrid.SetTable(transTable,True)
-                transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
+#                transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
                 Indx[transGrid.GetId()] = Yi
                 for c in range(0,4):
                     attr = wx.grid.GridCellAttr()
@@ -3364,7 +4101,6 @@ entered the right symbol for your structure.
             topLine.Add(stackType,0,WACV)
             if Layers['Stacking'][0] == 'recursive':
                 topLine.Add(wx.StaticText(layerData,label=' number of layers (<1022 or "infinite"): '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 numLayers = wx.TextCtrl(layerData,value=data['Layers']['Stacking'][1],style=wx.TE_PROCESS_ENTER)
                 numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
                 numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
@@ -3404,7 +4140,7 @@ entered the right symbol for your structure.
         Layers['allowedTrans'] = []
         if len(Layers['Layers']):
             layerNames = [layer['Name'] for layer in Layers['Layers']]
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         layerData = G2frame.layerData
         if layerData.GetSizer():
             layerData.GetSizer().Clear(True)
@@ -3430,10 +4166,7 @@ entered the right symbol for your structure.
         laueSizer.Add(laue,0,WACV)
         if Layers['Laue'] == 'unknown':
             laueSizer.Add(wx.StaticText(layerData,label=' Diffraction symmetry tolerance: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            toler = wx.TextCtrl(layerData,value='%.3f'%(Layers['Toler']),style=wx.TE_PROCESS_ENTER)
-            toler.Bind(wx.EVT_TEXT_ENTER,OnToler)        
-            toler.Bind(wx.EVT_KILL_FOCUS,OnToler)
+            toler = G2G.ValidatedTxtCtrl(layerData,Layers,'Toler',nDig=(10,3))
             laueSizer.Add(toler,0,WACV)
         topSizer.Add(laueSizer,0,WACV)
         topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
@@ -3463,7 +4196,7 @@ entered the right symbol for your structure.
         G2G.HorizontalLine(bottomSizer,layerData)
         bottomSizer.Add(StackSizer())
         mainSizer.Add(bottomSizer)
-        SetPhaseWindow(G2frame.dataFrame,G2frame.layerData,mainSizer,Scroll=Scroll)
+        SetPhaseWindow(G2frame.layerData,mainSizer,Scroll=Scroll)
         
     def OnCopyPhase(event):
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
@@ -3511,7 +4244,7 @@ entered the right symbol for your structure.
         idebug = 0
         if debug: idebug = 1
         ctrls = ''
-        dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
+        dlg = DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
             simCodes = dlg.GetSelection()
         else:
@@ -3532,20 +4265,20 @@ entered the right symbol for your structure.
             else:
                 return
             dlg.Destroy()
-            G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
-            sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistName)
+            sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId, 'Sample Parameters'))
             scale = sample['Scale'][0]
-            background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId, 'Background'))        
-            limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId, 'Limits'))[1]
-            inst = G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+            inst = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
             if 'T' in inst['Type'][0]:
                 wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
                 return            
-            profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+            profile = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
             G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile,debug)
             if debug:
                 ctrls = '0\n%d\n3\n'%(idebug)
@@ -3603,7 +4336,7 @@ entered the right symbol for your structure.
         data['Layers']['seqResults'] = []
         data['Layers']['seqCodes'] = []
         Parms = G2pwd.GetStackParms(data['Layers'])
-        dlg = G2gd.DIFFaXcontrols(G2frame,ctrls,Parms)
+        dlg = DIFFaXcontrols(G2frame,ctrls,Parms)
         if dlg.ShowModal() == wx.ID_OK:
             simCodes = dlg.GetSelection()
         else:
@@ -3622,20 +4355,20 @@ entered the right symbol for your structure.
         else:
             return
         dlg.Destroy()
-        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
-        sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+        G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistName)
+        sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Sample Parameters'))
         scale = sample['Scale'][0]
-        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Background'))        
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Limits'))[1]
-        inst = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+        inst = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
         if 'T' in inst['Type'][0]:
             wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
             return            
-        profile = np.copy(G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1])
+        profile = np.copy(G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1])
         resultXY2 = []
         resultXY = [np.vstack((profile[0],profile[1])),]    #observed data
         data['Layers']['selInst'] = simCodes[1]
@@ -3707,7 +4440,7 @@ entered the right symbol for your structure.
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         Indx = {}
         waveData = G2frame.waveData
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         generalData = data['General']
         SGData = generalData['SGData']
         SSGData = generalData['SSGData']
@@ -3738,10 +4471,10 @@ entered the right symbol for your structure.
             G2frame.bottomSizer = ShowAtomInfo()
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
-            G2frame.dataFrame.Refresh()
+            G2frame.dataWindow.Refresh()
             waveData.SetVirtualSize(mainSizer.GetMinSize())
             waveData.Scroll(0,Scroll)
-            G2frame.dataFrame.SendSizeEvent()
+            G2frame.dataWindow.SendSizeEvent()
             
         def ShowAtomInfo():
             
@@ -3750,7 +4483,7 @@ entered the right symbol for your structure.
                 def OnWaveType(event):
                     atom[-1]['SS1']['waveType'] = waveType.GetValue()
                     atom[-1]['SS1']['Spos'] = []
-                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
+                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
                     
                 def OnShowWave(event):
                     Obj = event.GetEventObject()
@@ -3784,7 +4517,7 @@ entered the right symbol for your structure.
                     if not len(atomData[iatm][-1]['SS1'][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
                         nt = numVals[waveType]
                     atomData[iatm][-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
-                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))
+                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     
                 def OnWaveVal(event):
                     event.Skip()
@@ -3811,7 +4544,7 @@ entered the right symbol for your structure.
                     Obj = event.GetEventObject()
                     iatm,item,iwave = Indx[Obj.GetId()]
                     del atomData[iatm][-1]['SS1'][item][iwave]
-                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
+                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
                 
                 waveSizer = wx.BoxSizer(wx.VERTICAL)
                 waveHead = wx.BoxSizer(wx.HORIZONTAL)
@@ -3852,7 +4585,6 @@ entered the right symbol for your structure.
                         waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                         for ival,val in enumerate(wave[0]):
                             if np.any(CSI[Stype][0][ival]):
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                                 waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
@@ -3900,7 +4632,7 @@ entered the right symbol for your structure.
         mainSizer.Add(topSizer,0,WACV)
         G2frame.bottomSizer = ShowAtomInfo()
         mainSizer.Add(G2frame.bottomSizer)
-        SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll=Scroll)
+        SetPhaseWindow(G2frame.waveData,mainSizer,Scroll=Scroll)
     
     def OnWaveVary(event):
         generalData = data['General']
@@ -3987,8 +4719,8 @@ entered the right symbol for your structure.
         
     def OnRestraint(event):        
         indx = drawAtoms.GetSelectedRows()
-        restData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'))
+        restData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'))
         drawingData = data['Drawing']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
@@ -4001,7 +4733,7 @@ entered the right symbol for your structure.
             atXYZ.append(np.array(atomData[item][cx:cx+3]))
             atSymOp.append(atomData[item][cs-1])
             atIndx.append(atomData[item][ci])
-        if event.GetId() == G2gd.wxID_DRAWRESTRBOND and len(indx) == 2:
+        if event.GetId() == G2G.wxID_DRAWRESTRBOND and len(indx) == 2:
             try:
                 bondData = restData[PhaseName]['Bond']
             except KeyError:
@@ -4009,7 +4741,7 @@ entered the right symbol for your structure.
                 restData[PhaseName] = {}
                 restData[PhaseName]['Bond'] = bondData
             bondData['Bonds'].append([atIndx,atSymOp,1.54,0.01])
-        elif event.GetId() == G2gd.wxID_DRAWRESTRANGLE and len(indx) == 3:
+        elif event.GetId() == G2G.wxID_DRAWRESTRANGLE and len(indx) == 3:
             try:
                 angleData = restData[PhaseName]['Angle']
             except KeyError:
@@ -4017,7 +4749,7 @@ entered the right symbol for your structure.
                 restData[PhaseName] = {}
                 restData[PhaseName]['Angle'] = angleData
             angleData['Angles'].append([atIndx,atSymOp,109.5,1.0])            
-        elif event.GetId() == G2gd.wxID_DRAWRESTRPLANE and len(indx) > 3:
+        elif event.GetId() == G2G.wxID_DRAWRESTRPLANE and len(indx) > 3:
             try:
                 planeData = restData[PhaseName]['Plane']
             except KeyError:
@@ -4025,7 +4757,7 @@ entered the right symbol for your structure.
                 restData[PhaseName] = {}
                 restData[PhaseName]['Plane'] = planeData
             planeData['Planes'].append([atIndx,atSymOp,0.0,0.01])            
-        elif event.GetId() == G2gd.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
+        elif event.GetId() == G2G.wxID_DRAWRESTRCHIRAL and len(indx) == 4:
             try:
                 chiralData = restData[PhaseName]['Chiral']
             except KeyError:
@@ -4036,14 +4768,14 @@ entered the right symbol for your structure.
         else:
             print '**** ERROR wrong number of atoms selected for this restraint'
             return
-        G2frame.PatternTree.SetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Restraints'),restData)
+        G2frame.GPXtree.SetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'),restData)
 
     def OnDefineRB(event):
         indx = drawAtoms.GetSelectedRows()
         indx.sort()
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        RBData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         drawingData = data['Drawing']
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
@@ -4073,7 +4805,7 @@ entered the right symbol for your structure.
         RBData['Residue'][rbId] = {'RBname':rbName,'rbXYZ':rbXYZ,'rbTypes':rbType,
             'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
         RBData['RBIds']['Residue'].append(rbId)
-        G2frame.dataFrame.SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies')
+        G2frame.GetStatusBar().SetStatusText('New rigid body UNKRB added to set of Residue rigid bodies',1)
 
 ################################################################################
 ##### Draw Atom routines
@@ -4212,7 +4944,7 @@ entered the right symbol for your structure.
             G2plt.PlotStructure(G2frame,data)                    
 
         # UpdateDrawAtoms executable code starts here
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
@@ -4270,7 +5002,7 @@ entered the right symbol for your structure.
            attr.SetBackgroundColour(VERY_LIGHT_GREY)
            if colLabels[c] not in ['Style','Label','Color']:
                 drawAtoms.SetColAttr(c,attr)
-        SetPhaseWindow(G2frame.dataFrame,drawAtoms,size=[600,300])
+        SetPhaseWindow(drawAtoms)
 
         FindBondsDraw(data)
         drawAtoms.ClearSelection()
@@ -4323,9 +5055,9 @@ entered the right symbol for your structure.
         indx = drawAtoms.GetSelectedRows()
         if indx:
             if len(indx) > 1:
-                G2frame.dataFrame.SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK')
+                G2frame.GetStatusBar().SetStatusText('Select Custom Color, change color, Add to Custom Colors, then OK',1)
             else:
-                G2frame.dataFrame.SetStatusText('Change color, Add to Custom Colors, then OK')
+                G2frame.GetStatusBar().SetStatusText('Change color, Add to Custom Colors, then OK',1)
             atomData = data['Drawing']['Atoms']
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
             atmColors = []
@@ -4352,7 +5084,7 @@ entered the right symbol for your structure.
                     data['Drawing']['Atoms'][r][cs+2] = color
             drawAtoms.ClearSelection()
             dlg.Destroy()
-            G2frame.dataFrame.SetStatusText('')
+            G2frame.GetStatusBar().SetStatusText('',1)
             G2plt.PlotStructure(G2frame,data)
             
     def ResetAtomColors(event):
@@ -4371,7 +5103,7 @@ entered the right symbol for your structure.
         generalData = data['General']
         if 'DisAglCtls' in generalData:
             DisAglCtls = generalData['DisAglCtls']
-        dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Angle=False)
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData,Angle=False)
         if dlg.ShowModal() == wx.ID_OK:
             DisAglCtls = dlg.GetData()
         dlg.Destroy()
@@ -4410,7 +5142,7 @@ entered the right symbol for your structure.
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
-            dlg = G2gd.SymOpDialog(G2frame,SGData,False,True)
+            dlg = SymOpDialog(G2frame,SGData,False,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -4466,7 +5198,7 @@ entered the right symbol for your structure.
         cellArray = G2lat.CellBlock(1)
         indx = drawAtoms.GetSelectedRows()
         indx.sort()
-        dlg = G2gd.SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
+        dlg = SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 centers,radius,targets = dlg.GetSelection()
@@ -4521,7 +5253,7 @@ entered the right symbol for your structure.
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
-            dlg = G2gd.SymOpDialog(G2frame,SGData,False,True)
+            dlg = SymOpDialog(G2frame,SGData,False,True)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Inv,Cent,Opr,Cell,New,Force = dlg.GetSelection()
@@ -4778,7 +5510,7 @@ entered the right symbol for your structure.
         DATData['Cell'] = generalData['Cell'][1:] #+ volume
         if 'pId' in data:
             DATData['pId'] = data['pId']
-            DATData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+            DATData['covData'] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
         G2stMn.DisAglTor(DATData)
                         
 ################################################################################
@@ -4798,17 +5530,6 @@ entered the right symbol for your structure.
                 drawingData['Zclip'] = Zclip.GetValue()
                 ZclipTxt.SetLabel(' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
                 G2plt.PlotStructure(G2frame,data)
-                
-            def OnZstep(event):
-                event.Skip()
-                try:
-                    step = float(Zstep.GetValue())
-                    if not (0.01 <= step <= 1.0):
-                        raise ValueError
-                except ValueError:
-                    step = drawingData['Zstep']
-                drawingData['Zstep'] = step
-                Zstep.SetValue('%.2fA'%(drawingData['Zstep']))
                 
             def OnMoveZ(event):
                 move = MoveZ.GetValue()*drawingData['Zstep']
@@ -4861,12 +5582,12 @@ entered the right symbol for your structure.
     
             cameraPosTxt = wx.StaticText(drawOptions,-1,
                 ' Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
-            G2frame.dataDisplay.cameraPosTxt = cameraPosTxt
+            G2frame.phaseDisplay.cameraPosTxt = cameraPosTxt
             slideSizer.Add(cameraPosTxt,0,WACV)
             cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
             cameraPos.SetRange(10,500)
             cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
-            G2frame.dataDisplay.cameraSlider = cameraPos
+            G2frame.phaseDisplay.cameraSlider = cameraPos
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
             
             ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
@@ -4878,11 +5599,7 @@ entered the right symbol for your structure.
             
             ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
             ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            Zstep = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Zstep']),
-                style=wx.TE_PROCESS_ENTER)
-            Zstep.Bind(wx.EVT_TEXT_ENTER,OnZstep)
-            Zstep.Bind(wx.EVT_KILL_FOCUS,OnZstep)
+            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=1.0)
             ZstepSizer.Add(Zstep,0,WACV)
             slideSizer.Add(ZstepSizer)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5010,7 +5727,7 @@ entered the right symbol for your structure.
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
             viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
-            G2frame.dataDisplay.viewDir = viewDir
+            G2frame.phaseDisplay.viewDir = viewDir
             lineSizer.Add(viewDir,0,WACV)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
@@ -5024,7 +5741,7 @@ entered the right symbol for your structure.
             VP = drawingData['viewPoint'][0]
             viewPoint = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
-            G2frame.dataDisplay.viewPoint = viewPoint
+            G2frame.phaseDisplay.viewPoint = viewPoint
             viewPoint.Bind(wx.EVT_TEXT_ENTER,OnViewPoint)
             viewPoint.Bind(wx.EVT_KILL_FOCUS,OnViewPoint)
             lineSizer.Add(viewPoint,0,WACV)
@@ -5053,40 +5770,20 @@ entered the right symbol for your structure.
             
         def RadSizer():
             
-            def OnSizeHatoms(event):
-                event.Skip()
-                try:
-                    value = max(0.1,min(1.2,float(sizeH.GetValue())))
-                except ValueError:
-                    value = 0.5
-                drawingData['sizeH'] = value
-                sizeH.SetValue("%.2f"%(value))
+            def OnSizeHatoms(invalid,value,tc):
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnRadFactor(event):
-                event.Skip()
-                try:
-                    value = max(0.1,min(1.2,float(radFactor.GetValue())))
-                except ValueError:
-                    value = 0.85
-                drawingData['radiusFactor'] = value
-                radFactor.SetValue("%.2f"%(value))
+            def OnRadFactor(invalid,value,tc):
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
             
             radSizer = wx.BoxSizer(wx.HORIZONTAL)
             radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            sizeH = wx.TextCtrl(drawOptions,-1,value='%.2f'%(drawingData['sizeH']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
-            sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
-            sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
+            sizeH = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'sizeH',nDig=(10,2),min=0.1,max=1.2,size=wx.Size(60,20),OnLeave=OnSizeHatoms)
             radSizer.Add(sizeH,0,WACV)
     
             radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            radFactor = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['radiusFactor']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
-            radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
-            radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
+            radFactor = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'radiusFactor',nDig=(10,2),min=0.1,max=1.2,size=wx.Size(60,20),OnLeave=OnRadFactor)
             radSizer.Add(radFactor,0,WACV)
             return radSizer
             
@@ -5113,14 +5810,7 @@ entered the right symbol for your structure.
                 drawingData['Plane'][2] = showStack.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
-            def OnPhase(event):
-                event.Skip()
-                try:
-                    val = float(phase.GetValue())
-                except ValueError:
-                    val = drawingData['Plane'][3]
-                drawingData['Plane'][3] = val
-                phase.SetValue('%.2f'%(val))
+            def OnPhase(invalid,value,tc):
                 G2plt.PlotStructure(G2frame,data)
             
             def OnPlaneColor(event):
@@ -5146,11 +5836,7 @@ entered the right symbol for your structure.
             planeSizer1.Add(showStack,0,WACV)
             planeSizer2 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer2.Add(wx.StaticText(drawOptions,label=' Phase shift (deg): '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            phase = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Plane'][3]),
-                style=wx.TE_PROCESS_ENTER)
-            phase.Bind(wx.EVT_TEXT_ENTER,OnPhase)
-            phase.Bind(wx.EVT_KILL_FOCUS,OnPhase)
+            phase = G2G.ValidatedTxtCtrl(drawOptions,drawingData['Plane'],3,nDig=(10,2),OnLeave=OnPhase)
             planeSizer2.Add(phase,0,WACV)
             planeSizer2.Add(wx.StaticText(drawOptions,-1,' Plane color: '),0,WACV)
             planeColor = wcs.ColourSelect(drawOptions, -1,colour=drawingData['Plane'][4],size=wx.Size(25,25))
@@ -5167,7 +5853,7 @@ entered the right symbol for your structure.
         SetupDrawingData()
         drawingData = data['Drawing']
 
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         if drawOptions.GetSizer():
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5181,7 +5867,7 @@ entered the right symbol for your structure.
         mainSizer.Add(RadSizer(),0,)
         mainSizer.Add((5,5),0)
         mainSizer.Add(PlaneSizer(),0,)
-        SetPhaseWindow(G2frame.dataFrame,drawOptions,mainSizer)
+        SetPhaseWindow(drawOptions,mainSizer)
 
 ################################################################################
 ####  Texture routines
@@ -5235,25 +5921,7 @@ entered the right symbol for your structure.
             Obj = event.GetEventObject()
             textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()
             
-        def OnAngValue(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                value =  float(Obj.GetValue())
-            except ValueError:
-                value = textureData[valIndx[Obj.GetId()]][1]
-            Obj.SetValue('%8.2f'%(value))
-            textureData[valIndx[Obj.GetId()]][1] = value
-            
-        def OnODFValue(event): 
-            event.Skip()
-            Obj = event.GetEventObject()
-            try:
-                value =  float(Obj.GetValue())
-            except ValueError:
-                value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
-            Obj.SetValue('%8.3f'%(value))
-            textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
+        def OnODFValue(invalid,value,tc): 
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPfType(event):
@@ -5406,15 +6074,6 @@ entered the right symbol for your structure.
                     dlg.Destroy()
                 wx.CallLater(100,UpdateTexture)
                 
-            def OnshToler(event):
-                event.Skip()
-                try:
-                    value = float(shToler.GetValue())
-                    Penalty[1] = value
-                except ValueError:
-                    pass
-                shToler.SetValue('%.2f'%(Penalty[1]))
-            
             A = G2lat.cell2A(generalData['Cell'][1:7])
             hkls = G2lat.GenPfHKLs(10,SGData,A)    
             shPenalty = wx.BoxSizer(wx.HORIZONTAL)
@@ -5425,18 +6084,13 @@ entered the right symbol for your structure.
             hklList.Bind(wx.EVT_BUTTON,OnHKLList)
             shPenalty.Add(hklList,0,WACV)
             shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            shToler = wx.TextCtrl(Texture,wx.ID_ANY,'%.2f'%(Penalty[1]),style=wx.TE_PROCESS_ENTER)
-            shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
-            shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
+            shToler = G2G.ValidatedTxtCtrl(Texture,Penalty,1,nDig=(10,2),min=0.001)
             shPenalty.Add(shToler,0,WACV)
             return shPenalty    
         
         # UpdateTexture executable starts here
-        #Texture.DestroyChildren() # bad, deletes scrollbars on Mac!
-        if Texture.GetSizer():
-            Texture.GetSizer().Clear(True)
-        G2frame.dataFrame.SetStatusText('')
+        if Texture.GetSizer(): Texture.GetSizer().Clear(True)
+        G2frame.GetStatusBar().SetStatusText('',1)
         generalData = data['General']        
         SGData = generalData['SGData']
         try:
@@ -5506,7 +6160,6 @@ entered the right symbol for your structure.
         else:
             PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,WACV)
             PX = textureData['PFxyz']
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
@@ -5529,16 +6182,11 @@ entered the right symbol for your structure.
             mainSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonic coefficients: '),0,WACV)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(0,8,2,2)
-            ODFIndx = {}
             ODFkeys = textureData['SH Coeff'][1].keys()
             ODFkeys.sort()
             for item in ODFkeys:
                 ODFSizer.Add(wx.StaticText(Texture,-1,item),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                ODFval = wx.TextCtrl(Texture,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
-                ODFIndx[ODFval.GetId()] = item
-                ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
-                ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
+                ODFval = G2G.ValidatedTxtCtrl(Texture,textureData['SH Coeff'][1],item,nDig=(8,3),OnLeave=OnODFValue)
                 ODFSizer.Add(ODFval,0,WACV)
             mainSizer.Add(ODFSizer,0,WACV)
             mainSizer.Add((0,5),0)
@@ -5547,22 +6195,17 @@ entered the right symbol for your structure.
         mainSizer.Add((0,5),0)
         angSizer = wx.BoxSizer(wx.HORIZONTAL)
         angIndx = {}
-        valIndx = {}
         for item in ['Sample omega','Sample chi','Sample phi']:
             angRef = wx.CheckBox(Texture,-1,label=item+': ')
             angRef.SetValue(textureData[item][0])
             angIndx[angRef.GetId()] = item
             angRef.Bind(wx.EVT_CHECKBOX, OnAngRef)
             angSizer.Add(angRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            angVal = wx.TextCtrl(Texture,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
-            valIndx[angVal.GetId()] = item
-            angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
-            angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
+            angVal = G2G.ValidatedTxtCtrl(Texture,textureData[item],1,nDig=(8,2))
             angSizer.Add(angVal,0,WACV|wx.LEFT,5)
         mainSizer.Add(angSizer,0,WACV|wx.LEFT,5)
 #        mainSizer.Add(SHPenalty(textureData['Penalty']),0,WACV|wx.LEFT,5)  for future
-        SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
+        SetPhaseWindow(Texture,mainSizer)
 
 ################################################################################
 ##### DData routines - GUI stuff in GSASIIddataGUI.py
@@ -5571,17 +6214,17 @@ entered the right symbol for your structure.
     def OnHklfAdd(event):
         keyList = data['Histograms'].keys()
         TextList = []
-        if not G2frame.PatternTree.GetCount():
+        if not G2frame.GPXtree.GetCount():
             return
         
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         while item:
-            name = G2frame.PatternTree.GetItemText(item)
+            name = G2frame.GPXtree.GetItemText(item)
             if name not in keyList and 'HKLF' in name:
                 TextList.append(name)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
+            item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                        
             if not TextList: 
-                G2G.G2MessageBox(G2frame.dataFrame,'No reflections')
+                G2G.G2MessageBox(G2frame,'No reflections')
                 return
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
             'Use data',TextList)
@@ -5615,8 +6258,8 @@ entered the right symbol for your structure.
         wx.BeginBusyCursor()
         for i in result:
             histoName = TextList[i]
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-            refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+            refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
             data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                 'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
@@ -5636,14 +6279,14 @@ entered the right symbol for your structure.
         wx.EndBusyCursor()
         
     def OnDataUse(event):
-        hist = G2frame.hist
+#        hist = G2frame.hist
         if data['Histograms']:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Use histograms', 
-                'Use which histograms?',G2frame.dataFrame.HistsInPhase)
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Use histograms', 
+                'Use which histograms?',G2frame.dataWindow.HistsInPhase)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelections()
-                    for id,item in enumerate(G2frame.dataFrame.HistsInPhase):
+                    for id,item in enumerate(G2frame.dataWindow.HistsInPhase):
                         if id in sel:
                             data['Histograms'][item]['Use'] = True
                         else:
@@ -5655,8 +6298,8 @@ entered the right symbol for your structure.
     # Note: function replaced by one with identical name, below
     # def UpdateHKLFdata(histoName):
     #     generalData = data['General']
-    #     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-    #     refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
+    #     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+    #     refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
     #     SGData = generalData['SGData']
     #     Cell = generalData['Cell'][1:7]
     #     G,g = G2lat.cell2Gmat(Cell))
@@ -5674,8 +6317,8 @@ entered the right symbol for your structure.
                 
     def UpdateHKLFdata(histoName):
         generalData = data['General']
-        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
-        refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+        refDict,reflData = G2frame.GPXtree.GetItemPyData(Id)
         SGData = generalData['SGData']
         Cell = generalData['Cell'][1:7]
         G,g = G2lat.cell2Gmat(Cell)
@@ -5686,10 +6329,10 @@ entered the right symbol for your structure.
         
     def OnDataCopy(event):
         hist = G2frame.hist
-        keyList = G2frame.dataFrame.HistsInPhase[:]
+        keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
         if not keyList:
-            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
         sourceDict = data['Histograms'][hist]
         if 'HKLF' in sourceDict['Histogram']:
@@ -5699,8 +6342,7 @@ entered the right symbol for your structure.
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5742,13 +6384,12 @@ entered the right symbol for your structure.
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = G2frame.dataFrame.HistsInPhase[:]
+        keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
         if not keyList:
-            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram flags\nfrom '+hist[5:][:35],
                 'Copy phase/hist flags', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5788,17 +6429,17 @@ entered the right symbol for your structure.
     def OnSelDataCopy(event):
         hist = G2frame.hist
         sourceDict = data['Histograms'][hist]
-        keyList = G2frame.dataFrame.HistsInPhase[:]
+        keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
         if not keyList:
-            G2G.G2MessageBox(G2frame.dataFrame,'No histograms to copy to')
+            G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail']
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []
         try:
@@ -5810,9 +6451,8 @@ entered the right symbol for your structure.
         copyDict = {}
         for parm in selectedItems:
             copyDict[parm] = copy.deepcopy(sourceDict[parm])
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-                        u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
-                        'Copy selected phase/hist parameters', keyList)
+        dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy selected phase/histogram parameters\nfrom '+hist[5:][:35],
+            'Copy selected phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for sel in dlg.GetSelections():
@@ -5828,18 +6468,18 @@ entered the right symbol for your structure.
         NDij = len(G2spc.HStrainNames(SGData))
         keyList = data['Histograms'].keys()
         TextList = []
-        if G2frame.PatternTree.GetCount():
-            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:
-                name = G2frame.PatternTree.GetItemText(item)
+                name = G2frame.GPXtree.GetItemText(item)
                 if name not in keyList and 'PWDR' in name:
                     TextList.append(name)
-                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
             if not TextList: 
-                G2G.G2MessageBox(G2frame.dataFrame,'No histograms')
+                G2G.G2MessageBox(G2frame,'No histograms')
                 return
             dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select powder histograms to use',
-                    'Use data',TextList)
+                'Use data',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
@@ -5847,7 +6487,7 @@ entered the right symbol for your structure.
                     if 'All PWDR' in newList:
                         newList = TextList[1:]
                     for histoName in newList:
-                        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
+                        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                         data['Histograms'][histoName] = {'Histogram':histoName,'Show':False,'LeBail':False,'newLeBail':True,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},['',],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
@@ -5856,20 +6496,20 @@ entered the right symbol for your structure.
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
-                        refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))
+                        refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
                 
     def OnDataDelete(event):
-        if G2frame.dataFrame.HistsInPhase:
+        if G2frame.dataWindow.HistsInPhase:
             DelList = []
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Delete histogram', 
-                'Which histogram to delete from this phase?',G2frame.dataFrame.HistsInPhase)
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Delete histogram', 
+                'Which histogram to delete from this phase?',G2frame.dataWindow.HistsInPhase)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    DelList = [G2frame.dataFrame.HistsInPhase[i] for i in dlg.GetSelections()]
+                    DelList = [G2frame.dataWindow.HistsInPhase[i] for i in dlg.GetSelections()]
                     for i in DelList:
                         del data['Histograms'][i]
             finally:
@@ -5907,16 +6547,7 @@ entered the right symbol for your structure.
             
         def ThermDataSizer(RBObj,rbType):
             
-            def OnThermval(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    RBObj['ThermalMotion'][1][item] = val
-                except ValueError:
-                    pass
-                Obj.SetValue('%8.4f'%(RBObj['ThermalMotion'][1][item]))
+            def OnThermval(invalid,value,tc):
                 Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[1]
                 Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                 cia = data['General']['AtomPtrs'][3]
@@ -5944,12 +6575,7 @@ entered the right symbol for your structure.
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
             for i,name in enumerate(names):
                 thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                thermVal = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(model[1][i]),
-                    style=wx.TE_PROCESS_ENTER)
-                thermVal.Bind(wx.EVT_TEXT_ENTER,OnThermval)
-                thermVal.Bind(wx.EVT_KILL_FOCUS,OnThermval)
-                Indx[thermVal.GetId()] = i
+                thermVal = G2G.ValidatedTxtCtrl(RigidBodies,model[1],i,nDig=(8,4),OnLeave=OnThermval)
                 thermSizer.Add(thermVal)
                 Tcheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
@@ -5966,22 +6592,13 @@ entered the right symbol for your structure.
             def OnOrienRef(event):
                 RBObj['Orient'][1] = Qcheck.GetValue()
                 
-            def OnOrigX(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    RBObj['Orig'][0][item] = val
-                    Obj.SetValue('%8.5f'%(val))
-                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                    for i,id in enumerate(RBObj['Ids']):
-                        data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
-                    data['Drawing']['Atoms'] = []
-                    UpdateDrawAtoms(atomStyle)
-                    G2plt.PlotStructure(G2frame,data)
-                except ValueError:
-                    pass
+            def OnOrigX(invalid,value,tc):
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
+                for i,id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms(atomStyle)
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnOrien(event):
                 event.Skip()
@@ -6017,11 +6634,7 @@ entered the right symbol for your structure.
             Orien.extend(OrienV/nl.norm(OrienV))
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,WACV)
             for ix,x in enumerate(Orig):
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                origX = wx.TextCtrl(RigidBodies,-1,value='%8.5f'%(x),style=wx.TE_PROCESS_ENTER)
-                origX.Bind(wx.EVT_TEXT_ENTER,OnOrigX)
-                origX.Bind(wx.EVT_KILL_FOCUS,OnOrigX)
-                Indx[origX.GetId()] = ix
+                origX = G2G.ValidatedTxtCtrl(RigidBodies,Orig,ix,nDig=(8,5),OnLeave=OnOrigX)
                 topSizer.Add(origX,0,WACV)
             topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
@@ -6030,7 +6643,6 @@ entered the right symbol for your structure.
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
             for ix,x in enumerate(Orien):
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
                 orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
                 orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
                 orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
@@ -6050,19 +6662,10 @@ entered the right symbol for your structure.
                 item = Indx[Obj.GetId()]
                 RBObj['Torsions'][item][1] = Obj.GetValue()                
                 
-            def OnTorsion(event):
-                event.Skip()
-                Obj = event.GetEventObject()
-                item = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    RBObj['Torsions'][item][0] = val
-                    newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
-                    for i,id in enumerate(RBObj['Ids']):
-                        data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
-                except ValueError:
-                    pass
-                Obj.SetValue("%10.3f"%(RBObj['Torsions'][item][0]))                
+            def OnTorsion(invalid,value,tc):
+                newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
+                for i,id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
                 drawAtoms.ClearSelection()
@@ -6095,11 +6698,7 @@ entered the right symbol for your structure.
             torSizer = wx.FlexGridSizer(0,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                torsTxt = wx.TextCtrl(RigidBodies,-1,value='%.3f'%(tors[0]),style=wx.TE_PROCESS_ENTER)
-                torsTxt.Bind(wx.EVT_TEXT_ENTER,OnTorsion)
-                torsTxt.Bind(wx.EVT_KILL_FOCUS,OnTorsion)
-                Indx[torsTxt.GetId()] = itors
+                torsTxt = G2G.ValidatedTxtCtrl(RigidBodies,RBObj['Torsions'][itors],0,nDig=(10,3),OnLeave=OnTorsion)
                 torSizer.Add(torsTxt)
                 torCheck = wx.CheckBox(RigidBodies,-1,'Refine?')
                 torCheck.Bind(wx.EVT_CHECKBOX,OnTorsionRef)
@@ -6122,7 +6721,7 @@ entered the right symbol for your structure.
             return resrbSizer
             
         def VecrbSizer(RBObj):
-            G2frame.dataFrame.SetStatusText('NB: Rotation vector is in crystallographic space')
+            G2frame.GetStatusBar().SetStatusText('NB: Rotation vector is in crystallographic space',1)
                    
             def OnDelVecRB(event):
                 Obj = event.GetEventObject()
@@ -6176,31 +6775,29 @@ entered the right symbol for your structure.
             G2frame.bottomSizer =  ResrbSizer(rbObj)
             mainSizer.Add(G2frame.bottomSizer)
             mainSizer.Layout()
-            G2frame.dataFrame.Refresh()
+            G2frame.dataWindow.Refresh()
             RigidBodies.SetVirtualSize(mainSizer.GetMinSize())
             RigidBodies.Scroll(0,Scroll)
-            G2frame.dataFrame.SendSizeEvent()
+            G2frame.dataWindow.SendSizeEvent()
             G2plt.PlotStructure(G2frame,data)
             wx.CallAfter(oldFocus.SetFocus)
         
         # FillRigidBodyGrid executable code starts here
         if refresh:
-            #RigidBodies.DestroyChildren() # bad, deletes scrollbars on Mac!
-            if RigidBodies.GetSizer():
-                RigidBodies.GetSizer().Clear(True)
+            if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
         general = data['General']
         cx,ct,cs,cia = general['AtomPtrs']
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies')
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies')
         if not Id:
             return
-        RBData = G2frame.PatternTree.GetItemPyData(Id)
+        RBData = G2frame.GPXtree.GetItemPyData(Id)
         Indx = {}
         atomStyle = 'balls & sticks'
         if 'macro' in general['Type']:
             atomStyle = 'sticks'
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['RBModels']:
             mainSizer.Add((5,5),0)
@@ -6225,7 +6822,7 @@ entered the right symbol for your structure.
             G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
             G2frame.bottomSizer.Add(ResrbSizer(rbObj))
             mainSizer.Add(G2frame.bottomSizer)
-            G2frame.dataFrame.SetStatusText('NB: Rotation vector is in crystallographic space')
+            G2frame.GetStatusBar().SetStatusText('NB: Rotation vector is in crystallographic space',1)
             G2plt.PlotStructure(G2frame,data)
         if 'Vector' in data['RBModels'] and len(data['RBModels']['Vector']):
             mainSizer.Add((5,5),0)
@@ -6234,7 +6831,7 @@ entered the right symbol for your structure.
             for RBObj in data['RBModels']['Vector']:
                 mainSizer.Add(VecrbSizer(RBObj))
 
-        SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
+        SetPhaseWindow(RigidBodies,mainSizer)
 
     def OnRBCopyParms(event):
         RBObjs = []
@@ -6268,9 +6865,9 @@ entered the right symbol for your structure.
                 
     def OnRBAssign(event):
         
-        G2frame.dataFrame.SetStatusText('')
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        G2frame.GetStatusBar().SetStatusText('',1)
+        RBData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbNames = {}
         for rbVec in RBData['Vector']:
             if rbVec != 'AtInfo':
@@ -6455,15 +7052,13 @@ entered the right symbol for your structure.
                 Tors = data['testRBObj']['rbObj']['Torsions'][tor]
                 val = float(Obj.GetValue())/10.
                 Tors[0] = val
-                ang.SetValue('%8.3f'%(val))
+                ang.SetValue(val)
                 G2plt.PlotStructure(G2frame,data)
 
             if len(data['testRBObj']):
                 G2plt.PlotStructure(G2frame,data)
                     
-            #RigidBodies.DestroyChildren() # bad, deletes scrollbars on Mac!
-            if RigidBodies.GetSizer():
-                RigidBodies.GetSizer().Clear(True)
+            if RigidBodies.GetSizer(): RigidBodies.GetSizer().Clear(True)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             if data['testRBObj']:
@@ -6564,12 +7159,12 @@ entered the right symbol for your structure.
             btnSizer.Add(CancelBtn)
             btnSizer.Add((20,20),1)
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            SetPhaseWindow(G2frame.dataFrame,RigidBodies,mainSizer)
+            SetPhaseWindow(RigidBodies,mainSizer)
         wx.CallAfter(Draw)
         
     def OnAutoFindResRB(event):
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        RBData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbKeys = RBData['Residue'].keys()
         rbKeys.remove('AtInfo')
         if not len(rbKeys):
@@ -6656,8 +7251,8 @@ entered the right symbol for your structure.
     def OnRBRemoveAll(event):
         data['RBModels']['Residue'] = []
         data['RBModels']['Vector'] = []
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        RBData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         for RBType in ['Vector','Residue']:
             for rbId in RBData[RBType]:
                 RBData[RBType][rbId]['useCount'] = 0        
@@ -6767,15 +7362,7 @@ entered the right symbol for your structure.
             model,item,ix = Indx[Obj.GetId()]
             model[item][1][ix] = Obj.GetValue()
             
-        def OnPosVal(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            model,item,ix = Indx[Obj.GetId()]
-            try:
-                model[item][0][ix] = float(Obj.GetValue())
-            except ValueError:
-                pass
-            Obj.SetValue("%.4f"%(model[item][0][ix]))
+        def OnPosVal(invalid,value,tc):
             G2plt.PlotStructure(G2frame,data)
             
         def OnPosRange(event):
@@ -6802,11 +7389,7 @@ entered the right symbol for your structure.
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 atomsizer.Add(posRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
-                posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
-                posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
-                Indx[posVal.GetId()] = [model,'Pos',ix]
+                posVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,model['Pos'][0],ix,nDig=(10,4),OnLeave=OnPosVal)
                 atomsizer.Add(posVal,0,WACV)
             atomsizer.Add((5,5),0)
             for ix,item in enumerate(['x','y','z']):
@@ -6857,7 +7440,6 @@ entered the right symbol for your structure.
                     ObjA.SetValue('%.5f'%(A))
                     ObjV.SetValue('%.3f %.3f %.3f'%(V[0],V[1],V[2]))
                 G2plt.PlotStructure(G2frame,data)
-#                UpdateMCSA()
 
             def OnMolCent(event):
                 Obj = event.GetEventObject()
@@ -6876,11 +7458,7 @@ entered the right symbol for your structure.
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 rbsizer1.Add(posRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
-                posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
-                posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
-                Indx[posVal.GetId()] = [model,'Pos',ix]
+                posVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,model['Pos'][0],ix,nDig=(10,4),OnLeave=OnPosVal)
                 rbsizer1.Add(posVal,0,WACV)
             molcent = wx.CheckBox(G2frame.MCSA,-1,label=' Use mol. center? ')
             molcent.SetValue(model['MolCent'][1])
@@ -6899,7 +7477,6 @@ entered the right symbol for your structure.
             rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oa: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             angVal = wx.TextCtrl(G2frame.MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
@@ -6947,11 +7524,7 @@ entered the right symbol for your structure.
                     torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                     Indx[torRef.GetId()] = [model,'Tor',it]
                     rbsizer3.Add(torRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                    torVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
-                    torVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
-                    torVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
-                    Indx[torVal.GetId()] = [model,'Tor',it]
+                    torVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,model['Tor'][0],it,nDig=(10,4),OnLeave=OnPosVal)
                     rbsizer3.Add(torVal,0,WACV)
                     rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                     rmin,rmax = model['Tor'][2][it]
@@ -6968,16 +7541,6 @@ entered the right symbol for your structure.
             
             def OnPORef(event):
                 POData['Coef'][1] = poRef.GetValue()
-                
-            def OnPOVal(event):
-                event.Skip()
-                try:
-                    mdVal = float(poVal.GetValue())
-                    if mdVal > 0:
-                        POData['Coef'][0] = mdVal
-                except ValueError:
-                    pass
-                poVal.SetValue("%.3f"%(POData['Coef'][0]))
                 
             def OnPORange(event):
                 event.Skip()
@@ -7011,10 +7574,7 @@ entered the right symbol for your structure.
             poRef.SetValue(POData['Coef'][1])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            poVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
-            poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
-            poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
+            poVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,POData['Coef'],0,nDig=(10,3),min=0.)
             poSizer.Add(poVal,0,WACV)
             poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
             rmin,rmax = POData['Coef'][2]
@@ -7043,9 +7603,9 @@ entered the right symbol for your structure.
                     SetSolution(result,Models)
                     Results[r][0] = True
                     resultsTable.SetValue(r,0,True)
+#                    resultsGrid.ForceRefresh()
                     G2plt.PlotStructure(G2frame,data)
                     wx.CallAfter(UpdateMCSA,G2frame.MCSA.GetScrollPos(wx.VERTICAL))
-                    resultsGrid.ForceRefresh()
                 elif c == 1:
                     if Results[r][1]:
                         Results[r][1] = False
@@ -7071,32 +7631,32 @@ entered the right symbol for your structure.
             resultsGrid.SetTable(resultsTable, True)
             resultsGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnCellChange)
             resultsGrid.AutoSizeColumns(True)
+            resultsGrid.SetMargins(0,0)
             for r in range(resultsGrid.GetNumberRows()):
                 for c in range(resultsGrid.GetNumberCols()):
                     if c in [0,1]:
                         resultsGrid.SetReadOnly(r,c,isReadOnly=False)
                     else:
                         resultsGrid.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            resultsSizer.Add(resultsGrid)
+#            resultsGrid.SetScrollRate(0,0)
+            resultsSizer.Add(resultsGrid,0,wx.EXPAND)
             return resultsSizer
         
         # UpdateMCSA executable code starts here
-        #G2frame.MCSA.DestroyChildren() # bad, deletes scrollbars on Mac!
-        if G2frame.MCSA.GetSizer():
-            G2frame.MCSA.GetSizer().Clear(True)
+        if G2frame.MCSA.GetSizer(): G2frame.MCSA.GetSizer().Clear(True)
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies')
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies')
         if not Id:
             return
-        RBData = G2frame.PatternTree.GetItemPyData(Id)
+        RBData = G2frame.GPXtree.GetItemPyData(Id)
         Indx = {}
 #        atomStyle = 'balls & sticks'
 #        if 'macro' in general['Type']:
 #            atomStyle = 'sticks'
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['MCSA']['Models']:
             mainSizer.Add((5,5),0)
@@ -7129,9 +7689,9 @@ entered the right symbol for your structure.
             mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA results:'),0,WACV)
             mainSizer.Add((5,5),0)
             Results = data['MCSA']['Results']
-            mainSizer.Add(ResultsSizer(Results))
+            mainSizer.Add(ResultsSizer(Results),0,wx.EXPAND)
             
-        SetPhaseWindow(G2frame.dataFrame,G2frame.MCSA,mainSizer)
+        SetPhaseWindow(G2frame.MCSA,mainSizer)
         
     def SetSolution(result,Models):
         for key,val in zip(result[-1],result[4:-1]):
@@ -7171,31 +7731,31 @@ entered the right symbol for your structure.
         MCSAdata['Results'] = saveResult           
         covData = {}
         if 'PWDR' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             try:        #patch for old reflection data
                 reflData = reflSets[phaseName]['RefList']
             except TypeError:
                 reflData = reflSets[phaseName]
             reflType = 'PWDR'
         elif 'HKLF' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
             try:
-                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]['RefList']
+                reflData = G2frame.GPXtree.GetItemPyData(PatternId)[1]['RefList']
             except TypeError:
-                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+                reflData = G2frame.GPXtree.GetItemPyData(PatternId)[1]
             reflType = 'HKLF'
         elif reflName == 'Pawley reflections':
             reflData = data['Pawley ref']
-            covData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
+            covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
             reflType = 'Pawley'
         else:
             print '**** ERROR - No data defined for MC/SA run'
             return
         print 'MC/SA run:'
         print 'Reflection type:',reflType,' Total No. reflections: ',len(reflData)
-        RBdata = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        RBdata = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         MCSAmodels = MCSAdata['Models']
         if not len(MCSAmodels):
             print '**** ERROR - no models defined for MC/SA run****'
@@ -7217,23 +7777,28 @@ entered the right symbol for your structure.
             if process == 'single':
                 for i in range(nCyc):
                     pgbar.SetTitle('MC/SA run '+str(i+1)+' of '+str(nCyc))
-                    Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
+                    Result,tsum,nsum,rcov = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
                     MCSAdata['Results'].append(Result)
-                    print ' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs'%(i,100*Result[2],tsum)
+                    print ' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs Nsfcalc: %d'%(i,100*Result[2],tsum,nsum)
                     tsf += tsum
-                print ' Structure factor time: %.2f'%(tsf)
+                print ' Total SF time: %.2fs'%(tsf)
+                XY = np.mgrid[0:rcov.shape[0],0:rcov.shape[1]]
+                G2plt.PlotXYZ(G2frame,XY,rcov,labelX='ref No.',labelY='ref No.',newPlot=False,
+                    Title='Reflection covariance matrix',zrange=[-1.,1.],color='RdYlGn')
             else:
-                MCSAdata['Results'] = G2mth.MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData)
-            print ' MC/SA run time: %.2f'%(time.time()-time1)
+                nprocs = GSASIIpath.GetConfigValue('Multiprocessing_cores')
+                Results,sftime,numsf = G2mth.MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs)
+                MCSAdata['Results'] += Results   #+= to  any saved ones
+                print ' Total SF time: %.2fs MC/SA run time: %.2fs Nsfcalc: %d'%(sftime,time.time()-time1,numsf)
         finally:
             if process == 'single':
                 pgbar.Destroy()
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
         MCSAdata['Results'][0][0] = True
         SetSolution(MCSAdata['Results'][0],data['MCSA']['Models'])
-        G2frame.dataDisplay.SetFocus()
-        Page = G2frame.dataDisplay.FindPage('MC/SA')
-        G2frame.dataDisplay.SetSelection(Page)
+        G2frame.phaseDisplay.SetFocus()
+        Page = G2frame.phaseDisplay.FindPage('MC/SA')
+        G2frame.phaseDisplay.SetSelection(Page)
         G2plt.PlotStructure(G2frame,data)
         wx.CallAfter(UpdateMCSA)
 
@@ -7253,8 +7818,8 @@ entered the right symbol for your structure.
         UpdateMCSA()
         
     def OnMCSAaddRB(event):
-        rbData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        rbData = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         rbNames = {}
         for rbVec in rbData['Vector']:
             if rbVec != 'AtInfo':
@@ -7265,7 +7830,7 @@ entered the right symbol for your structure.
         if not rbNames:
             print '**** ERROR - no rigid bodies defined ****'
             return
-        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select','Rigid body',rbNames.keys())
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Rigid body',rbNames.keys())
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             rbname = rbNames.keys()[sel]
@@ -7283,8 +7848,8 @@ entered the right symbol for your structure.
         data['MCSA']['Models'].append(body)
         data['MCSA']['rbData'] = rbData
         data['MCSA']['AtInfo'].update(rbData[rbType]['AtInfo'])
-        G2plt.PlotStructure(G2frame,data)
         UpdateMCSA()
+        wx.CallAfter(G2plt.PlotStructure,G2frame,data)
         
     def OnMCSAclear(event):
         data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
@@ -7337,7 +7902,7 @@ entered the right symbol for your structure.
                     FillPawleyReflectionsGrid()
             
         # FillPawleyReflectionsGrid executable starts here
-        G2frame.dataFrame.SetStatusText('To delete a Pawley reflection: select row & press Delete')                        
+        G2frame.GetStatusBar().SetStatusText('To delete a Pawley reflection: select row & press Delete',1)                        
         generalData = data['General']
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
@@ -7364,7 +7929,7 @@ entered the right symbol for your structure.
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             G2frame.PawleyRefl.SetMargins(0,0)
             G2frame.PawleyRefl.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,G2frame.PawleyRefl,size=[450,300])
+            SetPhaseWindow(G2frame.PawleyRefl)
                     
     def OnPawleySet(event):
         '''Set Pawley parameters and optionally recompute
@@ -7376,61 +7941,61 @@ entered the right symbol for your structure.
             pawlNegWt.Enable(generalData['doPawley'])
         generalData = data['General']
         startDmin = generalData['Pawley dmin']
-        General = wx.Dialog(G2frame.dataFrame,wx.ID_ANY,'Set Pawley Parameters',
+        genDlg = wx.Dialog(G2frame,wx.ID_ANY,'Set Pawley Parameters',
                         style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(General,wx.ID_ANY,
+        mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,
                                     'Set Pawley Extraction Parameters for phase '+
                                     generalData.get('Name','?')))
         mainSizer.Add([5,10])
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-        pawleySizer.Add(wx.StaticText(General,label=' Do Pawley refinement?: '),0,WACV)
-        pawlRef = G2G.G2CheckBox(General,'',generalData,'doPawley',
+        pawleySizer.Add(wx.StaticText(genDlg,label=' Do Pawley refinement?: '),0,WACV)
+        pawlRef = G2G.G2CheckBox(genDlg,'',generalData,'doPawley',
                              DisablePawleyOpts)
         pawleySizer.Add(pawlRef,0,WACV)
         mainSizer.Add(pawleySizer)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-        pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
+        pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley dmin: '),0,WACV)
         def d2Q(*a,**kw):
             temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
             pawlQVal.SetValue(temp['Qmax'])
-        pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
+        pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
                min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
         pawleySizer.Add(pawlVal,0,WACV)
-        pawleySizer.Add(wx.StaticText(General,label='   Qmax: '),0,WACV)
+        pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
         temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
         def Q2D(*args,**kw):
             generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
             pawlVal.SetValue(generalData['Pawley dmin'])        
-        pawlQVal = G2G.ValidatedTxtCtrl(General,temp,'Qmax',
+        pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
                min=0.314,max=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
         pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-        pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
-        pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
+        pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley neg. wt.: '),0,WACV)
+        pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
                     min=0.,max=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
         mainSizer.Add(pawleySizer)
 
         # make OK button
-        def OnOK(event): General.EndModal(wx.ID_OK)
+        def OnOK(event): genDlg.EndModal(wx.ID_OK)
         mainSizer.Add([5,5])
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(General, wx.ID_OK)
+        btn = wx.Button(genDlg, wx.ID_OK)
         btn.Bind(wx.EVT_BUTTON, OnOK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
-        btn = wx.Button(General, wx.ID_CANCEL) 
+        btn = wx.Button(genDlg, wx.ID_CANCEL) 
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
 
-        General.SetSizer(mainSizer)
-        mainSizer.Fit(General)
-        General.CenterOnParent()
-        res = General.ShowModal()
-        General.Destroy()
+        genDlg.SetSizer(mainSizer)
+        mainSizer.Fit(genDlg)
+        genDlg.CenterOnParent()
+        res = genDlg.ShowModal()
+        genDlg.Destroy()
 
         if generalData['doPawley'] and res == wx.ID_OK and startDmin != generalData['Pawley dmin']:
             dlg = wx.MessageDialog(G2frame,'Do you want to initialize the Pawley reflections with the new Dmin value?','Initialize Pawley?', 
@@ -7452,10 +8017,10 @@ entered the right symbol for your structure.
         dmin = generalData['Pawley dmin']
         for hist in histograms:
             if 'PWDR' in hist[:4]:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
-                inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                     G2frame,Id, 'Instrument Parameters'))[0]
-                limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
+                limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Limits'))
                 Tmin = G2lat.Dsp2pos(inst,dmin)
                 if 'T' in inst['Type'][0]:
                     limits[1][0] = max(limits[0][0],Tmin)
@@ -7508,10 +8073,10 @@ entered the right symbol for your structure.
         if not len(HistoNames):
             G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return
-        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])       #only use 1st histogram
-        xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
-        Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Sample Parameters'))
+        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistoNames[0])       #only use 1st histogram
+        xdata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
+        Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Sample Parameters'))
         wave = G2mth.getWave(Inst)
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
         gconst = 2.35482 # sqrt(8 ln 2)
@@ -7558,8 +8123,8 @@ entered the right symbol for your structure.
             G2frame.ErrorDialog('Pawley update','No histograms defined for this phase')
             return
         HistoNames = Histograms.keys()
-        PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
-        refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,  \
+        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistoNames[0])
+        refData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,  \
             PatternId,'Reflection Lists'))[PhaseName]['RefList']
         im = 0
         if data['General']['Modulated']:
@@ -7649,9 +8214,9 @@ entered the right symbol for your structure.
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
-        G2frame.dataFrame.SetStatusText('')
+        G2frame.GetStatusBar().SetStatusText('',1)
         if 'Map Peaks' in data:
-            G2frame.dataFrame.SetStatusText('Double click any column heading to sort')
+            G2frame.GetStatusBar().SetStatusText('Double click any column heading to sort',1)
             mapPeaks = data['Map Peaks']                        
             rowLabels = []
             for i in range(len(mapPeaks)): rowLabels.append(str(i))
@@ -7665,12 +8230,12 @@ entered the right symbol for your structure.
                     MapPeaks.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
             MapPeaks.SetMargins(0,0)
             MapPeaks.AutoSizeColumns(False)
-            SetPhaseWindow(G2frame.dataFrame,MapPeaks,size=[440,300])
+            SetPhaseWindow(MapPeaks)
                     
     def OnPeaksMove(event):
         if 'Map Peaks' in data:
             mapPeaks = np.array(data['Map Peaks'])
-            peakMax = np.fmax(mapPeaks.T[0])
+            peakMax = np.amax(mapPeaks.T[0])
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
                 mag,x,y,z = mapPeaks[ind][:4]
@@ -7714,10 +8279,10 @@ entered the right symbol for your structure.
         generalData = data['General']
         if generalData['Map'].get('Show bonds',False):
             generalData['Map']['Show bonds'] = False
-            G2frame.dataFrame.MapPeaksEdit.SetLabel(G2gd.wxID_SHOWBONDS,'Show bonds')
+            G2frame.dataWindow.MapPeaksEdit.SetLabel(G2G.wxID_SHOWBONDS,'Show bonds')
         else:
             generalData['Map']['Show bonds'] = True
-            G2frame.dataFrame.MapPeaksEdit.SetLabel(G2gd.wxID_SHOWBONDS,'Hide bonds')
+            G2frame.dataWindow.MapPeaksEdit.SetLabel(G2G.wxID_SHOWBONDS,'Hide bonds')
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
                 
@@ -7881,8 +8446,8 @@ entered the right symbol for your structure.
                 data['Map Peaks'] = G2mth.sortArray(mapPeaks,0,reverse=True)            
             print ' Map search finished, time = %.2fs'%(time.time()-time0)
             print ' No.peaks found:',len(peaks)    
-            Page = G2frame.dataDisplay.FindPage('Map peaks')
-            G2frame.dataDisplay.SetSelection(Page)
+            Page = G2frame.phaseDisplay.FindPage('Map peaks')
+            G2frame.phaseDisplay.SetSelection(Page)
             wx.CallAfter(FillMapPeaksGrid)
             UpdateDrawAtoms()
         else:
@@ -7979,11 +8544,11 @@ entered the right symbol for your structure.
                 im = 0
                 it = 0
                 histNames.append(name)
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))
-                Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))
+                Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                 Gangls[name] = copy.copy([Sample[item] for item in['Phi','Chi','Omega','Azimuth']])
-                RefDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))[phaseName]
+                RefDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))[phaseName]
                 Refs = RefDict['RefList'].T  #np.array!
                 if RefDict['Super']: im = 1     #(3+1) offset for m
                 if 'T' in RefDict['Type']: 
@@ -8026,9 +8591,9 @@ entered the right symbol for your structure.
                 print 'Warning: menu item not in dict! id=',event.GetId()
                 return                
             # find the matching tab
-            for PageNum in range(G2frame.dataDisplay.GetPageCount()):
-                if tabname == G2frame.dataDisplay.GetPageText(PageNum):
-                    G2frame.dataDisplay.SetSelection(PageNum)
+            for PageNum in range(G2frame.phaseDisplay.GetPageCount()):
+                if tabname == G2frame.phaseDisplay.GetPageText(PageNum):
+                    G2frame.phaseDisplay.SetSelection(PageNum)
                     return
             else:
                 print "Warning: tab "+tabname+" was not found"
@@ -8045,57 +8610,58 @@ entered the right symbol for your structure.
         '''This is called every time that a Notebook tab button is pressed
         on a Phase data item window
         '''
-        for page in G2frame.dataDisplay.gridList: # clear out all grids, forcing edits in progress to complete
+        for page in G2frame.phaseDisplay.gridList: # clear out all grids, forcing edits in progress to complete
             page.ClearGrid()
         page = event.GetSelection()
+        G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         ChangePage(page)
         
     def ChangePage(page):
-        text = G2frame.dataDisplay.GetPageText(page)
-        G2frame.dataDisplayPhaseText = text
-        G2frame.dataFrame.helpKey = text # use name of Phase tab for help lookup
+        text = G2frame.phaseDisplay.GetPageText(page)
+        G2frame.phaseDisplayPhaseText = text
+        G2frame.dataWindow.helpKey = text # use name of Phase tab for help lookup
         if text == 'General':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
             UpdateGeneral()
         elif text == 'Data':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
             G2ddG.UpdateDData(G2frame,DData,data)
             wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist='',Start=True)            
         elif text == 'Atoms':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.AtomsMenu)
             FillAtomsGrid(Atoms)
         elif text == 'Layers':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LayerData)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LayerData)
             UpdateLayerData()
         elif text == 'Wave Data' and data['General']['Modulated']:
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.WavesData)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.WavesData)
             UpdateWavesData()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Options':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             UpdateDrawOptions()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Atoms':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DrawAtomsMenu)
             UpdateDrawAtoms()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()
         elif text == 'Map peaks':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MapPeaksMenu)
             FillMapPeaksGrid()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MCSAMenu)
             UpdateMCSA()                        
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Texture':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.TextureMenu)
             UpdateTexture()                        
             wx.CallAfter(G2plt.PlotTexture,G2frame,data,Start=True)            
         elif text == 'Pawley reflections':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PawleyMenu)
             FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)
@@ -8104,127 +8670,127 @@ entered the right symbol for your structure.
         '''Create the Select tab menus and bind to all menu items
         '''
         # General
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataGeneral)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, On4DChargeFlip, id=G2gd.wxID_4DCHARGEFLIP)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTransform, id=G2gd.wxID_TRANSFORMSTRUCTURE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataGeneral)
+        G2frame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2G.wxID_FOURCALC)
+        G2frame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2G.wxID_FOURSEARCH)
+        G2frame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2G.wxID_CHARGEFLIP)
+        G2frame.Bind(wx.EVT_MENU, On4DChargeFlip, id=G2G.wxID_4DCHARGEFLIP)
+        G2frame.Bind(wx.EVT_MENU, OnFourClear, id=G2G.wxID_FOURCLEAR)
+        G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
+        G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
+        G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
         # Data
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataUse, id=G2gd.wxID_DATAUSE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopy, id=G2gd.wxID_DATACOPY)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2gd.wxID_DATACOPYFLAGS)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2gd.wxID_DATASELCOPY)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
+        G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)
+        G2frame.Bind(wx.EVT_MENU, OnDataCopy, id=G2G.wxID_DATACOPY)
+        G2frame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2G.wxID_DATACOPYFLAGS)
+        G2frame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2G.wxID_DATASELCOPY)
+        G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
+        G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
+        G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)
         # Atoms
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.AtomsMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSetAll, id=G2gd.wxID_ATOMSSETALL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSSETSEL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2gd.wxID_ADDHATOM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
-#        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRotate, id=G2gd.wxID_ATOMSROTATE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.AtomsMenu)
+        G2frame.Bind(wx.EVT_MENU, OnSetAll, id=G2G.wxID_ATOMSSETALL)
+        G2frame.Bind(wx.EVT_MENU, AtomRefine, id=G2G.wxID_ATOMSSETSEL)
+        G2frame.Bind(wx.EVT_MENU, AtomModify, id=G2G.wxID_ATOMSMODIFY)
+        G2frame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2G.wxID_ATOMSEDITINSERT)
+        G2frame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2G.wxID_ADDHATOM)
+        G2frame.Bind(wx.EVT_MENU, AtomDelete, id=G2G.wxID_ATOMSEDITDELETE)
+        G2frame.Bind(wx.EVT_MENU, AtomTransform, id=G2G.wxID_ATOMSTRANSFORM)
+#        G2frame.Bind(wx.EVT_MENU, AtomRotate, id=G2G.wxID_ATOMSROTATE)
         
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2gd.wxID_UPDATEHATOM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, MakeMolecule, id=G2gd.wxID_MAKEMOLECULE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDensity, id=G2gd.wxID_ATOMSDENSITY)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnValidProtein, id=G2gd.wxID_VALIDPROTEIN)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
+        G2frame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2G.wxID_ATOMSEDITADD)
+        G2frame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2G.wxID_ATOMSVIEWADD)
+        G2frame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2G.wxID_ATOMVIEWINSERT)
+        G2frame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2G.wxID_UPDATEHATOM)
+        G2frame.Bind(wx.EVT_MENU, OnAtomMove, id=G2G.wxID_ATOMMOVE)
+        G2frame.Bind(wx.EVT_MENU, MakeMolecule, id=G2G.wxID_MAKEMOLECULE)
+        G2frame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2G.wxID_RELOADDRAWATOMS)
+        G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
+        G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)
+        G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
+        G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
+        G2frame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:
-            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
+            G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
         else:
-            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
-        for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
+            G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
+        for id in G2frame.dataWindow.ReImportMenuId:     #loop over submenu items
+            G2frame.Bind(wx.EVT_MENU, OnReImport, id=id)
         # Wave Data
         if data['General']['Modulated']:
-            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.WavesData)
+            G2frame.Bind(wx.EVT_MENU, OnWaveVary, id=G2G.wxID_WAVEVARY)
         # Stacking faults 
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2gd.wxID_COPYPHASE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitLayers, id=G2gd.wxID_LAYERSFIT)                        
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.LayerData)
+        G2frame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2G.wxID_COPYPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2G.wxID_LOADDIFFAX)
+        G2frame.Bind(wx.EVT_MENU, OnSimulate, id=G2G.wxID_LAYERSIMULATE)
+        G2frame.Bind(wx.EVT_MENU, OnFitLayers, id=G2G.wxID_LAYERSFIT)                        
+        G2frame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2G.wxID_SEQUENCESIMULATE)
         # Draw Options
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataDrawOptions)
         # Draw Atoms
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DrawAtomsMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2gd.wxID_DRWAEDITRADII)   
-        G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AddSphere, id=G2gd.wxID_DRAWADDSPHERE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
-        G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2gd.wxID_DRAWDISTVP)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRBOND)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRANGLE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRPLANE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DrawAtomsMenu)
+        G2frame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2G.wxID_DRAWATOMSTYLE)
+        G2frame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2G.wxID_DRAWATOMLABEL)
+        G2frame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2G.wxID_DRAWATOMCOLOR)
+        G2frame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2G.wxID_DRAWATOMRESETCOLOR)
+        G2frame.Bind(wx.EVT_MENU, OnEditAtomRadii, id=G2G.wxID_DRWAEDITRADII)   
+        G2frame.Bind(wx.EVT_MENU, SetViewPoint, id=G2G.wxID_DRAWVIEWPOINT)
+        G2frame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2G.wxID_DRAWADDEQUIV)
+        G2frame.Bind(wx.EVT_MENU, AddSphere, id=G2G.wxID_DRAWADDSPHERE)
+        G2frame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2G.wxID_DRAWTRANSFORM)
+        G2frame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2G.wxID_DRAWFILLCOORD)            
+        G2frame.Bind(wx.EVT_MENU, FillUnitCell, id=G2G.wxID_DRAWFILLCELL)
+        G2frame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2G.wxID_DRAWDELETE)
+        G2frame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2G.wxID_DRAWDISTVP)
+        G2frame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2G.wxID_DRAWDISAGLTOR)
+        G2frame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2G.wxID_DRAWPLANE)
+        G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRBOND)
+        G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRANGLE)
+        G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRPLANE)
+        G2frame.Bind(wx.EVT_MENU, OnRestraint, id=G2G.wxID_DRAWRESTRCHIRAL)
+        G2frame.Bind(wx.EVT_MENU, OnDefineRB, id=G2G.wxID_DRAWDEFINERB)
         # RB Models
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.RigidBodiesMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBTherm, id=G2gd.wxID_GLOBALTHERM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.RigidBodiesMenu)
+        G2frame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2G.wxID_AUTOFINDRESRB)
+        G2frame.Bind(wx.EVT_MENU, OnRBAssign, id=G2G.wxID_ASSIGNATMS2RB)
+        G2frame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2G.wxID_COPYRBPARMS)
+        G2frame.Bind(wx.EVT_MENU, OnGlobalResRBTherm, id=G2G.wxID_GLOBALTHERM)
+        G2frame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2G.wxID_GLOBALRESREFINE)
+        G2frame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2G.wxID_RBREMOVEALL)
         # Map peaks
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.MapPeaksMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnShowBonds, id=G2gd.wxID_SHOWBONDS)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2gd.wxID_FINDEQVPEAKS)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MapPeaksMenu)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2G.wxID_PEAKSMOVE)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2G.wxID_PEAKSVIEWPT)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2G.wxID_PEAKSDISTVP)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2G.wxID_PEAKSDA)
+        G2frame.Bind(wx.EVT_MENU, OnShowBonds, id=G2G.wxID_SHOWBONDS)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2G.wxID_FINDEQVPEAKS)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2G.wxID_PEAKSUNIQUE)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
         # MC/SA
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.MCSAMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
+        G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
+        G2frame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2G.wxID_ADDMCSARB)
+        G2frame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2G.wxID_CLEARMCSARB)
+        G2frame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2G.wxID_MOVEMCSA)
+        G2frame.Bind(wx.EVT_MENU, OnClearResults, id=G2G.wxID_MCSACLEARRESULTS)
         # Texture
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.TextureMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
-#        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.TextureMenu)
+        G2frame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2G.wxID_REFINETEXTURE)
+#        G2frame.Bind(wx.EVT_MENU, OnTextureClear, id=G2G.wxID_CLEARTEXTURE)
         # Pawley reflections
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.PawleyMenu)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySet, id=G2gd.wxID_PAWLEYSET)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySelAll, id=G2gd.wxID_PAWLEYSELALL)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleySelNone, id=G2gd.wxID_PAWLEYSELNONE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyToggle, id=G2gd.wxID_PAWLEYSELTOGGLE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.PawleyMenu)
+        G2frame.Bind(wx.EVT_MENU, OnPawleySet, id=G2G.wxID_PAWLEYSET)
+        G2frame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2G.wxID_PAWLEYLOAD)
+        G2frame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2G.wxID_PAWLEYESTIMATE)
+        G2frame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2G.wxID_PAWLEYUPDATE)
+        G2frame.Bind(wx.EVT_MENU, OnPawleySelAll, id=G2G.wxID_PAWLEYSELALL)
+        G2frame.Bind(wx.EVT_MENU, OnPawleySelNone, id=G2G.wxID_PAWLEYSELNONE)
+        G2frame.Bind(wx.EVT_MENU, OnPawleyToggle, id=G2G.wxID_PAWLEYSELTOGGLE)
         
     # UpdatePhaseData execution starts here
 #patch
@@ -8244,71 +8810,75 @@ entered the right symbol for your structure.
 
     global rbAtmDict   
     rbAtmDict = {}
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    PhaseName = G2frame.PatternTree.GetItemText(Item)
+    PhaseName = G2frame.GPXtree.GetItemText(Item)
     G2gd.SetDataMenuBar(G2frame)
-    G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
-    G2frame.dataFrame.CreateStatusBar()
-    if GSASIIpath.GetConfigValue('debug'):
-        G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
-            style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
-    else:
-        G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-    G2frame.dataDisplay.gridList = [] # list of all grids in notebook
+    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Phase Data for '+PhaseName)
+    G2frame.SetTitle('Phase Data for '+PhaseName)
+    # Bob: why do this differently in debug mode? Is this code to test if tabs can be moved around? #TODO - yup, flaky tho.
+#    if GSASIIpath.GetConfigValue('debug'):
+#        G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize(),
+#            style=wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_TAB_MOVE)
+#    else:
+#        G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
+    G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(G2frame.phaseDisplay,1,wx.ALL|wx.EXPAND,1)
+    G2frame.phaseDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
-    G2frame.dataDisplay.gridList = []
-    General = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(General,'General')
+    General = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(General,'General')
     Pages.append('General')
-    DData = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(DData,'Data')
+    DData = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(DData,'Data')
     Pages.append('Data')
-    Atoms = G2G.GSGrid(G2frame.dataDisplay)
-    G2frame.dataDisplay.gridList.append(Atoms)
-    G2frame.dataDisplay.AddPage(Atoms,'Atoms')
+    Atoms = G2G.GSGrid(G2frame.phaseDisplay)
+#    Atoms.SetScrollRate(0,0)
+    G2frame.phaseDisplay.gridList.append(Atoms)
+    G2frame.phaseDisplay.AddPage(Atoms,'Atoms')
     Pages.append('Atoms')
     if data['General']['Modulated']:
-        G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(G2frame.waveData,'Wave Data')
+        G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.waveData,'Wave Data')
         Pages.append('Wave Data') 
     if data['General']['Type'] == 'faulted':
-        G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(G2frame.layerData,'Layers')
+        G2frame.layerData = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.layerData,'Layers')
         Pages.append('Layers')               
-    drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
+    drawOptions = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')
-    drawAtoms = G2G.GSGrid(G2frame.dataDisplay)
-    G2frame.dataDisplay.gridList.append(drawAtoms)
-    G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
+    drawAtoms = G2G.GSGrid(G2frame.phaseDisplay)
+#    drawAtoms.SetScrollRate(0,0)
+    G2frame.phaseDisplay.gridList.append(drawAtoms)
+    G2frame.phaseDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
-        RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
+        RigidBodies = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(RigidBodies,'RB Models')
         Pages.append('RB Models')
-    MapPeaks = G2G.GSGrid(G2frame.dataDisplay)
-    G2frame.dataDisplay.gridList.append(MapPeaks)    
-    G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
+    MapPeaks = G2G.GSGrid(G2frame.phaseDisplay)
+#    MapPeaks.SetScrollRate(0,0)
+    G2frame.phaseDisplay.gridList.append(MapPeaks)    
+    G2frame.phaseDisplay.AddPage(MapPeaks,'Map peaks')
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
-        G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(G2frame.MCSA,'MC/SA')
+        G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
-    Texture = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(Texture,'Texture')
+    Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
+    G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')
-    G2frame.PawleyRefl = G2G.GSGrid(G2frame.dataDisplay)
-    G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
-    G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
+    G2frame.PawleyRefl = G2G.GSGrid(G2frame.phaseDisplay)
+#    G2frame.PawleyRefl.SetScrollRate(0,0)
+    G2frame.phaseDisplay.gridList.append(G2frame.PawleyRefl)
+    G2frame.phaseDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     Pages.append('Pawley reflections')
-    G2frame.dataFrame.AtomCompute.Enable(G2gd.wxID_ISODISP,'ISODISTORT' in data)
-    G2frame.dataFrame.AtomCompute.Enable(G2gd.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
-    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
+    G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
+    G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if oldPage is None or oldPage == 0:
         ChangePage(0)
-        wx.CallAfter(G2frame.dataDisplay.SendSizeEvent)
+        #wx.CallAfter(G2frame.phaseDisplay.SendSizeEvent)
     elif oldPage:
         SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
-        G2frame.dataDisplay.SetSelection(oldPage)
+        G2frame.phaseDisplay.SetSelection(oldPage)

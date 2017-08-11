@@ -255,7 +255,44 @@ Histograms      \            A dict of dicts. The key for the outer dict is
                              the histograms tied to this phase. The inner
                              dict contains the combined phase/histogram
                              parameters for items such as scale factors,
-                             size and strain parameters. (dict)
+                             size and strain parameters. The following are the
+                             keys to the inner dict. (dict)
+\           Babinet          For protein crystallography. Dictionary with two
+                             entries, 'BabA', 'BabU'
+\           Extinction       Extinction parameter (list of float, bool)
+\           HStrain          Hydrostatic strain. List of two lists. The first is
+                             a list of the HStrain parameters (1, 2, 3, 4, or 6
+                             depending on unit cell), the second is a list of boolean
+                             refinement parameters (same length)
+\           Histogram        The name of the associated histogram (str)
+\           LeBail           Flag for LeBail extraction (bool)
+\           Mustrain         List of microstrain parameters, in order:
+
+                               0. Type, one of u'generalized', u'isotropic',
+                                  u'uniaxial'
+                               1. Isotropic/uniaxial parameters - list of 3 floats
+                               2. Refinement flags - list of 3 bools
+                               3. Microstrain axis - list of 3 ints, [h, k, l]
+                               4. Generalized mustrain parameters - list of 2-6
+                                  floats, depending on space group
+                               5. Generalized refinement flags - list of bools,
+                                  corresponding to the parameters of (4)
+\           Pref.Ori.        Preferred Orientation. List of eight parameters.
+                             Items marked SH are only used for Spherical Harmonics.
+
+                               0. Type, 'MD' for March-Dollase or 'SH' for
+                                  Spherical Harmonics
+                               1. Value, float
+                               2. Refinement flag, bool
+                               3. Preferred direction, list of ints, [h, k, l]
+                               4. SH - number of terms, int
+                               5. SH - dict
+                               6. SH - list
+                               7. SH - float
+\           Scale            Phase fraction, list of [float, bool].
+\           Show             bool
+\           Use              bool
+\           newLeBail        Whether to perform a new LeBail extraction
 MCSA            \            Monte-Carlo simulated annealing parameters (dict)
 \           
 ==========  ===============  ====================================================
@@ -468,7 +505,7 @@ Every powder diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "PWDR ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
 and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
@@ -631,7 +668,7 @@ Every single crystal diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "HKLF ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
 and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
@@ -718,7 +755,7 @@ Image Data Structure
 Every 2-dimensional image is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "IMG ". The
 image data are directly associated with that tree item and there 
-are a series of children to that item. The routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+are a series of children to that item. The routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
 and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
@@ -844,7 +881,7 @@ Parameter Dictionary
 The parameter dictionary contains all of the variable parameters for the refinement.
 The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>). 
 It is prepared in two ways. When loaded from the tree
-(in :meth:`GSASII.GSASII.MakeLSParmDict` and
+(in :meth:`GSASIIdataGUI.GSASII.MakeLSParmDict` and
 :meth:`GSASIIIO.ExportBaseclass.loadParmDict`), 
 the values are lists with two elements: ``[value, refine flag]``
 
@@ -1092,7 +1129,7 @@ def IndexAllIds(Histograms,Phases):
 
     This is called in three places (only): :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
     (which loads the histograms and phases from a GPX file),
-    :meth:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+    :meth:`~GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
     (which loads the histograms and phases from the data tree.) and
     :meth:`GSASIIconstrGUI.UpdateConstraints`
     (which displays & edits the constraints in a GUI)
@@ -1405,7 +1442,7 @@ def CompileVarDesc():
         'A([xyz])$' : '\\1 fractional atomic coordinate',
         'AUiso':'Atomic isotropic displacement parameter',
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
-        'Afrac': 'Atomic occupancy parameter',
+        'Afrac': 'Atomic site fraction parameter',
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Hist & Phase (HAP) vars (p:h:<var>)
@@ -1494,6 +1531,7 @@ def CompileVarDesc():
         'pos$': 'peak position',
         'int$': 'peak intensity',
         'WgtFrac':'phase weight fraction',
+        'C\([0-9]*,[0-9]*\)' : 'spherical harmonics preferred orientation coef.',
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value
@@ -1886,7 +1924,7 @@ class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
     Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
-    in :meth:`GSASII.GSASII.OnImportPhase`. 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase`. 
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
 
@@ -1904,8 +1942,8 @@ class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables
     of structure factors.
 
-    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportSfact`
-    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
+    Structure factors are read with a call to :meth:`GSASIIdataGUI.GSASII.OnImportSfact`
+    which in turn calls :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`, which calls
     methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
     :meth:`Reader`.
 
@@ -1964,7 +2002,7 @@ class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.
 
     Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
-    in :meth:`GSASII.GSASII.OnImportPowder`. 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder`. 
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
     '''
@@ -2105,8 +2143,8 @@ class ImportImage(ImportBaseclass):
     Images are read in only these places:
     
       * Initial reading is typically done from a menu item
-        with a call to :meth:`GSASII.GSASII.OnImportImage`
-        which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`. That calls
+        with a call to :meth:`GSASIIdataGUI.GSASII.OnImportImage`
+        which in turn calls :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`. That calls
         methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
         :meth:`Reader`. This returns a list of reader objects for each read image. 
 
@@ -2621,6 +2659,19 @@ class G2Exception(Exception):
     def __str__(self):
         return repr(self.msg)
 
+def HowDidIgetHere(wherecalledonly=False):
+    '''Show a traceback with calls that brought us to the current location.
+    Used for debugging.
+    '''
+    import traceback
+    if wherecalledonly:
+        i = traceback.format_list(traceback.extract_stack()[:-1])[-2]
+        print(i.strip().rstrip())
+    else:
+        print 70*'*'    
+        for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip().rstrip())
+        print 70*'*'    
+                
 def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
@@ -2639,7 +2690,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
         print('Skipping, entry already exists: '+PDFname)
         return None
     #PDFname = MakeUniqueLabel(PDFname,PDFnames)
-    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=PDFname)
+    Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=PDFname)
     Data = {
         'Sample':{'Name':PWDRtree,'Mult':1.0},
         'Sample Bkg.':{'Name':'','Mult':-1.0,'Refine':False},
@@ -2649,8 +2700,8 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
         'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':Qlimits,
         'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,
         'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
-    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='PDF Peaks'),
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Controls'),Data)
+    G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
     return Id        
 

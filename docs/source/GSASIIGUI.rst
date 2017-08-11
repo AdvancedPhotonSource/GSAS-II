@@ -1,6 +1,9 @@
 *GSAS-II GUI Submodules*
 ========================
 
+.. automodule:: GSASIIdataGUI
+    :members: 
+
 .. automodule:: GSASIIphsGUI
     :members: 
 

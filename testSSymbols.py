@@ -2,8 +2,8 @@
 import sys
 import wx
 import GSASIIspc as G2spc
-import GSASIIgrid as G2gd
-import GSASIIctrls as G2G
+import GSASIIdataGUI as G2gd
+import GSASIIctrlGUI as G2G
 import numpy as np
 import copy
 

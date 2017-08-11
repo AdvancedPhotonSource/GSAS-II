@@ -349,11 +349,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         override any other tests in order to accept the step.  This can be
         used, for example, to forcefully escape from a local minimum that
         ``basinhopping`` is trapped in.
-    callback : callable, ``callback(x, f, accept)``, optional
+    callback : callable, ``callback(x, f, fmin, accept)``, optional
         A callback function which will be called for all minimum found.  ``x``
         and ``f`` are the coordinates and function value of the trial minima,
-        and ``accept`` is whether or not that minima was accepted.  This can be
-        used, for example, to save the lowest N minima found.  Also,
+        and ``accept`` is whether or not that minima was accepted.  'fmin' is the lowest f found.
+        This can be used, for example, to save the lowest N minima found.  Also,
         ``callback`` can be used to specify a user defined stop criterion by
         optionally returning True to stop the ``basinhopping`` routine.
     interval : integer, optional
@@ -363,7 +363,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-
 
     Returns
     -------
@@ -613,7 +612,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
         if isinstance(callback, collections.Callable):
             # should we pass a copy of x?
-            val = callback(bh.xtrial, bh.energy_trial, bh.accept)
+            val = callback(bh.xtrial, bh.energy_trial, bh.storage.get_lowest()[1], bh.accept)
             if val is not None:
                 if val:
                     message = ["callback function requested stop early by"

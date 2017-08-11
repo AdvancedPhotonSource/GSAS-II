@@ -28,6 +28,10 @@ g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS'
     
 path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd
 
+# convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
+fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
+intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
+
 def GetConfigValue(key,default=None):
     '''Return the configuration file value for key or a default value if not present
     
@@ -36,7 +40,10 @@ def GetConfigValue(key,default=None):
       the config file is not found. Defaults to None
     :returns: the value found or the default.
     '''
-    return configDict.get(key,default)
+    try:
+        return configDict.get(key,default)
+    except NameError: # this happens when building docs
+        return None
 
 def SetConfigValue(parmdict):
     '''Set configuration variables from a dictionary where elements are lists
@@ -431,16 +438,8 @@ def svnInstallDir(URL,loadpath):
         return False
     print ("Files installed at: "+loadpath)
     return True
-            
-def DownloadG2Binaries(g2home,verbose=True):
-    '''Download GSAS-II binaries from appropriate section of the
-    GSAS-II svn repository based on the platform, numpy and Python
-    version
-    '''
-    # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
-    fmtver = lambda v: str(v//1000)+'.'+str(v%1000)
-    intver = lambda vs: sum([int(i) for i in vs.split('.')[0:2]]*np.array((1000,1)))
-    
+
+def GetBinaryPrefix():
     if sys.platform == "win32":
         prefix = 'win'
     elif sys.platform == "darwin":
@@ -455,14 +454,20 @@ def DownloadG2Binaries(g2home,verbose=True):
     else:
         bits = '32'
 
-    # format current python & numpy versions
+    # format current python version
     pyver = 'p{}.{}'.format(*sys.version_info[0:2])
-    npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
-    inpver = intver(np.__version__)
 
     items = [prefix,bits,pyver]
-    bindir = '_'.join(items)
+    return '_'.join(items)
 
+def DownloadG2Binaries(g2home,verbose=True):
+    '''Download GSAS-II binaries from appropriate section of the
+    GSAS-II svn repository based on the platform, numpy and Python
+    version
+    '''    
+    bindir = GetBinaryPrefix()
+    #npver = 'n{}.{}'.format(*np.__version__.split('.')[0:2])
+    inpver = intver(np.__version__)
     svn = whichsvn()
     if not svn:
         print('**** unable to load files: svn not found ****')
@@ -543,7 +548,7 @@ def svnSwitch2branch(branch=None,loc=None,svnHome=None):
     svnSwitchDir('','',svnURL,loadpath=loc)
     
 
-def IPyBreak_base():
+def IPyBreak_base(userMsg=None):
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py
     '''
@@ -562,6 +567,7 @@ def IPyBreak_base():
 
     frame = inspect.currentframe().f_back
     msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
+    if userMsg: msg += userMsg
     ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
@@ -658,7 +664,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("*"*75)
 
 BinaryPathLoaded = False
-def SetBinaryPath():
+def SetBinaryPath(printInfo=True):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
     
@@ -668,36 +674,64 @@ def SetBinaryPath():
     # do this only once no matter how many times it is called
     global BinaryPathLoaded
     if BinaryPathLoaded: return
-    BinaryPathLoaded = True
+    try:
+        inpver = intver(np.__version__)
+    except AttributeError: # happens on building docs
+        return
     binpath = None
+    binprfx = GetBinaryPrefix()
     for loc in os.path.abspath(sys.path[0]),os.path.abspath(os.path.split(__file__)[0]):
-        # Look at bin directory (created by a local compile) before standard dist
-        # that at the top of the path
-        for d in 'bin','bindist':
-            if not d: continue
-            fpth = os.path.join(loc,d)
+        # Look at bin directory (created by a local compile) before looking for standard dist files
+        searchpathlist = [os.path.join(loc,'bin')]
+        # also look for matching binary dist in loc/AllBinaries
+        versions = {}
+        for d in glob.glob(os.path.join(loc,'AllBinaries',binprfx+'*')):
+            v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
+            versions[v] = d
+        searchpathlist = [os.path.join(loc,'bin')]
+        vmin = None
+        vmax = None
+        for v in sorted(versions.keys()):
+            if v <= inpver:
+                vmin = v
+            elif v > inpver:
+                vmax = v
+                break
+        if vmin in versions:
+            searchpathlist.append(versions[vmin])
+        if vmax in versions:
+            searchpathlist.append(versions[vmax])
+        searchpathlist.append(os.path.join(loc,'bindist'))
+        for fpth in searchpathlist:
             if TestSPG(fpth):
                 binpath = fpth
                 break        
         if binpath: break
     if binpath:                                            # were GSAS-II binaries found
         sys.path.insert(0,binpath)
-        print('GSAS-II binary directory: {}'.format(binpath))
+        if printInfo:
+            print('GSAS-II binary directory: {}'.format(binpath))
+        BinaryPathLoaded = True
     else:                                                  # try loading them 
-        print('Attempting to download GSAS-II binary files...')
+        if printInfo:
+            print('Attempting to download GSAS-II binary files...')
         try:
             binpath = DownloadG2Binaries(g2home)
         except AttributeError:   # this happens when building in Read The Docs
-            print('Problem with download')
+            if printInfo:
+                print('Problem with download')
         if binpath and TestSPG(binpath):
-            print('GSAS-II binary directory: {}'.format(binpath))
+            if printInfo:
+                print('GSAS-II binary directory: {}'.format(binpath))
             sys.path.insert(0,binpath)
+            BinaryPathLoaded = True
         # this must be imported before anything that imports any .pyd/.so file for GSASII
         else:
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             # patch: use old location based on the host OS and the python version,  
             # path is relative to location of the script that is called as well as this file
+            BinaryPathLoaded = True
             bindir = None
             if sys.platform == "win32":
                 if platform.architecture()[0] == '64bit':
@@ -723,20 +757,22 @@ def SetBinaryPath():
                 binpath = fpth
                 if TestSPG(fpth):
                     sys.path.insert(0,binpath)
-                    print('\n'+75*'*')
-                    print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')
-                    print('  and will break in future GSAS-II versions. Please contact toby@anl.gov')
-                    print('  so we can learn what is not working on your installation.')
-                    print('GSAS-II binary directory: {}'.format(binpath))
-                    print(75*'*')
+                    if printInfo:
+                        print('\n'+75*'*')
+                        print('  Warning. Using an old-style GSAS-II binary library. This is unexpected')
+                        print('  and will break in future GSAS-II versions. Please contact toby@anl.gov')
+                        print('  so we can learn what is not working on your installation.')
+                        print('GSAS-II binary directory: {}'.format(binpath))
+                        print(75*'*')
                     break
             else:
             # end patch
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                print(75*'*')
-                print('Use of GSAS-II binary directory {} failed!'.format(binpath))
-                print(75*'*')
+                if printInfo:
+                    print(75*'*')
+                    print('Use of GSAS-II binary directory {} failed!'.format(binpath))
+                    print(75*'*')
                 raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****"
 
     # add the data import and export directory to the search path
@@ -752,11 +788,13 @@ def SetBinaryPath():
         configDict = config.__dict__
         import inspect
         vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
-        print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
+        if printInfo:
+            print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
     except ImportError:
         configDict = {'Clip_on':True}
     except Exception as err:
-        print("Error importing config.py file: "+str(err))
+        if printInfo:
+            print("Error importing config.py file: "+str(err))
         configDict = {'Clip_on':True}
 
 if __name__ == '__main__':

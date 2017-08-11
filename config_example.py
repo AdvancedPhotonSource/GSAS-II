@@ -132,12 +132,29 @@ DefaultAutoScale must be one of the AutoScale_ParmNames
 Used in AutoIntegration
 '''
 
+Main_Pos = '(100,100)'
+'''Main window location - will be updated & saved when user moves
+it. If position is outside screen then it will be repositioned to default
+'''
+Plot_Pos = '(200,200)'
+'''Plot window location - will be updated & saved when user moves it
+these widows. If position is outside screen then it will be repositioned to default
+'''
+
 Tick_length = 8.0
 '''Specifies the length of phase tick marks in pixels. Default is 8.'''
 
 Tick_width = 1.0
 '''Specifies the width of phase tick marks in pixels.
 Fractional values do seem to produce an effect. Default is 1.'''
+
 Contour_color = 'Paired'
 ''' Specifies the color map to be used for contour plots (images, pole figures, etc.)
+'''
+
+Multiprocessing_cores = -1
+''' Specifies the number of cores to use when performing multicore computing. A number less
+than zero (default) causes the recommended number of cores [using multiprocessing.cpu_count()]
+to be used. Setting this number to 0 or 1 avoids use of the multiprocessing module: all
+computations are performed in-line. 
 '''

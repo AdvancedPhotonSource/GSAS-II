@@ -54,32 +54,24 @@ def pinv(a, rcond=1e-15 ):
     singular-value decomposition (SVD) and including all
     *large* singular values.
 
-    Parameters
-    ----------
-    a : (M, M) array_like - here assumed to be LS Hessian
+    :param array a: (M, M) array_like - here assumed to be LS Hessian
       Matrix to be pseudo-inverted.
-    rcond : float
-      Cutoff for small singular values.
+    :param float rcond: Cutoff for small singular values.
       Singular values smaller (in modulus) than
       `rcond` * largest_singular_value (again, in modulus)
       are set to zero.
 
-    Returns
-    -------
-    B : (M, M) ndarray
+    :returns: B : (M, M) ndarray
       The pseudo-inverse of `a`
 
-    Raises
-    ------
-    LinAlgError
+    Raises: LinAlgError
       If the SVD computation does not converge.
 
-    Notes
-    -----
-    The pseudo-inverse of a matrix A, denoted :math:`A^+`, is
-    defined as: "the matrix that 'solves' [the least-squares problem]
-    :math:`Ax = b`," i.e., if :math:`\\bar{x}` is said solution, then
-    :math:`A^+` is that matrix such that :math:`\\bar{x} = A^+b`.
+    Notes: 
+      The pseudo-inverse of a matrix A, denoted :math:`A^+`, is
+      defined as: "the matrix that 'solves' [the least-squares problem]
+      :math:`Ax = b`," i.e., if :math:`\\bar{x}` is said solution, then
+      :math:`A^+` is that matrix such that :math:`\\bar{x} = A^+b`.
 
     It can be shown that if :math:`Q_1 \\Sigma Q_2^T = A` is the singular
     value decomposition of A, then
@@ -88,10 +80,9 @@ def pinv(a, rcond=1e-15 ):
     of A's so-called singular values, (followed, typically, by
     zeros), and then :math:`\\Sigma^+` is simply the diagonal matrix
     consisting of the reciprocals of A's singular values
-    (again, followed by zeros). [1]_
+    (again, followed by zeros). [1]
 
-    References
-    ----------
+    References: 
     .. [1] G. Strang, *Linear Algebra and Its Applications*, 2nd Ed., Orlando,
            FL, Academic Press, Inc., 1980, pp. 139-142.
 
@@ -180,6 +171,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Amat /= Anorm
         if Print:
             print 'initial chi^2 %.5g'%(chisq0)
+        chitol = ftol
         while True:
             Lam = np.eye(Amat.shape[0])*lam
             Amatlam = Amat*(One+Lam)
@@ -194,7 +186,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             M2 = func(x0+Xvec,*args)
             nfev += 1
             chisq1 = np.sum(M2**2)
-            if chisq1 > chisq0*(1.+ftol):
+            if chisq1 > chisq0*(1.+chitol):
                 lam *= 10.
                 if Print:
                     print 'new chi^2 %.5g, %d SVD zeros ; matrix modification needed; lambda now %.1e'%(chisq1,Nzeros,lam)
@@ -205,6 +197,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             if lam > 10.e3:
                 print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
                 break
+            chitol *= 2
         lamMax = max(lamMax,lam)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
@@ -2581,7 +2574,6 @@ def validProtein(Phase):
     resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
         'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
 # data taken from erratv2.ccp
-    lmt = np.array([17.190823041860433,11.526684477428809])
     b1 = np.array([	[0,0,0,0,0,0],
           [0,	5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],	
           [0,	3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],	
@@ -2621,6 +2613,8 @@ def validProtein(Phase):
     resIntAct = []
     chainIntAct = []
     res = []
+    resNames = []
+    resname = []
     newChain = True
     intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
     for ia,atom in enumerate(cartAtoms):
@@ -2629,12 +2623,15 @@ def validProtein(Phase):
             if len(resIntAct):
                 resIntAct.append(sumintact(intact))
                 chainIntAct.append(resIntAct)
+                resNames += resname
                 res = []
+                resname = []
                 resIntAct = []
                 intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
                 newChain = True
         if atom[0] not in res:  #new residue, get residue no.
             res.append(atom[0])
+            resname.append('%s-%s%s'%(atom[2],atom[0],atom[1]))
             if not newChain:
                 resIntAct.append(sumintact(intact))
             intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
@@ -2655,19 +2652,22 @@ def validProtein(Phase):
             if dsqt > 3.25:
                 mult = 2.*(3.75-dsqt)
             intype = atom[4].strip()+cartAtoms[tgt][4].strip()
-            intact[intype] += mult            
+            intact[intype] += mult
+    resNames += resname
     resIntAct.append(sumintact(intact))
     chainIntAct.append(resIntAct)
     chainProb = []
     for ich,chn in enumerate(chains):
         IntAct = chainIntAct[ich]
         nRes = len(IntAct)
-        Probs = []
+        Probs = [0.,0.,0.,0.]
         for i in range(4,nRes-4):
             mtrx = np.zeros(6)
             summ = 0.
             for j in range(i-4,i+4):
                 summ += np.sum(np.array(IntAct[j].values()))
+                print 'CC',IntAct[j]['CC'],'CN',IntAct[j]['CN'],'CO',IntAct[j]['CO']
+                print 'NN',IntAct[j]['NN'],'NO',IntAct[j]['NO'],'OO',IntAct[j]['OO']
                 mtrx[1] += IntAct[j]['CC']
                 mtrx[2] += IntAct[j]['CN']
                 mtrx[3] += IntAct[j]['CO']
@@ -2675,13 +2675,12 @@ def validProtein(Phase):
                 mtrx[5] += IntAct[j]['NO']
             mtrx /= summ
             mtrx -= avg
-            prob = np.inner(np.inner(mtrx,b1),mtrx)
+            prob = np.inner(np.inner(mtrx,b1),mtrx)/36.
+            print i, mtrx
             Probs.append(prob)
-        chainProb.append(Probs)
-            
-        
-    print 'Do VALIDPROTEIN analysis - TBD'
-            
+        Probs += 4*[0.,]
+        chainProb += Probs
+    return resNames,chainProb
     
 ################################################################################
 ##### Texture fitting stuff
@@ -3882,8 +3881,8 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
 
 
 import numpy
-from numpy import asarray, tan, exp, squeeze, sign, \
-     all, log, pi, shape, array, where
+from numpy import asarray, exp, squeeze, sign, \
+     all, shape, array, where
 from numpy import random
 
 #__all__ = ['anneal']
@@ -3893,9 +3892,8 @@ _double_max = numpy.finfo(float).max
 class base_schedule(object):
     def __init__(self):
         self.dwell = 20
-        self.learn_rate = 0.5
-        self.lower = -10
-        self.upper = 10
+        self.lower = 0.
+        self.upper = 1.
         self.Ninit = 50
         self.accepted = 0
         self.tests = 0
@@ -3918,14 +3916,10 @@ class base_schedule(object):
         """ Find a matching starting temperature and starting parameters vector
         i.e. find x0 such that func(x0) = T0.
 
-        Parameters
-        ----------
-        best_state : _state
+        :param best_state: _state
             A _state object to store the function value and x0 found.
 
-        returns
-        -------
-        x0 : array
+        :returns: x0 : array
             The starting parameters vector.
         """
 
@@ -3959,7 +3953,7 @@ class base_schedule(object):
         if dE < 0:
             self.accepted += 1
             return 1
-        p = exp(-dE*1.0/self.boltzmann/T)
+        p = exp(-dE*1.0/T)
         if (p > random.uniform(0.0, 1.0)):
             self.accepted += 1
             return 1
@@ -3971,16 +3965,9 @@ class base_schedule(object):
     def update_temp(self, x0):
         pass
 
-
-#  A schedule due to Lester Ingber modified to use bounds - OK
 class fast_sa(base_schedule):
     def init(self, **options):
         self.__dict__.update(options)
-        if self.m is None:
-            self.m = 1.0
-        if self.n is None:
-            self.n = 1.0
-        self.c = self.m * exp(-self.n * self.quench)
 
     def update_guess(self, x0):
         x0 = asarray(x0)
@@ -3989,45 +3976,10 @@ class fast_sa(base_schedule):
         xc = (sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0)/2.0
         xnew = xc*(self.upper - self.lower)+self.lower
         return xnew
-#        y = sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)
-#        xc = y*(self.upper - self.lower)
-#        xnew = x0 + xc
-#        return xnew
 
     def update_temp(self):
         self.T = self.T0*exp(-self.c * self.k**(self.quench))
         self.k += 1
-        return
-
-class cauchy_sa(base_schedule):     #modified to use bounds - not good
-    def update_guess(self, x0):
-        x0 = asarray(x0)
-        numbers = squeeze(random.uniform(-pi/4, pi/4, size=self.dims))
-        xc = (1.+(self.learn_rate * self.T * tan(numbers))%1.)
-        xnew = xc*(self.upper - self.lower)+self.lower
-        return xnew
-#        numbers = squeeze(random.uniform(-pi/2, pi/2, size=self.dims))
-#        xc = self.learn_rate * self.T * tan(numbers)
-#        xnew = x0 + xc
-#        return xnew
-
-    def update_temp(self):
-        self.T = self.T0/(1+self.k)
-        self.k += 1
-        return
-
-class boltzmann_sa(base_schedule):
-#    def update_guess(self, x0):
-#        std = minimum(sqrt(self.T)*ones(self.dims), (self.upper-self.lower)/3.0/self.learn_rate)
-#        x0 = asarray(x0)
-#        xc = squeeze(random.normal(0, 1.0, size=self.dims))
-#
-#        xnew = x0 + xc*std*self.learn_rate
-#        return xnew
-
-    def update_temp(self):
-        self.k += 1
-        self.T = self.T0 / log(self.k+1.0)
         return
 
 class log_sa(base_schedule):        #OK
@@ -4036,7 +3988,11 @@ class log_sa(base_schedule):        #OK
         self.__dict__.update(options)
         
     def update_guess(self,x0):     #same as default #TODO - is this a reasonable update procedure?
-        return np.squeeze(np.random.uniform(0.,1.,size=self.dims))*(self.upper-self.lower)+self.lower
+        u = squeeze(random.uniform(0.0, 1.0, size=self.dims))
+        T = self.T
+        xc = (sign(u-0.5)*T*((1+1.0/T)**abs(2*u-1)-1.0)+1.0)/2.0
+        xnew = xc*(self.upper - self.lower)+self.lower
+        return xnew
         
     def update_temp(self):
         self.k += 1
@@ -4047,16 +4003,29 @@ class _state(object):
         self.x = None
         self.cost = None
 
-# TODO:
-#     allow for general annealing temperature profile
-#     in that case use update given by alpha and omega and
-#     variation of all previous updates and temperature?
-
-# Simulated annealing   #TODO - should we switch to scipy basinhopping?
-
-def anneal(func, x0, args=(), schedule='fast', full_output=0,
+def makeTsched(data):
+    if data['Algorithm'] == 'fast':
+        sched = fast_sa()
+        sched.quench = data['fast parms'][0]
+        sched.c = data['fast parms'][1]
+    elif data['Algorithm'] == 'log':
+        sched = log_sa()
+        sched.slope = data['log slope']
+    sched.T0 = data['Annealing'][0]
+    if not sched.T0:
+        sched.T0 = 50.
+    Tf = data['Annealing'][1]
+    if not Tf:
+        Tf = 0.001
+    Tsched = [sched.T0,]
+    while Tsched[-1] > Tf:
+        sched.update_temp()
+        Tsched.append(sched.T)
+    return Tsched[1:]
+    
+def anneal(func, x0, args=(), schedule='fast', 
            T0=None, Tf=1e-12, maxeval=None, maxaccept=None, maxiter=400,
-           boltzmann=1.0, learn_rate=0.5, feps=1e-6, quench=1.0, m=1.0, n=1.0,
+           feps=1e-6, quench=1.0, c=1.0,
            lower=-100, upper=100, dwell=50, slope=0.9,ranStart=False,
            ranRange=0.10,autoRan=False,dlg=None):
     """Minimize a function using simulated annealing.
@@ -4072,8 +4041,6 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         Extra parameters to `func`.
     :param base_schedule schedule: 
         Annealing schedule to use (a class).
-    :param bool full_output:
-        Whether to return optional outputs.
     :param float T0: 
         Initial Temperature (estimated as 1.2 times the largest
         cost-function deviation over random points in the range).
@@ -4085,15 +4052,10 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         Maximum changes to accept.
     :param int maxiter: 
         Maximum cooling iterations.
-    :param float learn_rate:
-        Scale constant for adjusting guesses.
-    :param float boltzmann: 
-        Boltzmann constant in acceptance test
-        (increase for less stringent test at each temperature).
     :param float feps:
         Stopping relative error tolerance for the function value in
         last four coolings.
-    :param float quench,m,n:
+    :param float quench,c:
         Parameters to alter fast_sa schedule.
     :param float/ndarray lower,upper: 
         Lower and upper bounds on `x`.
@@ -4155,25 +4117,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
         xc = y * (upper - lower)
         x_new = x_old + xc
 
-        c = n * exp(-n * quench)
         T_new = T0 * exp(-c * k**quench)
 
-
-    In the 'cauchy' schedule the updates are ::
-
-        u ~ Uniform(-pi/2, pi/2, size=d)
-        xc = learn_rate * T * tan(u)
-        x_new = x_old + xc
-
-        T_new = T0 / (1+k)
-
-    In the 'boltzmann' schedule the updates are ::
-
-        std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )
-        y ~ Normal(0, std, size=d)
-        x_new = x_old + learn_rate * y
-
-        T_new = T0 / log(1+k)
 
     """
     x0 = asarray(x0)
@@ -4182,9 +4127,8 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
 
     schedule = eval(schedule+'_sa()')
     #   initialize the schedule
-    schedule.init(dims=shape(x0),func=func,args=args,boltzmann=boltzmann,T0=T0,
-                  learn_rate=learn_rate, lower=lower, upper=upper,
-                  m=m, n=n, quench=quench, dwell=dwell, slope=slope)
+    schedule.init(dims=shape(x0),func=func,args=args,T0=T0,lower=lower, upper=upper,
+        c=c, quench=quench, dwell=dwell, slope=slope)
 
     current_state, last_state, best_state = _state(), _state(), _state()
     if ranStart:
@@ -4257,60 +4201,67 @@ def anneal(func, x0, args=(), schedule='fast', full_output=0,
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-#                print "Warning: Cooled to %f at %s but this is not" \
-#                      % (squeeze(last_state.cost), str(squeeze(last_state.x))) \
-#                      + " the smallest point found."
+                print " Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1)
             break
         if (Tf is not None) and (schedule.T < Tf):
+#            print ' Minimum T reached in %d steps'%(iters-1)
             retval = 1
             break
         if (maxeval is not None) and (schedule.feval > maxeval):
             retval = 2
             break
         if (iters > maxiter):
-            print "Warning: Maximum number of iterations exceeded."
+            print  " Warning: Maximum number of iterations exceeded."
             retval = 3
             break
         if (maxaccept is not None) and (schedule.accepted > maxaccept):
             retval = 4
             break
 
-    if full_output:
-        return best_state.x, best_state.cost, schedule.T, \
-               schedule.feval, iters, schedule.accepted, retval
-    else:
-        return best_state.x, retval
+    return best_state.x, best_state.cost, schedule.T, \
+           schedule.feval, iters, schedule.accepted, retval
 
-def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,nprocess=-1):
+def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,out_t,out_n,nprocess=-1):
     outlist = []
+    timelist = []
+    nsflist = []
     random.seed(int(time.time())%100000+nprocess)   #make sure each process has a different random start
     for n in range(iCyc):
-        result = mcsaSearch(data,RBdata,reflType,reflData,covData,None)
+        result = mcsaSearch(data,RBdata,reflType,reflData,covData,None,False)         #mcsa result,time,rcov
         outlist.append(result[0])
-        print ' MC/SA residual: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1])
+        timelist.append(result[1])
+        nsflist.append(result[2])
+        print ' MC/SA final fit: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1])
     out_q.put(outlist)
+    out_t.put(timelist)
+    out_n.put(nsflist)
 
-def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData):
+def MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs):
     import multiprocessing as mp
     
-    nprocs = mp.cpu_count()
     out_q = mp.Queue()
+    out_t = mp.Queue()
+    out_n = mp.Queue()
     procs = []
+    totsftime = 0.
+    totnsf = 0
     iCyc = np.zeros(nprocs)
     for i in range(nCyc):
         iCyc[i%nprocs] += 1
     for i in range(nprocs):
-        p = mp.Process(target=worker,args=(int(iCyc[i]),data,RBdata,reflType,reflData,covData,out_q,i))
+        p = mp.Process(target=worker,args=(int(iCyc[i]),data,RBdata,reflType,reflData,covData,out_q,out_t,out_n,i))
         procs.append(p)
         p.start()
     resultlist = []
     for i in range(nprocs):
         resultlist += out_q.get()
+        totsftime += np.sum(out_t.get())
+        totnsf += np.sum(out_n.get())
     for p in procs:
         p.join()
-    return resultlist
+    return resultlist,totsftime,totnsf
 
-def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
+def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     '''default doc string
     
     :param type name: description
@@ -4318,8 +4269,26 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     :returns: type name: description
     '''
    
-    global tsum
+    class RandomDisplacementBounds(object):
+        """random displacement with bounds"""
+        def __init__(self, xmin, xmax, stepsize=0.5):
+            self.xmin = xmin
+            self.xmax = xmax
+            self.stepsize = stepsize
+    
+        def __call__(self, x):
+            """take a random step but ensure the new position is within the bounds"""
+            while True:
+                # this could be done in a much more clever way, but it will work for example purposes
+                steps = self.xmax-self.xmin
+                xnew = x + np.random.uniform(-self.stepsize*steps, self.stepsize*steps, np.shape(x))
+                if np.all(xnew < self.xmax) and np.all(xnew > self.xmin):
+                    break
+            return xnew
+    
+    global tsum,nsum
     tsum = 0.
+    nsum = 0
     
     def getMDparms(item,pfx,parmDict,varyList):
         parmDict[pfx+'MDaxis'] = item['axis']
@@ -4512,9 +4481,10 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             ParmDict: [dict] problem parameters
         puts result F^2 in each ref[5] in refList
         returns:
-            delt-F*rcov*delt-F/sum(Fo^2)^2
-        '''       
-        global tsum
+            delt-F*rcov*delt-F/sum(Fo^2)
+        '''   
+            
+        global tsum,nsum
         t0 = time.time()
         parmDict.update(dict(zip(varyList,values)))             #update parameter tables
         Xdata = GetAtomX(RBdata,parmDict)                       #get new atom coords from RB
@@ -4533,9 +4503,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         refList[6] = refList[4]-refList[5]
         M = np.inner(refList[6],np.inner(rcov,refList[6]))
         tsum += (time.time()-t0)
-        return M/np.sum(refList[4]**2)
+        nsum += 1
+        return np.sqrt(M/np.sum(refList[4]**2))
+    
+    def MCSAcallback(x, f, fmin,accept):
+        return not pgbar.Update(min(100.,fmin*100),
+            newmsg='%s%8.4f%s'%('MC/SA Residual:',fmin*100,'%'))[0]
 
-    sq8ln2 = np.sqrt(8*np.log(2))
     sq2pi = np.sqrt(2*np.pi)
     sq4pi = np.sqrt(4*np.pi)
     generalData = data['General']
@@ -4597,7 +4571,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
             h,k,l,m,d,pos,sig,gam,f = ref[:9]
             if d >= MCSA['dmin']:
                 sig = np.sqrt(sig)      #var -> sig in centideg
-                sig = G2pwd.getgamFW(gam,sig)/sq8ln2        #FWHM -> sig in centideg
+                sig = .01*G2pwd.getgamFW(gam,sig)        #sig,gam -> FWHM in deg
                 SQ = 0.25/d**2
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,pos,sig])
@@ -4662,26 +4636,37 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         rcov = np.identity(len(refs))
     allFF = np.array(allFF).T
     refs = np.array(refs).T
-    print ' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef)
-    print ' Number of parameters varied: %d'%(len(varyList))
+    if start:
+        print ' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef)
+        print ' Number of parameters varied: %d'%(len(varyList))
+        start = False
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    # consider replacing anneal with scipy.optimize.basinhopping
-    results = anneal(mcsaCalc,x0,args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
-        schedule=MCSA['Algorithm'], full_output=True,
-        T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],
-        boltzmann=MCSA['boltzmann'], learn_rate=0.5,  
-        quench=MCSA['fast parms'][0], m=MCSA['fast parms'][1], n=MCSA['fast parms'][2],
-        lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
-        ranRange=MCSA.get('ranRange',0.10),autoRan=MCSA.get('autoRan',False),dlg=pgbar)
-    mcsaCalc(results[0],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
-#    for ref in refs.T:
-#        print ' %4d %4d %4d %10.3f %10.3f %10.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[4],ref[5],ref[6])
-#    print np.sqrt((np.sum(refs[6]**2)/np.sum(refs[4]**2)))
-    Result = [False,False,results[1],results[2],]+list(results[0])
+    bounds = np.array(zip(lower,upper))
+    if MCSA['Algorithm'] == 'Basin Hopping':
+        import basinhopping as bs
+        take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
+        results = bs.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
+                interval=MCSA['Annealing'][2]/10,niter=MCSA['Annealing'][2],minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
+                'args':(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)},callback=MCSAcallback)
+    else:
+        T0 = MCSA['Annealing'][0]
+        if not T0:
+            T0 = None
+        results = anneal(mcsaCalc,x0,args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
+            schedule=MCSA['Algorithm'], dwell=MCSA['Annealing'][2],maxiter=10000,
+            T0=T0, Tf=MCSA['Annealing'][1],
+            quench=MCSA['fast parms'][0], c=MCSA['fast parms'][1], 
+            lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
+            ranRange=MCSA.get('ranRange',10.)/100.,autoRan=MCSA.get('autoRan',False),dlg=pgbar)
+        print ' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1])
+        results = so.minimize(mcsaCalc,results[0],method='L-BFGS-B',args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
+            bounds=bounds,)
+    mcsaCalc(results['x'],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
+    Result = [False,False,results['fun'],0.0,]+list(results['x'])
     Result.append(varyList)
-    return Result,tsum
+    return Result,tsum,nsum,rcov
 
         
 ################################################################################

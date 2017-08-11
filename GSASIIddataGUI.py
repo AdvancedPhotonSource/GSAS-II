@@ -22,10 +22,9 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIplot as G2plt
-import GSASIIgrid as G2gd
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
-import GSASIIctrls as G2G
+import GSASIIctrlGUI as G2G
 import numpy as np
 
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -769,11 +768,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return twinsizer
         
     def OnSelect(event):
-        G2frame.hist = G2frame.dataFrame.HistsInPhase[select.GetSelection()]
+        G2frame.hist = G2frame.dataWindow.HistsInPhase[DData.select.GetSelection()]
         oldFocus = wx.Window.FindFocus()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
         wx.CallLater(100,RepaintHistogramInfo)
-        wx.CallAfter(oldFocus.SetFocus)
+        if oldFocus: wx.CallAfter(oldFocus.SetFocus)
        
     def RepaintHistogramInfo(Scroll=0):
         G2frame.bottomSizer.DeleteWindows()
@@ -781,10 +780,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2frame.bottomSizer = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
         mainSizer.Layout()
-        G2frame.dataFrame.Refresh()
+        G2frame.dataWindow.Refresh()
         DData.SetVirtualSize(mainSizer.GetMinSize())
         DData.Scroll(0,Scroll)
-        G2frame.dataFrame.SendSizeEvent()
+        G2frame.dataWindow.SendSizeEvent()
         
     def ShowHistogramInfo():
         '''This creates a sizer with all the information pulled out from the Phase/data dict
@@ -854,7 +853,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             lebail.SetValue(UseList[G2frame.hist]['LeBail'])
             useBox.Add(lebail,0,WACV)
             if UseList[G2frame.hist]['LeBail']:
-                G2frame.dataFrame.SetStatusText('To reset LeBail, cycle LeBail check box.')
+                G2frame.SetStatusText('To reset LeBail, cycle LeBail check box.',1)
         bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
@@ -960,42 +959,42 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     ######################################################################
     # Beginning of UpdateDData execution here
     ######################################################################
-    G2frame.dataFrame.SetStatusText('')
+    G2frame.SetStatusText('',1)
     keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
     UseList = data['Histograms']
     if UseList:
-        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
+        G2frame.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,True)
         for item in G2frame.Refine: item.Enable(True)
     else:
-        G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,False)
+        G2frame.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,False)
         for item in G2frame.Refine: item.Enable(False)
     # make a list of histograms (any type) used in this phase, ordered as in tree
-    G2frame.dataFrame.HistsInPhase = [name for name in keyList if name in UseList]
+    G2frame.dataWindow.HistsInPhase = [name for name in keyList if name in UseList]
     generalData = data['General']
     PhaseName = generalData['Name']       
     SGData = generalData['SGData']
-    if len(G2frame.dataFrame.HistsInPhase) == 0: # no associated histograms, nothing to display here
+    if len(G2frame.dataWindow.HistsInPhase) == 0: # no associated histograms, nothing to display here
         G2frame.hist = ''
-    elif hist and hist in G2frame.dataFrame.HistsInPhase: # something was input as a selection as an argument
+    elif hist and hist in G2frame.dataWindow.HistsInPhase: # something was input as a selection as an argument
         G2frame.hist = hist
-    elif (not G2frame.hist) or (G2frame.hist not in G2frame.dataFrame.HistsInPhase): # no or bad selection but have data, take the first
-        G2frame.hist = G2frame.dataFrame.HistsInPhase[0]
+    elif (not G2frame.hist) or (G2frame.hist not in G2frame.dataWindow.HistsInPhase): # no or bad selection but have data, take the first
+        G2frame.hist = G2frame.dataWindow.HistsInPhase[0]
     Indx = {}
     
     if DData.GetSizer():
+        if hasattr(DData,'select'): 
+            DData.select.Unbind(wx.EVT_LISTBOX)  # remove binding to avoid event on Linux
         DData.GetSizer().Clear(True)
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
-        select = wx.ListBox(DData,choices=G2frame.dataFrame.HistsInPhase,
+        DData.select = wx.ListBox(DData,choices=G2frame.dataWindow.HistsInPhase,
                             style=wx.LB_SINGLE,size=(-1,120))
-        select.SetSelection(G2frame.dataFrame.HistsInPhase.index(G2frame.hist))
-        select.SetFirstItem(G2frame.dataFrame.HistsInPhase.index(G2frame.hist))
-        select.Bind(wx.EVT_LISTBOX,OnSelect)
-        topSizer.Add(select,0,WACV|wx.LEFT,5)
+        DData.select.SetSelection(G2frame.dataWindow.HistsInPhase.index(G2frame.hist))
+        DData.select.SetFirstItem(G2frame.dataWindow.HistsInPhase.index(G2frame.hist))
+        DData.select.Bind(wx.EVT_LISTBOX,OnSelect)
+        topSizer.Add(DData.select,0,WACV|wx.LEFT,5)
         if any(['PWDR' in item for item in keyList]):
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       
@@ -1004,11 +1003,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     elif not keyList:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This project has no data; use Import to read it)'),
                       0,WACV|wx.TOP,10)
-    elif not UseListG2frame.dataFrame.HistsInPhase:
+    elif not UseList in G2frame.dataWindow.HistsInPhase:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This phase has no associated data; use appropriate Edit/Add... menu item)'),
                       0,WACV|wx.TOP,10)
     else:
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),
                       0,WACV|wx.TOP,10)
         
-    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer,Scroll=Scroll)
+    G2phsGUI.SetPhaseWindow(DData,mainSizer,Scroll=Scroll)

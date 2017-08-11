@@ -1,10 +1,7 @@
-*GSAS-II GUI Routines*
-======================
+*GSAS-II GUI Support Routines*
+==============================
 
-.. automodule:: GSASIIctrls
-    :members: 
-
-.. automodule:: GSASIIgrid
+.. automodule:: GSASIIctrlGUI
     :members: 
 
 .. automodule:: GSASIIIO
@@ -15,3 +12,4 @@
 
 .. automodule:: GSASIIpy3
     :members: 
+

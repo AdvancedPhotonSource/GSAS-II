@@ -1,4 +1,0 @@
-built 8/23/16 on Jenkins with https://jenkins.aps.anl.gov/view/GSAS-II/job/GSAS-II-Linux64-numpy-1.6/
-numpy                     1.6.2                    py27_5  
-scipy                     0.13.1               np16py27_1  
-scons                     2.3.0                    py27_0  

@@ -680,7 +680,9 @@ def getgamFW(g,s):
     return gamFW(2.35482*s,g)   #sqrt(8ln2)*sig = FWHM(G)
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
-    'needs a doc string'
+    '''Compute the Finger-Cox-Jepcoat modified Voigt function for a
+    CW powder peak by direct convolution. This version is not used.
+    '''
     DX = xdata[1]-xdata[0]
     widths,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
     x = np.linspace(pos-fmin,pos+fmin,256)
@@ -952,15 +954,18 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
 
 #use old fortran routine
 def getFCJVoigt3(pos,sig,gam,shl,xdata):
-    'needs a doc string'
+    '''Compute the Finger-Cox-Jepcoat modified Pseudo-Voigt function for a
+    CW powder peak in external Fortran routine
+    '''
     Df = pyd.pypsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df = pyd.pypsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     Df /= np.sum(Df)
     return Df
 
 def getdFCJVoigt3(pos,sig,gam,shl,xdata):
-    'needs a doc string'
-    
+    '''Compute analytic derivatives the Finger-Cox-Jepcoat modified Pseudo-Voigt
+    function for a CW powder peak
+    '''
     Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcj(len(xdata),xdata-pos,pos,sig,gam,shl)
 #    Df,dFdp,dFds,dFdg,dFdsh = pyd.pydpsvfcjo(len(xdata),xdata-pos,pos,sig,gam,shl)
     return Df,dFdp,dFds,dFdg,dFdsh
@@ -1118,7 +1123,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                         alp = np.interp(dsp,Pdabc[0],Pdabc[1])
                     else:
                         alp = G2mth.getTOFalpha(parmDict,dsp)
-                alp = max(0.0001,alp)
+                alp = max(0.1,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]

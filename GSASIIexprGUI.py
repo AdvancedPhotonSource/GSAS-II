@@ -29,8 +29,8 @@ import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIgrid as G2gd
-import GSASIIctrls as G2G
+import GSASIIdataGUI as G2gd
+import GSASIIctrlGUI as G2G
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
@@ -701,7 +701,7 @@ class BondDialog(wx.Dialog):
         self.header = header
         self.pName = Phases.keys()[0]
         DisAglCtls = {}
-        dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
         if dlg.ShowModal() == wx.ID_OK:
             Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
@@ -716,7 +716,7 @@ class BondDialog(wx.Dialog):
             self.pName = Obj.GetValue()
             self.Oatom = ''
             DisAglCtls = {}
-            dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+            dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
             if dlg.ShowModal() == wx.ID_OK:
                 self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
             dlg.Destroy()
@@ -822,7 +822,7 @@ class AngleDialog(wx.Dialog):
         self.header = header
         self.pName = Phases.keys()[0]
         DisAglCtls = {}
-        dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
         if dlg.ShowModal() == wx.ID_OK:
             Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
@@ -837,7 +837,7 @@ class AngleDialog(wx.Dialog):
             self.pName = Obj.GetValue()
             self.Oatom = ''
             DisAglCtls = {}
-            dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+            dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
             if dlg.ShowModal() == wx.ID_OK:
                 self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
             dlg.Destroy()

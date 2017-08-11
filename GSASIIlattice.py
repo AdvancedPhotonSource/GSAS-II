@@ -417,8 +417,8 @@ def Gmat2AB(G):
 
     :returns: tuple of two 3x3 numpy arrays (A,B)
 
-       * A for crystal to Cartesian transformations A*x = np.inner(A,x) = X 
-       * B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) = x
+       * A for crystal to Cartesian transformations (A*x = np.inner(A,x) = X)
+       * B (= inverse of A) for Cartesian to crystal transformation (B*X = np.inner(B,X) = x)
 
     """
     cellstar = Gmat2cell(G)
@@ -1207,16 +1207,12 @@ def LaueUnique(Laue,HKLF):
     
     :param str Laue: Laue symbol, as below
     
-      centrosymmetric Laue groups
-      
-         ::
+      centrosymmetric Laue groups::
        
             ['-1','2/m','112/m','2/m11','mmm','-42m','-4m2','4/mmm','-3',
             '-31m','-3m1','6/m','6/mmm','m3','m3m']
      
-      noncentrosymmetric Laue groups
-
-         ::
+      noncentrosymmetric Laue groups::
      
            ['1','2','211','112','m','m11','11m','222','mm2','m2m','2mm',
            '4','-4','422','4mm','3','312','321','31m','3m1','6','-6',

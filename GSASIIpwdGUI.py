@@ -19,7 +19,6 @@ import sys
 import os.path
 import wx
 import wx.grid as wg
-import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import numpy.ma as ma
 import math
@@ -32,13 +31,14 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
-import GSASIIgrid as G2gd
-import GSASIIctrls as G2G
+import GSASIIdataGUI as G2gd
+import GSASIIctrlGUI as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
@@ -66,7 +66,7 @@ class RDFDialog(wx.Dialog):
     def __init__(self,parent):
         wx.Dialog.__init__(self,parent,-1,'Background radial distribution function',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.panel = None
         self.result = {'UseObsCalc':True,'maxR':20.0,'Smooth':'linear'}
         
         self.Draw()
@@ -79,7 +79,7 @@ class RDFDialog(wx.Dialog):
         def OnSmCombo(event):
             self.result['Smooth'] = smCombo.GetValue()
                     
-        self.panel.Destroy()
+        if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
@@ -136,15 +136,15 @@ class RDFDialog(wx.Dialog):
     
 def IsHistogramInAnyPhase(G2frame,histoName):
     'Needs a doc string'
-    phases = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+    phases = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
     if phases:
-        item, cookie = G2frame.PatternTree.GetFirstChild(phases)
+        item, cookie = G2frame.GPXtree.GetFirstChild(phases)
         while item:
-            data = G2frame.PatternTree.GetItemPyData(item)
+            data = G2frame.GPXtree.GetItemPyData(item)
             histoList = data['Histograms'].keys()
             if histoName in histoList:
-                return G2frame.PatternTree.GetItemText(item)
-            item, cookie = G2frame.PatternTree.GetNextChild(phases, cookie)
+                return G2frame.GPXtree.GetItemText(item)
+            item, cookie = G2frame.GPXtree.GetNextChild(phases, cookie)
         return False
     else:
         return False
@@ -221,12 +221,12 @@ def SetDefaultSubstances():
 
 def GetFileList(G2frame,fileType):
     fileList = []
-    id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+    id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
     while id:
-        name = G2frame.PatternTree.GetItemText(id)
+        name = G2frame.GPXtree.GetItemText(id)
         if fileType in name.split()[0]:
             fileList.append(name)
-        id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
     return fileList
         
 def GetHistsLikeSelected(G2frame):
@@ -238,8 +238,8 @@ def GetHistsLikeSelected(G2frame):
     :param wx.Frame G2frame: pointer to main GSAS-II data tree
     '''
     histList = []
-    inst,inst2 = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(
+    inst,inst2 = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Instrument Parameters')
         )
     hType = inst['Type'][0]
@@ -249,27 +249,27 @@ def GetHistsLikeSelected(G2frame):
         hLam = 1
     else:
         hLam = 0
-    sample = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(
+    sample = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Sample Parameters')
         )
     hGeom = sample.get('Type')
-    hstName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    hstName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     hPrefix = hstName.split()[0]+' '
     # cycle through tree looking for items that match the above
-    item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
+    item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)        
     while item:
-        name = G2frame.PatternTree.GetItemText(item)
+        name = G2frame.GPXtree.GetItemText(item)
         if name.startswith(hPrefix) and name != hstName:
             cGeom,cType,cLam, = '?','?',-1
-            subitem, subcookie = G2frame.PatternTree.GetFirstChild(item)
+            subitem, subcookie = G2frame.GPXtree.GetFirstChild(item)
             while subitem:
-                subname = G2frame.PatternTree.GetItemText(subitem)
+                subname = G2frame.GPXtree.GetItemText(subitem)
                 if subname == 'Sample Parameters':
-                    sample = G2frame.PatternTree.GetItemPyData(subitem)
+                    sample = G2frame.GPXtree.GetItemPyData(subitem)
                     cGeom = sample.get('Type')
                 elif subname == 'Instrument Parameters':
-                    inst,inst2 = G2frame.PatternTree.GetItemPyData(subitem)
+                    inst,inst2 = G2frame.GPXtree.GetItemPyData(subitem)
                     cType = inst['Type'][0]
                     if 'Lam1' in inst:
                         cLam = 2
@@ -277,10 +277,10 @@ def GetHistsLikeSelected(G2frame):
                         cLam = 1
                     else:
                         cLam = 0
-                subitem, subcookie = G2frame.PatternTree.GetNextChild(item, subcookie)
+                subitem, subcookie = G2frame.GPXtree.GetNextChild(item, subcookie)
             if cLam == hLam and cType == hType and cGeom == hGeom:
                 if name not in histList: histList.append(name)
-        item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
     return histList
 
 def SetCopyNames(histName,dataType,addNames=[]):
@@ -305,21 +305,19 @@ def SetCopyNames(histName,dataType,addNames=[]):
 def CopyPlotCtrls(G2frame):
     '''Global copy: Copy plot controls from current histogram to others.
     '''
-    hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     histList = GetHistsLikeSelected(G2frame)
     if not histList:
-        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame.dataFrame)
+        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame)
         return
-    sourceData = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+    sourceData = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
     
     if 'Offset' not in sourceData[0]:    #patch for old data
         sourceData[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,
             'refDelt':0.01,'qPlot':False,'dPlot':False,'sqrtPlot':False})
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternId,sourceData)
+        G2frame.GPXtree.SetItemPyData(G2frame.PatternId,sourceData)
         
-    dlg = G2G.G2MultiChoiceDialog(
-        G2frame.dataFrame, 
-        'Copy plot controls from\n'+str(hst[5:])+' to...',
+    dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy plot controls from\n'+str(hst[5:])+' to...',
         'Copy plot controls', histList)
     results = []
     try:
@@ -334,24 +332,22 @@ def CopyPlotCtrls(G2frame):
     keys = ['Offset','delOffset','refOffset','refDelt','qPlot','dPlot','sqrtPlot']
     source = dict(zip(keys,[sourceData[0][item] for item in keys]))
     for hist in copyList:
-        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
-        data = G2frame.PatternTree.GetItemPyData(Id)
+        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+        data = G2frame.GPXtree.GetItemPyData(Id)
         data[0].update(source)
-        G2frame.PatternTree.SetItemPyData(Id,data)
+        G2frame.GPXtree.SetItemPyData(Id,data)
     print 'Copy of plot controls successful'
 
 def CopySelectedHistItems(G2frame):
     '''Global copy: Copy items from current histogram to others.
     '''
-    hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     histList = GetHistsLikeSelected(G2frame)
     if not histList:
-        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame.dataFrame)
+        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame)
         return
     choices = ['Limits','Background','Instrument Parameters','Sample Parameters']
-    dlg = G2G.G2MultiChoiceDialog(
-        G2frame.dataFrame, 
-        'Copy which histogram sections from\n'+str(hst[5:]),
+    dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy which histogram sections from\n'+str(hst[5:]),
         'Select copy sections', choices, filterBox=False)
     dlg.SetSelections(range(len(choices)))
     choiceList = []
@@ -359,9 +355,7 @@ def CopySelectedHistItems(G2frame):
         choiceList = [choices[i] for i in dlg.GetSelections()]
     if not choiceList: return
     
-    dlg = G2G.G2MultiChoiceDialog(
-        G2frame.dataFrame, 
-        'Copy parameters from\n'+str(hst[5:])+' to...',
+    dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy parameters from\n'+str(hst[5:])+' to...',
         'Copy parameters', histList)
     results = []
     try:
@@ -374,46 +368,46 @@ def CopySelectedHistItems(G2frame):
         copyList.append(histList[i])
 
     if 'Limits' in choiceList: # Limits
-        data = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits'))
+        data = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits'))
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.SetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Limits'),
                 copy.deepcopy(data))
     if 'Background' in choiceList:  # Background
-        data = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Background'))
+        data = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Background'))
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.SetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),
                 copy.deepcopy(data))
     if 'Instrument Parameters' in choiceList:  # Instrument Parameters
         # for now all items in Inst. parms are copied
-        data,data1 = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(
+        data,data1 = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId,'Instrument Parameters'))
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters')
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters')
                 )[0].update(copy.deepcopy(data))
-            G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters')
+            G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters')
                 )[1].update(copy.deepcopy(data1))
     if 'Sample Parameters' in choiceList:  # Sample Parameters
-        data = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(
+        data = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(
                 G2frame,G2frame.PatternId,'Sample Parameters'))
         # selects items to be copied
         histType,copyNames = SetCopyNames(hst,data['Type'],
             addNames = ['Omega','Chi','Phi','Gonio. radius','InstrName'])
         copyDict = {parm:data[parm] for parm in copyNames}
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters')
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters')
                 ).update(copy.deepcopy(copyDict))
                          
 ################################################################################
@@ -423,14 +417,11 @@ def CopySelectedHistItems(G2frame):
 def UpdatePeakGrid(G2frame, data):
     '''respond to selection of PWDR powder peaks data tree item.
     '''
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-        
     def OnAutoSearch(event):
         PatternId = G2frame.PatternId
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        profile = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        profile = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
         iFin = np.searchsorted(x0,limits[1])
@@ -463,15 +454,13 @@ def UpdatePeakGrid(G2frame, data):
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnCopyPeaks(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy peak list from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy peak list from\n'+str(hst[5:])+' to...',
             'Copy peaks', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -480,27 +469,27 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.SetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
     
     def OnUnDo(event):
         DoUnDo()
-        G2frame.dataFrame.UnDo.Enable(False)
+        G2frame.dataWindow.UnDo.Enable(False)
         
     def DoUnDo():
         print 'Undo last refinement'
         file = open(G2frame.undofile,'rb')
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item),cPickle.load(file))
-            if G2frame.dataDisplay.GetName() == item:
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item),cPickle.load(file))
+            if G2frame.dataWindow.GetName() == item:
                 if item == 'Background':
-                    UpdateBackground(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+                    UpdateBackground(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
                 elif item == 'Instrument Parameters':
-                    UpdateInstrumentGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+                    UpdateInstrumentGrid(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
                 elif item == 'Peak List':
-                    UpdatePeakGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+                    UpdatePeakGrid(G2frame,G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, item)))
             print item,' recovered'
         file.close()
         
@@ -509,28 +498,29 @@ def UpdatePeakGrid(G2frame, data):
         file = open(G2frame.undofile,'wb')
         PatternId = G2frame.PatternId
         for item in ['Background','Instrument Parameters','Peak List']:
-            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
+            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
-        G2frame.dataFrame.UnDo.Enable(True)
+        G2frame.dataWindow.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
-        if G2frame.dataDisplay.IsCellEditControlEnabled(): # complete any grid edits in progress
-            G2frame.dataDisplay.HideCellEditControl()
-            G2frame.dataDisplay.DisableCellEditControl()
+        if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
+            reflGrid.HideCellEditControl()
+            reflGrid.DisableCellEditControl()
         if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can write in the same directory
             G2frame.OnFileSaveas(event)
         wx.CallAfter(OnPeakFit,'LSQ')
         
     def OnOneCycle(event):
-        if G2frame.dataDisplay.IsCellEditControlEnabled(): # complete any grid edits in progress
-            G2frame.dataDisplay.HideCellEditControl()
-            G2frame.dataDisplay.DisableCellEditControl()
+        if reflGrid.IsCellEditControlEnabled(): # complete any grid edits in progress
+            reflGrid.HideCellEditControl()
+            reflGrid.DisableCellEditControl()
         wx.CallAfter(OnPeakFit,'LSQ',oneCycle=True)
         
     def OnSeqPeakFit(event):
-        histList = G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential peak fits',
-             'Select dataset to include',histList)
+        histList = G2gd.GetGPXtreeDataNames(G2frame,['PWDR',])
+        od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Sequential peak fits',
+             'Select dataset to include',histList,extraOpts=od)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
@@ -538,25 +528,14 @@ def UpdatePeakGrid(G2frame, data):
         dlg.Destroy()
         if not names:
             return
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
+        Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
         if Id:
-            SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+            SeqResult = G2frame.GPXtree.GetItemPyData(Id)
         else:
             SeqResult = {}
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
+            Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
         SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
         SeqResult['histNames'] = names
-        Reverse = False
-        CopyForward = False
-        choice = ['Reverse sequence','Copy from prev.',]
-        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
-        if dlg.ShowModal() == wx.ID_OK:
-            for sel in dlg.GetSelections():
-                if sel:
-                    CopyForward = True
-                else:
-                    Reverse = True
-        dlg.Destroy()
         dlg = wx.ProgressDialog('Sequential peak fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         controls = {'deriv type':'analytic','min dM/M':0.001,}
@@ -566,7 +545,7 @@ def UpdatePeakGrid(G2frame, data):
         prevVaryList = []
         peaks = None
         varyList = None
-        if Reverse:
+        if od['value_2']:
             names.reverse()
         try:
             for i,name in enumerate(names):
@@ -575,15 +554,15 @@ def UpdatePeakGrid(G2frame, data):
                 if not GoOn:
                     dlg.Destroy()
                     break
-                PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
+                PatternId =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if i and od['value_1']:
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
                     prevVaryList = varyList[:]
-                peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
-                background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
-                limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-                inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-                data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+                peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
+                background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+                limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+                inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+                data = G2frame.GPXtree.GetItemPyData(PatternId)[1]
                 peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
                     background,limits,inst,inst2,data,prevVaryList,oneCycle,controls)
                 if len(result[0]) != len(fullvaryList):
@@ -591,7 +570,7 @@ def UpdatePeakGrid(G2frame, data):
                     print ' ***** Sequential peak fit stopped at '+name+' *****'
                     break
                 else:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
                     SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                         'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
                         'fullVary':fullvaryList,'badVary':badVary}
@@ -599,9 +578,9 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         SeqResult['histNames'] = histList
-        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        G2frame.GPXtree.SetItemPyData(Id,SeqResult)
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
-        G2frame.PatternTree.SelectItem(Id)
+        G2frame.GPXtree.SelectItem(Id)
         
     def OnClearPeaks(event):
         dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
@@ -615,19 +594,19 @@ def UpdatePeakGrid(G2frame, data):
         
     def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
-        controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         if not controls:
             controls = {'deriv type':'analytic','min dM/M':0.001,}     #fill in defaults if needed
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         PatternId = G2frame.PatternId
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks:
             G2frame.ErrorDialog('No peaks!','Nothing to fit!')
             return
-        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        data = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -641,21 +620,21 @@ def UpdatePeakGrid(G2frame, data):
             print 'finished'
             dlg.Destroy()
         newpeaks = copy.copy(peaks)
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallAfter(UpdatePeakGrid,G2frame,newpeaks)
         
     def OnResetSigGam(event):
         PatternId = G2frame.PatternId
-        Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
+        Inst,Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'))
         if not peaks['peaks']:
             G2frame.ErrorDialog('No peaks!','Nothing to do!')
             return
         newpeaks = {'peaks':[],'sigDict':{}}
         for peak in peaks['peaks']:
             newpeaks['peaks'].append(G2mth.setPeakparms(Inst,Inst2,peak[0],peak[2]))
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         UpdatePeakGrid(G2frame,newpeaks)
                 
     def RefreshPeakGrid(event):
@@ -671,22 +650,22 @@ def UpdatePeakGrid(G2frame, data):
         data['peaks'] = X        
         
     def setBackgroundColors():
-       for r in range(G2frame.dataDisplay.GetNumberRows()):
-           for c in range(G2frame.dataDisplay.GetNumberCols()):
-               if G2frame.dataDisplay.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
-                   if float(G2frame.dataDisplay.GetCellValue(r,c)) < 0.:
-                       G2frame.dataDisplay.SetCellBackgroundColour(r,c,wx.RED)
+       for r in range(reflGrid.GetNumberRows()):
+           for c in range(reflGrid.GetNumberCols()):
+               if reflGrid.GetColLabelValue(c) in ['position','intensity','alpha','beta','sigma','gamma']:
+                   if float(reflGrid.GetCellValue(r,c)) < 0.:
+                       reflGrid.SetCellBackgroundColour(r,c,wx.RED)
                    else:
-                       G2frame.dataDisplay.SetCellBackgroundColour(r,c,wx.WHITE)
+                       reflGrid.SetCellBackgroundColour(r,c,wx.WHITE)
                                                   
     def KeyEditPeakGrid(event):
         '''Respond to pressing a key to act on selection of a row, column or cell
         in the Peak List table
         '''
-        rowList = G2frame.dataDisplay.GetSelectedRows()
-        colList = G2frame.dataDisplay.GetSelectedCols()
-        selectList = G2frame.dataDisplay.GetSelectedCells()
-        data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
+        rowList = reflGrid.GetSelectedRows()
+        colList = reflGrid.GetSelectedCols()
+        selectList = reflGrid.GetSelectedCells()
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
         if event.GetKeyCode() == wx.WXK_RETURN:
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_CONTROL:
@@ -695,8 +674,8 @@ def UpdatePeakGrid(G2frame, data):
             event.Skip(True)
         elif rowList and (event.GetKeyCode() == wx.WXK_DELETE or event.GetKeyCode() == 8):
             # pressing the delete key or backspace deletes selected peak(s)
-            G2frame.dataDisplay.ClearSelection()
-            G2frame.dataDisplay.ClearGrid()
+            reflGrid.ClearSelection()
+            reflGrid.ClearGrid()
             rowList.sort()
             rowList.reverse()
             nDel = 0
@@ -706,13 +685,12 @@ def UpdatePeakGrid(G2frame, data):
             if nDel:
                 msg = wg.GridTableMessage(G2frame.PeakTable, 
                     wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
-                G2frame.dataDisplay.ProcessTableMessage(msg)
+                reflGrid.ProcessTableMessage(msg)
             data['peaks'] = G2frame.PeakTable.GetData()[:-nDel]
-            G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
-            wx.CallAfter(G2frame.dataDisplay.ForceRefresh)
+            G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
             setBackgroundColors()
         elif colList and (event.GetKeyCode() == 89 or event.GetKeyCode() == 78):
-            G2frame.dataDisplay.ClearSelection()
+            reflGrid.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
                 if G2frame.PeakTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
@@ -721,7 +699,7 @@ def UpdatePeakGrid(G2frame, data):
                     elif key == 78:  #'N'
                         for row in range(G2frame.PeakTable.GetNumberRows()): data['peaks'][row][col]=False
         elif selectList and (event.GetKeyCode() == 89 or event.GetKeyCode() == 78):
-            G2frame.dataDisplay.ClearSelection()
+            reflGrid.ClearSelection()
             key = event.GetKeyCode()
             for row,col in selectList:
                 if G2frame.PeakTable.GetTypeName(row,col) == wg.GRID_VALUE_BOOL:
@@ -733,16 +711,13 @@ def UpdatePeakGrid(G2frame, data):
             event.Skip()
             return
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
-        #wx.CallAfter(G2frame.dataDisplay.ForceRefresh) # did not always work
         wx.CallAfter(UpdatePeakGrid,G2frame,data)
             
     def SelectVars(rows):
         '''Set or clear peak refinement variables for peaks listed in rows
         '''
-        refOpts = {G2frame.dataDisplay.GetColLabelValue(i):i+1 for i in range(G2frame.dataDisplay.GetNumberCols()) if G2frame.dataDisplay.GetColLabelValue(i) != "refine"}
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Select columns to refine',
+        refOpts = {reflGrid.GetColLabelValue(i):i+1 for i in range(reflGrid.GetNumberCols()) if reflGrid.GetColLabelValue(i) != "refine"}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select columns to refine',
             'Refinement Selection', sorted(refOpts.keys()),
             filterBox=False,toggle=False)
         sels = []
@@ -761,8 +736,8 @@ def UpdatePeakGrid(G2frame, data):
     def OnRefineSelected(event):
         '''set refinement flags for the selected peaks
         '''
-        rows = list(set([row for row,col in G2frame.dataDisplay.GetSelectedCells()] +
-                        G2frame.dataDisplay.GetSelectedRows()))
+        rows = list(set([row for row,col in reflGrid.GetSelectedCells()] +
+                        reflGrid.GetSelectedRows()))
         if not rows:
             wx.MessageBox('No selected rows. You must select rows or cells before using this command',
                           caption='No selected peaks')
@@ -772,80 +747,76 @@ def UpdatePeakGrid(G2frame, data):
     def OnRefineAll(event):
         '''set refinement flags for all peaks
         '''
-        SelectVars(range(G2frame.dataDisplay.GetNumberRows()))
+        SelectVars(range(reflGrid.GetNumberRows()))
 
-    def onCellListSClick(event):
-        '''Called when a peak is selected so that it can be highlighted in the plot
-        '''
-        event.Skip()
-        c =  event.GetRow(),event.GetCol()
-        if c < 0: # replot except whan a column is selected
-            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
-        
+#    def onCellListSClick(event):
+#        '''Called when a peak is selected so that it can be highlighted in the plot
+#        '''
+#        event.Skip()
+#        c =  event.GetRow(),event.GetCol()
+#        if c < 0: # replot except whan a column is selected
+#            wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
+#        
     def onCellListDClick(event):
         '''Called after a double-click on a cell label'''
         r,c =  event.GetRow(),event.GetCol()
-        grid = G2frame.dataDisplay
         if r < 0 and c < 0:
-            for row in range(grid.GetNumberRows()):
-                grid.SelectRow(row,True)                    
-            for col in range(grid.GetNumberCols()):
-                grid.SelectCol(col,True)                    
+            for row in range(reflGrid.GetNumberRows()):
+                reflGrid.SelectRow(row,True)                    
+            for col in range(reflGrid.GetNumberCols()):
+                reflGrid.SelectCol(col,True)                    
         elif r > 0:     #row label: select it and replot!
-            grid.ClearSelection()
-            grid.SelectRow(r,True)
-            wx.CallAfter(G2frame.dataDisplay.ForceRefresh)
+            reflGrid.ClearSelection()
+            reflGrid.SelectRow(r,True)
+            wx.CallAfter(G2frame.reflGrid.ForceRefresh)
             wx.CallAfter(G2plt.PlotPatterns,G2frame,plotType='PWDR')
         elif c > 0:     #column label: just select it (& redisplay)
-            grid.ClearSelection()
-            grid.SelectCol(c,True)
-            if grid.GetColLabelValue(c) != 'refine': return
+            reflGrid.ClearSelection()
+            reflGrid.SelectCol(c,True)
+            if reflGrid.GetColLabelValue(c) != 'refine': return
             choice = ['Y - vary all','N - vary none',]
-            dlg = wx.SingleChoiceDialog(G2frame.dataFrame,
-                                        'Select refinement option for '+grid.GetColLabelValue(c-1),
-                                        'Refinement controls',choice)
+            dlg = wx.SingleChoiceDialog(G2frame,'Select refinement option for '+reflGrid.GetColLabelValue(c-1),
+                'Refinement controls',choice)
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
                 if sel == 0:
-                    for row in range(grid.GetNumberRows()): data['peaks'][row][c]=True
+                    for row in range(reflGrid.GetNumberRows()): data['peaks'][row][c]=True
                 else:
-                    for row in range(grid.GetNumberRows()): data['peaks'][row][c]=False
+                    for row in range(reflGrid.GetNumberRows()): data['peaks'][row][c]=False
             wx.CallAfter(UpdatePeakGrid,G2frame,data)
                  
     #======================================================================
     # beginning of UpdatePeakGrid init
     #======================================================================
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PeakMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-    Status.SetStatusText('Global refine: select refine column & press Y or N')
-    G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2gd.wxID_AUTOSEARCH)
-    G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2gd.wxID_PEAKSCOPY)
-    G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
-    G2frame.Bind(wx.EVT_MENU, OnRefineSelected, id=G2frame.dataFrame.peaksSel.GetId())
-    G2frame.Bind(wx.EVT_MENU, OnRefineAll, id=G2frame.dataFrame.peaksAll.GetId())
-    G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
-    G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
-    G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2gd.wxID_SEQPEAKFIT)
-    G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
-    G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
+    G2frame.GetStatusBar().SetStatusText('Global refine: select refine column & press Y or N',1)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
+    G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2G.wxID_PEAKSCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_UNDO)
+    G2frame.Bind(wx.EVT_MENU, OnRefineSelected, id=G2frame.dataWindow.peaksSel.GetId())
+    G2frame.Bind(wx.EVT_MENU, OnRefineAll, id=G2frame.dataWindow.peaksAll.GetId())
+    G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2G.wxID_LSQPEAKFIT)
+    G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2G.wxID_LSQONECYCLE)
+    G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2G.wxID_SEQPEAKFIT)
+    G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2G.wxID_CLEARPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2G.wxID_RESETSIGGAM)
     if data['peaks']:
-        G2frame.dataFrame.AutoSearch.Enable(False)
-        G2frame.dataFrame.PeakCopy.Enable(True)
-        G2frame.dataFrame.PeakFit.Enable(True)
-        G2frame.dataFrame.PFOneCycle.Enable(True)
-        G2frame.dataFrame.SeqPeakFit.Enable(True)
+        G2frame.dataWindow.AutoSearch.Enable(False)
+        G2frame.dataWindow.PeakCopy.Enable(True)
+        G2frame.dataWindow.PeakFit.Enable(True)
+        G2frame.dataWindow.PFOneCycle.Enable(True)
+        G2frame.dataWindow.SeqPeakFit.Enable(True)
     else:
-        G2frame.dataFrame.PeakFit.Enable(False)
-        G2frame.dataFrame.PeakCopy.Enable(False)
-        G2frame.dataFrame.PFOneCycle.Enable(False)
-        G2frame.dataFrame.AutoSearch.Enable(True)
-        G2frame.dataFrame.SeqPeakFit.Enable(False)
+        G2frame.dataWindow.PeakFit.Enable(False)
+        G2frame.dataWindow.PeakCopy.Enable(False)
+        G2frame.dataWindow.PFOneCycle.Enable(False)
+        G2frame.dataWindow.AutoSearch.Enable(True)
+        G2frame.dataWindow.SeqPeakFit.Enable(False)
     G2frame.PickTable = []
     rowLabels = []
     PatternId = G2frame.PatternId
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
     for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
     if 'C' in Inst['Type'][0]:
         colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine']
@@ -872,23 +843,27 @@ def UpdatePeakGrid(G2frame, data):
     X = []
     for key in T: X.append(D[key])
     data['peaks'] = X
-    G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
+    G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
     G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.dataFrame.SetLabel('Peak List')
-    G2frame.dataFrame.currentGrids = []
-    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
-    G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
+    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Peak List')
+    G2frame.SetTitle('Peak List')
+    G2frame.dataWindow.currentGrids = []
+    reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+    reflGrid.SetTable(G2frame.PeakTable, True)
     setBackgroundColors()                         
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
-    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onCellListSClick)
-#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onCellListSClick)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
-#    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
-    G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataFrame.setSizePosLeft([535,350])
-    #G2frame.dataFrame.SendSizeEvent()
+    reflGrid.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
+    reflGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+#    reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, onCellListSClick)
+#    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, onCellListSClick)
+    reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
+#    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
+    reflGrid.AutoSizeColumns(False)
+    reflGrid.SetScrollRate(1,1)
+    G2frame.reflGrid = reflGrid
+    mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
+    G2frame.dataWindow.SetDataSize()
 
 ################################################################################
 #####  Background
@@ -897,11 +872,6 @@ def UpdatePeakGrid(G2frame, data):
 def UpdateBackground(G2frame,data):
     '''respond to selection of PWDR background data tree item.
     '''
-    if len(data) < 2:       #add Debye diffuse & peaks scattering here
-        data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
-    if 'nPeaks' not in data[1]:
-        data[1].update({'nPeaks':0,'peaksList':[]})
-    G2frame.dataFrame.currentGrids = []
     
     def OnBackFlagCopy(event):
         flag = data[0][1]
@@ -914,14 +884,12 @@ def UpdateBackground(G2frame,data):
             PKflags = []
             for term in backDict['peaksList']:
                 PKflags.append(term[1::2])            
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy bkg ref. flags from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy bkg ref. flags from\n'+str(hst[5:])+' to...',
             'Copy bkg flags', histList)
         copyList = []
         try:
@@ -931,8 +899,8 @@ def UpdateBackground(G2frame,data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            backData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'))
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            backData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Background'))
             backData[0][1] = copy.copy(flag)
             bkDict = backData[-1]
             if bkDict['nDebye'] == backDict['nDebye']:
@@ -943,13 +911,13 @@ def UpdateBackground(G2frame,data):
                     term[1::2] = copy.copy(PKflags[i])                    
             
     def OnBackCopy(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Copy bkg params from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy bkg params from\n'+str(hst[5:])+' to...',
             'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -958,9 +926,9 @@ def UpdateBackground(G2frame,data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.SetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),copy.copy(data))
 
     def OnBkgFit(event):
         
@@ -984,11 +952,13 @@ def UpdateBackground(G2frame,data):
             return dataType,instDict,insVary
     
         PatternId = G2frame.PatternId        
-        controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
-        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+        limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         # sort the points for convenience and then separate them; extend the range if needed
+        if 'FixedPoints' not in background[1]:
+            return
         background[1]['FixedPoints'] = sorted(background[1]['FixedPoints'],key=lambda pair:pair[0])        
         X = [x for x,y in background[1]['FixedPoints']]
         Y = [y for x,y in background[1]['FixedPoints']]
@@ -999,7 +969,7 @@ def UpdateBackground(G2frame,data):
             X += [limits[1]]
             Y += [Y[-1]]
         # interpolate the fixed points onto the grid of data points within limits
-        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         xBeg = np.searchsorted(pwddata[0],limits[0])
         xFin = np.searchsorted(pwddata[0],limits[1])
         xdata = pwddata[0][xBeg:xFin]
@@ -1054,7 +1024,7 @@ def UpdateBackground(G2frame,data):
         Peaks = {'peaks':[],'sigDict':{}}
         for peak in data[1]['peaksList']:
             Peaks['peaks'].append([peak[0],0,peak[2],0,peak[4],0,peak[6],0])
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
         
     def OnMakeRDF(event):
         dlg = RDFDialog(G2frame)
@@ -1066,9 +1036,9 @@ def UpdateBackground(G2frame,data):
         finally:
             dlg.Destroy()
         PatternId = G2frame.PatternId        
-        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
-        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
+        inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
 #        GSASIIpath.IPyBreak()
         superMinusOne = unichr(0xaf)+unichr(0xb9)
@@ -1101,33 +1071,35 @@ def UpdateBackground(G2frame,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(item[-1])
-            G2frame.PatternTree.SetItemPyData(BackId,data)
+            G2frame.GPXtree.SetItemPyData(BackId,data)
             #wx.CallAfter(UpdateBackground,G2frame,data)
             wx.CallLater(100,UpdateBackground,G2frame,data)
             
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background function: '),0,WACV)
-        bakType = wx.ComboBox(G2frame.dataDisplay,value=data[0][0],
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background function: '),0,WACV)
+        bakType = wx.ComboBox(G2frame.dataWindow,value=data[0][0],
                 choices=Choices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         bakType.Bind(wx.EVT_COMBOBOX, OnNewType)
         topSizer.Add(bakType)
         topSizer.Add((5,0),0)
-        bakRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
+        bakRef = wx.CheckBox(G2frame.dataWindow,label=' Refine?')
         bakRef.SetValue(bool(data[0][1]))
         bakRef.Bind(wx.EVT_CHECKBOX, OnBakRef)
         topSizer.Add(bakRef,0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. coeff.: '),0,WACV)
-        bakTerms = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
+        backSizer.Add(topSizer)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Number of coeff.: '),0,WACV)
+        bakTerms = wx.ComboBox(G2frame.dataWindow,-1,value=str(data[0][2]),choices=[str(i+1) for i in range(36)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         bakTerms.Bind(wx.EVT_COMBOBOX,OnBakTerms)
         topSizer.Add(bakTerms,0,WACV)
         topSizer.Add((5,0),0)
         backSizer.Add(topSizer)
-        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background coefficients:'),0,WACV)
+        backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background coefficients:'),0,WACV)
         bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
-            bakVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[0],i+3,nDig=(10,4),typeHint=float)
+            bakVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],i+3,nDig=(10,4),typeHint=float)
             bakSizer.Add(bakVal,0,WACV)
         backSizer.Add(bakSizer)
         return backSizer
@@ -1168,16 +1140,16 @@ def UpdateBackground(G2frame,data):
         
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Debye scattering: '),0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. coeff.: '),0,WACV)
-        debTerms = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye scattering: '),0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Number of terms: '),0,WACV)
+        debTerms = wx.ComboBox(G2frame.dataWindow,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         debTerms.Bind(wx.EVT_COMBOBOX,OnDebTerms)
         topSizer.Add(debTerms,0,WACV)
         topSizer.Add((5,0),0)
         debSizer.Add(topSizer)
         if data[1]['nDebye']:
-            debSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Debye diffuse terms:'),0,WACV)       
+            debSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye diffuse terms:'),0,WACV)       
             rowLabels = []
             for i in range(len(data[1]['debyeTerms'])): rowLabels.append(str(i))
             colLabels = ['A','refine','R','refine','U','refine']
@@ -1185,7 +1157,8 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             debyeTable = G2G.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            debyeGrid = G2G.GSGrid(parent=G2frame.dataDisplay)
+            debyeGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+#            debyeGrid.SetScrollRate(0,0)
             debyeGrid.SetTable(debyeTable, True)
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             debyeGrid.AutoSizeColumns(False)
@@ -1227,17 +1200,17 @@ def UpdateBackground(G2frame,data):
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peaks in background: '),0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. peaks: '),0,WACV)
-        peaks = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(30)],
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Peaks in background: '),0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Number of peaks: '),0,WACV)
+        peaks = wx.ComboBox(G2frame.dataWindow,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(30)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         peaks.Bind(wx.EVT_COMBOBOX,OnPeaks)
         topSizer.Add(peaks,0,WACV)
         topSizer.Add((5,0),0)
         peaksSizer.Add(topSizer)
-        G2frame.dataFrame.currentGrids = []
+        G2frame.dataWindow.currentGrids = []
         if data[1]['nPeaks']:
-            peaksSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peak list:'),0,WACV)       
+            peaksSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Peak list:'),0,WACV)       
             rowLabels = []
             for i in range(len(data[1]['peaksList'])): rowLabels.append(str(i))
             colLabels = ['pos','refine','int','refine','sig','refine','gam','refine']
@@ -1246,38 +1219,37 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            peaksGrid = G2G.GSGrid(parent=G2frame.dataDisplay)
+            peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
+#            peaksGrid.SetScrollRate(0,0)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.AutoSizeColumns(False)
             peaksSizer.Add(peaksGrid)        
         return peaksSizer
-                
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.BackMenu)
-    G2frame.dataFrame.SetLabel('Background')
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
-    G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
-    G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
-    G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
-    G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2gd.wxID_MAKEBACKRDF)
-    G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataFrame.wxID_BackPts['Fit'])
-    G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataFrame.wxID_BackPts['Clear'])    
-    BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
+
+    # UpdateBackground execution starts here
+    if len(data) < 2:       #add Debye diffuse & peaks scattering here
+        data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
+    if 'nPeaks' not in data[1]:
+        data[1].update({'nPeaks':0,'peaksList':[]})
+    G2frame.dataWindow.currentGrids = []
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.BackMenu)
+    G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2G.wxID_BACKCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2G.wxID_BACKFLAGCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
+    G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2G.wxID_MAKEBACKRDF)
+    G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataWindow.wxID_BackPts['Fit'])
+    G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataWindow.wxID_BackPts['Clear'])    
+    BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 power series','lin interpolate','inv interpolate','log interpolate']
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(BackSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(DebyeSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(PeaksSizer())
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataFrame.setSizePosLeft(Size)
+    G2frame.dataWindow.SetDataSize()
         
 ################################################################################
 #####  Limits
@@ -1288,7 +1260,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     '''
     def AfterChange(invalid,value,tc):
         if invalid: return
-        plottype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
+        plottype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
 #        print 'new plot'
         wx.CallAfter(G2plt.PlotPatterns,G2frame,newPlot=False,plotType=plottype)  #unfortunately this resets the plot width
 
@@ -1296,9 +1268,10 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         limits = wx.FlexGridSizer(0,3,0,5)
         labels = ['Tmin','Tmax']
         for i in [0,1]:
-            limits.Add(wx.StaticText(G2frame.dataDisplay,label=' Original %s: %.4f'%(labels[0],data[0][i])),0,WACV)
-            limits.Add(wx.StaticText(G2frame.dataDisplay,label=' New: '),0,WACV)
-            limits.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[1],i,  \
+            limits.Add(wx.StaticText(G2frame.dataWindow,
+                label=' Original {} {:.4f}'.format(labels[i],data[0][i])),0,WACV)
+            limits.Add(wx.StaticText(G2frame.dataWindow,label=' New: '),0,WACV)
+            limits.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1],i,  \
                 min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
         return limits
         
@@ -1313,14 +1286,14 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         
         Indx = {}
         excl = wx.FlexGridSizer(0,3,0,5)
-        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' From: '),0,WACV)
-        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' To: '),0,WACV)
-        excl.Add(wx.StaticText(G2frame.dataDisplay,label=' Delete?: '),0,WACV)
+        excl.Add(wx.StaticText(G2frame.dataWindow,label=' From: '),0,WACV)
+        excl.Add(wx.StaticText(G2frame.dataWindow,label=' To: '),0,WACV)
+        excl.Add(wx.StaticText(G2frame.dataWindow,label=' Delete?: '),0,WACV)
         for id,item in enumerate(data[2:]):
             for i in [0,1]:
-                excl.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,i,  \
+                excl.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,i,  \
                     min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
-            delExcl = wx.CheckBox(G2frame.dataDisplay,label='')
+            delExcl = wx.CheckBox(G2frame.dataWindow,label='')
             Indx[delExcl.GetId()] = id
             delExcl.Bind(wx.EVT_CHECKBOX,OnDelExcl)
             excl.Add(delExcl,0,WACV)
@@ -1331,47 +1304,41 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         print 'Add excluded region'
         
     def OnLimitCopy(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy limits from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy limits from\n'+str(hst[5:])+' to...',
             'Copy limits', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for i in dlg.GetSelections(): 
                     item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    G2frame.PatternTree.SetItemPyData(
-                        G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),copy.copy(data))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    G2frame.GPXtree.SetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,Id,'Limits'),copy.copy(data))
         finally:
             dlg.Destroy()
             
     def Draw():
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        G2frame.dataWindow.ClearData()
+        mainSizer = G2frame.dataWindow.GetSizer()
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Data used in refinement'),0,WACV)
+        mainSizer.Add((5,5))
         mainSizer.Add(LimitSizer())
         if len(data)>2:
-#            mainSizer.Add((0,5),0)
-            mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Excluded regions:'),0,WACV)
+            mainSizer.Add((0,5),0)
+            mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Excluded regions:'),0,WACV)
             mainSizer.Add(ExclSizer())
-        mainSizer.Layout()    
-        G2frame.dataDisplay.SetSizer(mainSizer)
-        Size = mainSizer.Fit(G2frame.dataFrame)
-        G2frame.dataFrame.setSizePosLeft(Size)
-        
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()
+        G2frame.dataWindow.SetDataSize()
+
     G2frame.ifGetExclude = False
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
-    G2frame.dataFrame.SetLabel('Limits')
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
-    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
-    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
+    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Limits')
+    G2frame.SetTitle('Limits')
+    G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
     Draw() 
     
 ################################################################################
@@ -1383,7 +1350,7 @@ def UpdateInstrumentGrid(G2frame,data):
     data tree item.
     '''
     if 'Bank' not in data:  #get it from name; absent for default parms selection 
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         if 'Bank' in hst:
             bank = int(hst.split('Bank')[1].split('_')[0])
             data['Bank'] = [bank,bank,0]
@@ -1400,7 +1367,7 @@ def UpdateInstrumentGrid(G2frame,data):
         return good
         
     def updateData(inst,ref):
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[0]
         for item in data:
             try:
@@ -1413,18 +1380,18 @@ def UpdateInstrumentGrid(G2frame,data):
     
     def RefreshInstrumentGrid(event,doAnyway=False):
         if doAnyway or event.GetRow() == 1:
-            peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
+            peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
             newpeaks = []
             for peak in peaks['peaks']:
                 newpeaks.append(G2mth.setPeakparms(data,Inst2,peak[0],peak[2]))
             peaks['peaks'] = newpeaks
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),peaks)
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'),peaks)
             
     def OnCalibrate(event):
-        Pattern = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+        Pattern = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
         xye = ma.array(ma.getdata(Pattern[1]))
         cw = np.diff(xye[0])
-        IndexPeaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
+        IndexPeaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
             return
@@ -1461,7 +1428,7 @@ def UpdateInstrumentGrid(G2frame,data):
         
         Note that similar code is found in ReadPowderInstprm (GSASII.py)
         '''
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[0]
         bank = data['Bank'][0]
         pth = G2G.GetImportPath(G2frame)
@@ -1502,14 +1469,14 @@ def UpdateInstrumentGrid(G2frame,data):
                     S = File.readline()                
                 File.close()
                 if Found:
-                    Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
+                    Inst,Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
                     if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
                         Inst['Bank'] = [1,1,0]
-                    data = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
+                    data = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
                     RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
                 else:
-                    G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame.dataFrame)
+                    G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame)
                 UpdateInstrumentGrid(G2frame,data)
                 G2plt.PlotPeakWidths(G2frame)
         finally:
@@ -1543,13 +1510,11 @@ def UpdateInstrumentGrid(G2frame,data):
         Each block starts with #Bank n: GSAS-II instrument... where n is bank no.
         item: writes parameters from selected PWDR entries to a .instprm file
         '''
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         histList.insert(0,hst)
         saveList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Save instrument parameters from',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Save instrument parameters from',
             'Save instrument parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1567,8 +1532,8 @@ def UpdateInstrumentGrid(G2frame,data):
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
                 for hist in saveList:
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
-                    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+                    inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
                     if 'Bank' not in inst:  #patch
                         bank = 1
                         if 'Bank' in hist:
@@ -1590,10 +1555,10 @@ def UpdateInstrumentGrid(G2frame,data):
         G2plt.PlotPeakWidths(G2frame)
         
     def OnInstFlagCopy(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         keys = data.keys()
         try:
@@ -1603,9 +1568,7 @@ def UpdateInstrumentGrid(G2frame,data):
         flags = dict(zip(keys,[data[key][2] for key in keys]))
         instType = data['Type'][0]
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy inst ref. flags from\n'+hst[5:],
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy inst ref. flags from\n'+hst[5:],
             'Copy refinement flags', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1614,8 +1577,8 @@ def UpdateInstrumentGrid(G2frame,data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
 #            GSASIIpath.IPyBreak()
@@ -1628,16 +1591,14 @@ def UpdateInstrumentGrid(G2frame,data):
         
     def OnInstCopy(event):
         #need fix for dictionary
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
         instType = data['Type'][0]
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy inst params from\n'+hst,
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy inst params from\n'+hst,
             'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1646,8 +1607,8 @@ def UpdateInstrumentGrid(G2frame,data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
@@ -1682,7 +1643,8 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def RefineBox(item):
         'Define a refine checkbox with binding'
-        wid = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        #wid = wx.CheckBox(G2frame.dataWindow,label=' Refine?  ')
+        wid = wx.CheckBox(G2frame.dataWindow,label='')
         wid.SetValue(bool(insRef[item]))
         RefObj[wid.GetId()] = item
         wid.Bind(wx.EVT_CHECKBOX, OnItemRef)
@@ -1705,21 +1667,20 @@ def UpdateInstrumentGrid(G2frame,data):
             wx.CallAfter(MakeParameterWindow)
 
     def MakeParameterWindow():
-        'Displays the Instrument parameters in the datadisplay frame'
-        if G2frame.dataDisplay:
-            G2frame.dataFrame.Clear()
-        G2frame.dataFrame.SetLabel('Instrument Parameters')
-        G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        instSizer = wx.FlexGridSizer(0,6,5,5)
+        'Displays the Instrument parameters in the dataWindow frame'
+        G2frame.SetTitle('Instrument Parameters')
+        G2frame.dataWindow.ClearData()
+        mainSizer = G2frame.dataWindow.GetSizer()
+        instSizer = wx.FlexGridSizer(0,3,5,5)
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
         if insVal['Bank'] == None:      #patch
             insVal['Bank'] = 1
         text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
-        subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,text),0,WACV)
+        subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,text),0,WACV)
         mainSizer.Add(subSizer)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
+            [instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt),0,WACV) for txt in [' Name (default)',' Value','Refine?']]
             if 'C' in insVal['Type']:               #constant wavelength
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
@@ -1727,86 +1688,56 @@ def UpdateInstrumentGrid(G2frame,data):
                 refFlgElem.append(None)                   
                 if 'Lam1' in insVal:
                     subSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: '),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
                     txt = '%7.2f'%(insVal['Azimuth'])
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'   Ka1/Ka2: '),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'   Ka1/Ka2: '),0,WACV)
                     txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                     waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Source type: '),0,WACV)
+                    waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                     # PATCH?: for now at least, Source is not saved anywhere before here
                     if 'Source' not in data: data['Source'] = ['CuKa','?']
                     choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
-                    lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                     waveSizer.Add(lamPick,0)
                     subSizer.Add(waveSizer,0)
                     mainSizer.Add(subSizer)
-                    instSizer.Add(wx.StaticText(
-                        G2frame.dataDisplay,-1,
-                        lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),
-                        0,WACV)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),0,WACV)
                     key = 'I(L2)/I(L1)'
                     labelLst.append(key)
                     elemKeysLst.append([key,1])
                     dspLst.append([10,4])
                     refFlgElem.append([key,2])                   
-                    ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                    ratVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(ratVal,0)
                     instSizer.Add(RefineBox(key),0,WACV)
-                    instSizer.Add((5,5),0)
-                    instSizer.Add((5,5),0)
-                    instSizer.Add((5,5),0)                
                 else: # single wavelength
-                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: '),0,WACV)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Azimuth: '),0,WACV)
                     txt = '%7.2f'%(insVal['Azimuth'])
-                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                     instSizer.Add((5,5),0)
                     key = 'Lam'
-                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
-                        0,WACV)
-                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),0,WACV)
+                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                     labelLst.append(u'Lam (\xc5)')
                     elemKeysLst.append([key,1])
                     dspLst.append([10,6])
                     instSizer.Add(waveVal,0,WACV)
                     refFlgElem.append([key,2])                   
                     instSizer.Add(RefineBox(key),0,WACV)
-#                    if ifHisto:
-#                        refFlgElem.append([key,2])                   
-#                        instSizer.Add(RefineBox(key),0,WACV)
-#                    else:
-#                        refFlgElem.append(None)                   
-#                        instSizer.Add((5,5),0)
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)
                         elemKeysLst.append([item,1])
                         dspLst.append([10,4])
-                        instSizer.Add(
-                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,4,insDef[item])),
-                            0,WACV)
-                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,4,insDef[item])),0,WACV)
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
                         instSizer.Add(RefineBox(item),0,WACV)
-#                        if ifHisto:
-#                            refFlgElem.append([item,2])
-#                            instSizer.Add(RefineBox(item),0,WACV)
-#                        else:
-#                            refFlgElem.append(None)                   
-#                            instSizer.Add((5,5),0)
-                    else:                           #skip Polariz. for neutrons
-                        instSizer.Add((5,5),0)
-                        instSizer.Add((5,5),0)
-                        instSizer.Add((5,5),0)
-                for item in ['U','V','W','','X','Y','SH/L']:
-                    if item == '':
-                        instSizer.Add((5,5),0)
-                        instSizer.Add((5,5),0)
-                        instSizer.Add((5,5),0)
-                        continue
+                for item in ['U','V','W','X','Y','SH/L']:
                     nDig = (10,3)
                     if item == 'SH/L':
                         nDig = (10,5)
@@ -1814,38 +1745,36 @@ def UpdateInstrumentGrid(G2frame,data):
                     elemKeysLst.append([item,1])
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
-                    instSizer.Add(
-                        wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
-                        0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
-                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Fligth path: '),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Flight path: '),0,WACV)
                 txt = '%8.3f'%(insVal['fltPath'])
-                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 labelLst.append('flight path')
                 elemKeysLst.append(['fltPath',1])
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
-                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  2-theta: '),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  2-theta: '),0,WACV)
                 txt = '%7.2f'%(insVal['2-theta'])
-                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                 labelLst.append('2-theta')
                 elemKeysLst.append(['2-theta',1])
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
                 if 'Pdabc' in Inst2:
                     Items = ['sig-0','sig-1','sig-2','sig-q','X','Y']
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  difC: '),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
                     txt = '%8.2f'%(insVal['difC'])
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
                     labelLst.append('difC')
                     elemKeysLst.append(['difC',1])
                     dspLst.append([10,2])
                     refFlgElem.append(None)
-                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  alpha, beta: fixed by table'),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
                 else:
                     Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']
                 mainSizer.Add((5,5),0)
@@ -1861,9 +1790,9 @@ def UpdateInstrumentGrid(G2frame,data):
                     if 'beta' in item:
                         nDig = (12,6)
                     instSizer.Add(
-                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
+                            wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),
                             0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
@@ -1872,42 +1801,39 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'PKS' in insVal['Type']:   #peak positions only
                 key = 'Lam'
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
                     0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append([key,1])
                 dspLst.append([10,6])
                 instSizer.Add(waveVal,0,WACV)
                 refFlgElem.append([key,2])                   
-#                    instSizer.Add(RefineBox(key),0,WACV)
                 for item in ['Zero',]:
                     if item in insDef:
                         labelLst.append(item)
                         elemKeysLst.append([item,1])
                         dspLst.append([10,4])
                         instSizer.Add(
-                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,4,insDef[item])),
+                            wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,4,insDef[item])),
                             0,WACV)
-                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
-#                        instSizer.Add(RefineBox(item),0,WACV)
-                
                 
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Source type: '),0,WACV)
+                waveSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Source type: '),0,WACV)
                 # PATCH?: for now at least, Source is not saved anywhere before here
                 if 'Source' not in data: data['Source'] = ['CuKa','?']
                 choice = ['synchrotron','TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
-                lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick = wx.ComboBox(G2frame.dataWindow,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                 waveSizer.Add(lamPick,0,WACV)
                 instSizer.Add(waveSizer,0,WACV)
@@ -1918,15 +1844,15 @@ def UpdateInstrumentGrid(G2frame,data):
                 pass                                #for now
         elif insVal['Type'][0] in ['L','R',]:
             if 'C' in insVal['Type']:        
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
                 dspLst.append([10,6])
                 refFlgElem.append(None)
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
+                instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
                 labelLst.append('Azimuth angle')
                 elemKeysLst.append(['Azimuth',1])
                 dspLst.append([10,2])
@@ -1935,10 +1861,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 pass                                #for now
 
         mainSizer.Add(instSizer,0)
-        mainSizer.Layout()    
-        G2frame.dataDisplay.SetSizer(mainSizer)
-        G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
-        G2frame.dataFrame.SendSizeEvent()  # this causes a frame repaint, even if the size does not change!
+        G2frame.dataWindow.SetDataSize()
         # end of MakeParameterWindow
                 
     # beginning of UpdateInstrumentGrid code    
@@ -1973,12 +1896,14 @@ def UpdateInstrumentGrid(G2frame,data):
         insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
         insRef = {}
     RefObj = {}
+    #These from Intl. Tables C, Table 4.2.2.1, p. 177-179
     waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
         'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
         'AgKa':[0.559363,0.563775]}
-    meanwaves = {'CuKa':1.5418,'TiKa':2.7496,'CrKa':2.2909,'FeKa':1.9373,
-        'CoKa':1.7902,'MoKa':0.7107,'AgKa':0.5608}
-    Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+    # meanwaves computed as (2*Ka1+Ka2)/3
+    meanwaves = {'CuKa':1.54178,'TiKa':2.74963,'CrKa':2.29092,'FeKa':1.93728,
+        'CoKa':1.79021,'MoKa':0.71069,'AgKa':0.56083}
+    Inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]        
     G2gd.SetDataMenuBar(G2frame)
     #patch
@@ -1995,24 +1920,19 @@ def UpdateInstrumentGrid(G2frame,data):
 #                insRef['difB'] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()            
-            Status.SetStatusText('NB: Azimuth is used for polarization only')
-        G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2gd.wxID_INSTCALIB)
-        G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2gd.wxID_INSTLOAD)
-        G2frame.Bind(wx.EVT_MENU,OnSave,id=G2gd.wxID_INSTSAVE)
-        G2frame.Bind(wx.EVT_MENU,OnSaveAll,id=G2gd.wxID_INSTSAVEALL)
-        G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
-        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
-        G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
-        #G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
-        G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2gd.wxID_INST1VAL)
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.InstMenu)
+        G2frame.GetStatusBar().SetStatusText('NB: Azimuth is used for polarization only',1)
+        G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2G.wxID_INSTCALIB)
+        G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2G.wxID_INSTLOAD)
+        G2frame.Bind(wx.EVT_MENU,OnSave,id=G2G.wxID_INSTSAVE)
+        G2frame.Bind(wx.EVT_MENU,OnSaveAll,id=G2G.wxID_INSTSAVEALL)
+        G2frame.Bind(wx.EVT_MENU,OnReset,id=G2G.wxID_INSTPRMRESET)
+        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_INSTCOPY)
+        G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2G.wxID_INSTFLAGCOPY)
+        G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2G.wxID_INST1VAL)
     elif 'L' in insVal['Type'] or 'R' in insVal['Type']:                   #SASD data menu commands
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SASDInstMenu)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()
-        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SASDInstMenu)
+        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2G.wxID_SASDINSTCOPY)
     MakeParameterWindow()
         
     
@@ -2072,7 +1992,7 @@ def UpdateSampleGrid(G2frame,data):
                     S = File.readline()                
                 File.close()
                 data.update(newItems)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'),data)
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'),data)
                 UpdateSampleGrid(G2frame,data)
         finally:
             dlg.Destroy()
@@ -2109,7 +2029,7 @@ def UpdateSampleGrid(G2frame,data):
             return
         dataDict = dict(zip(itemNames,newItems))
         ifany = False
-        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
+        Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Controls'))
         Names = [' ','Phi','Chi','Omega','Time','Temperature','Pressure']
         freeNames = {}
         for name in ['FreePrm1','FreePrm2','FreePrm3']:
@@ -2129,7 +2049,7 @@ def UpdateSampleGrid(G2frame,data):
         if not ifany:
             G2frame.ErrorDialog('Nothing to do','No columns identified')
             return
-        histList = [G2frame.PatternTree.GetItemText(G2frame.PatternId),]
+        histList = [G2frame.GPXtree.GetItemText(G2frame.PatternId),]
         histList += GetHistsLikeSelected(G2frame)
         colIds = {}
         for i,name in enumerate(colNames):
@@ -2141,8 +2061,8 @@ def UpdateSampleGrid(G2frame,data):
             for item in colIds:
                 key = freeNames.get(item,item)
                 newItems[key] = float(dataDict[name][colIds[item]])
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
-            sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
+            sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
             sampleData.update(newItems)        
         UpdateSampleGrid(G2frame,data)        
     
@@ -2152,8 +2072,8 @@ def UpdateSampleGrid(G2frame,data):
             dlg = wx.MessageDialog(G2frame,'Rescale data by %.2f?'%(Scale),'Rescale data',wx.OK|wx.CANCEL)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histName)
-                    y,w = G2frame.PatternTree.GetItemPyData(pId)[1][1:3]
+                    pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histName)
+                    y,w = G2frame.GPXtree.GetItemPyData(pId)[1][1:3]
                     y *= Scale
                     w /= Scale**2
                     data['Scale'][0] = 1.0
@@ -2164,12 +2084,12 @@ def UpdateSampleGrid(G2frame,data):
             return
         #SASD rescaliing                
         histList = []
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         while item:
-            name = G2frame.PatternTree.GetItemText(item)
+            name = G2frame.GPXtree.GetItemText(item)
             if 'SASD' in name and name != histName:
                 histList.append(name)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         if not len(histList):      #nothing to copy to!
             return
         dlg = wx.SingleChoiceDialog(G2frame,'Select reference histogram for scaling',
@@ -2180,27 +2100,27 @@ def UpdateSampleGrid(G2frame,data):
                 refHist = histList[sel]
         finally:
             dlg.Destroy()
-        Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
-        Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+        Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
+        Profile = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1]
         Data = [Profile,Limits,data]
-        refId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,refHist)
-        refSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,refId, 'Sample Parameters'))
-        refLimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,refId, 'Limits'))
-        refProfile = G2frame.PatternTree.GetItemPyData(refId)[1]
+        refId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,refHist)
+        refSample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,refId, 'Sample Parameters'))
+        refLimits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,refId, 'Limits'))
+        refProfile = G2frame.GPXtree.GetItemPyData(refId)[1]
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
         G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         UpdateSampleGrid(G2frame,data)
         
     def OnRescaleAll(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
-        x0,y0,w0 = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1][:3]
+        x0,y0,w0 = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[1][:3]
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         od = {'label_1':'Scaling range min','value_1':0.0,'label_2':'Scaling range max','value_2':10.}
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
             'Do scaling from\n'+str(hst[5:])+' to...','Rescale histograms', histList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2215,8 +2135,8 @@ def UpdateSampleGrid(G2frame,data):
                     result = dlg.GetSelections()
                     for i in result: 
                         item = histList[i]
-                        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                        xi,yi,wi = G2frame.PatternTree.GetItemPyData(Id)[1][:3]
+                        Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                        xi,yi,wi = G2frame.GPXtree.GetItemPyData(Id)[1][:3]
                         sumi = np.sum(yi[iBeg:iFin])
                         if sumi:
                             Scale = sum0/sumi
@@ -2232,46 +2152,39 @@ def UpdateSampleGrid(G2frame,data):
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,
-            'Copy sample params from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
                 for i in result: 
                     item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()
 
     def OnSampleCopySelected(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        Controls = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        Controls = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         # Assemble a list of item labels
         TextTable = {key:label for key,label,dig in
-                     SetupSampleLabels(hst,data.get('Type'),Inst['Type'][0])
-                     }
+            SetupSampleLabels(hst,data.get('Type'),Inst['Type'][0])}
         # get flexible labels
-        TextTable.update({
-            key:Controls[key] for key in Controls if key.startswith('FreePrm')
-            })
+        TextTable.update({key:Controls[key] for key in Controls if key.startswith('FreePrm')})
         # add a few extra
-        TextTable.update({
-            'Type':'Diffractometer type',
-            'InstrName':'Instrument Name',
-            })
+        TextTable.update({'Type':'Diffractometer type','InstrName':'Instrument Name',})
         # Assemble a list of dict entries that would be labeled in the Sample
         # params data window (drop ranId and items not used).
         keyList = [i for i in data.keys() if i in TextTable]
@@ -2279,9 +2192,7 @@ def UpdateSampleGrid(G2frame,data):
         # sort both lists together, ordered by keyText
         keyText, keyList = zip(*sorted(zip(keyText,keyList))) # sort lists 
         selectedKeys = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
-            'Select which sample parameters\nto copy',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which sample parameters\nto copy',
             'Select sample parameters', keyText)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2292,17 +2203,15 @@ def UpdateSampleGrid(G2frame,data):
         copyDict = {}
         for parm in selectedKeys:
             copyDict[parm] = data[parm]
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
-            'Copy sample params from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
                 for i in result: 
                     item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()            
@@ -2313,22 +2222,20 @@ def UpdateSampleGrid(G2frame,data):
         flagDict = {}
         for parm in copyNames:
             flagDict[parm] = data[parm][1]
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
             'Copy sample flags', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
                 for i in result: 
                     item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters'))
                     for name in copyNames:
                         sampleData[name][1] = copy.copy(flagDict[name])
         finally:
@@ -2377,29 +2284,25 @@ def UpdateSampleGrid(G2frame,data):
     #reload(GSASIIpwdGUI)
     #reload(G2gd)
     ######################################################################
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SampleMenu)
-    G2frame.dataFrame.SetLabel('Sample Parameters')
-    G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2gd.wxID_SETSCALE)
-    G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
-    G2frame.Bind(wx.EVT_MENU, OnSampleCopySelected, id=G2gd.wxID_SAMPLECOPYSOME)
-    G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
-    G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
-    G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
-    G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2gd.wxID_SAMPLE1VAL)
-    G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2gd.wxID_ALLSAMPLELOAD)
-    G2frame.Bind(wx.EVT_MENU, OnRescaleAll, id=G2gd.wxID_RESCALEALL)
+    histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SampleMenu)
+    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sample Parameters')
+    G2frame.SetTitle('Sample Parameters')
+    G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2G.wxID_SETSCALE)
+    G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2G.wxID_SAMPLECOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleCopySelected, id=G2G.wxID_SAMPLECOPYSOME)
+    G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2G.wxID_SAMPLEFLAGCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2G.wxID_SAMPLESAVE)
+    G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2G.wxID_SAMPLELOAD)
+    G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2G.wxID_SAMPLE1VAL)
+    G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2G.wxID_ALLSAMPLELOAD)
+    G2frame.Bind(wx.EVT_MENU, OnRescaleAll, id=G2G.wxID_RESCALEALL)
     if histName[:4] in ['SASD','REFD','PWDR']:
-        G2frame.dataFrame.SetScale.Enable(True)
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()    
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    Controls = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        G2frame.dataWindow.SetScale.Enable(True)
+    Controls = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
 #patch
     if 'ranId' not in data:
         data['ranId'] = ran.randint(0,sys.maxint)
@@ -2440,21 +2343,21 @@ def UpdateSampleGrid(G2frame,data):
 #patch end
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
     parms = SetupSampleLabels(histName,data.get('Type'),Inst['Type'][0])
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add((-1,-1),1,wx.EXPAND,1)
-    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Sample and Experimental Parameters'))
-    topSizer.Add((-1,-1),1,wx.EXPAND,1)
-    mainSizer.Add(topSizer,0,wx.EXPAND,1)
+    topSizer.Add((-1,-1),0,WACV)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
+    topSizer.Add((-1,-1),0,WACV)
+    mainSizer.Add(topSizer,0,WACV)
     nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-    nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Instrument Name'),
-                0,WACV)
-    nameSizer.Add((-1,-1),1,wx.EXPAND,1)
-    instNameVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,data['InstrName'],
-                              size=(200,-1),style=wx.TE_PROCESS_ENTER)        
+    nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Instrument Name '),0,WACV)
+    nameSizer.Add((-1,-1),1,WACV)
+    instNameVal = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,data['InstrName'],
+        size=(200,-1),style=wx.TE_PROCESS_ENTER)        
     nameSizer.Add(instNameVal)
     instNameVal.Bind(wx.EVT_CHAR,OnNameVal)
-    mainSizer.Add(nameSizer,0,wx.EXPAND,1)
+    mainSizer.Add(nameSizer,0,WACV)
     mainSizer.Add((5,5),0)
     labelLst.append('Instrument Name')
     elemKeysLst.append(['InstrName'])
@@ -2463,17 +2366,17 @@ def UpdateSampleGrid(G2frame,data):
 
     if 'PWDR' in histName:
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-        nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Diffractometer type: '),
+        nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Diffractometer type: '),
                     0,WACV)
         if 'T' in Inst['Type'][0]:
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]
-        histoType = G2G.G2ChoiceButton(G2frame.dataDisplay,choices,
+        histoType = G2G.G2ChoiceButton(G2frame.dataWindow,choices,
                     strLoc=data,strKey='Type',
                     onChoice=OnHistoChange)
         nameSizer.Add(histoType)
-        mainSizer.Add(nameSizer,0,wx.EXPAND,1)
+        mainSizer.Add(nameSizer,0,WACV)
         mainSizer.Add((5,5),0)
 
     parmSizer = wx.FlexGridSizer(0,2,5,0)
@@ -2481,28 +2384,28 @@ def UpdateSampleGrid(G2frame,data):
         labelLst.append(lbl.strip().strip(':').strip())
         dspLst.append(nDig)
         if 'list' in str(type(data[key])):
-            parmRef = G2G.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
+            parmRef = G2G.G2CheckBox(G2frame.dataWindow,' '+lbl,data[key],1)
             parmSizer.Add(parmRef,0,WACV|wx.EXPAND)
-            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,
+            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[key],0,
                 nDig=nDig,typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key,0])
             refFlgElem.append([key,1])
         else:
-            parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
+            parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' '+lbl),
                 0,WACV|wx.EXPAND)
-            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,
+            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,key,
                 typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key])
             refFlgElem.append(None)
-        parmSizer.Add(parmVal,1,wx.EXPAND)
+        parmSizer.Add(parmVal,0,WACV)
     Info = {}
         
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
-        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,
+        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Controls,key,typeHint=str,
                                         notBlank=False)
         parmSizer.Add(parmVal,1,wx.EXPAND)
-        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
-        parmSizer.Add(parmVal,1,wx.EXPAND)
+        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,key,typeHint=float)
+        parmSizer.Add(parmVal,0,WACV)
         labelLst.append(Controls[key])
         dspLst.append(None)
         elemKeysLst.append([key])
@@ -2515,17 +2418,17 @@ def UpdateSampleGrid(G2frame,data):
         anomrho = [0.,0.]
         mu = 0.
         subSizer = wx.FlexGridSizer(0,4,5,5)
-        Substances = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
+        Substances = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))
         for id,item in enumerate(data['Materials']):
-            subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
-            matsel = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=Substances['Substances'].keys(),
+            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Material: '),0,WACV)
+            matsel = wx.ComboBox(G2frame.dataWindow,value=item['Name'],choices=Substances['Substances'].keys(),
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Info[matsel.GetId()] = id
             matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
             subSizer.Add(matsel,0,WACV)
-            subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
-            volfrac = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'VolFrac',
+            subSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Volume fraction: '),0,WACV)
+            volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,'VolFrac',
                 min=0.,max=1.,nDig=(10,3),typeHint=float,OnLeave=OnVolFrac)
             subSizer.Add(volfrac,0,WACV)
             material = Substances['Substances'][item['Name']]
@@ -2535,17 +2438,13 @@ def UpdateSampleGrid(G2frame,data):
         data['Contrast'] = [(rho[1]-rho[0])**2,(anomrho[1]-anomrho[0])**2]
         mainSizer.Add(subSizer,0)
         conSizer = wx.BoxSizer(wx.HORIZONTAL)
-        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Contrast: %10.2f '%(data['Contrast'][0])),0,WACV)
-        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Anom. Contrast: %10.2f '%(data['Contrast'][1])),0,WACV)
+        conSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Contrast: %10.2f '%(data['Contrast'][0])),0,WACV)
+        conSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Anom. Contrast: %10.2f '%(data['Contrast'][1])),0,WACV)
         mut =  mu*data['Thick']
-        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Transmission (calc): %10.3f  '%(np.exp(-mut))),0,WACV)
+        conSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Transmission (calc): %10.3f  '%(np.exp(-mut))),0,WACV)
         mainSizer.Add(conSizer,0)
+    G2frame.dataWindow.SetDataSize()
     
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataFrame.setSizePosLeft(Size)
-                
 ################################################################################
 #####  Indexing Peaks
 ################################################################################           
@@ -2556,22 +2455,19 @@ def UpdateIndexPeaksGrid(G2frame, data):
     '''
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
-    IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    limitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
-    Limits = G2frame.PatternTree.GetItemPyData(limitId)
+    IndexId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    limitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
+    Limits = G2frame.GPXtree.GetItemPyData(limitId)
+    
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         peaks = G2frame.IndexPeaksTable.GetData()
         if c == 2:
-            if peaks[r][c]:
-                peaks[r][c] = False
-            else:
-                peaks[r][c] = True
+            peaks[r][c] = not peaks[r][c]
             G2frame.IndexPeaksTable.SetData(peaks)
-            G2frame.PatternTree.SetItemPyData(IndexId,[peaks,data[1]])
-            G2frame.dataDisplay.ForceRefresh()
-            if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+            G2frame.indxPeaks.ForceRefresh()
+            if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                 G2plt.PlotPowderLines(G2frame)
             else:
                 G2plt.PlotPatterns(G2frame,plotType='PWDR')
@@ -2579,7 +2475,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     def OnReload(event):
         peaks = []
         sigs = []
-        Peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
+        Peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         for ip,peak in enumerate(Peaks['peaks']):
             dsp = G2lat.Pos2dsp(Inst,peak[0])
             peaks.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])    #SS?
@@ -2589,12 +2485,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 sig = 0.
             sigs.append(sig)
         data = [peaks,sigs]
-        G2frame.PatternTree.SetItemPyData(IndexId,data)
+        G2frame.GPXtree.SetItemPyData(IndexId,data)
         UpdateIndexPeaksGrid(G2frame,data)
         
     def KeyEditPickGrid(event):
-        colList = G2frame.dataDisplay.GetSelectedCols()
-        data = G2frame.PatternTree.GetItemPyData(IndexId)
+        colList = G2frame.indxPeaks.GetSelectedCols()
+        data = G2frame.GPXtree.GetItemPyData(IndexId)
         if event.GetKeyCode() == wx.WXK_RETURN:
             event.Skip(True)
         elif event.GetKeyCode() == wx.WXK_CONTROL:
@@ -2602,7 +2498,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         elif event.GetKeyCode() == wx.WXK_SHIFT:
             event.Skip(True)
         elif colList:
-            G2frame.dataDisplay.ClearSelection()
+            G2frame.indxPeaks.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
                 if G2frame.IndexPeaksTable.GetColLabelValue(col) in ['use',]:
@@ -2612,20 +2508,15 @@ def UpdateIndexPeaksGrid(G2frame, data):
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=False
                     elif key == 83: # 'S'
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col] = not data[0][row][col]
-                        
             
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
-    if 'PWD' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndPeaksMenu)
-        G2frame.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
-    G2frame.dataFrame.IndexPeaks.Enable(False)
+    if 'PWD' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndPeaksMenu)
+        G2frame.Bind(wx.EVT_MENU, OnReload, id=G2G.wxID_INDXRELOAD)
+    G2frame.dataWindow.IndexPeaks.Enable(False)
     G2frame.IndexPeaksTable = []
     if len(data[0]):
-        G2frame.dataFrame.IndexPeaks.Enable(True)
-        Unit = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
+        G2frame.dataWindow.IndexPeaks.Enable(True)
+        Unit = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         if Unit:
             if len(Unit) == 4:  #patch
                 Unit.append({})
@@ -2667,20 +2558,21 @@ def UpdateIndexPeaksGrid(G2frame, data):
         colLabels = ['position','intensity','use','indexed','h','k','l','m','d-obs','d-calc']
         Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
             4*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
-    G2frame.PatternTree.SetItemPyData(IndexId,data)
+    G2frame.GPXtree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.dataFrame.SetLabel('Index Peak List')
-    G2frame.dataFrame.currentGrids = []
-    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)                
-    G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
+    G2frame.SetTitle('Index Peak List')
+    G2frame.dataWindow.currentGrids = []
+    G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)                
+    G2frame.indxPeaks.SetTable(G2frame.IndexPeaksTable, True)
+    G2frame.indxPeaks.SetScrollRate(1,1)
     XY = []
     Sigs = []
-    for r in range(G2frame.dataDisplay.GetNumberRows()):
-        for c in range(G2frame.dataDisplay.GetNumberCols()):
+    for r in range(G2frame.indxPeaks.GetNumberRows()):
+        for c in range(G2frame.indxPeaks.GetNumberCols()):
             if c == 2:
-                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+                G2frame.indxPeaks.SetReadOnly(r,c,isReadOnly=False)
             else:
-                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+                G2frame.indxPeaks.SetReadOnly(r,c,isReadOnly=True)
         if data[0][r][2] and data[0][r][3]:
             XY.append([data[0][r][-1],data[0][r][0]])
             try:
@@ -2688,16 +2580,18 @@ def UpdateIndexPeaksGrid(G2frame, data):
             except IndexError:
                 sig = 0.
             Sigs.append(sig)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
-    G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
-    G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataFrame.setSizePosLeft([490,300])
+    G2frame.indxPeaks.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
+    G2frame.indxPeaks.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
+#    G2frame.indxPeaks.SetScrollRate(0,0)
+    G2frame.indxPeaks.AutoSizeColumns(False)
     if len(XY):
         XY = np.array(XY)
         G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
-    G2frame.dataFrame.SendSizeEvent()
-      
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer.Add(G2frame.indxPeaks,0,wx.ALL|wx.EXPAND,1)
+    G2frame.dataWindow.SetDataSize()
+
 ################################################################################
 #####  Unit cells
 ################################################################################           
@@ -2705,14 +2599,14 @@ def UpdateIndexPeaksGrid(G2frame, data):
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
     '''
-    UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+    UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
         'Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
@@ -2812,7 +2706,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnSpcSel(event):
         controls[13] = spcSel.GetString(spcSel.GetSelection())
-        G2frame.dataFrame.RefineCell.Enable(True)
+        G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(event)
         
     def SetCellValue(Obj,ObjId,value):
@@ -2899,8 +2793,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnHklShow(event):
         PatternId = G2frame.PatternId
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
-        controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
 #        ibrav = bravaisSymb.index(controls[5])
@@ -2925,14 +2819,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.HKL = np.array(G2frame.HKL)
         if len(G2frame.HKL):
             print ' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL))
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
-        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
+        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2plt.PlotPatterns(G2frame)
             
     def OnSortCells(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
@@ -2943,11 +2837,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             return
         data = [controls,bravais,cells,dmin,ssopt]
-        G2frame.PatternTree.SetItemPyData(UnitCellsId,data)
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def CopyUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         for Cell in cells:
             if Cell[-2]:
                 break
@@ -2957,8 +2851,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[6:12] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
-        G2frame.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
-        G2frame.dataFrame.RefineCell.Enable(True)
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+        G2frame.dataWindow.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)        
                 
     def RefineCell(event):
@@ -2982,12 +2876,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             print ' %s %10.5f %10.5f %10.5f'%('Modulation vector:',Vec[0],Vec[1],Vec[2])
              
         PatternId = G2frame.PatternId
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         if not len(peaks[0]):
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print ' Refine cell'
-        controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
@@ -3020,7 +2914,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
-        cells = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2]
+        cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
         for cell in cells:
             cell[-2] = False
         cells.insert(0,[M20,X20,ibrav]+controls[6:13]+[True,False])
@@ -3030,7 +2924,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:
             G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
         data = [controls,bravais,cells,dmin,ssopt]
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
         print " %s%10.3f" % ('refinement M20 = ',M20)
         print ' unindexed lines = ',X20
         cellPrint(controls[5],Aref)
@@ -3041,7 +2935,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         for hkl in G2frame.HKL:
             hkl[ip] = G2lat.Dsp2pos(Inst,hkl[ip-1])+controls[1]
         G2frame.HKL = np.array(G2frame.HKL)
-        if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+        if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
             G2plt.PlotPatterns(G2frame)
@@ -3052,7 +2946,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         print 'Peak Indexing'
         keepcells = []
         try:
-            controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+            controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
             for cell in cells:
                 if cell[11]:
                     cell[10] = False    #clear selection flag on keepers
@@ -3074,8 +2968,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         if len(peaks[0][0]) > 9:
             G2frame.ErrorDialog('Error','You need to reload Index Peaks List first')
             return
-        G2frame.dataFrame.CopyCell.Enable(False)
-        G2frame.dataFrame.RefineCell.Enable(False)
+        G2frame.dataWindow.CopyCell.Enable(False)
+        G2frame.dataWindow.RefineCell.Enable(False)
         dlg = wx.ProgressDialog("Generated reflections",'0 '+" cell search for "+bravaisNames[ibrav],101, 
 #            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT) #desn't work in 32 bit versions
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
@@ -3090,25 +2984,25 @@ def UpdateUnitCellsGrid(G2frame, data):
         if OK:
             cells[0][10] = True         #select best M20
             data = [controls,bravais,cells,dmin,ssopt]
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
                 G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 G2frame.HKL = np.array(G2frame.HKL)
-                if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+                if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
                     G2plt.PlotPatterns(G2frame)
-            G2frame.dataFrame.CopyCell.Enable(True)
-            G2frame.dataFrame.IndexPeaks.Enable(True)
-            G2frame.dataFrame.MakeNewPhase.Enable(True)
+            G2frame.dataWindow.CopyCell.Enable(True)
+            G2frame.dataWindow.IndexPeaks.Enable(True)
+            G2frame.dataWindow.MakeNewPhase.Enable(True)
             G2frame.ifX20 = True
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefreshUnitCellsGrid(event):
-        data = G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
@@ -3125,7 +3019,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 G2frame.HKL = np.array(G2frame.HKL)
-                if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+                if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
                     G2plt.PlotPatterns(G2frame)
@@ -3137,50 +3031,46 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[r][c] = True
                     UnitCellsTable.SetValue(r,c,True)
                 gridDisplay.ForceRefresh()
-            G2frame.PatternTree.SetItemPyData(UnitCellsId,data)
+            G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
     def MakeNewPhase(event):
-        if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'):
-            sub = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Phases')
+        if not G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
+            sub = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Phases')
         else:
-            sub = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+            sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
         PhaseName = ''
         dlg = wx.TextEntryDialog(None,'Enter a name for this phase','Phase Name Entry','New phase',
             style=wx.OK)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PhaseName = dlg.GetValue()
-                cells = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2]
+                cells = G2frame.GPXtree.GetItemPyData(UnitCellsId)[2]
                 for Cell in cells:
                     if Cell[-2]:
                         break
                 cell = Cell[2:10]        
-                sub = G2frame.PatternTree.AppendItem(parent=sub,text=PhaseName)
+                sub = G2frame.GPXtree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(controls[13])
-                G2frame.PatternTree.SetItemPyData(sub, \
+                G2frame.GPXtree.SetItemPyData(sub, \
                     G2obj.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:],Super=ssopt))
-                Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
+                G2frame.GetStatusBar().SetStatusText('Change space group from '+str(controls[13])+' if needed',1)
         finally:
             dlg.Destroy()
             
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()
-    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndexMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-    G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2gd.wxID_INDEXPEAKS)
-    G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
-    G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
-    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
-    G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2gd.wxID_EXPORTCELLS)
+    G2frame.SetTitle('Unit cells')
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
+    G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
+    G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
+    G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
+    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
+    G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
         
     controls,bravais,cells,dminx,ssopt = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space group used in indexing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
-    G2frame.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
+    G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
@@ -3194,48 +3084,48 @@ def UpdateUnitCellsGrid(G2frame, data):
         ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
         [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     
-    G2frame.dataFrame.SetLabel('Unit Cells List')
-    G2frame.dataFrame.IndexPeaks.Enable(False)
-    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
+    G2frame.dataWindow.IndexPeaks.Enable(False)
+    peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
     if peaks:
-        G2frame.dataFrame.IndexPeaks.Enable(True)
-    G2frame.dataFrame.RefineCell.Enable(False)
+        G2frame.dataWindow.IndexPeaks.Enable(True)
+    G2frame.dataWindow.RefineCell.Enable(False)
     if controls[12] > 1.0:                               #if a "real" volume (i.e. not default)
-        G2frame.dataFrame.RefineCell.Enable(True)    
-    G2frame.dataFrame.CopyCell.Enable(False)
-    G2frame.dataFrame.MakeNewPhase.Enable(False)        
-    G2frame.dataFrame.ExportCells.Enable(False)
+        G2frame.dataWindow.RefineCell.Enable(True)    
+    G2frame.dataWindow.CopyCell.Enable(False)
+    G2frame.dataWindow.MakeNewPhase.Enable(False)        
+    G2frame.dataWindow.ExportCells.Enable(False)
     if cells:
-        G2frame.dataFrame.CopyCell.Enable(True)
-        G2frame.dataFrame.MakeNewPhase.Enable(True)
-        G2frame.dataFrame.ExportCells.Enable(True)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Indexing controls: '),0,WACV)
+        G2frame.dataWindow.CopyCell.Enable(True)
+        G2frame.dataWindow.MakeNewPhase.Enable(True)
+        G2frame.dataWindow.ExportCells.Enable(True)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(0,5,5,5)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max Nc/Nobs '),0,WACV)
-    NcNo = wx.SpinCtrl(G2frame.dataDisplay)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max Nc/Nobs '),0,WACV)
+    NcNo = wx.SpinCtrl(G2frame.dataWindow)
     NcNo.SetRange(2,8)
     NcNo.SetValue(controls[2])
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Start Volume '),0,WACV)
-    startVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controls,3,typeHint=int,min=25)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Start Volume '),0,WACV)
+    startVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,3,typeHint=int,min=25)
     littleSizer.Add(startVol,0,WACV)
-    x20 = wx.CheckBox(G2frame.dataDisplay,label='Use M20/(X20+1)?')
+    x20 = wx.CheckBox(G2frame.dataWindow,label='Use M20/(X20+1)?')
     x20.SetValue(G2frame.ifX20)
     x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
     littleSizer.Add(x20,0,WACV)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Select Bravais Lattices for indexing: '),
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),
         0,WACV)
     mainSizer.Add((5,5),0)
     littleSizer = wx.FlexGridSizer(0,7,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
     for brav,bravName in bravs:
-        bravCk = wx.CheckBox(G2frame.dataDisplay,label=bravName)
+        bravCk = wx.CheckBox(G2frame.dataWindow,label=bravName)
         bravList.append(bravCk.GetId())
         bravCk.SetValue(brav)
         bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
@@ -3243,34 +3133,34 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Cell Test & Refinement: '),0,WACV)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test & Refinement: '),0,WACV)
     mainSizer.Add((5,5),0)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Bravais lattice "),0,WACV)
-    bravSel = wx.Choice(G2frame.dataDisplay,choices=bravaisSymb)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais lattice "),0,WACV)
+    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb)
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Space group "),0,WACV)
-    spcSel = wx.Choice(G2frame.dataDisplay,choices=SPGlist[controls[5]])
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space group "),0,WACV)
+    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]])
     spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
     if ssopt.get('Use',False):        #zero for super lattice doesn't work!
         controls[0] = False
     else:
-        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Zero offset"),0,WACV)
-        zero = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,controls,1,nDig=(10,4),typeHint=float,min=-5.,max=5.)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset"),0,WACV)
+        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,min=-5.,max=5.)
         littleSizer.Add(zero,0,WACV)
-        zeroVar = wx.CheckBox(G2frame.dataDisplay,label="Refine?")
+        zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
         zeroVar.SetValue(controls[0])
         zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
         littleSizer.Add(zeroVar,0,WACV)
-    SSopt = wx.CheckBox(G2frame.dataDisplay,label="Super lattice?")
+    SSopt = wx.CheckBox(G2frame.dataWindow,label="Super lattice?")
     SSopt.SetValue(ssopt.get('Use',False))
     SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
     littleSizer.Add(SSopt,0,WACV)
-    hklShow = wx.Button(G2frame.dataDisplay,label="Show hkl positions")
+    hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,WACV)
     mainSizer.Add(littleSizer,0)
@@ -3284,15 +3174,15 @@ def UpdateUnitCellsGrid(G2frame, data):
     valDict = {}
     littleSizer = wx.FlexGridSizer(0,useGUI[1],5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=txt),0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt),0,WACV)
         if ifEdit:          #a,b,c,etc.
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            cellVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
+            cellVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
             cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
-            cellSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+            cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
             cellSpin.SetValue(0)
             cellSpin.SetRange(-1,1)
             cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
@@ -3302,7 +3192,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             cellList.append(cellSpin.GetId())
             valDict[cellSpin.GetId()] = cellVal
         else:               #volume
-            volVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
+            volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
@@ -3313,22 +3203,22 @@ def UpdateUnitCellsGrid(G2frame, data):
         if ssopt['ssSymb'] not in ssChoice:
             ssopt['ssSymb'] = ssChoice[0]
         ssSizer = wx.BoxSizer(wx.HORIZONTAL)
-        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
-        selMG = wx.ComboBox(G2frame.dataDisplay,value=ssopt['ssSymb'],
+        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
+        selMG = wx.ComboBox(G2frame.dataWindow,value=ssopt['ssSymb'],
                 choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
         ssSizer.Add(selMG,0,WACV)
-        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Mod. vector: '),0,WACV)
+        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
         Indx = {}
         for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
-                modVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ssopt['ModVec'],i,
+                modVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ssopt['ModVec'],i,
                     min=-.98,max=.98,nDig=(10,4),typeHint=float,OnLeave=OnModVal)
                 valSizer.Add(modVal,0,WACV)
-                modSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+                modSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))
                 modSpin.SetValue(0)
                 modSpin.SetRange(-1,1)
                 modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
@@ -3337,23 +3227,23 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Indx[modVal.GetId()] = i
                 Indx[modSpin.GetId()] = [i,modVal]
             else:
-                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),
+                modVal = wx.TextCtrl(G2frame.dataWindow,value=('%.3f'%(val)),
                     size=wx.Size(50,20),style=wx.TE_READONLY)
                 modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                 ssSizer.Add(modVal,0,WACV)
-        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max. M: '),0,WACV)
-        maxMH = wx.ComboBox(G2frame.dataDisplay,value=str(ssopt['maxH']),
+        ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max. M: '),0,WACV)
+        maxMH = wx.ComboBox(G2frame.dataWindow,value=str(ssopt['maxH']),
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
-        findMV = wx.Button(G2frame.dataDisplay,label="Find mod. vec.?")
+        findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
         findMV.Bind(wx.EVT_BUTTON,OnFindMV)
         ssSizer.Add(findMV,0,WACV)
         mainSizer.Add(ssSizer,0)
 
-    G2frame.dataFrame.currentGrids = []
+    G2frame.dataWindow.currentGrids = []
     if cells:
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='\n Indexing Result:'),0,WACV)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'),0,WACV)
         rowLabels = []
         colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume','Keep']
         Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]+ \
@@ -3371,12 +3261,12 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = np.array(G2frame.HKL)
             table.append(row)
         UnitCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        gridDisplay = G2G.GSGrid(G2frame.dataDisplay)
+        gridDisplay = G2G.GSGrid(G2frame.dataWindow)
         gridDisplay.SetTable(UnitCellsTable, True)
-        G2frame.dataFrame.CopyCell.Enable(True)
+        G2frame.dataWindow.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
         gridDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnSortCells)
-        gridDisplay.SetMargins(0,0)
+#        gridDisplay.SetScrollRate(0,0)
         gridDisplay.SetRowLabelSize(0)
         gridDisplay.AutoSizeColumns(False)
         for r in range(gridDisplay.GetNumberRows()):
@@ -3386,14 +3276,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(gridDisplay,0,WACV)
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetAutoLayout(1)
-    G2frame.dataDisplay.SetupScrolling()
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    Size[0] += 25
-    Size[1] = min(600,Size[1])
-    G2frame.dataFrame.setSizePosLeft(Size)    
+    G2frame.dataWindow.SetDataSize()
     
 ################################################################################
 #####  Reflection list
@@ -3403,7 +3286,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item by displaying
     a table of reflections in the data window.
     '''
-    Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     dMin = 0.05
     if 'UsrReject' in Controls:
         dMin = Controls['UsrReject'].get('MinD',0.05)
@@ -3412,9 +3295,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''
         phaseName = G2frame.RefList
         if phaseName not in ['Unknown',]:
-            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
-            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
+            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
             Super = General.get('Super',0)
             SuperVec = General.get('SuperVec',[])
         else:
@@ -3440,9 +3323,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''
         phaseName = G2frame.RefList
         if phaseName not in ['Unknown',]:
-            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
-            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
+            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
             Super = General.get('Super',0)
             SuperVec = General.get('SuperVec',[])
         else:
@@ -3472,11 +3355,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         for a phase.        
         '''
         if phaseName not in ['Unknown',]:
-            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
             if not phaseId:         #phase deleted 
                 return None
-            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
             Super = General.get('Super',0)
         else:
             Super = 0
@@ -3486,7 +3369,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             refs = refList
         else:
             if len(data) > 1:
-                G2frame.dataFrame.SelectPhase.Enable(True)
+                G2frame.dataWindow.SelectPhase.Enable(True)
             try:            #patch for old reflection lists
                 if not len(data[phaseName]):
                     return None
@@ -3554,11 +3437,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if not HKLF and not len(data[phaseName]):
             return          #deleted phase?
         G2frame.RefList = phaseName
-        G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
+        G2frame.SetTitle('Reflection List for '+phaseName)
         if HKLF:
-            Status.SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; twin < 0 (user rejected) red; twin=0 (sp. gp. absent) red')
+            G2frame.GetStatusBar().SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; twin < 0 (user rejected) red; twin=0 (sp. gp. absent) red',1)
         else:
-            Status.SetStatusText('Prfo < 0. in red; if excluded Fosq in red & mul < 0')
+            G2frame.GetStatusBar().SetStatusText('Prfo < 0. in red; if excluded Fosq in red & mul < 0',1)
         itof = 0
         if HKLF:
             im = data[1].get('Super',0)
@@ -3580,9 +3463,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             refList = np.array([refl[:6+im] for refl in data[phaseName]['RefList']])
         G2frame.HKL = np.vstack((refList.T)).T    #build for plots
         # raise the tab (needed for 1st use and from OnSelectPhase)
-        for PageNum in range(G2frame.dataDisplay.GetPageCount()):
-            if phaseName == G2frame.dataDisplay.GetPageText(PageNum):
-                G2frame.dataDisplay.SetSelection(PageNum)
+        for PageNum in range(G2frame.refBook.GetPageCount()):
+            if phaseName == G2frame.refBook.GetPageText(PageNum):
+                G2frame.refBook.SetSelection(PageNum)
                 break
         else:
             print phaseName
@@ -3593,8 +3476,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Respond to a press on a phase tab by displaying the reflections. This
         routine is needed because the reflection table may not have been created yet.
         '''
+        G2frame.refBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         page = event.GetSelection()
-        phaseName = G2frame.dataDisplay.GetPageText(page)
+        phaseName = G2frame.refBook.GetPageText(page)
         ShowReflTable(phaseName)
 
     def OnSelectPhase(event):
@@ -3621,34 +3505,32 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     else:
         phaseName = G2frame.RefList
         phases = data.keys()
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ReflMenu)
     if HKLF:
-        G2gd.SetDataMenuBar(G2frame)
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
-        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
-        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
-        G2frame.dataFrame.SelectPhase.Enable(False)
+        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.dataWindow.SelectPhase.Enable(False)
     else:
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
-        G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
-        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
-        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
-        G2frame.dataFrame.SelectPhase.Enable(False)
+        G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2G.wxID_SELECTPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
+        G2frame.dataWindow.SelectPhase.Enable(False)
             
-    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataWindow.ClearData()
+    G2frame.refBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(G2frame.refBook,1,wx.ALL|wx.EXPAND,1)
     G2frame.refTable = {}
-    G2frame.dataFrame.currentGrids = []
+    G2frame.dataWindow.currentGrids = []
     for tabnum,phase in enumerate(phases):
         if isinstance(data,list):           #single crystal HKLF
-            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
-            G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
+            G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
+            G2frame.refTable[phase].SetScrollRate(1,1) # reflection grids (inside tab) need scroll bars 
         elif len(data[phase]):              #else dict for PWDR
-            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
-            G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+            G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
+            G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
+            G2frame.refTable[phase].SetScrollRate(1,1) # as above
         else:       #cleanup deleted phase reflection lists
             del data[phase]
             if len(data):
@@ -3657,10 +3539,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             else:
                 G2frame.RefList = ''
                 phaseName = ''
-    if phaseName:
-        ShowReflTable(phaseName)
-    G2frame.dataFrame.setSizePosLeft([550,350])
-    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    if phaseName: ShowReflTable(phaseName)
+    G2frame.refBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.dataWindow.SetDataSize()
     
 ################################################################################
 #####  SASD/REFD Substances 
@@ -3672,7 +3553,7 @@ def UpdateSubstanceGrid(G2frame,data):
     import Substances as substFile
     
     def LoadSubstance(name):
-        
+
         subst = substFile.Substances[name]
         ElList = subst['Elements'].keys()
         for El in ElList:
@@ -3742,15 +3623,13 @@ def UpdateSubstanceGrid(G2frame,data):
         UpdateSubstanceGrid(G2frame,data)
         
     def OnCopySubstance(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy substances from\n'+hst[5:]+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy substances from\n'+hst[5:]+' to...',
             'Copy substances', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -3759,8 +3638,8 @@ def UpdateSubstanceGrid(G2frame,data):
         finally:
             dlg.Destroy()        
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))[0]
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Instrument Parameters'))[0]
             wave = G2mth.getWave(Inst)
             ndata = copy.deepcopy(data)
             for name in ndata['Substances'].keys():
@@ -3772,7 +3651,7 @@ def UpdateSubstanceGrid(G2frame,data):
                     ndata['Substances'][name]['XAnom density'] = recontrst
                     ndata['Substances'][name]['XAbsorption'] = absorb
                     ndata['Substances'][name]['XImag density'] = imcontrst
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),ndata)
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Substances'),ndata)
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
@@ -3937,88 +3816,77 @@ def UpdateSubstanceGrid(G2frame,data):
         
         Indx = {}
         substSizer = wx.BoxSizer(wx.VERTICAL)
-        substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Substance list: wavelength: %.5fA'%(wave)),
+        substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Substance list: wavelength: %.5fA'%(wave)),
             0,WACV)
         for name in data['Substances']:
-            G2G.HorizontalLine(substSizer,G2frame.dataDisplay)    
-            substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Data for '+name+':'),
+            G2G.HorizontalLine(substSizer,G2frame.dataWindow)    
+            substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Data for '+name+':'),
                 0,WACV)
             if name == 'vacuum':
-                substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='        Not applicable'),
+                substSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='        Not applicable'),
                     0,WACV)
             elif name == 'unit scatter':
-                substSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Scattering density,f: %.3f *10%scm%s'%(data['Substances'][name]['Scatt density'],Pwr10,Pwrm2)),0,WACV)
+                substSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Scattering density,f: %.3f *10%scm%s'%(data['Substances'][name]['Scatt density'],Pwr10,Pwrm2)),0,WACV)
             else:    
                 elSizer = wx.FlexGridSizer(0,8,5,5)
                 Substance = data['Substances'][name]
                 Elems = Substance['Elements']
                 for El in Elems:    #do elements as pull downs for isotopes for neutrons
-                    elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
+                    elSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' '+El+': '),
                         0,WACV)
-                    num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name]['Elements'][El],'Num',
+                    num = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Substances'][name]['Elements'][El],'Num',
                         nDig=(10,2,'f'),typeHint=float,OnLeave=OnNum)
                     Indx[num.GetId()] = [name,El,'Num']
                     elSizer.Add(num,0,WACV)
                     if 'N' in Inst['Type'][0]:
-                        elSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Isotope: '),0,WACV)
+                        elSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Isotope: '),0,WACV)
                         isotopes = Elems[El]['Isotopes'].keys()
-                        isotope = wx.ComboBox(G2frame.dataDisplay,choices=isotopes,value=Elems[El].get('Isotope','Nat. Abund.'),
+                        isotope = wx.ComboBox(G2frame.dataWindow,choices=isotopes,value=Elems[El].get('Isotope','Nat. Abund.'),
                             style=wx.CB_READONLY|wx.CB_DROPDOWN)
                         Indx[isotope.GetId()] = [El,name]
                         isotope.Bind(wx.EVT_COMBOBOX,OnIsotope)
                         elSizer.Add(isotope,0,WACV)
                 substSizer.Add(elSizer,0)
                 vdsSizer = wx.FlexGridSizer(0,4,5,5)
-                vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Volume: '),
+                vdsSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Volume: '),
                     0,WACV)
-                vol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name],'Volume',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
+                vol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Substances'][name],'Volume',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
                 Indx[vol.GetId()] = [name,'Volume']
                 vdsSizer.Add(vol,0,WACV)                
-                vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Density: '),
+                vdsSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Density: '),
                     0,WACV)
-                den = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Substances'][name],'Density',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
+                den = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Substances'][name],'Density',nDig=(10,2),typeHint=float,OnLeave=OnVolDen)
                 Indx[den.GetId()] = [name,'Density']
                 vdsSizer.Add(den,0,WACV)
                 substSizer.Add(vdsSizer,0)
                 denSizer = wx.FlexGridSizer(0,2,0,0)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Scattering density,f'),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3f *10%scm%s'%(Substance['Scatt density'],Pwr10,Pwrm2)),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Real density,f+f'"),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Imaginary density,f"'),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3g *10%scm%s'%(Substance['XImag density'],Pwr10,Pwrm2)),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Absorption'),0,WACV)
-                denSizer.Add(wx.StaticText(G2frame.dataDisplay,label=': %.3g cm%s'%(Substance['XAbsorption'],Pwrm1)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Scattering density,f'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=': %.3f *10%scm%s'%(Substance['Scatt density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Real density,f+f'"),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=': %.3f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Imaginary density,f"'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=': %.3g *10%scm%s'%(Substance['XImag density'],Pwr10,Pwrm2)),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Absorption'),0,WACV)
+                denSizer.Add(wx.StaticText(G2frame.dataWindow,label=': %.3g cm%s'%(Substance['XAbsorption'],Pwrm1)),0,WACV)
                 substSizer.Add(denSizer)
         return substSizer
             
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     wave = G2mth.getWave(Inst)
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()  # is this a ScrolledWindow? If so, bad!
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SubstanceMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
-    G2frame.dataFrame.SetLabel('Substances')
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadSubstances, id=G2gd.wxID_RELOADSUBSTANCES)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopySubstance, id=G2gd.wxID_COPYSUBSTANCE)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteSubstance, id=G2gd.wxID_DELETESUBSTANCE)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_ELEMENTADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_ELEMENTDELETE)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SubstanceMenu)
+    G2frame.SetTitle('Substances')
+    G2frame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2G.wxID_LOADSUBSTANCE)    
+    G2frame.Bind(wx.EVT_MENU, OnReloadSubstances, id=G2G.wxID_RELOADSUBSTANCES)    
+    G2frame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2G.wxID_ADDSUBSTANCE)
+    G2frame.Bind(wx.EVT_MENU, OnCopySubstance, id=G2G.wxID_COPYSUBSTANCE)
+    G2frame.Bind(wx.EVT_MENU, OnDeleteSubstance, id=G2G.wxID_DELETESUBSTANCE)    
+    G2frame.Bind(wx.EVT_MENU, OnAddElement, id=G2G.wxID_ELEMENTADD)
+    G2frame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2G.wxID_ELEMENTDELETE)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(SubstSizer(),0)
+    G2frame.dataWindow.SetDataSize()
 
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetAutoLayout(1)
-    G2frame.dataDisplay.SetupScrolling()
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    Size[0] += 25
-    G2frame.dataFrame.setSizePosLeft(Size)    
-       
 ################################################################################
 #####  SASD Models 
 ################################################################################           
@@ -4077,15 +3945,13 @@ def UpdateModelsGrid(G2frame,data):
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
         
     def OnCopyModel(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy models from\n'+hst[5:]+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy models from\n'+hst[5:]+' to...',
             'Copy models', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -4094,28 +3960,26 @@ def UpdateModelsGrid(G2frame,data):
         finally:
             dlg.Destroy()        
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             newdata = copy.deepcopy(data)
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),newdata)
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Models'),newdata)
             if newdata['BackFile']:
-                Profile = G2frame.PatternTree.GetItemPyData(Id)[1]
-                BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,newdata['BackFile'])
-                BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
-                Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
+                Profile = G2frame.GPXtree.GetItemPyData(Id)[1]
+                BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,newdata['BackFile'])
+                BackSample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,BackId, 'Sample Parameters'))
+                Profile[5] = BackSample['Scale'][0]*G2frame.GPXtree.GetItemPyData(BackId)[1][1]
         UpdateModelsGrid(G2frame,newdata)  
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
         RefreshPlots(True)
                 
     def OnCopyFlags(event):
         thisModel = copy.deepcopy(data)
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame, 
-            'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
             'Copy sample flags', histList)
         distChoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm','Bragg','Unified',
             'Porod','Monodisperse',]
@@ -4126,8 +3990,8 @@ def UpdateModelsGrid(G2frame,data):
                 result = dlg.GetSelections()
                 for i in result: 
                     item = histList[i]
-                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    newModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    newModel = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Models'))
                     newModel['Back'][1] = copy.copy(thisModel['Back'][1])
                     for ilev,level in enumerate(newModel['Particle']['Levels']):
                         for form in level:
@@ -4145,40 +4009,30 @@ def UpdateModelsGrid(G2frame,data):
             dlg.Destroy()
                 
     def OnFitModelAll(event):
-        choices = G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
-             'Select dataset to include',choices)
+        choices = G2gd.GetGPXtreeDataNames(G2frame,['SASD',])
+        od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Sequential SASD refinement',
+             'Select dataset to include',choices,extraOpts=od)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
-            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
+            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential SASD results')
             if Id:
-                SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+                SeqResult = G2frame.GPXtree.GetItemPyData(Id)
             else:
                 SeqResult = {}
-                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
             SeqResult['histNames'] = names
         else:
             dlg.Destroy()
             return
         dlg.Destroy()
-        Reverse = False
-        CopyForward = False
-        choice = ['Reverse sequence','Copy from prev.']
-        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
-        if dlg.ShowModal() == wx.ID_OK:
-            for sel in dlg.GetSelections():
-                if sel:
-                    CopyForward = True
-                else:
-                    Reverse = True
-        dlg.Destroy()
         dlg = wx.ProgressDialog('SASD Sequential fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         wx.BeginBusyCursor()
-        if Reverse:
+        if od['value_2']:
             names.reverse()
         JModel = None
         try:
@@ -4187,13 +4041,13 @@ def UpdateModelsGrid(G2frame,data):
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
-                sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
-                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(sId)[:2]
-                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
-                ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Sample Parameters'))
-                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))
+                sId =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if i and od['value_1']:
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'),JModel)
+                IProfDict,IProfile = G2frame.GPXtree.GetItemPyData(sId)[:2]
+                IModel = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'))
+                ISample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Sample Parameters'))
+                ILimits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Limits'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
                 JModel = copy.deepcopy(IModel)
                 if not IfOK:
@@ -4204,7 +4058,7 @@ def UpdateModelsGrid(G2frame,data):
                     dlg.Destroy()
                     break
                 else:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
                 
                 G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
@@ -4214,8 +4068,8 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-        G2frame.PatternTree.SelectItem(Id)
+        G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+        G2frame.GPXtree.SelectItem(Id)
         
     def OnFitModel(event):
         if data['Current'] == 'Size dist.':
@@ -4241,9 +4095,9 @@ def UpdateModelsGrid(G2frame,data):
             
     def OnUnDo(event):
         DoUnDo()
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Models'))
-        G2frame.dataFrame.SasdUndo.Enable(False)
+        G2frame.dataWindow.SasdUndo.Enable(False)
         UpdateModelsGrid(G2frame,data)
         G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
         RefreshPlots(True)
@@ -4252,7 +4106,7 @@ def UpdateModelsGrid(G2frame,data):
         print 'Undo last refinement'
         file = open(G2frame.undosasd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
         print ' Models recovered'
         file.close()
         
@@ -4261,9 +4115,9 @@ def UpdateModelsGrid(G2frame,data):
         file = open(G2frame.undosasd,'wb')
         PatternId = G2frame.PatternId
         for item in ['Models']:
-            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
+            cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,item)),file,1)
         file.close()
-        G2frame.dataFrame.SasdUndo.Enable(True)
+        G2frame.dataWindow.SasdUndo.Enable(True)
         
     def OnSelectFit(event):
         data['Current'] = fitSel.GetValue()
@@ -4298,34 +4152,34 @@ def UpdateModelsGrid(G2frame,data):
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
         sizeSizer = wx.BoxSizer(wx.VERTICAL)
-        sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Size distribution parameters: '),0,WACV)
+        sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Size distribution parameters: '),0,WACV)
         binSizer = wx.FlexGridSizer(0,7,5,5)
-        binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' No. size bins: '),0,WACV)
+        binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. size bins: '),0,WACV)
         bins = ['50','100','150','200']
-        nbins = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Nbins']),choices=bins,
+        nbins = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['Nbins']),choices=bins,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[nbins.GetId()] = [data['Size'],'Nbins',0]
         nbins.Bind(wx.EVT_COMBOBOX,OnIntVal)        
         binSizer.Add(nbins,0,WACV)
-        binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min diam.: '),0,WACV)
+        binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Min diam.: '),0,WACV)
         minDias = ['10','25','50','100','150','200']
-        mindiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MinDiam']),choices=minDias,
+        mindiam = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['MinDiam']),choices=minDias,
             style=wx.CB_DROPDOWN)
         mindiam.Bind(wx.EVT_LEAVE_WINDOW,OnIntVal)
         mindiam.Bind(wx.EVT_TEXT_ENTER,OnIntVal)        
         mindiam.Bind(wx.EVT_KILL_FOCUS,OnIntVal)
         Indx[mindiam.GetId()] = [data['Size'],'MinDiam',0]
         binSizer.Add(mindiam,0,WACV)
-        binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max diam.: '),0,WACV)
+        binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max diam.: '),0,WACV)
         maxDias = [str(1000*(i+1)) for i in range(10)]
-        maxdiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MaxDiam']),choices=maxDias,
+        maxdiam = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['MaxDiam']),choices=maxDias,
             style=wx.CB_DROPDOWN)
         maxdiam.Bind(wx.EVT_LEAVE_WINDOW,OnIntVal)
         maxdiam.Bind(wx.EVT_TEXT_ENTER,OnIntVal)        
         maxdiam.Bind(wx.EVT_KILL_FOCUS,OnIntVal)
         Indx[maxdiam.GetId()] = [data['Size'],'MaxDiam',0]
         binSizer.Add(maxdiam,0,WACV)
-        logbins = wx.CheckBox(G2frame.dataDisplay,label='Log bins?')
+        logbins = wx.CheckBox(G2frame.dataWindow,label='Log bins?')
         Indx[logbins.GetId()] = [data['Size'],'logBins']
         logbins.SetValue(data['Size']['logBins'])
         logbins.Bind(wx.EVT_CHECKBOX, OnCheckBox)
@@ -4333,48 +4187,48 @@ def UpdateModelsGrid(G2frame,data):
         sizeSizer.Add(binSizer,0)
         sizeSizer.Add((5,5),0)
         partSizer = wx.BoxSizer(wx.HORIZONTAL)
-        partSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Particle description: '),0,WACV)
+        partSizer.Add(wx.StaticText(G2frame.dataWindow,label='Particle description: '),0,WACV)
         shapes = {'Spheroid':' Aspect ratio: ','Cylinder':' Diameter ','Cylinder AR':' Aspect ratio: ',
             'Unified sphere':'','Unified rod':' Diameter: ','Unified rod AR':' Aspect ratio: ',
             'Unified disk':' Thickness: ', 'Spherical shell': ' Shell thickness'}
-        partsh = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Shape'][0]),choices=shapes.keys(),
+        partsh = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['Shape'][0]),choices=shapes.keys(),
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         partsh.Bind(wx.EVT_COMBOBOX,OnShape)        
         partSizer.Add(partsh,0,WACV)
         if data['Size']['Shape'][0] not in ['Unified sphere',]:
-            partSizer.Add(wx.StaticText(G2frame.dataDisplay,label=shapes[data['Size']['Shape'][0]]),0,WACV)
-            partprm = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Size']['Shape'],1,
+            partSizer.Add(wx.StaticText(G2frame.dataWindow,label=shapes[data['Size']['Shape'][0]]),0,WACV)
+            partprm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Size']['Shape'],1,
                 nDig=(10,3),typeHint=float,min=0.)
             partSizer.Add(partprm,0,WACV)
         sizeSizer.Add(partSizer,0)
         sizeSizer.Add((5,5),0)
         fitSizer = wx.BoxSizer(wx.HORIZONTAL)
         methods = ['MaxEnt','IPG',]
-        fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Fitting method: '),0,WACV)
-        method = wx.ComboBox(G2frame.dataDisplay,value=data['Size']['Method'],choices=methods,
+        fitSizer.Add(wx.StaticText(G2frame.dataWindow,label='Fitting method: '),0,WACV)
+        method = wx.ComboBox(G2frame.dataWindow,value=data['Size']['Method'],choices=methods,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         method.Bind(wx.EVT_COMBOBOX,OnMethod)
         fitSizer.Add(method,0,WACV)
         iters = ['10','25','50','100','150','200']        
-        fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' No. iterations: '),0,WACV)
+        fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. iterations: '),0,WACV)
         Method = data['Size']['Method']
-        iter = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size'][Method]['Niter']),choices=iters,
+        iter = wx.ComboBox(G2frame.dataWindow,value=str(data['Size'][Method]['Niter']),choices=iters,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[iter.GetId()] = [data['Size'][Method],'Niter',0]
         iter.Bind(wx.EVT_COMBOBOX,OnIntVal)
         fitSizer.Add(iter,0,WACV)
         if 'MaxEnt' in data['Size']['Method']:
-            fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Log floor factor: '),0,WACV)
+            fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Log floor factor: '),0,WACV)
             floors = [str(-i) for i in range(9)]
-            floor = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MaxEnt']['Sky']),choices=floors,
+            floor = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['MaxEnt']['Sky']),choices=floors,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[floor.GetId()] = [data['Size']['MaxEnt'],'Sky',-10]
             floor.Bind(wx.EVT_COMBOBOX,OnIntVal)
             fitSizer.Add(floor,0,WACV)
         elif 'IPG' in data['Size']['Method']:
-            fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Q power weight (-1 for sigma): '),0,WACV)
+            fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Q power weight (-1 for sigma): '),0,WACV)
             choices = ['-1','0','1','2','3','4']
-            power = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['IPG']['Power']),choices=choices,
+            power = wx.ComboBox(G2frame.dataWindow,value=str(data['Size']['IPG']['Power']),choices=choices,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[power.GetId()] = [data['Size']['IPG'],'Power',-2]
             power.Bind(wx.EVT_COMBOBOX,OnIntVal)
@@ -4433,7 +4287,10 @@ def UpdateModelsGrid(G2frame,data):
         def OnSelect(event):
             Obj = event.GetEventObject()
             item,key = Indx[Obj.GetId()]
-            item[key] = Obj.GetValue()
+            if key in ['NumPoints',]:
+                item[key] = int(Obj.GetValue())
+            else:
+                item[key] = Obj.GetValue()
             if 'Refine' not in Obj.GetLabel():
                 if 'FormFact' in key :
                     item['FFargs'] = FormFactors[Obj.GetValue()]
@@ -4466,51 +4323,51 @@ def UpdateModelsGrid(G2frame,data):
             
         def SizeSizer():
             sizeSizer = wx.FlexGridSizer(0,4,5,5)
-            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Distribution: '),0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Distribution: '),0,WACV)
             Distchoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm','Bragg','Unified','Porod','Monodisperse',]
-            distChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['DistType'],choices=Distchoice,
+            distChoice = wx.ComboBox(G2frame.dataWindow,value=level['Controls']['DistType'],choices=Distchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[distChoice.GetId()] = [level['Controls'],'DistType']
             distChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
             sizeSizer.Add(distChoice,0,WACV)    #put structure factor choices here
             if level['Controls']['DistType'] not in ['Bragg','Unified','Porod',]:
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Form Factor: '),0,WACV)
+                sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Form Factor: '),0,WACV)
                 if 'Mono' in level['Controls']['DistType']:
-                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffMonoChoices,
+                    ffChoice = wx.ComboBox(G2frame.dataWindow,value=level['Controls']['FormFact'],choices=ffMonoChoices,
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 else:
-                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffDistChoices,
+                    ffChoice = wx.ComboBox(G2frame.dataWindow,value=level['Controls']['FormFact'],choices=ffDistChoices,
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Indx[ffChoice.GetId()] = [level['Controls'],'FormFact']
                 ffChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
                 sizeSizer.Add(ffChoice,0,WACV)
                 
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
-                matSel = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['Material'],
+                sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Material: '),0,WACV)
+                matSel = wx.ComboBox(G2frame.dataWindow,value=level['Controls']['Material'],
                     choices=Substances['Substances'].keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Indx[matSel.GetId()] = [level['Controls'],'Material']
                 matSel.Bind(wx.EVT_COMBOBOX,OnSelect)        
                 sizeSizer.Add(matSel,0,WACV) #do neutron test here?
                 rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
                 level['Controls']['Contrast'] = contrast = (rho-rhoMat)**2                 
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
+                sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Resonant X-ray contrast: '),0,WACV)
+                sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
                 if 'Mono' not in level['Controls']['DistType']:
-                    sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Num. radii: '),0,WACV)
+                    sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Num. radii: '),0,WACV)
                     radii = ['25','50','75','100','200']
-                    nRadii = wx.ComboBox(G2frame.dataDisplay,value=str(level['Controls']['NumPoints']),choices=radii,
+                    nRadii = wx.ComboBox(G2frame.dataWindow,value=str(level['Controls']['NumPoints']),choices=radii,
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     Indx[nRadii.GetId()] = [level['Controls'],'NumPoints']
                     nRadii.Bind(wx.EVT_COMBOBOX,OnSelect)
                     sizeSizer.Add(nRadii,0,WACV)
-                    sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' R dist. cutoff: '),0,WACV)
-                    rCutoff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
+                    sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' R dist. cutoff: '),0,WACV)
+                    rCutoff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,level['Controls'],'Cutoff',
                         min=0.001,max=0.1,typeHint=float)
                     sizeSizer.Add(rCutoff,0,WACV)
             elif level['Controls']['DistType']  in ['Unified',]:
                 Parms = level['Unified']
                 Best = G2sasd.Bestimate(Parms['G'][0],Parms['Rg'][0],Parms['P'][0])
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Estimated Dist B: %12.4g'%(Best)),0,WACV)
+                sizeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Estimated Dist B: %12.4g'%(Best)),0,WACV)
             return sizeSizer
             
         def ParmSizer():
@@ -4525,15 +4382,15 @@ def UpdateModelsGrid(G2frame,data):
             for parm in parmOrder:
                 if parm in Parms:
                     if parm == 'MinSize':
-                        parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Dist '+parm),0,wx.ALIGN_CENTER)
+                        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Dist '+parm),0,wx.ALIGN_CENTER)
                     else:
-                        parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
+                        parmVar = wx.CheckBox(G2frame.dataWindow,label='Refine? Dist '+parm) 
                         parmVar.SetValue(Parms[parm][1])
                         parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                         parmSizer.Add(parmVar,0,WACV)
                         Indx[parmVar.GetId()] = [Parms[parm],1]
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
+                    parmValue = wx.TextCtrl(G2frame.dataWindow,value='%.3g'%(Parms[parm][0]),
                         style=wx.TE_PROCESS_ENTER)
                     parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
                     parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
@@ -4544,7 +4401,7 @@ def UpdateModelsGrid(G2frame,data):
                     else:
                         value = np.log10(Parms[parm][0])
                         valMinMax = [value-1,value+1]
-                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=slMult*valMinMax[0],
+                    parmSldr = wx.Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
                         maxValue=slMult*valMinMax[1],value=slMult*value)
                     Indx[parmValue.GetId()] = [Parms,parm,parmSldr]
                     Indx[parmSldr.GetId()] = [Parms,parm,parmValue]
@@ -4556,13 +4413,13 @@ def UpdateModelsGrid(G2frame,data):
                 for iarg,Args in enumerate([FFargs,SFargs]):
                     for parm in parmOrder:
                         if parm in Args:
-                            parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+fTypes[iarg]+parm) 
+                            parmVar = wx.CheckBox(G2frame.dataWindow,label='Refine? '+fTypes[iarg]+parm) 
                             parmVar.SetValue(Args[parm][1])
                             Indx[parmVar.GetId()] = [Args[parm],1]
                             parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                             parmSizer.Add(parmVar,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                            parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Args[parm][0]),
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
+                            parmValue = wx.TextCtrl(G2frame.dataWindow,value='%.3g'%(Args[parm][0]),
                                 style=wx.TE_PROCESS_ENTER)
                             parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
                             parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
@@ -4581,7 +4438,7 @@ def UpdateModelsGrid(G2frame,data):
                             else:
                                 value = np.log10(Args[parm][0])
                                 valMinMax = [value-1,value+1]
-                            parmSldr = wx.Slider(G2frame.dataDisplay,minValue=slMult*valMinMax[0],
+                            parmSldr = wx.Slider(G2frame.dataWindow,minValue=slMult*valMinMax[0],
                                 maxValue=slMult*valMinMax[1],value=slMult*value)
                             Indx[parmVar.GetId()] = [Args[parm],1]
                             Indx[parmValue.GetId()] = [Args,parm,parmSldr]
@@ -4593,37 +4450,37 @@ def UpdateModelsGrid(G2frame,data):
         Indx = {}
         partSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Particle fit parameters: '),0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Matrix: '),0,WACV)
-        matsel = wx.ComboBox(G2frame.dataDisplay,value=data['Particle']['Matrix']['Name'],
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Particle fit parameters: '),0,WACV)
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Matrix: '),0,WACV)
+        matsel = wx.ComboBox(G2frame.dataWindow,value=data['Particle']['Matrix']['Name'],
             choices=Substances['Substances'].keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[matsel.GetId()] = [data['Particle']['Matrix'],'Name'] 
         matsel.Bind(wx.EVT_COMBOBOX,OnSelect) #Do neutron test here?
         rhoMat = Substances['Substances'][data['Particle']['Matrix']['Name']].get('XAnom density',0.0)        
         topSizer.Add(matsel,0,WACV)
-        topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
-        volfrac = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Particle']['Matrix']['VolFrac'],0,
+        topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Volume fraction: '),0,WACV)
+        volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Particle']['Matrix']['VolFrac'],0,
                 typeHint=float)
         topSizer.Add(volfrac,0,WACV)
-        volVar = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
+        volVar = wx.CheckBox(G2frame.dataWindow,label=' Refine?')
         volVar.SetValue(data['Particle']['Matrix']['VolFrac'][1])
         Indx[volVar.GetId()] = [data['Particle']['Matrix']['VolFrac'],1]
         volVar.Bind(wx.EVT_CHECKBOX, OnSelect)
         topSizer.Add(volVar,0,WACV)
         partSizer.Add(topSizer,0,)
         for ilev,level in enumerate(data['Particle']['Levels']):
-            G2G.HorizontalLine(partSizer,G2frame.dataDisplay)
+            G2G.HorizontalLine(partSizer,G2frame.dataWindow)
             topLevel = wx.BoxSizer(wx.HORIZONTAL)
-            topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Model component %d: '%(ilev)),0,WACV)
-            delBtn = wx.Button(G2frame.dataDisplay,label=' Delete?')
+            topLevel.Add(wx.StaticText(G2frame.dataWindow,label=' Model component %d: '%(ilev)),0,WACV)
+            delBtn = wx.Button(G2frame.dataWindow,label=' Delete?')
             Indx[delBtn.GetId()] = ilev
             delBtn.Bind(wx.EVT_BUTTON,OnDelLevel)
             topLevel.Add(delBtn,0,WACV)
             partSizer.Add(topLevel,0)
             partSizer.Add(SizeSizer())
             if level['Controls']['DistType'] not in ['Bragg','Unified','Porod',]:
-                topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Structure factor: '),0,WACV)
-                strfctr = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['StrFact'],
+                topLevel.Add(wx.StaticText(G2frame.dataWindow,label=' Structure factor: '),0,WACV)
+                strfctr = wx.ComboBox(G2frame.dataWindow,value=level['Controls']['StrFact'],
                     choices=sfChoices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Indx[strfctr.GetId()] = [level['Controls'],'StrFact']
                 strfctr.Bind(wx.EVT_COMBOBOX,OnSelect)
@@ -4650,87 +4507,77 @@ def UpdateModelsGrid(G2frame,data):
     def OnBackFile(event):  #multiple backgrounds?
         data['BackFile'] = backFile.GetValue()
         if data['BackFile']:
-            BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
-            BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
-            Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
+            BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['BackFile'])
+            BackSample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,BackId, 'Sample Parameters'))
+            Profile[5] = BackSample['Scale'][0]*G2frame.GPXtree.GetItemPyData(BackId)[1][1]
         else:
             Profile[5] = np.zeros(len(Profile[5]))
         RefreshPlots(True)
             
-    Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
-    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
-    Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
-    ProfDict,Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:2]
+    Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
+    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
+    Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))
+    ProfDict,Profile = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:2]
     if data['BackFile']:
-        BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
-        BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
-        Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataFrame.SetLabel('Modelling')
-    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2gd.wxID_MODELCOPYFLAGS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddModel, id=G2gd.wxID_MODELADD)
+        BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['BackFile'])
+        BackSample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,BackId, 'Sample Parameters'))
+        Profile[5] = BackSample['Scale'][0]*G2frame.GPXtree.GetItemPyData(BackId)[1][1]
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ModelMenu)
+    G2frame.dataWindow.ClearData()
+    G2frame.SetTitle('Modelling')
+    G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2G.wxID_MODELCOPYFLAGS)
+    G2frame.Bind(wx.EVT_MENU, OnFitModel, id=G2G.wxID_MODELFIT)
+    G2frame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2G.wxID_MODELFITALL)
+    G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_MODELUNDO)
+    G2frame.Bind(wx.EVT_MENU, OnAddModel, id=G2G.wxID_MODELADD)
     Indx = {}
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     models = ['Size dist.','Particle fit']
-    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Modeling by: '),0,WACV)
-    fitSel = wx.ComboBox(G2frame.dataDisplay,value=data['Current'],choices=models,
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Modeling by: '),0,WACV)
+    fitSel = wx.ComboBox(G2frame.dataWindow,value=data['Current'],choices=models,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     fitSel.Bind(wx.EVT_COMBOBOX,OnSelectFit)        
     topSizer.Add(fitSel,0,WACV)
-    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Error multiplier: '),0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-    esdScale = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(1./np.sqrt(ProfDict['wtFactor'])),style=wx.TE_PROCESS_ENTER)
+    topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Error multiplier: '),0,WACV)
+#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
+    esdScale = wx.TextCtrl(G2frame.dataWindow,value='%.3f'%(1./np.sqrt(ProfDict['wtFactor'])),style=wx.TE_PROCESS_ENTER)
     esdScale.Bind(wx.EVT_TEXT_ENTER,OnEsdScale)        
     esdScale.Bind(wx.EVT_KILL_FOCUS,OnEsdScale)
     topSizer.Add(esdScale,0,WACV)
     mainSizer.Add(topSizer)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     if 'Size' in data['Current']:
         if 'MaxEnt' in data['Size']['Method']:
-            Status.SetStatusText('Size distribution by Maximum entropy')
+            G2frame.GetStatusBar().SetStatusText('Size distribution by Maximum entropy',1)
         elif 'IPG' in data['Size']['Method']:
-            Status.SetStatusText('Size distribution by Interior-Point Gradient')
+            G2frame.GetStatusBar().SetStatusText('Size distribution by Interior-Point Gradient',1)
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
         mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
-    backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
-    backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Back'],0,
+    backSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background:'),0,WACV)
+    backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Back'],0,
         nDig=(10,3),typeHint=float,OnLeave=OnBackChange)
     backSizer.Add(backVal,0,WACV)
-    backVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+    backVar = wx.CheckBox(G2frame.dataWindow,label='Refine?')
     Indx[backVar.GetId()] = [data['Back'],1]
     backVar.SetValue(data['Back'][1])
     backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
     backSizer.Add(backVar,0,WACV)
     #multiple background files?
-    backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background file: '),0,WACV)
-    Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
-    backFile = wx.ComboBox(parent=G2frame.dataDisplay,value=data['BackFile'],choices=Choices,
+    backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background file: '),0,WACV)
+    Choices = ['',]+G2gd.GetGPXtreeDataNames(G2frame,['SASD',])
+    backFile = wx.ComboBox(parent=G2frame.dataWindow,value=data['BackFile'],choices=Choices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     backFile.Bind(wx.EVT_COMBOBOX,OnBackFile)
     backSizer.Add(backFile)    
     mainSizer.Add(backSizer)
+    G2frame.dataWindow.SetDataSize()
 
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetAutoLayout(1)
-    G2frame.dataDisplay.SetupScrolling()
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    Size[0] += 25
-    G2frame.dataFrame.setSizePosLeft(Size)    
-    
 ################################################################################
 #####  REFD Models 
 ################################################################################           
@@ -4739,13 +4586,13 @@ def UpdateREFDModelsGrid(G2frame,data):
     '''respond to selection of REFD Models data tree item.
     '''
     def OnCopyModel(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Copy reflectivity models from\n'+str(hst[5:])+' to...',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy reflectivity models from\n'+str(hst[5:])+' to...',
             'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -4754,9 +4601,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         finally:
             dlg.Destroy()
         for item in copyList:
-            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),copy.deepcopy(data))
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            G2frame.GPXtree.SetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Models'),copy.deepcopy(data))
         
     def OnFitModel(event):
         
@@ -4768,16 +4615,16 @@ def UpdateREFDModelsGrid(G2frame,data):
         wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
         
     def OnModelPlot(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         histList = GetFileList(G2frame,'REFD')
 #        histList = [hst,]
 #        histList += GetHistsLikeSelected(G2frame)
         if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         plotList = []
         od = {'label_1':'Zero at substrate','value_1':False,'label_2':'Show layer transitions','value_2':True}
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Plot reflectivity models for:',
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Plot reflectivity models for:',
             'Plot SLD models', histList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -4791,9 +4638,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         XY = []
         LinePos = []
         for item in plotList:
-            mId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            model = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,mId,'Models'))
-            Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,mId,'Substances'))['Substances']       
+            mId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+            model = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,mId,'Models'))
+            Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,mId,'Substances'))['Substances']       
             x,xr,y = G2pwd.makeSLDprofile(model,Substances)
             if od['value_1']:
                 XY.append([xr,y])
@@ -4814,40 +4661,30 @@ def UpdateREFDModelsGrid(G2frame,data):
                       Title='Scattering length density',lines=True,names=[],vertLines=LinePos)
         
     def OnFitModelAll(event):
-        choices = G2gd.GetPatternTreeDataNames(G2frame,['REFD',])
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential REFD refinement',
-             'Select dataset to include',choices)
+        choices = G2gd.GetGPXtreeDataNames(G2frame,['REFD',])
+        od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Sequential REFD refinement',
+             'Select dataset to include',choices,extraOpts=od)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
-            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential REFD results')
+            Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential REFD results')
             if Id:
-                SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+                SeqResult = G2frame.GPXtree.GetItemPyData(Id)
             else:
                 SeqResult = {}
-                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential REFD results')
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential REFD results')
             SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
             SeqResult['histNames'] = names
         else:
             dlg.Destroy()
             return
         dlg.Destroy()
-        Reverse = False
-        CopyForward = False
-        choice = ['Reverse sequence','Copy from prev.']
-        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
-        if dlg.ShowModal() == wx.ID_OK:
-            for sel in dlg.GetSelections():
-                if sel:
-                    CopyForward = True
-                else:
-                    Reverse = True
-        dlg.Destroy()
         dlg = wx.ProgressDialog('REFD Sequential fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         wx.BeginBusyCursor()
-        if Reverse:
+        if od['value_2']:
             names.reverse()
         JModel = None
         try:
@@ -4856,13 +4693,13 @@ def UpdateREFDModelsGrid(G2frame,data):
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
-                sId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),JModel)
-                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(sId)[:2]
-                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'))
-                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Substances'))['Substances']
-                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Limits'))
+                sId =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                if i and od['value_1']:
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'),JModel)
+                IProfDict,IProfile = G2frame.GPXtree.GetItemPyData(sId)[:2]
+                IModel = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'))
+                ISubstances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Substances'))['Substances']
+                ILimits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Limits'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2pwd.REFDRefine(IProfile,IProfDict,Inst,ILimits,ISubstances,IModel)
                 JModel = copy.deepcopy(IModel)
                 if not IfOK:
@@ -4873,7 +4710,7 @@ def UpdateREFDModelsGrid(G2frame,data):
                     dlg.Destroy()
                     break
                 else:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,sId, 'Models'),copy.deepcopy(IModel))
                 
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                     'covMatrix':covMatrix,'title':name,'parmDict':parmDict}
@@ -4882,8 +4719,8 @@ def UpdateREFDModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-        G2frame.PatternTree.SelectItem(Id)
+        G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+        G2frame.GPXtree.SelectItem(Id)
                 
     def ModelPlot(data,x,xr,y):
         laySeq = data['Layer Seq'].split()
@@ -4903,9 +4740,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         
     def OnUnDo(event):
         DoUnDo()
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Models'))
-        G2frame.dataFrame.REFDUndo.Enable(False)
+        G2frame.dataWindow.REFDUndo.Enable(False)
         G2pwd.REFDModelFxn(Profile,Inst,Limits,Substances,data)
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
@@ -4916,7 +4753,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         print 'Undo last refinement'
         file = open(G2frame.undorefd,'rb')
         PatternId = G2frame.PatternId
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
         print ' Model recovered'
         file.close()
         
@@ -4924,9 +4761,9 @@ def UpdateREFDModelsGrid(G2frame,data):
         G2frame.undorefd = os.path.join(G2frame.dirname,'GSASIIrefd.save')
         file = open(G2frame.undorefd,'wb')
         PatternId = G2frame.PatternId
-        cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Models')),file,1)
+        cPickle.dump(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Models')),file,1)
         file.close()
-        G2frame.dataFrame.REFDUndo.Enable(True)
+        G2frame.dataWindow.REFDUndo.Enable(True)
     
     def ControlSizer():
         
@@ -4946,12 +4783,12 @@ def UpdateREFDModelsGrid(G2frame,data):
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
             
-        def OnQ4fftplot(event):
-            q4fft.SetValue(False)
-            R,F = G2pwd.makeRefdFFT(Limits,Profile)
-            XY = [[R[:2500],F[:2500]],]
-            G2plt.PlotXY(G2frame,XY,labelX='thickness',labelY='F(R)',newPlot=True,
-                Title='Fourier transform',lines=True)
+#        def OnQ4fftplot(event):
+#            q4fft.SetValue(False)
+#            R,F = G2pwd.makeRefdFFT(Limits,Profile)
+#            XY = [[R[:2500],F[:2500]],]
+#            G2plt.PlotXY(G2frame,XY,labelX='thickness',labelY='F(R)',newPlot=True,
+#                Title='Fourier transform',lines=True)
             
         def OndQSel(event):
             data['dQ type'] = dQSel.GetStringSelection()
@@ -4971,40 +4808,40 @@ def UpdateREFDModelsGrid(G2frame,data):
         choice = ['None','const '+GkDelta+'Q/Q',]
         if ProfDict['ifDQ']:
             choice += [GkDelta+'Q/Q in data']
-        dQSel = wx.RadioBox(G2frame.dataDisplay,wx.ID_ANY,'Instrument resolution type:',choices=choice,
+        dQSel = wx.RadioBox(G2frame.dataWindow,wx.ID_ANY,'Instrument resolution type:',choices=choice,
             majorDimension=0,style=wx.RA_SPECIFY_COLS)
         dQSel.SetStringSelection(data['dQ type'])
         dQSel.Bind(wx.EVT_RADIOBOX,OndQSel)
         resol.Add(dQSel,0,WACV)
-        resol.Add(wx.StaticText(G2frame.dataDisplay,label=' (FWHM %): '),0,WACV)
-        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Resolution'],0,nDig=(10,3),min=0.,max=5.,OnLeave=NewRes),0,WACV)
+        resol.Add(wx.StaticText(G2frame.dataWindow,label=' (FWHM %): '),0,WACV)
+        resol.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Resolution'],0,nDig=(10,3),min=0.,max=5.,OnLeave=NewRes),0,WACV)
         controlSizer.Add(resol,0,WACV)
         minimiz = wx.BoxSizer(wx.HORIZONTAL)
-        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Minimizer: '),0,WACV)
+        minimiz.Add(wx.StaticText(G2frame.dataWindow,label=' Minimizer: '),0,WACV)
         minlist = ['LMLS','Basin Hopping','MC/SA Anneal','L-BFGS-B',]
-        minSel = wx.ComboBox(G2frame.dataDisplay,value=data['Minimizer'],choices=minlist,
+        minSel = wx.ComboBox(G2frame.dataWindow,value=data['Minimizer'],choices=minlist,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         minSel.Bind(wx.EVT_COMBOBOX, OnMinSel)
         minimiz.Add(minSel,0,WACV)
-        minimiz.Add(wx.StaticText(G2frame.dataDisplay,label=' Bounds factor: '),0,WACV)
-        minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Toler',nDig=(10,2),max=0.99,min=0.1),0,WACV)
-        weight = wx.CheckBox(G2frame.dataDisplay,label='Use 2% sig. weights')
+        minimiz.Add(wx.StaticText(G2frame.dataWindow,label=' Bounds factor: '),0,WACV)
+        minimiz.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Toler',nDig=(10,2),max=0.99,min=0.1),0,WACV)
+        weight = wx.CheckBox(G2frame.dataWindow,label='Use 2% sig. weights')
         weight.SetValue(data.get('2% weight',False))
         weight.Bind(wx.EVT_CHECKBOX, OnWeight)
         minimiz.Add(weight,0,WACV)
         controlSizer.Add(minimiz,0,WACV)
         plotSizer = wx.BoxSizer(wx.HORIZONTAL)
-        plotSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Plot controls: '),0,WACV)
-        sld = wx.CheckBox(G2frame.dataDisplay,label='Plot SLD?')
+        plotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Plot controls: '),0,WACV)
+        sld = wx.CheckBox(G2frame.dataWindow,label='Plot SLD?')
         sld.Bind(wx.EVT_CHECKBOX, OnSLDplot)
         plotSizer.Add(sld,0,WACV)
-        plotSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Zero position location: '),0,WACV)
+        plotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Zero position location: '),0,WACV)
         poslist = ['Top','Bottom']
-        refpos = wx.ComboBox(G2frame.dataDisplay,value=data['Zero'],choices=poslist,
+        refpos = wx.ComboBox(G2frame.dataWindow,value=data['Zero'],choices=poslist,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         refpos.Bind(wx.EVT_COMBOBOX, OnRefPos)
         plotSizer.Add(refpos,0,WACV)
-#        q4fft = wx.CheckBox(G2frame.dataDisplay,label='Plot fft?')
+#        q4fft = wx.CheckBox(G2frame.dataWindow,label='Plot fft?')
 #        q4fft.Bind(wx.EVT_CHECKBOX, OnQ4fftplot)
 #        plotSizer.Add(q4fft,0,WACV)
         controlSizer.Add(plotSizer,0,WACV)
@@ -5029,17 +4866,17 @@ def UpdateREFDModelsGrid(G2frame,data):
             G2plt.PlotPatterns(G2frame,plotType='REFD')
 
         overall = wx.BoxSizer(wx.HORIZONTAL)
-        overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Scale: '),0,WACV)
-        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Scale'],0,
+        overall.Add(wx.StaticText(G2frame.dataWindow,label=' Scale: '),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Scale'],0,
             nDig=(10,2),typeHint=float,OnLeave=Recalculate),0,WACV)
-        scaleref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        scaleref = wx.CheckBox(G2frame.dataWindow,label=' Refine?  ')
         scaleref.SetValue(data['Scale'][1])
         scaleref.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         overall.Add(scaleref,0,WACV)
-        overall.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat bkg.: '),0,WACV)
-        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['FltBack'],0,
+        overall.Add(wx.StaticText(G2frame.dataWindow,label=' Flat bkg.: '),0,WACV)
+        overall.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['FltBack'],0,
             nDig=(10,2,'g'),typeHint=float,OnLeave=Recalculate),0,WACV)
-        backref = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        backref = wx.CheckBox(G2frame.dataWindow,label=' Refine?  ')
         backref.SetValue(data['FltBack'][1])
         backref.Bind(wx.EVT_CHECKBOX, OnBackRef)
         overall.Add(backref,0,WACV)        
@@ -5102,59 +4939,59 @@ def UpdateREFDModelsGrid(G2frame,data):
         
         for ilay,layer in enumerate(data['Layers']):
             if not ilay:
-                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Top layer (superphase):'),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Top layer (superphase):'),0,WACV)
             elif ilay < len(data['Layers'])-1:
-                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer no. %d'%(ilay)),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layer no. %d'%(ilay)),0,WACV)
             else:
-                layerSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Bottom layer (substrate):'),0,WACV)
+                layerSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bottom layer (substrate):'),0,WACV)
             midlayer = wx.BoxSizer(wx.HORIZONTAL)
-            midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Substance: '),0,WACV)
+            midlayer.Add(wx.StaticText(G2frame.dataWindow,label=' Substance: '),0,WACV)
             midName = data['Layers'][ilay]['Name']
-            midSel = wx.ComboBox(G2frame.dataDisplay,value=midName,
+            midSel = wx.ComboBox(G2frame.dataWindow,value=midName,
                 choices=Substances.keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[midSel.GetId()] = ilay
             midSel.Bind(wx.EVT_COMBOBOX,OnSelect)
             midlayer.Add(midSel,0,WACV)
             if midName != 'vacuum':
                 if midName != 'unit scatter':
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Den. Mult.: '),0,WACV)
-                    midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
+                    midlayer.Add(wx.StaticText(G2frame.dataWindow,label=' Den. Mult.: '),0,WACV)
+                    midlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay]['DenMul'],0,
                         nDig=(10,4),OnLeave=Recalculate),0,WACV)
-                    varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                    varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                     Indx[varBox.GetId()] = [ilay,'DenMul']
                     varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
                     varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
                     midlayer.Add(varBox,0,WACV)
                     realScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['Scatt density']
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    midlayer.Add(wx.StaticText(G2frame.dataWindow,
                         label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
                     imagScatt = data['Layers'][ilay]['DenMul'][0]*Substances[midName]['XImag density']
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    midlayer.Add(wx.StaticText(G2frame.dataWindow,
                         label=' Imag scat. den.: %.4g'%(imagScatt)),0,WACV)
                 else:
                     realScatt = data['Layers'][ilay]['DenMul'][0]
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    midlayer.Add(wx.StaticText(G2frame.dataWindow,
                         label=' Real scat. den.: %.4g'%(realScatt)),0,WACV)
                     imagScatt = data['Layers'][ilay]['iDenMul'][0]
-                    midlayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    midlayer.Add(wx.StaticText(G2frame.dataWindow,
                         label=' Imag scat. den.: %.4g'%(imagScatt)),0,WACV)                    
             else:
-                midlayer.Add(wx.StaticText(G2frame.dataDisplay,label=', air or gas'),0,WACV)
+                midlayer.Add(wx.StaticText(G2frame.dataWindow,label=', air or gas'),0,WACV)
             layerSizer.Add(midlayer)
             if midName == 'unit scatter':
                 nxtlayer = wx.BoxSizer(wx.HORIZONTAL)
-                nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Real Den. : '),0,WACV)                
-                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['DenMul'],0,
+                nxtlayer.Add(wx.StaticText(G2frame.dataWindow,label=' Real Den. : '),0,WACV)                
+                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay]['DenMul'],0,
                     nDig=(10,4),OnLeave=Recalculate),0,WACV)
-                varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                 Indx[varBox.GetId()] = [ilay,'DenMul']
                 varBox.SetValue(data['Layers'][ilay]['DenMul'][1])
                 varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
                 nxtlayer.Add(varBox,0,WACV)
-                nxtlayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Imag Den. : '),0,WACV)                
-                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['iDenMul'],0,
+                nxtlayer.Add(wx.StaticText(G2frame.dataWindow,label=' Imag Den. : '),0,WACV)                
+                nxtlayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay]['iDenMul'],0,
                     nDig=(10,4),OnLeave=Recalculate),0,WACV)
-                varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                 Indx[varBox.GetId()] = [ilay,'iDenMul']
                 varBox.SetValue(data['Layers'][ilay]['iDenMul'][1])
                 varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
@@ -5163,15 +5000,15 @@ def UpdateREFDModelsGrid(G2frame,data):
             if midName != 'vacuum':
                 if 'N' in Inst['Type'][0] and midName not in ['vacuum','unit scatter']:
                     magLayer = wx.BoxSizer(wx.HORIZONTAL)
-                    magLayer.Add(wx.StaticText(G2frame.dataDisplay,label=' Magnetic SLD: '),0,WACV)
-                    magLayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay]['Mag SLD'],0,
+                    magLayer.Add(wx.StaticText(G2frame.dataWindow,label=' Magnetic SLD: '),0,WACV)
+                    magLayer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay]['Mag SLD'],0,
                         nDig=(10,4),OnLeave=Recalculate),0,WACV)
-                    varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                    varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                     Indx[varBox.GetId()] = [ilay,'Mag SLD']
                     varBox.SetValue(data['Layers'][ilay]['Mag SLD'][1])
                     varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
                     magLayer.Add(varBox,0,WACV)
-                    magLayer.Add(wx.StaticText(G2frame.dataDisplay,
+                    magLayer.Add(wx.StaticText(G2frame.dataWindow,
                         label=' Real+mag scat. den.: %.4g'%(realScatt+data['Layers'][ilay]['Mag SLD'][0])),0,WACV)
                     layerSizer.Add(magLayer)
                 if ilay:
@@ -5181,10 +5018,10 @@ def UpdateREFDModelsGrid(G2frame,data):
                     if ilay == len(data['Layers'])-1:
                         parms = ['Rough',]
                     for parm in parms:
-                        parmsline.Add(wx.StaticText(G2frame.dataDisplay,label=' %s: '%(names[parm])),0,WACV)
-                        parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Layers'][ilay][parm],0,
+                        parmsline.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(names[parm])),0,WACV)
+                        parmsline.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Layers'][ilay][parm],0,
                             nDig=(10,2),OnLeave=Recalculate),0,WACV)
-                        varBox = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
+                        varBox = wx.CheckBox(G2frame.dataWindow,label='Refine?')
                         Indx[varBox.GetId()] = [ilay,parm]
                         varBox.SetValue(data['Layers'][ilay][parm][1])
                         varBox.Bind(wx.EVT_CHECKBOX, OnCheckBox)
@@ -5192,16 +5029,16 @@ def UpdateREFDModelsGrid(G2frame,data):
                     layerSizer.Add(parmsline)
             if ilay < len(data['Layers'])-1:
                 newlayer = wx.BoxSizer(wx.HORIZONTAL)
-                insert = wx.Button(G2frame.dataDisplay,label='Insert')
+                insert = wx.Button(G2frame.dataWindow,label='Insert')
                 Indx[insert.GetId()] = ilay
                 insert.Bind(wx.EVT_BUTTON,OnInsertLayer)
                 newlayer.Add(insert)
-                delet = wx.Button(G2frame.dataDisplay,label='Delete')
+                delet = wx.Button(G2frame.dataWindow,label='Delete')
                 Indx[delet.GetId()] = ilay
                 delet.Bind(wx.EVT_BUTTON,OnDeleteLayer)
                 newlayer.Add(delet)
                 layerSizer.Add(newlayer)
-                G2G.HorizontalLine(layerSizer,G2frame.dataDisplay)   
+                G2G.HorizontalLine(layerSizer,G2frame.dataWindow)   
         
         return layerSizer
         
@@ -5254,41 +5091,37 @@ def UpdateREFDModelsGrid(G2frame,data):
             ModelPlot(data,x,xr,y)
             G2plt.PlotPatterns(G2frame,plotType='REFD')
     
-    Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
-    ProfDict,Profile,Name = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:3]
+    Substances = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))['Substances']
+    ProfDict,Profile,Name = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:3]
     if 'ifDQ' not in ProfDict:
         ProfDict['ifDQ'] = np.any(Profile[5])
         data['dQ type'] = 'None'
-    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
-    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.REFDModelMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataFrame.SetLabel('Modelling')
-    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnModelPlot, id=G2gd.wxID_MODELPLOT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Reflectometry fitting for: '+Name),0,WACV)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Controls:'),0,WACV)
+    Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
+    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.REFDModelMenu)
+    G2frame.SetTitle('Modelling')
+    G2frame.dataWindow.ClearData()
+    G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnModelPlot, id=G2G.wxID_MODELPLOT)
+    G2frame.Bind(wx.EVT_MENU, OnFitModel, id=G2G.wxID_MODELFIT)
+    G2frame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2G.wxID_MODELFITALL)
+    G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_MODELUNDO)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Reflectometry fitting for: '+Name),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Controls:'),0,WACV)
     mainSizer.Add(ControlSizer())
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)   
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Global parameters:'),0,WACV)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)   
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Global parameters:'),0,WACV)
     mainSizer.Add(OverallSizer()) 
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     Nlayers = len(data['Layers'])
     if Nlayers > 2:
         if 'Layer Seq' not in data:
             data['Layer Seq'] = ' '.join([str(i+1) for i in range(Nlayers-2)])
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-        lineSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layer sequence: '),0,WACV)
-        repseq = wx.TextCtrl(G2frame.dataDisplay,value = data['Layer Seq'],style=wx.TE_PROCESS_ENTER,size=(500,25))
+        lineSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layer sequence: '),0,WACV)
+        repseq = wx.TextCtrl(G2frame.dataWindow,value = data['Layer Seq'],style=wx.TE_PROCESS_ENTER,size=(500,25))
         repseq.Bind(wx.EVT_TEXT_ENTER,OnRepSeq)        
         repseq.Bind(wx.EVT_KILL_FOCUS,OnRepSeq)
         lineSizer.Add(repseq,0,WACV)
@@ -5296,22 +5129,12 @@ def UpdateREFDModelsGrid(G2frame,data):
         Str = ' Use sequence nos. from:'
         for ilay,layer in enumerate(data['Layers'][1:-1]):
             Str += ' %d: %s'%(ilay+1,layer['Name'])
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=Str),0,WACV)
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' NB: Repeat sequence by e.g. 6*(1 2) '),0,WACV)
-    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=Str),0,WACV)
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' NB: Repeat sequence by e.g. 6*(1 2) '),0,WACV)
+    G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Layers: scatt. densities are 10%scm%s = 10%s%s%s'%(Pwr10,Pwrm2,Pwrm6,Angstr,Pwrm2)),0,WACV)
     mainSizer.Add(LayerSizer())
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetAutoLayout(1)
-    G2frame.dataDisplay.SetupScrolling()
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    Size[0] += 25
-    Size[1] = min(700,Size[1])
-    G2frame.dataFrame.setSizePosLeft(Size)
-#    x,xr,y = G2pwd.makeSLDprofile(data,Substances)
-#    ModelPlot(data,x,xr,y)
-    
+    G2frame.dataWindow.SetDataSize()
     
 ################################################################################
 #####  PDF controls
@@ -5326,10 +5149,10 @@ def computePDF(G2frame,data):
     for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
         name = data[key]['Name']
         if name:
-            xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
-    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample']['Name'])
-    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
-    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
+            xydata[key] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name))
+    powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Sample']['Name'])
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
+    inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
     auxPlot = G2pwd.CalcPDF(data,inst,limits,xydata)
     data['I(Q)'] = xydata['IofQ']
     data['S(Q)'] = xydata['SofQ']
@@ -5383,11 +5206,11 @@ def SetupPDFEval(G2frame,data):
     for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
         name = Data[key]['Name']
         if name:
-            xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
+            xydata[key] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name))
     powName = Data['Sample']['Name']
-    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
-    limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
-    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
+    powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,powName)
+    limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
+    inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
     numbDen = G2pwd.GetNumDensity(Data['ElList'],Data['Form Vol'])
     BkgMax = 1.
     def EvalLowPDF(arg):
@@ -5476,16 +5299,16 @@ def UpdatePDFGrid(G2frame,data):
             def OnRefMult(event):
                 item['Refine'] = refMult.GetValue()
                 if item['Refine']:
-                    Status.SetStatusText('Be sure Mult is close to anticipated value. '+   \
-                        'Suggest setting Flat Bkg. to 0 before Optimize Mult')
+                    G2frame.GetStatusBar().SetStatusText('Be sure Mult is close to anticipated value. '+   \
+                        'Suggest setting Flat Bkg. to 0 before Optimize Mult',1)
             
             def GetExposure(backFile):
-                dataId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:])
-                dataComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,dataId,'Comments'))
+                dataId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:])
+                dataComments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,dataId,'Comments'))
                 if not backFile:
                     return -1.
-                backId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,backFile)
-                backComments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,backId,'Comments'))
+                backId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backFile)
+                backComments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,backId,'Comments'))
                 expTime = 1.
                 sumExp = 1.
                 for item in dataComments:
@@ -5506,25 +5329,25 @@ def UpdatePDFGrid(G2frame,data):
             
             item = data[key]
             fileList = [''] + GetFileList(G2frame,'PWDR')
-            fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
-            fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
+            fileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' '+key+' file:'),0,WACV)
+            fileName = wx.ComboBox(G2frame.dataWindow,value=item['Name'],choices=fileList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             itemDict[fileName.GetId()] = [key,'Name','%s']
             fileName.Bind(wx.EVT_COMBOBOX,OnSelectFile)        
             fileSizer.Add(fileName,0,)
-            fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Multiplier:'),0,WACV)
+            fileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='Multiplier:'),0,WACV)
             mulBox = wx.BoxSizer(wx.HORIZONTAL)
-            mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,item,'Mult',nDig=(10,3),
+            mult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,'Mult',nDig=(10,3),
                 typeHint=float,OnLeave=OnMult)
             mulBox.Add(mult,0,)
-            multSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+            multSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
             multSpin.SetRange(-1,1)
             multSpin.SetValue(0)
             multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
             mulBox.Add(multSpin,0,WACV)
             fileSizer.Add(mulBox,0,WACV)
             if 'Refine' in item and item['Name']:
-                refMult = wx.CheckBox(parent=G2frame.dataDisplay,label='Refine?')
+                refMult = wx.CheckBox(parent=G2frame.dataWindow,label='Refine?')
                 refMult.SetValue(item['Refine'])
                 refMult.Bind(wx.EVT_CHECKBOX, OnRefMult)
                 fileSizer.Add(refMult,0,WACV)
@@ -5532,30 +5355,30 @@ def UpdatePDFGrid(G2frame,data):
                 fileSizer.Add((5,5),0)
                             
         def ResetFlatBkg():
-            Smin = np.min(G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:]))[1][1])
+            Smin = np.min(G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'PWDR'+dataFile[4:]))[1][1])
             Bmin = 0; Cmin = 0.; Cmul = 0.; CBmin = 0.
             if data['Sample Bkg.']['Name']:
-                Bmin = np.min(G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Sample Bkg.']['Name']))[1][1])
+                Bmin = np.min(G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Sample Bkg.']['Name']))[1][1])
                 Smin += Bmin*data['Sample Bkg.']['Mult']
             if data['Container']['Name']:
-                Cmin = np.min(G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Container']['Name']))[1][1])
+                Cmin = np.min(G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Container']['Name']))[1][1])
                 Cmul = data['Container']['Mult']
                 if data['Container Bkg.']['Name']:
-                    CBmin = np.min(G2frame.PatternTree.GetItemPyData(
-                        G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['Container Bkg.']['Name']))[1][1])
+                    CBmin = np.min(G2frame.GPXtree.GetItemPyData(
+                        G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Container Bkg.']['Name']))[1][1])
                     Cmin += CBmin*data['Container Bkg.']['Mult']
                 Smin += Cmul*Cmin
             data['Flat Bkg'] = max(0,Smin)
                             
         PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
-        PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
+        PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' PDF data files: '),0,WACV)
         PDFfileSizer.Add((5,5),0)    
         if 'C' in inst['Type'][0]:
             str = ' Sample file: PWDR%s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[4:],wave,keV,polariz)
-            PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
+            PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=str),0,WACV)
         PDFfileSizer.Add((5,5),0)
         fileSizer = wx.FlexGridSizer(0,5,5,1)
         select = ['Sample Bkg.','Container']
@@ -5576,12 +5399,12 @@ def UpdatePDFGrid(G2frame,data):
                 wx.CallAfter(UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                     
-            elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
+            elemSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
                 label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
-            num = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,ElData,'FormulaNo',nDig=(10,3),min=0.0,
+            num = G2G.ValidatedTxtCtrl(G2frame.dataWindow,ElData,'FormulaNo',nDig=(10,3),min=0.0,
                 typeHint=float,OnLeave=AfterChange)
             elemSizer.Add(num,0,WACV)
-            elemSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,
+            elemSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
                 label="f': %.3f"%(ElData['fp'])+' f": %.3f'%(ElData['fpp'])+' mu: %.2f barns'%(ElData['mu']) ),
                 0,WACV)
             
@@ -5598,9 +5421,9 @@ def UpdatePDFGrid(G2frame,data):
         
         sampleSizer = wx.BoxSizer(wx.VERTICAL)
         if not ElList:
-            sampleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: fill in this 1st'),0,WACV)
+            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: fill in this 1st'),0,WACV)
         else:
-            sampleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample information: '),0,WACV)
+            sampleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample information: '),0,WACV)
         sampleSizer.Add((5,5),0)    
         Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
         Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
@@ -5610,34 +5433,34 @@ def UpdatePDFGrid(G2frame,data):
         sampleSizer.Add(elemSizer,0)
         sampleSizer.Add((5,5),0)    
         midSizer = wx.BoxSizer(wx.HORIZONTAL)
-        midSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Formula volume: '),0,WACV)
-        formVol = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Form Vol',nDig=(10,3),min=10.0,
+        midSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Formula volume: '),0,WACV)
+        formVol = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Form Vol',nDig=(10,3),min=10.0,
             typeHint=float,OnLeave=AfterChange)
         midSizer.Add(formVol,0)
-        midSizer.Add(wx.StaticText(G2frame.dataDisplay,
+        midSizer.Add(wx.StaticText(G2frame.dataWindow,
             label=' Theoretical absorption: %.4f cm-1 Sample absorption: %.4f cm-1'%(Abs,Abs*data['Pack'])),
             0,WACV)
         sampleSizer.Add(midSizer,0)
         sampleSizer.Add((5,5),0)
         geoBox = wx.BoxSizer(wx.HORIZONTAL)
-        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample geometry: '),0,WACV)
+        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample geometry: '),0,WACV)
         choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
-        geometry = wx.ComboBox(G2frame.dataDisplay,value=data['Geometry'],choices=choice,
+        geometry = wx.ComboBox(G2frame.dataWindow,value=data['Geometry'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
         geoBox.Add(geometry,0)
-        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample diameter/thickness, mm: '),0,WACV)
-        diam = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Diam',nDig=(10,3),min=0.01,
+        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample diameter/thickness, mm: '),0,WACV)
+        diam = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Diam',nDig=(10,3),min=0.01,
             typeHint=float,OnLeave=AfterChange)
         geoBox.Add(diam,0)
         sampleSizer.Add(geoBox,0)
         sampleSizer.Add((5,5),0)    
         geoBox = wx.BoxSizer(wx.HORIZONTAL)
-        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Packing: '),0,WACV)
-        pack = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Pack',nDig=(10,2),min=0.01,
+        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Packing: '),0,WACV)
+        pack = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Pack',nDig=(10,2),min=0.01,
             typeHint=float,OnLeave=AfterChange)
         geoBox.Add(pack,0)
-        geoBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
+        geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample transmission: %.3f %%'%(Trans)),0,WACV)    
         sampleSizer.Add(geoBox,0)
         return sampleSizer
         
@@ -5651,7 +5474,7 @@ def UpdatePDFGrid(G2frame,data):
             if not data['ElList']:
                 G2frame.ErrorDialog('PDF error','Chemical formula not defined')
                 return
-            Status.SetStatusText('')
+            G2frame.GetStatusBar().SetStatusText('',1)
             wx.BeginBusyCursor()
             try:
                 OptimizePDF(G2frame,data)
@@ -5710,86 +5533,86 @@ def UpdatePDFGrid(G2frame,data):
 
         sfgSizer = wx.BoxSizer(wx.VERTICAL)         
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' S(Q)->F(Q)->G(r) controls: '),0,WACV)
         sqBox.Add((1,1),1,wx.EXPAND,1)
-        optB = wx.Button(G2frame.dataDisplay,label='Optimize PDF',style=wx.BU_EXACTFIT)
+        optB = wx.Button(G2frame.dataWindow,label='Optimize PDF',style=wx.BU_EXACTFIT)
         optB.Bind(wx.EVT_BUTTON, OnOptimizePDF)
         sqBox.Add(optB,0,WACV|wx.ALIGN_RIGHT)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
         
         sfgSizer.Add((5,5),0)
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Detector type: '),0,WACV)
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Detector type: '),0,WACV)
         choice = ['Area detector','Point detector']
-        detType = wx.ComboBox(G2frame.dataDisplay,value=data['DetType'],choices=choice,
+        detType = wx.ComboBox(G2frame.dataWindow,value=data['DetType'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         detType.Bind(wx.EVT_COMBOBOX, OnDetType)
         sqBox.Add(detType,0)
         if data['DetType'] == 'Area detector':
-            sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' IP transmission coeff.: '),0,WACV)
-            obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
+            sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' IP transmission coeff.: '),0,WACV)
+            obliqCoeff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'ObliqCoeff',nDig=(10,3),min=0.0,max=1.0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Flat Bkg.: '),0,WACV)
-        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Flat Bkg',nDig=(10,0),min=0,
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
+        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),min=0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(flatBkg,0)
-        flatSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+        flatSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
         flatSpin.SetRange(-1,1)
         flatSpin.SetValue(0)
         flatSpin.Bind(wx.EVT_SPIN, OnFlatSpin)
         sqBox.Add(flatSpin,0,WACV)
         sqBox.Add((1,1),1,wx.EXPAND,1)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
-        rmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmin',nDig=(5,1),
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label='Rmin: '),0,WACV|wx.ALIGN_RIGHT)
+        rmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Rmin',nDig=(5,1),
                 typeHint=float,size=wx.Size(50,20))
         sqBox.Add(rmin,0,WACV|wx.ALIGN_RIGHT)
         sfgSizer.Add(sqBox,0,wx.EXPAND)
             
         bkBox = wx.BoxSizer(wx.HORIZONTAL)
-        bkBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background ratio: '),0,WACV)    
-        backSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+        bkBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background ratio: '),0,WACV)    
+        backSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
             value=int(100*data['BackRatio']))
         bkBox.Add(backSldr,1,wx.EXPAND)
         backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
-        backVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'BackRatio',nDig=(10,3),min=0.0,max=1.0,
+        backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'BackRatio',nDig=(10,3),min=0.0,max=1.0,
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         bkBox.Add(backVal,0,WACV)    
         sfgSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
     
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Ruland width: '),0,WACV)    
-        rulandSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Ruland width: '),0,WACV)    
+        rulandSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
             value=int(1000*data['Ruland']))
         sqBox.Add(rulandSldr,1,wx.EXPAND)
         rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
-        rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
+        rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(rulandWdt,0,WACV)    
         sfgSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
         
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling Q-range: '),0,WACV)
-        SQmin = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],0,nDig=(10,3),
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Scaling Q-range: '),0,WACV)
+        SQmin = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['QScaleLim'],0,nDig=(10,3),
             min=qLimits[0],max=.95*data['QScaleLim'][1],
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         sqBox.Add(SQmin,0,WACV)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' to Qmax '),0,WACV)
-        SQmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['QScaleLim'],1,nDig=(10,3),
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' to Qmax '),0,WACV)
+        SQmax = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['QScaleLim'],1,nDig=(10,3),
             min=qLimits[0],max=qLimits[1],typeHint=float,OnLeave=NewQmax)
         sqBox.Add(SQmax,0,WACV)
-        resetQ = wx.Button(G2frame.dataDisplay,label='Reset?',style=wx.BU_EXACTFIT)
+        resetQ = wx.Button(G2frame.dataWindow,label='Reset?',style=wx.BU_EXACTFIT)
         sqBox.Add(resetQ,0,WACV)
         resetQ.Bind(wx.EVT_BUTTON, OnResetQ)
-        sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Rmax: '),0,WACV)
-        rmax = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Rmax',nDig=(10,1),min=10.,max=200.,
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Rmax: '),0,WACV)
+        rmax = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Rmax',nDig=(10,1),min=10.,max=200.,
             typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))
         sqBox.Add(rmax,0,WACV)
-        lorch = wx.CheckBox(parent=G2frame.dataDisplay,label='Lorch damping?')
+        lorch = wx.CheckBox(parent=G2frame.dataWindow,label='Lorch damping?')
         lorch.SetValue(data['Lorch'])
         lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
         sqBox.Add(lorch,0,WACV)
-        noRing = wx.CheckBox(parent=G2frame.dataDisplay,label='Suppress G(0) ringing?')
+        noRing = wx.CheckBox(parent=G2frame.dataWindow,label='Suppress G(0) ringing?')
         noRing.SetValue(data['noRing'])
         noRing.Bind(wx.EVT_CHECKBOX, OnNoRing)
         sqBox.Add(noRing,0,WACV)
@@ -5802,9 +5625,9 @@ def UpdatePDFGrid(G2frame,data):
             newName = grName.GetValue()
             if newName:
                 data['delt-G(R)'] = copy.deepcopy(data['G(R)'])
-                id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,newName)
-                pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
-                subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)']
+                id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,newName)
+                pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+                subData = G2frame.GPXtree.GetItemPyData(pId)['G(R)']
                 if subData[1][0][-1] != data['G(R)'][1][0][-1]:
                     G2frame.ErrorDialog('delt-G(R) Error',' G(R) for '+newName+' not same R range')
                     grName.SetValue(data['diffGRname'])
@@ -5817,22 +5640,22 @@ def UpdatePDFGrid(G2frame,data):
                 
         def OnMult(invalid,value,tc):
             if invalid: return
-            id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['diffGRname'])
-            pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
-            subData = G2frame.PatternTree.GetItemPyData(pId)['G(R)']
+            id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['diffGRname'])
+            pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+            subData = G2frame.GPXtree.GetItemPyData(pId)['G(R)']
             data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-data['diffMult']*subData[1][1]])
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
         
         diffSizer = wx.BoxSizer(wx.HORIZONTAL)
         fileList = [''] + GetFileList(G2frame,'PDF')
-        diffSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Subtract G(R) for: '),0,WACV)
-        grName = wx.ComboBox(G2frame.dataDisplay,value=data['diffGRname'],choices=fileList,
+        diffSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Subtract G(R) for: '),0,WACV)
+        grName = wx.ComboBox(G2frame.dataWindow,value=data['diffGRname'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         grName.Bind(wx.EVT_COMBOBOX,OnSelectGR)        
         diffSizer.Add(grName,0,WACV)
         if data['diffGRname']:
-            diffSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Mult: '),0,WACV)
-            mult = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'diffMult',nDig=(10,3),
+            diffSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Mult: '),0,WACV)
+            mult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'diffMult',nDig=(10,3),
                     typeHint=float,OnLeave=OnMult)
             diffSizer.Add(mult,0,WACV)
             OnMult(False,None,None)
@@ -5850,26 +5673,26 @@ def UpdatePDFGrid(G2frame,data):
     def OnCopyPDFControls(event):
         import copy
         TextList = GetFileList(G2frame,'PDF')
-        Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        od = {'label_1':'Only copy flags','value_1':False}
+        od = {'label_1':'Only refine flag','value_1':False}
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PDFlist = [TextList[i] for i in dlg.GetSelections()]
                 for item in PDFlist:
-                    id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'))
+                    id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Controls'))
                     if od['value_1']:
                         olddata['Sample Bkg.']['Refine'] = data['Sample Bkg.']['Refine']    #only one flag
                     else:
                         sample = olddata['Sample']
                         olddata.update(copy.deepcopy(data))
                         olddata['Sample'] = sample
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'),olddata)
-                Status.SetStatusText('PDF controls copied')
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Controls'),olddata)
+                G2frame.GetStatusBar().SetStatusText('PDF controls copied',1)
         finally:
             dlg.Destroy()
                 
@@ -5953,9 +5776,7 @@ def UpdatePDFGrid(G2frame,data):
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
             return
         auxPlot = computePDF(G2frame,data)
-        if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()
-            Status.SetStatusText('PDF computed')
+        G2frame.GetStatusBar().SetStatusText('PDF computed',1)
         for plot in auxPlot:
             XY = np.array(plot[:2])
             G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
@@ -5970,22 +5791,22 @@ def UpdatePDFGrid(G2frame,data):
     def OnComputeAllPDF(event):
         print('Calculating PDFs...')
         choices = []
-        if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        if G2frame.GPXtree.GetCount():
+            id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while id:
-                Name = G2frame.PatternTree.GetItemText(id)
+                Name = G2frame.GPXtree.GetItemText(id)
                 if Name.startswith('PDF '):
-                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
+                    Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls'))
                     if not Data['ElList']:
                         print('  No chemical formula for {}'.format(Name))
                     else:
                         choices.append(Name)
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         if not choices:
             print('  No PDFs to compute\n')
             return
         od = {'label_1':'Optimize PDFs','value_1':True}
-        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Select PDFs to compute','Select PDFs',
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select PDFs to compute','Select PDFs',
             choices,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -6001,33 +5822,33 @@ def UpdatePDFGrid(G2frame,data):
         pgbar = wx.ProgressDialog('Compute PDF','PDFs done: 0',len(Names)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         notConverged = 0
-        id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         N = 0
         try:
             while id:
-                Name = G2frame.PatternTree.GetItemText(id)
+                Name = G2frame.GPXtree.GetItemText(id)
                 if Name in Names:
                     N += 1
                     msg = 'PDFs done: {} of {}'.format(N-1,len(Names))
                     if not pgbar.Update(N,msg)[0]:
                         pgbar.Destroy()
                         break
-                    pId = G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls')
-                    Data = G2frame.PatternTree.GetItemPyData(pId)
+                    pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+                    Data = G2frame.GPXtree.GetItemPyData(pId)
                     print('  Computing {}'.format(Name))
                     computePDF(G2frame,Data)
                     if od['value_1']:
                         notConverged += not OptimizePDF(G2frame,Data,maxCycles=10)
                     computePDF(G2frame,Data)
-                    G2frame.PatternTree.SetItemPyData(pId,Data)
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                    G2frame.GPXtree.SetItemPyData(pId,Data)
+                id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         finally:
             pgbar.Destroy()
         if od['value_1']:
             msg = '{}/{} PDFs computed; {} unconverged'.format(N,len(Names),notConverged)
         else:
             msg = '{}/{} PDFs computed'.format(N,len(Names))
-        G2frame.dataFrame.GetStatusBar().SetStatusText(msg)
+        G2frame.GetStatusBar().SetStatusText(msg,1)
         print(msg)
         # what item is being plotted? -- might be better to select from tree
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='I(Q)')
@@ -6039,12 +5860,12 @@ def UpdatePDFGrid(G2frame,data):
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
     tof2q = lambda t,C:2.0*math.pi*C/t
-    dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    dataFile = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
-    powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
+    powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, powName)
     if powId: # skip if no matching PWDR entry
-        fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
-        inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
+        fullLimits,limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId, 'Limits'))[:2]
+        inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
         if 'C' in inst['Type'][0]:
             wave = G2mth.getWave(inst)
             keV = 12.397639/wave
@@ -6080,38 +5901,32 @@ def UpdatePDFGrid(G2frame,data):
             data['diffGRname'] = ''
         if 'diffMult' not in data:
             data['diffMult'] = 1.0
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFMenu)
     if powId:
-        G2frame.dataFrame.PDFMenu.EnableTop(0,enable=True)
+        G2frame.dataWindow.PDFMenu.EnableTop(0,enable=True)
     else:
-        G2frame.dataFrame.PDFMenu.EnableTop(0,enable=False)
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2gd.wxID_PDFCOPYCONTROLS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2gd.wxID_PDFSAVECONTROLS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadPDFControls, id=G2gd.wxID_PDFLOADCONTROLS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_PDFADDELEMENT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_PDFDELELEMENT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputePDF, id=G2gd.wxID_PDFCOMPUTE)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2gd.wxID_PDFCOMPUTEALL)
+        G2frame.dataWindow.PDFMenu.EnableTop(0,enable=False)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPDFControls, id=G2G.wxID_PDFCOPYCONTROLS)
+    G2frame.Bind(wx.EVT_MENU, OnSavePDFControls, id=G2G.wxID_PDFSAVECONTROLS)
+    G2frame.Bind(wx.EVT_MENU, OnLoadPDFControls, id=G2G.wxID_PDFLOADCONTROLS)
+    G2frame.Bind(wx.EVT_MENU, OnAddElement, id=G2G.wxID_PDFADDELEMENT)
+    G2frame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2G.wxID_PDFDELELEMENT)
+    G2frame.Bind(wx.EVT_MENU, OnComputePDF, id=G2G.wxID_PDFCOMPUTE)
+    G2frame.Bind(wx.EVT_MENU, OnComputeAllPDF, id=G2G.wxID_PDFCOMPUTEALL)
 
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     if powId:
         ElList = data['ElList']
         mainSizer.Add(PDFFileSizer(),0,WACV)
-        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
         mainSizer.Add(SampleSizer(),0,WACV)
-        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
         mainSizer.Add(SFGctrlSizer(),0,WACV)
-        G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
+        G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     mainSizer.Add(DiffSizer(),0,WACV)
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataFrame.setSizePosLeft(Size)
+    G2frame.dataWindow.SetDataSize()
+
 ###############################################################################################################
 #UpdatePDFPeaks: peaks in G(r)
 ###############################################################################################################
@@ -6125,11 +5940,11 @@ def UpdatePDFPeaks(G2frame,peaks,data):
             G2plt.PlotISFG(G2frame,data,newPlot=False,plotType='G(R)',peaks=peaks)
                         
         limitBox = wx.BoxSizer(wx.HORIZONTAL)
-        limitBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Limits: '),0,WACV)
-        lowLim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Limits'],0,nDig=(10,3),
+        limitBox.Add(wx.StaticText(G2frame.dataWindow,label=' PDF Limits: '),0,WACV)
+        lowLim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,peaks['Limits'],0,nDig=(10,3),
             min=0.,max=10.,typeHint=float,OnLeave=NewLim)
         limitBox.Add(lowLim,0,WACV)
-        highLim = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Limits'],1,nDig=(10,3),
+        highLim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,peaks['Limits'],1,nDig=(10,3),
             min=peaks['Limits'][0],max=10.,typeHint=float,OnLeave=NewLim)
         limitBox.Add(highLim,0,WACV)
         return limitBox
@@ -6145,11 +5960,11 @@ def UpdatePDFPeaks(G2frame,peaks,data):
             peaks['Background'][2] = refbk.GetValue()
         
         backBox = wx.wx.BoxSizer(wx.HORIZONTAL)
-        backBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background slope: '),0,WACV)
-        slope = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,peaks['Background'][1],1,nDig=(10,3),
+        backBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background slope: '),0,WACV)
+        slope = G2G.ValidatedTxtCtrl(G2frame.dataWindow,peaks['Background'][1],1,nDig=(10,3),
             min=-4.*np.pi,max=0.,typeHint=float,OnLeave=NewBack)
         backBox.Add(slope,0,WACV)
-        refbk = wx.CheckBox(parent=G2frame.dataDisplay,label=' Refine?')
+        refbk = wx.CheckBox(parent=G2frame.dataWindow,label=' Refine?')
         refbk.SetValue(peaks['Background'][2])
         refbk.Bind(wx.EVT_CHECKBOX, OnRefBack)
         backBox.Add(refbk,0,WACV)
@@ -6187,7 +6002,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
             2*[wg.GRID_VALUE_STRING,]+[wg.GRID_VALUE_FLOAT+':10,3',]
         rowLabels = range(len(peaks['Peaks']))
         peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        PDFPeaks = G2G.GSGrid(G2frame.dataDisplay)
+        PDFPeaks = G2G.GSGrid(G2frame.dataWindow)
         PDFPeaks.SetTable(peakTable,False)
         PDFPeaks.SetMargins(0,0)
         PDFPeaks.SetRowLabelSize(40)
@@ -6196,7 +6011,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         PDFPeaks.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, ElTypeSelect)
 
         peakBox = wx.BoxSizer(wx.VERTICAL)
-        peakBox.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF Peaks:'),0,WACV)
+        peakBox.Add(wx.StaticText(G2frame.dataWindow,label=' PDF Peaks:'),0,WACV)
         peakBox.Add(PDFPeaks,0,WACV)
         
         return peakBox
@@ -6204,55 +6019,68 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     def OnCopyPDFPeaks(event):
         import copy
         TextList = GetFileList(G2frame,'PDF')
-        Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy PDF peaks to','There must be more than one "PDF" pattern')
             return
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF peaks','Copy peaks from '+Source+' to:',TextList)
+        od = {'label_1':'Only refine flags','value_1':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF peaks','Copy peaks from '+Source+' to:',TextList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 PDFlist = [TextList[i] for i in dlg.GetSelections()]
                 for item in PDFlist:
-                    id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                    olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Peaks'))
-                    olddata.update(copy.deepcopy(peaks))
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Peaks'),olddata)
-                Status.SetStatusText('PDF peaks copied')
+                    id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Peaks'))
+                    if od['value_1']:
+                        olddata['Background'][2] = peaks['Background'][2]
+                        for ip,peak in enumerate(olddata['Peaks']):
+                            peak[3] = peaks['Peaks'][ip][3]
+                    else:
+                        olddata.update(copy.deepcopy(peaks))
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Peaks'),olddata)
+                G2frame.GetStatusBar().SetStatusText('PDF peaks copied',1)
         finally:
             dlg.Destroy()
         
     def OnFitPDFpeaks(event):
         PatternId = G2frame.PatternId
-        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'))
+        data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'PDF Controls'))
+        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'PDF Peaks'))
         if not peaks:
             G2frame.ErrorDialog('No peaks!','Nothing to fit!')
             return
         newpeaks = G2pwd.PDFPeakFit(peaks,data['G(R)'])[0]
         print 'PDF peak fit finished'
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Peaks'),newpeaks)
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'PDF Peaks'),newpeaks)
         G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
         wx.CallAfter(UpdatePDFPeaks,G2frame,newpeaks,data)
         
     def OnFitAllPDFpeaks(event):
-        Names = G2gd.GetPatternTreeDataNames(G2frame,['PDF ',])
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'PDF peak fitting','Select PDFs to fit:',Names)
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['PDF ',])
+        od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'PDF peak fitting','Select PDFs to fit:',Names,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
+                Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential PDF peak fit results')
                 if Id:
-                    SeqResult = G2frame.PatternTree.GetItemPyData(Id)
+                    SeqResult = G2frame.GPXtree.GetItemPyData(Id)
                 else:
                     SeqResult = {}
-                    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
+                    Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text='Sequential PDF peak fit results')
                 SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
                 items = dlg.GetSelections()
+                if od['value_2']:
+                    items.reverse()
+                newpeaks = None
                 G2frame.EnablePlot = False
                 for item in items:
                     name = Names[item]
-                    pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                    data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Controls'))
-                    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'PDF Peaks'))
+                    pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'PDF Controls'))
+                    if od['value_1'] and newpeaks is not None:
+                        peaks = copy.deepcopy(newpeaks)
+                    else:
+                        peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'PDF Peaks'))
                     newpeaks,vals,varyList,sigList,parmDict,Rvals = G2pwd.PDFPeakFit(peaks,data['G(R)'])
                     if vals is None:
                         print 'Nothing varied!'
@@ -6260,34 +6088,32 @@ def UpdatePDFPeaks(G2frame,peaks,data):
                         return
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':Rvals,
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId, 'PDF Peaks'),newpeaks)
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId, 'PDF Peaks'),newpeaks)
                 SeqResult['histNames'] = Names
                 G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
+                G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
+                G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+                G2frame.GPXtree.SelectItem(Id)
+                print 'All PDFs peak fitted - results in Sequential PDF peak fit results'
+            else:
+                print 'Sequential fit cancelled'
         finally:
             dlg.Destroy()
-        G2plt.PlotISFG(G2frame,data,peaks=newpeaks,newPlot=False)
-        G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-        G2frame.PatternTree.SelectItem(Id)
-        print 'All PDFs peak fitted - results in Sequential PDF peak fit results'
         
     def OnClearPDFpeaks(event):
         peaks['Peaks'] = []
         G2plt.PlotISFG(G2frame,data,peaks=peaks,newPlot=False)
         wx.CallAfter(UpdatePDFPeaks,G2frame,peaks,data)
 
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PDFPksMenu)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPDFPeaks, id=G2gd.wxID_PDFCOPYPEAKS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2gd.wxID_PDFPKSFIT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2gd.wxID_PDFPKSFITALL)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2gd.wxID_CLEARPDFPEAKS)
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PDFPksMenu)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPDFPeaks, id=G2G.wxID_PDFCOPYPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnFitPDFpeaks, id=G2G.wxID_PDFPKSFIT)
+    G2frame.Bind(wx.EVT_MENU, OnFitAllPDFpeaks, id=G2G.wxID_PDFPKSFITALL)
+    G2frame.Bind(wx.EVT_MENU, OnClearPDFpeaks, id=G2G.wxID_CLEARPDFPEAKS)
+    G2frame.dataWindow.ClearData()
+    mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add((5,5),0) 
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' PDF peak fit controls:'),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' PDF peak fit controls:'),0,WACV)
     mainSizer.Add((5,5),0) 
     mainSizer.Add(limitSizer(),0,WACV) 
     mainSizer.Add((5,5),0) 
@@ -6295,8 +6121,5 @@ def UpdatePDFPeaks(G2frame,peaks,data):
     if len(peaks['Peaks']):
         mainSizer.Add((5,5),0)
         mainSizer.Add(peakSizer())
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    Size = mainSizer.Fit(G2frame.dataFrame)
-    G2frame.dataFrame.setSizePosLeft(Size)
+    G2frame.dataWindow.SetDataSize()
     

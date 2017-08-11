@@ -2193,7 +2193,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             hId = Histogram['hId']
             if 'PWDR' in histogram:
                 limits = Histogram['Limits'][1]
-                inst = Histogram['Instrument Parameters'][0]
+                inst = Histogram['Instrument Parameters'][0]    #TODO - grab table here if present
                 if 'C' in inst['Type'][1]:
                     try:
                         wave = inst['Lam'][1]
@@ -2225,7 +2225,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 for i,name in enumerate(names):
                     hapDict[pfx+name] = hapData['HStrain'][0][i]
                     HSvals.append(hapDict[pfx+name])
-                    if hapData['HStrain'][1][i] and not hapDict[pfx+'LeBail']:
+                    if hapData['HStrain'][1][i]:
+#                    if hapData['HStrain'][1][i] and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+name)
                 controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                 if hapData['Pref.Ori.'][0] == 'MD':
@@ -2332,6 +2333,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                         wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
                                         refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
+                                        #TODO - if tabulated put alp & bet in here
                                         Uniq.append(uniq)
                                         Phi.append(phi)
                     else:
@@ -2859,6 +2861,11 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 insVary.append(insName)
         if 'C' in dataType:
             instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
+        elif 'T' in dataType:   #trap zero alp, bet coeff.
+            if not instDict[pfx+'alpha']:
+                instDict[pfx+'alpha'] = 1.0
+            if not instDict[pfx+'beta-0'] and not instDict[pfx+'beta-1']:
+                instDict[pfx+'beta-1'] = 1.0
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):
@@ -2991,8 +2998,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             histDict.update(bakDict)
             histVary += bakVary
             
-            Inst = Histogram['Instrument Parameters'][0]
-            Type,instDict,insVary = GetInstParms(hId,Inst)
+            Inst = Histogram['Instrument Parameters']        #TODO ? ignores tabulated alp,bet & delt for TOF
+            if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
+                print 'Warning: tabulated profile coefficients are ignored'
+            Type,instDict,insVary = GetInstParms(hId,Inst[0])
             controlDict[pfx+'histType'] = Type
             if 'XC' in Type:
                 if pfx+'Lam1' in instDict:
@@ -3022,7 +3031,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                     for excl in excls:
                         print >>pFile,' Excluded region:  %8.2f%s to %8.2f%s'%(excl[0],units,excl[1],units)    
                 PrintSampleParms(Sample)
-                PrintInstParms(Inst)
+                PrintInstParms(Inst[0])
                 PrintBackground(Background)
         elif 'HKLF' in histogram:
             Histogram = Histograms[histogram]

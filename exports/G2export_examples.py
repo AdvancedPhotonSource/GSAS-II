@@ -25,7 +25,6 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIpy3 as G2py3
-#import GSASIIgrid as G2gd
 #import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd

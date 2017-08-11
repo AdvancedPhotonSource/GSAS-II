@@ -20,7 +20,6 @@ import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-#import GSASIIgrid as G2gd
 import GSASIIstrIO as G2stIO
 #import GSASIImath as G2mth
 import GSASIIlattice as G2lat

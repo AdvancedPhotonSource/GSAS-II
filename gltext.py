@@ -278,7 +278,7 @@ class TextElement(object):
         Destructor
         """
 #        self.deleteTexture()
-        pass
+        del self._texture
 
     #---Getters/Setters
     

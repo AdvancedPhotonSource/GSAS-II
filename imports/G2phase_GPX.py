@@ -56,16 +56,18 @@ class PhaseReaderClass(G2obj.ImportPhase):
         elif len(phasenames) == 1: # one block, no choices
             selblk = 0
         else:                       # choose from options                
-            selblk = G2IO.PhaseSelector(
-                phasenames,
-                ParentFrame=ParentFrame,
-                title= 'Select a phase from the list below',
-                )
+            selblk = G2IO.PhaseSelector(phasenames,ParentFrame=ParentFrame,
+                title= 'Select a phase from the list below',)
             if selblk is None:
                 self.errors = 'No phase selected'
                 return False # User pressed cancel
         self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
         self.Phase['Histograms'] = {}       #remove any histograms
         self.Phase['Pawley ref'] = []       # & any Pawley refl.
+        self.Phase['RBModels'] = {}
+        del self.Phase['MCSA']
+        if 'Map Peaks' in self.Phase:
+            del self.Phase['Map Peaks']
+        del self.Phase['General']['Map']
         self.Phase['ranId'] = ran.randint(0,sys.maxint)
         return True

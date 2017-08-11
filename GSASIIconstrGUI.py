@@ -30,8 +30,8 @@ import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
-import GSASIIgrid as G2gd
-import GSASIIctrls as G2G
+import GSASIIdataGUI as G2gd
+import GSASIIctrlGUI as G2G
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
@@ -223,8 +223,8 @@ def UpdateConstraints(G2frame,data):
         if j:
             print str(key) + ': '+str(j)+' variable(s) as strings converted to objects'
     ##################################################################################
-    rigidbodyDict = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    rigidbodyDict = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
@@ -457,7 +457,7 @@ def UpdateConstraints(G2frame,data):
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
             atchoice = [fmt.format(*i1) for i1 in choices]
             dlg = G2G.G2MultiChoiceDialog(
-                G2frame.dataFrame,legend,
+                G2frame,legend,
                 'Constrain '+str(FrstVarb)+' with...',atchoice,
                 toggle=False,size=(625,400),monoFont=True)
             dlg.CenterOnParent()
@@ -467,7 +467,7 @@ def UpdateConstraints(G2frame,data):
             if res != wx.ID_OK: return []
             if len(Selections) == 0:
                 dlg = wx.MessageDialog(
-                    G2frame.dataFrame,
+                    G2frame,
                     'No variables were selected to include with '+str(FrstVarb),
                     'No variables')
                 dlg.CenterOnParent()
@@ -476,7 +476,7 @@ def UpdateConstraints(G2frame,data):
                 return []
         else:
             dlg = wx.MessageDialog(
-                G2frame.dataFrame,
+                G2frame,
                 'There are no appropriate variables to include with '+str(FrstVarb),
                 'No variables')
             dlg.CenterOnParent()
@@ -553,7 +553,7 @@ def UpdateConstraints(G2frame,data):
                 raise Exception,'Unknown constraint type: '+str(constType)
         else:
             dlg = wx.MessageDialog(
-                G2frame.dataFrame,
+                G2frame,
                 'There are no selected variables to include with '+str(FrstVarb),
                 'No variables')
             dlg.CenterOnParent()
@@ -583,7 +583,7 @@ def UpdateConstraints(G2frame,data):
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',
                 'Error with newly added constraint:\n'+errmsg+
-                '\n\nDiscard newly added constraint?',parent=G2frame.dataFrame,
+                '\n\nDiscard newly added constraint?',parent=G2frame,
                 wtype=wx.YES_NO)
             return res != wx.ID_YES
         elif warnmsg:
@@ -610,7 +610,7 @@ def UpdateConstraints(G2frame,data):
         if errmsg:
             res = G2frame.ErrorDialog('Constraint Error',
                 'Error after editing constraint:\n'+errmsg+
-                '\n\nDiscard last constraint edit?',parent=G2frame.dataFrame,
+                '\n\nDiscard last constraint edit?',parent=G2frame,
                 wtype=wx.YES_NO)
             return res != wx.ID_YES
         elif warnmsg:
@@ -650,7 +650,7 @@ def UpdateConstraints(G2frame,data):
         title1 = "Hold "+vartype+" variable"
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
         l2 = l1 = 1
         for i in varList:
@@ -661,8 +661,7 @@ def UpdateConstraints(G2frame,data):
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]
         #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to hold (Will not be varied, even if vary flag is set)"
-        dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,
+        dlg = G2G.G2MultiChoiceDialog(G2frame,
             legend,title1,varListlbl,toggle=False,size=(625,400),monoFont=True)
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
@@ -683,7 +682,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional "+vartype+" variable(s) to be equivalent with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
 #        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'equivalence')
@@ -696,7 +695,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional atoms(s) to be equivalent with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
 #        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'equivalence')
@@ -709,7 +708,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional atoms(s) to ride on "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
 #        legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'riding')
@@ -722,7 +721,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Include additional "+vartype+" variable(s) to be included with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
 #        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'function')
@@ -735,7 +734,7 @@ def UpdateConstraints(G2frame,data):
         title2 = "Select additional "+vartype+" variable(s) to include in constraint with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
-                parent=G2frame.dataFrame)
+                parent=G2frame)
             return
 #        legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'constraint')
@@ -752,7 +751,7 @@ def UpdateConstraints(G2frame,data):
             l2 = max(l2,len(loc))
         fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]        
-        dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',
+        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select 1st variable:',
             title1,varListlbl,monoFont=True,size=(625,400))
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
@@ -801,7 +800,7 @@ def UpdateConstraints(G2frame,data):
                 Atoms[atName].append(item)
         AtNames = Atoms.keys()
         AtNames.sort()
-        dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st atom:',
+        dlg = G2G.G2SingleChoiceDialog(G2frame,'Select 1st atom:',
             title1,AtNames,monoFont=True,size=(625,400))
         dlg.CenterOnParent()
         FrstAtom = ''
@@ -819,7 +818,7 @@ def UpdateConstraints(G2frame,data):
             print 'no atom selected'
             return
         dlg = G2G.G2MultiChoiceDialog(
-            G2frame.dataFrame,title2+FrstAtom,
+            G2frame,title2+FrstAtom,
             'Constrain '+str(FrstAtom)+' with...',AtNames,
             toggle=False,size=(625,400),monoFont=True)
         if dlg.ShowModal() == wx.ID_OK:
@@ -1012,19 +1011,19 @@ def UpdateConstraints(G2frame,data):
             else:
                 varname = ""
             lbl = 'Enter value for each term in constraint; sum = new variable'
-            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items,
+            dlg = ConstraintDialog(G2frame,constType,lbl,items,
                                    varname=varname,varyflag=data[name][Id][-2])
         elif data[name][Id][-1] == 'c':
             items = data[name][Id][:-3]+[
                 [data[name][Id][-3],'fixed value =']]
             constType = 'Constraint'
             lbl = 'Edit value for each term in constant constraint sum'
-            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items)
+            dlg = ConstraintDialog(G2frame,constType,lbl,items)
         elif data[name][Id][-1] == 'e':
             items = data[name][Id][:-3]
             constType = 'Equivalence'
             lbl = 'The following terms are set to be equal:'
-            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items,'/')
+            dlg = ConstraintDialog(G2frame,constType,lbl,items,'/')
         else:
             return
         try:
@@ -1061,19 +1060,17 @@ def UpdateConstraints(G2frame,data):
         '''Update the contents of the selected Constraint
         notebook tab. Called in :func:`OnPageChanged`
         '''
-        if panel.GetSizer(): panel.GetSizer().Clear(True) # N.B. don't use panel.DestroyChildren()
-        # because it deletes scrollbars on Mac
+        if panel.GetSizer(): panel.GetSizer().Clear(True)
         Siz = wx.BoxSizer(wx.VERTICAL)
         Siz.Add((5,5),0)
-        Siz.Add(MakeConstraintsSizer(typ,panel))
+        Siz.Add(MakeConstraintsSizer(typ,panel),1,wx.EXPAND)
         panel.SetSizer(Siz,True)
         Size = Siz.GetMinSize()
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         panel.SetSize(Size)
         panel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(500,Size[1])
-        G2frame.dataFrame.setSizePosLeft(Size)
+        panel.Show()
 
     def OnPageChanged(event):
         '''Called when a tab is pressed or when a "select tab" menu button is
@@ -1082,11 +1079,12 @@ def UpdateConstraints(G2frame,data):
         if event:       #page change event!
             page = event.GetSelection()
         else: # called directly, get current page
-            page = G2frame.dataDisplay.GetSelection()
-        G2frame.dataDisplay.ChangeSelection(page)
-        text = G2frame.dataDisplay.GetPageText(page)
-        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,False)
-#        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,False)
+            page = G2frame.constr.GetSelection()
+        #G2frame.constr.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
+        G2frame.constr.ChangeSelection(page)
+        text = G2frame.constr.GetPageText(page)
+        G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
+#        G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
         if text == 'Histogram/Phase':
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
@@ -1095,8 +1093,8 @@ def UpdateConstraints(G2frame,data):
             UpdateConstraintPanel(HistConstr,'Hist')
         elif text == 'Phase':
             G2frame.Page = [page,'phs']
-            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,True)
-#            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,True)
+            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,True)
+#            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,True)
             if 'DELETED' in str(PhaseConstr):   #seems to be no other way to do this (wx bug)
                 if GSASIIpath.GetConfigValue('debug'):
                     print 'wx error: PhaseConstr not cleanly deleted after Refine'
@@ -1109,52 +1107,50 @@ def UpdateConstraints(G2frame,data):
     def RaisePage(event):
         'Respond to a "select tab" menu button'
         try:
-            i = (G2gd.wxID_CONSPHASE,
-                 G2gd.wxID_CONSHAP,
-                 G2gd.wxID_CONSHIST,
-                 G2gd.wxID_CONSGLOBAL).index(event.GetId())
-            G2frame.dataDisplay.SetSelection(i)
+            i = (G2G.wxID_CONSPHASE,
+                 G2G.wxID_CONSHAP,
+                 G2G.wxID_CONSHIST,
+                 G2G.wxID_CONSGLOBAL).index(event.GetId())
+            G2frame.constr.SetSelection(i)
             wx.CallAfter(OnPageChanged,None)
         except ValueError:
             print('Unexpected event in RaisePage')
 
     def SetStatusLine(text):
-        Status.SetStatusText(text)                                      
+        G2frame.GetStatusBar().SetStatusText(text,1)                                      
         
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ConstraintMenu)
-    G2frame.dataFrame.SetLabel('Constraints')
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
+    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Constraints')
+    G2frame.SetTitle('Constraints')
     SetStatusLine('')
     
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ConstraintMenu)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddConstraint, id=G2gd.wxID_CONSTRAINTADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=G2gd.wxID_FUNCTADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=G2gd.wxID_EQUIVADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=G2gd.wxID_HOLDADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2gd.wxID_EQUIVALANCEATOMS)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRiding, id=G2gd.wxID_ADDRIDING)
+    G2frame.Bind(wx.EVT_MENU, OnAddConstraint, id=G2G.wxID_CONSTRAINTADD)
+    G2frame.Bind(wx.EVT_MENU, OnAddFunction, id=G2G.wxID_FUNCTADD)
+    G2frame.Bind(wx.EVT_MENU, OnAddEquivalence, id=G2G.wxID_EQUIVADD)
+    G2frame.Bind(wx.EVT_MENU, OnAddHold, id=G2G.wxID_HOLDADD)
+    G2frame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2G.wxID_EQUIVALANCEATOMS)
+#    G2frame.Bind(wx.EVT_MENU, OnAddRiding, id=G2G.wxID_ADDRIDING)
     # tab commands
-    for id in (G2gd.wxID_CONSPHASE,
-               G2gd.wxID_CONSHAP,
-               G2gd.wxID_CONSHIST,
-               G2gd.wxID_CONSGLOBAL):
-        G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=id)
+    for id in (G2G.wxID_CONSPHASE,
+               G2G.wxID_CONSHAP,
+               G2G.wxID_CONSHIST,
+               G2G.wxID_CONSGLOBAL):
+        G2frame.Bind(wx.EVT_MENU, RaisePage,id=id)
 
-    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame)
+    #G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
+    G2frame.constr = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(G2frame.constr,1,wx.ALL|wx.EXPAND)
     # note that order of pages is hard-coded in RaisePage
-    PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase')
-    HAPConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase')
-    HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HistConstr,'Histogram')
-    GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(GlobalConstr,'Global')
+    PhaseConstr = wx.ScrolledWindow(G2frame.constr)
+    G2frame.constr.AddPage(PhaseConstr,'Phase')
+    HAPConstr = wx.ScrolledWindow(G2frame.constr)
+    G2frame.constr.AddPage(HAPConstr,'Histogram/Phase')
+    HistConstr = wx.ScrolledWindow(G2frame.constr)
+    G2frame.constr.AddPage(HistConstr,'Histogram')
+    GlobalConstr = wx.ScrolledWindow(G2frame.constr)
+    G2frame.constr.AddPage(GlobalConstr,'Global')
     wx.CallAfter(OnPageChanged,None)
-    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.constr.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
     allcons = []
     for key in data:
@@ -1166,7 +1162,7 @@ def UpdateConstraints(G2frame,data):
     errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
     if errmsg:
         G2frame.ErrorDialog('Constraint Error','Error in constraints:\n'+errmsg,
-            parent=G2frame.dataFrame)
+            parent=G2frame)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
 
@@ -1211,8 +1207,8 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     nSGData = newPhase['General']['SGData']
     oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
-    item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
-    constraints = G2frame.PatternTree.GetItemPyData(item)
+    item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+    constraints = G2frame.GPXtree.GetItemPyData(item)
 #    GSASIIpath.IPyBreak()
     parmDict = {}
     varyList = []
@@ -1313,6 +1309,15 @@ def UpdateRigidBodies(G2frame,data):
     Indx = {}
     resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+
+    G2frame.rbBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
+    G2frame.dataWindow.GetSizer().Add(G2frame.rbBook,1,wx.ALL|wx.EXPAND)
+    VectorRB = wx.ScrolledWindow(G2frame.rbBook)
+    VectorRBDisplay = wx.Panel(VectorRB)
+    G2frame.rbBook.AddPage(VectorRB,'Vector rigid bodies')
+    ResidueRB = wx.ScrolledWindow(G2frame.rbBook)
+    ResidueRBDisplay = wx.Panel(ResidueRB)
+    G2frame.rbBook.AddPage(ResidueRB,'Residue rigid bodies')
     
     def OnPageChanged(event):
         global resList
@@ -1320,19 +1325,20 @@ def UpdateRigidBodies(G2frame,data):
         if event:       #page change event!
             page = event.GetSelection()
         else:
-            page = G2frame.dataDisplay.GetSelection()
-        G2frame.dataDisplay.ChangeSelection(page)
-        text = G2frame.dataDisplay.GetPageText(page)
+            page = G2frame.rbBook.GetSelection()
+        #G2frame.rbBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
+        G2frame.rbBook.ChangeSelection(page)
+        text = G2frame.rbBook.GetPageText(page)
         if text == 'Vector rigid bodies':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.VectorBodyMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AddVectorRB, id=G2gd.wxID_VECTORBODYADD)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.VectorBodyMenu)
+            G2frame.Bind(wx.EVT_MENU, AddVectorRB, id=G2G.wxID_VECTORBODYADD)
             G2frame.Page = [page,'vrb']
             UpdateVectorRB()
         elif text == 'Residue rigid bodies':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AddResidueRB, id=G2gd.wxID_RIGIDBODYADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ) #enable only if residue RBs exist?
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodyMenu)
+            G2frame.Bind(wx.EVT_MENU, AddResidueRB, id=G2G.wxID_RIGIDBODYADD)
+            G2frame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2G.wxID_RIGIDBODYIMPORT)
+            G2frame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2G.wxID_RESIDUETORSSEQ) #enable only if residue RBs exist?
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
             
@@ -1376,15 +1382,15 @@ def UpdateRigidBodies(G2frame,data):
         return text,ext.lower()
         
     def OnImportRigidBody(event):
-        page = G2frame.dataDisplay.GetSelection()
-        if 'Vector' in G2frame.dataDisplay.GetPageText(page):
+        page = G2frame.rbBook.GetSelection()
+        if 'Vector' in G2frame.rbBook.GetPageText(page):
             pass
-        elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
+        elif 'Residue' in G2frame.rbBook.GetPageText(page):
             ImportResidueRB()
             
     def AddVectorRB(event):
         AtInfo = data['Vector']['AtInfo']
-        dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
+        dlg = MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
             rbId = ran.randint(0,sys.maxint)
@@ -1553,7 +1559,7 @@ def UpdateRigidBodies(G2frame,data):
         if len(rbNames) == 0:
             print 'There are no rigid bodies defined'
             G2frame.ErrorDialog('No rigid bodies','There are no rigid bodies defined',
-                                parent=G2frame.dataFrame)
+                                parent=G2frame)
             return
         elif len(rbNames) > 1:
             dlg = wx.SingleChoiceDialog(G2frame,'Select rigid body for torsion sequence','Torsion sequence',rbNames)
@@ -1594,7 +1600,7 @@ def UpdateRigidBodies(G2frame,data):
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
         refChoice = {}
-        if 'DELETED' in str(Status):   #seems to be no other way to do this (wx bug)
+        if 'DELETED' in str(G2frame.GetStatusBar()):   #seems to be no other way to do this (wx bug)
             if GSASIIpath.GetConfigValue('debug'):
                 print 'wx error: Rigid Body/Status not cleanly deleted after Refine'
             return
@@ -1761,7 +1767,7 @@ def UpdateRigidBodies(G2frame,data):
                     vecGrid.SetCellStyle(row,3,VERY_LIGHT_GREY,True)                    
                 for col in [4,5,6]:
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
-            vecGrid.SetMargins(0,0)
+#            vecGrid.SetScrollRate(0,0)
             vecGrid.AutoSizeColumns(False)
             vecSizer.Add(vecGrid)
             return vecSizer
@@ -1777,10 +1783,7 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].append(rbRef[i])
                 refChoice[rbId][i].sort()     
             
-        #VectorRB.DestroyChildren() # bad, deletes scrollbars on Mac!
-        if VectorRB.GetSizer():
-            VectorRB.GetSizer().Clear(True)
-        VectorRBDisplay = wx.Panel(VectorRB)
+        if VectorRB.GetSizer(): VectorRB.GetSizer().Clear(True)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Vector']:
             if rbId != 'AtInfo':
@@ -1803,8 +1806,6 @@ def UpdateRigidBodies(G2frame,data):
         VectorRBDisplay.SetSize(Size)
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         VectorRB.Scroll(0,Scroll)
-        Size[1] = min(Size[1],500)
-        G2frame.dataFrame.setSizePosLeft(Size)
         
     def UpdateResidueRB():
         AtInfo = data['Residue']['AtInfo']
@@ -1928,7 +1929,7 @@ def UpdateRigidBodies(G2frame,data):
             for row in range(vecTable.GetNumberRows()):
                 for col in range(5):
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
-            vecGrid.SetMargins(0,0)
+#            vecGrid.SetScrollRate(0,0)
             vecGrid.AutoSizeColumns(False)
             vecSizer = wx.BoxSizer()
             vecSizer.Add(vecGrid)
@@ -2057,12 +2058,7 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].append(rbRef[i])
                 refChoice[rbId][i].sort()     
             
-        #ResidueRB.DestroyChildren() # bad, deletes scrollbars on Mac!
-        if ResidueRB.GetSizer():
-#            ResidueRB.DestroyChildren()
-            ResidueRB.GetSizer().Clear(True)
-            
-        ResidueRBDisplay = wx.Panel(ResidueRB)
+        ResidueRBDisplay.DestroyChildren()
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Residue']:
             rbData = data['Residue'][rbId]
@@ -2080,7 +2076,7 @@ def UpdateRigidBodies(G2frame,data):
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
             if rbData['rbSeq']:
                 ResidueRBSizer.Add(slideSizer,)
-            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,100*'-'))
+            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,70*'-'))
 
         ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    
@@ -2090,26 +2086,13 @@ def UpdateRigidBodies(G2frame,data):
         Size[1] = max(Size[1],450) + 20
         ResidueRBDisplay.SetSize(Size)
         ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(500,Size[1])
-        G2frame.dataFrame.setSizePosLeft(Size)
         
     def SetStatusLine(text):
-        Status.SetStatusText(text)                                      
+        G2frame.GetStatusBar().SetStatusText(text,1)                                      
 
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
-    G2frame.dataFrame.SetLabel('Rigid bodies')
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodyMenu)
+    G2frame.SetTitle('Rigid bodies')
     SetStatusLine('')
-
-    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-
-    VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')
-    ResidueRB = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
     UpdateVectorRB()
-    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    G2frame.rbBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     wx.CallAfter(OnPageChanged,None)

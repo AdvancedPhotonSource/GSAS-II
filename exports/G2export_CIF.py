@@ -32,8 +32,8 @@ import wx.lib.resizewidget as rw
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIgrid as G2gd
-import GSASIIctrls as G2G
+import GSASIIdataGUI as G2gd
+import GSASIIctrlGUI as G2G
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
@@ -742,7 +742,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if 'DisAglCtls' not in generalData:
                 # should not happen, since DisAglDialog should be called
                 # for all phases before getting here
-                dlg = G2gd.DisAglDialog(
+                dlg = G2G.DisAglDialog(
                     self.G2frame,
                     {},
                     generalData)
@@ -1356,7 +1356,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''
             but = event.GetEventObject()
             phasedict = but.phasedict
-            dlg = G2gd.DisAglDialog(
+            dlg = G2G.DisAglDialog(
                 self.G2frame,
                 phasedict['General']['DisAglCtls'], # edited 
                 phasedict['General'], # defaults
@@ -1494,7 +1494,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if 'DisAglCtls' not in generalData:
                 # should not be used, since DisAglDialog should be called
                 # for all phases before getting here
-                dlg = G2gd.DisAglDialog(
+                dlg = G2G.DisAglDialog(
                     self.cifdefs,
                     {},
                     generalData)
@@ -1784,7 +1784,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             #i = self.Phases[phasenam]['pId']
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             if 'DisAglCtls' not in phasedict['General']:
-                dlg = G2gd.DisAglDialog(
+                dlg = G2G.DisAglDialog(
                     self.G2frame,
                     {},
                     phasedict['General'])

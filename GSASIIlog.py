@@ -15,7 +15,7 @@ Module to provide logging services, e.g. track and replay "actions"
 such as menu item, tree item, button press, value change and so on. 
 '''
 import wx
-import GSASIIgrid as G2gd
+import GSASIIdataGUI as G2gd
 import GSASIIpath
 # Global variables 
 MenuBindingLookup = {}
@@ -162,8 +162,8 @@ class TabLogEntry(LogEntry):
         wintitle = self.wintitle
         tabname = self.tablabel
         LogInfo['LastPaintAction'] = self
-        if LogInfo['Tree'].G2frame.dataFrame.GetTitle() != wintitle:
-            print LogInfo['Tree'].G2frame.dataFrame.GetTitle(),' != ',wintitle
+        if LogInfo['Tree'].G2frame.GetTitle() != wintitle:
+            print LogInfo['Tree'].G2frame.GetTitle(),' != ',wintitle
             raise Exception('tab in wrong window')
         for PageNum in range(LogInfo['Tree'].G2frame.dataDisplay.GetPageCount()):
             if tabname == LogInfo['Tree'].G2frame.dataDisplay.GetPageText(PageNum):
@@ -207,7 +207,7 @@ class TreeLogEntry(LogEntry):
                 txt = LogInfo['Tree'].ConvertRelativeHistNum(*txt)
             elif i == 1 and type(txt) is int and self.treeItemList[0] == "Phases":
                 txt = LogInfo['Tree'].ConvertRelativePhaseNum(txt)
-            item = G2gd.GetPatternTreeItemId(LogInfo['Tree'].G2frame,parent,txt)
+            item = G2gd.GetGPXtreeItemId(LogInfo['Tree'].G2frame,parent,txt)
             if not item:
                 print 'Not found',txt
                 return

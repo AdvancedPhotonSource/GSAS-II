@@ -102,7 +102,6 @@ MOCK_MODULES = [
                 ]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -111,10 +110,14 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','exports')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','imports')))
 #print(sys.path)
+# import all files to set version number
 import glob
 for fil in glob.glob(os.path.abspath(os.path.join('..', '..','*.py'))):
     pkg = os.path.splitext(os.path.split(fil)[1])[0]
-    exec('import '+pkg)
+    try:
+        exec('import '+pkg)
+    except:
+        pass
 import GSASIIpath
 version = GSASIIpath.GetVersionNumber()
 print('Found highest version as {}'.format(version))
@@ -132,7 +135,6 @@ templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
-
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 

@@ -510,26 +510,26 @@ def DownloadG2Binaries(g2home,verbose=True):
     svnSwitchDir('bindist','',distdir,verbose=verbose)
     return os.path.join(path2GSAS2,'bindist')
 
-def svnTestBranch(loc=None):
-    '''Returns the name of the branch directory if the installation has been switched.
-    Returns none, if not a branch
-    the test 2frame branch. False otherwise
-    '''
-    if loc is None: loc = path2GSAS2
-    svn = whichsvn()
-    if not svn:
-        print('**** unable to load files: svn not found ****')
-        return ''
-    cmd = [svn, 'info', loc]
-    if proxycmds: cmd += proxycmds
-    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = p.communicate()
-    for l in res.split('\n'):
-        if "Relative URL:" in l: break
-    if "/branch/" in l:
-        return l[l.find("/branch/")+8:].strip()
-    else:
-        return None
+# def svnTestBranch(loc=None):
+#     '''Returns the name of the branch directory if the installation has been switched.
+#     Returns none, if not a branch
+#     the test 2frame branch. False otherwise
+#     '''
+#     if loc is None: loc = path2GSAS2
+#     svn = whichsvn()
+#     if not svn:
+#         print('**** unable to load files: svn not found ****')
+#         return ''
+#     cmd = [svn, 'info', loc]
+#     if proxycmds: cmd += proxycmds
+#     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+#     res,err = p.communicate()
+#     for l in res.split('\n'):
+#         if "Relative URL:" in l: break
+#     if "/branch/" in l:
+#         return l[l.find("/branch/")+8:].strip()
+#     else:
+#         return None
     
 def svnSwitch2branch(branch=None,loc=None,svnHome=None):
     '''Switch to a subversion branch if specified. Switches to trunk otherwise.

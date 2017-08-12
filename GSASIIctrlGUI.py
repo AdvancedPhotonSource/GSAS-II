@@ -3503,13 +3503,13 @@ class MyHelp(wx.Menu):
                 help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
                 text='&Regress to an old GSAS-II version')
             frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
-            if GSASIIpath.svnTestBranch():
-                msg = "&Switch back to standard GSAS-II version"
-            else:
-                msg = "&Switch to test (2frame) GSAS-II version"
-            helpobj = self.Append(
-                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=msg)
-            frame.Bind(wx.EVT_MENU, self.OnSelectBranch, helpobj)
+            # if GSASIIpath.svnTestBranch():
+            #     msg = "&Switch back to standard GSAS-II version"
+            # else:
+            #     msg = "&Switch to test (2frame) GSAS-II version"
+            # helpobj = self.Append(
+            #     help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=msg)
+            # frame.Bind(wx.EVT_MENU, self.OnSelectBranch, helpobj)
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
             helpobj = self.Append(text=lbl,
@@ -3741,29 +3741,29 @@ For DIFFaX use cite:
         GSASIIpath.svnUpdateProcess(projectfile=GPX,version=str(ver))
         return
 
-    def OnSelectBranch(self,event):
-        '''Allow the user to select branch of GSAS-II or return to trunk
-        N.B. Name of branch to use is hard-coded here. Must contain a slash
-        '''
-        testbranch = '/branch/2frame'
-        if not GSASIIpath.svnTestBranch():
-            dlg = wx.MessageDialog(self.frame,
-                                   'Switching to test GSAS-II version',
-                                   'Confirm Switch',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK: return
-            branch = testbranch
-        else:
-            dlg = wx.MessageDialog(self.frame,
-                                   'Switching back to standard GSAS-II version',
-                                   'Confirm Switch',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK: return
-            branch = 'trunk'
-        print('start switch')
-        self.frame.OnFileSave(event)
-        GPX = self.frame.GSASprojectfile
-        GSASIIpath.svnUpdateProcess(projectfile=GPX,branch=branch)
+    # def OnSelectBranch(self,event):
+    #     '''Allow the user to select branch of GSAS-II or return to trunk
+    #     N.B. Name of branch to use is hard-coded here. Must contain a slash
+    #     '''
+    #     testbranch = '/branch/2frame'
+    #     if not GSASIIpath.svnTestBranch():
+    #         dlg = wx.MessageDialog(self.frame,
+    #                                'Switching to test GSAS-II version',
+    #                                'Confirm Switch',
+    #                                wx.OK|wx.CANCEL)
+    #         if dlg.ShowModal() != wx.ID_OK: return
+    #         branch = testbranch
+    #     else:
+    #         dlg = wx.MessageDialog(self.frame,
+    #                                'Switching back to standard GSAS-II version',
+    #                                'Confirm Switch',
+    #                                wx.OK|wx.CANCEL)
+    #         if dlg.ShowModal() != wx.ID_OK: return
+    #         branch = 'trunk'
+    #     print('start switch')
+    #     self.frame.OnFileSave(event)
+    #     GPX = self.frame.GSASprojectfile
+    #     GSASIIpath.svnUpdateProcess(projectfile=GPX,branch=branch)
 
 ################################################################################
 class HelpButton(wx.Button):

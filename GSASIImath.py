@@ -2573,14 +2573,24 @@ def validProtein(Phase):
         
     resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
         'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
+    old = True          #use errat version 1 math
+# data from errat.f
+    b1_old = np.array([ 
+        [1154.343,  600.213, 1051.018, 1132.885,  960.738],
+        [600.213, 1286.818, 1282.042,  957.156,  612.789],
+        [1051.018, 1282.042, 3519.471,  991.974, 1226.491],
+        [1132.885,  957.156,  991.974, 1798.672,  820.355],
+        [960.738,  612.789, 1226.491,  820.355, 2428.966]
+        ])
+    avg_old = np.array([ 0.225, 0.281, 0.071, 0.237, 0.044])    #Table 1 3.5A Obsd. Fr. p 1513
 # data taken from erratv2.ccp
-    b1 = np.array([	[0,0,0,0,0,0],
-          [0,	5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],	
-          [0,	3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],	
-          [0,	4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],	
-          [0,	4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],	
-          [0,	5054.781210204625500,	4304.078200827220800,	5287.691183798409800,	4050.797811118806700,	6666.856740479164700]])
-    avg = np.array([0.,0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
+    b1 = np.array([
+          [5040.279078850848200,	3408.805141583649400,	4152.904423767300600,	4236.200004171890200,	5054.781210204625500],	
+          [3408.805141583648900,	8491.906094010220800,	5958.881777877950300,	1521.387352718486200,	4304.078200827221700],	
+          [4152.904423767301500,	5958.881777877952100,	7637.167089335050100,	6620.715738223072500,	5287.691183798410700],	
+          [4236.200004171890200,	1521.387352718486200,	6620.715738223072500,	18368.343774298410000,	4050.797811118806700],	
+          [5054.781210204625500,	4304.078200827220800,	5287.691183798409800,	4050.797811118806700,	6666.856740479164700]])
+    avg = np.array([0.192765509919262, 0.195575208778518, 0.275322406824210, 0.059102357035642, 0.233154192767480])
     General = Phase['General']
     Amat,Bmat = G2lat.cell2AB(General['Cell'][1:7])
     cx,ct,cs,cia = General['AtomPtrs']
@@ -2593,8 +2603,8 @@ def validProtein(Phase):
         if atom[1] in resNames:
             if atom[4].strip() in ['S','Se']:
                 atom[4] = 'O'
-            if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
-                continue
+#            if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
+#                continue
             cartAtoms.append(atom[:cx+3])
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
@@ -2606,9 +2616,12 @@ def validProtein(Phase):
     for ib,box in enumerate(iBox):  #put in a try for too many atoms in box (IndexError)?
         Boxes[box[0],box[1],box[2],0] += 1
         Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
+    #Box content checks with errat.f ibox1 array
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
     dsmax = 3.75**2
+    if old:
+        dsmax = 3.5**2
     chains = []
     resIntAct = []
     chainIntAct = []
@@ -2630,6 +2643,7 @@ def validProtein(Phase):
                 intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
                 newChain = True
         if atom[0] not in res:  #new residue, get residue no.
+            if len(res): print res[-1],resname[-1],intact
             res.append(atom[0])
             resname.append('%s-%s%s'%(atom[2],atom[0],atom[1]))
             if not newChain:
@@ -2644,12 +2658,15 @@ def validProtein(Phase):
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
         tgts = list(set(tgts))
         tgts = [tgt for tgt in tgts if atom[1:3] != cartAtoms[tgt][1:3]]    #exclude same residue
-        tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['C','N']]  #exclude main chain
+        if atom[3].strip() in ['C',]:
+            tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['N',]]  #exclude main chain C-N
+        if atom[3].strip() in ['N',]:
+            tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['C',]]  #exclude main chain N-C
         tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) <= dsmax]
         for tgt in tgts:
             dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
             mult = 1.0
-            if dsqt > 3.25:
+            if dsqt > 3.25 and not old:
                 mult = 2.*(3.75-dsqt)
             intype = atom[4].strip()+cartAtoms[tgt][4].strip()
             intact[intype] += mult
@@ -2662,20 +2679,32 @@ def validProtein(Phase):
         nRes = len(IntAct)
         Probs = [0.,0.,0.,0.]
         for i in range(4,nRes-4):
-            mtrx = np.zeros(6)
+            print i,IntAct[i]
+            mtrx = np.zeros(5)
             summ = 0.
-            for j in range(i-4,i+4):
+            for j in range(i-4,i+5):
                 summ += np.sum(np.array(IntAct[j].values()))
-                print 'CC',IntAct[j]['CC'],'CN',IntAct[j]['CN'],'CO',IntAct[j]['CO']
-                print 'NN',IntAct[j]['NN'],'NO',IntAct[j]['NO'],'OO',IntAct[j]['OO']
-                mtrx[1] += IntAct[j]['CC']
-                mtrx[2] += IntAct[j]['CN']
-                mtrx[3] += IntAct[j]['CO']
-                mtrx[4] += IntAct[j]['NN']
-                mtrx[5] += IntAct[j]['NO']
+                if old:
+                    mtrx[0] += IntAct[j]['CC']
+                    mtrx[1] += IntAct[j]['CO']
+                    mtrx[2] += IntAct[j]['NN']
+                    mtrx[3] += IntAct[j]['NO']
+                    mtrx[4] += IntAct[j]['OO']
+                else:
+                    mtrx[0] += IntAct[j]['CC']
+                    mtrx[1] += IntAct[j]['CN']
+                    mtrx[2] += IntAct[j]['CO']
+                    mtrx[3] += IntAct[j]['NN']
+                    mtrx[4] += IntAct[j]['NO']
+            print mtrx,np.sum(mtrx)
+            print summ
             mtrx /= summ
-            mtrx -= avg
-            prob = np.inner(np.inner(mtrx,b1),mtrx)/36.
+            if old:
+                mtrx -= avg_old
+                prob = np.inner(np.inner(mtrx,b1_old),mtrx)
+            else:
+                mtrx -= avg
+                prob = np.inner(np.inner(mtrx,b1),mtrx)
             print i, mtrx
             Probs.append(prob)
         Probs += 4*[0.,]

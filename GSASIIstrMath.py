@@ -3547,6 +3547,337 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     #if GSASIIpath.GetConfigValue('debug'):
     #    print 'end getPowderProfileDerv t=',time.time()-starttime
     return dMdv
+
+def getPowderProfileDervMP(args):
+    '''Computes the derivatives of the computed powder pattern with respect to all
+    refined parameters.
+    Multiprocessing version.
+    '''
+    parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup = args[:8]
+    prc=0
+    tprc=1
+    if len(args) >= 9: prc=args[8]
+    if len(args) >= 10: tprc=args[9]
+    def cellVaryDerv(pfx,SGData,dpdA): 
+        if SGData['SGLaue'] in ['-1',]:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
+                [pfx+'A3',dpdA[3]],[pfx+'A4',dpdA[4]],[pfx+'A5',dpdA[5]]]
+        elif SGData['SGLaue'] in ['2/m',]:
+            if SGData['SGUniq'] == 'a':
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A5',dpdA[5]]]
+            elif SGData['SGUniq'] == 'b':
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A4',dpdA[4]]]
+            else:
+                return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],[pfx+'A3',dpdA[3]]]
+        elif SGData['SGLaue'] in ['mmm',]:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+            return [[pfx+'A0',dpdA[0]],[pfx+'A2',dpdA[2]]]
+        elif SGData['SGLaue'] in ['3R', '3mR']:
+            return [[pfx+'A0',dpdA[0]+dpdA[1]+dpdA[2]],[pfx+'A3',dpdA[3]+dpdA[4]+dpdA[5]]]                       
+        elif SGData['SGLaue'] in ['m3m','m3']:
+            return [[pfx+'A0',dpdA[0]]]
+            
+    # create a list of dependent variables and set up a dictionary to hold their derivatives
+    dependentVars = G2mv.GetDependentVars()
+    depDerivDict = {}
+    for j in dependentVars:
+        depDerivDict[j] = np.zeros(shape=(len(x)))
+    #print 'dependent vars',dependentVars
+    hId = Histogram['hId']
+    hfx = ':%d:'%(hId)
+    bakType = calcControls[hfx+'bakType']
+    dMdv = np.zeros(shape=(len(varylist),len(x)))
+    dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
+    if prc == 0 and hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
+        bBpos = varylist.index(hfx+'Back;0')
+        dMdv[bBpos:bBpos+len(dMdb)] += dMdb     #TODO crash if bck parms tossed
+    names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
+    for name in varylist:
+        if prc == 0 and 'Debye' in name:
+            id = int(name.split(';')[-1])
+            parm = name[:int(name.rindex(';'))]
+            ip = names.index(parm)
+            dMdv[varylist.index(name)] += dMddb[3*id+ip]
+    names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
+    for name in varylist:
+        if prc == 0 and 'BkPk' in name:
+            parm,id = name.split(';')
+            id = int(id)
+            if parm in names:
+                ip = names.index(parm)
+                dMdv[varylist.index(name)] += dMdpk[4*id+ip]
+    cw = np.diff(ma.getdata(x))
+    cw = np.append(cw,cw[-1])
+    Ka2 = False #also for TOF!
+    if 'C' in calcControls[hfx+'histType']:    
+        shl = max(parmDict[hfx+'SH/L'],0.002)
+        if hfx+'Lam1' in parmDict.keys():
+            wave = parmDict[hfx+'Lam1']
+            Ka2 = True
+            lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
+            kRatio = parmDict[hfx+'I(L2)/I(L1)']
+        else:
+            wave = parmDict[hfx+'Lam']
+    for phase in Histogram['Reflection Lists']:
+        refDict = Histogram['Reflection Lists'][phase]
+        if phase not in Phases:     #skips deleted or renamed phases silently!
+            continue
+        Phase = Phases[phase]
+        SGData = Phase['General']['SGData']
+        SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+        im = 0
+        if Phase['General'].get('Modulated',False):
+            SSGData = Phase['General']['SSGData']
+            im = 1  #offset in SS reflection list
+            #??
+        pId = Phase['pId']
+        pfx = '%d::'%(pId)
+        phfx = '%d:%d:'%(pId,hId)
+        Dij = GetDij(phfx,SGData,parmDict)
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
+        G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
+        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+        if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+            if im:
+                dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+            else:
+                if Phase['General']['Type'] == 'magnetic':
+                    dFdvDict = StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                else:
+                    dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+            ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
+        # determine the parameters that will have derivatives computed only at end
+        nonatomvarylist = []
+        for name in varylist:
+            if '::RBV;' not in name:
+                try:
+                    aname = name.split(pfx)[1][:2]
+                    if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
+                        'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
+                except IndexError:
+                    continue
+            nonatomvarylist.append(name)
+        nonatomdependentVars = []
+        for name in dependentVars:
+            if '::RBV;' not in name:
+                try:
+                    aname = name.split(pfx)[1][:2]
+                    if aname not in ['Af','dA','AU','RB','AM','Xs','Xc','Ys','Yc','Zs','Zc',    \
+                        'Tm','Xm','Ym','Zm','U1','U2','U3']: continue # skip anything not an atom or rigid body param
+                except IndexError:
+                    continue
+            nonatomdependentVars.append(name)
+        #==========================================================================================
+        #==========================================================================================
+        for iref in range(prc,len(refDict['RefList']),tprc):
+            refl = refDict['RefList'][iref]
+            if im:
+                h,k,l,m = refl[:4]
+            else:
+                h,k,l = refl[:3]
+            Uniq = np.inner(refl[:3],SGMT)
+            if 'T' in calcControls[hfx+'histType']:
+                wave = refl[14+im]
+            dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,im,wave,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
+            if 'C' in calcControls[hfx+'histType']:        #CW powder
+                Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5+im],refl[6+im],refl[7+im],shl)
+            else: #'T'OF
+                Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
+            iBeg = np.searchsorted(x,refl[5+im]-fmin)
+            iFin = np.searchsorted(x,refl[5+im]+fmax)
+            if not iBeg+iFin:       #peak below low limit - skip peak
+                continue
+            elif not iBeg-iFin:     #peak above high limit - done
+                break
+            pos = refl[5+im]
+            if 'C' in calcControls[hfx+'histType']:
+                tanth = tand(pos/2.0)
+                costh = cosd(pos/2.0)
+                lenBF = iFin-iBeg
+                dMdpk = np.zeros(shape=(6,lenBF))
+                dMdipk = G2pwd.getdFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))
+                for i in range(5):
+                    dMdpk[i] += 100.*cw[iBeg:iFin]*refl[11+im]*refl[9+im]*dMdipk[i]
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'sig':dMdpk[2],'gam':dMdpk[3],'shl':dMdpk[4],'L1/L2':np.zeros_like(dMdpk[0])}
+                if Ka2:
+                    pos2 = refl[5+im]+lamRatio*tanth       # + 360/pi * Dlam/lam * tan(th)
+                    iBeg2 = np.searchsorted(x,pos2-fmin)
+                    iFin2 = np.searchsorted(x,pos2+fmax)
+                    if iBeg2-iFin2:
+                        lenBF2 = iFin2-iBeg2
+                        dMdpk2 = np.zeros(shape=(6,lenBF2))
+                        dMdipk2 = G2pwd.getdFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))
+                        for i in range(5):
+                            dMdpk2[i] = 100.*cw[iBeg2:iFin2]*refl[11+im]*refl[9+im]*kRatio*dMdipk2[i]
+                        dMdpk2[5] = 100.*cw[iBeg2:iFin2]*refl[11+im]*dMdipk2[0]
+                        dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
+            else:   #'T'OF
+                lenBF = iFin-iBeg
+                if lenBF < 0:   #bad peak coeff
+                    break
+                dMdpk = np.zeros(shape=(6,lenBF))
+                dMdipk = G2pwd.getdEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))
+                for i in range(6):
+                    dMdpk[i] += refl[11+im]*refl[9+im]*dMdipk[i]      #cw[iBeg:iFin]*
+                dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
+            if Phase['General'].get('doPawley'):
+                dMdpw = np.zeros(len(x))
+                try:
+                    if im:
+                        pIdx = pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d,%d'%(h,k,l,m)])
+                    else:
+                        pIdx = pfx+'PWLref:'+str(pawleyLookup[pfx+'%d,%d,%d'%(h,k,l)])
+                    idx = varylist.index(pIdx)
+                    dMdpw[iBeg:iFin] = dervDict['int']/refl[9+im]
+                    if Ka2: #not for TOF either
+                        dMdpw[iBeg2:iFin2] += dervDict2['int']/refl[9+im]
+                    dMdv[idx] = dMdpw
+                except: # ValueError:
+                    pass
+            if 'C' in calcControls[hfx+'histType']:
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict)
+                names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
+                    hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
+                    hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
+                    hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
+                    hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
+                    hfx+'DisplaceY':[dpdY,'pos'],}
+                if 'Bragg' in calcControls[hfx+'instType']:
+                    names.update({hfx+'SurfRoughA':[dFdAb[0],'int'],
+                        hfx+'SurfRoughB':[dFdAb[1],'int'],})
+                else:
+                    names.update({hfx+'Absorption':[dFdAb,'int'],})
+            else:   #'T'OF
+                dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)
+                names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],
+                    hfx+'difC':[dpdDC,'pos'],hfx+'difA':[dpdDA,'pos'],hfx+'difB':[dpdDB,'pos'],
+                    hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],
+                    hfx+'alpha':[1./refl[4+im],'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[1./refl[4+im]**4,'bet'],
+                    hfx+'beta-q':[1./refl[4+im]**2,'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4+im]**2,'sig'],
+                    hfx+'sig-2':[refl[4+im]**4,'sig'],hfx+'sig-q':[1./refl[4+im]**2,'sig'],
+                    hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
+            for name in names:
+                item = names[name]
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += item[0]*dervDict[item[1]]
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += item[0]*dervDict[item[1]]
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
+            for iPO in dIdPO:
+                if iPO in varylist:
+                    dMdv[varylist.index(iPO)][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(iPO)][iBeg2:iFin2] += dIdPO[iPO]*dervDict2['int']
+                elif iPO in dependentVars:
+                    depDerivDict[iPO][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[iPO][iBeg2:iFin2] += dIdPO[iPO]*dervDict2['int']
+            for i,name in enumerate(['omega','chi','phi']):
+                aname = pfx+'SH '+name
+                if aname in varylist:
+                    dMdv[varylist.index(aname)][iBeg:iFin] += dFdSA[i]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(aname)][iBeg2:iFin2] += dFdSA[i]*dervDict2['int']
+                elif aname in dependentVars:
+                    depDerivDict[aname][iBeg:iFin] += dFdSA[i]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[aname][iBeg2:iFin2] += dFdSA[i]*dervDict2['int']
+            for iSH in dFdODF:
+                if iSH in varylist:
+                    dMdv[varylist.index(iSH)][iBeg:iFin] += dFdODF[iSH]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(iSH)][iBeg2:iFin2] += dFdODF[iSH]*dervDict2['int']
+                elif iSH in dependentVars:
+                    depDerivDict[iSH][iBeg:iFin] += dFdODF[iSH]*dervDict['int']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[iSH][iBeg2:iFin2] += dFdODF[iSH]*dervDict2['int']
+            cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
+            for name,dpdA in cellDervNames:
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dpdA*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += dpdA*dervDict2['pos']
+                elif name in dependentVars: #need to scale for mixed phase constraints?
+                    depDerivDict[name][iBeg:iFin] += dpdA*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += dpdA*dervDict2['pos']
+            dDijDict = GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict)
+            for name in dDijDict:
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dDijDict[name]*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
+            for i,name in enumerate([pfx+'mV0',pfx+'mV1',pfx+'mV2']):
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dpdV[i]*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += dpdV[i]*dervDict['pos']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
+            if 'C' in calcControls[hfx+'histType']:
+                sigDict,gamDict = GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
+            else:   #'T'OF
+                sigDict,gamDict = GetSampleSigGamDerv(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
+            for name in gamDict:
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += gamDict[name]*dervDict2['gam']
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += gamDict[name]*dervDict['gam']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += gamDict[name]*dervDict2['gam']
+            for name in sigDict:
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += sigDict[name]*dervDict['sig']
+                    if Ka2 and iFin2-iBeg2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += sigDict[name]*dervDict['sig']
+                    if Ka2 and iFin2-iBeg2:
+                        depDerivDict[name][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
+            for name in ['BabA','BabU']:
+                if refl[9+im]:
+                    if phfx+name in varylist:
+                        dMdv[varylist.index(phfx+name)][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
+                        if Ka2 and iFin2-iBeg2:
+                            dMdv[varylist.index(phfx+name)][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]
+                    elif phfx+name in dependentVars:                    
+                        depDerivDict[phfx+name][iBeg:iFin] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict['int']/refl[9+im]
+                        if Ka2 and iFin2-iBeg2:
+                            depDerivDict[phfx+name][iBeg2:iFin2] += parmDict[phfx+'Scale']*dFdvDict[phfx+name][iref]*dervDict2['int']/refl[9+im]                  
+            if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
+                #do atom derivatives -  for RB,F,X & U so far - how do I scale mixed phase constraints?
+                corr = 0.
+                corr2 = 0.
+                if refl[9+im]:             
+                    corr = dervDict['int']/refl[9+im]
+                    #if Ka2 and iFin2-iBeg2:
+                    #    corr2 = dervDict2['int']/refl[9+im]
+                for name in nonatomvarylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
+                    if Ka2 and iFin2-iBeg2:
+                       dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+                for name in nonatomdependentVars:
+                   depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
+                   if Ka2 and iFin2-iBeg2:
+                       depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
+    # now process derivatives in constraints
+    dMdv[:,ma.getmaskarray(x)] = 0.  # instead of masking, zero out masked values
+    G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
+    return dMdv
     
 def UserRejectHKL(ref,im,userReject):
     if ref[5+im]/ref[6+im] < userReject['minF/sig']:
@@ -3745,13 +4076,41 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             dy = y-yc
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
-                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
-            # print 'HessRefine getPowderProfileDerv'
-            # import cPickle
-            # fp = open('/tmp/hess.pkl','w')
-            # cPickle.dump(dMdvh,fp,1)
-            # fp.close()
+            ######################################################################
+            #import GSASIImpsubs as G2mp
+            #G2mp.InitMP()
+            useMP = False
+            ncores = 0
+            #useMP = G2mp.useMP #and len(refDict['RefList']) > 100
+            if GSASIIpath.GetConfigValue('debug'):
+                starttime = time.time()
+                print 'starting getPowderProfileDerv'
+            #useMP = True
+            if useMP and ncores > 1:
+                import multiprocessing as mp
+                print 'mp with ',ncores,'cores'
+                MPpool = mp.Pool(ncores)
+                dMdvh = None
+                profArgs = [
+                    (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,
+                     i,ncores) for i in range(ncores)]
+                for dmdv in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
+                    if dMdvh is None:
+                       dMdvh = dmdv
+                    else: 
+                       dMdvh += dmdv
+            else:
+                #dMdvh = getPowderProfileDervMP([parmDict,x[xB:xF],
+                #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup])
+                dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
+                    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
+            if GSASIIpath.GetConfigValue('debug'):
+                print 'end getPowderProfileDerv t=',time.time()-starttime
+            #import cPickle
+            #fp = open('/tmp/hess.pkl','w')
+            #cPickle.dump(dMdvh,fp,1)
+            #fp.close()
+            ######################################################################
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt

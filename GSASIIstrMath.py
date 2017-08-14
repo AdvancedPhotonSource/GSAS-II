@@ -3197,7 +3197,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     #print 'end getPowderProfile t=',time.time()-starttime
     return yc,yb
     
-def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
+def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars):
     '''Computes the derivatives of the computed powder pattern with respect to all
     refined parameters
     '''
@@ -3228,7 +3228,6 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             return [[pfx+'A0',dpdA[0]]]
             
     # create a list of dependent variables and set up a dictionary to hold their derivatives
-    dependentVars = G2mv.GetDependentVars()
     depDerivDict = {}
     for j in dependentVars:
         depDerivDict[j] = np.zeros(shape=(len(x)))
@@ -3553,11 +3552,11 @@ def getPowderProfileDervMP(args):
     refined parameters.
     Multiprocessing version.
     '''
-    parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup = args[:8]
+    parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars = args[:9]
     prc=0
     tprc=1
-    if len(args) >= 9: prc=args[8]
-    if len(args) >= 10: tprc=args[9]
+    if len(args) >= 10: prc=args[9]
+    if len(args) >= 11: tprc=args[10]
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
@@ -3581,11 +3580,11 @@ def getPowderProfileDervMP(args):
             return [[pfx+'A0',dpdA[0]]]
             
     # create a list of dependent variables and set up a dictionary to hold their derivatives
-    dependentVars = G2mv.GetDependentVars()
+#    dependentVars = G2mv.GetDependentVars()
     depDerivDict = {}
     for j in dependentVars:
         depDerivDict[j] = np.zeros(shape=(len(x)))
-    #print 'dependent vars',dependentVars
+#    print 'dependent vars',dependentVars
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -4005,6 +4004,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    dependentVars = G2mv.GetDependentVars()
     dMdv = np.empty(0)
     histoList = Histograms.keys()
     histoList.sort()
@@ -4019,7 +4019,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
             dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
-                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
+                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             phase = Histogram['Reflection Lists']
@@ -4058,6 +4058,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    dependentVars = G2mv.GetDependentVars()
     #fixup H atom positions here?
     ApplyRBModels(parmDict,Phases,rigidbodyDict)        #,Update=True??
     Hess = np.empty(0)
@@ -4080,11 +4081,11 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             #import GSASIImpsubs as G2mp
             #G2mp.InitMP()
             useMP = False
-            ncores = 0
+            ncores = GSASIIpath.GetConfigValue('Multiprocessing_cores')
             #useMP = G2mp.useMP #and len(refDict['RefList']) > 100
             if GSASIIpath.GetConfigValue('debug'):
                 starttime = time.time()
-                print 'starting getPowderProfileDerv'
+#                print 'starting getPowderProfileDerv'
             #useMP = True
             if useMP and ncores > 1:
                 import multiprocessing as mp
@@ -4092,7 +4093,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 MPpool = mp.Pool(ncores)
                 dMdvh = None
                 profArgs = [
-                    (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,
+                    (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
                      i,ncores) for i in range(ncores)]
                 for dmdv in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
                     if dMdvh is None:
@@ -4103,7 +4104,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 #dMdvh = getPowderProfileDervMP([parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup])
                 dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
-                    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
+                    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             if GSASIIpath.GetConfigValue('debug'):
                 print 'end getPowderProfileDerv t=',time.time()-starttime
             #import cPickle

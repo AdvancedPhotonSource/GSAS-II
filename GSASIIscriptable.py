@@ -14,6 +14,9 @@
 Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
 
 Supports a command line interface as well.
+
+
+Look at :class:`G2Project` to start.
 """
 from __future__ import division, print_function # needed?
 import os.path as ospath
@@ -21,33 +24,39 @@ import sys
 import cPickle
 import imp
 import copy
-import platform
 import os
 import random as ran
-import json
 
 import numpy.ma as ma
 import scipy.interpolate as si
 import numpy as np
 import scipy as sp
-import matplotlib as mpl
 
 import GSASIIpath
 GSASIIpath.SetBinaryPath(False) # would rather have this in __name__ == '__main__' stanza
-import GSASIIIO as G2IO
-import GSASIIfiles as G2fil
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
-import GSASIIstrIO as G2strIO
-import GSASIIspc as G2spc
 import GSASIIstrMain as G2strMain
-import GSASIImath as G2mth
+import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
+# Delay imports to not slow down small scripts
+G2fil = None
+PwdrDataReaders = []
+PhaseReaders = []
+
+
+def LoadG2fil():
+    """Delay importing this module, it is slow"""
+    global G2fil
+    global PwdrDataReaders
+    global PhaseReaders
+    if G2fil is None:
+        import GSASIIfiles
+        G2fil = GSASIIfiles
+        PwdrDataReaders = G2fil.LoadImportRoutines("pwd", "Powder_Data")
+        PhaseReaders = G2fil.LoadImportRoutines("phase", "Phase")
+
 
 def LoadDictFromProjFile(ProjFile):
     '''Read a GSAS-II project file and load items to dictionary
@@ -350,6 +359,7 @@ def SetupGeneral(data, dirname):
         F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
     generalData['F000X'] = F000X
     generalData['F000N'] = F000N
+    import GSASIImath as G2mth
     generalData['Mass'] = G2mth.getMass(generalData)
 
 def make_empty_project(author=None, filename=None):
@@ -367,6 +377,8 @@ def make_empty_project(author=None, filename=None):
     else:
         filename = os.path.abspath(filename)
     gsasii_version = str(GSASIIpath.GetVersionNumber())
+    LoadG2fil()
+    import matplotlib as mpl
     python_library_versions = G2fil.get_python_versions([mpl, np, sp])
 
     controls_data = dict(G2obj.DefaultControls)
@@ -462,6 +474,7 @@ def load_iprms(instfile, reader):
 
     Returns a 2-tuple of (Iparm1, Iparm2) parameters
     """
+    LoadG2fil()
     ext = os.path.splitext(instfile)[1]
 
     if ext.lower() == '.instprm':
@@ -633,6 +646,7 @@ class G2ObjectWrapper(object):
 
 
 class G2Project(G2ObjectWrapper):
+    """Represents an entire GSAS-II project."""
     def __init__(self, gpxfile=None, author=None, filename=None):
         """Loads a GSAS-II project from a specified filename.
 
@@ -697,13 +711,15 @@ class G2Project(G2ObjectWrapper):
         :param str iparams: The instrument parameters file, a filename.
 
         :returns: A :class:`G2PwdrData` object representing
-        the histogram"""
+        the histogram
+        """
+        LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
         iparams = os.path.abspath(os.path.expanduser(iparams))
         pwdrreaders = import_generic(datafile, PwdrDataReaders)
         histname, new_names, pwdrdata = load_pwd_from_reader(
                                           pwdrreaders[0], iparams,
-                                          list(self.histogram_names()))
+                                          [h.name for h in self.histograms()])
         if histname in self.data:
             print("Warning - redefining histogram", histname)
         else:
@@ -723,7 +739,9 @@ class G2Project(G2ObjectWrapper):
         this phase
 
         :returns: A :class:`G2Phase` object representing the
-        new phase."""
+        new phase.
+        """
+        LoadG2fil()
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
 
         # TODO handle multiple phases in a file
@@ -731,7 +749,7 @@ class G2Project(G2ObjectWrapper):
         phasereader = phasereaders[0]
 
         phasename = phasename or phasereader.Phase['General']['Name']
-        phaseNameList = list(self.phase_names())
+        phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)
         phasereader.Phase['General']['Name'] = phasename
 
@@ -802,11 +820,11 @@ class G2Project(G2ObjectWrapper):
         # valid
         _deep_copy_into(from_=data, into=self.data)
 
-    def refine(self, newfile=None, printFile=None):
+    def refine(self, newfile=None, printFile=None, makeBack=False):
         # index_ids will automatically save the project
         self.index_ids()
         # TODO G2strMain does not properly use printFile
-        G2strMain.Refine(self.filename)
+        G2strMain.Refine(self.filename, makeBack=makeBack)
         # Reload yourself
         self.reload()
 
@@ -831,39 +849,47 @@ class G2Project(G2ObjectWrapper):
     def histogram(self, histname):
         """Returns the histogram named histname, or None if it does not exist.
 
+        :param histname: The name of the histogram (str), or ranId or index.
         :returns: A :class:`G2PwdrData` object, or None if
         the histogram does not exist
+
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram_names`
             :func:`~GSASIIscriptable.G2Project.histograms`
             :func:`~GSASIIscriptable.G2Project.phase`
             :func:`~GSASIIscriptable.G2Project.phases`
-            :func:`~GSASIIscriptable.G2Project.phase_names`
             """
         if histname in self.data:
             return G2PwdrData(self.data[histname], self)
-        return None
+        histRanId = None
+        for key, val in G2obj.HistIdLookup.items():
+            name, ranId = val
+            # histname can be either ranId (key) or index (val)
+            if ranId == histname or key == str(histname):
+                return self.histogram(name)
 
     def histograms(self):
         """Return a list of all histograms, as
         :class:`G2PwdrData` objects
+
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram_names`
             :func:`~GSASIIscriptable.G2Project.histograms`
             :func:`~GSASIIscriptable.G2Project.phase`
             :func:`~GSASIIscriptable.G2Project.phases`
-            :func:`~GSASIIscriptable.G2Project.phase_names`
             """
-        return [self.histogram(name) for name in self.histogram_names()]
+        output = []
+        for obj in self.names:
+            if len(obj) > 1 and obj[0] != u'Phases':
+                output.append(self.histogram(obj[0]))
+        return output
 
     def phase_names(self):
         """Gives an list of the names of each phase in the project.
 
         :returns: A list of strings
+
         .. seealso::
             :func:`~GSASIIscriptable.G2Project.histogram`
             :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.histogram_names`
             :func:`~GSASIIscriptable.G2Project.phase`
             :func:`~GSASIIscriptable.G2Project.phases`
             """
@@ -879,30 +905,37 @@ class G2Project(G2ObjectWrapper):
         :param str phasename: The name of the desired phase
         :returns: A :class:`G2Phase` object
         :raises: KeyError
+
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram_names`
             :func:`~GSASIIscriptable.G2Project.histograms`
             :func:`~GSASIIscriptable.G2Project.phase`
             :func:`~GSASIIscriptable.G2Project.phases`
-            :func:`~GSASIIscriptable.G2Project.phase_names`
             """
         phases = self.data['Phases']
         if phasename in phases:
             return G2Phase(phases[phasename], phasename, self)
+        phaseRanId = None
+        for key, val in G2obj.PhaseIdLookup.items():
+            name, ranId = val
+            # phasename can be either ranId (key) or index (val)
+            if ranId == phasename or key == str(phasename):
+                return self.phase(name)
 
     def phases(self):
         """
         Returns a list of all the phases in the project.
 
         :returns: A :class:`G2Phase`
+
         .. seealso::
             :func:`~GSASIIscriptable.G2Project.histogram`
             :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.histogram_names`
             :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phase_names`
             """
-        return [self.phase(name) for name in self.phase_names()]
+        for obj in self.names:
+            if obj[0] == 'Phases':
+                return [self.phase(p) for p in obj[1:]]
+        return []
 
     def do_refinements(self, refinements, histogram='all', phase='all',
                        outputnames=None):
@@ -943,22 +976,36 @@ class G2Project(G2ObjectWrapper):
     def set_refinement(self, refinement, histogram='all', phase='all'):
         """Apply specified refinements to a given histogram(s) or phase(s).
 
+        Refinement parameters are categorize in three groups:
+
+        1. Histogram parameters
+        2. Phase parameters
+        3. Histogram-and-Phase (HAP) parameters
+
         :param dict refinement: The refinements to be conducted
         :param histogram: Either a name of a histogram (str), a list of
         histogram names, or 'all' (default)
         :param phase: Either a name of a phase (str), a list of phase names, or
-        'all' (default)"""
+        'all' (default)
+
+        .. seealso::
+            :func:`~G2PwdrData.set_refinements`
+            :func:`~G2PwdrData.clear_refinements`
+            :func:`~G2Phase.set_refinements`
+            :func:`~G2Phase.clear_refinements`
+            :func:`~G2Phase.set_HAP_refinements`
+            :func:`~G2Phase.clear_HAP_refinements`"""
+
         if histogram == 'all':
-            hists = [self.histogram(name)
-                     for name in self.histogram_names()]
-        elif isinstance(histogram, str):
+            hists = self.histograms()
+        elif isinstance(histogram, str) or isinstance(histogram, int):
             hists = [self.histogram(histogram)]
         else:
             hists = [self.histogram(name) for name in histogram]
 
         if phase == 'all':
-            phases = [self.phase(name) for name in self.phase_names()]
-        elif isinstance(phase, str):
+            phases = self.phases()
+        elif isinstance(phase, str) or isinstance(phase, int):
             phases = [self.phase(phase)]
         else:
             phases = [self.phase(name) for name in phase]
@@ -974,37 +1021,48 @@ class G2Project(G2ObjectWrapper):
 
         pwdr_set = {}
         phase_set = {}
+        hap_set = {}
         for key, val in refinement.get('set', {}).items():
             # Apply refinement options
             if G2PwdrData.is_valid_refinement_key(key):
                 pwdr_set[key] = val
             elif G2Phase.is_valid_refinement_key(key):
                 phase_set[key] = val
+            elif G2Phase.is_valid_HAP_refinement_key(key):
+                hap_set[key] = val
             else:
-                print("Unknown refinement key:", key)
+                raise ValueError("Unknown refinement key", key)
 
         for hist in hists:
             hist.set_refinements(pwdr_set)
         for phase in phases:
             phase.set_refinements(phase_set)
+        for phase in phases:
+            phase.set_HAP_refinements(hap_set, hists)
 
         pwdr_clear = {}
         phase_clear = {}
+        hap_clear = {}
         for key, val in refinement.get('clear', {}).items():
             # Clear refinement options
             if G2PwdrData.is_valid_refinement_key(key):
                 pwdr_clear[key] = val
             elif G2Phase.is_valid_refinement_key(key):
                 phase_clear[key] = val
+            elif G2Phase.is_valid_HAP_refinement_key(key):
+                hap_set[key] = val
             else:
-                print("Unknown refinement key:", key)
+                raise ValueError("Unknown refinement key", key)
 
         for hist in hists:
             hist.clear_refinements(pwdr_clear)
         for phase in phases:
             phase.clear_refinements(phase_clear)
+        for phase in phases:
+            phase.clear_HAP_refinements(hap_clear, hists)
 
     def index_ids(self):
+        import GSASIIstrIO as G2strIO
         self.save()
         return G2strIO.GetUsedHistogramsAndPhases(self.filename)
 
@@ -1041,6 +1099,7 @@ class G2Project(G2ObjectWrapper):
 
         Automatically converts string phase, hist, or atom names into the ID required
         by G2VarObj."""
+
         if reloadIdx:
             self.index_ids()
 
@@ -1142,7 +1201,7 @@ class G2AtomRecord(G2ObjectWrapper):
 
 
 class G2PwdrData(G2ObjectWrapper):
-    """Wraps a Poweder Data Histogram."""
+    """Wraps a Powder Data Histogram."""
     def __init__(self, data, proj):
         self.data = data
         self.proj = proj
@@ -1167,9 +1226,12 @@ class G2PwdrData(G2ObjectWrapper):
         return {key: data[key]
                 for key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']}
 
+    @property
+    def id(self):
+        return G2obj.HistRanIdLookup[self.ranId]
+
     def fit_fixed_points(self):
         """Attempts to apply a background fit to the fixed points currently specified."""
-
         def SetInstParms(Inst):
             dataType = Inst['Type'][0]
             insVary = []
@@ -1242,7 +1304,8 @@ class G2PwdrData(G2ObjectWrapper):
         return self['data'][1][3]
 
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
-        if plt:
+        try:
+            import matplotlib.pyplot as plt
             data = self['data'][1]
             if Yobs:
                 plt.plot(data[0], data[1], label='Yobs')
@@ -1252,6 +1315,8 @@ class G2PwdrData(G2ObjectWrapper):
                 plt.plot(data[0], data[4], label='Background')
             if Residual:
                 plt.plot(data[0], data[5], label="Residual")
+        except ImportError:
+            pass
 
     def set_refinements(self, refs):
         """Sets the refinement parameter 'key' to the specification 'value'
@@ -1325,7 +1390,9 @@ class G2PwdrData(G2ObjectWrapper):
             self['Background'][0][1] = orig
 
     def clear_refinements(self, refs):
-        """Clears the refinement parameter 'key' and its associated value."""
+        """Clears the refinement parameter 'key' and its associated value.
+
+        :param dict refs: A dictionary of parameters to clear."""
         for key, value in refs.items():
             if key == 'Limits':
                 old_limits, cur_limits = self.data['Limits']
@@ -1379,9 +1446,9 @@ class G2Phase(G2ObjectWrapper):
         exist.
 
         :param str atomlabel: The name of the atom (e.g. "O2")
-
         :returns: A :class:`G2AtomRecord` object
-        representing the atom."""
+        representing the atom.
+        """
         # Consult GSASIIobj.py for the meaning of this
         cx, ct, cs, cia = self.data['General']['AtomPtrs']
         ptrs = [cx, ct, cs, cia]
@@ -1394,7 +1461,8 @@ class G2Phase(G2ObjectWrapper):
         """Returns a list of atoms present in the phase.
 
         :returns: A list of :class:`G2AtomRecord` objects. See
-        also :func:`~GSASIIscriptable.G2Phase.atom`"""
+        also :func:`~GSASIIscriptable.G2Phase.atom`
+        """
         ptrs = self.data['General']['AtomPtrs']
         output = []
         atoms = self.data['Atoms']
@@ -1412,6 +1480,10 @@ class G2Phase(G2ObjectWrapper):
     def ranId(self):
         return self.data['ranId']
 
+    @property
+    def id(self):
+        return G2obj.PhaseRanIdLookup[self.ranId]
+
     def cell_dict(self):
         """Returns a dictionary of the cell parameters, with keys:
             'a', 'b', 'c', 'alpha', 'beta', 'gamma', 'vol'
@@ -1423,6 +1495,11 @@ class G2Phase(G2ObjectWrapper):
                 'vol': cell[7]}
 
     def set_refinements(self, refs):
+        """Sets the refinement parameter 'key' to the specification 'value'
+
+        :param dict refs: A dictionary of the parameters to be set.
+
+        :returns: None"""
         for key, value in refs.items():
             if key == "Cell":
                 self.data['General']['Cell'][0] = True
@@ -1446,6 +1523,9 @@ class G2Phase(G2ObjectWrapper):
                 raise ValueError("Unknown key:", key)
 
     def clear_refinements(self, refs):
+        """Clears a given set of parameters.
+
+        :param dict refs: The parameters to clear"""
         for key, value in refs.items():
             if key == "Cell":
                 self.data['General']['Cell'][0] = False
@@ -1464,6 +1544,136 @@ class G2Phase(G2ObjectWrapper):
                     hoptions['LeBail'] = False
             else:
                 raise ValueError("Unknown key:", key)
+
+    def set_HAP_refinements(self, refs, histograms='all'):
+        """Sets the given HAP refinement parameters between this phase and
+        the given histograms
+
+        :param dict refs: A dictionary of the parameters to be set.
+        :param histograms: Either 'all' (default) or a list of the histograms
+        whose HAP parameters will be set with this phase. Histogram and phase
+        must already be associated
+
+        :returns: None
+        """
+        if histograms == 'all':
+            histograms = self['Histograms'].values()
+        else:
+            histograms = [self['Histograms'][h.name] for h in histograms]
+
+        for key, val in refs.items():
+            for h in histograms:
+                if key == 'Babinet':
+                    try:
+                        sets = list(val)
+                    except ValueError:
+                        sets = ['BabA', 'BabU']
+                    for param in sets:
+                        if param not in ['BabA', 'BabU']:
+                            raise ValueError("Not sure what to do with" + param)
+                        for hist in histograms:
+                            hist['Babinet'][param][1] = True
+                elif key == 'Extinction':
+                    for h in histograms:
+                        h['Extinction'][1] = True
+                elif key == 'HStrain':
+                    for h in histograms:
+                        hist['HStrain'][1] = [True for p in hist['Hstrain'][0]]
+                elif key == 'Mustrain':
+                    for h in histograms:
+                        mustrain = h['Mustrain']
+                        newType = None
+                        if isinstance(val, str):
+                            if val in ['isotropic', 'uniaxial', 'generalized']:
+                                newType = val
+                            else:
+                                raise ValueError("Not a Mustrain type: " + val)
+                        elif isinstance(val, dict):
+                            newType = val.get('type', None)
+                            direction = val.get('direction', None)
+
+                        if newType:
+                            mustrain[0] = newType
+                            if newType == 'isotropic':
+                                mustrain[2][0] = True
+                                mustrain[5] = [False for p in mustrain[4]]
+                            elif newType == 'uniaxial':
+                                pass
+                            else:  # newtype == 'generalized'
+                                mustrain[2] = [False for p in mustrain[1]]
+                        if direction:
+                            direction = [int(n) for n in direction]
+                            if len(direction) != 3:
+                                raise ValueError("Expected hkl, found", direction)
+                            mustrain[3] = direction
+                elif key == 'Pref.Ori.':
+                    for h in histograms:
+                        h['Pref.Ori.'][2] = True
+                elif key == 'Show':
+                    for h in histograms:
+                        h['Show'] = True
+                elif key == 'Size':
+                    raise NotImplementedError()
+                elif key == 'Use':
+                    for h in histograms:
+                        h['Use'] = True
+                elif key == 'Scale':
+                    for h in histograms:
+                        h['Scale'][1] = False
+
+    def clear_HAP_refinements(self, refs, histograms='all'):
+        """Clears the given HAP refinement parameters between this phase and
+        the given histograms
+
+        :param dict refs: A dictionary of the parameters to be cleared.
+        :param histograms: Either 'all' (default) or a list of the histograms
+        whose HAP parameters will be cleared with this phase. Histogram and
+        phase must already be associated
+
+        :returns: None
+        """
+        if histograms == 'all':
+            histograms = self['Histograms'].values()
+        else:
+            histograms = [self['Histograms'][h.name] for h in histograms]
+
+        for key, val in refs.items():
+            for h in histograms:
+                if key == 'Babinet':
+                    try:
+                        sets = list(val)
+                    except ValueError:
+                        sets = ['BabA', 'BabU']
+                    for param in sets:
+                        if param not in ['BabA', 'BabU']:
+                            raise ValueError("Not sure what to do with" + param)
+                        for hist in histograms:
+                            hist['Babinet'][param][1] = False
+                elif key == 'Extinction':
+                    for h in histograms:
+                        h['Extinction'][1] = False
+                elif key == 'HStrain':
+                    for h in histograms:
+                        hist['HStrain'][1] = [False for p in hist['Hstrain'][0]]
+                elif key == 'Mustrain':
+                    for h in histograms:
+                        mustrain = h['Mustrain']
+                        mustrain[2] = [False for p in mustrain[1]]
+                        mustrain[5] = [False for p in mustrain[4]]
+                elif key == 'Pref.Ori.':
+                    for h in histograms:
+                        h['Pref.Ori.'][2] = False
+                elif key == 'Show':
+                    for h in histograms:
+                        h['Show'] = False
+                elif key == 'Size':
+                    raise NotImplementedError()
+                elif key == 'Use':
+                    for h in histograms:
+                        h['Use'] = False
+                elif key == 'Scale':
+                    for h in histograms:
+                        h['Scale'][1] = False
 
 
 ##########################
@@ -1543,11 +1753,11 @@ def dump(*args):
             if histograms:
                 hists = proj.histograms()
                 for h in hists:
-                    print(fname, h.name)
+                    print(fname, "hist", h.id, h.name)
             if phases:
-                phases = proj.phases()
-                for p in phases:
-                    print(fname, p.name)
+                phase_list = proj.phases()
+                for p in phase_list:
+                    print(fname, "phase", p.id, p.name)
 
 
 def IPyBrowse(*args):
@@ -1617,8 +1827,6 @@ def main():
     #     exit()
     # print("Done")
 
-PwdrDataReaders = G2fil.LoadImportRoutines("pwd", "Powder_Data")
-PhaseReaders = G2fil.LoadImportRoutines("phase", "Phase")
 if __name__ == '__main__':
     main()
 
@@ -1671,4 +1879,3 @@ if __name__ == '__main__':
     # for key, val in proj.items():
     #     print(key, ":", sep='')
     #     pretty.pprint(val)
-

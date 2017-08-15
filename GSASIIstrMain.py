@@ -134,7 +134,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return IfOK,Rvals,result,covMatrix,sig
 
-def Refine(GPXfile,dlg=None):
+def Refine(GPXfile,dlg=None,makeBack=True):
     'Global refinement -- refines to minimize against all histograms'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
@@ -221,7 +221,7 @@ def Refine(GPXfile,dlg=None):
         G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
         G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
         G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData)
+        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)
         printFile.close()
         print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
         print ' ***** Refinement successful *****'

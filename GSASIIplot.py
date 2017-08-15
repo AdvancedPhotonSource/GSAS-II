@@ -1989,6 +1989,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 id,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id, 'Sample Parameters')))
+        mcolors = mpl.cm.ScalarMappable(mpl.cm.get_cmap(G2frame.ContourColor))
     lenX = 0
     Ymax = None
     for Pattern in PlotList:
@@ -2244,14 +2245,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     elif plottype in ['SASD','REFD']:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
                 else:
+                    color = 256*N/len(PlotList)
                     if 'PWDR' in plottype:
-                        Plot.plot(X,Y,colors[N%6],picker=False)
+                        Plot.plot(X,Y,color=mcolors.cmap(color),picker=False)         #colors[N%6]
                     elif plottype in ['SASD','REFD']:
-                        Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.loglog(X,Y,mcolors.cmap(color),picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if G2frame.logPlot and 'PWDR' in plottype:
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
+#    if not G2frame.SinglePlot and not G2frame.Contour:
+#        axcb = mpl.colorbar.ColorbarBase(N)
+#        axcb.set_label('PDF number')
+
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if G2frame.GPXtree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
@@ -2648,7 +2654,10 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         if 'G(R)' not in data:
             return
         PlotList = [data[plotType],]
-        name = PlotList[0][2]
+        try:
+            name = PlotList[0][2]
+        except:
+            name = ''
     else:
         PlotList = []
         if G2frame.PDFselections is None:

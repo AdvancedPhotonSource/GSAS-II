@@ -4036,7 +4036,7 @@ class GSASII(wx.Frame):
         if GetGPXtreeItemId(self,self.root,'Phases'):
             sub = GetGPXtreeItemId(self,self.root,'Phases')
         else:
-            print 'no phases found in GetPhaseData'
+#            print 'no phases found in GetPhaseData'
             sub = None
         if sub:
             item, cookie = self.GPXtree.GetFirstChild(sub)
@@ -4083,7 +4083,7 @@ class GSASII(wx.Frame):
         if GetGPXtreeItemId(self,self.root,'Phases'):
             sub = GetGPXtreeItemId(self,self.root,'Phases')
         else:
-            print 'no phases found in GetPhaseNames'
+#            print 'no phases found in GetPhaseNames'
             sub = None
         if sub:
             item, cookie = self.GPXtree.GetFirstChild(sub)

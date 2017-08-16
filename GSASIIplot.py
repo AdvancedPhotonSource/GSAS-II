@@ -1269,7 +1269,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     global exclLines
     global DifLine # BHT: probably does not need to be global
     global Ymax
-    global Pattern
+    global Pattern,mcolors
     plottype = plotType
     
     if not G2frame.PatternId:
@@ -1313,17 +1313,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Pattern[0]['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
-            if G2frame.Contour:
-                choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
-                choice.sort()
-                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    G2frame.ContourColor = choice[sel]
-                else:
-                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
-                dlg.Destroy()
-            elif G2frame.SinglePlot:
+            if G2frame.SinglePlot:  #toggle sqrt plot
                 G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
                 Ymax = max(Pattern[1][1])
                 if G2frame.plotStyle['sqrtPlot']:
@@ -1334,6 +1324,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Pattern[0]['delOffset'] = .02*Ymax
                     Pattern[0]['refOffset'] = -0.1*Ymax
                     Pattern[0]['refDelt'] = .1*Ymax
+            else:   #select color scheme for multiplots & contour plots
+                choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+                choice.sort()
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    G2frame.ContourColor = choice[sel]
+                else:
+                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                dlg.Destroy()
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
@@ -1938,10 +1938,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot',
                         'w: toggle divide by sig','+: no selection')
                 else:
-                    Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                        'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
-                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','f: select data',
-                        'w: toggle divide by sig','+: no selection')
+                    Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up','o: reset offset',
+                        'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot',
+                        'm: toggle multidata plot','f: select data','s: color scheme','w: toggle divide by sig','+: no selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
@@ -1989,7 +1988,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 id,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id, 'Sample Parameters')))
-        mcolors = mpl.cm.ScalarMappable(mpl.cm.get_cmap(G2frame.ContourColor))
     lenX = 0
     Ymax = None
     for Pattern in PlotList:
@@ -2042,6 +2040,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
+    mcolors = mpl.cm.ScalarMappable(mpl.cm.get_cmap(G2frame.ContourColor))
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -2156,9 +2155,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
-                        Plot.plot(X,Y,colors[N%6]+pP,picker=3.,clip_on=Clip_on)
-                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                        Plot.plot(X,W,colors[(N+2)%6],picker=False)     #background
+                        Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on)
+                        Plot.plot(X,Z,colors[1],picker=False)
+                        Plot.plot(X,W,colors[2],picker=False)     #background
                     elif plottype in ['SASD','REFD']:
                         Plot.set_xscale("log",nonposx='mask')
                         Ibeg = np.searchsorted(X,limits[1][0])
@@ -2166,7 +2165,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         if G2frame.Weight:
                             Plot.set_yscale("linear")
                             DS = (YB-ZB)*np.sqrt(xye[2])
-                            Plot.plot(X[Ibeg:Ifin],DS[Ibeg:Ifin],colors[(N+3)%6],picker=False)
+                            Plot.plot(X[Ibeg:Ifin],DS[Ibeg:Ifin],colors[3],picker=False)
                             Plot.axhline(0.,color=wx.BLACK)
                             Plot.set_ylim(bottom=np.min(DS[Ibeg:Ifin])*1.2,top=np.max(DS[Ibeg:Ifin])*1.2)                                                    
                         else:
@@ -2174,41 +2173,41 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                             if G2frame.ErrorBars:
                                 if G2frame.plotStyle['sqPlot']:
                                     Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[N%6],picker=3.,clip_on=Clip_on)
+                                        ecolor=colors[0],picker=3.,clip_on=Clip_on)
                                 else:
                                     Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[N%6],picker=3.,clip_on=Clip_on)
+                                        ecolor=colors[0],picker=3.,clip_on=Clip_on)
                             else:
-                                Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=Clip_on)
-                            Plot.plot(X,W,colors[(N+2)%6],picker=False)     #const. background
-                            Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
+                                Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on)
+                            Plot.plot(X,W,colors[2],picker=False)     #const. background
+                            Plot.plot(X,ZB,colors[1],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
                     DY = xye[1]*np.sqrt(xye[2])
                     Ymax = max(DY)
                     DZ = xye[3]*np.sqrt(xye[2])
                     DS = xye[5]*np.sqrt(xye[2])-Ymax*Pattern[0]['delOffset']
-                    ObsLine = Plot.plot(X,DY,colors[N%6]+pP,picker=3.,clip_on=Clip_on)         #Io/sig(Io)
-                    Plot.plot(X,DZ,colors[(N+1)%6],picker=False)                    #Ic/sig(Io)
-                    DifLine = Plot.plot(X,DS,colors[(N+3)%6],picker=1.)                    #(Io-Ic)/sig(Io)
+                    ObsLine = Plot.plot(X,DY,colors[0]+pP,picker=3.,clip_on=Clip_on)         #Io/sig(Io)
+                    Plot.plot(X,DZ,colors[1],picker=False)                    #Ic/sig(Io)
+                    DifLine = Plot.plot(X,DS,colors[3],picker=1.)                    #(Io-Ic)/sig(Io)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            Plot.plot(Xum,Y-W,colors[N%6]+pP,picker=False,clip_on=Clip_on)  #Io-Ib
-                            Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)               #Ic-Ib
+                            Plot.plot(Xum,Y-W,colors[0]+pP,picker=False,clip_on=Clip_on)  #Io-Ib
+                            Plot.plot(X,Z-W,colors[1],picker=False)               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=Clip_on)
-                            Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on)
+                            Plot.plot(X,ZB,colors[1],picker=False)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+pP,picker=3.,clip_on=Clip_on)    #Io
-                            Plot.plot(X,Z,colors[(N+1)%6],picker=False)                 #Ic
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on)    #Io
+                            Plot.plot(X,Z,colors[1],picker=False)                 #Ic
                         else:
-                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=Clip_on)
-                            Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on)
+                            Plot.plot(X,ZB,colors[1],picker=False)
                     if 'PWDR' in plottype:
-                        Plot.plot(X,W,colors[(N+2)%6],picker=False)                 #Ib
-                        DifLine = Plot.plot(X,D,colors[(N+3)%6],picker=1.)                 #Io-Ic
+                        Plot.plot(X,W,colors[2],picker=False)                 #Ib
+                        DifLine = Plot.plot(X,D,colors[3],picker=1.)                 #Io-Ic
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
                 if PickId:
@@ -2239,17 +2238,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))
                         
             else:   #not picked
+                icolor = 256*N/len(PlotList)
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
-                        Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.semilogy(X,Y,color=mcolors.cmap(icolor),picker=False,nonposy='mask')
                     elif plottype in ['SASD','REFD']:
-                        Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.semilogy(X,Y,color=mcolors.cmap(icolor),picker=False,nonposy='mask')
                 else:
-                    color = 256*N/len(PlotList)
                     if 'PWDR' in plottype:
-                        Plot.plot(X,Y,color=mcolors.cmap(color),picker=False)         #colors[N%6]
+                        Plot.plot(X,Y,color=mcolors.cmap(icolor),picker=False)
                     elif plottype in ['SASD','REFD']:
-                        Plot.loglog(X,Y,mcolors.cmap(color),picker=False,nonposy='mask')
+                        Plot.loglog(X,Y,mcolors.cmap(icolor),picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
                 if G2frame.logPlot and 'PWDR' in plottype:

@@ -32,6 +32,7 @@ There are three classes of refinement parameters:
 """
 from __future__ import division, print_function # needed?
 import os.path as ospath
+import datetime as dt
 import sys
 import cPickle
 import imp
@@ -375,6 +376,16 @@ def SetupGeneral(data, dirname):
     generalData['F000N'] = F000N
     import GSASIImath as G2mth
     generalData['Mass'] = G2mth.getMass(generalData)
+
+
+############################################
+############ CIF export helpers ############
+############################################
+## These functions are translated from
+## exports/G2export_CIF.py
+## They are used in G2Phase.export_CIF
+
+
 
 def make_empty_project(author=None, filename=None):
     """Creates an dictionary in the style of GSASIIscriptable, for an empty
@@ -1484,15 +1495,98 @@ class G2Phase(G2ObjectWrapper):
     def id(self):
         return G2obj.PhaseRanIdLookup[self.ranId]
 
-    def cell_dict(self):
+    def get_cell(self):
         """Returns a dictionary of the cell parameters, with keys:
-            'a', 'b', 'c', 'alpha', 'beta', 'gamma', 'vol'
+            'length_a', 'length_b', 'length_c', 'angle_alpha', 'angle_beta', 'angle_gamma', 'volume'
 
         :returns: a dict"""
         cell = self['General']['Cell']
-        return {'a': cell[1], 'b': cell[2], 'c': cell[3],
-                'alpha': cell[4], 'beta': cell[5], 'gamma': cell[6],
-                'vol': cell[7]}
+        return {'length_a': cell[1], 'length_b': cell[2], 'length_c': cell[3],
+                'angle_alpha': cell[4], 'angle_beta': cell[5], 'angle_gamma': cell[6],
+                'volume': cell[7]}
+
+    def export_CIF(self, outputname, quickmode=True):
+        """Write this phase to a .cif file named outputname
+
+        :param str outputname: The name of the .cif file to write to
+        :param bool quickmode: Currently ignored. Carryover from exports.G2export_CIF"""
+        # This code is all taken from exports/G2export_CIF.py
+        # Functions copied have the same names
+        import GSASIImath as G2mth
+        import GSASIImapvars as G2mv
+        from exports import G2export_CIF as cif
+
+        CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
+        CIFname = os.path.splitext(self.proj.filename)[0]
+        CIFname = os.path.split(CIFname)[1]
+        CIFname = ''.join([c if ord(c) < 128 else ''
+                           for c in CIFname.replace(' ', '_')])
+        try:
+            author = self.proj['Controls'].get('Author','').strip()
+        except KeyError:
+            pass
+        oneblock = True
+
+        covDict = self.proj['Covariance']
+        parmDict = dict(zip(covDict.get('varyList',[]),
+                            covDict.get('variables',[])))
+        sigDict = dict(zip(covDict.get('varyList',[]),
+                           covDict.get('sig',[])))
+
+        if covDict.get('covMatrix') is not None:
+            sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],
+                                              covDict['varyList'],
+                                              parmDict))
+
+        with open(outputname, 'w') as fp:
+            fp.write(' \n' + 70*'#' + '\n')
+            cif.WriteCIFitem(fp, 'data_' + CIFname)
+            # from exports.G2export_CIF.WritePhaseInfo
+            cif.WriteCIFitem(fp, '\n# phase info for '+str(self.name) + ' follows')
+            cif.WriteCIFitem(fp, '_pd_phase_name', self.name)
+            # TODO get esds
+            cellDict = self.get_cell()
+            defsigL = 3*[-0.00001] + 3*[-0.001] + [-0.01] # significance to use when no sigma
+            names = ['length_a','length_b','length_c',
+                     'angle_alpha','angle_beta ','angle_gamma',
+                     'volume']
+            for key, val in cellDict.items():
+                cif.WriteCIFitem(fp, '_cell_' + key, G2mth.ValEsd(val))
+
+            cif.WriteCIFitem(fp, '_symmetry_cell_setting',
+                         self['General']['SGData']['SGSys'])
+
+            spacegroup = self['General']['SGData']['SpGrp'].strip()
+            # regularize capitalization and remove trailing H/R
+            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
+            cif.WriteCIFitem(fp, '_symmetry_space_group_name_H-M', spacegroup)
+
+            # generate symmetry operations including centering and center of symmetry
+            SymOpList, offsetList, symOpList, G2oprList, G2opcodes = G2spc.AllOps(
+                self['General']['SGData'])
+            cif.WriteCIFitem(fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
+            for i, op in enumerate(SymOpList,start=1):
+                cif.WriteCIFitem(fp, '   {:3d}  {:}'.format(i,op.lower()))
+
+            # TODO skipped histograms, exports/G2export_CIF.py:880
+
+            # report atom params
+            if self['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
+                cif.WriteAtomsNuclear(fp, self.data, self.name, parmDict, sigDict, [])
+                # self._WriteAtomsNuclear(fp, parmDict, sigDict)
+            else:
+                raise Exception,"no export for "+str(self['General']['Type'])+" coordinates implemented"
+            # report cell contents
+            cif.WriteComposition(fp, self.data, self.name, parmDict)
+            if not quickmode and self['General']['Type'] == 'nuclear':      # report distances and angles
+                # WriteDistances(fp,self.name,SymOpList,offsetList,symOpList,G2oprList)
+                raise NotImplementedError("only quickmode currently supported")
+            if 'Map' in self['General'] and 'minmax' in self['General']['Map']:
+                cif.WriteCIFitem(fp,'\n# Difference density results')
+                MinMax = self['General']['Map']['minmax']
+                cif.WriteCIFitem(fp,'_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
+                cif.WriteCIFitem(fp,'_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
+
 
     def set_refinements(self, refs):
         """Sets the refinement parameter 'key' to the specification 'value'
@@ -1681,11 +1775,23 @@ class G2Phase(G2ObjectWrapper):
 ##########################
 
 
+# TODO SUBPARSERS
+
 def create(*args):
     """The create subcommand.
 
     Should be passed all the command-line arguments after `create`"""
-    proj = G2Project(filename=args[0])
+    import argparse
+    parser = argparse.ArgumentParser(prog=' '.join([sys.argv[0], sys.argv[1]]))
+    parser.add_argument('filename',
+                        help='the project file to create. should end in .gpx')
+    parser.add_argument('-g', '--histograms', nargs='+',
+                        help='list of histograms to add')
+    parser.add_argument('-p', '--phases', nargs='+',
+                        help='list of phases to add')
+    results = parser.parse_args(args)
+
+    proj = G2Project(filename=filename)
 
     isPhase = False
     isPowderData = False
@@ -1723,25 +1829,24 @@ def create(*args):
 
 def dump(*args):
     """The dump subcommand"""
-    raw = True
-    histograms = False
-    phases = False
-    filenames = []
-    for arg in args:
-        if arg in ['-h', '--histograms']:
-            histograms = True
-            raw = False
-        elif arg in ['-p', '--phases']:
-            phases = True
-            raw = False
-        elif arg in ['-r', '--raw']:
-            raw = True
-        else:
-            filenames.append(arg)
-    if raw:
+    import argparse
+    parser = argparse.ArgumentParser(prog=' '.join([sys.argv[0], sys.argv[1]]))
+    parser.add_argument('-g', '--histograms', action='store_true',
+                        help='list histograms in files, overrides --raw')
+    parser.add_argument('-p', '--phases', action='store_true',
+                        help='list phases in files, overrides --raw')
+    parser.add_argument('-r', '--raw', action='store_true',
+                        help='dump raw file contents')
+    parser.add_argument('files', nargs='*')
+    results = parser.parse_args(args)
+
+    if not results.histograms and not results.phases:
+        results.raw = True
+    if results.raw:
         import IPython.lib.pretty as pretty
-    for fname in filenames:
-        if raw:
+
+    for fname in results.files:
+        if results.raw:
             proj, nameList = LoadDictFromProjFile(fname)
             print("file:", fname)
             print("names:", nameList)
@@ -1750,11 +1855,11 @@ def dump(*args):
                 pretty.pprint(val)
         else:
             proj = G2Project(fname)
-            if histograms:
+            if results.histograms:
                 hists = proj.histograms()
                 for h in hists:
                     print(fname, "hist", h.id, h.name)
-            if phases:
+            if results.phases:
                 phase_list = proj.phases()
                 for p in phase_list:
                     print(fname, "phase", p.id, p.name)
@@ -1775,7 +1880,15 @@ def IPyBrowse(*args):
 def refine(*args):
     """The refine subcommand"""
     proj = G2Project(args[0])
-    proj.refine()
+    if len(args) == 1:
+        proj.refine()
+    elif len(args) == 2:
+        import json
+        with open(args[1]) as refs:
+            refs = json.load(refs)
+        proj.do_refinements(refs['refinements'])
+    else:
+        print("Refine not sure what to do with args:", args)
 
 
 def seqrefine(*args):
@@ -1786,7 +1899,10 @@ def seqrefine(*args):
 def export(*args):
     """The export subcommand"""
     # Export CIF or Structure or ...
-    raise NotImplementedError("export is not yet implemented")
+    gpxfile, phase, exportfile = args
+    proj = G2Project(gpxfile)
+    phase = proj.phase(phase)
+    phase.export_CIF(exportfile)
 
 
 subcommands = {"create": create,
@@ -1798,21 +1914,49 @@ subcommands = {"create": create,
 
 
 def main():
-    '''TODO: the command-line options need some thought
+    '''The command line interface for GSASIIscriptable.
+
+    Executes one of the following subcommands:
+
+        * :func:`create`
+        * :func:`dump`
+        * :func:`refine`
+        * :func:`seqrefine`
+        * :func:`export`
+        * :func:`browse`
+
+    .. seealso::
+        :func:`create`
+        :func:`dump`
+        :func:`refine`
+        :func:`seqrefine`
+        :func:`export`
+        :func:`browse`
     '''
-    argv = sys.argv
-    if len(argv) > 1 and argv[1] in subcommands:
-        subcommands[argv[1]](*argv[2:])
-    elif len(argv) == 1 or argv[1] in ('help', '--help', '-h'):
-        # TODO print usage
-        subcommand_names = ' | '.join(sorted(subcommands.keys()))
-        print("USAGE: {} [ {} ] ...".format(argv[0], subcommand_names))
-    else:
-        print("Unknown subcommand: {}".format(argv[1]))
-        print("Available subcommands:")
-        for name in sorted(subcommands.keys()):
-            print("\t{}".format(name))
-        sys.exit(-1)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('subcommand', choices=sorted(subcommands.keys()),
+                        help='The subcommand to be executed')
+
+    result = parser.parse_args(sys.argv[1:2])
+    sub = result.subcommand
+    subcommands[sub](*sys.argv[2:])
+
+    # argv = sys.argv
+    # if len(argv) > 1 and argv[1] in subcommands:
+    #     subcommands[argv[1]](*argv[2:])
+    # elif len(argv) == 1 or argv[1] in ('help', '--help', '-h'):
+    #     # TODO print usage
+    #     subcommand_names = ' | '.join(sorted(subcommands.keys()))
+    #     print("USAGE: {} [ {} ] ...".format(argv[0], subcommand_names))
+    # else:
+    #     print("Unknown subcommand: {}".format(argv[1]))
+    #     print("Available subcommands:")
+    #     for name in sorted(subcommands.keys()):
+    #         print("\t{}".format(name))
+    #     sys.exit(-1)
+    # sys.exit(0)
+
     # arg = sys.argv
     # print(arg)
     # if len(arg) > 1:

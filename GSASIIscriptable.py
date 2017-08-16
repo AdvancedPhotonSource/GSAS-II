@@ -15,8 +15,20 @@ Routines for reading, writing, modifying and creating GSAS-II project (.gpx) fil
 
 Supports a command line interface as well.
 
-
 Look at :class:`G2Project` to start.
+
+=====================
+Refinement parameters
+=====================
+
+There are three classes of refinement parameters:
+
+    * Histogram. Turned on and off through :func:`~G2PwdrData.set_refinements`
+      and :func:`~G2PwdrData.clear_refinements`
+    * Phase. Turned on and off through :func:`~G2Phase.set_refinements`
+      and :func:`~G2Phase.clear_refinements`
+    * Histogram-and-phase (HAP). Turned on and off through
+      :func:`~G2Phase.set_HAP_refinements` and :func:`~G2Phase.clear_HAP_refinements`
 """
 from __future__ import division, print_function # needed?
 import os.path as ospath
@@ -133,7 +145,7 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     '''Save a GSAS-II project file from dictionary/nameList created by LoadDictFromProjFile
 
     :param dict Project: representation of gpx file following the GSAS-II
-      tree structure as described for LoadDictFromProjFile
+        tree structure as described for LoadDictFromProjFile
     :param list nameList: names of main tree entries & subentries used to reconstruct project file
     :param str ProjFile: full file name for output project.gpx file (including extension)
     '''
@@ -158,11 +170,11 @@ def ImportPowder(reader,filename):
     :param str filename: full name of powder data file; can be "multi-Bank" data
 
     :returns list rdlist: list of reader objects containing powder data, one for each
-      "Bank" of data encountered in file. Items in reader object of interest are:
+        "Bank" of data encountered in file. Items in reader object of interest are:
 
-        * rd.comments: list of str: comments found on powder file
-        * rd.dnames: list of str: data nammes suitable for use in GSASII data tree NB: duplicated in all rd entries in rdlist
-        * rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed for a PWDR entry in  GSASII data tree.
+          * rd.comments: list of str: comments found on powder file
+          * rd.dnames: list of str: data nammes suitable for use in GSASII data tree NB: duplicated in all rd entries in rdlist
+          * rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed for a PWDR entry in  GSASII data tree.
     '''
     rdfile,rdpath,descr = imp.find_module(reader)
     rdclass = imp.load_module(reader,rdfile,rdpath,descr)
@@ -193,7 +205,7 @@ def ImportPowder(reader,filename):
 def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
     '''Create an initial Histogram dictionary
 
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     '''
     if dType in ['SXC','SNC']:
         return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
@@ -221,7 +233,8 @@ def PreSetup(data):
     '''Create part of an initial (empty) phase dictionary
 
     from GSASIIphsGUI.py, near end of UpdatePhaseData
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     '''
     if 'RBModels' not in data:
         data['RBModels'] = {}
@@ -240,7 +253,8 @@ def SetupGeneral(data, dirname):
     """Helps initialize phase data.
 
     From GSASIIphsGui.py, function of the same name. Minor changes for imports etc.
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
@@ -370,7 +384,8 @@ def make_empty_project(author=None, filename=None):
     <current dir>/test_output.gpx are used , respectively.
 
     Returns: project dictionary, name list
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     if not filename:
         filename = os.path.join(os.getcwd(), 'test_output.gpx')
@@ -511,8 +526,9 @@ def load_iprms(instfile, reader):
 def load_pwd_from_reader(reader, instprm, existingnames=[]):
     """Loads powder data from a reader object, and assembles it into a GSASII data tree.
 
-    Returns: (name, tree) - 2-tuple of the histogram name (str), and data
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+    :returns: (name, tree) - 2-tuple of the histogram name (str), and data
+
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
     HistName = unicode(G2obj.MakeUniqueLabel(HistName, existingnames))
@@ -579,7 +595,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[]):
 
 def _deep_copy_into(from_, into):
     """Helper function for reloading .gpx file. See G2Project.reload()
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+
+    :author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     if isinstance(from_, dict) and isinstance(into, dict):
         combined_keys = set(from_.keys()).union(into.keys())
@@ -618,7 +635,7 @@ class G2ObjectWrapper(object):
     The underlying GSAS-II format can be accessed as `wrapper.data`. A number
     of overrides are implemented so that the wrapper behaves like a dictionary.
 
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     def __init__(self, datadict):
         self.data = datadict
@@ -651,11 +668,11 @@ class G2Project(G2ObjectWrapper):
         """Loads a GSAS-II project from a specified filename.
 
         :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
-        creates an empty project.
+            creates an empty project.
         :param str author: Author's name. Optional.
         :param str filename: The filename the project should be saved to in
-        the future. If both filename and gpxfile are present, the project is
-        loaded from the gpxfile, then set to  save to filename in the future"""
+            the future. If both filename and gpxfile are present, the project is
+            loaded from the gpxfile, then set to  save to filename in the future"""
         if gpxfile is None:
             filename = os.path.abspath(os.path.expanduser(filename))
             self.filename = filename
@@ -711,7 +728,7 @@ class G2Project(G2ObjectWrapper):
         :param str iparams: The instrument parameters file, a filename.
 
         :returns: A :class:`G2PwdrData` object representing
-        the histogram
+            the histogram
         """
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
@@ -736,10 +753,10 @@ class G2Project(G2ObjectWrapper):
         :param str phasefile: The CIF file from which to import the phase.
         :param str phasename: The name of the new phase, or None for the default
         :param list histograms: The names of the histograms to associate with
-        this phase
+            this phase
 
         :returns: A :class:`G2Phase` object representing the
-        new phase.
+            new phase.
         """
         LoadG2fil()
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
@@ -828,30 +845,12 @@ class G2Project(G2ObjectWrapper):
         # Reload yourself
         self.reload()
 
-    def histogram_names(self):
-        """Gives a list of the names of each histogram in the project.
-
-        :returns: list of strings
-
-        .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram`
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phases`
-            :func:`~GSASIIscriptable.G2Project.phase_names`
-            """
-        output = []
-        for obj in self.names:
-            if len(obj) > 1 and obj[0] != u'Phases':
-                output.append(obj[0])
-        return output
-
     def histogram(self, histname):
         """Returns the histogram named histname, or None if it does not exist.
 
         :param histname: The name of the histogram (str), or ranId or index.
         :returns: A :class:`G2PwdrData` object, or None if
-        the histogram does not exist
+            the histogram does not exist
 
         .. seealso::
             :func:`~GSASIIscriptable.G2Project.histograms`
@@ -860,7 +859,6 @@ class G2Project(G2ObjectWrapper):
             """
         if histname in self.data:
             return G2PwdrData(self.data[histname], self)
-        histRanId = None
         for key, val in G2obj.HistIdLookup.items():
             name, ranId = val
             # histname can be either ranId (key) or index (val)
@@ -882,27 +880,12 @@ class G2Project(G2ObjectWrapper):
                 output.append(self.histogram(obj[0]))
         return output
 
-    def phase_names(self):
-        """Gives an list of the names of each phase in the project.
-
-        :returns: A list of strings
-
-        .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram`
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phases`
-            """
-        for obj in self.names:
-            if obj[0] == 'Phases':
-                return obj[1:]
-        return []
-
     def phase(self, phasename):
         """
         Gives an object representing the specified phase in this project.
 
-        :param str phasename: The name of the desired phase
+        :param str phasename: The name of the desired phase. Either the name
+            (str), the phase's ranId, or the phase's index
         :returns: A :class:`G2Phase` object
         :raises: KeyError
 
@@ -914,7 +897,6 @@ class G2Project(G2ObjectWrapper):
         phases = self.data['Phases']
         if phasename in phases:
             return G2Phase(phases[phasename], phasename, self)
-        phaseRanId = None
         for key, val in G2obj.PhaseIdLookup.items():
             name, ranId = val
             # phasename can be either ranId (key) or index (val)
@@ -925,7 +907,7 @@ class G2Project(G2ObjectWrapper):
         """
         Returns a list of all the phases in the project.
 
-        :returns: A :class:`G2Phase`
+        :returns: A list of :class:`G2Phase` objects
 
         .. seealso::
             :func:`~GSASIIscriptable.G2Project.histogram`
@@ -943,9 +925,9 @@ class G2Project(G2ObjectWrapper):
 
         :param list refinements: A list of dictionaries defining refinements
         :param str histogram: Name of histogram for refinements to be applied
-        to, or 'all'
+            to, or 'all'
         :param str phase: Name of phase for refinements to be applied to, or
-        'all'
+            'all'
         """
         if outputnames:
             if len(refinements) != len(outputnames):
@@ -984,9 +966,9 @@ class G2Project(G2ObjectWrapper):
 
         :param dict refinement: The refinements to be conducted
         :param histogram: Either a name of a histogram (str), a list of
-        histogram names, or 'all' (default)
+            histogram names, or 'all' (default)
         :param phase: Either a name of a phase (str), a list of phase names, or
-        'all' (default)
+            'all' (default)
 
         .. seealso::
             :func:`~G2PwdrData.set_refinements`
@@ -1081,8 +1063,8 @@ class G2Project(G2ObjectWrapper):
 
         type is passed directly to add_constraint_raw as consType
 
-        :param list vars: A list of variables to hold. Either G2obj.G2VarObj objects,
-        string variable specifiers, or arguments for :meth:`make_var_obj`
+        :param list vars: A list of variables to hold. Either :class:`GSASIIobj.G2VarObj` objects,
+            string variable specifiers, or arguments for :meth:`make_var_obj`
         :param str type: A string constraint type specifier. See
         :class:`~GSASIIscriptable.G2Project.add_constraint_raw`"""
         for var in vars:
@@ -1140,6 +1122,10 @@ class G2Project(G2ObjectWrapper):
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Has convenient accessors via @property.
 
+
+    Available accessors: label, type, refinement_flags, coordinates,
+        occupancy, ranId, id, adp_flag, uiso
+
     Example:
 
     >>> atom = some_phase.atom("O3")
@@ -1153,6 +1139,8 @@ class G2AtomRecord(G2ObjectWrapper):
     u'FX'
     >>> atom.ranId
     4615973324315876477
+    >>> atom.occupancy
+    1.0
     """
     def __init__(self, data, indices, proj):
         self.data = data
@@ -1182,6 +1170,14 @@ class G2AtomRecord(G2ObjectWrapper):
     @property
     def coordinates(self):
         return tuple(self.data[self.cx:self.cx+3])
+
+    @property
+    def occupancy(self):
+        return self.data[self.cx+3]
+
+    @occupancy.setter
+    def occupancy(self, val):
+        self.data[self.cx+3] = float(val)
 
     @property
     def ranId(self):
@@ -1423,7 +1419,8 @@ class G2PwdrData(G2ObjectWrapper):
 
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
-    Author: Jackson O'Donnell jacksonhodonnell@gmail.com
+
+    Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     def __init__(self, data, name, proj):
         self.data = data
@@ -1447,7 +1444,7 @@ class G2Phase(G2ObjectWrapper):
 
         :param str atomlabel: The name of the atom (e.g. "O2")
         :returns: A :class:`G2AtomRecord` object
-        representing the atom.
+            representing the atom.
         """
         # Consult GSASIIobj.py for the meaning of this
         cx, ct, cs, cia = self.data['General']['AtomPtrs']
@@ -1460,8 +1457,11 @@ class G2Phase(G2ObjectWrapper):
     def atoms(self):
         """Returns a list of atoms present in the phase.
 
-        :returns: A list of :class:`G2AtomRecord` objects. See
-        also :func:`~GSASIIscriptable.G2Phase.atom`
+        :returns: A list of :class:`G2AtomRecord` objects.
+
+        .. seealso::
+            :func:`~GSASIIscriptable.G2Phase.atom`
+            :class:`G2AtomRecord`
         """
         ptrs = self.data['General']['AtomPtrs']
         output = []
@@ -1551,8 +1551,8 @@ class G2Phase(G2ObjectWrapper):
 
         :param dict refs: A dictionary of the parameters to be set.
         :param histograms: Either 'all' (default) or a list of the histograms
-        whose HAP parameters will be set with this phase. Histogram and phase
-        must already be associated
+            whose HAP parameters will be set with this phase. Histogram and phase
+            must already be associated
 
         :returns: None
         """
@@ -1627,8 +1627,8 @@ class G2Phase(G2ObjectWrapper):
 
         :param dict refs: A dictionary of the parameters to be cleared.
         :param histograms: Either 'all' (default) or a list of the histograms
-        whose HAP parameters will be cleared with this phase. Histogram and
-        phase must already be associated
+            whose HAP parameters will be cleared with this phase. Histogram and
+            phase must already be associated
 
         :returns: None
         """

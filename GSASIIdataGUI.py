@@ -2667,26 +2667,17 @@ class GSASII(wx.Frame):
         self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
         self.plotFrame.Show()
 
-        try:
-            main_pos = eval(GSASIIpath.GetConfigValue('Main_Pos'))
-            self.SetPosition(main_pos)
-            if GetDisplay(main_pos) is None:
-                self.Center()
-        except:
-            if GSASIIpath.GetConfigValue('Main_Pos'):
-                print('Value for config Main_Pos {} is invalid'.format(GSASIIpath.GetConfigValue('Main_Pos')))
-                self.Center()
-            
-        try:
-            plot_pos = eval(GSASIIpath.GetConfigValue('Plot_Pos'))
-            self.plotFrame.SetPosition(plot_pos)
-            if GetDisplay(plot_pos) is None:
-                self.plotFrame.Center()
-        except:
-            if GSASIIpath.GetConfigValue('Plot_Pos'):
-                print('Value for config Plot_Pos {} is invalid'.format(GSASIIpath.GetConfigValue('Plot_Pos')))
-                self.plotFrame.Center()
-        
+        for win,var in ((self,'Main_Pos'),(self.plotFrame,'Plot_Pos')):
+            try:
+                pos = GSASIIpath.GetConfigValue(var)
+                if type(pos) is str: pos = eval(pos)
+                win.SetPosition(pos)
+                if GetDisplay(pos) is None: win.Center()
+            except:
+                if GSASIIpath.GetConfigValue(var):
+                    print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
+                    win.Center()
+
     def __init__(self, parent):
         self.ExportLookup = {}
         self.exporterlist = []

@@ -4531,9 +4531,17 @@ def ToggleMultiSpotMask(G2frame):
     else:
         G2frame.MaskKey = 's'
         (x0,y0),(x1,y1) = Plot.get_position().get_points()
-        Page.figure.suptitle('Multiple spot mode on, press s or right-click to end',color='r',fontweight='bold')
         Page.Choice[-1] = 's: stop multiple spot mask mode'
-        Page.canvas.draw()
+        ShowSpotMaskInfo(G2frame,Page)
+
+def ShowSpotMaskInfo(G2frame,Page):
+    if G2frame.MaskKey == 's':
+        Page.figure.suptitle('Multiple spot mode on (size={}), press s or right-click to end'
+                             .format(G2frame.spotSize),color='r',fontweight='bold')
+    else:
+        Page.figure.suptitle('New spot size={}'.format(G2frame.spotSize),
+                             color='r',fontweight='bold')
+    Page.canvas.draw()
 
 def ComputeArc(angI,angO,wave,azm0=0,azm1=362):
     '''Computes arc/ring arrays in with inner and outer radii from angI,angO
@@ -4588,6 +4596,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     colors=['b','g','r','c','m','k'] 
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+    G2frame.spotSize = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
+    G2frame.spotString = ''
+
 # patch
     if 'invert_x' not in Data:
         Data['invert_x'] = False
@@ -4649,20 +4660,40 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         except TypeError:
             return
         if treeItem == 'Masks':
-            if event.key == 's': # implement multiple spot mode
+            if event.key in [str(i) for i in range(10)]+['.']:
+                G2frame.spotString += event.key
+                return
+            elif G2frame.spotString:
+                try:
+                    size = float(G2frame.spotString)
+                    G2frame.spotSize = size
+                    print('Spot size set to {} mm'.format(size))
+                    ShowSpotMaskInfo(G2frame,Page)
+                except:
+                    print('Spot size {} invalid'.format(G2frame.spotString))
+                G2frame.spotString = ''
+            if event.key == 's':       # turn multiple spot mode on/off
                 ToggleMultiSpotMask(G2frame)
                 return
+            elif event.key == ' ':     # space key: ask for spot size
+                dlg = G2G.SingleFloatDialog(G2frame.G2plotNB,'Spot Size',
+                                            'Enter new value for spot size',
+                                            G2frame.spotSize,[.1,50])
+                if dlg.ShowModal() == wx.ID_OK:
+                    G2frame.spotSize = dlg.GetValue()
+                    print('Spot size set to {} mm'.format(G2frame.spotSize))
+                    ShowSpotMaskInfo(G2frame,Page)
+                dlg.Destroy()    
             elif event.key == 't':
                 try: # called from menu?
                     Xpos,Ypos = event.xdata,event.ydata
                 except AttributeError:
-                    G2G.G2MessageBox(G2frame,
+                    G2G.G2MessageBox(G2frame.G2plotNB,
                          'You must use the "{}" key from the keyboard'.format(event.key),
                          'Keyboard only')
                     return
                 if not (event.xdata and event.ydata): return
-                d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
-                spot = [event.xdata,event.ydata,d]
+                spot = [event.xdata,event.ydata,G2frame.spotSize]
                 Masks['Points'].append(spot)
                 artist = Circle(spot[:2],radius=spot[2]/2,fc='none',ec='r',picker=3)
                 Page.figure.gca().add_artist(artist)
@@ -4967,6 +4998,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.cid = None
         if treeItem not in ['Image Controls','Masks','Stress/Strain']:
             return
+        if treeItem == 'Masks' and G2frame.spotString:
+            try:
+                size = float(G2frame.spotString)
+                G2frame.spotSize = size
+                print('Spot size set to {} mm'.format(size))
+                ShowSpotMaskInfo(G2frame,Page)
+            except:
+                print('Spot size {} invalid'.format(G2frame.spotString))
+            G2frame.spotString = ''
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
@@ -5016,8 +5056,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 3:
                     ToggleMultiSpotMask(G2frame)
                 else:
-                    d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
-                    spot = [Xpos,Ypos,d]
+                    spot = [Xpos,Ypos,G2frame.spotSize]
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=3)
                     Page.figure.gca().add_artist(artist)
@@ -5028,8 +5067,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return 
             elif G2frame.MaskKey == 's':
                 if event.button == 1:
-                    d = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
-                    spot = [Xpos,Ypos,d]
+                    spot = [Xpos,Ypos,G2frame.spotSize]
                     Masks['Points'].append(spot)
                     G2imG.UpdateMasks(G2frame,Masks)
                 G2frame.MaskKey = ''
@@ -5159,7 +5197,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.Lazim.SetValue(Data['LRazimuth'][0])
                 G2frame.Razim.SetValue(Data['LRazimuth'][1])
             elif pickType == "Spot" and treeItem == 'Masks':
-                if event.button == 3:
+                if event.button == 1:
+                    spotnum = G2frame.itemPicked.itemNumber
+                    Masks['Points'][spotnum][0:2] = G2frame.itemPicked.center
+                elif event.button == 3:
                     # update the selected circle mask with the last drawn values
                     spotnum = G2frame.itemPicked.itemNumber
                     Masks['Points'][spotnum] = list(G2frame.itemPicked.center) + [
@@ -5213,7 +5254,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.Choice = [' key press','l: log(I) on','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',
                 't: add spot mask at mouse position',
-                'd: select spot mask to delete with mouse']
+                'd: select spot mask to delete with mouse',
+                ' typing a number sets diameter of new spot masks',
+                ' (space) input the spot mask diameter']
             Page.Choice.append('s: start multiple spot mask mode') # this must be the last choice
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'

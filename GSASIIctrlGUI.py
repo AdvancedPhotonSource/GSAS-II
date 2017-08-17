@@ -1986,7 +1986,17 @@ class PickTwoDialog(wx.Dialog):
 
 ################################################################################
 class SingleFloatDialog(wx.Dialog):
-    'Dialog to obtain a single float value from user'
+    '''Dialog to obtain a single float value from user
+
+    Typical usage::
+
+            limits = (0,1)
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for...',default,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+            dlg.Destroy()    
+
+    '''
     def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)

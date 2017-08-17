@@ -31,6 +31,7 @@ There are three classes of refinement parameters:
       :func:`~G2Phase.set_HAP_refinements` and :func:`~G2Phase.clear_HAP_refinements`
 """
 from __future__ import division, print_function # needed?
+import argparse
 import os.path as ospath
 import datetime as dt
 import sys
@@ -770,6 +771,7 @@ class G2Project(G2ObjectWrapper):
             new phase.
         """
         LoadG2fil()
+        histograms = [self.histogram(h).name for h in histograms]
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
 
         # TODO handle multiple phases in a file
@@ -868,6 +870,9 @@ class G2Project(G2ObjectWrapper):
             :func:`~GSASIIscriptable.G2Project.phase`
             :func:`~GSASIIscriptable.G2Project.phases`
             """
+        if isinstance(histname, G2PwdrData):
+            if histname.proj == self:
+                return histname
         if histname in self.data:
             return G2PwdrData(self.data[histname], self)
         for key, val in G2obj.HistIdLookup.items():
@@ -1775,78 +1780,29 @@ class G2Phase(G2ObjectWrapper):
 ##########################
 
 
-# TODO SUBPARSERS
+def create(args):
+    """The create subcommand."""
+    proj = G2Project(filename=args.filename)
 
-def create(*args):
-    """The create subcommand.
+    hist_objs = []
+    for h in args.histograms:
+        hist_objs.append(proj.add_powder_histogram(h, args.iparams))
 
-    Should be passed all the command-line arguments after `create`"""
-    import argparse
-    parser = argparse.ArgumentParser(prog=' '.join([sys.argv[0], sys.argv[1]]))
-    parser.add_argument('filename',
-                        help='the project file to create. should end in .gpx')
-    parser.add_argument('-g', '--histograms', nargs='+',
-                        help='list of histograms to add')
-    parser.add_argument('-p', '--phases', nargs='+',
-                        help='list of phases to add')
-    results = parser.parse_args(args)
-
-    proj = G2Project(filename=filename)
-
-    isPhase = False
-    isPowderData = False
-    isInstPrms = False
-    instPrms = None
-
-    # TODO how to associate phase with histogram?
-    for arg in args[1:]:
-        if arg == '--phases':
-            isPhase = True
-            isPowderData = False
-            isInstPrms = False
-        elif arg == '--powder':
-            isPhase = False
-            isPowderData = True
-            isInstPrms = False
-        # Instrument parameters must be specified before
-        # any powder data files are passed
-        elif arg == '--iparams':
-            isPhase = False
-            isPowderData = False
-            isInstPrms = True
-        elif isPhase:
-            proj.add_phase(arg)
-        elif isPowderData:
-            proj.add_powder_histogram(arg, instPrms)
-        elif isInstPrms:
-            instPrms = arg
-            isInstPrms = False
-        else:
-            print("Not sure what to do with: {}".format(arg))
+    for p in args.phases:
+        proj.add_phase(p, histograms=hist_objs)
 
     proj.save()
 
 
-def dump(*args):
+def dump(args):
     """The dump subcommand"""
-    import argparse
-    parser = argparse.ArgumentParser(prog=' '.join([sys.argv[0], sys.argv[1]]))
-    parser.add_argument('-g', '--histograms', action='store_true',
-                        help='list histograms in files, overrides --raw')
-    parser.add_argument('-p', '--phases', action='store_true',
-                        help='list phases in files, overrides --raw')
-    parser.add_argument('-r', '--raw', action='store_true',
-                        help='dump raw file contents')
-    parser.add_argument('files', nargs='*')
-    results = parser.parse_args(args)
-
-    if not results.histograms and not results.phases:
-        results.raw = True
-    if results.raw:
+    if not args.histograms and not args.phases:
+        args.raw = True
+    if args.raw:
         import IPython.lib.pretty as pretty
 
-    for fname in results.files:
-        if results.raw:
+    for fname in args.files:
+        if args.raw:
             proj, nameList = LoadDictFromProjFile(fname)
             print("file:", fname)
             print("names:", nameList)
@@ -1855,62 +1811,103 @@ def dump(*args):
                 pretty.pprint(val)
         else:
             proj = G2Project(fname)
-            if results.histograms:
+            if args.histograms:
                 hists = proj.histograms()
                 for h in hists:
                     print(fname, "hist", h.id, h.name)
-            if results.phases:
+            if args.phases:
                 phase_list = proj.phases()
                 for p in phase_list:
                     print(fname, "phase", p.id, p.name)
 
 
-def IPyBrowse(*args):
+def IPyBrowse(args):
     """Load a .gpx file and then open a IPython shell to browse it
     """
-    filename = []
-    for arg in args:
-        fname = arg
+    for fname in args.files:
         proj, nameList = LoadDictFromProjFile(fname)
-        msg = "\nfile {} loaded into proj (dict) with names in nameList".format(fname)
+        msg = "\nfname {} loaded into proj (dict) with names in nameList".format(fname)
         GSASIIpath.IPyBreak_base(msg)
         break
 
 
-def refine(*args):
+def refine(args):
     """The refine subcommand"""
-    proj = G2Project(args[0])
-    if len(args) == 1:
+    proj = G2Project(args.gpxfile)
+    if args.refinements is None:
         proj.refine()
-    elif len(args) == 2:
+    else:
         import json
-        with open(args[1]) as refs:
+        with open(args.refinements) as refs:
             refs = json.load(refs)
         proj.do_refinements(refs['refinements'])
-    else:
-        print("Refine not sure what to do with args:", args)
 
 
-def seqrefine(*args):
+def seqrefine(args):
     """The seqrefine subcommand"""
     raise NotImplementedError("seqrefine is not yet implemented")
 
 
-def export(*args):
+def export(args):
     """The export subcommand"""
-    # Export CIF or Structure or ...
-    gpxfile, phase, exportfile = args
-    proj = G2Project(gpxfile)
-    phase = proj.phase(phase)
-    phase.export_CIF(exportfile)
+    # Export phase as CIF to args.exportfile
+    proj = G2Project(args.gpxfile)
+    phase = proj.phase(args.phase)
+    phase.export_CIF(args.exportfile)
 
 
-subcommands = {"create": create,
-               "dump": dump,
-               "refine": refine,
-               "seqrefine": seqrefine,
-               "export": export,
-               "browse": IPyBrowse}
+def _args_kwargs(*args, **kwargs):
+    return args, kwargs
+
+# A dictionary of the name of each subcommand, and a tuple
+# of its associated function and a list of its arguments
+# The arguments are passed directly to the add_argument() method
+# of an argparse.ArgumentParser
+subcommands = {"create":
+               (create, [_args_kwargs('filename',
+                                      help='the project file to create. should end in .gpx'),
+
+                         _args_kwargs('-i', '--iparams',
+                                      help='instrument parameter file'),
+
+                         _args_kwargs('-d', '--histograms',
+                                      nargs='+',
+                                      help='list of datafiles to add as histograms'),
+
+                         _args_kwargs('-p', '--phases',
+                                      nargs='+',
+                                      help='list of phases to add. phases are '
+                                           'automatically associated with all '
+                                           'histograms given.')]),
+
+               "dump": (dump, [_args_kwargs('-d', '--histograms',
+                                     action='store_true',
+                                     help='list histograms in files, overrides --raw'),
+
+                               _args_kwargs('-p', '--phases',
+                                            action='store_true',
+                                            help='list phases in files, overrides --raw'),
+
+                               _args_kwargs('-r', '--raw',
+                                      action='store_true', help='dump raw file contents, default'),
+
+                               _args_kwargs('files', nargs='+')]),
+
+               "refine":
+               (refine, [_args_kwargs('gpxfile', help='the project file to refine'),
+                         _args_kwargs('refinements',
+                                      help='json file of refinements to apply. if not present'
+                                           ' refines file as-is',
+                                      default=None,
+                                      nargs='?')]),
+
+               "seqrefine": (seqrefine, []),
+               "export": (export, [_args_kwargs('gpxfile',
+                                                help='the project file from which to export'),
+                                   _args_kwargs('phase', help='identifier of phase to export'),
+                                   _args_kwargs('exportfile', help='the .cif file to export to')]),
+               "browse": (IPyBrowse, [_args_kwargs('files', nargs='+',
+                                                   help='list of files to browse')])}
 
 
 def main():
@@ -1933,14 +1930,19 @@ def main():
         :func:`export`
         :func:`browse`
     '''
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('subcommand', choices=sorted(subcommands.keys()),
-                        help='The subcommand to be executed')
+    subs = parser.add_subparsers()
 
-    result = parser.parse_args(sys.argv[1:2])
-    sub = result.subcommand
-    subcommands[sub](*sys.argv[2:])
+    # Create all of the specified subparsers
+    for name, (func, args) in subcommands.items():
+        new_parser = subs.add_parser(name)
+        for listargs, kwds in args:
+            new_parser.add_argument(*listargs, **kwds)
+        new_parser.set_defaults(func=func)
+
+    # Parse and trigger subcommand
+    result = parser.parse_args()
+    result.func(result)
 
     # argv = sys.argv
     # if len(argv) > 1 and argv[1] in subcommands:
@@ -1957,31 +1959,8 @@ def main():
     #     sys.exit(-1)
     # sys.exit(0)
 
-    # arg = sys.argv
-    # print(arg)
-    # if len(arg) > 1:
-    #     GPXfile = arg[1]
-    #     if not ospath.exists(GPXfile):
-    #         print(u'ERROR - '+GPXfile+u" doesn't exist!")
-    #         exit()
-    #     Project,nameList = LoadDictFromProjFile(GPXfile)
-    #     SaveDictToProjFile(Project,nameList,'testout.gpx')
-    # else:
-    #     print('ERROR - missing filename')
-    #     exit()
-    # print("Done")
-
 if __name__ == '__main__':
     main()
-
-    # from gpx_manipulatons.py
-    # try:
-    #     filename, authorname = sys.argv[1:3]
-    #     proj, names = make_empty_project(authorname, filename)
-    #     SaveDictToProjFile(proj, names, os.path.abspath(filename))
-    # except ValueError:
-    #     print("Usage: {} <filename> <author>".format(sys.argv[0]))
-    #     sys.exit(-1)
 
 
     # from refinements.py

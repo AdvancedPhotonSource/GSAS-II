@@ -236,7 +236,7 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
     :return dict: Inst  instrument parameter dict if OK, or
              str: Error message if failed
     
-    (transliterated from GSASII.py:1012, function of the same name)
+    (transliterated from GSASIIdataGUI.py:1235 (rev 3008), function of the same name)
      ''' 
     if 'GSAS-II' not in instLines[0]:
         raise ValueError("Not a valid GSAS-II instprm file")
@@ -250,7 +250,11 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
         for S in instLines:
             if S[0] == '#' and 'Bank' in S:
                 banklist.add(int(S.split(':')[0].split()[1]))
-        bank = sorted(banklist[1])
+        # Picks the first bank by default
+        if len(banklist) > 1:
+            bank = sorted(banklist)[0]
+        else:
+            bank = 1
         rd.powderentry[2] = bank
     while il < len(instLines):
         S = instLines[il]

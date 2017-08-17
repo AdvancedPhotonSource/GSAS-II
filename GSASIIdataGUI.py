@@ -6370,7 +6370,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             # compute and update the corrected reciprocal cell terms using the Dij values
             elif key[2] in Ddict:
                 akey = key[0]+'::'+Ddict[key[2]]
-                parmDict[akey] -= parmDict[item]
+                parmDict[akey] += parmDict[item]
                 delList.append(item)
         for item in delList:
             del parmDict[item]                
@@ -6426,7 +6426,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if key[2] in Ddict:
                     if key[0] not in phaselist: phaselist.append(key[0])
                     akey = key[0]+'::'+Ddict[key[2]]
-                    VparmDict[akey] -= VparmDict[item]
+                    VparmDict[akey] += VparmDict[item]
             for i in phaselist:
                 pId = int(i)
                 # apply cell symmetry

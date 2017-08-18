@@ -211,10 +211,11 @@ def GetTifData(filename):
 #                image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
 #                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
+                # includes CHESS & Pilatus files from Area Detector
                 tifType = 'CHESS'
                 pixy = [200.,200.]
                 File.seek(8)
-                print 'Read CHESS-detector tiff file: ',filename
+                print 'Read as 32-bit unsigned (CHESS) tiff file: ',filename
                 image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.uint32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])

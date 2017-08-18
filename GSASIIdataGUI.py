@@ -6668,11 +6668,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         var = colLabels[col]
         lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
+        head = u'Set a new name for variable {} (column {})'.format(var,col)
         dlg = G2G.SingleStringDialog(G2frame,'Set variable label',
-                                 'Set a new name for variable '+var,lbl,size=(400,-1))
+                                 head,lbl,size=(400,-1))
         if dlg.Show():
             variableLabels[var] = dlg.GetValue()
-        dlg.Destroy()
+            dlg.Destroy()
+            wx.CallAfter(UpdateSeqResults,G2frame,data) # redisplay variables
+        else:
+            dlg.Destroy()
 
     def DoSequentialExport(event):
         '''Event handler for all Sequential Export menu items
@@ -7123,13 +7127,19 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             del G2frame.colList[l]
             del G2frame.colSigs[l]
 
+    # make a copy of the column labels substituting alternate labels when defined
+    displayLabels = colLabels[:]
+    for i,l in enumerate(colLabels):
+        if l in variableLabels:
+            displayLabels[i] = variableLabels[l]
+            
     G2frame.dataWindow.ClearData()
     G2frame.dataWindow.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
     G2frame.dataDisplay.SetScrollRate(1,1)
     G2frame.dataWindow.GetSizer().Add(G2frame.dataDisplay,1,wx.ALL|wx.EXPAND)
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
-        colLabels=colLabels,rowLabels=histNames,types=Types)
+        colLabels=displayLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     G2frame.dataDisplay.EnableEditing(False)
     # make all read-only

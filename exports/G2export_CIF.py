@@ -195,6 +195,24 @@ def MakeUniqueLabel(lbl, labellist):
 
 
 # Refactored over here to allow access by GSASIIscriptable.py
+def HillSortElements(elmlist):
+    '''Sort elements in "Hill" order: C, H, others, (where others
+    are alphabetical).
+
+    :params list elmlist: a list of element strings
+
+    :returns: a sorted list of element strings
+    '''
+    newlist = []
+    oldlist = elmlist[:]
+    for elm in ('C','H'):
+        if elm in elmlist:
+            newlist.append(elm)
+            oldlist.pop(oldlist.index(elm))
+    return newlist+sorted(oldlist)
+
+
+# Refactored over here to allow access by GSASIIscriptable.py
 def FmtAtomType(sym):
     'Reformat a GSAS-II atom type symbol to match CIF rules'
     sym = sym.replace('_','') # underscores are not allowed: no isotope designation?
@@ -297,6 +315,7 @@ def WriteComposition(fp, phasedict, phasenam, parmDict):
     WriteCIFitem(fp,  '_chemical_formula_sum',formula)
     WriteCIFitem(fp,  '_chemical_formula_weight',
                   G2mth.ValEsd(cellmass/Z,-0.09,True))
+
 
 class ExportCIF(G2IO.ExportBaseclass):
     '''Base class for CIF exports
@@ -807,21 +826,21 @@ class ExportCIF(G2IO.ExportBaseclass):
         #              s += PutInCol(G2mth.ValEsd(val,sig),11)
         #          WriteCIFitem(self.fp, s)
 
-        def HillSortElements(elmlist):
-            '''Sort elements in "Hill" order: C, H, others, (where others
-            are alphabetical).
+        # def HillSortElements(elmlist):
+        #     '''Sort elements in "Hill" order: C, H, others, (where others
+        #     are alphabetical).
 
-            :params list elmlist: a list of element strings
+        #     :params list elmlist: a list of element strings
 
-            :returns: a sorted list of element strings
-            '''
-            newlist = []
-            oldlist = elmlist[:]
-            for elm in ('C','H'):
-                if elm in elmlist:
-                    newlist.append(elm)
-                    oldlist.pop(oldlist.index(elm))
-            return newlist+sorted(oldlist)
+        #     :returns: a sorted list of element strings
+        #     '''
+        #     newlist = []
+        #     oldlist = elmlist[:]
+        #     for elm in ('C','H'):
+        #         if elm in elmlist:
+        #             newlist.append(elm)
+        #             oldlist.pop(oldlist.index(elm))
+        #     return newlist+sorted(oldlist)
 
         # Factored out to above by Jackson O'Donnell
         # so that it can be accessed by GSASIIscriptable

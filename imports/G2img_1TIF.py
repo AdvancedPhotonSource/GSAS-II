@@ -215,7 +215,7 @@ def GetTifData(filename):
                 pixy = [200.,200.]
                 File.seek(8)
                 print 'Read CHESS-detector tiff file: ',filename
-                image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
+                image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.uint32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])

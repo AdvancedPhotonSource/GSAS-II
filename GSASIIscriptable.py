@@ -1096,7 +1096,7 @@ class G2Project(G2ObjectWrapper):
         cons_scope should be one of "Hist", "Phase", "HAP", or "Global".
 
         WARNING it does not check the constraint is well-constructed"""
-        constrs = self['Constraints']['data']
+        constrs = self.data['Constraints']['data']
         if 'Global' not in constrs:
             constrs['Global'] = []
         constrs[cons_scope].append(constr)
@@ -1138,7 +1138,7 @@ class G2Project(G2ObjectWrapper):
         if isinstance(phase, G2Phase):
             phaseObj = phase
             phase = G2obj.PhaseRanIdLookup[phase.ranId]
-        elif phase in self['Phases']:
+        elif phase in self.data['Phases']:
             phaseObj = self.phase(phase)
             phaseRanId = phaseObj.ranId
             phase = G2obj.PhaseRanIdLookup[phaseRanId]
@@ -1253,22 +1253,21 @@ class G2PwdrData(G2ObjectWrapper):
 
     @property
     def name(self):
-        return self['data'][-1]
+        return self.data['data'][-1]
 
     @property
     def ranId(self):
-        return self['data'][0]['ranId']
+        return self.data['data'][0]['ranId']
 
     @property
     def residuals(self):
-        data = self['data'][0]
+        data = self.data['data'][0]
         return {key: data[key]
                 for key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']}
 
-    # TODO Figure out G2obj.HistRanIdLookup reload
     @property
     def id(self):
-        return G2obj.HistRanIdLookup[self.ranId]
+        return self.data['data'][0]['hId']
 
     def fit_fixed_points(self):
         """Attempts to apply a background fit to the fixed points currently specified."""
@@ -1290,14 +1289,14 @@ class G2PwdrData(G2ObjectWrapper):
                 instDict['SH/L'] = max(instDict['SH/L'], 0.002)
             return dataType, instDict, insVary
 
-        bgrnd = self['Background']
+        bgrnd = self.data['Background']
 
         # Need our fixed points in order
         bgrnd[1]['FixedPoints'].sort(key=lambda pair: pair[0])
         X = [x for x, y in bgrnd[1]['FixedPoints']]
         Y = [y for x, y in bgrnd[1]['FixedPoints']]
 
-        limits = self['Limits'][1]
+        limits = self.data['Limits'][1]
         if X[0] > limits[0]:
             X = [limits[0]] + X
             Y = [Y[0]] + Y
@@ -1307,8 +1306,8 @@ class G2PwdrData(G2ObjectWrapper):
 
         # Some simple lookups
         controls = self.proj['Controls']['data']
-        inst, inst2 = self['Instrument Parameters']
-        pwddata = self['data'][1]
+        inst, inst2 = self.data['Instrument Parameters']
+        pwddata = self.data['data'][1]
 
         # Construct the data for background fitting
         xBeg = np.searchsorted(pwddata[0], limits[0])
@@ -1341,12 +1340,12 @@ class G2PwdrData(G2ObjectWrapper):
         self.proj.save()
 
     def y_calc(self):
-        return self['data'][1][3]
+        return self.data['data'][1][3]
 
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt
-            data = self['data'][1]
+            data = self.data['data'][1]
             if Yobs:
                 plt.plot(data[0], data[1], label='Yobs')
             if Ycalc:
@@ -1423,11 +1422,11 @@ class G2PwdrData(G2ObjectWrapper):
         # are added
         if do_fit_fixed_points:
             # Background won't be fit if refinement flag not set
-            orig = self['Background'][0][1]
-            self['Background'][0][1] = True
+            orig = self.data['Background'][0][1]
+            self.data['Background'][0][1] = True
             self.fit_fixed_points()
             # Restore the previous value
-            self['Background'][0][1] = orig
+            self.data['Background'][0][1] = orig
 
     def clear_refinements(self, refs):
         """Clears the refinement parameter 'key' and its associated value.
@@ -1526,17 +1525,63 @@ class G2Phase(G2ObjectWrapper):
 
     @property
     def id(self):
-        return G2obj.PhaseRanIdLookup[self.ranId]
+        return self.data['pId']
 
     def get_cell(self):
         """Returns a dictionary of the cell parameters, with keys:
             'length_a', 'length_b', 'length_c', 'angle_alpha', 'angle_beta', 'angle_gamma', 'volume'
 
-        :returns: a dict"""
-        cell = self['General']['Cell']
+        :returns: a dict
+
+        .. seealso::
+           :func:`~G2Phase.get_cell_and_esd`
+        """
+        cell = self.data['General']['Cell']
         return {'length_a': cell[1], 'length_b': cell[2], 'length_c': cell[3],
                 'angle_alpha': cell[4], 'angle_beta': cell[5], 'angle_gamma': cell[6],
                 'volume': cell[7]}
+
+    def get_cell_and_esd(self):
+        """
+        Returns a pair of dictionaries, the first representing the unit cell, the second
+        representing the estimated standard deviations of the unit cell.
+
+        :returns: a tuple of two dictionaries
+        .. seealso::
+           :func:`~G2Phase.get_cell`
+        """
+        # translated from GSASIIstrIO.ExportBaseclass.GetCell
+        import GSASIIstrIO as G2stIO
+        import GSASIIlattice as G2lat
+        import GSASIImapvars as G2mv
+        try:
+            pfx = str(self.id) + '::'
+            sgdata = self['General']['SGData']
+            covDict = self.proj['Covariance']['data']
+
+            parmDict = dict(zip(covDict.get('varyList',[]),
+                                covDict.get('variables',[])))
+            sigDict = dict(zip(covDict.get('varyList',[]),
+                               covDict.get('sig',[])))
+
+            if covDict.get('covMatrix') is not None:
+                sigDict.update(G2mv.ComputeDepESD(covDict['covMatrix'],
+                                                  covDict['varyList'],
+                                                  parmDict))
+
+            A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
+            cellSig = G2stIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
+            cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
+            cellDict, cellSigDict = {}, {}
+            for i, key in enumerate(['length_a', 'length_b', 'length_c',
+                                     'angle_alpha', 'angle_beta', 'angle_gamma',
+                                     'volume']):
+                cellDict[key] = cellList[i]
+                cellSigDict[key] = cellSig[i]
+            return cellDict, cellSigDict
+        except KeyError:
+            cell = self.get_cell()
+            return cell, {key: 0.0 for key in cell}
 
     def export_CIF(self, outputname, quickmode=True):
         """Write this phase to a .cif file named outputname
@@ -1555,12 +1600,12 @@ class G2Phase(G2ObjectWrapper):
         CIFname = ''.join([c if ord(c) < 128 else ''
                            for c in CIFname.replace(' ', '_')])
         try:
-            author = self.proj['Controls'].get('Author','').strip()
+            author = self.proj['Controls']['data'].get('Author','').strip()
         except KeyError:
             pass
         oneblock = True
 
-        covDict = self.proj['Covariance']
+        covDict = self.proj['Covariance']['data']
         parmDict = dict(zip(covDict.get('varyList',[]),
                             covDict.get('variables',[])))
         sigDict = dict(zip(covDict.get('varyList',[]),
@@ -1587,16 +1632,16 @@ class G2Phase(G2ObjectWrapper):
                 cif.WriteCIFitem(fp, '_cell_' + key, G2mth.ValEsd(val))
 
             cif.WriteCIFitem(fp, '_symmetry_cell_setting',
-                         self['General']['SGData']['SGSys'])
+                         self.data['General']['SGData']['SGSys'])
 
-            spacegroup = self['General']['SGData']['SpGrp'].strip()
+            spacegroup = self.data['General']['SGData']['SpGrp'].strip()
             # regularize capitalization and remove trailing H/R
             spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
             cif.WriteCIFitem(fp, '_symmetry_space_group_name_H-M', spacegroup)
 
             # generate symmetry operations including centering and center of symmetry
             SymOpList, offsetList, symOpList, G2oprList, G2opcodes = G2spc.AllOps(
-                self['General']['SGData'])
+                self.data['General']['SGData'])
             cif.WriteCIFitem(fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
             for i, op in enumerate(SymOpList,start=1):
                 cif.WriteCIFitem(fp, '   {:3d}  {:}'.format(i,op.lower()))
@@ -1604,19 +1649,19 @@ class G2Phase(G2ObjectWrapper):
             # TODO skipped histograms, exports/G2export_CIF.py:880
 
             # report atom params
-            if self['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
+            if self.data['General']['Type'] in ['nuclear','macromolecular']:        #this needs macromolecular variant, etc!
                 cif.WriteAtomsNuclear(fp, self.data, self.name, parmDict, sigDict, [])
                 # self._WriteAtomsNuclear(fp, parmDict, sigDict)
             else:
-                raise Exception,"no export for "+str(self['General']['Type'])+" coordinates implemented"
+                raise Exception,"no export for "+str(self.data['General']['Type'])+" coordinates implemented"
             # report cell contents
             cif.WriteComposition(fp, self.data, self.name, parmDict)
-            if not quickmode and self['General']['Type'] == 'nuclear':      # report distances and angles
+            if not quickmode and self.data['General']['Type'] == 'nuclear':      # report distances and angles
                 # WriteDistances(fp,self.name,SymOpList,offsetList,symOpList,G2oprList)
                 raise NotImplementedError("only quickmode currently supported")
-            if 'Map' in self['General'] and 'minmax' in self['General']['Map']:
+            if 'Map' in self.data['General'] and 'minmax' in self.data['General']['Map']:
                 cif.WriteCIFitem(fp,'\n# Difference density results')
-                MinMax = self['General']['Map']['minmax']
+                MinMax = self.data['General']['Map']['minmax']
                 cif.WriteCIFitem(fp,'_refine_diff_density_max',G2mth.ValEsd(MinMax[0],-0.009))
                 cif.WriteCIFitem(fp,'_refine_diff_density_min',G2mth.ValEsd(MinMax[1],-0.009))
 
@@ -1684,9 +1729,9 @@ class G2Phase(G2ObjectWrapper):
         :returns: None
         """
         if histograms == 'all':
-            histograms = self['Histograms'].values()
+            histograms = self.data['Histograms'].values()
         else:
-            histograms = [self['Histograms'][h.name] for h in histograms]
+            histograms = [self.data['Histograms'][h.name] for h in histograms]
 
         for key, val in refs.items():
             for h in histograms:
@@ -1760,9 +1805,9 @@ class G2Phase(G2ObjectWrapper):
         :returns: None
         """
         if histograms == 'all':
-            histograms = self['Histograms'].values()
+            histograms = self.data['Histograms'].values()
         else:
-            histograms = [self['Histograms'][h.name] for h in histograms]
+            histograms = [self.data['Histograms'][h.name] for h in histograms]
 
         for key, val in refs.items():
             for h in histograms:

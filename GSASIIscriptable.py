@@ -936,8 +936,34 @@ class G2Project(G2ObjectWrapper):
         return []
 
     def do_refinements(self, refinements, histogram='all', phase='all',
-                       outputnames=None):
-        """Conducts a series of refinements.
+                       outputnames=None, makeBack=False):
+        """Conducts a series of refinements. Wrapper around iter_refinements
+
+        :param list refinements: A list of dictionaries defining refinements
+        :param str histogram: Name of histogram for refinements to be applied
+            to, or 'all'
+        :param str phase: Name of phase for refinements to be applied to, or
+            'all'
+        """
+        for proj in self.iter_refinements(refinements, histogram, phase,
+                                          outputnames, makeBack):
+            pass
+        return self
+
+    def iter_refinements(self, refinements, histogram='all', phase='all',
+                         outputnames=None, makeBack=False):
+        """Conducts a series of refinements, iteratively. Stops after every
+        refinement and yields this project, to allow error checking or
+        logging of intermediate results.
+
+        >>> def checked_refinements(proj):
+        ...     for p in proj.iter_refinements(refs):
+        ...         # Track intermediate results
+        ...         log(p.histogram('0').residuals)
+        ...         log(p.phase('0').get_cell())
+        ...         # Check if parameter diverged, nonsense answer, or whatever
+        ...         if is_something_wrong(p):
+        ...             raise Exception("I need a human!")
 
         :param list refinements: A list of dictionaries defining refinements
         :param str histogram: Name of histogram for refinements to be applied
@@ -963,7 +989,8 @@ class G2Project(G2ObjectWrapper):
             if output:
                 self.save(output)
 
-            self.refine()  # newFile=output)
+            self.refine(makeBack=makeBack)
+            yield self
 
             # Handle 'once' args - refinements that are disabled after this
             # refinement
@@ -1238,6 +1265,7 @@ class G2PwdrData(G2ObjectWrapper):
         return {key: data[key]
                 for key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']}
 
+    # TODO Figure out G2obj.HistRanIdLookup reload
     @property
     def id(self):
         return G2obj.HistRanIdLookup[self.ranId]

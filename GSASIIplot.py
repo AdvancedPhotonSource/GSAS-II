@@ -17,12 +17,16 @@ import os.path
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
-import wx
-import wx.aui
-import wx.glcanvas
-import matplotlib as mpl
-import matplotlib.collections as mplC
-import mpl_toolkits.mplot3d.axes3d as mp3d
+# Don't depend on wx/matplotlib for scriptable
+try:
+    import wx
+    import wx.aui
+    import wx.glcanvas
+    import matplotlib as mpl
+    import matplotlib.collections as mplC
+    import mpl_toolkits.mplot3d.axes3d as mp3d
+except ImportError:
+    pass
 import GSASIIpath
 Clip_on = GSASIIpath.GetConfigValue('Clip_on',True)
 GSASIIpath.SetVersionNumber("$Revision$")

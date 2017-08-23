@@ -21,7 +21,10 @@ import os.path
 import math
 import random as ran
 import numpy as np
-import wx
+try:
+    import wx
+except ImportError:
+    wx = None
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat

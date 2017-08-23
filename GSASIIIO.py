@@ -22,7 +22,14 @@ This module needs some work to separate wx from non-wx routines
 """GSASIIIO: functions for IO of data
    Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
 """
-import wx
+# If this is being used for GSASIIscriptable, don't depend on wx
+try:
+    import wx
+except ImportError:
+    class Placeholder(object):
+        def __init__(self):
+            self.Dialog = object
+    wx = Placeholder()
 import math
 import numpy as np
 import copy
@@ -32,17 +39,26 @@ import re
 import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIdataGUI as G2gd
+try:
+    import GSASIIdataGUI as G2gd
+except ImportError:
+    pass
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIImath as G2mth
-import GSASIIpwdGUI as G2pdG
-import GSASIIimgGUI as G2imG
+try:
+    import GSASIIpwdGUI as G2pdG
+    import GSASIIimgGUI as G2imG
+except ImportError:
+    pass
 import GSASIIimage as G2img
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
-import GSASIIctrlGUI as G2G
+try:
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 import os
 import os.path as ospath
 

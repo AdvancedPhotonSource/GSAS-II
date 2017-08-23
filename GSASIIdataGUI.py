@@ -27,14 +27,20 @@ import inspect
 import numpy as np
 import numpy.ma as ma
 import matplotlib as mpl
-import OpenGL as ogl
+try:
+    import OpenGL as ogl
+except ImportError:
+    pass
 import scipy as sp
 import scipy.optimize as so
-import wx
-import wx.grid as wg
-#import wx.wizard as wz
-#import wx.aui
-import wx.lib.scrolledpanel as wxscroll
+try:
+    import wx
+    import wx.grid as wg
+    #import wx.wizard as wz
+    #import wx.aui
+    import wx.lib.scrolledpanel as wxscroll
+except ImportError:
+    pass
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth

@@ -36,13 +36,16 @@ tand = lambda x: np.tan(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-    
+
 ateln2 = 8.0*math.log(2.0)
 DEBUG = True
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifPrint,printFile,dlg):
-    'Core optimization routines, shared between SeqRefine and Refine'
+    '''Core optimization routines, shared between SeqRefine and Refine
+
+    :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
+    '''
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
     G2mv.Map2Dict(parmDict,varyList)
@@ -52,7 +55,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
         # test code to compute GOF and save for external repeat
         #args = ([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg)
-        #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)            
+        #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)
         #fl = open('beforeFit.cpickle','wb')
         #import cPickle
         #cPickle.dump(values,fl,1)
@@ -61,7 +64,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Ftol = Controls['min dM/M']
         Xtol = Controls['SVDtol']
         Factor = Controls['shift factor']
-        if 'Jacobian' in Controls['deriv type']:            
+        if 'Jacobian' in Controls['deriv type']:
             result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
@@ -123,7 +126,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 for i,val in enumerate(np.flipud(result[2]['psing'])):
                     if val:
                         print 'Removing parameter: ',varyList[num-i]
-                        del(varyList[num-i])                    
+                        del(varyList[num-i])
             else:
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
@@ -138,16 +141,16 @@ def Refine(GPXfile,dlg=None,makeBack=True):
     'Global refinement -- refines to minimize against all histograms'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
-    
+
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     G2stIO.ShowBanner(printFile)
     varyList = []
     parmDict = {}
-    G2mv.InitVars()    
+    G2mv.InitVars()
     Controls = G2stIO.GetControls(GPXfile)
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
-    calcControls.update(Controls)            
+    calcControls.update(Controls)
     constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
@@ -198,7 +201,7 @@ def Refine(GPXfile,dlg=None,makeBack=True):
         #if warnmsg: print 'Warnings',warnmsg
         return False,' Constraint error'
 #    print G2mv.VarRemapShow(varyList)
-    
+
     ifPrint = True
     print >>printFile,'\n Refinement results:'
     print >>printFile,135*'-'
@@ -228,7 +231,7 @@ def Refine(GPXfile,dlg=None,makeBack=True):
     except G2obj.G2Exception,Msg:
         printFile.close()
         return False,Msg.msg
-    
+
 #for testing purposes!!!
     if DEBUG:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
@@ -244,10 +247,10 @@ def Refine(GPXfile,dlg=None,makeBack=True):
         fl.close()
     if dlg:
         return True,Rvals
-        
+
 def phaseCheck(phaseVary,Phases,histogram):
     '''
-    Removes unused parameters from phase varylist if phase not in histogram 
+    Removes unused parameters from phase varylist if phase not in histogram
     '''
     pIds = []
     for phase in Phases:
@@ -262,12 +265,12 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
     '''
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
-    
+
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
     print 'Starting Sequential Refinement'
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
-    G2stIO.ShowControls(Controls,printFile,SeqRef=True)            
+    G2stIO.ShowControls(Controls,printFile,SeqRef=True)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
@@ -350,7 +353,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         #reload(G2mv) # debug
-        G2mv.InitVars()    
+        G2mv.InitVars()
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         try:
@@ -403,7 +406,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
                         line += 'none, '
                 print(line[:-2])
             firstVaryList = newVaryList
-        
+
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram
         print >>printFile,135*'-'
@@ -412,14 +415,14 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
             if PlotFunction:
                 PlotFunction(G2frame,Histo[histogram]['Data'],histogram)
-    
+
             print '  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'])
             # add the uncertainties into the esd dictionary (sigDict)
             sigDict = dict(zip(varyList,sig))
             # the uncertainties for dependent constrained parms into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
-    
+
             # a dict with values & esds for dependent (constrained) parameters - avoid extraneous holds
             depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i in sigDict and i not in varyList}
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
@@ -440,7 +443,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
             makeBack = False
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
-            # next histogram, for use in next refinement. 
+            # next histogram, for use in next refinement.
             if Controls['Copy2Next'] and ihst < len(histNames)-1:
                 hId = Histo[histogram]['hId'] # current histogram
                 nexthId = Histograms[histNames[ihst+1]]['hId']
@@ -469,7 +472,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
        :func:`GSASIIctrlGUI.DisAglDialog`
-    :param dict DisAglData: contains phase data: 
+    :param dict DisAglData: contains phase data:
        Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
        for distance/angle origins and atoms to be used as targets.
        Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
@@ -480,7 +483,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
 
       **DistArray** is a dict keyed by the origin atom number where the value is a list
       of distance entries. The value for each distance is a list containing:
-      
+
         0) the target atom number (int);
         1) the unit cell offsets added to x,y & z (tuple of int values)
         2) the symmetry operator number (which may be modified to indicate centering and center of symmetry)
@@ -496,21 +499,21 @@ def RetDistAngle(DisAglCtls,DisAglData):
         2) a angle, uncertainty pair; the s.u. may be zero (tuple of two floats)
 
       The AngArray distance reference items refer directly to the index of the items in the
-      DistArray item for the list of distances for the central atom. 
+      DistArray item for the list of distances for the central atom.
     '''
     import numpy.ma as ma
-    
+
     SGData = DisAglData['SGData']
     Cell = DisAglData['Cell']
-    
+
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
-    if 'covData' in DisAglData:   
+    if 'covData' in DisAglData:
         covData = DisAglData['covData']
         covMatrix = covData['covMatrix']
         varyList = covData['varyList']
         pfx = str(DisAglData['pId'])+'::'
-        
+
     Factor = DisAglCtls['Factors']
     Radii = dict(zip(DisAglCtls['AtomTypes'],zip(DisAglCtls['BondRadii'],DisAglCtls['AngleRadii'])))
     indices = (-2,-1,0,1,2)
@@ -586,16 +589,16 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
 
     :param dict DisAglCtls: contains distance/angle radii usually defined using
        :func:`GSASIIctrlGUI.DisAglDialog`
-    :param dict DisAglData: contains phase data: 
+    :param dict DisAglData: contains phase data:
        Items 'OrigAtoms' and 'TargAtoms' contain the atoms to be used
        for distance/angle origins and atoms to be used as targets.
        Item 'SGData' has the space group information (see :ref:`Space Group object<SGData_table>`)
-    :param file out: file object for output. Defaults to sys.stdout.    
+    :param file out: file object for output. Defaults to sys.stdout.
     '''
     def MyPrint(s):
         out.write(s+'\n')
         # print(s,file=out) # use in Python 3
-    
+
     def ShowBanner(name):
         MyPrint(80*'*')
         MyPrint('   Interatomic Distances and Angles for phase '+name)
@@ -611,14 +614,14 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
                 line = ' %s'%(item.ljust(30))
             else:
                 line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
-            MyPrint(line)   
+            MyPrint(line)
     else:
         MyPrint(' ( 1)    %s'%(SGtable[0])) #triclinic case
     Cell = DisAglData['Cell']
-    
+
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
-    if 'covData' in DisAglData:   
+    if 'covData' in DisAglData:
         covData = DisAglData['covData']
         pfx = str(DisAglData['pId'])+'::'
         A = G2lat.cell2A(Cell[:6])
@@ -627,9 +630,9 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
         valEsd = [G2mth.ValEsd(Cell[i],cellSig[i],True) for i in range(7)]
         line = '\n Unit cell:'
         for name,vals in zip(names,valEsd):
-            line += name+vals  
+            line += name+vals
         MyPrint(line)
-    else: 
+    else:
         MyPrint('\n Unit cell: a = '+('%.5f'%Cell[0])+' b = '+('%.5f'%Cell[1])+' c = '+('%.5f'%Cell[2])+
             ' alpha = '+('%.3f'%Cell[3])+' beta = '+('%.3f'%Cell[4])+' gamma = '+
             ('%.3f'%Cell[5])+' Volume = '+('%.3f'%Cell[6]))
@@ -676,11 +679,11 @@ def DisAglTor(DATData):
     'Needs a doc string'
     SGData = DATData['SGData']
     Cell = DATData['Cell']
-    
+
     Amat,Bmat = G2lat.cell2AB(Cell[:6])
     covData = {}
     pfx = ''
-    if 'covData' in DATData:   
+    if 'covData' in DATData:
         covData = DATData['covData']
         pfx = str(DATData['pId'])+'::'
     Datoms = []
@@ -688,7 +691,7 @@ def DisAglTor(DATData):
     for i,atom in enumerate(DATData['Datoms']):
         symop = atom[-1].split('+')
         if len(symop) == 1:
-            symop.append('0,0,0')        
+            symop.append('0,0,0')
         symop[0] = int(symop[0])
         symop[1] = eval(symop[1])
         atom.append(symop)
@@ -712,7 +715,7 @@ def DisAglTor(DATData):
     else:   #2 atoms - distance
         Dist,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
         print ' Distance in '+DATData['Name']+' for atom sequence: ',atmSeq,'=',G2mth.ValEsd(Dist,sig)
-                
+
 def BestPlane(PlaneData):
     'Needs a doc string'
 
@@ -723,8 +726,8 @@ def BestPlane(PlaneData):
 
     ShowBanner(PlaneData['Name'])
 
-    Cell = PlaneData['Cell']    
-    Amat,Bmat = G2lat.cell2AB(Cell[:6])        
+    Cell = PlaneData['Cell']
+    Amat,Bmat = G2lat.cell2AB(Cell[:6])
     Atoms = PlaneData['Atoms']
     sumXYZ = np.zeros(3)
     XYZ = []
@@ -749,8 +752,8 @@ def BestPlane(PlaneData):
     print ' Name         X         Y         Z'
     for i,xyz in enumerate(XYZ):
         print ' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2])
-    print '\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]])   
-            
+    print '\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]])
+
 def main():
     'Needs a doc string'
     starttime = time.time()
@@ -765,6 +768,6 @@ def main():
         print 'ERROR - missing filename'
         exit()
     print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
-         
+
 if __name__ == '__main__':
     main()

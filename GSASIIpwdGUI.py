@@ -17,8 +17,12 @@ with the powder histogram (PWDR) data tree items.
 '''
 import sys
 import os.path
-import wx
-import wx.grid as wg
+# Don't depend on graphics for scriptable
+try:
+    import wx
+    import wx.grid as wg
+except ImportError:
+    pass
 import numpy as np
 import numpy.ma as ma
 import math

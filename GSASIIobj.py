@@ -13,7 +13,7 @@
 =========================
 
 This module defines and/or documents the data structures used in GSAS-II, as well
-as provides misc. support routines. 
+as provides misc. support routines.
 
 Constraints Tree Item
 ----------------------
@@ -42,12 +42,12 @@ The keys in the Constraints dict are:
 ==========  ====================================================
   key         explanation
 ==========  ====================================================
-Hist        This specifies a list of constraints on 
+Hist        This specifies a list of constraints on
             histogram-related parameters,
             which will be of form :h:<var>:n.
 HAP         This specifies a list of constraints on parameters
             that are defined for every histogram in each phase
-            and are of form p:h:<var>:n.            
+            and are of form p:h:<var>:n.
 Phase       This specifies a list of constraints on phase
             parameters,
             which will be of form p::<var>:n.
@@ -66,7 +66,7 @@ Each constraint is defined as an item in a list. Each constraint is of form::
 
 [[<mult1>, <var1>], [<mult2>, <var2>],..., <fixedval>, <varyflag>, <constype>]
 
-Where the variable pair list item containing two values [<mult>, <var>], where: 
+Where the variable pair list item containing two values [<mult>, <var>], where:
 
   * <mult> is a multiplier for the constraint (float)
   * <var> a :class:`G2VarObj` object (previously a str variable name of form
@@ -85,16 +85,16 @@ Note that the last three items in the list play a special role:
 
     * 'e' defines a set of equivalent variables. Only the first variable is refined (if the
       appropriate refine flag is set) and and all other equivalent variables in the list
-      are generated from that variable, using the appropriate multipliers. 
+      are generated from that variable, using the appropriate multipliers.
     * 'c' defines a constraint equation of form,
       :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`
     * 'h' defines a variable to hold (not vary). Any variable on this list is not varied,
       even if its refinement flag is set. Only one [mult,var] pair is allowed in a hold
       constraint and the mult value is ignored.
       This is of particular value when needing to hold one or more variables where a
-      single flag controls a set of variables such as, coordinates, 
-      the reciprocal metric tensor or anisotropic displacement parameter. 
-    * 'f' defines a new variable (function) according to relationship 
+      single flag controls a set of variables such as, coordinates,
+      the reciprocal metric tensor or anisotropic displacement parameter.
+    * 'f' defines a new variable (function) according to relationship
       :math:`newvar = m_1 \\times var_1 + m_2 \\times var_2 + ...`
 
 Covariance Tree Item
@@ -123,9 +123,9 @@ variables      \                Values for all N refined variables
 sig            \                Uncertainty values for all N refined variables
                                 (list of float values, length N,
                                 ordered to match varyList)
-varyList       \                List of directly refined variables 
+varyList       \                List of directly refined variables
                                 (list of str values, length N)
-newAtomDict    \                dict with atom position values computed in 
+newAtomDict    \                dict with atom position values computed in
                                 :func:`GSASIIstrMath.ApplyXYZshifts` (dict)
 Rvals          \                R-factors, GOF, Marquardt value for last
                                 refinement cycle (dict)
@@ -170,33 +170,33 @@ General         \            Overall information for the phase (dict)
                              volume (A^3, float)
   \         Type             'nuclear' or 'macromolecular' for now (str)
   \         Map              dict of map parameters
-  \         SH Texture       dict of spherical harmonic preferred orientation 
+  \         SH Texture       dict of spherical harmonic preferred orientation
                              parameters
   \         Isotope          dict of isotopes for each atom type
   \         Isotopes         dict of scattering lengths for each isotope
-                             combination for each element in phase  
+                             combination for each element in phase
   \         Name             phase name (str)
   \         SGData           Space group details as a :ref:`space group (SGData) object <SGData_table>`
                              as defined in :func:`GSASIIspc.SpcGroup`.
   \         Pawley neg wt    Restraint value for negative Pawley intensities
                              (float)
-  \         Flip             dict of Charge flip controls 
-  \         Data plot type   data plot type ('Mustrain', 'Size' or 
+  \         Flip             dict of Charge flip controls
+  \         Data plot type   data plot type ('Mustrain', 'Size' or
                              'Preferred orientation') for powder data (str)
   \         Mass             Mass of unit cell contents in g/mol
   \         POhkl            March-Dollase preferred orientation direction
-  \         Z                dict of atomic numbers for each atom type 
-  \         vdWRadii         dict of van der Waals radii for each atom type 
+  \         Z                dict of atomic numbers for each atom type
+  \         vdWRadii         dict of van der Waals radii for each atom type
   \         Color            Colors for atoms (list of (r,b,g) triplets)
   \         AtomTypes        List of atom types
   \         AtomMass         List of masses for atoms
   \         doPawley         Flag for Pawley intensity extraction (bool)
   \         NoAtoms          Number of atoms per unit cell of each type (dict)
-  \         Pawley dmin      maximum Q (as d-space) to use for Pawley 
+  \         Pawley dmin      maximum Q (as d-space) to use for Pawley
                              extraction (float)
-  \         BondRadii        Default radius for each atom used to compute 
+  \         BondRadii        Default radius for each atom used to compute
                              interatomic distances (list of floats)
-  \         AngleRadii       Default radius for each atom used to compute 
+  \         AngleRadii       Default radius for each atom used to compute
                              interatomic angles (list of floats)
   \         DisAglCtls       Dict with distance/angle search controls,
                              which has keys 'Name', 'AtomTypes',
@@ -225,19 +225,19 @@ Drawing         \            Display parameters (dict)
                              (list with three atoms)
 \           selectedAtoms    List of selected atoms (list of int values)
 \           showRigidBodies  Flag to highlight rigid body placement
-\           sizeH            Size ratio for H atoms (float) 
+\           sizeH            Size ratio for H atoms (float)
 \           bondRadius       Size of binds in A (float)
 \           atomPtrs         positions of x, type, site sym, ADP flag in Draw Atoms (list)
 \           viewPoint        list of lists. First item in list is [x,y,z]
                              in fractional coordinates for the center of
-                             the plot. Second item list of previous & current 
+                             the plot. Second item list of previous & current
                              atom number viewed (may be [0,0])
 \           showHydrogen     Flag to control plotting of H atoms.
 \           unitCellBox      Flag to control display of the unit cell.
 \           ellipseProb      Probability limit for display of thermal
                              ellipsoids in % (float).
 \           vdwScale         Multiplier of van der Waals radius for
-                             display of vdW spheres. 
+                             display of vdW spheres.
 \           Atoms            A list of lists with an entry for each atom
                              that is plotted.
 \           Zstep            Step to de/increase Z-clip (float)
@@ -294,7 +294,7 @@ Histograms      \            A dict of dicts. The key for the outer dict is
 \           Use              bool
 \           newLeBail        Whether to perform a new LeBail extraction
 MCSA            \            Monte-Carlo simulated annealing parameters (dict)
-\           
+\
 ==========  ===============  ====================================================
 
 Rigid Body Objects
@@ -305,8 +305,8 @@ Rigid Body Objects
 .. index::
    single: Rigid Body Data description
    single: Data object descriptions; Rigid Body Data
-   
-Rigid body descriptions are available for two types of rigid bodies: 'Vector' 
+
+Rigid body descriptions are available for two types of rigid bodies: 'Vector'
 and 'Residue'. Vector rigid bodies are developed by a sequence of translations each
 with a refinable magnitude and Residue rigid bodies are described as Cartesian coordinates
 with defined refinable torsion angles.
@@ -321,7 +321,7 @@ Vector      RBId             vector rigid bodies (dict of dict)
 \           RBname           Name assigned by user to rigid body (str)
 \           VectMag          vector magnitudes in A (list)
 \           rbXYZ            Cartesian coordinates for Vector rigid body (list of 3 float)
-\           rbRef            3 assigned reference atom nos. in rigid body for origin 
+\           rbRef            3 assigned reference atom nos. in rigid body for origin
                              definition, use center of atoms flag (list of 3 int & 1 bool)
 \           VectRef          refinement flags for VectMag values (list of bool)
 \           rbTypes          Atom types for each atom in rigid body (list of str)
@@ -333,7 +333,7 @@ Residue     RBId             residue rigid bodies (dict of dict)
 \           rbXYZ            Cartesian coordinates for Residue rigid body (list of 3 float)
 \           rbTypes          Atom types for each atom in rigid body (list of str)
 \           atNames          Names of each atom in rigid body (e.g. C1,N2...) (list of str)
-\           rbRef            3 assigned reference atom nos. in rigid body for origin 
+\           rbRef            3 assigned reference atom nos. in rigid body for origin
                              definition, use center of atoms flag (list of 3 int & 1 bool)
 \           rbSeq            Orig,Piv,angle,Riding (list): definition of internal rigid body
                              torsion; origin atom (int), pivot atom (int), torsion angle (float),
@@ -345,7 +345,7 @@ RBIds           \            unique Ids generated upon creation of each rigid bo
 \           Residue          Ids for each Residue rigid body (list)
 ==========  ===============  ====================================================
 
-Space Group Objects 
+Space Group Objects
 -------------------
 
 .. _SGData_table:
@@ -354,8 +354,8 @@ Space Group Objects
    single: Space Group Data description
    single: Data object descriptions; Space Group Data
 
-Space groups are interpreted by :func:`GSASIIspc.SpcGroup` 
-and the information is placed in a SGdata object 
+Space groups are interpreted by :func:`GSASIIspc.SpcGroup`
+and the information is placed in a SGdata object
 which is a dict with these keys:
 
 .. tabularcolumns:: |l|p{4.5in}|
@@ -390,7 +390,7 @@ SGSys       symmetry unit cell: type one of
             'hexagonal', 'cubic' (str)
 SGPolax     Axes for space group polarity. Will be one of
             '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
-            'xyz'. In the case where axes are arbitrary 
+            'xyz'. In the case where axes are arbitrary
             '111' is used (P 1, and ?).
 ==========  ====================================================
 
@@ -400,8 +400,8 @@ SGPolax     Axes for space group polarity. Will be one of
    single: Superspace Group Data description
    single: Data object descriptions; Superspace Group Data
 
-Superspace groups [3+1] are interpreted by :func:`GSASIIspc.SSpcGroup` 
-and the information is placed in a SSGdata object 
+Superspace groups [3+1] are interpreted by :func:`GSASIIspc.SSpcGroup`
+and the information is placed in a SSGdata object
 which is a dict with these keys:
 
 .. tabularcolumns:: |l|p{4.5in}|
@@ -428,9 +428,9 @@ Atom Records
 
 If ``phasedict`` points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
-``phasedict['Atoms']``. Also needed to read atom information 
-are four pointers, ``cx,ct,cs,cia = phasedict['General']['atomPtrs']``,
-which define locations in the atom record, as shown below. Items shown are 
+``phasedict['Atoms']``. Also needed to read atom information
+are four pointers, ``cx,ct,cs,cia = phasedict['General']['AtomPtrs']``,
+which define locations in the atom record, as shown below. Items shown are
 always present; additional ones for macromolecular phases are marked 'mm'
 
 .. tabularcolumns:: |l|p{4.5in}|
@@ -445,6 +445,7 @@ ct-1              atom label (str)
 ct                atom type (str)
 ct+1              refinement flags; combination of 'F', 'X', 'U' (str)
 cx,cx+1,cx+2      the x,y and z coordinates (3 floats)
+cx+3              site occupancy (float)
 cs                site symmetry (str)
 cs+1              site multiplicity (int)
 cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
@@ -466,9 +467,9 @@ Drawing Atom Records
 
 If ``phasedict`` points to the phase information in the data tree, then
 drawing atoms are contained in a list of drawing atom records (list) in
-``phasedict['Drawing']['Atoms']``. Also needed to read atom information 
+``phasedict['Drawing']['Atoms']``. Also needed to read atom information
 are four pointers, ``cx,ct,cs,ci = phasedict['Drawing']['AtomPtrs']``,
-which define locations in the atom record, as shown below. Items shown are 
+which define locations in the atom record, as shown below. Items shown are
 always present; additional ones for macromolecular phases are marked 'mm'
 
 .. tabularcolumns:: |l|p{4.5in}|
@@ -516,12 +517,12 @@ a key of ``Data``, as outlined below.
 ======================  ===============  ====================================================
   key                      sub-key        explanation
 ======================  ===============  ====================================================
-Comments                      \           Text strings extracted from the original powder 
-                                          data header. These cannot be changed by the user; 
+Comments                      \           Text strings extracted from the original powder
+                                          data header. These cannot be changed by the user;
                                           it may be empty.
 Limits                       \            A list of two two element lists, as [[Ld,Hd],[L,H]]
                                           where L and Ld are the current and default lowest
-                                          two-theta value to be used and 
+                                          two-theta value to be used and
                                           where H and Hd are the current and default highest
                                           two-theta value to be used.
 Reflection Lists              \           A dict with an entry for each phase in the
@@ -545,8 +546,8 @@ Instrument Parameters         \           A list containing two dicts where the 
 \                         Lam2            Specifies the secondary wavelength in
                                           Angstrom, when an alpha1, alpha2
                                           source is used [1]
-                          I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]           
-\                         Type            Histogram type (str) [1]: 
+                          I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]
+\                         Type            Histogram type (str) [1]:
                                            * 'PXC' for constant wavelength x-ray
                                            * 'PNC' for constant wavelength neutron
                                            * 'PNT' for time of flight neutron
@@ -577,15 +578,15 @@ Sample Parameters             \           Specifies a dict with parameters that 
                                           a float and a bool, where the second value
                                           specifies if the value is refined, otherwise
                                           the value is a float unless otherwise noted.
-\                         Scale           The histogram scale factor (refinable) 
+\                         Scale           The histogram scale factor (refinable)
 \                         Absorption      The sample absorption coefficient as
                                           :math:`\\mu r` where r is the radius
                                           (refinable). Only valid for Debye-Scherrer geometry.
 \                         SurfaceRoughA   Surface roughness parameter A as defined by
-                                          Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable - 
-                                          only valid for Bragg-Brentano geometry)                                         
-\                         SurfaceRoughB   Surface roughness parameter B (refinable - 
-                                          only valid for Bragg-Brentano geometry)                                          
+                                          Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable -
+                                          only valid for Bragg-Brentano geometry)
+\                         SurfaceRoughB   Surface roughness parameter B (refinable -
+                                          only valid for Bragg-Brentano geometry)
 \                         DisplaceX,      Sample displacement from goniometer center
                           DisplaceY       where Y is along the beam direction and
                                           X is perpendicular. Units are :math:`\\mu m`
@@ -596,8 +597,8 @@ Sample Parameters             \           Specifies a dict with parameters that 
 \                         InstrName       A name for the instrument, used in preparing
                                           a CIF (str).
 \                         Force,          Variables that describe how the measurement
-                          Temperature,    was performed. Not used directly in 
-                          Humidity,       any computations. 
+                          Temperature,    was performed. Not used directly in
+                          Humidity,       any computations.
                           Pressure,
                           Voltage
 \                         ranId           The random-number Id for the histogram
@@ -615,7 +616,7 @@ Background                    \           The background is stored as a list wit
                                           function and its coefficients; the dict contains
                                           Debye diffuse terms and background peaks.
                                           (TODO: this needs to be expanded.)
-Data                          \           The data consist of a list of 6 np.arrays 
+Data                          \           The data consist of a list of 6 np.arrays
                                           containing in order:
 
                                            0. the x-postions (two-theta in degrees),
@@ -634,7 +635,7 @@ Powder Reflection Data Structure
 .. index::
    single: Powder reflection object description
    single: Data object descriptions; Powder Reflections
-   
+
 For every phase in a histogram, the ``Reflection Lists`` value is a dict
 one element of which is `'RefList'`, which is a np.array containing
 reflections. The columns in that array are documented below.
@@ -652,7 +653,7 @@ reflections. The columns in that array are documented below.
  9           :math:`F_{calc}^2`
  10          reflection phase, in degrees
  11          intensity correction for reflection, this times
-             :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc 
+             :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
 ==========  ====================================================
 
 Single Crystal Tree Items
@@ -679,7 +680,7 @@ a key of ``Data``, as outlined below.
 ======================  ===============  ====================================================
   key                      sub-key        explanation
 ======================  ===============  ====================================================
-Data                          \           A dict that contains the 
+Data                          \           A dict that contains the
                                           reflection table,
                                           as described in the
                                           :ref:`Single Crystal Reflections
@@ -693,7 +694,7 @@ Instrument Parameters         \           A list containing two dicts where the 
                                           The first and second
                                           values are floats unless otherwise noted.
 \                         Lam             Specifies a wavelength in Angstroms (two floats)
-\                         Type            Histogram type (two str values): 
+\                         Type            Histogram type (two str values):
                                            * 'SXC' for constant wavelength x-ray
                                            * 'SNC' for constant wavelength neutron
                                            * 'SNT' for time of flight neutron
@@ -721,7 +722,7 @@ Single Crystal Reflection Data Structure
 .. index::
    single: Single Crystal reflection object description
    single: Data object descriptions; Single Crystal Reflections
-   
+
 For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
 The columns in that array are documented below.
@@ -751,10 +752,10 @@ Image Data Structure
 .. index::
    image: Image data object description
    image: Image object descriptions
-   
+
 Every 2-dimensional image is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "IMG ". The
-image data are directly associated with that tree item and there 
+image data are directly associated with that tree item and there
 are a series of children to that item. The routines :func:`GSASIIdataGUI.GSASII.GetUsedHistogramsAndPhasesfromTree`
 and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
@@ -766,43 +767,43 @@ a key of ``Data``, as outlined below.
 ======================  ======================  ====================================================
   key                      sub-key              explanation
 ======================  ======================  ====================================================
-Comments                       \                Text strings extracted from the original image data 
-                                                header or a metafile. These cannot be changed by  
-                                                the user; it may be empty.                                                
-Image Controls              azmthOff            (float) The offset to be applied to an azimuthal 
-                                                value. Accomodates 
-                                                detector orientations other than with the detector 
+Comments                       \                Text strings extracted from the original image data
+                                                header or a metafile. These cannot be changed by
+                                                the user; it may be empty.
+Image Controls              azmthOff            (float) The offset to be applied to an azimuthal
+                                                value. Accomodates
+                                                detector orientations other than with the detector
                                                 X-axis
                                                 horizontal.
 \                           background image    (list:str,float) The name of a tree item ("IMG ...") that is to be subtracted
-                                                during image integration multiplied by value. It must have the same size/shape as 
+                                                during image integration multiplied by value. It must have the same size/shape as
                                                 the integrated image. NB: value < 0 for subtraction.
 \                           calibrant           (str) The material used for determining the position/orientation
-                                                of the image. The data is obtained from :func:`ImageCalibrants` 
+                                                of the image. The data is obtained from :func:`ImageCalibrants`
                                                 and UserCalibrants.py (supplied by user).
 \                           calibdmin           (float) The minimum d-spacing used during the last calibration run.
 \                           calibskip           (int) The number of expected diffraction lines skipped during the last
                                                 calibration run.
 \                           center              (list:floats) The [X,Y] point in detector coordinates (mm) where the direct beam
-                                                strikes the detector plane as determined by calibration. This point 
-                                                does not have to be within the limits of the detector boundaries. 
+                                                strikes the detector plane as determined by calibration. This point
+                                                does not have to be within the limits of the detector boundaries.
 \                           centerAzm           (bool) If True then the azimuth reported for the integrated slice
                                                 of the image is at the center line otherwise it is at the leading edge.
 \                           color               (str) The name of the colormap used to display the image. Default = 'Paired'.
-\                           cutoff              (float) The minimum value of I/Ib for a point selected in a diffraction ring for 
-                                                calibration calculations. See pixLimit for details as how point is found.           
+\                           cutoff              (float) The minimum value of I/Ib for a point selected in a diffraction ring for
+                                                calibration calculations. See pixLimit for details as how point is found.
 \                           DetDepth            (float) Coefficient for penetration correction to distance; accounts for diffraction
                                                 ring offset at higher angles. Optionally determined by calibration.
 \                           DetDepthRef         (bool) If True then refine DetDepth during calibration/recalibration calculation.
 \                           distance            (float) The distance (mm) from sample to detector plane.
 \                           ellipses            (list:lists) Each object in ellipses is a list [center,phi,radii,color] where
-                                                center (list) is location (mm) of the ellipse center on the detector plane, phi is the 
+                                                center (list) is location (mm) of the ellipse center on the detector plane, phi is the
                                                 rotation of the ellipse minor axis from the x-axis, and radii are the minor & major
                                                 radii of the ellipse. If radii[0] is negative then parameters describe a hyperbola. Color
                                                 is the selected drawing color (one of 'b', 'g' ,'r') for the ellipse/hyperbola.
 \                           edgemin             (float) Not used;  parameter in EdgeFinder code.
 \                           fullIntegrate       (bool) If True then integrate over full 360 deg azimuthal range.
-\                           GonioAngles         (list:floats) The 'Omega','Chi','Phi' goniometer angles used for this image. 
+\                           GonioAngles         (list:floats) The 'Omega','Chi','Phi' goniometer angles used for this image.
                                                 Required for texture calculations.
 \                           invert_x            (bool) If True display the image with the x-axis inverted.
 \                           invert_y            (bool) If True display the image with the y-axis inverted.
@@ -811,33 +812,33 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           Oblique             (list:float,bool) If True apply a detector absorption correction using the value to the
                                                 intensities obtained during integration.
 \                           outAzimuths         (int) The number of azimuth pie slices.
-\                           outChannels         (int) The number of 2-theta steps. 
+\                           outChannels         (int) The number of 2-theta steps.
 \                           pixelSize           (list:ints) The X,Y dimensions (microns) of each pixel.
 \                           pixLimit            (int) A box in the image with 2*pixLimit+1 edges is searched to find the maximum.
                                                 This value (I) along with the minimum (Ib) in the box is reported by :func:`GSASIIimage.ImageLocalMax`
-                                                and subject to cutoff in :func:`GSASIIimage.makeRing`. 
+                                                and subject to cutoff in :func:`GSASIIimage.makeRing`.
                                                 Locations are used to construct rings of points for calibration calcualtions.
-\                           PolaVal             (list:float,bool) If type='SASD' and if True, apply polarization correction to intensities from 
+\                           PolaVal             (list:float,bool) If type='SASD' and if True, apply polarization correction to intensities from
                                                 integration using value.
-\                           rings               (list:lists) Each entry is [X,Y,dsp] where X & Y are lists of x,y coordinates around a 
+\                           rings               (list:lists) Each entry is [X,Y,dsp] where X & Y are lists of x,y coordinates around a
                                                 diffraction ring with the same d-spacing (dsp)
-\                           ring                (list) The x,y coordinates of the >5 points on an inner ring 
+\                           ring                (list) The x,y coordinates of the >5 points on an inner ring
                                                 selected by the user,
 \                           Range               (list) The minimum & maximum values of the image
-\                           rotation            (float) The angle between the x-axis and the vector about which the 
-                                                detector is tilted. Constrained to -180 to 180 deg.     
+\                           rotation            (float) The angle between the x-axis and the vector about which the
+                                                detector is tilted. Constrained to -180 to 180 deg.
 \                           SampleShape         (str) Currently only 'Cylinder'. Sample shape for Debye-Scherrer experiments; used for absorption
                                                 calculations.
 \                           SampleAbs           (list: float,bool) Value of absorption coefficient for Debye-Scherrer experimnents, flag if True
                                                 to cause correction to be applied.
 \                           setDefault          (bool) If True the use the image controls values for all new images to be read. (might be removed)
-\                           setRings            (bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.            
+\                           setRings            (bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.
 \                           showLines           (bool) If True then isplay the integration limits to be used.
 \                           size                (list:int) The number of pixels on the image x & y axes
 \                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
 \                           wavelength          (float) Tha radiation wavelength (Angstroms) as entered by the user (or someday obtained from the image header).
-                                                
+
 Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
                                                 to be excluded from integration
 \                           Frames              (list:lists) Each entry describes the x,y points (3 or more - mm) that describe a frame outside
@@ -849,13 +850,13 @@ Masks                       Arcs                (list: lists) Each entry [2-thet
 \                           Rings               (list: lists) Each entry [2-theta,thickness] describes a ring mask
                                                 to be excluded from integration.
 \                           Thresholds          (list:[tuple,list]) [(Imin,Imax),[Imin,Imax]] This gives lower and upper limits for points on the image to be included
-                                                in integrsation. The tuple is the image intensity limits and the list are those set by the user.    
-                                                
+                                                in integrsation. The tuple is the image intensity limits and the list are those set by the user.
+
 Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.
 \                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)
                                                 These will be restricted by space group symmetry; result of strain fit refinement.
 \                           Type                (str) 'True' or 'Conventional': The strain model used for the calculation.
-\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase 
+\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase
                                                 and are used to determine the strain tensor.
                                                 The dictionary items are:
                                                 'Dset': (float) True d-spacing for the diffraction ring; entered by the user.
@@ -867,7 +868,7 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
                                                 'ImxyObs': (list: lists) [[X],[Y]] observed points to be used for strain calculations.
                                                 'ImtaObs': (list: lists) [[d],[azm]] transformed via detector calibration from ImxyObs.
                                                 'ImtaCalc': (list: lists [[d],[azm]] calculated d-spacing & azimuth from fit.
-                                                
+
 ======================  ======================  ====================================================
 
 Parameter Dictionary
@@ -879,16 +880,16 @@ Parameter Dictionary
    single: Parameter dictionary
 
 The parameter dictionary contains all of the variable parameters for the refinement.
-The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>). 
+The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>).
 It is prepared in two ways. When loaded from the tree
 (in :meth:`GSASIIdataGUI.GSASII.MakeLSParmDict` and
-:meth:`GSASIIIO.ExportBaseclass.loadParmDict`), 
+:meth:`GSASIIIO.ExportBaseclass.loadParmDict`),
 the values are lists with two elements: ``[value, refine flag]``
 
 When loaded from the GPX file (in
 :func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine`), the value in the
-dict is the actual parameter value (usually a float, but sometimes a 
-letter or string flag value (such as I or A for iso/anisotropic). 
+dict is the actual parameter value (usually a float, but sometimes a
+letter or string flag value (such as I or A for iso/anisotropic).
 
 
 *Classes and routines*
@@ -924,7 +925,7 @@ data tree item.
 '''
 def StripUnicode(string,subs='.'):
     '''Strip non-ASCII characters from strings
-    
+
     :param str string: string to strip Unicode characters from
     :param str subs: character(s) to place into string in place of each
       Unicode character. Defaults to '.'
@@ -1017,7 +1018,7 @@ the same values as :attr:`VarDesc` except that keys have been compiled as
 regular expressions. Initialized in :func:`CompileVarDesc`.
 '''
 # create a default space group object for P1; N.B. fails when building documentation
-try: 
+try:
     P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
 except TypeError:
     pass
@@ -1091,7 +1092,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
         phaseData['General']['SuperVec'] = [Super['ModVec'],False,Super['maxH']]
 
     return phaseData
-               
+
 def ReadCIF(URLorFile):
     '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW
     (from James Hester).
@@ -1109,7 +1110,7 @@ def ReadCIF(URLorFile):
     # alternate approach:
     #import urllib
     #ciffile = 'file:'+urllib.pathname2url(filename)
-   
+
     try:
         fp = open(URLorFile,'r')
         cf = cif.ReadCif(fp)
@@ -1124,7 +1125,7 @@ def IndexAllIds(Histograms,Phases):
     confirm that assigned random numbers are unique -- just in case lightning
     strikes twice in the same place.
 
-    Note: this code assumes that the atom random Id (ranId) is the last 
+    Note: this code assumes that the atom random Id (ranId) is the last
     element each atom record.
 
     This is called in three places (only): :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
@@ -1138,13 +1139,13 @@ def IndexAllIds(Histograms,Phases):
     '''
     # process phases and atoms
     PhaseIdLookup.clear()
-    PhaseRanIdLookup.clear()    
+    PhaseRanIdLookup.clear()
     AtomIdLookup.clear()
     AtomRanIdLookup.clear()
     ShortPhaseNames.clear()
     for ph in Phases:
         cx,ct,cs,cia = Phases[ph]['General']['AtomPtrs']
-        ranId = Phases[ph]['ranId'] 
+        ranId = Phases[ph]['ranId']
         while ranId in PhaseRanIdLookup:
             # Found duplicate random Id! note and reassign
             print ("\n\n*** Phase "+str(ph)+" has repeated ranId. Fixing.\n")
@@ -1282,31 +1283,31 @@ def LookupHistName(hId):
     return HistIdLookup[hId]
 
 def fmtVarDescr(varname):
-    '''Return a string with a more complete description for a GSAS-II variable 
+    '''Return a string with a more complete description for a GSAS-II variable
 
     :param str varname: A full G2 variable name with 2 or 3 or 4
        colons (<p>:<h>:name[:<a>] or <p>::RBname:<r>:<t>])
-       
+
     :returns: a string with the description
     '''
     s,l = VarDescr(varname)
     return s+": "+l
 
 def VarDescr(varname):
-    '''Return two strings with a more complete description for a GSAS-II variable 
+    '''Return two strings with a more complete description for a GSAS-II variable
 
     :param str name: A full G2 variable name with 2 or 3 or 4
        colons (<p>:<h>:name[:<a>] or <p>::RBname:<r>:<t>])
-       
+
     :returns: (loc,meaning) where loc describes what item the variable is mapped
       (phase, histogram, etc.) and meaning describes what the variable does.
     '''
-    
+
     # special handling for parameter names without a colons
     # for now, assume self-defining
     if varname.find(':') == -1:
         return "Global",varname
-        
+
     l = getVarDescr(varname)
     if not l:
         return ("invalid variable name ("+str(varname)+")!"),""
@@ -1349,7 +1350,7 @@ def VarDescr(varname):
                 s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
             else: #modulation parm
                 s = 'Atom %s wave %s in %s'%(LookupAtomLabel(l[0],l[3])[0],l[4],lbl)
-        elif l[3] is not None: # atom parameter, 
+        elif l[3] is not None: # atom parameter,
             lbl = ShortPhaseNames.get(l[0],'phase?')
             try:
                 albl = LookupAtomLabel(l[0],l[3])[0]
@@ -1377,11 +1378,11 @@ def VarDescr(varname):
     return s,l[-1]
 
 def getVarDescr(varname):
-    '''Return a short description for a GSAS-II variable 
+    '''Return a short description for a GSAS-II variable
 
     :param str name: A full G2 variable name with 2 or 3 or 4
        colons (<p>:<h>:name[:<a1>][:<a2>])
-      
+
     :returns: a six element list as [`p`,`h`,`name`,`a1`,`a2`,`description`],
       where `p`, `h`, `a1`, `a2` are str values or `None`, for the phase number,
       the histogram number and the atom number; `name` will always be
@@ -1403,7 +1404,7 @@ def getVarDescr(varname):
             l[i] = None
     l += [getDescr(l[2])]
     return l
-    
+
 def CompileVarDesc():
     '''Set the values in the variable description lookup table (:attr:`VarDesc`)
     into :attr:`reVarDesc`. This is called in :func:`getDescr` so the initialization
@@ -1423,7 +1424,7 @@ def CompileVarDesc():
 
     will match ``AU11``, ``AU23``,.. and `U11`, `U23` etc will be displayed
     in the value when used.
-    
+
     '''
     if reVarDesc: return # already done
     for key,value in {
@@ -1537,10 +1538,10 @@ def CompileVarDesc():
         reVarDesc[re.compile(key)] = value
 
 def getDescr(name):
-    '''Return a short description for a GSAS-II variable 
+    '''Return a short description for a GSAS-II variable
 
     :param str name: The descriptive part of the variable name without colons (:)
-      
+
     :returns: a short description or None if not found
     '''
 
@@ -1557,11 +1558,11 @@ def GenWildCard(varlist):
     for a phase, histogram or atom number (but only for one of these
     fields) but only when there is more than one matching variable in the
     input variable list. So if the input is this::
-    
+
       varlist = ['0::AUiso:0', '0::AUiso:1', '1::AUiso:0']
 
     then the output will be this::
-    
+
        wildList = ['*::AUiso:0', '0::AUiso:*']
 
     :param list varlist: an input list of GSAS-II variable names
@@ -1595,12 +1596,12 @@ def GenWildCard(varlist):
 def LookupWildCard(varname,varlist):
     '''returns a list of variable names from list varname
     that match wildcard name in varname
-    
+
     :param str varname: a G2 variable name containing a wildcard
       (such as \*::var)
     :param list varlist: the list of all variable names used in
       the current project
-    :returns: a list of matching GSAS-II variables (may be empty)  
+    :returns: a list of matching GSAS-II variables (may be empty)
     '''
     rexp = re.compile(varname.replace('*','[0-9]+'))
     return sorted([var for var in varlist if rexp.match(var)])
@@ -1628,12 +1629,12 @@ class G2VarObj(object):
     body # to/from random Ids
 
     A :class:`G2VarObj` object can be created with a single parameter:
-    
+
     :param str/tuple varname: a single value can be used to create a :class:`G2VarObj`
       object. If a string, it must be of form "p:h:var" or "p:h:var:a", where
 
-     * p is the phase number (which may be left blank or may be '*' to indicate all phases); 
-     * h is the histogram number (which may be left blank or may be '*' to indicate all histograms); 
+     * p is the phase number (which may be left blank or may be '*' to indicate all phases);
+     * h is the histogram number (which may be left blank or may be '*' to indicate all histograms);
      * a is the atom number (which may be left blank in which case the third colon is omitted).
        The atom number can be specified as '*' if a phase number is specified (not as '*').
        For rigid body variables, specify a will be a string of form "residue:body#"
@@ -1649,7 +1650,7 @@ class G2VarObj(object):
     :param str/int histnum: The number for the histogram (or None or '*')
     :param str varname: a single value can be used to create a :class:`G2VarObj`
     :param str/int atomnum: The number for the atom (or None or '*')
-    
+
     '''
     IDdict = {}
     IDdict['phases'] = {}
@@ -1664,14 +1665,14 @@ class G2VarObj(object):
             # single arg with 4 values
             self.phase,self.histogram,self.name,self.atom = args[0]
         elif len(args) == 1 and ':' in args[0]:
-            #parse a string 
+            #parse a string
             lst = args[0].split(':')
             if lst[0] == '*':
                 self.phase = '*'
                 if len(lst) > 3:
                     self.atom = lst[3]
                 self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
-            elif lst[1] == '*':            
+            elif lst[1] == '*':
                 self.histogram = '*'
                 self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
             else:
@@ -1713,7 +1714,7 @@ class G2VarObj(object):
         return self.varname()
 
     def varname(self):
-        '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable 
+        '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable
         string (p:h:<var>:a) or (p:h:<var>)
 
         :returns: the variable name as a str
@@ -1740,7 +1741,7 @@ class G2VarObj(object):
             hist = _lookup(HistRanIdLookup,self.histogram)
         s = (ph + ":" + hist + ":" + str(self.name)) + a
         return s
-    
+
     def __repr__(self):
         '''Return the detailed contents of the object
         '''
@@ -1809,17 +1810,17 @@ def SetDefaultSample():
 class ImportBaseclass(object):
     '''Defines a base class for the reading of input files (diffraction
     data, coordinates,...). See :ref:`Writing a Import Routine<Import_routines>`
-    for an explanation on how to use a subclass of this class. 
+    for an explanation on how to use a subclass of this class.
     '''
     class ImportException(Exception):
         '''Defines an Exception that is used when an import routine hits an expected error,
         usually in .Reader.
 
         Good practice is that the Reader should define a value in self.errors that
-        tells the user some information about what is wrong with their file.         
+        tells the user some information about what is wrong with their file.
         '''
         pass
-    
+
     UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
     def __init__(self,formatName,longFormatName=None,
                  extensionlist=[],strictExtension=False,):
@@ -1857,11 +1858,11 @@ class ImportBaseclass(object):
         self.repeatcount = 0
         self.readfilename = '?'
 
-        
+
 #    def Reader(self, filename, filepointer, ParentFrame=None, **unused):
-#        '''This method must be supplied in the child class to read the file. 
+#        '''This method must be supplied in the child class to read the file.
 #        if the read fails either return False or raise an Exception
-#        preferably of type ImportException. 
+#        preferably of type ImportException.
 #        '''
 #        #start reading
 #        raise ImportException("Error occurred while...")
@@ -1885,10 +1886,10 @@ class ImportBaseclass(object):
     def ContentsValidator(self, filepointer):
         '''This routine will attempt to determine if the file can be read
         with the current format.
-        This will typically be overridden with a method that 
+        This will typically be overridden with a method that
         takes a quick scan of [some of]
         the file contents to do a "sanity" check if the file
-        appears to match the selected format. 
+        appears to match the selected format.
         '''
         #filepointer.seek(0) # rewind the file pointer
         return True
@@ -1904,29 +1905,29 @@ class ImportBaseclass(object):
             blank lines'''
             line = l.strip()
             if len(line) == 0: # ignore blank lines
-                continue 
+                continue
             elif line.startswith('#'): # ignore comments
-                continue 
+                continue
             elif line.startswith('data_'): # on the right track, accept this file
                 return True
             else: # found something invalid
                 self.errors = 'line '+str(i+1)+' contains unexpected data:\n'
                 if all([ord(c) < 128 and ord(c) != 0 for c in str(l)]): # show only if ASCII
                     self.errors += '  '+str(l)
-                else: 
+                else:
                     self.errors += '  (binary)'
                 self.errors += '\n  Note: a CIF should only have blank lines or comments before'
                 self.errors += '\n        a data_ statement begins a block.'
-                return False 
+                return False
 
 ######################################################################
 class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
     Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase`. 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase`.
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
+    for an explanation on how to use this class.
 
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
@@ -1948,7 +1949,7 @@ class ImportStructFactor(ImportBaseclass):
     :meth:`Reader`.
 
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use import classes in general. The specifics 
+    for an explanation on how to use import classes in general. The specifics
     for reading a structure factor histogram require that
     the ``Reader()`` routine in the import
     class need to do only a few things: It
@@ -1972,7 +1973,7 @@ class ImportStructFactor(ImportBaseclass):
         :ref:`Single Crystal Reflection Data Structure<XtalRefl_table>`
         for the contents of each row. Dict element 'FF'
         contains the form factor values for each element type; if this entry
-        is left as initialized (an empty list) it will be initialized as needed later. 
+        is left as initialized (an empty list) it will be initialized as needed later.
         '''
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
@@ -1980,7 +1981,7 @@ class ImportStructFactor(ImportBaseclass):
         self.InitParameters()
         self.Banks = []             #for multi bank data (usually TOF)
         self.RefDict = {'RefList':[],'FF':{},'Super':0}
-        
+
     def InitParameters(self):
         'initialize the instrument parameters structure'
         Lambda = 0.70926
@@ -1995,16 +1996,16 @@ class ImportStructFactor(ImportBaseclass):
         if Type is not None:
             self.Parameters[0]['Type'] = [Type,Type]
         if Wave is not None:
-            self.Parameters[0]['Lam'] = [Wave,Wave]           
-                       
+            self.Parameters[0]['Lam'] = [Wave,Wave]
+
 ######################################################################
 class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.
 
     Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder`. 
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder`.
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
+    for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,
         extensionlist=[],strictExtension=False,):
@@ -2012,7 +2013,7 @@ class ImportPowderData(ImportBaseclass):
             extensionlist,strictExtension)
         self.clockWd = None  # used in TOF
         self.ReInitialize()
-        
+
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
@@ -2025,14 +2026,14 @@ class ImportPowderData(ImportBaseclass):
                 np.array(yc), # calc. intensities (zero)
                 np.array(yb), # calc. background (zero)
                 np.array(yd), # obs-calc profiles
-        '''                            
+        '''
         self.comments = []
         self.idstring = ''
         self.Sample = SetDefaultSample() # default sample parameters
-        self.Controls = {}  # items to be placed in top-level Controls 
+        self.Controls = {}  # items to be placed in top-level Controls
         self.GSAS = None     # used in TOF
         self.repeat_instparm = True # Should a parm file be
-        #                             used for multiple histograms? 
+        #                             used for multiple histograms?
         self.instparm = None # name hint from file of instparm to use
         self.instfile = '' # full path name to instrument parameter file
         self.instbank = '' # inst parm bank number
@@ -2046,15 +2047,15 @@ class ImportPowderData(ImportBaseclass):
 class ImportSmallAngleData(ImportBaseclass):
     '''Defines a base class for the reading of files with small angle data.
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
+    for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
-            
+
         ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
             strictExtension)
         self.ReInitialize()
-        
+
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
@@ -2067,7 +2068,7 @@ class ImportSmallAngleData(ImportBaseclass):
                 np.array(yc), # calc. intensities (zero)
                 np.array(yd), # obs-calc profiles
                 np.array(yb), # preset bkg
-        '''                            
+        '''
         self.comments = []
         self.idstring = ''
         self.Sample = SetDefaultSample()
@@ -2080,15 +2081,15 @@ class ImportSmallAngleData(ImportBaseclass):
 class ImportReflectometryData(ImportBaseclass):
     '''Defines a base class for the reading of files with reflectometry data.
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
+    for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
-            
+
         ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
             strictExtension)
         self.ReInitialize()
-        
+
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
@@ -2101,7 +2102,7 @@ class ImportReflectometryData(ImportBaseclass):
                 np.array(yc), # calc. intensities (zero)
                 np.array(yd), # obs-calc profiles
                 np.array(yb), # preset bkg
-        '''                            
+        '''
         self.comments = []
         self.idstring = ''
         self.Sample = SetDefaultSample()
@@ -2114,15 +2115,15 @@ class ImportReflectometryData(ImportBaseclass):
 class ImportPDFData(ImportBaseclass):
     '''Defines a base class for the reading of files with PDF G(R) data.
     See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use this class. 
+    for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
-            
+
         ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
             strictExtension)
         self.ReInitialize()
-        
+
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
@@ -2131,7 +2132,7 @@ class ImportPDFData(ImportBaseclass):
         '''A pdf g(r) data set is a list with items [x,y]:
                 np.array(x), # r-axis values
                 np.array(y), # pdf g(r)
-        '''                            
+        '''
         self.comments = []
         self.idstring = ''
         self.numbanks = 1
@@ -2141,12 +2142,12 @@ class ImportImage(ImportBaseclass):
     '''Defines a base class for the reading of images
 
     Images are read in only these places:
-    
+
       * Initial reading is typically done from a menu item
         with a call to :meth:`GSASIIdataGUI.GSASII.OnImportImage`
         which in turn calls :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`. That calls
         methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
-        :meth:`Reader`. This returns a list of reader objects for each read image. 
+        :meth:`Reader`. This returns a list of reader objects for each read image.
 
       * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
         directly into the data tree.
@@ -2157,13 +2158,13 @@ class ImportImage(ImportBaseclass):
 
     When reading an image, the ``Reader()`` routine in the ImportImage class
     should set:
-    
+
       * :attr:`Comments`: a list of strings (str),
       * :attr:`Npix`: the number of pixels in the image (int),
       * :attr:`Image`: the actual image as a numpy array (np.array)
       * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
         data items are needed:
-        
+
          * 'pixelSize': size of each pixel in microns (such as ``[200,200]``.
          * 'wavelength': wavelength in Angstoms.
          * 'distance': distance of detector from sample in cm.
@@ -2174,11 +2175,11 @@ class ImportImage(ImportBaseclass):
          * 'sumfile': holds sum image file name if a sum was produced from a multi image file
 
     optional data items:
-    
+
       * :attr:`repeat`: set to True if there are additional images to
         read in the file, False otherwise
       * :attr:`repeatcount`: set to the number of the image.
-      
+
     Note that the above is initialized with :meth:`InitParameters`.
     (Also see :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use import classes in general.)
@@ -2188,12 +2189,12 @@ class ImportImage(ImportBaseclass):
         ImportBaseclass.__init__(self,formatName,longFormatName,
             extensionlist,strictExtension)
         self.InitParameters()
-        
+
     def ReInitialize(self):
         'Reinitialize the Reader to initial settings -- not used at present'
         ImportBaseclass.ReInitialize(self)
         self.InitParameters()
-        
+
     def InitParameters(self):
         'initialize the instrument parameters structure'
         self.Comments = ['No comments']
@@ -2211,7 +2212,7 @@ class ImportImage(ImportBaseclass):
         if ParentFrame:
             ParentFrame.ImageZ = self.Image   # store the image for plotting
             ParentFrame.oldImagefile = imagefile # save the name of the last image file read
-            ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read            
+            ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read
 
 #################################################################################################
 # shortcut routines
@@ -2226,7 +2227,7 @@ class ExpressionObj(object):
     secondary fits or restraints. Object is created null, but is changed
     using :meth:`LoadExpression`. This contains only the minimum
     information that needs to be stored to save and load the expression
-    and how it is mapped to GSAS-II variables. 
+    and how it is mapped to GSAS-II variables.
     '''
     def __init__(self):
         self.expression = ''
@@ -2244,7 +2245,7 @@ class ExpressionObj(object):
          * a name assigned to the parameter
          * a value for to the parameter and
          * a flag to determine if the variable is refined.
-        ''' 
+        '''
         self.depVar = None
 
         self.lastError = ('','')
@@ -2263,7 +2264,7 @@ class ExpressionObj(object):
         This will not test if the variable referenced in these definitions
         are actually in the parameter dictionary. This is checked when the
         computation for the expression is done in :meth:`SetupCalc`.
-        
+
         :param str expr: the expression
         :param list exprVarLst: parameter labels found in the expression
         :param dict varSelect: this will be 0 for Free parameters
@@ -2364,13 +2365,13 @@ class ExpressionObj(object):
     def ParseExpression(self,expr):
         '''Parse an expression and return a dict of called functions and
         the variables used in the expression. Returns None in case an error
-        is encountered. If packages are referenced in functions, they are loaded 
+        is encountered. If packages are referenced in functions, they are loaded
         and the functions are looked up into the modules global
-        workspace. 
-        
+        workspace.
+
         Note that no changes are made to the object other than
         saving an error message, so that this can be used for testing prior
-        to the save. 
+        to the save.
 
         :returns: a list of used variables
         '''
@@ -2387,7 +2388,7 @@ class ExpressionObj(object):
             df = f.split('.')
             pkgdict = {}
             # no listed package, try in current namespace
-            if len(df) == 1: 
+            if len(df) == 1:
                 try:
                     fxnobj = eval(f)
                     return pkgdict,fxnobj
@@ -2447,7 +2448,7 @@ class ExpressionObj(object):
             elif isinstance(node, ast.AST):
                 for a, b in ast.iter_fields(node):
                     if isinstance(b, ast.AST):
-                        if a == 'func': 
+                        if a == 'func':
                             fxnlist += ['.'.join(ASTtransverse(b,True)[0])]
                             continue
                         v,f = ASTtransverse(b,fxn)
@@ -2502,7 +2503,7 @@ class ExpressionObj(object):
 class ExpressionCalcObj(object):
     '''An object used to evaluate an expression from a :class:`ExpressionObj`
     object.
-    
+
     :param ExpressionObj exprObj: a :class:`~ExpressionObj` expression object with
       an expression string and mappings for the parameter labels in that object.
     '''
@@ -2561,7 +2562,7 @@ class ExpressionCalcObj(object):
             except (TypeError,IndexError):
                 parmsInList = False
             break
-            
+
         # set up the dicts needed to speed computations
         self.exprDict = {}
         self.lblLookup = {}
@@ -2619,7 +2620,7 @@ class ExpressionCalcObj(object):
         for var in parmDict:
             if var in self.lblLookup:
                 self.exprDict[self.lblLookup[var]] = parmDict[var]
-            
+
     def EvalExpression(self):
         '''Evaluate an expression. Note that the expression
         and mapping are taken from the :class:`ExpressionObj` expression object
@@ -2652,7 +2653,7 @@ class ExpressionCalcObj(object):
         if not np.isscalar(val):
             val = np.sum(val)
         return val
-        
+
 class G2Exception(Exception):
     def __init__(self,msg):
         self.msg = msg
@@ -2668,10 +2669,10 @@ def HowDidIgetHere(wherecalledonly=False):
         i = traceback.format_list(traceback.extract_stack()[:-1])[-2]
         print(i.strip().rstrip())
     else:
-        print 70*'*'    
+        print 70*'*'
         for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip().rstrip())
-        print 70*'*'    
-                
+        print 70*'*'
+
 def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
@@ -2682,7 +2683,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
     :param float numAtm: no. atom in chemical formula
     :param float FltBkg: flat background value
     :param list PDFnames: previously used PDF names
-    
+
     :returns: the Id of the newly created PDF entry
     '''
     PDFname = 'PDF '+PWDRtree[4:] # this places two spaces after PDF, which is needed is some places
@@ -2703,7 +2704,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Controls'),Data)
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
-    return Id        
+    return Id
 
 
 if __name__ == "__main__":
@@ -2740,7 +2741,7 @@ if __name__ == "__main__":
     calcobj2 = ExpressionCalcObj(obj2)
     calcobj2.SetupCalc(parmDict2)
     showEQ(calcobj2)
-    
+
     parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
     print '\nDict = ',parmDict1
     calcobj.SetupCalc(parmDict1)

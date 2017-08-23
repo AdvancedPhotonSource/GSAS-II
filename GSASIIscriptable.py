@@ -152,7 +152,6 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     :param str ProjFile: full file name for output project.gpx file (including extension)
     '''
     file = open(ProjFile,'wb')
-    # print('save to file: {}'.format(ProjFile))
     try:
         for name in nameList:
             data = []
@@ -163,7 +162,6 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
             cPickle.dump(data,file,1)
     finally:
         file.close()
-    # print('project save successful')
 
 def ImportPowder(reader,filename):
     '''Use a reader to import a powder diffraction data file
@@ -887,6 +885,9 @@ class G2Project(G2ObjectWrapper):
         _deep_copy_into(from_=data, into=self.data)
 
     def refine(self, newfile=None, printFile=None, makeBack=False):
+        # TODO migrate to RefineCore
+        # G2strMain.RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
+	#      calcControls,pawleyLookup,ifPrint,printFile,dlg)
         # index_ids will automatically save the project
         self.index_ids()
         # TODO G2strMain does not properly use printFile

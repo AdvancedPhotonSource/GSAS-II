@@ -16,15 +16,32 @@ A library of GUI controls for reuse throughout GSAS-II
 '''
 import os
 import sys
-import wx
-import wx.grid as wg
-# import wx.wizard as wz
-import wx.aui
-import wx.lib.scrolledpanel as wxscroll
-import matplotlib as mpl
+try:
+    import wx
+    import wx.grid as wg
+    # import wx.wizard as wz
+    import wx.aui
+    import wx.lib.scrolledpanel as wxscroll
+    import wx.html        # could postpone this for quicker startup
+    import matplotlib as mpl
+except ImportError:
+    raise
+    # Dumm 'wx' so this file can be imported
+    vals = ('TreeCtrl TextCtrl PyValidator Button ComboBox Choice CheckBox'.split() +
+            'Dialog ID_ANY OPEN'.split())
+    class Placeholder(object):
+        def __init__(self, vals):
+            for val in vals:
+                setattr(self, val, object)
+        def __getattr__(self, value):
+            if value[0].isupper():
+                return object
+            return Placeholder([])
+    wx = Placeholder(vals)
+    wxscroll = Placeholder(['ScrolledPanel'])
+    wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
 import time
 import copy
-import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 
 import GSASIIpath
@@ -38,8 +55,13 @@ import GSASIIobj as G2obj
 # Define a short names for convenience
 WHITE = (255,255,255)
 DULL_YELLOW = (230,230,190)
-VERY_LIGHT_GREY = wx.Colour(235,235,235)
-WACV = wx.ALIGN_CENTER_VERTICAL
+# Don't depend on wx, for scriptable
+try:
+    VERY_LIGHT_GREY = wx.Colour(235,235,235)
+    WACV = wx.ALIGN_CENTER_VERTICAL
+except:
+    # Don't depend on GUI
+    pass
 
 ################################################################################
 #### Fixed definitions for wx Ids 

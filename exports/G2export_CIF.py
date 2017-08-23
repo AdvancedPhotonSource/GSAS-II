@@ -993,7 +993,20 @@ class ExportCIF(G2IO.ExportBaseclass):
                     generalData['DisAglCtls'],
                     DisAglData)
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
-                print('**** ERROR - try again but do "Reset" to fill in missing atom types ****')
+                print(u'**** ERROR computing distances & angles for phase {} ****\nresetting to default values'.format(phasenam))
+                data = generalData['DisAglCtls'] = {}
+                data['Name'] = generalData['Name']
+                data['Factors'] = [0.85,0.85]
+                data['AtomTypes'] = generalData['AtomTypes']
+                data['BondRadii'] = generalData['BondRadii'][:]
+                data['AngleRadii'] = generalData['AngleRadii'][:]
+                try:
+                    AtomLabels,DistArray,AngArray = G2stMn.RetDistAngle(
+                        generalData['DisAglCtls'],
+                        DisAglData)
+                except:
+                    print('Reset failed. To fix this, use the Reset button in the "edit distance/angle menu" for this phase')
+                    return
 
             # loop over interatomic distances for this phase
             WriteCIFitem(self.fp, '\n# MOLECULAR GEOMETRY')

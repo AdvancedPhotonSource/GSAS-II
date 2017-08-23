@@ -2939,7 +2939,7 @@ class DisAglDialog(wx.Dialog):
         'Called when the Reset button is pressed'
         data = {}
         self._default(data,self.default)
-        self.Draw(self.data)
+        wx.CallAfter(self.Draw,self.data)
                 
 ################################################################################
 class ShowLSParms(wx.Dialog):

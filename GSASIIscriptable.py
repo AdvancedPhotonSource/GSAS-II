@@ -693,6 +693,7 @@ class G2Project(G2ObjectWrapper):
             # TODO set author, filename
             self.filename = os.path.abspath(os.path.expanduser(gpxfile))
             self.data, self.names = LoadDictFromProjFile(gpxfile)
+            self.update_ids()
             self.index_ids()
         else:
             raise ValueError("Not sure what to do with gpxfile")
@@ -757,6 +758,7 @@ class G2Project(G2ObjectWrapper):
             else:
                 self.names.append(new_names)
         self.data[histname] = pwdrdata
+        self.update_ids()
         return self.histogram(histname)
 
     def add_phase(self, phasefile, phasename=None, histograms=[]):
@@ -810,21 +812,22 @@ class G2Project(G2ObjectWrapper):
             SuperVec = []
         UseList = data['Histograms']
 
-        for histname in histograms:
-            if histname.startswith('HKLF '):
-                raise NotImplementedError("Does not support HKLF yet")
-            elif histname.startswith('PWDR '):
-                hist = self.histogram(histname)
-                hist['Reflection Lists'][generalData['Name']] = {}
-                UseList[histname] = SetDefaultDData('PWDR', histname, NShkl=NShkl, NDij=NDij)
-                for key, val in [('Use', True), ('LeBail', False),
-                                 ('newLeBail', True),
-                                 ('Babinet', {'BabA': [0.0, False],
-                                              'BabU': [0.0, False]})]:
-                    if key not in UseList[histname]:
-                        UseList[histname][key] = val
-            else:
-                raise NotImplementedError("Unexpected histogram" + histname)
+        for hist in histograms:
+            self.link_histogram_phase(hist, phasename)
+            # if histname.startswith('HKLF '):
+            #     raise NotImplementedError("Does not support HKLF yet")
+            # elif histname.startswith('PWDR '):
+            #     hist = self.histogram(histname)
+            #     hist['Reflection Lists'][generalData['Name']] = {}
+            #     UseList[histname] = SetDefaultDData('PWDR', histname, NShkl=NShkl, NDij=NDij)
+            #     for key, val in [('Use', True), ('LeBail', False),
+            #                      ('newLeBail', True),
+            #                      ('Babinet', {'BabA': [0.0, False],
+            #                                   'BabU': [0.0, False]})]:
+            #         if key not in UseList[histname]:
+            #             UseList[histname][key] = val
+            # else:
+            #     raise NotImplementedError("Unexpected histogram" + histname)
 
         for obj in self.names:
             if obj[0] == 'Phases':
@@ -839,7 +842,40 @@ class G2Project(G2ObjectWrapper):
         SetupGeneral(data, os.path.dirname(phasefile))
         self.index_ids()
 
+        self.update_ids()
         return self.phase(phasename)
+
+    def link_histogram_phase(self, histogram, phase):
+        """Associates a given histogram and phase.
+
+        .. seealso::
+
+            :func:`~G2Project.histogram`
+            :func:`~G2Project.phase`"""
+        hist = self.histogram(histogram)
+        phase = self.phase(phase)
+
+        generalData = phase['General']
+
+        if hist.name.startswith('HKLF '):
+            raise NotImplementedError("HKLF not yet supported")
+        elif hist.name.startswith('PWDR '):
+            hist['Reflection Lists'][generalData['Name']] = {}
+            UseList = phase['Histograms']
+            SGData = generalData['SGData']
+            NShkl = len(G2spc.MustrainNames(SGData))
+            NDij = len(G2spc.HStrainNames(SGData))
+            UseList[hist.name] = SetDefaultDData('PWDR', hist.name, NShkl=NShkl, NDij=NDij)
+            UseList[hist.name]['hId'] = hist.id
+            for key, val in [('Use', True), ('LeBail', False),
+                             ('newLeBail', True),
+                             ('Babinet', {'BabA': [0.0, False],
+                                          'BabU': [0.0, False]})]:
+                if key not in UseList[hist.name]:
+                    UseList[hist.name][key] = val
+        else:
+            raise RuntimeError("Unexpected histogram" + hist.name)
+
 
     def reload(self):
         """Reload self from self.filename"""
@@ -934,6 +970,15 @@ class G2Project(G2ObjectWrapper):
             if obj[0] == 'Phases':
                 return [self.phase(p) for p in obj[1:]]
         return []
+
+    def update_ids(self):
+        """Makes sure all phases and histograms have proper hId and pId"""
+        # Translated from GetUsedHistogramsAndPhasesfromTree,
+        #   GSASIIdataGUI.py:4107
+        for i, h in enumerate(self.histograms()):
+            h.id = i
+        for i, p in enumerate(self.phases()):
+            p.id = i
 
     def do_refinements(self, refinements, histogram='all', phase='all',
                        outputnames=None, makeBack=False):
@@ -1267,7 +1312,12 @@ class G2PwdrData(G2ObjectWrapper):
 
     @property
     def id(self):
+        self.proj.update_ids()
         return self.data['data'][0]['hId']
+
+    @id.setter
+    def id(self, val):
+        self.data['data'][0]['hId'] = val
 
     def fit_fixed_points(self):
         """Attempts to apply a background fit to the fixed points currently specified."""
@@ -1526,6 +1576,10 @@ class G2Phase(G2ObjectWrapper):
     @property
     def id(self):
         return self.data['pId']
+
+    @id.setter
+    def id(self, val):
+        self.data['pId'] = val
 
     def get_cell(self):
         """Returns a dictionary of the cell parameters, with keys:

@@ -473,8 +473,12 @@ def DownloadG2Binaries(g2home,verbose=True):
         print('**** unable to load files: svn not found ****')
         return ''
     # get binaries matching the required type -- other than for the numpy version
-    cmd = [svn, 'list', g2home + '/Binaries/']
+    cmd = [svn, 'list', g2home + '/Binaries/','--non-interactive', '--trust-server-cert']
     if proxycmds: cmd += proxycmds
+    if verbose:
+        print('Running svn command')
+        for item in cmd: print item,
+        print ""
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     res,err = p.communicate()
     versions = {}

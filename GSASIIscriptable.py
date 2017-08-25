@@ -377,15 +377,6 @@ def SetupGeneral(data, dirname):
     generalData['Mass'] = G2mth.getMass(generalData)
 
 
-############################################
-############ CIF export helpers ############
-############################################
-## These functions are translated from
-## exports/G2export_CIF.py
-## They are used in G2Phase.export_CIF
-
-
-
 def make_empty_project(author=None, filename=None):
     """Creates an dictionary in the style of GSASIIscriptable, for an empty
     project.
@@ -1284,6 +1275,14 @@ class G2AtomRecord(G2ObjectWrapper):
         else:
             return self.data[self.cia+2:self.cia+8]
 
+    @uiso.setter
+    def uiso(self, value):
+        if self.adp_flag == 'I':
+            self.data[self.cia+1] = float(value)
+        else:
+            assert len(value) == 6
+            self.data[self.cia+2:self.cia+8] = [float(v) for v in value]
+
 
 class G2PwdrData(G2ObjectWrapper):
     """Wraps a Powder Data Histogram."""
@@ -1708,7 +1707,7 @@ class G2Phase(G2ObjectWrapper):
                 cif.WriteAtomsNuclear(fp, self.data, self.name, parmDict, sigDict, [])
                 # self._WriteAtomsNuclear(fp, parmDict, sigDict)
             else:
-                raise Exception,"no export for "+str(self.data['General']['Type'])+" coordinates implemented"
+                raise Exception("no export for "+str(self.data['General']['Type'])+" coordinates implemented")
             # report cell contents
             cif.WriteComposition(fp, self.data, self.name, parmDict)
             if not quickmode and self.data['General']['Type'] == 'nuclear':      # report distances and angles
@@ -1906,6 +1905,10 @@ class G2Phase(G2ObjectWrapper):
 ##########################
 # Command Line Interface #
 ##########################
+# Each of these takes an argparse.Namespace object as their argument,
+# representing the parsed command-line arguments for the relevant subcommand.
+# The argument specification for each is in the subcommands dictionary (see
+# below)
 
 
 def create(args):

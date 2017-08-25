@@ -26,14 +26,28 @@ import numpy as np
 import cPickle
 import copy
 import re
-import wx
-import wx.lib.scrolledpanel as wxscroll
-import wx.lib.resizewidget as rw
+try:
+    import wx
+    import wx.lib.scrolledpanel as wxscroll
+    import wx.lib.resizewidget as rw
+except ImportError:
+    # Avoid wx dependency for CLI
+    class Placeholder(object):
+        def __init__(self):
+            self.BoxSizer = object
+            self.Button = object
+            self.Dialog = object
+            self.ScrolledPanel = object
+    wx = Placeholder()
+    wxscroll = Placeholder()
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIdataGUI as G2gd
-import GSASIIctrlGUI as G2G
+try:
+    import GSASIIdataGUI as G2gd
+    import GSASIIctrlGUI as G2G
+except ImportError:
+    pass
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn

@@ -1364,16 +1364,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
+            if G2frame.Contour:
+                G2frame.plotStyle['qPlot'] = False
+                G2frame.plotStyle['dPlot'] = False
         elif event.key == 'q': 
             if 'PWDR' in plottype:
                 newPlot = True
                 G2frame.plotStyle['qPlot'] = not G2frame.plotStyle['qPlot']
+                if G2frame.plotStyle['qPlot']:
+                    G2frame.Contour = False
                 G2frame.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
                 newPlot = True
                 G2frame.plotStyle['sqPlot'] = not G2frame.plotStyle['sqPlot']
         elif event.key == 't' and 'PWDR' in plottype:
             G2frame.plotStyle['dPlot'] = not G2frame.plotStyle['dPlot']
+            if G2frame.plotStyle['dPlot']:
+                G2frame.Contour = False                
             G2frame.plotStyle['qPlot'] = False
             newPlot = True      
         elif event.key == 'm':

@@ -3290,10 +3290,20 @@ entered the right symbol for your structure.
         G2G.G2MessageBox(G2frame,msg,'Density')
         
     def OnValidProtein(event):
-        resNames,Probs = G2mth.validProtein(data)
-        G2plt.PlotAAProb(G2frame,resNames,Probs,Title='Error score for %s'%(data['General']['Name']),
-            thresh=[8.0,6.0])
-#            thresh=[17.190823041860433,11.526684477428809])
+        old = GSASIIpath.GetConfigValue('Old protein validator',True)
+        resNames,Probs = G2mth.validProtein(data,old)
+        if old:             #duplicate errat.f  
+            print 'Protein validation based on errat.f'
+            print 'Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).'
+            print 'Residue error scores >6 for 5% & >8 for 1% likelihood of being correct'
+            G2plt.PlotAAProb(G2frame,resNames,Probs,Title='Error score for %s'%(data['General']['Name']),
+                thresh=[8.0,6.0])
+        else:
+            print 'Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates'
+            print 'Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).'
+            print 'Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct'
+            G2plt.PlotAAProb(G2frame,resNames,Probs,Title='Error score for %s'%(data['General']['Name']),
+                thresh=[17.191,11.527])
 
     def OnSetAll(event):
         'set refinement flags for all atoms in table'

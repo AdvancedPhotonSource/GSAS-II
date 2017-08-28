@@ -2564,7 +2564,7 @@ def ValEsd(value,esd=0,nTZ=False):
 ##### Protein validation - "ERRATV2" analysis
 ###############################################################################
 
-def validProtein(Phase):
+def validProtein(Phase,old):
     
     def sumintact(intact):
         return {'CC':intact['CC'],'NN':intact['NN'],'OO':intact['OO'],
@@ -2573,7 +2573,6 @@ def validProtein(Phase):
         
     resNames = ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
         'LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','MSE']
-    old = True          #use errat version 1 math
 # data from errat.f
     b1_old = np.array([ 
         [1154.343,  600.213, 1051.018, 1132.885,  960.738],
@@ -2659,7 +2658,7 @@ def validProtein(Phase):
             if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
         tgts = list(set(tgts))
-        tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) <= dsmax]
+        tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) < dsmax]
         tgts = [tgt for tgt in tgts if atom[:3] != cartAtoms[tgt][:3]]    #exclude same residue
         ires = int(atom[0])
         if atom[3].strip() == 'C':

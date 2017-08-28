@@ -3292,7 +3292,8 @@ entered the right symbol for your structure.
     def OnValidProtein(event):
         resNames,Probs = G2mth.validProtein(data)
         G2plt.PlotAAProb(G2frame,resNames,Probs,Title='Error score for %s'%(data['General']['Name']),
-            thresh=[17.190823041860433,11.526684477428809])
+            thresh=[8.0,6.0])
+#            thresh=[17.190823041860433,11.526684477428809])
 
     def OnSetAll(event):
         'set refinement flags for all atoms in table'

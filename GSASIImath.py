@@ -2598,15 +2598,18 @@ def validProtein(Phase):
     cartAtoms = []
     xyzmin = 999.*np.ones(3)
     xyzmax = -999.*np.ones(3)
-    #select residue atoms, skipping main chain C & N; make cartesian
+    #select residue atoms,S,Se --> O make cartesian
     for atom in Atoms:
         if atom[1] in resNames:
             if atom[4].strip() in ['S','Se']:
+                atom[3] = 'Os'
                 atom[4] = 'O'
-#            if atom[3].strip() in ['C','N']:    #skip main chain C & N atoms
-#                continue
             cartAtoms.append(atom[:cx+3])
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
+            if atom[3] in ['N','CA','C','O']:
+                cartAtoms[-1].append('B')
+            else:
+                cartAtoms[-1].append('S')
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
     xyzmax = np.array([np.max(XYZ.T[i]) for i in [0,1,2]])
@@ -2643,7 +2646,6 @@ def validProtein(Phase):
                 intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
                 newChain = True
         if atom[0] not in res:  #new residue, get residue no.
-            if len(res): print res[-1],resname[-1],intact
             res.append(atom[0])
             resname.append('%s-%s%s'%(atom[2],atom[0],atom[1]))
             if not newChain:
@@ -2657,12 +2659,15 @@ def validProtein(Phase):
             if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
         tgts = list(set(tgts))
-        tgts = [tgt for tgt in tgts if atom[1:3] != cartAtoms[tgt][1:3]]    #exclude same residue
-        if atom[3].strip() in ['C',]:
-            tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['N',]]  #exclude main chain C-N
-        if atom[3].strip() in ['N',]:
-            tgts = [tgt for tgt in tgts if cartAtoms[tgt][3].strip() not in ['C',]]  #exclude main chain N-C
         tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) <= dsmax]
+        tgts = [tgt for tgt in tgts if atom[:3] != cartAtoms[tgt][:3]]    #exclude same residue
+        ires = int(atom[0])
+        if atom[3].strip() == 'C':
+            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+        elif atom[3].strip() == 'N':
+            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() in ['C','CA'] and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+        elif atom[3].strip() == 'CA':
+            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
         for tgt in tgts:
             dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
             mult = 1.0
@@ -2679,7 +2684,6 @@ def validProtein(Phase):
         nRes = len(IntAct)
         Probs = [0.,0.,0.,0.]
         for i in range(4,nRes-4):
-            print i,IntAct[i]
             mtrx = np.zeros(5)
             summ = 0.
             for j in range(i-4,i+5):
@@ -2696,8 +2700,6 @@ def validProtein(Phase):
                     mtrx[2] += IntAct[j]['CO']
                     mtrx[3] += IntAct[j]['NN']
                     mtrx[4] += IntAct[j]['NO']
-            print mtrx,np.sum(mtrx)
-            print summ
             mtrx /= summ
             if old:
                 mtrx -= avg_old
@@ -2705,7 +2707,6 @@ def validProtein(Phase):
             else:
                 mtrx -= avg
                 prob = np.inner(np.inner(mtrx,b1),mtrx)
-            print i, mtrx
             Probs.append(prob)
         Probs += 4*[0.,]
         chainProb += Probs

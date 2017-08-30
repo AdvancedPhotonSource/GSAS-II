@@ -158,3 +158,8 @@ than zero (default) causes the recommended number of cores [using multiprocessin
 to be used. Setting this number to 0 or 1 avoids use of the multiprocessing module: all
 computations are performed in-line. 
 '''
+
+Old_protein_validator = True
+''' When True (default) select the old protein validator of Colovos & Yeates (errat) or
+if False use that (erratv2) of Obukhov & Yeates.
+'''

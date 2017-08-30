@@ -3290,7 +3290,7 @@ entered the right symbol for your structure.
         G2G.G2MessageBox(G2frame,msg,'Density')
         
     def OnValidProtein(event):
-        old = GSASIIpath.GetConfigValue('Old protein validator',True)
+        old = GSASIIpath.GetConfigValue('Old_protein_validator',True)
         resNames,Probs = G2mth.validProtein(data,old)
         if old:             #duplicate errat.f  
             print 'Protein validation based on errat.f'

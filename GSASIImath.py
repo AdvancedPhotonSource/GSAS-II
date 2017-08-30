@@ -2601,14 +2601,12 @@ def validProtein(Phase,old):
     for atom in Atoms:
         if atom[1] in resNames:
             if atom[4].strip() in ['S','Se']:
+                if not old:
+                    continue        #S,Se skipped for erratv2?
                 atom[3] = 'Os'
                 atom[4] = 'O'
             cartAtoms.append(atom[:cx+3])
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
-            if atom[3] in ['N','CA','C','O']:
-                cartAtoms[-1].append('B')
-            else:
-                cartAtoms[-1].append('S')
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
     xyzmax = np.array([np.max(XYZ.T[i]) for i in [0,1,2]])
@@ -2661,12 +2659,18 @@ def validProtein(Phase,old):
         tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) < dsmax]
         tgts = [tgt for tgt in tgts if atom[:3] != cartAtoms[tgt][:3]]    #exclude same residue
         ires = int(atom[0])
-        if atom[3].strip() == 'C':
-            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
-        elif atom[3].strip() == 'N':
-            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() in ['C','CA'] and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
-        elif atom[3].strip() == 'CA':
-            tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+        if old:
+            if atom[3].strip() == 'C':
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+            elif atom[3].strip() == 'N':
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() in ['C','CA'] and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+            elif atom[3].strip() == 'CA':
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
+        else:
+            if atom[3].strip() == 'C':
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) == ires+1)]
+            elif atom[3].strip() == 'N':
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'C' and int(cartAtoms[tgt][0]) == ires-1)]
         for tgt in tgts:
             dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
             mult = 1.0

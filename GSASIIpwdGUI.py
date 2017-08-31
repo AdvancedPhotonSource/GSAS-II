@@ -2415,7 +2415,7 @@ def UpdateSampleGrid(G2frame,data):
         elemKeysLst.append([key])
         refFlgElem.append(None)
         
-    mainSizer.Add(parmSizer,1,wx.EXPAND)
+    mainSizer.Add(parmSizer,0)
     mainSizer.Add((0,5),0)    
     if histName[:4] in ['SASD',]:
         rho = [0.,0.]

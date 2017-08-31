@@ -6790,7 +6790,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     SetDataMenuBar(G2frame,G2frame.dataWindow.SequentialMenu)
     #G2frame.dataWindow.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sequential refinement results')
     G2frame.SetTitle('Sequential refinement results')
-    G2frame.GetStatusBar().SetStatusText('',1)
     G2frame.Bind(wx.EVT_MENU, OnSelectUse, id=G2G.wxID_SELECTUSE)
     G2frame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=G2G.wxID_RENAMESEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=G2G.wxID_SAVESEQSEL)

@@ -2321,9 +2321,7 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Save log')
         def OnSaveLog(event):
             import cPickle
-            defnam = os.path.splitext(
-                os.path.split(self.GSASprojectfile)[1]
-                )[0]+u'.gcmd'
+            defnam = os.path.splitext(os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
             dlg = wx.FileDialog(self,
                 'Choose an file to save past actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
@@ -2333,7 +2331,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     filename = dlg.GetPath()
                     # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+u'.gcmd'
+                    filename = os.path.splitext(filename)[0]+'.gcmd'
                 else:
                     filename = None
             finally:
@@ -2353,8 +2351,7 @@ class GSASII(wx.Frame):
             # this appends. Perhaps we should ask to clear? 
             import cPickle
             defnam = os.path.splitext(
-                os.path.split(self.GSASprojectfile)[1]
-                )[0]+u'.gcmd'
+                os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
             dlg = wx.FileDialog(self,
                 'Choose an file to read saved actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
@@ -2364,7 +2361,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     filename = dlg.GetPath()
                     # make sure extension is correct
-                    filename = os.path.splitext(filename)[0]+u'.gcmd'
+                    filename = os.path.splitext(filename)[0]+'.gcmd'
                 else:
                     filename = None
             finally:
@@ -2767,7 +2764,7 @@ class GSASII(wx.Frame):
                 
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
-            self.GSASprojectfile = os.path.splitext(arg[1])[0]+u'.gpx'
+            self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.abspath(os.path.dirname(arg[1]))
             if self.dirname: os.chdir(self.dirname)
             try:
@@ -3609,7 +3606,7 @@ class GSASII(wx.Frame):
         if not filename:
             GetGPX()
         else:
-            self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
+            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
         try:

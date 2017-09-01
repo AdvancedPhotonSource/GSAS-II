@@ -1932,7 +1932,8 @@ def UpdateStressStrain(G2frame,data):
         
     def OnFitAllStrSta(event):
         choices = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
-        dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
+        od = {'label_1':'Copy to next','value_1':False,'label_2':'Reverse order','value_2':False}
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices,extraOpts=od)
         names = []
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
@@ -1950,24 +1951,15 @@ def UpdateStressStrain(G2frame,data):
         dlg.Destroy()
         if not names:
             return
-        Reverse = False
-        CopyForward = False
-        choice = ['Reverse sequence','Copy from prev.',]
-        dlg = wx.MultiChoiceDialog(G2frame,'Sequential controls','Select controls',choice)
-        if dlg.ShowModal() == wx.ID_OK:
-            for sel in dlg.GetSelections():
-                if sel:
-                    CopyForward = True
-                else:
-                    Reverse = True
-        dlg.Destroy()
         dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
         wx.BeginBusyCursor()
         goodnames = []
-        if Reverse:
+        if od['value_2']:
             names.reverse()
         try:
+            varyList = []
+            variables = []
             for i,name in enumerate(names):
                 print ' Sequential strain fit for ',name
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
@@ -1983,11 +1975,11 @@ def UpdateStressStrain(G2frame,data):
                 Npix,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(sId)
                 image = GetImageZ(G2frame,Controls)
                 sig = []
+                if i and od['value_1']:
+                    for j,ring in enumerate(StaCtrls['d-zero']):
+                        ring['Emat'] = copy.copy(variables[4*j:4*j+3])
                 varyList = []
                 variables = []
-                if i and CopyForward:
-                    for j,ring in enumerate(StaCtrls['d-zero']):
-                        ring['Emat'] = variables[4*j:4*j+3]
                 #get results from previous & put in StaCtrls
                 G2img.FitStrSta(image,StaCtrls,Controls)
                 G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)

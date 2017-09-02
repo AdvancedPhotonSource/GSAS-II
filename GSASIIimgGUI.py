@@ -2041,43 +2041,8 @@ def UpdateStressStrain(G2frame,data):
 
         return samSizer
         
-    def DzeroSizer():       #TODO replace with a GSTable
-    
-#        def OnDzero(invalid,value,tc):
-#            data['d-zero'] = G2mth.sortArray(data['d-zero'],'Dset',reverse=True)
-#            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[tc.GetId()]],G2frame.ImageZ,Controls)
-#            if len(Ring):
-#                data['d-zero'][Indx[tc.GetId()]].update(R)
-#            else:
-#                G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
-#                
-#            wx.CallAfter(UpdateStressStrain,G2frame,data)
-#            G2plt.PlotExposedImage(G2frame,event=tc.event,newPlot=False)
-#            G2plt.PlotStrain(G2frame,data,newPlot=True)
-#            
-#        def OnDeleteDzero(event):
-#            Obj = event.GetEventObject()
-#            del(data['d-zero'][delIndx.index(Obj)])
-#            UpdateStressStrain(G2frame,data)
-#            G2plt.PlotExposedImage(G2frame,event=event,newPlot=True)
-#            G2plt.PlotStrain(G2frame,data,newPlot=True)
-#        
-#        def OnCutOff(invalid,value,tc):
-#            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[tc.GetId()]],G2frame.ImageZ,Controls)
-#            G2plt.PlotExposedImage(G2frame,event=tc.event)
-#            G2plt.PlotStrain(G2frame,data,newPlot=True)
-#        
-#        def OnPixLimit(event):
-#            Obj = event.GetEventObject()
-#            data['d-zero'][Indx[Obj.GetId()]]['pixLimit'] = int(Obj.GetValue())
-#            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
-#            G2plt.PlotExposedImage(G2frame,event=event)
-#            G2plt.PlotStrain(G2frame,data,newPlot=True)
-#            
-#        def OnFixDset(event):
-#            Obj = event.GetEventObject()
-#            data['d-zero'][Indx[Obj.GetId()]]['fixDset'] = Obj.GetValue()
-            
+    def DzeroSizer():
+                
         def OnStrainChange(event):
             print event
             r,c = event.GetRow(),event.GetCol()
@@ -2113,16 +2078,12 @@ def UpdateStressStrain(G2frame,data):
                         for row in range(StrainGrid.GetNumberRows()): data['d-zero'][row]['fixDset']=False
                 wx.CallAfter(UpdateStressStrain,G2frame,data)
             
-            
-#        Indx = {}
-#        delIndx = []
-        
         colTypes = [wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,1',
-            wg.GRID_VALUE_CHOICE+':1,2,5,10,15,20',]+3*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_BOOL,]
-        colIds = ['d-zero','Poisson\n mean?','d-zero ave','I/Ib','nPix','e11','e12','e22','Delete?']
+            wg.GRID_VALUE_CHOICE+':1,2,5,10,15,20',]+3*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_BOOL,]+2*[wg.GRID_VALUE_FLOAT+':10,2',]
+        colIds = ['d-zero','Poisson\n mean?','d-zero ave','I/Ib','nPix','e11','e12','e22','Delete?','h-mustrain','Ivar']
         rowIds = [str(i) for i in range(len(data['d-zero']))]
         table = [[item['Dset'],item.get('fixDset',False),item['Dcalc'],item['cutoff'],item['pixLimit'],  
-            item['Emat'][0],item['Emat'][1],item['Emat'][2],False] for item in data['d-zero']]
+            item['Emat'][0],item['Emat'][1],item['Emat'][2],False,1.e6*(item['Dcalc']/item['Dset']-1.),item['Ivar']] for item in data['d-zero']]
         StrainTable = G2G.Table(table,rowLabels=rowIds,colLabels=colIds,types=colTypes)
         StrainGrid = G2G.GSGrid(G2frame.dataWindow)
         StrainGrid.SetTable(StrainTable,True)
@@ -2132,53 +2093,11 @@ def UpdateStressStrain(G2frame,data):
             StrainGrid.SetCellStyle(r,5,VERY_LIGHT_GREY,True)
             StrainGrid.SetCellStyle(r,6,VERY_LIGHT_GREY,True)
             StrainGrid.SetCellStyle(r,7,VERY_LIGHT_GREY,True)
+            StrainGrid.SetCellStyle(r,9,VERY_LIGHT_GREY,True)
+            StrainGrid.SetCellStyle(r,10,VERY_LIGHT_GREY,True)
         StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnStrainChange)
         StrainGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnSetCol)
-        
-        
         return StrainGrid
-        
-#        dzeroSizer = wx.FlexGridSizer(0,8,5,5)
-#        for id,dzero in enumerate(data['d-zero']):
-#            dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=(' d-zero #%d: '%(id))),0,WACV)
-#            dZero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['d-zero'][id],'Dset',
-#                min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=OnDzero)
-#            dzeroSizer.Add(dZero,0,WACV)
-#            Indx[dZero.GetId()] = id
-#            dfix = wx.CheckBox(G2frame.dataWindow,label='Use Poisson mean?')
-#            dfix.SetValue(dzero.get('fixDset',False))
-#            dfix.Bind(wx.EVT_CHECKBOX,OnFixDset)
-#            Indx[dfix.GetId()] = id
-#            dzeroSizer.Add(dfix,0,WACV)
-#            dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),0,WACV)
-#                
-#            dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Min ring I/Ib '),0,WACV)
-#            cutOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['d-zero'][id],'cutoff',
-#                    min=0.5,max=20.,nDig=(10,1),typeHint=float,OnLeave=OnCutOff)
-#            Indx[cutOff.GetId()] = id
-#            dzeroSizer.Add(cutOff,0,WACV)
-#        
-#            dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pixel search range '),0,WACV)
-#            pixLimit = wx.ComboBox(parent=G2frame.dataWindow,value=str(dzero['pixLimit']),choices=['1','2','5','10','15','20'],
-#                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-#            pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
-#            Indx[pixLimit.GetId()] = id
-#            dzeroSizer.Add(pixLimit,0,WACV)                
-#                
-#            dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=(' Strain tensor:')),WACV)
-#            names = ['e11','e12','e22']
-#            for i in range(3):
-#                dzeroSizer.Add(wx.StaticText(G2frame.dataWindow,-1,label=names[i]),0,WACV)
-#                tensorElem = wx.TextCtrl(G2frame.dataWindow,-1,value='%.2f'%(dzero['Emat'][i]),style=wx.TE_READONLY)
-#                tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
-#                dzeroSizer.Add(tensorElem,0,WACV)
-#            dzeroDelete = wx.CheckBox(parent=G2frame.dataWindow,label='delete?')
-#            dzeroDelete.Bind(wx.EVT_CHECKBOX,OnDeleteDzero)
-#            delIndx.append(dzeroDelete)
-#            dzeroSizer.Add(dzeroDelete,0,WACV)
-#            
-#        return dzeroSizer
-        
 # patches
     if 'Sample load' not in data:
         data['Sample load'] = 0.0

@@ -6444,7 +6444,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         GL.glTranslate(x,y,z)
         GL.glMultMatrixf(B4mat.T)
         GL.glDisable(GL.GL_LIGHTING)
-        GL.glWindowPos3f(0,0,0)
+#        GL.glWindowPos3f(0,0,0)
         GL.glMultMatrixf(matRot)
         GL.glRotate(180,1,0,0)             #fix to flip about x-axis
         text = gltext.Text(text=label,font=Font,foreground=color)

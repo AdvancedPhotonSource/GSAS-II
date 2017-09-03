@@ -2711,6 +2711,7 @@ def validProtein(Phase,old):
                 mtrx -= avg
                 prob = np.inner(np.inner(mtrx,b1),mtrx)
             Probs.append(prob)
+            print i,prob
         Probs += 4*[0.,]
         chainProb += Probs
     return resNames,chainProb
@@ -4061,6 +4062,25 @@ def anneal(func, x0, args=(), schedule='fast',
            feps=1e-6, quench=1.0, c=1.0,
            lower=-100, upper=100, dwell=50, slope=0.9,ranStart=False,
            ranRange=0.10,autoRan=False,dlg=None):
+''' Scipy license:
+    Copyright (c) 2001, 2002 Enthought, Inc.
+All rights reserved.
+
+Copyright (c) 2003-2016 SciPy Developers.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  a. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+  b. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+  c. Neither the name of Enthought nor the names of the SciPy Developers
+     may be used to endorse or promote products derived from this software
+     without specific prior written permission.
+'''
     """Minimize a function using simulated annealing.
 
     Schedule is a schedule class implementing the annealing schedule.
@@ -4539,7 +4559,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         nsum += 1
         return np.sqrt(M/np.sum(refList[4]**2))
     
-    def MCSAcallback(x, f, fmin,accept):
+    def MCSAcallback(x, f,accept):
+        fmin = min(f)
         return not pgbar.Update(min(100.,fmin*100),
             newmsg='%s%8.4f%s'%('MC/SA Residual:',fmin*100,'%'))[0]
 
@@ -4678,9 +4699,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     ifInv = SGData['SGInv']
     bounds = np.array(zip(lower,upper))
     if MCSA['Algorithm'] == 'Basin Hopping':
-        import basinhopping as bs
+#        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
-        results = bs.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
+        results = so.basinhopping(mcsaCalc,x0,take_step=take_step,disp=True,T=MCSA['Annealing'][0],
                 interval=MCSA['Annealing'][2]/10,niter=MCSA['Annealing'][2],minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
                 'args':(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)},callback=MCSAcallback)
     else:

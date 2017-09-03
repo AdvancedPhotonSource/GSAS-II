@@ -4561,9 +4561,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
         return np.sqrt(M/np.sum(refList[4]**2))
     
     def MCSAcallback(x, f,accept):
-        fmin = min(f)
-        return not pgbar.Update(min(100.,fmin*100),
-            newmsg='%s%8.4f%s'%('MC/SA Residual:',fmin*100,'%'))[0]
+        return not pgbar.Update(min(100.,f*100),
+            newmsg='%s%8.4f%s'%('MC/SA Residual:',f*100,'%'))[0]
 
     sq2pi = np.sqrt(2*np.pi)
     sq4pi = np.sqrt(4*np.pi)

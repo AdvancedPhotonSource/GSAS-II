@@ -2764,7 +2764,10 @@ class GSASII(wx.Frame):
                 
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
-            self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
+            try:
+                self.GSASprojectfile = os.path.splitext(arg[1])[0]+u'.gpx'
+            except:
+                self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.abspath(os.path.dirname(arg[1]))
             if self.dirname: os.chdir(self.dirname)
             try:
@@ -3606,7 +3609,10 @@ class GSASII(wx.Frame):
         if not filename:
             GetGPX()
         else:
-            self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
+            try:
+                self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
+            except:
+                self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
         try:

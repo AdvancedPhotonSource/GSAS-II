@@ -770,4 +770,5 @@ def main():
     print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
 
 if __name__ == '__main__':
+    GSASIIpath.InvokeDebugOpts()
     main()

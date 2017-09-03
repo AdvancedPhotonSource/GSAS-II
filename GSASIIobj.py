@@ -2706,6 +2706,52 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
     return Id
 
+class ShowTiming(object):
+    '''An object to use for timing repeated sections of code.
+
+    Create the object with::
+       tim0 = ShowTiming()
+
+    Tag sections of code to be timed with::
+       tim0.start('start')
+       tim0.start('in section 1')
+       tim0.start('in section 2')
+    etc. (Note that each section should have a unique label.)
+
+    After the last section, end timing with::
+       tim0.end()
+
+    Show timing results with::
+       tim0.show()
+       
+    '''
+    def __init__(self):
+        self.timeSum =  []
+        self.timeStart = []
+        self.label = []
+        self.prev = None
+    def start(self,label):
+        if label in self.label:
+            i = self.label.index(label)
+            self.timeStart[i] = time.time()
+        else:
+            i = len(self.label)
+            self.timeSum.append(0.0)
+            self.timeStart.append(time.time())
+            self.label.append(label)
+        if self.prev is not None:
+            self.timeSum[self.prev] += self.timeStart[i] - self.timeStart[self.prev]
+        self.prev = i
+    def end(self):
+        if self.prev is not None:
+            self.timeSum[self.prev] += time.time() - self.timeStart[self.prev]
+        self.prev = None
+    def show(self):
+        sumT = sum(self.timeSum)
+        print('Timing results (total={:.2f} sec)'.format(sumT))
+        for i,(lbl,val) in enumerate(zip(self.label,self.timeSum)):
+            print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
+
 
 if __name__ == "__main__":
     # test equation evaluation

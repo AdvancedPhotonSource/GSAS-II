@@ -152,9 +152,9 @@ Contour_color = 'Paired'
 ''' Specifies the color map to be used for contour plots (images, pole figures, etc.)
 '''
 
-Multiprocessing_cores = -1
+Multiprocessing_cores = 0
 ''' Specifies the number of cores to use when performing multicore computing. A number less
-than zero (default) causes the recommended number of cores [using multiprocessing.cpu_count()]
+than zero causes the recommended number of cores [using multiprocessing.cpu_count()/2]
 to be used. Setting this number to 0 or 1 avoids use of the multiprocessing module: all
 computations are performed in-line. 
 '''

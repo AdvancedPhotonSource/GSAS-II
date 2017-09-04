@@ -3150,7 +3150,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ################################################################################
 ##### PlotHist
 ################################################################################
-def PlotAAProb(G2frame,resNames,Probs,Title='',thresh=None,newPlot=True):
+def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,newPlot=True):
 
 
     global xylim
@@ -3169,25 +3169,24 @@ def PlotAAProb(G2frame,resNames,Probs,Title='',thresh=None,newPlot=True):
         global xylim
         Plot.clear()
         Plot.set_title(Title)
-        Plot.set_xlabel(r'Error score',fontsize=14)
-        Plot.set_ylabel(r'Residue',fontsize=14)
-        try:
-            Plot.barh(np.arange(len(resNames)),Probs,tick_label=resNames,)
-        except AttributeError:  #tick_label not in mpl 1.4
-            Plot.barh(np.arange(len(resNames)),Probs)
+        Plot.set_axis_off()
+        Plot1 = Page.figure.add_subplot(211)
+        Plot1.set_xlabel(r'Error score 1',fontsize=14)
+        Plot1.set_ylabel(r'Residue',fontsize=14)
+        colors = list(np.where(np.array(Probs1)>thresh[0][1],'r','b'))
+        Plot1.barh(np.arange(len(resNames)),Probs1,color=colors,linewidth=0)
         if thresh is not None:
-            for item in thresh:
-                Plot.axvline(item,dashes=(5,5),picker=False)
-        if not newPlot:
-            Page.toolbar.push_current()
-            Plot.set_xlim(xylim[0])
-            Plot.set_ylim(xylim[1])
-            xylim = []
-            Page.toolbar.push_current()
-            Page.toolbar.draw()
-            Page.canvas.draw()
-        else:
-            Page.canvas.draw()
+            for item in thresh[0]:
+                Plot1.axvline(item,dashes=(5,5),picker=False)
+        Plot2 = Page.figure.add_subplot(212)
+        Plot2.set_xlabel(r'Error score 2',fontsize=14)
+        Plot2.set_ylabel(r'Residue',fontsize=14)        
+        colors = list(np.where(np.array(Probs2)>thresh[1][1],'r','b'))
+        Plot2.barh(np.arange(len(resNames)),Probs2,color=colors,linewidth=0)
+        if thresh is not None:
+            for item in thresh[1]:
+                Plot2.axvline(item,dashes=(5,5),picker=False)
+        Page.canvas.draw()
     
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     Page.Offset = [0,0]

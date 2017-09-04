@@ -2711,7 +2711,6 @@ def validProtein(Phase,old):
                 mtrx -= avg
                 prob = np.inner(np.inner(mtrx,b1),mtrx)
             Probs.append(prob)
-            print i,prob
         Probs += 4*[0.,]
         chainProb += Probs
     return resNames,chainProb

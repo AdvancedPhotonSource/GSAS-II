@@ -163,7 +163,7 @@ def ProcessConstraints(constList):
                 else:
                     eqlist.append([var,firstmult/term[0]])
             if len(eqlist) > 0:
-                G2mv.StoreEquivalence(firstvar,eqlist)
+                G2mv.StoreEquivalence(firstvar,eqlist,False)
             else:
                 ignored += 1
         else:

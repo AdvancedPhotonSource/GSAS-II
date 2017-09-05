@@ -4263,7 +4263,7 @@ class GSASII(wx.Frame):
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
         if errmsg:
-            self.ErrorDialog('Refinement error',errmsg)
+            self.ErrorDialog('Refinement error',errmsg+'\nCheck console output for more information')
             return
         if warnmsg:
             print('Conflict between refinment flag settings and constraints:\n'+

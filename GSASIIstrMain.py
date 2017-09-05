@@ -139,6 +139,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 
 def Refine(GPXfile,dlg=None,makeBack=True):
     'Global refinement -- refines to minimize against all histograms'
+    import GSASIImpsubs as G2mp
+    G2mp.InitMP()
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
@@ -263,6 +265,8 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
     one at a time
     '''
+    import GSASIImpsubs as G2mp
+    G2mp.InitMP()
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
@@ -755,7 +759,7 @@ def BestPlane(PlaneData):
     print '\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]])
 
 def main():
-    'Needs a doc string'
+    'Called to run a refinement when this module is executed '
     starttime = time.time()
     arg = sys.argv
     if len(arg) > 1:
@@ -763,10 +767,11 @@ def main():
         if not ospath.exists(GPXfile):
             print 'ERROR - ',GPXfile," doesn't exist!"
             exit()
-        Refine(GPXfile,None)
     else:
         print 'ERROR - missing filename'
         exit()
+    # TODO: figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
+    Refine(GPXfile,None)
     print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
 
 if __name__ == '__main__':

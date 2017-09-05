@@ -42,6 +42,13 @@ tand = lambda x: np.tan(x*np.pi/180.)
     
 ncores = None
 
+def ResetMP():
+    '''Call after changing Config var 'Multiprocessing_cores' to force a resetting
+    of the useMP from the parameter.
+    '''
+    global ncores
+    ncores = None
+    
 def InitMP(allowMP=True):
     '''Called to initialize use of Multiprocessing
     '''

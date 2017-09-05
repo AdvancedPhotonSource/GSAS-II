@@ -4129,6 +4129,8 @@ class SelectConfigSetting(wx.Dialog):
         'Set config variables to match the current settings'
         GSASIIpath.SetConfigValue(self.vars)
         self.EndModal(wx.ID_OK)
+        import GSASIImpsubs as G2mp
+        G2mp.ResetMP()
         
     def OnSave(self,event):
         '''Write the config variables to config.py and then set them
@@ -4136,6 +4138,7 @@ class SelectConfigSetting(wx.Dialog):
         '''
         if not SaveConfigVars(self.vars,parent=self):
             self.OnApplyChanges() # force a reload of the config settings
+        else:
             self.EndModal(wx.ID_OK)
 
     def OnBoolSelect(self,event):

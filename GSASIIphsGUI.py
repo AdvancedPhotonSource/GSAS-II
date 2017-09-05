@@ -1002,8 +1002,8 @@ def FindBondsDraw(data):
     generalData = data['General']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
     radii = generalData['BondRadii']
-    if generalData.get('DisAglCtls',{}):
-        radii = generalData['DisAglCtls']['BondRadii']
+#    if generalData.get('DisAglCtls',{}):
+#        radii = generalData['DisAglCtls']['BondRadii']
     atomTypes = generalData['AtomTypes']
     try:
         indH = atomTypes.index('H')
@@ -3290,8 +3290,8 @@ entered the right symbol for your structure.
         G2G.G2MessageBox(G2frame,msg,'Density')
         
     def OnValidProtein(event):
-        resNames,Probs1 = G2mth.validProtein(data,True)
-        resNames,Probs2 = G2mth.validProtein(data,False)
+        resNames,Probs1 = G2mth.validProtein(data,True)         #old version
+        resNames,Probs2 = G2mth.validProtein(data,False)        #new version
         print 'Plot 1 is Protein validation based on errat.f'
         print 'Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).'
         print 'Residue error scores >6 for 5% & >8 for 1% likelihood of being correct'

@@ -2656,8 +2656,8 @@ def validProtein(Phase,old):
             if np.all(jbox>=0) and np.all((jbox-nbox[:3])<0):                
                 tgts += list(Boxes[jbox[0],jbox[1],jbox[2]])
         tgts = list(set(tgts))
-        tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) < dsmax]
         tgts = [tgt for tgt in tgts if atom[:3] != cartAtoms[tgt][:3]]    #exclude same residue
+        tgts = [tgt for tgt in tgts if np.sum((XYZ[ia]-XYZ[tgt])**2) < dsmax]
         ires = int(atom[0])
         if old:
             if atom[3].strip() == 'C':
@@ -2685,7 +2685,7 @@ def validProtein(Phase,old):
     for ich,chn in enumerate(chains):
         IntAct = chainIntAct[ich]
         nRes = len(IntAct)
-        Probs = [0.,0.,0.,0.]
+        Probs = [0.,0.,0.,0.]   #skip 1st 4 residues in chain
         for i in range(4,nRes-4):
             mtrx = np.zeros(5)
             summ = 0.
@@ -2711,7 +2711,7 @@ def validProtein(Phase,old):
                 mtrx -= avg
                 prob = np.inner(np.inner(mtrx,b1),mtrx)
             Probs.append(prob)
-        Probs += 4*[0.,]
+        Probs += 4*[0.,]        #skip last 4 residues in chain
         chainProb += Probs
     return resNames,chainProb
     

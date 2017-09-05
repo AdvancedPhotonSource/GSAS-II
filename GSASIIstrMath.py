@@ -27,7 +27,7 @@ import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIobj as G2obj
 import GSASIImpsubs as G2mp
-G2mp.InitMP(False)  # This disables multiprocessing 
+#G2mp.InitMP(False)  # This disables multiprocessing 
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

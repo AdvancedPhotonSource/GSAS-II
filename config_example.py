@@ -150,6 +150,7 @@ Fractional values do seem to produce an effect. Default is 1.'''
 
 Contour_color = 'Paired'
 ''' Specifies the color map to be used for contour plots (images, pole figures, etc.)
+will be applied for new images and if Saved for a new start of GSAS-II
 '''
 
 Multiprocessing_cores = 0

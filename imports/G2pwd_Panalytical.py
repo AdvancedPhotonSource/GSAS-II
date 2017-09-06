@@ -58,18 +58,18 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
         tag = tag.split('}')[0]+'}'
         sample = self.root.find(tag+'sample')
         self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
-        dataSets = self.root.findall(tag+'xrdMeasurement')
-        if blockNum-1 == len(dataSets):
-            self.repeat = False
-            return False
-        data = dataSets[blockNum-1]
-        if len(dataSets) > 1:
-            self.repeat = True
+        data = self.root.find(tag+'xrdMeasurement')
         wave = data.find(tag+'usedWavelength')
         incident = data.find(tag+'incidentBeamPath')
         radius = float(incident.find(tag+'radius').text)
         tube = incident.find(tag+'xRayTube')
-        scan = data.find(tag+'scan')
+        scans = data.findall(tag+'scan')
+        if len(scans) > 1:
+            self.repeat = True
+        if blockNum-1 == len(scans):
+            self.repeat = False
+            return False
+        scan = scans[blockNum-1]
         header = scan.find(tag+'header')
         dataPoints = scan.find(tag+'dataPoints')
         self.comments.append('Gonio. radius=%.2f'%(radius))

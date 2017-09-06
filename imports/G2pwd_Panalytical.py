@@ -76,9 +76,12 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
         self.Sample['Gonio. radius'] = radius
         if sample.find(tag+'id').text:
             self.comments.append('Sample name='+sample.find(tag+'id').text)
-        self.comments.append('Date/TimeStart='+header.find(tag+'startTimeStamp').text)
-        self.comments.append('Date/TimeEnd='+header.find(tag+'endTimeStamp').text)
-        self.comments.append('xray tube='+tube.attrib['name'])
+        try:
+            self.comments.append('Date/TimeStart='+header.find(tag+'startTimeStamp').text)
+            self.comments.append('Date/TimeEnd='+header.find(tag+'endTimeStamp').text)
+            self.comments.append('xray tube='+tube.attrib['name'])
+        except AttributeError:
+            pass
         self.comments.append('Ka1=%s'%(wave.find(tag+'kAlpha1').text))
         self.comments.append('Ka2=%s'%(wave.find(tag+'kAlpha2').text))
         self.comments.append('Ka2/Ka1=%s'%(wave.find(tag+'ratioKAlpha2KAlpha1').text))

@@ -7649,6 +7649,21 @@ entered the right symbol for your structure.
 #            resultsGrid.SetScrollRate(0,0)
             resultsSizer.Add(resultsGrid,0,wx.EXPAND)
             return resultsSizer
+
+        def OnSelect(event):
+            rbId = rbids[select.GetSelection()]
+            wx.CallLater(100,RepaintRBInfo,rbId)
+           
+        def RepaintRBInfo(rbId,Scroll=0):
+            oldFocus = wx.Window.FindFocus()
+            G2frame.bottomSizer.DeleteWindows()
+            Indx.clear()
+            rbObj = data['MCSA']['Models'][rbId]
+            G2frame.bottomSizer.Insert(0,rbSizer(rbObj))
+            mainSizer.Layout()
+            G2frame.dataWindow.Refresh()
+            G2frame.dataWindow.SendSizeEvent()
+            wx.CallAfter(oldFocus.SetFocus)
         
         # UpdateMCSA executable code starts here
         if G2frame.MCSA.GetSizer(): G2frame.MCSA.GetSizer().Clear(True)
@@ -7674,19 +7689,28 @@ entered the right symbol for your structure.
             mainSizer.Add((5,5),0)
             mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA models:'),0,WACV)
             mainSizer.Add((5,5),0)
-            for model in data['MCSA']['Models']:
-                Xsize = 500
+            rbNames = []
+            rbids = []
+            for im,model in enumerate(data['MCSA']['Models']):
                 if model['Type'] == 'MD':
                     mainSizer.Add(MDSizer(model))
                 elif model['Type'] == 'Atom':
                     Asizer = atomSizer(model)
                     mainSizer.Add(Asizer)
-                    Xsize = max(Asizer.GetMinSize()[0],Xsize)
                 else:
-                    Rsizer = rbSizer(model)
-                    mainSizer.Add(Rsizer)
-                    Xsize = max(Rsizer.GetMinSize()[0],Xsize)
-                G2G.HorizontalLine(mainSizer,G2frame.MCSA)
+                    rbNames.append(model['name'])
+                    rbids.append(im)
+            G2G.HorizontalLine(mainSizer,G2frame.MCSA)
+            if len(rbNames):
+                rbName = rbNames[0]
+                select = wx.ListBox(G2frame.MCSA,choices=rbNames,style=wx.LB_SINGLE,size=(-1,65))
+                select.SetSelection(rbNames.index(rbName))
+                select.SetFirstItem(rbNames.index(rbName))
+                select.Bind(wx.EVT_LISTBOX,OnSelect)
+                mainSizer.Add(select,0,WACV)
+                G2frame.bottomSizer = wx.BoxSizer(wx.VERTICAL)
+                G2frame.bottomSizer.Add(rbSizer(data['MCSA']['Models'][rbids[0]]))
+                mainSizer.Add(G2frame.bottomSizer)
                 
         if not data['MCSA']['Results']:
             mainSizer.Add((5,5),0)

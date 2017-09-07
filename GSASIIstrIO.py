@@ -1882,6 +1882,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         General = Phase['General']
         SGData = General['SGData']
         Atoms = Phase['Atoms']
+        AtLookup = []
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
             AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)

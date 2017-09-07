@@ -1504,11 +1504,14 @@ def UpdateRigidBodies(G2frame,data):
             if 'pdb' in ext and ('ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]):
                 break
             items = txtStr.split()
-        rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
-        data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
-            'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
-        data['RBIds']['Residue'].append(rbId)
-        print 'Rigid body UNKRB added'
+        if len(atNames) < 3:
+            G2G.G2MessageBox(G2frame,'Not enough atoms in rigid body; must be 3 or more')
+        else:
+            rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
+            data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
+                'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
+            data['RBIds']['Residue'].append(rbId)
+            print 'Rigid body UNKRB added'
         text.close()
         UpdateResidueRB()
         
@@ -1523,7 +1526,7 @@ def UpdateRigidBodies(G2frame,data):
         sumR = Radii[Orig]+Radii
         IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
         for j in IndB[0]:
-            if j != Orig:
+            if j != Orig and atTypes[j] != 'H':
                 Neigh.append(atNames[j])
         return Neigh
         
@@ -1826,6 +1829,23 @@ def UpdateRigidBodies(G2frame,data):
                     data['RBIds']['Residue'].remove(rbId)
                 wx.CallAfter(UpdateResidueRB)
                 
+            def OnStripH(event):
+                Obj = event.GetEventObject()
+                rbId = Indx[Obj.GetId()]
+                if rbId in data['Residue']:
+                    newNames = []
+                    newTypes = []
+                    newXYZ = []
+                    for i,atype in enumerate(rbData['rbTypes']):
+                        if atype != 'H':
+                            newNames.append(rbData['atNames'][i])
+                            newTypes.append(rbData['rbTypes'][i])
+                            newXYZ.append(rbData['rbXYZ'][i])
+                    rbData['atNames'] = newNames
+                    rbData['rbTypes'] = newTypes
+                    rbData['rbXYZ'] = newXYZ
+                wx.CallAfter(UpdateResidueRB)
+                    
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
                 Obj.SetValue(False)
@@ -1850,6 +1870,11 @@ def UpdateRigidBodies(G2frame,data):
                 Indx[delRB.GetId()] = rbId
                 delRB.Bind(wx.EVT_CHECKBOX,OnDelRB)
                 nameSizer.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+                if 'H'  in rbData['rbTypes']:
+                    stripH = wx.CheckBox(ResidueRBDisplay,-1,'Strip H-atoms?')
+                    Indx[stripH.GetId()] = rbId
+                    stripH.Bind(wx.EVT_CHECKBOX,OnStripH)
+                    nameSizer.Add(stripH,0,wx.ALIGN_CENTER_VERTICAL)
             return nameSizer
             
         def rbResidues(rbId,rbData):
@@ -1890,6 +1915,8 @@ def UpdateRigidBodies(G2frame,data):
                 iref,res,jref = Indx[Obj.GetId()]
                 sel = Obj.GetValue()
                 ind = atNames.index(sel)
+                if rbData['rbTypes'][ind] == 'H':
+                    G2G.G2MessageBox(G2frame,'You should not select an H-atom for rigid body orientation')
                 rbData['rbRef'][iref] = ind
                 FillRefChoice(rbId,rbData)
                 for i,ref in enumerate(RefObjs[jref]):
@@ -1939,11 +1966,11 @@ def UpdateRigidBodies(G2frame,data):
             rbRef = rbData['rbRef']
             if rbData['rbRef'][3] or rbData['useCount']:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Orientation reference atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
+                    'Orientation reference non-H atoms A-B-C: %s, %s, %s'%(atNames[rbRef[0]], \
                      atNames[rbRef[1]],atNames[rbRef[2]])),0)
             else:
                 refAtmSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Orientation reference atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    'Orientation reference non-H atoms A-B-C: '),0,wx.ALIGN_CENTER_VERTICAL)
                 refObj = [0,0,0]
                 for i in range(3):
                     choices = [atNames[j] for j in refChoice[rbId][i]]
@@ -2062,6 +2089,8 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Residue']:
             rbData = data['Residue'][rbId]
+            if len(rbData['rbXYZ']) < 3:    #patch - skip around bad RBs with too few atoms
+                continue
             FillRefChoice(rbId,rbData)
             ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
             ResidueRBSizer.Add(rbResidues(rbId,rbData),0)

@@ -4638,17 +4638,20 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu(empty=True)
         
         # Constraints
-        G2G.Define_wxId('wxID_CONSTRAINTADD', 'wxID_EQUIVADD', 'wxID_HOLDADD', 'wxID_FUNCTADD', 'wxID_ADDRIDING',
-          'wxID_CONSPHASE', 'wxID_CONSHIST', 'wxID_CONSHAP', 'wxID_CONSGLOBAL', 'wxID_EQUIVALANCEATOMS',)
+        G2G.Define_wxId('wxID_CONSTRAINTADD', 'wxID_EQUIVADD', 'wxID_HOLDADD', 'wxID_FUNCTADD',
+                        'wxID_ADDRIDING', 'wxID_CONSPHASE', 'wxID_CONSHIST', 'wxID_CONSHAP',
+                        'wxID_CONSGLOBAL', 'wxID_CONSSYM', 'wxID_EQUIVALANCEATOMS',)
         self.ConstraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ConstraintMenu)
         self.ConstraintTab = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintTab, title='Select tab')
         for id,txt in (
-            (G2G.wxID_CONSPHASE,'Phase'),
-            (G2G.wxID_CONSHAP,'Histogram/Phase'),
-            (G2G.wxID_CONSHIST,'Histogram'),
-            (G2G.wxID_CONSGLOBAL,'Global')):
+                (G2G.wxID_CONSPHASE,'Phase'),
+                (G2G.wxID_CONSHAP,'Histogram/Phase'),
+                (G2G.wxID_CONSHIST,'Histogram'),
+                (G2G.wxID_CONSGLOBAL,'Global'),
+                (G2G.wxID_CONSSYM,'Sym-Generated'),
+                ):
             self.ConstraintTab.Append(id=id, kind=wx.ITEM_NORMAL,text=txt,
                 help='Select '+txt+' constraint editing tab')
         self.ConstraintEdit = wx.Menu(title='')
@@ -7650,6 +7653,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotCovariance(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Constraints':
             data = G2frame.GPXtree.GetItemPyData(item)
+            #reload(G2cnstG)  # for testing changes to GSASIIconstrGUI
             G2cnstG.UpdateConstraints(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item) == 'Rigid bodies':
             data = G2frame.GPXtree.GetItemPyData(item)

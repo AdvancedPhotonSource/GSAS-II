@@ -2582,6 +2582,71 @@ def GetItemOrder(parent,keylist,vallookup,posdict):
     dlg.ShowModal()
 
 ################################################################################
+class MultiIntegerDialog(wx.Dialog):
+    '''Input a series of integers based on prompts
+    '''
+    def __init__(self,parent,title,prompts,values):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.values = values
+        self.prompts = prompts
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            event.Skip()
+            Obj = event.GetEventObject()
+            ind = Indx[Obj.GetId()]
+            try:
+                val = int(Obj.GetValue())
+                if val <= 0:
+                    raise ValueError
+            except ValueError:
+                val = self.values[ind]
+            self.values[ind] = val
+            Obj.SetValue('%d'%(val))
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        Indx = {}
+        for ival,[prompt,value] in enumerate(zip(self.prompts,self.values)):
+            mainSizer.Add(wx.StaticText(self.panel,-1,prompt),0,wx.ALIGN_CENTER)
+            valItem = wx.TextCtrl(self.panel,-1,value='%d'%(value),style=wx.TE_PROCESS_ENTER)
+            mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
+            Indx[valItem.GetId()] = ival
+            valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+            valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetValues(self):
+        return self.values
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
     '''Creates a panel with scrollbars where items can be ordered into columns
     

@@ -37,70 +37,6 @@ import GSASIIobj as G2obj
 import GSASIIspc as G2spc
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
-class MultiIntegerDialog(wx.Dialog):
-    '''Input a series of integers based on prompts
-    '''
-    def __init__(self,parent,title,prompts,values):
-        wx.Dialog.__init__(self,parent,-1,title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
-        self.values = values
-        self.prompts = prompts
-        self.Draw()
-        
-    def Draw(self):
-        
-        def OnValItem(event):
-            event.Skip()
-            Obj = event.GetEventObject()
-            ind = Indx[Obj.GetId()]
-            try:
-                val = int(Obj.GetValue())
-                if val <= 0:
-                    raise ValueError
-            except ValueError:
-                val = self.values[ind]
-            self.values[ind] = val
-            Obj.SetValue('%d'%(val))
-            
-        self.panel.Destroy()
-        self.panel = wx.Panel(self)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        Indx = {}
-        for ival,[prompt,value] in enumerate(zip(self.prompts,self.values)):
-            mainSizer.Add(wx.StaticText(self.panel,-1,prompt),0,wx.ALIGN_CENTER)
-            valItem = wx.TextCtrl(self.panel,-1,value='%d'%(value),style=wx.TE_PROCESS_ENTER)
-            mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
-            Indx[valItem.GetId()] = ival
-            valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
-            valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
-        OkBtn = wx.Button(self.panel,-1,"Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        CancelBtn = wx.Button(self.panel,-1,'Cancel')
-        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
-        btnSizer.Add(CancelBtn)
-        btnSizer.Add((20,20),1)
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        self.panel.SetSizer(mainSizer)
-        self.panel.Fit()
-        self.Fit()
-
-    def GetValues(self):
-        return self.values
-        
-    def OnOk(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_OK)              
-        
-    def OnCancel(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_CANCEL)
-
 class ConstraintDialog(wx.Dialog):
     '''Window to edit Constraint values
     '''
@@ -233,8 +169,8 @@ def UpdateConstraints(G2frame,data):
     try:
         AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     except KeyError:
-        G2frame.ErrorDialog('Constraint Error','You must run least squares at least once before setting constraints\n'+ \
-            'We suggest you refine scale factor first')
+        G2frame.ErrorDialog('Constraint Error','Constraints cannot be set until a cycle of least squares'+
+                            'has been run.\nWe suggest you refine a scale factor.')
         return
 
     # create a list of the phase variables
@@ -870,17 +806,34 @@ def UpdateConstraints(G2frame,data):
         the specified type.
 
         :param str name: the type of constraints to be displayed ('HAP',
-          'Hist', 'Phase', or 'Global')
+          'Hist', 'Phase', 'Global', 'Sym-Generated')
         :param wx.Panel pageDisplay: parent panel for sizer
         :returns: wx.Sizer created by method
         '''
-        #TODO: show symmetry generated constraints - no clue how to do this.
+        if name == 'Sym-Generated':         #show symmetry generated constraints
+            Sizer1 =  wx.BoxSizer(wx.VERTICAL)
+            Sizer1.Add(wx.StaticText(pageDisplay,wx.ID_ANY,
+                                    'Equivalences generated based on cell/space group input'))
+            Sizer1.Add((-1,5))
+            Sizer = wx.FlexGridSizer(0,2,0,0)
+            Sizer1.Add(Sizer)
+            for sym in G2mv.GetSymEquiv():
+                Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,'EQUIV'),
+                           0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+                Sizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,sym))
+                Sizer.Add((-1,-1))
+                Sizer.Add((-1,2))
+            return Sizer1
         constSizer = wx.FlexGridSizer(0,6,0,0)
-        maxlen = 70 # characters before wrapping a constraint
+        maxlen = 50 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
             refineflag = False
             helptext = ""
             eqString = ['',]
+            problemItem = False
+            for term in item[:-3]:
+                if str(term[1]) in G2mv.problemVars:
+                    problemItem = True
             if item[-1] == 'h': # Hold on variable
                 constSizer.Add((-1,-1),0)              # blank space for edit button
                 typeString = 'FIXED'
@@ -889,7 +842,7 @@ def UpdateConstraints(G2frame,data):
                 eqString[-1] =  var +'   '
                 helptext = "Prevents variable:\n"+ var + " ("+ varMean + ")\nfrom being changed"
             elif isinstance(item[-1],str): # not true on original-style (2011?) constraints
-                constEdit = wx.Button(pageDisplay,-1,'Edit',style=wx.BU_EXACTFIT)
+                constEdit = wx.Button(pageDisplay,wx.ID_ANY,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
                 constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)            # edit button
                 Indx[constEdit.GetId()] = [Id,name]
@@ -965,7 +918,7 @@ def UpdateConstraints(G2frame,data):
                 print 'Removing old-style constraints'
                 data[name] = []
                 return constSizer
-            constDel = wx.Button(pageDisplay,-1,'Delete',style=wx.BU_EXACTFIT)
+            constDel = wx.Button(pageDisplay,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
             constDel.Bind(wx.EVT_BUTTON,OnConstDel)
             Indx[constDel.GetId()] = [Id,name]
             constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)             # delete button
@@ -979,14 +932,19 @@ def UpdateConstraints(G2frame,data):
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))                
-            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),
+            constSizer.Add(wx.StaticText(pageDisplay,wx.ID_ANY,typeString),
                            0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            if problemItem: eqString[-1] += ' -- Conflict: see console'
             if len(eqString) > 1:
                 Eq = wx.BoxSizer(wx.VERTICAL)
                 for s in eqString:
-                    Eq.Add(wx.StaticText(pageDisplay,-1,s),0,wx.ALIGN_CENTER_VERTICAL)
+                    line = wx.StaticText(pageDisplay,wx.ID_ANY,s)
+                    if problemItem: line.SetBackgroundColour(wx.YELLOW)
+                    Eq.Add(line,0,wx.ALIGN_CENTER_VERTICAL)
+                Eq.Add((-1,4))
             else:
-                Eq = wx.StaticText(pageDisplay,-1,eqString[0])
+                Eq = wx.StaticText(pageDisplay,wx.ID_ANY,eqString[0])
+                if problemItem: Eq.SetBackgroundColour(wx.YELLOW)
             constSizer.Add(Eq,1,wx.ALIGN_CENTER_VERTICAL)
         return constSizer
                 
@@ -1103,6 +1061,10 @@ def UpdateConstraints(G2frame,data):
         elif text == 'Global':
             G2frame.Page = [page,'glb']
             UpdateConstraintPanel(GlobalConstr,'Global')
+        else:
+            G2frame.Page = [page,'sym']
+            UpdateConstraintPanel(SymConstr,'Sym-Generated')            
+        G2frame.dataWindow.SetDataSize()
 
     def RaisePage(event):
         'Respond to a "select tab" menu button'
@@ -1149,6 +1111,8 @@ def UpdateConstraints(G2frame,data):
     G2frame.constr.AddPage(HistConstr,'Histogram')
     GlobalConstr = wx.ScrolledWindow(G2frame.constr)
     G2frame.constr.AddPage(GlobalConstr,'Global')
+    SymConstr = wx.ScrolledWindow(G2frame.constr)
+    G2frame.constr.AddPage(SymConstr,'Sym-Generated')
     wx.CallAfter(OnPageChanged,None)
     G2frame.constr.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
@@ -1157,12 +1121,23 @@ def UpdateConstraints(G2frame,data):
         if key.startswith('_'): continue
         allcons += data[key]
     if not len(allcons): return
+    #reload(G2mv) # TODO: for testing
     G2mv.InitVars()    
     constDictList,fixedList,ignored = G2stIO.ProcessConstraints(allcons)
+    # generate symmetry constraints to check for conflicts
+    rigidbodyDict = G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
+        Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     errmsg, warnmsg = G2mv.CheckConstraints('',constDictList,fixedList)
     if errmsg:
-        G2frame.ErrorDialog('Constraint Error','Error in constraints:\n'+errmsg,
-            parent=G2frame)
+        G2frame.ErrorDialog('Constraint Error',
+                            'Error in constraints:\n'+errmsg+'\nCheck console output for more information',
+                            parent=G2frame)
+        print errmsg
+        print G2mv.VarRemapShow([],True)
     elif warnmsg:
         print 'Unexpected contraint warning:\n',warnmsg
 
@@ -1390,7 +1365,7 @@ def UpdateRigidBodies(G2frame,data):
             
     def AddVectorRB(event):
         AtInfo = data['Vector']['AtInfo']
-        dlg = MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[1,1])
+        dlg = G2G.MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
             rbId = ran.randint(0,sys.maxint)

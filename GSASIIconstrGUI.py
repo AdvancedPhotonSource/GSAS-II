@@ -391,7 +391,7 @@ def UpdateConstraints(G2frame,data):
                 l1 = max(l1,len(i1))
                 l2 = max(l2,len(i2))
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-            atchoice = [fmt.format(*i1) for i1 in choices]
+            atchoice = G2obj.SortVariables([fmt.format(*i1) for i1 in choices])
             dlg = G2G.G2MultiChoiceDialog(
                 G2frame,legend,
                 'Constrain '+str(FrstVarb)+' with...',atchoice,
@@ -604,6 +604,7 @@ def UpdateConstraints(G2frame,data):
         '''
         page = G2frame.Page
         vartype,varList,constrDictEnt = PageSelection(page)
+        varList = G2obj.SortVariables(varList)
         if vartype is None: return
         title1 = "Hold "+vartype+" variable"
         if not varList:
@@ -717,7 +718,7 @@ def UpdateConstraints(G2frame,data):
             omitVars = G2mv.GetDependentVars()
         else:
             omitVars = []
-        varList = [i for i in varList if i not in omitVars]
+        varList = G2obj.SortVariables([i for i in varList if i not in omitVars])
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]
         dlg = G2G.G2SingleChoiceDialog(G2frame,'Select 1st variable:',
             title1,varListlbl,monoFont=True,size=(625,400))
@@ -728,7 +729,8 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelection()
             FrstVarb = varList[sel]
             VarObj = G2obj.G2VarObj(FrstVarb)
-            moreVarb = FindEquivVarb(FrstVarb,[i for i in varList if i not in omitVars])
+            moreVarb = G2obj.SortVariables(
+                FindEquivVarb(FrstVarb,[i for i in varList if i not in omitVars]))
             newcons = SelectVarbs(page,VarObj,moreVarb,title2+FrstVarb,constType)
             if len(newcons) > 0:
                 if CheckAddedConstraint(newcons):

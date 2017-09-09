@@ -1618,6 +1618,19 @@ def _lookup(dic,key):
     else:
         return dic.get(key,'?')
 
+def SortVariables(varlist):
+    '''Sorts variable names in a sensible manner
+    '''
+    def cvnnums(var):
+        v = []
+        for i in var.split(':'):
+            try:
+                v.append(int(i))
+            except:
+                v.append(i)
+        return v
+    return sorted(varlist,key=cvnnums)
+
 class G2VarObj(object):
     '''Defines a GSAS-II variable either using the phase/atom/histogram
     unique Id numbers or using a character string that specifies

@@ -7805,7 +7805,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     elif G2frame.GPXtree.GetItemText(item) == 'Sample Parameters':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
-        datatype = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[2][:4]
+        datatype = G2frame.GPXtree.GetItemText(G2frame.PatternId)[:4]
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],

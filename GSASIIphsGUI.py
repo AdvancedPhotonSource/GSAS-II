@@ -1429,8 +1429,9 @@ entered the right symbol for your structure.
                 NShkl = len(G2spc.MustrainNames(SGData))
                 NDij = len(G2spc.HStrainNames(SGData))
                 for hist in data['Histograms']:
-                    data['Histograms'][hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
-                    data['Histograms'][hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+                    if 'HStrain' in data['Histograms'][hist]:       #PWDR only
+                        data['Histograms'][hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+                        data['Histograms'][hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):
@@ -2974,6 +2975,7 @@ entered the right symbol for your structure.
         IDs = []
         if not indx: return
         atomData = data['Atoms']
+        indx.sort()
         indx.reverse()
         for ind in indx:
             atom = atomData[ind]

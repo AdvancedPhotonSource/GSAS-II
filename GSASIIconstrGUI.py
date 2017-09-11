@@ -391,10 +391,10 @@ def UpdateConstraints(G2frame,data):
                 l1 = max(l1,len(i1))
                 l2 = max(l2,len(i2))
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-            atchoice = G2obj.SortVariables([fmt.format(*i1) for i1 in choices])
+            atchoices = [fmt.format(*i1) for i1 in choices] # reformat list as str with columns
             dlg = G2G.G2MultiChoiceDialog(
                 G2frame,legend,
-                'Constrain '+str(FrstVarb)+' with...',atchoice,
+                'Constrain '+str(FrstVarb)+' with...',atchoices,
                 toggle=False,size=(625,400),monoFont=True)
             dlg.CenterOnParent()
             res = dlg.ShowModal()
@@ -708,17 +708,17 @@ def UpdateConstraints(G2frame,data):
         and OnAddConstraint. Then create and check the constraint.
         '''
         #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        if constType == 'equivalence':
+            omitVars = G2mv.GetDependentVars()
+        else:
+            omitVars = []
+        varList = G2obj.SortVariables([i for i in varList if i not in omitVars])
         l2 = l1 = 1
         for i in varList:
             l1 = max(l1,len(i))
             loc,desc = G2obj.VarDescr(i)
             l2 = max(l2,len(loc))
         fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-        if constType == 'equivalence':
-            omitVars = G2mv.GetDependentVars()
-        else:
-            omitVars = []
-        varList = G2obj.SortVariables([i for i in varList if i not in omitVars])
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]
         dlg = G2G.G2SingleChoiceDialog(G2frame,'Select 1st variable:',
             title1,varListlbl,monoFont=True,size=(625,400))

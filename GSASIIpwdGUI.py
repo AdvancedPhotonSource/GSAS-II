@@ -431,7 +431,7 @@ def UpdatePeakGrid(G2frame, data):
         iFin = np.searchsorted(x0,limits[1])
         x = x0[iBeg:iFin]
         y0 = profile[1][iBeg:iFin]
-        ysig = 0.5*np.std(y0)
+        ysig = 1.0*np.std(y0)
         offset = [-1,1]
         ymask = ma.array(y0,mask=(y0<ysig))
         for off in offset:
@@ -446,7 +446,7 @@ def UpdatePeakGrid(G2frame, data):
             refs = G2mth.sortArray(refs,0,reverse=False)    #big TOFs first
         for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
             for ref2 in refs[i+1:]:
-                if abs(ref2[0]-ref1[0]) < G2pwd.getFWHM(ref1[0],inst):
+                if abs(ref2[0]-ref1[0]) < 2.*G2pwd.getFWHM(ref1[0],inst):
                     del(refs[i])
         if 'C' in Inst['Type'][0]:    
             refs = G2mth.sortArray(refs,1,reverse=True)

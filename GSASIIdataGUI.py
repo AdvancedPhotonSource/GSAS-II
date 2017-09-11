@@ -5719,7 +5719,7 @@ def UpdateControls(G2frame,data):
     if 'Reverse Seq' not in data:
         data['Reverse Seq'] = False
     if 'UsrReject' not in data:
-        data['UsrReject'] = {'minF/sig':0,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
+        data['UsrReject'] = {'minF/sig':0.,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
     if 'HatomFix' not in data:
         data['HatomFix'] = False
     if 'Marquardt' not in data:
@@ -5844,8 +5844,8 @@ def UpdateControls(G2frame,data):
             LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
             userReject = data['UsrReject']
-            usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0,5], ],'MinExt':[' Min extinct. (0-.9): ',[0,.9],],
-                'MaxDF/F':[' Max delt-F/sig (3-1000): ',[3.,1000.],],'MaxD':[' Max d-spacing (3-500): ',[3,500],],
+            usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0.,5.], ],'MinExt':[' Min extinct. (0-.9): ',[0.,.9],],
+                'MaxDF/F':[' Max delt-F/sig (3-1000): ',[3.,1000.],],'MaxD':[' Max d-spacing (3-500): ',[3.,500.],],
                 'MinD':[' Min d-spacing (0.1-2.0): ',[0.1,2.0],]}
 
             fsqRef = wx.CheckBox(G2frame.dataWindow,-1,label='Refine HKLF as F^2? ')

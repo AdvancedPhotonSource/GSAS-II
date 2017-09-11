@@ -912,7 +912,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 DefaultControls = {
     'deriv type':'analytic Hessian',
     'min dM/M':0.001,'shift factor':1.,'max cyc':3,'F**2':False,'SVDtol':1.e-6,
-    'UsrReject':{'minF/sig':0,'MinExt':0.01,'MaxDF/F':100.,'MaxD':500.,'MinD':0.05},
+    'UsrReject':{'minF/sig':0.,'MinExt':0.01,'MaxDF/F':100.,'MaxD':500.,'MinD':0.05},
     'Copy2Next':False,'Reverse Seq':False,'HatomFix':False,
     'Author':'no name',
     'FreePrm1':'Sample humidity (%)',

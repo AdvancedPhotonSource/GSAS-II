@@ -1368,14 +1368,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 G2frame.plotStyle['qPlot'] = False
                 G2frame.plotStyle['dPlot'] = False
         elif event.key == 'q': 
+            newPlot = True
             if 'PWDR' in plottype:
-                newPlot = True
                 G2frame.plotStyle['qPlot'] = not G2frame.plotStyle['qPlot']
                 if G2frame.plotStyle['qPlot']:
                     G2frame.Contour = False
                 G2frame.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
-                newPlot = True
                 G2frame.plotStyle['sqPlot'] = not G2frame.plotStyle['sqPlot']
         elif event.key == 't' and 'PWDR' in plottype:
             G2frame.plotStyle['dPlot'] = not G2frame.plotStyle['dPlot']
@@ -2296,6 +2295,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
+            Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue

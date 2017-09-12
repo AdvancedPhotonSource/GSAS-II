@@ -53,6 +53,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     while True:
         begin = time.time()
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
+        if np.any(np.isnan(values)):
+            raise G2obj.G2Exception('ERROR - nan found in LS parameters - use Calculate/View LS parms to locate')
         # test code to compute GOF and save for external repeat
         #args = ([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg)
         #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)
@@ -134,7 +136,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         print 'Removing parameter: ',varyList[ipvt-1]
                         del(varyList[ipvt-1])
                         break
-    G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
+    if IfOK:
+        G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return IfOK,Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg=None,makeBack=True):
@@ -211,31 +214,35 @@ def Refine(GPXfile,dlg=None,makeBack=True):
         covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
-        sigDict = dict(zip(varyList,sig))
-        newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
-        newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
-        covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                   'varyListStart':varyListStart,
-                   'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
-                   'newCellDict':newCellDict,'freshCOV':True}
-        # add the uncertainties into the esd dictionary (sigDict)
-        sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
-        G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
-        G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
-        G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
-        G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
-        G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)
-        printFile.close()
-        print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
-        print ' ***** Refinement successful *****'
+        if IfOK:
+            sigDict = dict(zip(varyList,sig))
+            newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
+            newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
+            covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                       'varyListStart':varyListStart,
+                       'covMatrix':covMatrix,'title':GPXfile,'newAtomDict':newAtomDict,
+                       'newCellDict':newCellDict,'freshCOV':True}
+            # add the uncertainties into the esd dictionary (sigDict)
+            sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
+            G2mv.PrintIndependentVars(parmDict,varyList,sigDict,pFile=printFile)
+            G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
+            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+            G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
+            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)
+            printFile.close()
+            print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
+            print ' ***** Refinement successful *****'
+        else:
+            print '****ERROR - Refinement failed'
+            raise G2obj.G2Exception('****ERROR - Refinement failed')
     except G2obj.G2Exception,Msg:
         printFile.close()
         return False,Msg.msg
 
 #for testing purposes!!!
-    if DEBUG:
+    if DEBUG and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         import cPickle
         fl = open('testDeriv.dat','wb')

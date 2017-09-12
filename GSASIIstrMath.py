@@ -4069,8 +4069,8 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             x,y,w,yc,yb,yd = Histogram['Data']
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
-                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
+            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDervMP([parmDict,x[xB:xF],
+                varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             phase = Histogram['Reflection Lists']

@@ -141,7 +141,9 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         if abs(val) < treatAsZero:
             return '0.0'
     # negative numbers, leave room for a sign
-    if val < 0: maxdigits -= 1
+    if np.isnan(val):
+        return str(val)
+    if val < 0: maxdigits -= 1        
     if abs(val) < 1e-99 or abs(val) > 9.999e99:
         decimals = min(maxdigits-6,sigfigs)
         fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}" # create format string
@@ -155,10 +157,10 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         decimals = min(maxdigits-5,sigfigs)
         fmt = "{" + (":{:d}.{:d}g".format(maxdigits,decimals))+"}"
     elif abs(val) < 1: # small numbers, add to decimal places
-        decimals = sigfigs - int(np.log10(abs(val)))
+        decimals = sigfigs - int(np.log10(np.abs(val)))
         fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     else: # larger numbers, remove decimal places
-        decimals = sigfigs - 1 - int(np.log10(abs(val)))
+        decimals = sigfigs - 1 - int(np.log10(np.abs(val)))
         if decimals <= 0: 
             fmt = "{" + (":{:d}.0f".format(maxdigits))+"}."
         else:

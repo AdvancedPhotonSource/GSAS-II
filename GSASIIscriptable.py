@@ -902,11 +902,15 @@ class G2Project(G2ObjectWrapper):
                 return histname
         if histname in self.data:
             return G2PwdrData(self.data[histname], self)
-        for key, val in G2obj.HistIdLookup.items():
-            name, ranId = val
-            # histname can be either ranId (key) or index (val)
-            if ranId == histname or key == str(histname):
-                return self.histogram(name)
+        try:
+            # see if histname is an id or ranId
+            histname = int(histname)
+        except ValueError:
+            return
+
+        for histogram in self.histograms():
+            if histogram.id == histname or histogram.ranId == histname:
+                return histogram
 
     def histograms(self):
         """Return a list of all histograms, as
@@ -940,11 +944,16 @@ class G2Project(G2ObjectWrapper):
         phases = self.data['Phases']
         if phasename in phases:
             return G2Phase(phases[phasename], phasename, self)
-        for key, val in G2obj.PhaseIdLookup.items():
-            name, ranId = val
-            # phasename can be either ranId (key) or index (val)
-            if ranId == phasename or key == str(phasename):
-                return self.phase(name)
+
+        try:
+            # phasename should be phase index or ranId
+            phasename = int(phasename)
+        except ValueError:
+            return
+
+        for phase in self.phases():
+            if phase.id == phasename or phase.ranId == phasename:
+                return phase
 
     def phases(self):
         """
@@ -1070,7 +1079,6 @@ class G2Project(G2ObjectWrapper):
             phases = [self.phase(phase)]
         else:
             phases = [self.phase(name) for name in phase]
-
 
         # TODO: HAP parameters:
         #   Babinet

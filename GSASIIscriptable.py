@@ -683,7 +683,6 @@ class G2Project(G2ObjectWrapper):
             self.filename = os.path.abspath(os.path.expanduser(gpxfile))
             self.data, self.names = LoadDictFromProjFile(gpxfile)
             self.update_ids()
-            self.index_ids()
         else:
             raise ValueError("Not sure what to do with gpxfile")
 

@@ -119,7 +119,34 @@ proxycmds = []
 'Used to hold proxy information for subversion, set if needed in whichsvn'
 svnLocCache = None
 'Cached location of svn to avoid multiple searches for it'
+def getsvnProxy():
+    '''Loads a proxy for subversion from the file created by bootstrap.py
+    '''
+    proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
+    if os.path.exists(proxyinfo):
+        global proxycmds
+        proxycmds = []
+        fp = open(proxyinfo,'r')
+        host = fp.readline().strip()
+        port = fp.readline().strip()
+        fp.close()
+        setsvnProxy(host,port)
+        if not host.strip(): return '',''
+        return host,port
 
+def setsvnProxy(host,port):
+    '''Sets the svn commands needed to use a proxy
+    '''
+    global proxycmds
+    proxycmds = []
+    host = host.strip()
+    port = port.strip()
+    if not host.strip(): return
+    proxycmds.append('--config-option')
+    proxycmds.append('servers:global:http-proxy-host='+host)
+    proxycmds.append('--config-option')
+    proxycmds.append('servers:global:http-proxy-port='+port)
+        
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
     Searches the current path after adding likely places where GSAS-II
@@ -135,26 +162,15 @@ def whichsvn():
     is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     svnprog = 'svn'
     if sys.platform.startswith('win'): svnprog += '.exe'
-    gsaspath = os.path.split(__file__)[0]
-    # check for a proxy
-    proxyinfo = os.path.join(gsaspath,"proxyinfo.txt")
-    if os.path.exists(proxyinfo):
-        global proxycmds
-        proxycmds = []
-        fp = open(proxyinfo,'r')
-        host = fp.readline().strip()
-        port = fp.readline().strip()
-        fp.close()
-        proxycmds.append('--config-option')
-        proxycmds.append('servers:global:http-proxy-host='+host)
-        proxycmds.append('--config-option')
-        proxycmds.append('servers:global:http-proxy-port='+port)
+    host,port = getsvnProxy()
+    if GetConfigValue('debug'):
+        print('Using proxy host {} port {}'.format(host,port))
     # add likely places to find subversion when installed with GSAS-II
     pathlist = os.environ["PATH"].split(os.pathsep)
     pathlist.append(os.path.split(sys.executable)[0])
-    pathlist.append(gsaspath)
+    pathlist.append(path2GSAS2)
     for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
-        pt = os.path.normpath(os.path.join(gsaspath,*rpt))
+        pt = os.path.normpath(os.path.join(path2GSAS2,*rpt))
         if os.path.exists(pt):
             pathlist.insert(0,pt)    
     # search path for svn or svn.exe

@@ -125,7 +125,6 @@ def GetDisplay(pos):
 ################################################################################
 #### class definitions used for main GUI
 ################################################################################
-
                
 class MergeDialog(wx.Dialog):
     ''' HKL transformation & merge dialog
@@ -456,11 +455,22 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
         item = parent.Append(wx.ID_PREFERENCES, text = "&Preferences")
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
+        if GSASIIpath.whichsvn():
+            item = parent.Append(
+                help='Edit proxy internet information (used for updates)', id=wx.ID_ANY,
+                kind=wx.ITEM_NORMAL,text='Edit proxy...')
+            self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
             def OnIPython(event):
                 GSASIIpath.IPyBreak()
             item = parent.Append(wx.ID_ANY, text = "IPython Console")
             self.Bind(wx.EVT_MENU, OnIPython, item)
+            def OnwxInspect(event):
+                import wx.lib.inspection as wxeye
+                wxeye.InspectionTool().Show()
+            item = parent.Append(wx.ID_ANY, text = "wx inspection tool")
+            self.Bind(wx.EVT_MENU, OnwxInspect, item)
+            
         item = parent.Append(
             help='Exit from GSAS-II', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&Exit')
@@ -1961,6 +1971,30 @@ class GSASII(wx.Frame):
         dlg.ShowModal() == wx.ID_OK
         dlg.Destroy()
 
+    def EditProxyInfo(self,event):
+        '''Edit the proxy information used by subversion
+        '''
+        h,p = host,port = GSASIIpath.getsvnProxy()
+        dlg = G2G.MultiStringDialog(self,'Enter proxy values',
+                                        ['Proxy address','proxy port'],
+                                        [host,port],size=300)
+        #dlg.SetSize((300,-1))
+        if dlg.Show():
+            h,p = dlg.GetValues()
+        dlg.Destroy()
+        if h != host or p != port:
+            proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
+            GSASIIpath.setsvnProxy(h,p)
+            if not h.strip():
+                os.remove(proxyinfo)
+                return
+            try:
+                fp = open(proxyinfo,'w')
+                fp.write(h.strip()+'\n')
+                fp.write(p.strip()+'\n')
+                fp.close()
+            except Exception as err:
+                print('Error writing file {}:\n{}'.format(proxyinfo,err))
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
         '''

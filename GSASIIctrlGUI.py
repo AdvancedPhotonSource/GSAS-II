@@ -2207,8 +2207,9 @@ class MultiStringDialog(wx.Dialog):
     :param str title: title string for dialog
     :param str prompts: strings to tell use what they are inputting
     :param str values: default input values, if any
+    :param int size: length of the input box in pixels
     '''
-    def __init__(self,parent,title,prompts,values=[]):      #,size=(200,-1)?
+    def __init__(self,parent,title,prompts,values=[],size=-1):
         
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
                            pos=wx.DefaultPosition,
@@ -2216,27 +2217,25 @@ class MultiStringDialog(wx.Dialog):
         self.values = values
         self.prompts = prompts
         self.CenterOnParent()
-        self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         promptSizer = wx.FlexGridSizer(0,2,5,5)
         self.Indx = {}
         for prompt,value in zip(prompts,values):
-            promptSizer.Add(wx.StaticText(self.panel,-1,prompt),0,WACV)
-            valItem = wx.TextCtrl(self.panel,-1,value=value,style=wx.TE_PROCESS_ENTER)
+            promptSizer.Add(wx.StaticText(self,-1,prompt),0,WACV)
+            valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(size,-1))
             self.Indx[valItem.GetId()] = prompt
             valItem.Bind(wx.EVT_TEXT,self.newValue)
-            promptSizer.Add(valItem,0,WACV)
-        mainSizer.Add(promptSizer,0)
+            promptSizer.Add(valItem,1,WACV|wx.EXPAND,1)
+        mainSizer.Add(promptSizer,1,wx.ALL|wx.EXPAND,1)
         btnsizer = wx.StdDialogButtonSizer()
-        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn = wx.Button(self, wx.ID_OK)
         OKbtn.SetDefault()
         btnsizer.AddButton(OKbtn)
-        btn = wx.Button(self.panel, wx.ID_CANCEL)
+        btn = wx.Button(self, wx.ID_CANCEL)
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
-        self.panel.SetSizer(mainSizer)
-        self.panel.Fit()
+        self.SetSizer(mainSizer)
         self.Fit()
         
     def newValue(self,event):
@@ -2757,7 +2756,7 @@ class OrderBox(wxscroll.ScrolledPanel):
                 wid.SetSelection(self.chceDict[wid][1])
         self.GBsizer.Layout()
         self.FitInside()
-
+        
 ################################################################################
 def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.OPEN,
                   *args, **kwargs):

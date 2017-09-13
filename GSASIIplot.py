@@ -1970,6 +1970,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
+        Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1].get('background PWDR',['',-1.0])
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
@@ -1993,6 +1994,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if 'Offset' not in Pattern[0]:     #plot offset data
                 Ymax = max(Pattern[1][1])
                 Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
+            Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1].get('background PWDR',['',-1.0])
             PlotList.append(Pattern)
             ParmList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id,'Instrument Parameters'))[0])
@@ -2002,9 +2004,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     Ymax = None
     for Pattern in PlotList:
         xye = Pattern[1]
+        bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if xye[1] is None: continue
-        if Ymax is None: Ymax = max(xye[1])
-        Ymax = max(Ymax,max(xye[1]))
+        if Ymax is None: Ymax = max(xye[1]+bxye)
+        Ymax = max(Ymax,max(xye[1]+bxye))
     if Ymax is None: return # nothing to plot
     offsetX = Pattern[0]['Offset'][1]
     offsetY = Pattern[0]['Offset'][0]
@@ -2061,7 +2064,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         ifpicked = False
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
-        xye = ma.array(ma.getdata(Pattern[1]))
+#        xye = ma.array(ma.getdata(Pattern[1]))
+        xye = np.array(ma.getdata(Pattern[1]))
+        bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
             LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits')
@@ -2080,10 +2085,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if 'PWDR' in plottype:
             if G2frame.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
+                Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))
                 np.seterr(invalid=olderr['invalid'])
             else:
-                Y = xye[1]+offsetY*N*Ymax/100.0
+                Y = xye[1]+bxye+offsetY*N*Ymax/100.0
         elif plottype in ['SASD','REFD']:
             if plottype == 'SASD':
                 B = xye[5]

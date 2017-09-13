@@ -137,6 +137,13 @@ class RDFDialog(wx.Dialog):
 ################################################################################
 ##### Setup routines
 ################################################################################
+
+def GetFileBackground(G2frame,xye,Pattern):
+    backfile,mult = Pattern[0]['BackFile']
+    bxye = np.zeros(len(xye[1]))
+    if backfile:
+        bxye = mult*G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile))[1][1]
+    return bxye
     
 def IsHistogramInAnyPhase(G2frame,histoName):
     'Needs a doc string'
@@ -425,12 +432,14 @@ def UpdatePeakGrid(G2frame, data):
         PatternId = G2frame.PatternId
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        profile = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+        profile = Pattern[1]
+        bxye = GetFileBackground(G2frame,profile,Pattern)
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
         iFin = np.searchsorted(x0,limits[1])
         x = x0[iBeg:iFin]
-        y0 = profile[1][iBeg:iFin]
+        y0 = (profile[1]+bxye)[iBeg:iFin]
         ysig = 1.0*np.std(y0)
         offset = [-1,1]
         ymask = ma.array(y0,mask=(y0<ysig))
@@ -566,9 +575,11 @@ def UpdatePeakGrid(G2frame, data):
                 background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
                 limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
                 inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-                data = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+                Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+                data = Pattern[1]
+                fixback = GetFileBackground(G2frame,data,Pattern)
                 peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
-                    background,limits,inst,inst2,data,prevVaryList,oneCycle,controls)
+                    background,limits,inst,inst2,data,fixback,prevVaryList,oneCycle,controls)
                 if len(result[0]) != len(fullvaryList):
                     dlg.Destroy()
                     print ' ***** Sequential peak fit stopped at '+name+' *****'
@@ -610,7 +621,9 @@ def UpdatePeakGrid(G2frame, data):
         background = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
         limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        data = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+        data = Pattern[1]
+        bxye = GetFileBackground(G2frame,data,Pattern)
         dlg = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -619,7 +632,7 @@ def UpdatePeakGrid(G2frame, data):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
+            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,dlg)[0]
         finally:
             print 'finished'
             dlg.Destroy()
@@ -932,7 +945,7 @@ def UpdateBackground(G2frame,data):
         for item in copyList:
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             G2frame.GPXtree.SetItemPyData(
-                G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),copy.copy(data))
+                G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),copy.deepcopy(data))
 
     def OnBkgFit(event):
         
@@ -1230,6 +1243,30 @@ def UpdateBackground(G2frame,data):
             peaksGrid.AutoSizeColumns(False)
             peaksSizer.Add(peaksGrid)        
         return peaksSizer
+    
+    def BackFileSizer():
+        
+        def OnBackPWDR(event):
+            data[1]['background PWDR'][0] = back.GetValue()
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        
+        fileSizer = wx.BoxSizer(wx.VERTICAL)
+        fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0,WACV)
+        if 'background PWDR' not in data[1]:
+            data[1]['background PWDR'] = ['',-1.]
+        backSizer = wx.BoxSizer(wx.HORIZONTAL)
+        Choices = ['',]+G2gd.GetGPXtreeDataNames(G2frame,['PWDR',])
+        Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        Choices.pop(Choices.index(Source))
+        back = wx.ComboBox(parent=G2frame.dataWindow,value=data[1]['background PWDR'][0],choices=Choices,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        back.Bind(wx.EVT_COMBOBOX,OnBackPWDR)
+        backSizer.Add(back)
+        backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
+        backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1]['background PWDR'],1,nDig=(10,3))
+        backSizer.Add(backMult,0,WACV)
+        fileSizer.Add(backSizer)
+        return fileSizer
 
     # UpdateBackground execution starts here
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
@@ -1253,6 +1290,8 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add(DebyeSizer())
     mainSizer.Add((0,5),0)
     mainSizer.Add(PeaksSizer())
+    mainSizer.Add((0,5),0)
+    mainSizer.Add(BackFileSizer())
     G2frame.dataWindow.SetDataSize()
         
 ################################################################################

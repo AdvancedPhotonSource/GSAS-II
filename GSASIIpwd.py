@@ -1500,7 +1500,7 @@ def DoCalibInst(IndexPeaks,Inst):
     InstPrint(Inst,sigDict)
     return True
             
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
@@ -1518,6 +1518,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     :param numpy.array data: a 5xn array. data[0] is the x-values,
       data[1] is the y-values, data[2] are weight values, data[3], [4] and [5] are
       calc, background and difference intensities, respectively. 
+    :param array fixback: fixed background values
     :param list prevVaryList: Used in sequential refinements to override the
       variable list. Defaults as an empty list.
     :param bool oneCycle: True if only one cycle of fitting should be performed
@@ -1800,12 +1801,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         Rvals = {}
         badVary = []
         result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-               args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
+               args=(x[xBeg:xFin],(y+fixback)[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin    
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
-        Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
+        Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
         Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
         print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
         if ncyc:
@@ -1833,7 +1834,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     sigDict = dict(zip(varyList,sig))
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
-    yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
+    yd[xBeg:xFin] = (y+fixback)[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)

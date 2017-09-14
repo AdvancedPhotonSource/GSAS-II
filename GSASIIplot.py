@@ -112,8 +112,8 @@ _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
     0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
     0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
     1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=128)
-mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data),lut=128)
+mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=256)
+mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data),lut=256)
 #This can be done on request for other colors
 
 class _tabPlotWin(wx.Panel):    
@@ -2053,7 +2053,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
-    mcolors = mpl.cm.ScalarMappable(mpl.cm.get_cmap(G2frame.ContourColor))
+    mpl.rcParams['image.cmap'] = G2frame.ContourColor
+    mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
     if G2frame.Contour:
         ContourZ = []
         ContourY = []

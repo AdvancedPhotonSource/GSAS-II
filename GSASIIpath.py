@@ -133,6 +133,7 @@ def getsvnProxy():
         setsvnProxy(host,port)
         if not host.strip(): return '',''
         return host,port
+    return None,None
 
 def setsvnProxy(host,port):
     '''Sets the svn commands needed to use a proxy
@@ -163,7 +164,7 @@ def whichsvn():
     svnprog = 'svn'
     if sys.platform.startswith('win'): svnprog += '.exe'
     host,port = getsvnProxy()
-    if GetConfigValue('debug'):
+    if GetConfigValue('debug') and host:
         print('Using proxy host {} port {}'.format(host,port))
     # add likely places to find subversion when installed with GSAS-II
     pathlist = os.environ["PATH"].split(os.pathsep)

@@ -147,7 +147,7 @@ class G2PlotOgl(_tabPlotWin):
         if 'win' in sys.platform:           #Windows (& Mac) already double buffered
             self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
         else:                               #fix from Jim Hester for X systems
-            attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)
+            attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,wx.glcanvas.WX_GL_DEPTH_SIZE,24)
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
         # create GL context
         i,j= wx.__version__.split('.')[0:2]

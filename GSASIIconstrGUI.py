@@ -1513,6 +1513,12 @@ def UpdateRigidBodies(G2frame,data):
             G2G.G2MessageBox(G2frame,'Not enough atoms in rigid body; must be 3 or more')
         else:
             rbXYZ = np.array(rbXYZ)-np.array(rbXYZ[0])
+            Xxyz = rbXYZ[1]
+            X = Xxyz/np.sqrt(np.sum(Xxyz**2))
+            Yxyz = rbXYZ[2]
+            Y = Yxyz/np.sqrt(np.sum(Yxyz**2))
+            Mat = G2mth.getRBTransMat(X,Y)
+            rbXYZ = np.inner(Mat,rbXYZ).T
             data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
                 'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
             data['RBIds']['Residue'].append(rbId)
@@ -1849,6 +1855,7 @@ def UpdateRigidBodies(G2frame,data):
                     rbData['atNames'] = newNames
                     rbData['rbTypes'] = newTypes
                     rbData['rbXYZ'] = newXYZ
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 wx.CallAfter(UpdateResidueRB)
                     
             def OnPlotRB(event):
@@ -1916,6 +1923,7 @@ def UpdateRigidBodies(G2frame,data):
                     vecGrid.SelectRow(r,True)
 
             def OnRefSel(event):
+                
                 Obj = event.GetEventObject()
                 iref,res,jref = Indx[Obj.GetId()]
                 sel = Obj.GetValue()
@@ -1926,18 +1934,26 @@ def UpdateRigidBodies(G2frame,data):
                 FillRefChoice(rbId,rbData)
                 for i,ref in enumerate(RefObjs[jref]):
                     ref.SetItems([atNames[j] for j in refChoice[rbId][i]])
-                    ref.SetValue(atNames[rbData['rbRef'][i]])
+                    ref.SetValue(atNames[rbData['rbRef'][i]])                    
+                rbXYZ = rbData['rbXYZ']
                 if not iref:     #origin change
-                    rbXYZ = rbData['rbXYZ']
                     rbXYZ -= rbXYZ[ind]
-                    res.ClearSelection()
-                    resTable = res.GetTable()
-                    for r in range(res.GetNumberRows()):
-                        row = resTable.GetRowValues(r)
-                        row[2:4] = rbXYZ[r]
-                        resTable.SetRowValues(r,row)
-                    res.ForceRefresh()
-                    G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
+                #TODO - transform all atom XYZ by axis choices
+                Xxyz = rbXYZ[rbData['rbRef'][1]]
+                X = Xxyz/np.sqrt(np.sum(Xxyz**2))
+                Yxyz = rbXYZ[rbData['rbRef'][2]]
+                Y = Yxyz/np.sqrt(np.sum(Yxyz**2))
+                Mat = G2mth.getRBTransMat(X,Y)
+                rbXYZ = np.inner(Mat,rbXYZ).T
+                rbData['rbXYZ'] = rbXYZ
+                res.ClearSelection()
+                resTable = res.GetTable()
+                for r in range(res.GetNumberRows()):
+                    row = resTable.GetRowValues(r)
+                    row[2:4] = rbXYZ[r]
+                    resTable.SetRowValues(r,row)
+                res.ForceRefresh()
+                G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
                 
             Types = 2*[wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]
             colLabels = ['Name','Type','Cart x','Cart y','Cart z']

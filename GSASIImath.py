@@ -824,6 +824,25 @@ def getAtomXYZ(atoms,cx):
         XYZ.append(atom[cx:cx+3])
     return np.array(XYZ)
 
+def getRBTransMat(X,Y):
+    '''Get transformation for Cartesian axes given 2 vectors
+    X will  be parallel to new X-axis; X cross Y will be new Z-axis & 
+    (X cross Y) cross Y will be new Y-axis
+    Useful for rigid body axes definintion
+    
+    :param array X: normalized vector
+    :param array Y: normalized vector
+    
+    :returns: array M: transformation matrix 
+    use as XYZ' = np.inner(M,XYZ) where XYZ are Cartesian
+    
+    '''
+    Mat2 = np.cross(X,Y)      #UxV-->Z
+    Mat2 /= np.sqrt(np.sum(Mat2**2))
+    Mat3 = np.cross(Mat2,X)        #(UxV)xU-->Y
+    Mat3 /= np.sqrt(np.sum(Mat3**2))
+    return np.array([X,Mat3,Mat2])        
+                
 def RotateRBXYZ(Bmat,Cart,oriQ):
     '''rotate & transform cartesian coordinates to crystallographic ones
     no translation applied. To be used for numerical derivatives 

@@ -7523,28 +7523,31 @@ entered the right symbol for your structure.
             rbsizer.Add(rbsizer1)    
             rbsizer.Add(rbsizer2)    
             if model['Type'] == 'Residue':
-                atNames = RBData['Residue'][model['RBId']]['atNames']
-                rbsizer.Add(wx.StaticText(G2frame.MCSA,-1,'Torsions:'),0,WACV)
-                rbsizer3 = wx.FlexGridSizer(0,8,5,5)
-                for it,tor in enumerate(model['Tor'][0]):
-                    iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
-                    name = atNames[iBeg]+'-'+atNames[iFin]
-                    torRef = wx.CheckBox(G2frame.MCSA,-1,label=' %s: '%(name))
-                    torRef.SetValue(model['Tor'][1][it])
-                    torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
-                    Indx[torRef.GetId()] = [model,'Tor',it]
-                    rbsizer3.Add(torRef,0,WACV)
-                    torVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,model['Tor'][0],it,nDig=(10,4),OnLeave=OnPosVal)
-                    rbsizer3.Add(torVal,0,WACV)
-                    rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
-                    rmin,rmax = model['Tor'][2][it]
-                    torRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
-                    Indx[torRange.GetId()] = [model,'Tor',it]
-                    torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
-                    torRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-                    rbsizer3.Add(torRange,0,WACV)
-                rbsizer.Add(rbsizer3)
-                
+                try:
+                    atNames = RBData['Residue'][model['RBId']]['atNames']
+                    rbsizer.Add(wx.StaticText(G2frame.MCSA,-1,'Torsions:'),0,WACV)
+                    rbsizer3 = wx.FlexGridSizer(0,8,5,5)
+                    for it,tor in enumerate(model['Tor'][0]):
+                        iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
+                        name = atNames[iBeg]+'-'+atNames[iFin]
+                        torRef = wx.CheckBox(G2frame.MCSA,-1,label=' %s: '%(name))
+                        torRef.SetValue(model['Tor'][1][it])
+                        torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
+                        Indx[torRef.GetId()] = [model,'Tor',it]
+                        rbsizer3.Add(torRef,0,WACV)
+                        torVal = G2G.ValidatedTxtCtrl(G2frame.MCSA,model['Tor'][0],it,nDig=(10,4),OnLeave=OnPosVal)
+                        rbsizer3.Add(torVal,0,WACV)
+                        rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
+                        rmin,rmax = model['Tor'][2][it]
+                        torRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                        Indx[torRange.GetId()] = [model,'Tor',it]
+                        torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
+                        torRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
+                        rbsizer3.Add(torRange,0,WACV)
+                    rbsizer.Add(rbsizer3)
+                except KeyError:    #Missing RB - clear all away!
+                    data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+                    wx.CallAfter(UpdateMCSA)
             return rbsizer
             
         def MDSizer(POData):
@@ -7795,7 +7798,8 @@ entered the right symbol for your structure.
             print '**** ERROR - no models defined for MC/SA run****'
             return
         time1 = time.time()
-        if process == 'single':
+        nprocs = GSASIIpath.GetConfigValue('Multiprocessing_cores',0)
+        if process == 'single' or not nprocs:
             pgbar = wx.ProgressDialog('MC/SA','Residual Rcf =',101.0, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
@@ -7808,7 +7812,7 @@ entered the right symbol for your structure.
         try:
             tsf = 0.
             nCyc = mcsaControls['Cycles']
-            if process == 'single':
+            if process == 'single' or not nprocs:
                 for i in range(nCyc):
                     pgbar.SetTitle('MC/SA run '+str(i+1)+' of '+str(nCyc))
                     Result,tsum,nsum,rcov = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
@@ -7820,12 +7824,11 @@ entered the right symbol for your structure.
                 G2plt.PlotXYZ(G2frame,XY,rcov,labelX='ref No.',labelY='ref No.',newPlot=False,
                     Title='Reflection covariance matrix',zrange=[-1.,1.],color='RdYlGn')
             else:
-                nprocs = GSASIIpath.GetConfigValue('Multiprocessing_cores')
                 Results,sftime,numsf = G2mth.MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs)
                 MCSAdata['Results'] += Results   #+= to  any saved ones
                 print ' Total SF time: %.2fs MC/SA run time: %.2fs Nsfcalc: %d'%(sftime,time.time()-time1,numsf)
         finally:
-            if process == 'single':
+            if process == 'single' or not nprocs:
                 pgbar.Destroy()
         MCSAdata['Results'] = G2mth.sortArray(MCSAdata['Results'],2,reverse=False)
         MCSAdata['Results'][0][0] = True

@@ -7456,7 +7456,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
     mainSizer.Add(wtSizer)
-    if data[0].get('Dummy'):
+    if data[0].get('Dummy',False):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)
         Tmin = min(data[1][0])
         Tmax = max(data[1][0])

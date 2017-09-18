@@ -2951,7 +2951,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
         elif event.key == 's':
             if len(XY):
                 G2IO.XYsave(G2frame,XY,labelX,labelY,names)
-            if XY2 != None:
+            if XY2 != []:
                 G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
 #        else:
 #            return
@@ -3005,7 +3005,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
                 else:
                     Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
         if len(names):
-            Plot.legend(loc='best')
+            Plot.legend(names,loc='best')
         if not newPlot:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])

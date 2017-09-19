@@ -41,8 +41,8 @@ Refinement specifiers format
 Histogram parameters
 --------------------
 
-This table describes the dictionaries supplied to :func:`~G2PwdrData.set_refinement`
-and :func:`~G2PwdrData.clear_refinement`.
+This table describes the dictionaries supplied to :func:`~G2PwdrData.set_refinements`
+and :func:`~G2PwdrData.clear_refinements`.
 
 .. tabularcolumns:: |l|p|
 
@@ -88,9 +88,22 @@ Instrument Parameters                       As in Sample Paramters, Should be pr
 Phase parameters
 ----------------
 
-This table describes the dictionaries supplied to :func:`~G2Phase.set_refinement`
-and :func:`~G2Phase.clear_refinement`.
+This table describes the dictionaries supplied to :func:`~G2Phase.set_refinements`
+and :func:`~G2Phase.clear_refinements`.
 
+===================== ====================
+key                   explanation
+===================== ====================
+Cell                  Whether or not to refine the unit cell.
+Atoms                 Dictionary of atoms and refinement flags.
+                      Each key should be an atom label, e.g.
+                      'O3', 'Mn5', and each value should be
+                      a string defining what values to refine.
+                      Values can be any combination of 'F'
+                      for fractional occupancy, 'X' for position,
+                      and 'U' for Debye-Waller factor
+LeBail                Enables LeBail intensity extraction.
+===================== ====================
 
 .. _HAP_parameters_table:
 
@@ -98,9 +111,37 @@ and :func:`~G2Phase.clear_refinement`.
 Histogram-and-phase parameters
 ------------------------------
 
-This table describes the dictionaries supplied to :func:`~G2Phase.set_HAP_refinement`
-and :func:`~G2Phase.clear_HAP_refinement`.
+This table describes the dictionaries supplied to :func:`~G2Phase.set_HAP_refinements`
+and :func:`~G2Phase.clear_HAP_refinements`.
 
+===================== ===================== ====================
+key                   subkey                explanation
+===================== ===================== ====================
+Babinet                                     Should be a **list** of the following
+                                            subkeys. If not, assumes both
+                                            BabA and BabU
+\                     BabA
+\                     BabU
+Extinction                                  Should be boolean, whether or not to
+                                            refine.
+HStrain                                     Should be boolean, whether or not to
+                                            refine.
+Mustrain
+\                     type                  Mustrain model. One of 'isotropic',
+                                            'uniaxial', or 'generalized'
+\                     direction             For uniaxial. A list of three integers,
+                                            the [hkl] direction of the axis.
+\                     refine                Usually boolean, whether or not to refine.
+                                            When in doubt, set it to true.
+                                            For uniaxial model, can specify list
+                                            of 'axial' or 'equatorial'. If boolean
+                                            given sets both axial and equatorial.
+Pref.Ori.                                   Boolean, whether to refine
+Show                                        Boolean, whether to refine
+Size                                        Not implemented
+Use                                         Boolean, whether to refine
+Scale                                       Boolean, whether to refine
+===================== ===================== ====================
 
 ============================
 Scriptable API
@@ -1816,10 +1857,9 @@ class G2Phase(G2ObjectWrapper):
         :returns: None"""
         for key, value in refs.items():
             if key == "Cell":
-                self.data['General']['Cell'][0] = True
-            elif key == "Atoms":
-                cx, ct, cs, cia = self.data['General']['AtomPtrs']
+                self.data['General']['Cell'][0] = value
 
+            elif key == "Atoms":
                 for atomlabel, atomrefinement in value.items():
                     if atomlabel == 'all':
                         for atom in self.atoms():
@@ -1829,11 +1869,12 @@ class G2Phase(G2ObjectWrapper):
                         if atom is None:
                             raise ValueError("No such atom: " + atomlabel)
                         atom.refinement_flags = atomrefinement
+
             elif key == "LeBail":
                 hists = self.data['Histograms']
                 for hname, hoptions in hists.items():
                     if 'LeBail' not in hoptions:
-                        hoptions['newLeBail'] = True
+                        hoptions['newLeBail'] = bool(True)
                     hoptions['LeBail'] = bool(value)
             else:
                 raise ValueError("Unknown key:", key)
@@ -1893,10 +1934,10 @@ class G2Phase(G2ObjectWrapper):
                             hist['Babinet'][param][1] = True
                 elif key == 'Extinction':
                     for h in histograms:
-                        h['Extinction'][1] = True
+                        h['Extinction'][1] = bool(val)
                 elif key == 'HStrain':
                     for h in histograms:
-                        hist['HStrain'][1] = [True for p in hist['Hstrain'][0]]
+                        hist['HStrain'][1] = [bool(val) for p in hist['Hstrain'][0]]
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = h['Mustrain']
@@ -1920,6 +1961,13 @@ class G2Phase(G2ObjectWrapper):
                                     types = val['refine']
                                     if isinstance(types, (unicode, str)):
                                         types = [types]
+                                    elif isinstance(types, bool):
+                                        mustrain[2][0] = types
+                                        mustrain[2][1] = types
+                                        types = []
+                                    else:
+                                        raise ValueError("Not sure what to do with: "
+                                                         + str(types))
                                 else:
                                     types = []
 
@@ -1941,18 +1989,19 @@ class G2Phase(G2ObjectWrapper):
                             mustrain[3] = direction
                 elif key == 'Pref.Ori.':
                     for h in histograms:
-                        h['Pref.Ori.'][2] = True
+                        h['Pref.Ori.'][2] = bool(val)
                 elif key == 'Show':
                     for h in histograms:
-                        h['Show'] = True
+                        h['Show'] = bool(val)
                 elif key == 'Size':
+                    # TODO
                     raise NotImplementedError()
                 elif key == 'Use':
                     for h in histograms:
-                        h['Use'] = True
+                        h['Use'] = bool(val)
                 elif key == 'Scale':
                     for h in histograms:
-                        h['Scale'][1] = False
+                        h['Scale'][1] = bool(val)
 
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and

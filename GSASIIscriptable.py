@@ -13,9 +13,16 @@
 
 Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
 
-Supports a command line interface as well.
+Supports a command line interface as well. Run `python GSASIIscriptable.py --help` to
+show the available subcommands, and inspect each subcommand with
+`python GSASIIscriptable.py <subcommand> --help`.
 
-Look at :class:`G2Project` to start.
+This file specifies several wrapper classes around GSAS-II data representations.
+They all inherit from :class:`G2ObjectWrapper`. The chief class is :class:`G2Project`,
+which represents an entire GSAS-II project and provides several methods to access
+phases, powder histograms, and execute Rietveld refinements.
+
+.. _Refinement_parameters_kinds:
 
 =====================
 Refinement parameters
@@ -23,17 +30,21 @@ Refinement parameters
 
 There are three classes of refinement parameters:
 
-    * Histogram. Turned on and off through :func:`~G2PwdrData.set_refinements`
-      and :func:`~G2PwdrData.clear_refinements`
-    * Phase. Turned on and off through :func:`~G2Phase.set_refinements`
-      and :func:`~G2Phase.clear_refinements`
+    * Histogram. Turned on and off through :func:`G2PwdrData.set_refinements`
+      and :func:`G2PwdrData.clear_refinements`
+    * Phase. Turned on and off through :func:`G2Phase.set_refinements`
+      and :func:`G2Phase.clear_refinements`
     * Histogram-and-phase (HAP). Turned on and off through
-      :func:`~G2Phase.set_HAP_refinements` and :func:`~G2Phase.clear_HAP_refinements`
+      :func:`G2Phase.set_HAP_refinements` and :func:`G2Phase.clear_HAP_refinements`
 
 
 ============================
 Refinement specifiers format
 ============================
+
+Refinement parameters are specified as dictionaries, supplied to any of the functions
+named in :ref:`Refinement_parameters_kinds`. Each method accepts a different set
+of keys, described below for each of the three parameter classes.
 
 .. _Histogram_parameters_table:
 
@@ -41,16 +52,27 @@ Refinement specifiers format
 Histogram parameters
 --------------------
 
-This table describes the dictionaries supplied to :func:`~G2PwdrData.set_refinements`
-and :func:`~G2PwdrData.clear_refinements`.
+This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
+and :func:`G2PwdrData.clear_refinements`.
 
-.. tabularcolumns:: |l|p|
+Example:
+
+.. code-block::  python
+
+    params = {'set': { 'Limits': [0.8, 12.0],
+                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev', 'refine': True}},
+              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
+    some_histogram.set_refinements(params['set'])
+    some_histogram.clear_refinements(params['clear'])
+
+.. tabularcolumns:: |l|p|p|
 
 ===================== ====================  ====================
 key                   subkey                explanation
 ===================== ====================  ====================
 Limits                                      The 2-theta range of values to consider. Can
-                                            be either a dictionary of 'low' and 'high',
+                                            be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
 \                     low                   Sets the low limit
 \                     high                  Sets the high limit
@@ -88,8 +110,20 @@ Instrument Parameters                       As in Sample Paramters, Should be pr
 Phase parameters
 ----------------
 
-This table describes the dictionaries supplied to :func:`~G2Phase.set_refinements`
-and :func:`~G2Phase.clear_refinements`.
+This table describes the dictionaries supplied to :func:`G2Phase.set_refinements`
+and :func:`G2Phase.clear_refinements`.
+
+Example:
+
+.. code-block::  python
+
+    params = { 'LeBail': True, 'Cell': True,
+               'Atoms': { 'Mn1': 'X',
+                          'O3': 'XU',
+                          'V4': 'FXU'}}
+    some_histogram.set_refinements(params)
+
+.. tabularcolumns:: |l|p|
 
 ===================== ====================
 key                   explanation
@@ -111,37 +145,50 @@ LeBail                Enables LeBail intensity extraction.
 Histogram-and-phase parameters
 ------------------------------
 
-This table describes the dictionaries supplied to :func:`~G2Phase.set_HAP_refinements`
-and :func:`~G2Phase.clear_HAP_refinements`.
+This table describes the dictionaries supplied to :func:`G2Phase.set_HAP_refinements`
+and :func:`G2Phase.clear_HAP_refinements`.
 
-===================== ===================== ====================
-key                   subkey                explanation
-===================== ===================== ====================
-Babinet                                     Should be a **list** of the following
-                                            subkeys. If not, assumes both
-                                            BabA and BabU
+Example:
+
+.. code-block::  python
+
+    params = { 'Babinet': 'BabA',
+               'Extinction': True,
+               'Mustrain': { 'type': 'uniaxial',
+                             'direction': [0, 0, 1],
+                             'refine': True}}
+    some_phase.set_HAP_refinements(params)
+
+.. tabularcolumns:: |l|p|p|
+
+===================== =====================  ====================
+key                   subkey                 explanation
+===================== =====================  ====================
+Babinet                                      Should be a **list** of the following
+                                             subkeys. If not, assumes both
+                                             BabA and BabU
 \                     BabA
 \                     BabU
-Extinction                                  Should be boolean, whether or not to
-                                            refine.
-HStrain                                     Should be boolean, whether or not to
-                                            refine.
+Extinction                                   Should be boolean, whether or not to
+                                             refine.
+HStrain                                      Should be boolean, whether or not to
+                                             refine.
 Mustrain
-\                     type                  Mustrain model. One of 'isotropic',
-                                            'uniaxial', or 'generalized'
-\                     direction             For uniaxial. A list of three integers,
-                                            the [hkl] direction of the axis.
-\                     refine                Usually boolean, whether or not to refine.
-                                            When in doubt, set it to true.
-                                            For uniaxial model, can specify list
-                                            of 'axial' or 'equatorial'. If boolean
-                                            given sets both axial and equatorial.
-Pref.Ori.                                   Boolean, whether to refine
-Show                                        Boolean, whether to refine
-Size                                        Not implemented
-Use                                         Boolean, whether to refine
-Scale                                       Boolean, whether to refine
-===================== ===================== ====================
+\                     type                   Mustrain model. One of 'isotropic',
+                                             'uniaxial', or 'generalized'
+\                     direction              For uniaxial. A list of three integers,
+                                             the [hkl] direction of the axis.
+\                     refine                 Usually boolean, whether or not to refine.
+                                             When in doubt, set it to true.
+                                             For uniaxial model, can specify list
+                                             of 'axial' or 'equatorial'. If boolean
+                                             given sets both axial and equatorial.
+Pref.Ori.                                    Boolean, whether to refine
+Show                                         Boolean, whether to refine
+Size                                         Not implemented
+Use                                          Boolean, whether to refine
+Scale                                        Boolean, whether to refine
+===================== =====================  ====================
 
 ============================
 Scriptable API
@@ -781,7 +828,43 @@ class G2ObjectWrapper(object):
 
 
 class G2Project(G2ObjectWrapper):
-    """Represents an entire GSAS-II project."""
+    """
+    Represents an entire GSAS-II project.
+
+    There are two ways to initialize it:
+
+    >>> # Load an existing project file
+    >>> proj = G2Project('filename.gpx')
+    >>> # Create a new project
+    >>> proj = G2Project(filename='new_file.gpx')
+    >>> # Specify an author
+    >>> proj = G2Project(author='Dr. So-And-So', filename='my_data.gpx')
+
+    Histograms can be accessed easily.
+
+    >>> # By name
+    >>> hist = proj.histogram('PWDR my-histogram-name')
+    >>> # Or by index
+    >>> hist = proj.histogram(0)
+    >>> assert hist.id == 0
+    >>> # Or by random id
+    >>> assert hist == proj.histogram(hist.ranId)
+
+    Phases can be accessed the same way.
+
+    >>> phase = proj.phase('name of phase')
+
+    New data can also be loaded via :func:`~G2Project.add_phase` and
+    :func:`~G2Project.add_powder_histogram`.
+
+    >>> hist = proj.add_powder_histogram('some_data_file.chi',
+                                         'instrument_parameters.prm')
+    >>> phase = proj.add_phase('my_phase.cif', histograms=[hist])
+
+    Parameters for Rietveld refinement can be turned on and off as well.
+    See :func:`~G2Project.set_refinement`, :func:`~G2Project.refine`,
+    :func:`~G2Project.iter_refinements`, :func:`~G2Project.do_refinements`.
+    """
     def __init__(self, gpxfile=None, author=None, filename=None):
         """Loads a GSAS-II project from a specified filename.
 
@@ -2231,61 +2314,5 @@ def main():
     result = parser.parse_args()
     result.func(result)
 
-    # argv = sys.argv
-    # if len(argv) > 1 and argv[1] in subcommands:
-    #     subcommands[argv[1]](*argv[2:])
-    # elif len(argv) == 1 or argv[1] in ('help', '--help', '-h'):
-    #     # TODO print usage
-    #     subcommand_names = ' | '.join(sorted(subcommands.keys()))
-    #     print("USAGE: {} [ {} ] ...".format(argv[0], subcommand_names))
-    # else:
-    #     print("Unknown subcommand: {}".format(argv[1]))
-    #     print("Available subcommands:")
-    #     for name in sorted(subcommands.keys()):
-    #         print("\t{}".format(name))
-    #     sys.exit(-1)
-    # sys.exit(0)
-
 if __name__ == '__main__':
     main()
-
-
-    # from refinements.py
-#      USAGE = """USAGE: {} datafile instparams phasefile projectname refinements
-
-# datafile:    Input powder data
-# intparams:   Corresponding instrument parameter file
-# phasefile:   Phase to refine against data
-# projectname: Project file to be created, should end in .gpx
-# refinements: JSON file of refinements to be executed
-# """
-#     try:
-#         datafile, instprm, phasefile, projectname, refinements = sys.argv[1:]
-#     except ValueError:
-#         print(USAGE.format(sys.argv[0]))
-#         sys.exit(-1)
-
-#     try:
-#         with open(refinements) as f:
-#             refinements = json.load(f)
-#     except IOError:
-#         print("No such refinements file: {}".format(refinements))
-
-#     print("Creating project file \"{}\"...".format(projectname))
-#     proj = G2Project(filename=projectname)
-#     # Add the histogram
-#     hist = proj.add_powder_histogram(datafile, instprm)
-#     # Add the phase, and associate it with the histogram
-#     proj.add_phase(phasefile, histograms=[hist.name])
-
-#     proj.do_refinements(refinements['refinements'])
-#     proj.save()
-
-
-    # from gpx_dumper
-    # import IPython.lib.pretty as pretty
-    # proj, nameList = LoadDictFromProjFile(sys.argv[1])
-    # print("names:", nameList)
-    # for key, val in proj.items():
-    #     print(key, ":", sep='')
-    #     pretty.pprint(val)

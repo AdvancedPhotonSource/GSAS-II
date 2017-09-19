@@ -29,6 +29,82 @@ There are three classes of refinement parameters:
       and :func:`~G2Phase.clear_refinements`
     * Histogram-and-phase (HAP). Turned on and off through
       :func:`~G2Phase.set_HAP_refinements` and :func:`~G2Phase.clear_HAP_refinements`
+
+
+============================
+Refinement specifiers format
+============================
+
+.. _Histogram_parameters_table:
+
+--------------------
+Histogram parameters
+--------------------
+
+This table describes the dictionaries supplied to :func:`~G2PwdrData.set_refinement`
+and :func:`~G2PwdrData.clear_refinement`.
+
+.. tabularcolumns:: |l|p|
+
+===================== ====================  ====================
+key                   subkey                explanation
+===================== ====================  ====================
+Limits                                      The 2-theta range of values to consider. Can
+                                            be either a dictionary of 'low' and 'high',
+                                            or a list of 2 items [low, high]
+\                     low                   Sets the low limit
+\                     high                  Sets the high limit
+Sample Parameters                           Should be provided as a **list** of subkeys
+                                            to set or clear, e.g. ['DisplaceX', 'Scale']
+\                     Absorption
+\                     Contrast
+\                     DisplaceX             Sample displacement along the X direction
+\                     DisplaceY             Sample displacement along the Y direction
+\                     Scale                 Histogram Scale factor
+Background                                  Sample background. If value is a boolean,
+                                            the background's 'refine' parameter is set
+                                            to the given boolean. Usually should be a
+                                            dictionary with any of the following keys:
+\                     type                  The background model, e.g. 'chebyschev'
+\                     refine                The value of the refine flag, boolean
+\                     no. coeffs            Number of coefficients to use, integer
+\                     coeffs                List of floats, literal values for background
+\                     FixedPoints           List of (2-theta, intensity) values for fixed points
+\                     fit fixed points      If True, triggers a fit to the fixed points to be calculated. It is calculated when this key is detected, regardless of calls to refine.
+Instrument Parameters                       As in Sample Paramters, Should be provided as a **list** of subkeys to
+                                            set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
+\                     U, V, W               All separate keys. Gaussian peak profile terms
+\                     X, Y                  Separate keys. Lorentzian peak profile terms
+\                     Zero                  Zero shift
+\                     SH/L
+\                     Polariz.              Polarization parameter
+\                     Lam                   Lambda, the incident wavelength
+===================== ====================  ====================
+
+
+.. _Phase_parameters_table:
+
+----------------
+Phase parameters
+----------------
+
+This table describes the dictionaries supplied to :func:`~G2Phase.set_refinement`
+and :func:`~G2Phase.clear_refinement`.
+
+
+.. _HAP_parameters_table:
+
+------------------------------
+Histogram-and-phase parameters
+------------------------------
+
+This table describes the dictionaries supplied to :func:`~G2Phase.set_HAP_refinement`
+and :func:`~G2Phase.clear_HAP_refinement`.
+
+
+============================
+Scriptable API
+============================
 """
 from __future__ import division, print_function # needed?
 import argparse
@@ -719,7 +795,7 @@ class G2Project(G2ObjectWrapper):
             raise AttributeError("No file name to save to")
         SaveDictToProjFile(self.data, self.names, self.filename)
 
-    def add_powder_histogram(self, datafile, iparams):
+    def add_powder_histogram(self, datafile, iparams, phases=[]):
         """Loads a powder data histogram into the project.
 
         Automatically checks for an instrument parameter file, or one can be
@@ -727,6 +803,7 @@ class G2Project(G2ObjectWrapper):
 
         :param str datafile: The powder data file to read, a filename.
         :param str iparams: The instrument parameters file, a filename.
+        :param list phases: Phases to link to the new histogram
 
         :returns: A :class:`G2PwdrData` object representing
             the histogram
@@ -740,13 +817,17 @@ class G2Project(G2ObjectWrapper):
                                           [h.name for h in self.histograms()])
         if histname in self.data:
             print("Warning - redefining histogram", histname)
+        elif self.names[-1][0] == 'Phases':
+            self.names.insert(-1, new_names)
         else:
-            if self.names[-1][0] == 'Phases':
-                self.names.insert(-1, new_names)
-            else:
-                self.names.append(new_names)
+            self.names.append(new_names)
         self.data[histname] = pwdrdata
         self.update_ids()
+
+        for phase in phases:
+            phase = self.phase(phase)
+            self.link_histogram_phase(histname, phase)
+
         return self.histogram(histname)
 
     def add_phase(self, phasefile, phasename=None, histograms=[]):
@@ -802,20 +883,6 @@ class G2Project(G2ObjectWrapper):
 
         for hist in histograms:
             self.link_histogram_phase(hist, phasename)
-            # if histname.startswith('HKLF '):
-            #     raise NotImplementedError("Does not support HKLF yet")
-            # elif histname.startswith('PWDR '):
-            #     hist = self.histogram(histname)
-            #     hist['Reflection Lists'][generalData['Name']] = {}
-            #     UseList[histname] = SetDefaultDData('PWDR', histname, NShkl=NShkl, NDij=NDij)
-            #     for key, val in [('Use', True), ('LeBail', False),
-            #                      ('newLeBail', True),
-            #                      ('Babinet', {'BabA': [0.0, False],
-            #                                   'BabU': [0.0, False]})]:
-            #         if key not in UseList[histname]:
-            #             UseList[histname][key] = val
-            # else:
-            #     raise NotImplementedError("Unexpected histogram" + histname)
 
         for obj in self.names:
             if obj[0] == 'Phases':
@@ -1153,7 +1220,9 @@ class G2Project(G2ObjectWrapper):
         :param list vars: A list of variables to hold. Either :class:`GSASIIobj.G2VarObj` objects,
             string variable specifiers, or arguments for :meth:`make_var_obj`
         :param str type: A string constraint type specifier. See
-        :class:`~GSASIIscriptable.G2Project.add_constraint_raw`"""
+            :class:`~GSASIIscriptable.G2Project.add_constraint_raw`
+
+        """
         for var in vars:
             if isinstance(var, str):
                 var = self.make_var_obj(var)
@@ -1417,9 +1486,13 @@ class G2PwdrData(G2ObjectWrapper):
     def set_refinements(self, refs):
         """Sets the refinement parameter 'key' to the specification 'value'
 
-        :param dict refs: A dictionary of the parameters to be set.
+        :param dict refs: A dictionary of the parameters to be set. See
+                          :ref:`Histogram_parameters_table` for a description of
+                          what these dictionaries should be.
 
-        :returns: None"""
+        :returns: None
+
+        """
         do_fit_fixed_points = False
         for key, value in refs.items():
             if key == 'Limits':
@@ -1435,6 +1508,9 @@ class G2PwdrData(G2ObjectWrapper):
             elif key == 'Sample Parameters':
                 sample = self.data['Sample Parameters']
                 for sparam in value:
+                    if sparam not in sample:
+                        raise ValueError("Unknown refinement parameter, "
+                                         + str(sparam))
                     sample[sparam][1] = True
             elif key == 'Background':
                 bkg, peaks = self.data['Background']
@@ -1596,6 +1672,7 @@ class G2Phase(G2ObjectWrapper):
 
         .. seealso::
            :func:`~G2Phase.get_cell_and_esd`
+
         """
         cell = self.data['General']['Cell']
         return {'length_a': cell[1], 'length_b': cell[2], 'length_c': cell[3],
@@ -1608,8 +1685,10 @@ class G2Phase(G2ObjectWrapper):
         representing the estimated standard deviations of the unit cell.
 
         :returns: a tuple of two dictionaries
+
         .. seealso::
            :func:`~G2Phase.get_cell`
+
         """
         # translated from GSASIIstrIO.ExportBaseclass.GetCell
         import GSASIIstrIO as G2stIO
@@ -1730,7 +1809,9 @@ class G2Phase(G2ObjectWrapper):
     def set_refinements(self, refs):
         """Sets the refinement parameter 'key' to the specification 'value'
 
-        :param dict refs: A dictionary of the parameters to be set.
+        :param dict refs: A dictionary of the parameters to be set. See
+                          :ref:`Phase_parameters_table` for a description of
+                          this dictionary.
 
         :returns: None"""
         for key, value in refs.items():
@@ -1745,6 +1826,8 @@ class G2Phase(G2ObjectWrapper):
                             atom.refinement_flags = atomrefinement
                     else:
                         atom = self.atom(atomlabel)
+                        if atom is None:
+                            raise ValueError("No such atom: " + atomlabel)
                         atom.refinement_flags = atomrefinement
             elif key == "LeBail":
                 hists = self.data['Histograms']
@@ -1782,7 +1865,9 @@ class G2Phase(G2ObjectWrapper):
         """Sets the given HAP refinement parameters between this phase and
         the given histograms
 
-        :param dict refs: A dictionary of the parameters to be set.
+        :param dict refs: A dictionary of the parameters to be set. See
+                          :ref:`HAP_parameters_table` for a description of this
+                          dictionary.
         :param histograms: Either 'all' (default) or a list of the histograms
             whose HAP parameters will be set with this phase. Histogram and phase
             must already be associated
@@ -1816,7 +1901,7 @@ class G2Phase(G2ObjectWrapper):
                     for h in histograms:
                         mustrain = h['Mustrain']
                         newType = None
-                        if isinstance(val, str):
+                        if isinstance(val, (unicode, str)):
                             if val in ['isotropic', 'uniaxial', 'generalized']:
                                 newType = val
                             else:
@@ -1831,9 +1916,24 @@ class G2Phase(G2ObjectWrapper):
                                 mustrain[2][0] = True
                                 mustrain[5] = [False for p in mustrain[4]]
                             elif newType == 'uniaxial':
-                                pass
+                                if 'refine' in val:
+                                    types = val['refine']
+                                    if isinstance(types, (unicode, str)):
+                                        types = [types]
+                                else:
+                                    types = []
+
+                                for unitype in types:
+                                    if unitype == 'equatorial':
+                                        mustrain[2][0] = True
+                                    elif unitype == 'axial':
+                                        mustrain[2][1] = True
+                                    else:
+                                        msg = 'Invalid uniaxial mustrain type'
+                                        raise ValueError(msg + ': ' + unitype)
                             else:  # newtype == 'generalized'
                                 mustrain[2] = [False for p in mustrain[1]]
+
                         if direction:
                             direction = [int(n) for n in direction]
                             if len(direction) != 3:

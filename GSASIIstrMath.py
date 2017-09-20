@@ -3926,8 +3926,8 @@ def getPowderProfileDervMP(args):
                        depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
     # now process derivatives in constraints
     dMdv[:,ma.getmaskarray(x)] = 0.  # instead of masking, zero out masked values
-    G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
-    return dMdv
+    #G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
+    return dMdv,depDerivDict
     
 def UserRejectHKL(ref,im,userReject):
     if ref[5+im]/ref[6+im] < userReject['minF/sig']:
@@ -4069,8 +4069,10 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             x,y,w,yc,yb,yd = Histogram['Data']
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
-            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDervMP([parmDict,x[xB:xF],
+            dMdv,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
+            G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
+            dMdvh = np.sqrt(w[xB:xF])*dMdv
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             phase = Histogram['Reflection Lists']
@@ -4133,19 +4135,23 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             if useMP:
                 MPpool = mp.Pool(ncores)
                 dMdvh = None
+                depDerivDict = None
                 profArgs = [
                     (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
                      i,ncores) for i in range(ncores)]
-                for dmdv in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
+                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
                     if dMdvh is None:
                        dMdvh = dmdv
+                       depDerivDict = depDerivs
                     else: 
                        dMdvh += dmdv
+                       for key in depDerivs.keys(): depDerivDict[key] += depDerivs[key]                        
             else:
-                dMdvh = getPowderProfileDervMP([parmDict,x[xB:xF],
+                dMdvh,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
                     varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
+            G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
             if GSASIIpath.GetConfigValue('debug'): print 'getPowderProfileDerv t=',time.time()-starttime
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]

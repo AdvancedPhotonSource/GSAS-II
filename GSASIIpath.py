@@ -26,7 +26,7 @@ import numpy as np
 g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS'
 'Define the location of the GSAS-II subversion repository'
     
-path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # location of this file; save before any changes in pwd
+path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__))) # location of this file; save before any changes in pwd
 
 # convert version numbers as '1.2.3' to integers (1002) and back (to 1.2)
 fmtver = lambda v: str(v//1000)+'.'+str(v%1000)

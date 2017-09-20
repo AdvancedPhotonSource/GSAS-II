@@ -1504,7 +1504,7 @@ entered the right symbol for your structure.
                 ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
             [['2/m'+'c'],10,zip([" a = "," b = "," c = "," gamma = "," Vol = "],
                 ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,5,0])],
-            [['-1'],8,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+            [['-1'],7,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
                 ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
                 [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
                 

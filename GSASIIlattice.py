@@ -300,7 +300,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
                 atom[cm:cm+3] = mom*mag
     newPhase['Atoms'] = newAtoms
     newPhase['Atoms'],atCodes = GetUnique(newPhase,atCodes)
-    newPhase['Drawing']['Atoms'] = []
+    newPhase['Drawing'] = []
     newPhase['ranId'] = ran.randint(0,sys.maxint)
     return newPhase,atCodes
     

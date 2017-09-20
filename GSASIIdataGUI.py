@@ -7127,7 +7127,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colList += [valList]
         G2frame.colSigs += [esdList]
         colLabels += [expr]
-        Types += [wg.GRID_VALUE_FLOAT+':10,3']
+        Types += [wg.GRID_VALUE_FLOAT+':10,5']
     #---- table build done -------------------------------------------------------------
 
     # Make dict needed for creating & editing pseudovars (PSvarDict).

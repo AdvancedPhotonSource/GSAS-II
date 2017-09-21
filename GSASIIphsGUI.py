@@ -330,7 +330,7 @@ class SphereEnclosure(wx.Dialog):
 
 ################################################################################
 class TransformDialog(wx.Dialog):
-    ''' Phase transformation
+    ''' Phase transformation X' = M*(X-U)+V
     
     :param wx.Frame parent: reference to parent frame (or None)
     :param phase: phase data
@@ -348,7 +348,8 @@ class TransformDialog(wx.Dialog):
 #            self.Vec = np.zeros(4)
 #        else:
         self.Trans = np.eye(3)
-        self.Vec = np.zeros(3)
+        self.Uvec = np.zeros(3)
+        self.Vvec = np.zeros(3)
         self.oldSpGrp = phase['General']['SGData']['SpGrp']
         self.oldSGdata = phase['General']['SGData']
         self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
@@ -439,7 +440,7 @@ class TransformDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
-        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix & vector: M*X+V = X'"))
+        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix & vectors: M*(X-U)+V = X'"))
 #        if self.Super:
 #            Trmat = wx.FlexGridSizer(4,4,0,0)
 #        else:
@@ -454,13 +455,15 @@ class TransformDialog(wx.Dialog):
         common.Bind(wx.EVT_COMBOBOX,OnCommon)
         commonSizer.Add(common,0,WACV)
         transSizer.Add(commonSizer)
-        Trmat = wx.FlexGridSizer(3,5,0,0)
+        Trmat = wx.FlexGridSizer(3,6,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
                 item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
                 Trmat.Add(item)
             Trmat.Add((25,0),0)
-            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vec,iy,nDig=(10,3),size=(65,25))
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Uvec,iy,nDig=(10,3),size=(65,25))
+            Trmat.Add(vec)
+            vec = G2G.ValidatedTxtCtrl(self.panel,self.Vvec,iy,nDig=(10,3),size=(65,25))
             Trmat.Add(vec)
         transSizer.Add(Trmat)
         MatSizer.Add((10,0),0)
@@ -524,7 +527,7 @@ class TransformDialog(wx.Dialog):
         else:
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-        return self.Phase,self.Trans,self.Vec,self.ifMag,self.ifConstr,self.Common
+        return self.Phase,self.Trans,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -2175,7 +2178,7 @@ entered the right symbol for your structure.
         dlg = TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Vec,ifMag,ifConstr,Common = dlg.GetSelection()
+                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
             else:
                 return
         finally:
@@ -2188,12 +2191,12 @@ entered the right symbol for your structure.
             Atoms = data['Atoms']
             for atom in Atoms:
                 for i in range(3):
-                    atom[cx+i] += Vec[i]
+                    atom[cx+i] -= Uvec[i]
                 atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
             data['Drawing'] = []
         else:
             phaseName = newPhase['General']['Name']
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vvec,ifMag)
             detTrans = np.abs(nl.det(Trans))
     
             generalData = newPhase['General']

@@ -6742,8 +6742,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         else:
             dlg.Destroy()
-    
-    #def GridRowLblToolTip(row): return 'Row ='+str(row)
+            
+    def OnCellChange(event):
+        r = event.GetRow()
+        val = G2frame.SeqTable.GetValue(r,0)
+        print r,val
+        G2frame.SeqTable.SetValue(r,0, val)
     
     # lookup table for unique cell parameters by symmetry
     cellGUIlist = [
@@ -7186,11 +7190,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=displayLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
-    G2frame.dataDisplay.EnableEditing(False)
-    # make all read-only
-#    for c in range(len(colLabels)):
-#        for r in range(nRows):
-#            G2frame.dataDisplay.SetCellReadOnly(r,c)
+    # make all Use editable all others ReadOnly
+    for c in range(len(colLabels)):
+        for r in range(nRows):
+            if c:
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+            else:
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)

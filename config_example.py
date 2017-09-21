@@ -159,3 +159,6 @@ than zero causes the recommended number of cores [using multiprocessing.cpu_coun
 to be used. Setting this number to 0 or 1 avoids use of the multiprocessing module: all
 computations are performed in-line. 
 '''
+
+Show_timing = False
+'''If True, shows various timing results.'''

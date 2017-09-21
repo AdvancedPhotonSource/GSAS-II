@@ -2416,7 +2416,7 @@ class ExpressionObj(object):
                     pass
             # includes a package, lets try to load the packages
             pkgname = ''
-            path = sys.path
+            path = sys.path+['./',]
             for pkg in f.split('.')[:-1]: # if needed, descend down the tree
                 if pkgname:
                     pkgname += '.' + pkg

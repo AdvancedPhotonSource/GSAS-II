@@ -2928,7 +2928,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
     '''Compute the observed structure factors for Powder histograms and store in reflection array
     Multiprocessing support added
     '''
-    if GSASIIpath.GetConfigValue('debug'):
+    if GSASIIpath.GetConfigValue('Show_timing',False):
         starttime = time.time() #; print 'start GetFobsSq'
     histoList = Histograms.keys()
     histoList.sort()
@@ -3059,12 +3059,12 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
             Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
-    if GSASIIpath.GetConfigValue('debug'):
+    if GSASIIpath.GetConfigValue('Show_timing',False):
         print 'GetFobsSq t=',time.time()-starttime
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     'Computes the powder pattern for a histogram based on contributions from all used phases'
-    if GSASIIpath.GetConfigValue('debug'): starttime = time.time()
+    if GSASIIpath.GetConfigValue('Show_timing',False): starttime = time.time()
     
     def GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict):
         U = parmDict[hfx+'U']
@@ -3247,7 +3247,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             MPpool.terminate()
     if badPeak:
         print 'ouch #4 bad profile coefficients yield negative peak width; some reflections skipped' 
-    if GSASIIpath.GetConfigValue('debug'):
+    if GSASIIpath.GetConfigValue('Show_timing',False):
         print 'getPowderProfile t=',time.time()-starttime
     return yc,yb
     
@@ -4131,7 +4131,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
             useMP,ncores = G2mp.InitMP()
-            if GSASIIpath.GetConfigValue('debug'): starttime = time.time()
+            if GSASIIpath.GetConfigValue('Show_timing',False): starttime = time.time()
             if useMP:
                 MPpool = mp.Pool(ncores)
                 dMdvh = None
@@ -4152,7 +4152,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
-            if GSASIIpath.GetConfigValue('debug'): print 'getPowderProfileDerv t=',time.time()-starttime
+            if GSASIIpath.GetConfigValue('Show_timing',False): print 'getPowderProfileDerv t=',time.time()-starttime
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt

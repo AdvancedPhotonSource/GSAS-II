@@ -1011,7 +1011,7 @@ def UpdateBackground(G2frame,data):
         wx.BeginBusyCursor()
         try:
             G2pwd.DoPeakFit('LSQ',[],background,limits,inst,inst2,
-                np.array((xdata,ydata,W,Z,Z,Z)),bakVary,False,controls)
+                np.array((xdata,ydata,W,Z,Z,Z)),Z,prevVaryList=bakVary,controls=controls)
         finally:
             wx.EndBusyCursor()
         # compute the background values and plot them

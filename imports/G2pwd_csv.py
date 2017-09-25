@@ -81,8 +81,9 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                 err = True
                 msg = 'Error in line '+str(i+1)
             if err and i > 0:
-                print msg
-                print S
+                if GSASIIpath.GetConfigValue('debug'):
+                    print msg
+                    print S.strip()
                 break
         N = len(x)
         self.powderdata = [

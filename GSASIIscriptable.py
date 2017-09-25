@@ -183,11 +183,11 @@ Mustrain
                                              For uniaxial model, can specify list
                                              of 'axial' or 'equatorial'. If boolean
                                              given sets both axial and equatorial.
-Pref.Ori.                                    Boolean, whether to refine
-Show                                         Boolean, whether to refine
+Pref.Ori.                                    Boolean, True to refine
+Show                                         Boolean, True to refine
 Size                                         Not implemented
-Use                                          Boolean, whether to refine
-Scale                                        Boolean, whether to refine
+Use                                          Boolean, True to refine
+Scale                                        Phase fraction; Boolean, True to refine
 ===================== =====================  ====================
 
 ============================
@@ -630,20 +630,23 @@ def import_generic(filename, readerlist):
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
-                flag = rd.Reader(filename, fp, buffer=rdbuffer, blocknum=block)
+                try:
+                    flag = rd.Reader(filename, fp, buffer=rdbuffer, blocknum=block)
+                except:
+                    flag = False
                 if flag:
                     # Omitting image loading special cases
                     rd.readfilename = filename
                     rd_list.append(copy.deepcopy(rd))
                     repeat = rd.repeat
                 else:
-                    raise G2ImportException("{}.Reader() returned:".format(rd),
-                                            flag)
-
+                    if GSASIIpath.GetConfigValue('debug'): print("{} Reader failed to read {}".format(rd.formatName,filename))
             if rd_list:
                 if rd.warnings:
                     print("Read warning by", rd.formatName, "reader:",
                           rd.warnings, file=sys.stderr)
+                else:
+                    print("{} read by Reader {}\n".format(filename,rd.formatName))                    
                 return rd_list
     raise G2ImportException("No reader could read file: " + filename)
 
@@ -923,7 +926,8 @@ class G2Project(G2ObjectWrapper):
         """Loads a powder data histogram into the project.
 
         Automatically checks for an instrument parameter file, or one can be
-        provided.
+        provided. Note that in unix fashion, "~" can be used to indicate the
+        home directory (e.g. ~/G2data/data.fxye).
 
         :param str datafile: The powder data file to read, a filename.
         :param str iparams: The instrument parameters file, a filename.
@@ -972,7 +976,7 @@ class G2Project(G2ObjectWrapper):
         # TODO handle multiple phases in a file
         phasereaders = import_generic(phasefile, PhaseReaders)
         phasereader = phasereaders[0]
-
+        
         phasename = phasename or phasereader.Phase['General']['Name']
         phaseNameList = [p.name for p in self.phases()]
         phasename = G2obj.MakeUniqueLabel(phasename, phaseNameList)

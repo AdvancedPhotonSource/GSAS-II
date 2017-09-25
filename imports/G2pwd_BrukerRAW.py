@@ -14,7 +14,7 @@ Routine to read in powder data from a Bruker versions 1-3 .raw file
 
 '''
 
-import sys
+#import sys
 import os.path as ospath
 import struct as st
 import numpy as np
@@ -61,7 +61,6 @@ class raw_ReaderClass(G2obj.ImportPowderData):
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         'Read a Bruker RAW file'
         self.comments = []
-        self.repeat = True
         self.powderentry[0] = filename
         File = open(filename,'rb')
         if 'ver. 1' in self.formatName:
@@ -101,6 +100,8 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     File.seek(pos)
                 if blockNum == nBlock:
                     self.repeat = False                                   
+                else:
+                    self.repeat = True
             File.close()
         elif 'ver. 3' in self.formatName:
             File.seek(12)
@@ -153,7 +154,9 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     pos += headLen+4*nSteps
                     File.seek(pos)
                 if blockNum == nBlock:
-                    self.repeat = False                                   
+                    self.repeat = False
+                else:
+                    self.repeat = True
             File.close()
             
         elif 'ver. 4' in self.formatName:   #does not work - format still elusive
@@ -188,5 +191,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             w = 1./y
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
             File.close()
+        else:
+            return False
             
         return True

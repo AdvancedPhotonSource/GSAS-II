@@ -93,9 +93,9 @@ class CIFpwdReader(G2obj.ImportPowderData):
             print 'debug: Reuse previously parsed CIF'
             selections = rdbuffer.get('selections')
         if cf is None:
-            print "Starting parse of CIF file"
+            if GSASIIpath.GetConfigValue('debug'): print("Starting parse of {} as CIF".format(filename))
             cf = G2obj.ReadCIF(filename)
-            print "CIF file parsed"
+            if GSASIIpath.GetConfigValue('debug'): print "CIF file parsed"
         # scan all blocks for sets of data
         if choicelist is None:
             choicelist = []

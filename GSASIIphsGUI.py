@@ -376,7 +376,7 @@ class TransformDialog(wx.Dialog):
                 self.Phase['General']['SGData'] = SGData
             else:
                 if self.Common == G2gd.commonNames[-1]:      #change setting
-                    self.Vec = G2spc.spg2origins[self.oldSpGrp]
+                    self.Vvec = G2spc.spg2origins[self.oldSpGrp]
                     self.newSpGrp = self.oldSpGrp
                 else:
                     self.Trans = G2gd.commonTrans[self.Common]
@@ -2187,16 +2187,16 @@ entered the right symbol for your structure.
             generalData = data['General']
             cx,ct,cs,cia = generalData['AtomPtrs']
             SGData = generalData['SGData']
-        
+            if SGData['SpGrp'] in G2spc.spg2origins:
+                T = G2spc.spg2origins[SGData['SpGrp']]
             Atoms = data['Atoms']
             for atom in Atoms:
-                for i in range(3):
-                    atom[cx+i] -= Uvec[i]
-                atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
+                for i in [0,1,2]:
+                    atom[cx+i] += T[i]
             data['Drawing'] = []
         else:
             phaseName = newPhase['General']['Name']
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Vvec,ifMag)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
             detTrans = np.abs(nl.det(Trans))
     
             generalData = newPhase['General']

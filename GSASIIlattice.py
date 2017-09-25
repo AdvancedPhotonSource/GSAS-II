@@ -228,7 +228,7 @@ def TransformU6(U6,Trans):
     Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans))
     return UijtoU6(Uij)
     
-def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
+def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     '''Transform atoms from oldPhase to newPhase by Trans & Vec
     
     :param oldPhase: dict G2 phase info for old phase
@@ -285,7 +285,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)%1.
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans,Vvec)%1.
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
@@ -305,7 +305,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     return newPhase,atCodes
     
 def FillUnitCell(Phase):
-    Atoms = Phase['Atoms']
+    Atoms = copy.deepcopy(Phase['Atoms'])
     atomData = []
     atCodes = []
     SGData = Phase['General']['SGData']

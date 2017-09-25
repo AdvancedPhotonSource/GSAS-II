@@ -2911,7 +2911,25 @@ spgbyNum = [None,
         'P m -3 m','P n -3 n','P m -3 n','P n -3 m',
         'F m -3 m','F m -3 c','F d -3 m','F d -3 c',
         'I m -3 m','I a -3 d',]                                       #195-230
-
+spg2origins = {}
+''' A dictionary of all spacegroups that have 2nd settings; the value is the 
+1st --> 2nd setting transformation vector as X(2nd) = X(1st)-V, nonstandard ones are included.
+'''
+spg2origins = {
+        'P n n n':[-.25,-.25,-.25],
+        'P b a n':[-.25,-.25,0],'P n c b':[0,-.25,-.25],'P c n a':[-.25,0,-.25],
+        'P m m n':[-.25,-.25,0],'P n m m':[0,-.25,-.25],'P m n m':[-.25,0,-.25],
+        'C c c a':[0,-.25,-.25],'C c c b':[-.25,0,-.25],'A b a a':[-.25,0,-.25],
+        'A c a a':[-.25,-.25,0],'B b c b':[-.25,-.25,0],'B b a b':[0,-.25,-.25],
+        'F d d d':[-.125,-.125,-.125],
+        'P 4/n':[-.25,-.25,0],'P 42/n':[-.25,-.25,-.25],'I 41/a':[0,-.25,-.125],
+        'P 4/n b m':[-.25,-.25,0],'P 4/n n c':[-.25,-.25,-.25],'P 4/n m m':[-.25,-.25,0],'P 4/n c c':[-.25,-.25,0],
+        'P 42/n b c':[-.25,-.25,-.25],'P 42/n n m':[-.25,.25,-.25],'P 42/n m c':[-.25,.25,-.25],'P 42/n c m':[-.25,.25,-.25],
+        'I 41/a m d':[0,.25,-.125],'I 41/a c d':[0,.25,-.125],
+        'p n -3':[-.25,-.25,-.25],'F d -3':[-.125,-.125,-.125],'P n -3 n':[-.25,-.25,-.25],
+        'P n -3 m':[-.25,-.25,-.25],'F d -3 m':[-.125,-.125,-.125],'F d -3 c':[-.375,-.375,-.375],
+        'p n 3':[-.25,-.25,-.25],'F d 3':[-.125,-.125,-.125],'P n 3 n':[-.25,-.25,-.25],
+        'P n 3 m':[-.25,-.25,-.25],'F d 3 m':[-.125,-.125,-.125],'F d - c':[-.375,-.375,-.375]}
 spglist = {}
 '''A dictionary of space groups as ordered and named in the pre-2002 International 
 Tables Volume A, except that spaces are used following the GSAS convention to 
@@ -3000,25 +3018,6 @@ spglist = {
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
         'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }
-
-spg2origins = {}
-''' A dictionary of all space groups with two alternative origin settings.
-each entry is symbol: atom transpation vector for setting #1 --> setting #2
-'''
-spg2origins = {"P n n n":[-.25,-.25,-.25],"P b a n":[-.25,-.25 ,0],      
-    "P n c b":[0,-.25,-.25],"P c n a":[-.25,0,-.25],"P m m n":[-.25,-.25 ,0],       
-    "P n m m":[0,-.25,-.25],"P m n m":[-.25,0,-.25],"C c c a":[0,-.25,-.25],         
-    "C c c b":[-.25,0,-.25],"A b a a":[-.25,0,-.25],"A c a a":[-.25,-.25,0],       
-    "B b c b":[-.25,-.25,0],"B b a b":[0,-.25,-.25],"F d d d":[.125,.125,.125],     
-    "P 4/n":[.25,-.2, 0],"P 42/n":[.25,.25,.25],"I 41/a":[0,.25,.125],         
-    "P 4/n b m":[.25,.25,0],"P 4/n n c":[.25,.25,.25],"P 4/n m m":[.25,-.25,0],         
-    "P 4/n c c":[.25,-.25,0],"P 42/n b c":[.25,-.25,.25],"P 42/n n m":[.25,-.25,.25],       
-    "P 42/n m c":[.25,-.25,.25],"P 42/n c m":[.25,-.25,.25],       
-    "I 41/a m d":[0,-.25,.125],"I 41/a c d":[0,-.25,.125],        
-    "P n 3":[.25,.25,.25],"F d 3":[.125,.125,.125],"P n 3 n":[.25,.25,.25],               
-    "P n 3 m":[.25,.25,.25],"F d 3 m":[.125,.125,.125],"F d 3 c":[.375,.375,.375],            
-    "P n -3":[.25,.25,.25],"F d -3":[.125,.125,.125],"P n -3 n":[.25,.25,.25],               
-    "P n -3 m":[.25,.25,.25],"F d -3 m":[.125,.125,.125],"F d -3 c":[.375,.375,.375]}            
 
 ssdict = {}
 '''A dictionary of superspace group symbols allowed for each entry in spglist

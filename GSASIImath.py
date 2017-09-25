@@ -2687,9 +2687,9 @@ def validProtein(Phase,old):
                 tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
         else:
             if atom[3].strip() == 'C':
-                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) == ires+1)]
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0])  in [ires-1,ires+1])]
             elif atom[3].strip() == 'N':
-                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'C' and int(cartAtoms[tgt][0]) == ires-1)]
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'C' and int(cartAtoms[tgt][0])  in [ires-1,ires+1])]
         for tgt in tgts:
             dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
             mult = 1.0
@@ -2723,6 +2723,7 @@ def validProtein(Phase,old):
                     mtrx[3] += IntAct[j]['NN']
                     mtrx[4] += IntAct[j]['NO']
             mtrx /= summ
+#            print i+1,mtrx*summ
             if old:
                 mtrx -= avg_old
                 prob = np.inner(np.inner(mtrx,b1_old),mtrx)

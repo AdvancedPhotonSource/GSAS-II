@@ -6348,31 +6348,31 @@ entered the right symbol for your structure.
         if not keyList:
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        sourceDict = data['Histograms'][hist]
+        sourceDict = copy.deepcopy(data['Histograms'][hist])
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail',]
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU']
         copyDict = {}
         for name in copyNames: 
-            copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
+            copyDict[name] = sourceDict[name]        #force copy
         dlg = G2G.G2MultiChoiceDialog(G2frame,u'Copy phase/histogram parameters\nfrom '+hist[5:][:35],
                 'Copy phase/hist parameters', keyList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for sel in dlg.GetSelections():
-                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
+                    data['Histograms'][keyList[sel]].update(copyDict)
         finally:
             dlg.Destroy()
         
     def OnDataCopyFlags(event):
         hist = G2frame.hist
-        sourceDict = data['Histograms'][hist]
+        sourceDict = copy.deepcopy(data['Histograms'][hist])
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Fix FXU']
         babNames = ['BabA','BabU']
         for name in copyNames:
             if name in ['Scale','Extinction','HStrain','Flack','Twins']:
@@ -6397,7 +6397,9 @@ entered the right symbol for your structure.
             elif name == 'Babinet':
                 copyDict[name] = {}
                 for bab in babNames:
-                    copyDict[name][bab] = sourceDict[name][bab][1]                       
+                    copyDict[name][bab] = sourceDict[name][bab][1]
+            elif name == 'Fix FXU':
+                copyDict[name] = sourceDict[name]                      
         keyList = G2frame.dataWindow.HistsInPhase[:]
         if hist in keyList: keyList.remove(hist)
         if not keyList:
@@ -6436,7 +6438,9 @@ entered the right symbol for your structure.
                                data['Histograms'][item][name][7] = copy.deepcopy(sourceDict[name][7])
                         elif name == 'Babinet':
                             for bab in babNames:
-                                data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
+                                data['Histograms'][item][name][bab][1] = copy.deepcopy(copyDict[name][bab])
+                        elif name == 'Fix FXU':
+                            data['Histograms'][item][name] = copy.deepcopy(sourceDict[name])                      
         finally:
             dlg.Destroy()
         
@@ -6450,9 +6454,9 @@ entered the right symbol for your structure.
             return
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Fix FXU']
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []
@@ -6509,7 +6513,7 @@ entered the right symbol for your structure.
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+                            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' '}
                         refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

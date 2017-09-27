@@ -828,6 +828,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Size'][3] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
+            
+        def OnFixVals(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['Fix FXU'] = Obj.GetValue()
 
         if G2frame.hist not in UseList:                
             G2frame.ErrorDialog('Missing data error',
@@ -841,10 +845,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['newLeBail'] = True
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
-        if 'Fix X' not in UseList[G2frame.hist]:
-            UseList[G2frame.hist]['Fix F'] = False
-            UseList[G2frame.hist]['Fix X'] = False
-            UseList[G2frame.hist]['Fix U'] = False
+        if 'Fix FXU' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['Fix FXU'] = ' '
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
         useBox = wx.BoxSizer(wx.HORIZONTAL)
         useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+G2frame.hist+' ?')
@@ -858,8 +860,18 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             useBox.Add(lebail,0,WACV)
             if UseList[G2frame.hist]['LeBail']:
                 G2frame.SetStatusText('To reset LeBail, cycle LeBail check box.',1)
-        #TODO - put Sequential refinement fix F? fix X? fix U? CheckBox here
         bottomSizer.Add(useBox,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
+        fixBox = wx.BoxSizer(wx.HORIZONTAL)
+        parmChoice = [' ','X','XU','U','F','FX','FXU','FU']
+        if generalData['Type'] == 'magnetic':
+            parmChoice += ['M','MX','MXU','MU','MF','MFX','MFXU','MFU']
+        fixBox.Add(wx.StaticText(DData,label=' In sequential refinement, fix these in '+generalData['Name']+' for this histogram: '),0,WACV)
+        fixVals = wx.ComboBox(DData,value=UseList[G2frame.hist]['Fix FXU'],choices=parmChoice,
+            style=wx.CB_DROPDOWN)
+        fixVals.Bind(wx.wx.EVT_COMBOBOX,OnFixVals)
+        fixBox.Add(fixVals,0,WACV)
+        bottomSizer.Add(fixBox)
+        #TODO - put Sequential refinement fix F? fix X? fix U? CheckBox here
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
             

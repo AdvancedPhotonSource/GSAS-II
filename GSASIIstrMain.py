@@ -260,14 +260,25 @@ def Refine(GPXfile,dlg=None,makeBack=True):
 def phaseCheck(phaseVary,Phases,histogram):
     '''
     Removes unused parameters from phase varylist if phase not in histogram
-    #TODO - implement "Fix F,X,U" for seq refinement here
+    #TODO - implement "Fix FXU" for seq refinement here - done?
     '''
-    pIds = []
+    NewVary = []
     for phase in Phases:
         if histogram not in Phases[phase]['Histograms']: continue
         if Phases[phase]['Histograms'][histogram]['Use']:
-            pIds.append(str(Phases[phase]['pId']))
-    return [item for item in phaseVary if item.split(':')[0] in pIds]
+            pId = Phases[phase]['pId']
+            newVary = [item for item in phaseVary if item.split(':')[0] == str(pId)]
+            FixVals = Phases[phase]['Histograms'][histogram].get('Fix FXU',' ')
+            if 'F' in FixVals:
+                newVary = [item for item in newVary if not 'AF' in item]
+            if 'X' in FixVals:
+                newVary = [item for item in newVary if not 'dA' in item]
+            if 'U' in FixVals:
+                newVary = [item for item in newVary if not 'AU' in item]
+            if 'M' in FixVals:
+                newVary = [item for item in newVary if not 'AM' in item]
+            NewVary += newVary
+    return NewVary
 
 def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
@@ -333,9 +344,9 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         if histogram not in Histograms:
             print("Error: not found!")
             continue
-    #TODO - implement "Fix F,X,U" for seq refinement here
-        Histo = {histogram:Histograms[histogram],}
+    #TODO - implement "Fix FXU" for seq refinement here - done?
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
+        Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histo,False)

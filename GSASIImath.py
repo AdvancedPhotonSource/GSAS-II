@@ -2619,12 +2619,12 @@ def validProtein(Phase,old):
     #select residue atoms,S,Se --> O make cartesian
     for atom in Atoms:
         if atom[1] in resNames:
+            cartAtoms.append(atom[:cx+3])
             if atom[4].strip() in ['S','Se']:
                 if not old:
                     continue        #S,Se skipped for erratv2?
-                atom[3] = 'Os'
-                atom[4] = 'O'
-            cartAtoms.append(atom[:cx+3])
+                cartAtoms[-1][3] = 'Os'
+                cartAtoms[-1][4] = 'O'
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
@@ -2635,7 +2635,7 @@ def validProtein(Phase,old):
     for ib,box in enumerate(iBox):  #put in a try for too many atoms in box (IndexError)?
         Boxes[box[0],box[1],box[2],0] += 1
         Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
-    #Box content checks with errat.f ibox1 array
+    #Box content checks with errat.f $ erratv2.cpp ibox1 arrays
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
     dsmax = 3.75**2
@@ -2650,6 +2650,7 @@ def validProtein(Phase,old):
     newChain = True
     intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
     for ia,atom in enumerate(cartAtoms):
+        jntact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
         if atom[2] not in chains:   #get chain id & save residue sequence from last chain
             chains.append(atom[2])
             if len(resIntAct):
@@ -2686,17 +2687,21 @@ def validProtein(Phase,old):
             elif atom[3].strip() == 'CA':
                 tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) in [ires-1,ires+1])]
         else:
+            tgts = [tgt for tgt in tgts if not int(cartAtoms[tgt][0]) in [ires+1,ires+2,ires+3,ires+4,ires+5,ires+6,ires+7,ires+8]]
             if atom[3].strip() == 'C':
-                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0])  in [ires-1,ires+1])]
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'N' and int(cartAtoms[tgt][0]) == ires+1)]
             elif atom[3].strip() == 'N':
-                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'C' and int(cartAtoms[tgt][0])  in [ires-1,ires+1])]
+                tgts = [tgt for tgt in tgts if not (cartAtoms[tgt][3].strip() == 'C' and int(cartAtoms[tgt][0]) == ires-1)]
         for tgt in tgts:
             dsqt = np.sqrt(np.sum((XYZ[ia]-XYZ[tgt])**2))
             mult = 1.0
             if dsqt > 3.25 and not old:
                 mult = 2.*(3.75-dsqt)
             intype = atom[4].strip()+cartAtoms[tgt][4].strip()
-            intact[intype] += mult
+            if 'S' not in intype:
+                intact[intype] += mult
+                jntact[intype] += mult
+#        print ia,atom[0]+atom[1]+atom[3],tgts,jntact['CC'],jntact['CN']+jntact['NC'],jntact['CO']+jntact['OC'],jntact['NN'],jntact['NO']+jntact['ON']
     resNames += resname
     resIntAct.append(sumintact(intact))
     chainIntAct.append(resIntAct)

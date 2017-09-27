@@ -3300,10 +3300,11 @@ entered the right symbol for your structure.
         print 'Plot 1 is Protein validation based on errat.f'
         print 'Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).'
         print 'Residue error scores >6 for 5% & >8 for 1% likelihood of being correct'
-        print 'Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates'
+        print 'NB: this calc. matches errat.f result'
+        print 'Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates (2002)'
         print 'Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).'
         print 'Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct'
-        print 'NB: this calc. still in error'
+        print 'NB: this calc. gives a close approximate to original erratv2 result'
         G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
             thresh=[[8.0,6.0],[17.191,11.527]])
 

@@ -993,17 +993,24 @@ def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
     phasePage.SetScrollRate(10,10)
     phasePage.SendSizeEvent()
     phasePage.Scroll(0,Scroll)
-
     
-def FindBondsDraw(data):    
+def FindBondsDraw(data):
+    '''Generally used routine where cell is from data
+    '''
+    generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    FindBondsDrawCell(data,cell)
+    
+def FindBondsDrawCell(data,cell):    
     '''uses numpy & masks - very fast even for proteins!
+    allows different cell as input from seq. refinements
     '''
     import numpy.ma as ma
     cx,ct,cs,ci = data['Drawing']['atomPtrs']
     hydro = data['Drawing']['showHydrogen']
     atomData = data['Drawing']['Atoms']
     generalData = data['General']
-    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    Amat,Bmat = G2lat.cell2AB(cell)
     radii = generalData['BondRadii']
 #    if generalData.get('DisAglCtls',{}):
 #        radii = generalData['DisAglCtls']['BondRadii']

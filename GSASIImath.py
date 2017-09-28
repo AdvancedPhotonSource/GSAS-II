@@ -547,6 +547,42 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
 #            U6 = Atom[cia+2:cia+8]
     
 
+def ApplySeqData(data,seqData):
+    '''Applies result from seq. refinement to drawing atom positions & Uijs
+    '''
+    generalData = data['General']
+    SGData = generalData['SGData']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    drawingData = data['Drawing']
+    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    atoms = data['Atoms']
+    drawAtoms = drawingData['Atoms']
+    pId = data['pId']
+    pfx = '%d::'%(pId)
+    parmDict = seqData['parmDict']
+    for ia,atom in enumerate(atoms):
+        dxyz = np.array([parmDict[pfx+'dAx:'+str(ia)],parmDict[pfx+'dAy:'+str(ia)],parmDict[pfx+'dAz:'+str(ia)]])
+        if atom[cia] == 'A':
+            atuij = np.array([parmDict[pfx+'AU11:'+str(ia)],parmDict[pfx+'AU22:'+str(ia)],parmDict[pfx+'AU33:'+str(ia)],
+                parmDict[pfx+'AU12:'+str(ia)],parmDict[pfx+'AU13:'+str(ia)],parmDict[pfx+'AU23:'+str(ia)]])
+        else:
+            atuiso = parmDict[pfx+'AUiso:'+str(ia)]
+        atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3])+dxyz)[0]
+        indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+        for ind in indx:
+            drawatom = drawAtoms[ind]
+            opr = drawatom[dcs-1]
+            #how do I handle Sfrac? - fade the atoms?
+            if atom[cia] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz,atuij)
+                drawatom[dcx:dcx+3] = X
+                drawatom[dci-6:dci] = U
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atxyz)
+                drawatom[dcx:dcx+3] = X
+                drawatom[dci-7] = atuiso
+    return drawAtoms
+    
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
     cx,ct,cs,cia = General['AtomPtrs']
@@ -1567,7 +1603,7 @@ def fracFourier(tau,fsin,fcos):
     A = np.array([fs[:,nxs]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
     B = np.array([fc[:,nxs]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
-    
+
 def ApplyModulation(data,tau):
     '''Applies modulation to drawing atom positions & Uijs for given tau
     '''

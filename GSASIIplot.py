@@ -5625,6 +5625,7 @@ def PlotStructure(G2frame,data,firstCall=False):
 
     # PlotStructure initialization here
     global mcsaXYZ,mcsaTypes,mcsaBonds
+    global cell, Vol, Amat, Bmat, A4mat, B4mat
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
@@ -5825,8 +5826,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             SetMapPeaksText(mapPeaks)
         elif key in ['M',]and generalData['Modulated']:  #make a movie file
             G2frame.tau = 0.
-            for i in range(10):
+            for i in range(100):
                 G2frame.tau += 0.1
+                G2frame.tau %= 1.
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
                 SetDrawAtomsText(data['Drawing']['Atoms'])
@@ -5834,7 +5836,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                 if not np.any(Fade):
                     Fade += 1
                 Draw('key down',Fade)
-        elif key in ['+','-','=','0'] and generalData['Modulated']:
+            return
+        elif key in ['+','-','=','0']:
             if keyBox:
                 OnKeyPressed(event)
             return
@@ -5878,11 +5881,23 @@ def PlotStructure(G2frame,data,firstCall=False):
                         G2frame.seq -= 1
                     G2frame.seq %= len(histNames)   #makes loop
                     G2frame.G2plotNB.status.SetStatusText('Seq. data file: %s'%(histNames[G2frame.seq]),1)
-                    
-                    
-                    
+                    pId = data['pId']
+                    SGData = generalData['SGData']
+                    pfx = str(pId)+'::'
+                    phfx = '%d:%d:'%(pId,G2frame.seq)
+                    seqData = Seqdata[histNames[G2frame.seq]]
+                    parmDict = seqData['parmDict']
+                    cellA = G2lat.cellDijFill(pfx,phfx,SGData,parmDict)
+                    global cell, Vol, Amat, Bmat, A4mat, B4mat
+                    cell = G2lat.A2cell(cellA)
+                    Vol = G2lat.calc_V(cellA)
+                    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+                    Gmat,gmat = G2lat.cell2Gmat(cell)
+                    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+                    data['Drawing']['Atoms'] = G2mth.ApplySeqData(data,seqData)
                     SetDrawAtomsText(data['Drawing']['Atoms'])
-                    G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+                    G2phG.FindBondsDrawCell(data,cell)           #rebuild bonds & polygons
                     Draw('key down')                    
                 else:
                     pass
@@ -6779,7 +6794,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     except:
         pass
     wx.CallAfter(Draw,'main')
-    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
+#    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
 
 ################################################################################
 #### Plot Rigid Body

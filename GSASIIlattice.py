@@ -195,6 +195,50 @@ def invcell2Gmat(invcell):
     G = fillgmat(invcell)
     g = nl.inv(G)
     return G,g
+
+def cellDijFill(pfx,phfx,SGData,parmDict): 
+    '''Returns the filled-out reciprocal cell (A) terms 
+    from the parameter dictionaries corrected for Dij.
+
+    :param str pfx: parameter prefix ("n::", where n is a phase number)
+    :param dict SGdata: a symmetry object
+    :param dict parmDict: a dictionary of parameters
+
+    :returns: A,sigA where each is a list of six terms with the A terms 
+    '''
+    if SGData['SGLaue'] in ['-1',]:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
+             parmDict[pfx+'A2']+parmDict[phfx+'D33'],
+             parmDict[pfx+'A3']+parmDict[phfx+'D12'],parmDict[pfx+'A4']+parmDict[phfx+'D13'],
+             parmDict[pfx+'A5']+parmDict[phfx+'D23']]
+    elif SGData['SGLaue'] in ['2/m',]:
+        if SGData['SGUniq'] == 'a':
+            A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
+                 parmDict[pfx+'A2']+parmDict[phfx+'D33'],0,0,parmDict[pfx+'A5']+parmDict[phfx+'D23']]
+        elif SGData['SGUniq'] == 'b':
+            A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
+                 parmDict[pfx+'A2']+parmDict[phfx+'D33'],0,parmDict[pfx+'A4']+parmDict[phfx+'D13'],0]
+        else:
+            A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
+                 parmDict[pfx+'A2']+parmDict[phfx+'D33'],parmDict[pfx+'A3']+parmDict[phfx+'D12'],0,0]
+    elif SGData['SGLaue'] in ['mmm',]:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A1']+parmDict[phfx+'D22'],
+             parmDict[pfx+'A2']+parmDict[phfx+'D33'],0,0,0]
+    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
+             parmDict[pfx+'A2']+parmDict[phfx+'D33'],0,0,0]
+    elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
+             parmDict[pfx+'A2']+parmDict[phfx+'D33'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],0,0]
+    elif SGData['SGLaue'] in ['3R', '3mR']:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
+            parmDict[pfx+'A0']+parmDict[phfx+'D11'],
+            parmDict[pfx+'A3']+parmDict[phfx+'D23'],parmDict[pfx+'A3']+parmDict[phfx+'D23'],
+            parmDict[pfx+'A3']+parmDict[phfx+'D23']]
+    elif SGData['SGLaue'] in ['m3m','m3']:
+        A = [parmDict[pfx+'A0']+parmDict[phfx+'D11'],parmDict[pfx+'A0']+parmDict[phfx+'D11'],
+             parmDict[pfx+'A0']+parmDict[phfx+'D11'],0,0,0]
+    return A
     
 def prodMGMT(G,Mat):
     '''Transform metric tensor by matrix

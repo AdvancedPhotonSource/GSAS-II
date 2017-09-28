@@ -4610,7 +4610,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             return
         #if Sizer.GetItemCount() == 1: # not wx 2.8
         if len(Sizer.GetChildren()) == 1: # handle cases with a single grid in DataWindow differently
-            # note that Grid's scroll bars must be turned on with .SetScrollRate(1,1)
+            # note that Grid's scroll bars must be turned on with .SetScrollRate(10,10)
             # just after the call to .GSGrid()
             if isinstance(Sizer.GetItem(0).GetWindow(), G2G.GSGrid):
                 self.Bind(wx.EVT_SIZE,self.OnResize)
@@ -4620,7 +4620,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 self.SendSizeEvent()
                 return
         self.SetAutoLayout(True)
-        self.SetScrollRate(1,1)
+        self.SetScrollRate(10,10)
         self.SendSizeEvent()
 
     def PrefillDataMenu(self,menu,empty=False):
@@ -7185,7 +7185,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataWindow.ClearData()
     G2frame.dataWindow.currentGrids = []
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
-    G2frame.dataDisplay.SetScrollRate(1,1)
+    G2frame.dataDisplay.SetScrollRate(10,10)
     G2frame.dataWindow.GetSizer().Add(G2frame.dataDisplay,1,wx.ALL|wx.EXPAND)
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
         colLabels=displayLabels,rowLabels=histNames,types=Types)

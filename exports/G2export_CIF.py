@@ -360,7 +360,7 @@ class ExportCIF(G2IO.ExportBaseclass):
           phaseOnly: used to export only one phase
           histOnly: used to export only one histogram
           IncludeOnlyHist: used for a full CIF that includes only one of the
-            histograms (from a sequential fit) TODO: needs lots of work!
+            histograms (from a sequential fit) #TODO: needs lots of work!
         '''
 
 #***** define functions for export method =======================================

@@ -877,7 +877,7 @@ def UpdatePeakGrid(G2frame, data):
     reflGrid.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, onCellListDClick)
 #    G2frame.dataWindow.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, onCellListDClick)
     reflGrid.AutoSizeColumns(False)
-    reflGrid.SetScrollRate(1,1)
+    reflGrid.SetScrollRate(10,10)
     G2frame.reflGrid = reflGrid
     mainSizer.Add(reflGrid,1,wx.ALL|wx.EXPAND,1)
     G2frame.dataWindow.SetDataSize()
@@ -2607,7 +2607,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.dataWindow.currentGrids = []
     G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)                
     G2frame.indxPeaks.SetTable(G2frame.IndexPeaksTable, True)
-    G2frame.indxPeaks.SetScrollRate(1,1)
+    G2frame.indxPeaks.SetScrollRate(10,10)
     XY = []
     Sigs = []
     for r in range(G2frame.indxPeaks.GetNumberRows()):
@@ -3569,11 +3569,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if isinstance(data,list):           #single crystal HKLF
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
-            G2frame.refTable[phase].SetScrollRate(1,1) # reflection grids (inside tab) need scroll bars 
+            G2frame.refTable[phase].SetScrollRate(10,10) # reflection grids (inside tab) need scroll bars 
         elif len(data[phase]):              #else dict for PWDR
             G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.refBook)
             G2frame.refBook.AddPage(G2frame.refTable[phase],phase)
-            G2frame.refTable[phase].SetScrollRate(1,1) # as above
+            G2frame.refTable[phase].SetScrollRate(10,10) # as above
         else:       #cleanup deleted phase reflection lists
             del data[phase]
             if len(data):

@@ -990,7 +990,7 @@ def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
     if mainSizer is not None: 
         phasePage.SetSizer(mainSizer)
     phasePage.SetAutoLayout(True)
-    phasePage.SetScrollRate(1,1)
+    phasePage.SetScrollRate(10,10)
     phasePage.SendSizeEvent()
     phasePage.Scroll(0,Scroll)
 

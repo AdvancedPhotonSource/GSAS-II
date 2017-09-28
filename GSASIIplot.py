@@ -5710,6 +5710,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     Bc = np.array(list(drawingData['backColor']))
     uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
     G2frame.tau = 0.
+    G2frame.seq = 0
     
     def OnKeyBox(event):
         mode = cb.GetValue()
@@ -5855,7 +5856,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                     G2frame.tau += 0.1
                 elif key == '-':
                     G2frame.tau -= 0.1
-                G2frame.tau %= 1.   #force 0-1 range
+                G2frame.tau %= 1.   #force 0-1 range; makes loop
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
                 SetDrawAtomsText(data['Drawing']['Atoms'])
@@ -5863,8 +5864,28 @@ def PlotStructure(G2frame,data,firstCall=False):
                 if not np.any(Fade):
                     Fade += 1
                 Draw('key down',Fade)
-            else:
-                pass        #TODO sequential result movie here
+            else:        #TODO sequential result movie here
+                SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
+                if SeqId:
+                    Seqdata = G2frame.GPXtree.GetItemPyData(SeqId)
+                    histNames = [seqKey for seqKey in Seqdata.keys() if 'PWDR' in seqKey]
+                    histNames.sort()
+                    if key == '0':
+                        G2frame.seq = 0
+                    elif key in ['=','+']:
+                        G2frame.seq += 1
+                    elif key in ['-','_']:
+                        G2frame.seq -= 1
+                    G2frame.seq %= len(histNames)   #makes loop
+                    G2frame.G2plotNB.status.SetStatusText('Seq. data file: %s'%(histNames[G2frame.seq]),1)
+                    
+                    
+                    
+                    SetDrawAtomsText(data['Drawing']['Atoms'])
+                    G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+                    Draw('key down')                    
+                else:
+                    pass
             
     def GetTruePosition(xy,Add=False):
         View = GL.glGetIntegerv(GL.GL_VIEWPORT)

@@ -23,7 +23,6 @@ import os.path as ospath
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import pyspg
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
@@ -69,6 +68,7 @@ def SpcGroup(SGSymbol):
     if ':R' in SGSymbol:
         SGSymbol = SGSymbol.replace(':',' ')    #get rid of ':' in R space group symbols from some cif files
     SGSymbol = SGSymbol.split(':')[0]   #remove :1/2 setting symbol from some cif files
+    import pyspg
     SGInfo = pyspg.sgforpy(SGSymbol)
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]
@@ -1749,6 +1749,7 @@ def GenHKLf(HKL,SGData):
     OpT = np.array([op[1] for op in Ops])
     Cen = np.array([cen for cen in SGData['SGCen']],order='F')
     
+    import pyspg
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
     Uniq=np.array(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq]))

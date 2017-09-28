@@ -9,7 +9,7 @@
 ########### SVN repository information ###################
 """
 *GSASIIscriptable: Scripting Tools*
------------------------------------
+======================================
 
 Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
 
@@ -28,15 +28,17 @@ phases, powder histograms, and execute Rietveld refinements.
 Refinement parameters
 =====================
 
-There are three classes of refinement parameters:
+There are three types of refinement parameters:
 
-    * Histogram. Turned on and off through :func:`G2PwdrData.set_refinements`
-      and :func:`G2PwdrData.clear_refinements`
-    * Phase. Turned on and off through :func:`G2Phase.set_refinements`
+    * Histogram: These can be turned on and off through
+      :meth:`G2PwdrData.set_refinements` and :func:`G2PwdrData.clear_refinements`
+    * Phase: Turned on and off through :func:`G2Phase.set_refinements`
       and :func:`G2Phase.clear_refinements`
-    * Histogram-and-phase (HAP). Turned on and off through
+    * Histogram-and-phase (HAP): Turned on and off through
       :func:`G2Phase.set_HAP_refinements` and :func:`G2Phase.clear_HAP_refinements`
 
+These parameters can be combined and set by :meth:`G2Project.do_refinements`
+or :meth:`G2Project.set_refinement`.
 
 ============================
 Refinement specifiers format
@@ -66,11 +68,11 @@ Example:
     some_histogram.set_refinements(params['set'])
     some_histogram.clear_refinements(params['clear'])
 
-.. tabularcolumns:: |l|p|p|
+.. tabularcolumns:: |l|l|p{3.5in}|
 
-===================== ====================  ====================
+===================== ====================  =================================================
 key                   subkey                explanation
-===================== ====================  ====================
+===================== ====================  =================================================
 Limits                                      The 2-theta range of values to consider. Can
                                             be either a dictionary of 'low' and/or 'high',
                                             or a list of 2 items [low, high]
@@ -101,8 +103,7 @@ Instrument Parameters                       As in Sample Paramters, Should be pr
 \                     SH/L
 \                     Polariz.              Polarization parameter
 \                     Lam                   Lambda, the incident wavelength
-===================== ====================  ====================
-
+===================== ====================  =================================================
 
 .. _Phase_parameters_table:
 
@@ -123,11 +124,11 @@ Example:
                           'V4': 'FXU'}}
     some_histogram.set_refinements(params)
 
-.. tabularcolumns:: |l|p|
+.. tabularcolumns:: |l|p{4.5in}|
 
-===================== ====================
+===================== ============================================
 key                   explanation
-===================== ====================
+===================== ============================================
 Cell                  Whether or not to refine the unit cell.
 Atoms                 Dictionary of atoms and refinement flags.
                       Each key should be an atom label, e.g.
@@ -137,7 +138,7 @@ Atoms                 Dictionary of atoms and refinement flags.
                       for fractional occupancy, 'X' for position,
                       and 'U' for Debye-Waller factor
 LeBail                Enables LeBail intensity extraction.
-===================== ====================
+===================== ============================================
 
 .. _HAP_parameters_table:
 
@@ -159,11 +160,11 @@ Example:
                              'refine': True}}
     some_phase.set_HAP_refinements(params)
 
-.. tabularcolumns:: |l|p|p|
+.. tabularcolumns:: |l|l|p{3.5in}|
 
-===================== =====================  ====================
+===================== ====================  =================================================
 key                   subkey                 explanation
-===================== =====================  ====================
+===================== ====================  =================================================
 Babinet                                      Should be a **list** of the following
                                              subkeys. If not, assumes both
                                              BabA and BabU
@@ -188,7 +189,8 @@ Show                                         Boolean, True to refine
 Size                                         Not implemented
 Use                                          Boolean, True to refine
 Scale                                        Phase fraction; Boolean, True to refine
-===================== =====================  ====================
+===================== ====================  =================================================
+
 
 ============================
 Scriptable API
@@ -211,7 +213,7 @@ import numpy as np
 import scipy as sp
 
 import GSASIIpath
-GSASIIpath.SetBinaryPath(False) # would rather have this in __name__ == '__main__' stanza
+GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these modules can be imported
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
@@ -222,7 +224,6 @@ import GSASIIElem as G2elem
 G2fil = None
 PwdrDataReaders = []
 PhaseReaders = []
-
 
 def LoadG2fil():
     """Delay importing this module, it is slow"""
@@ -857,16 +858,16 @@ class G2Project(G2ObjectWrapper):
 
     >>> phase = proj.phase('name of phase')
 
-    New data can also be loaded via :func:`~G2Project.add_phase` and
-    :func:`~G2Project.add_powder_histogram`.
+    New data can also be loaded via :meth:`~G2Project.add_phase` and
+    :meth:`~G2Project.add_powder_histogram`.
 
     >>> hist = proj.add_powder_histogram('some_data_file.chi',
                                          'instrument_parameters.prm')
     >>> phase = proj.add_phase('my_phase.cif', histograms=[hist])
 
     Parameters for Rietveld refinement can be turned on and off as well.
-    See :func:`~G2Project.set_refinement`, :func:`~G2Project.refine`,
-    :func:`~G2Project.iter_refinements`, :func:`~G2Project.do_refinements`.
+    See :meth:`~G2Project.set_refinement`, :meth:`~G2Project.refine`,
+    :meth:`~G2Project.iter_refinements`, :meth:`~G2Project.do_refinements`.
     """
     def __init__(self, gpxfile=None, author=None, filename=None):
         """Loads a GSAS-II project from a specified filename.
@@ -1033,8 +1034,8 @@ class G2Project(G2ObjectWrapper):
 
         .. seealso::
 
-            :func:`~G2Project.histogram`
-            :func:`~G2Project.phase`"""
+            :meth:`G2Project.histogram`
+            :meth:`G2Project.phase`"""
         hist = self.histogram(histogram)
         phase = self.phase(phase)
 
@@ -1088,9 +1089,9 @@ class G2Project(G2ObjectWrapper):
             the histogram does not exist
 
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phases`
+            :meth:`G2Project.histograms`
+            :meth:`G2Project.phase`
+            :meth:`G2Project.phases`
             """
         if isinstance(histname, G2PwdrData):
             if histname.proj == self:
@@ -1112,9 +1113,9 @@ class G2Project(G2ObjectWrapper):
         :class:`G2PwdrData` objects
 
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phases`
+            :meth:`G2Project.histograms`
+            :meth:`G2Project.phase`
+            :meth:`G2Project.phases`
             """
         output = []
         for obj in self.names:
@@ -1132,9 +1133,9 @@ class G2Project(G2ObjectWrapper):
         :raises: KeyError
 
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
-            :func:`~GSASIIscriptable.G2Project.phases`
+            :meth:`G2Project.histograms`
+            :meth:`G2Project.phase`
+            :meth:`G2Project.phases`
             """
         phases = self.data['Phases']
         if phasename in phases:
@@ -1157,9 +1158,9 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2Phase` objects
 
         .. seealso::
-            :func:`~GSASIIscriptable.G2Project.histogram`
-            :func:`~GSASIIscriptable.G2Project.histograms`
-            :func:`~GSASIIscriptable.G2Project.phase`
+            :meth:`G2Project.histogram`
+            :meth:`G2Project.histograms`
+            :meth:`G2Project.phase`
             """
         for obj in self.names:
             if obj[0] == 'Phases':
@@ -1254,12 +1255,12 @@ class G2Project(G2ObjectWrapper):
             'all' (default)
 
         .. seealso::
-            :func:`~G2PwdrData.set_refinements`
-            :func:`~G2PwdrData.clear_refinements`
-            :func:`~G2Phase.set_refinements`
-            :func:`~G2Phase.clear_refinements`
-            :func:`~G2Phase.set_HAP_refinements`
-            :func:`~G2Phase.clear_HAP_refinements`"""
+            :meth:`G2PwdrData.set_refinements`
+            :meth:`G2PwdrData.clear_refinements`
+            :meth:`G2Phase.set_refinements`
+            :meth:`G2Phase.clear_refinements`
+            :meth:`G2Phase.set_HAP_refinements`
+            :meth:`G2Phase.clear_HAP_refinements`"""
 
         if histogram == 'all':
             hists = self.histograms()
@@ -1348,7 +1349,7 @@ class G2Project(G2ObjectWrapper):
         :param list vars: A list of variables to hold. Either :class:`GSASIIobj.G2VarObj` objects,
             string variable specifiers, or arguments for :meth:`make_var_obj`
         :param str type: A string constraint type specifier. See
-            :class:`~GSASIIscriptable.G2Project.add_constraint_raw`
+            :class:`G2Project.add_constraint_raw`
 
         """
         for var in vars:
@@ -1764,7 +1765,7 @@ class G2Phase(G2ObjectWrapper):
         :returns: A list of :class:`G2AtomRecord` objects.
 
         .. seealso::
-            :func:`~GSASIIscriptable.G2Phase.atom`
+            :meth:`G2Phase.atom`
             :class:`G2AtomRecord`
         """
         ptrs = self.data['General']['AtomPtrs']
@@ -1799,7 +1800,7 @@ class G2Phase(G2ObjectWrapper):
         :returns: a dict
 
         .. seealso::
-           :func:`~G2Phase.get_cell_and_esd`
+           :meth:`G2Phase.get_cell_and_esd`
 
         """
         cell = self.data['General']['Cell']
@@ -1815,7 +1816,7 @@ class G2Phase(G2ObjectWrapper):
         :returns: a tuple of two dictionaries
 
         .. seealso::
-           :func:`~G2Phase.get_cell`
+           :meth:`G2Phase.get_cell`
 
         """
         # translated from GSASIIstrIO.ExportBaseclass.GetCell
@@ -2169,7 +2170,11 @@ def create(args):
 
 
 def dump(args):
-    """The dump subcommand"""
+    """The dump subcommand. This is intended to be called by the :func:`main` routine. 
+    This is typically called by invoking this script with a subcommand::
+
+       python GSASIIscriptable.py dump <file.gpx>
+    """
     if not args.histograms and not args.phases:
         args.raw = True
     if args.raw:
@@ -2294,7 +2299,13 @@ def main():
         * :func:`refine`
         * :func:`seqrefine`
         * :func:`export`
-        * :func:`browse`
+        * browse (:func:`IPyBrowse`)
+
+    These commands are typically called by invoking this script with a subcommand,
+    for example::
+
+       python GSASIIscriptable.py dump <file.gpx>
+        
 
     .. seealso::
         :func:`create`
@@ -2302,7 +2313,7 @@ def main():
         :func:`refine`
         :func:`seqrefine`
         :func:`export`
-        :func:`browse`
+        :func:`IPyBrowse`
     '''
     parser = argparse.ArgumentParser()
     subs = parser.add_subparsers()

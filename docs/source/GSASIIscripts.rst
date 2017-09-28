@@ -1,8 +1,8 @@
-*GSAS-II Scripts*
-=================
-
 .. automodule:: GSASIIscriptable
     :members: 
+
+*GSAS-II Misc Scripts*
+======================
 
 .. automodule:: testDeriv
     :members: 

@@ -422,8 +422,7 @@ def GetTthAzmG(x,y,data):
     dx = x-data['center'][0]
     dy = y-data['center'][1]
     G = ((dx-x0)**2+dy**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    X = np.dstack([dx.T,dy.T,np.zeros_like(dx.T)])
-    Z = np.dot(X,MN).T[2]
+    Z = np.dot(np.dstack([dx.T,dy.T,np.zeros_like(dx.T)]),MN).T[2]
     xyZ = dx**2+dy**2-Z**2    
     tth = npatand(np.sqrt(xyZ)/(dist-Z))
     dxy = peneCorr(tth,data['DetDepth'],dist,tilt,npatan2d(dy,dx))

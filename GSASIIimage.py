@@ -49,6 +49,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+nxs = np.newaxis
 debug = False
     
 def pointInPolygon(pXY,xy):
@@ -812,7 +813,7 @@ def ImageCalibrate(G2frame,data):
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
     
-def Make2ThetaAzimuthMap(data,masks,iLim,jLim,times): #most expensive part of integration!
+def Make2ThetaAzimuthMap(data,masks,iLim,jLim,tamp,times): #most expensive part of integration!
     'Needs a doc string'
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
@@ -820,34 +821,28 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim,times): #most expensive part of in
     scaley = pixelSize[1]/1000.
     
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
-    tax = np.asfarray(tax*scalex,dtype=np.float32)
-    tay = np.asfarray(tay*scaley,dtype=np.float32)
+    tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
+    tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
     t0 = time.time()
     #make position masks here
     frame = masks['Frames']
-    tam = ma.make_mask_none((nI,nJ))
+    tam = ma.make_mask_none((nI*nJ))
     if frame:
-        tamp = ma.make_mask_none((1024*1024))
-        tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-            tay.flatten(),len(frame),frame,tamp)[:nI*nJ])-True  #switch to exclude around frame
-        tam = ma.mask_or(tam.flatten(),tamp)
+        tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
+            tay,len(frame),frame,tamp)[:nI*nJ])-True)
     polygons = masks['Polygons']
     for polygon in polygons:
         if polygon:
-            tamp = ma.make_mask_none((1024*1024))
-            tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-                tay.flatten(),len(polygon),polygon,tamp)[:nI*nJ])
-            tam = ma.mask_or(tam.flatten(),tamp)
+            tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
+                tay,len(polygon),polygon,tamp)[:nI*nJ]))
+    for X,Y,rsq in masks['Points'].T:
+        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
-    spots = masks['Points']
-    for X,Y,diam in spots:
-        tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
-        tam = ma.mask_or(tam,tamp)
     times[0] += time.time()-t0
     t0 = time.time()
-    TA = np.array(GetTthAzmG(tax,tay,data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
+    TA = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
     times[1] += time.time()-t0
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     return np.array(TA),tam           #2-theta, azimuth & geom. corr. arrays & position mask
@@ -874,7 +869,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
     tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     return tax,tay,taz,tad,tabs
-    
+
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
@@ -897,6 +892,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
         data['DetDepth'] /= data['distance']
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
+    Masks = copy.deepcopy(masks)
+    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
+    if np.any(masks['Points']):
+        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     Nx,Ny = data['size']
@@ -904,6 +903,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     nYBlks = (Ny-1)/blkSize+1
     tbeg = time.time()
     times = [0,0,0,0,0]
+    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
         iFin = min(iBeg+blkSize,Ny)
@@ -911,10 +911,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
-            TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
+            TA,tam = Make2ThetaAzimuthMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp,times)           #2-theta & azimuth arrays & create position mask
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
-            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
             del TA; del tam
             times[2] += time.time()-t0
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible

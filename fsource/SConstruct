@@ -223,7 +223,7 @@ if FCompiler == 'gfortran':
     elif sys.platform == "darwin":
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
     elif sys.platform == "win32":
-         if F2PYflags == "": F2PYflags = '--compiler=mingw32 --fcompiler=gnu95 --f77flags="-fno-range-check -m64"'
+         if F2PYflags == "": F2PYflags = '--compiler=mingw32 --fcompiler=gnu95 --f77flags="-fno-range-check"'
 elif FCompiler == 'g77':
     if FORTpath == "": FORTpath = G77path
     if sys.platform == "win32":

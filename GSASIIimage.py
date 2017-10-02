@@ -836,8 +836,15 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim,tamp,times): #most expensive part 
         if polygon:
             tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
                 tay,len(polygon),polygon,tamp)[:nI*nJ]))
-    for X,Y,rsq in masks['Points'].T:
-        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
+    try:
+        import spotmask as sm
+        spots = masks['Points'].T
+        if len(spots):
+            tam = ma.mask_or(tam,ma.getmask(sm.spotmask(nI*nJ,tax,
+                    tay,len(spots),spots,tamp)[:nI*nJ]))
+    except:
+        for X,Y,rsq in masks['Points'].T:
+            tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
     times[0] += time.time()-t0
     t0 = time.time()

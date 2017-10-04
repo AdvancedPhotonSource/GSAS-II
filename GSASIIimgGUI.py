@@ -199,7 +199,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                         vals.append(parmDict['dist'])
                         varyList.append('dist')
                         sigList.append(None)
-                    vals.append(Data['setdist'])
+                    vals.append(Data.get('setdist',Data['distance']))
                     varyList.append('setdist')
                     sigList.append(None)
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],

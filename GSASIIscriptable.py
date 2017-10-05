@@ -12,15 +12,18 @@
 ======================================
 
 Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
-
-Supports a command line interface as well. Run `python GSASIIscriptable.py --help` to
-show the available subcommands, and inspect each subcommand with
-`python GSASIIscriptable.py <subcommand> --help`.
-
 This file specifies several wrapper classes around GSAS-II data representations.
 They all inherit from :class:`G2ObjectWrapper`. The chief class is :class:`G2Project`,
 which represents an entire GSAS-II project and provides several methods to access
 phases, powder histograms, and execute Rietveld refinements.
+These routines can be accessed either by directly calling these routines
+or via a command line interface. Run::
+
+   python GSASIIscriptable.py --help
+
+to show the available subcommands, and inspect each subcommand with
+`python GSASIIscriptable.py <subcommand> --help`.
+
 
 .. _Refinement_parameters_kinds:
 
@@ -28,17 +31,148 @@ phases, powder histograms, and execute Rietveld refinements.
 Refinement parameters
 =====================
 
-There are three types of refinement parameters:
+Note that parameters and refinement flags used in GSAS-II fall into three classes:
 
-    * Histogram: These can be turned on and off through
-      :meth:`G2PwdrData.set_refinements` and :func:`G2PwdrData.clear_refinements`
-    * Phase: Turned on and off through :func:`G2Phase.set_refinements`
-      and :func:`G2Phase.clear_refinements`
-    * Histogram-and-phase (HAP): Turned on and off through
-      :func:`G2Phase.set_HAP_refinements` and :func:`G2Phase.clear_HAP_refinements`
+    * **Histogram**: There will be a set of these for each dataset loaded into a
+      project file. The parameters available depend on the type of histogram
+      (Bragg-Brentano, Single-Crystal, TOF,...). Typical Histogram parameters
+      include the overall scale factor, background, instrument and sample parameters;
+      see the :ref:`Histogram_parameters_table` table for a list of the histogram
+      parameters where access has been provided.
+      
+    * **Phase**: There will be a set of these for each phase loaded into a
+      project file. While some parameters are found in all types of phases,
+      others are only found in certain types (modulated, magnetic, protein...).
+      Typical phase parameters include unit cell lengths and atomic positions; see the
+      :ref:`Phase_parameters_table` table for a list of the phase      
+      parameters where access has been provided.
+      
+    * **Histogram-and-phase** (HAP): There is a set of these for every histogram
+      that is associated with each phase, so that if there are ``N`` phases and ``M``
+      histograms, there can be ``N*M`` total sets of "HAP" parameters sets (fewer if all
+      histograms are not linked to all phases.) Typical HAP parameters include the
+      phase fractions, sample microstrain and crystallite size broadening terms,
+      hydrostatic strain pertibations of the unit cell and preferred orientation
+      values.
+      See the :ref:`HAP_parameters_table` table for the HAP parameters where access has
+      been provided. 
 
-These parameters can be combined and set by :meth:`G2Project.do_refinements`
-or :meth:`G2Project.set_refinement`.
+There are several ways to set parameters using different objects, as described below, 
+
+------------------------
+Histogram/Phase objects
+------------------------
+Each histogram and phase has an object. 
+Parameters within each individual object can be turned on and off by calling
+:meth:`G2PwdrData.set_refinements` or :meth:`G2PwdrData.clear_refinements`
+for histogram parameters;
+:meth:`G2Phase.set_refinements` or :meth:`G2Phase.clear_refinements`
+for phase parameters; and :meth:`G2Phase.set_HAP_refinements` or
+:meth:`G2Phase.clear_HAP_refinements`. As an example, if some_histogram is a histogram object (of type :class:`G2PwdrData`), use this to set parameters in that histogram:
+
+.. code-block::  python
+
+    params = { 'Limits': [0.8, 12.0],
+               'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+               'Background': {'type': 'chebyschev', 'refine': True}
+    some_histogram.set_refinements(params)
+
+Likewise to turn refinement flags on, use code such as this:
+
+.. code-block::  python
+
+    params = { 'Instrument Parameters': ['U', 'V', 'W']} 
+    some_histogram.set_refinements(params)
+
+and to turn these refinement flags, off use this (Note that the
+``.clear_refinements()`` methods will usually will turn off refinement even
+if a refinement parameter is set in the dict to True.):
+
+.. code-block::  python
+
+    params = { 'Instrument Parameters': ['U', 'V', 'W']} 
+    some_histogram.clear_refinements(params)
+
+For phase parameters, use code such as this:
+    
+.. code-block::  python
+
+    params = { 'LeBail': True, 'Cell': True,
+               'Atoms': { 'Mn1': 'X',
+                          'O3': 'XU',
+                          'V4': 'FXU'}}
+    some_histogram.set_refinements(params)
+
+
+and here is an example for HAP parameters:
+
+.. code-block::  python
+
+    params = { 'Babinet': 'BabA',
+               'Extinction': True,
+               'Mustrain': { 'type': 'uniaxial',
+                             'direction': [0, 0, 1],
+                             'refine': True}}
+    some_phase.set_HAP_refinements(params)
+
+Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
+
+------------------------
+Project objects
+------------------------
+It is also possible to create a composite dictionary containing parameters of any type.
+In this case dictionaries are nested with keys at the outer level of "set" and "clear"
+to specify which function is used with function :meth:`G2Project.set_refinement`. Note
+that optionally a list of histograms and/or phases can be supplied to
+:meth:`G2Project.set_refinement`, where the default is to use all phases and histograms.
+As an example: 
+
+.. code-block::  python
+
+    pardict = {'set': { 'Limits': [0.8, 12.0],
+                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev', 'refine': True}},
+              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
+    my_project.set_refinement(pardict)
+
+------------------------
+Refinement recipe
+------------------------
+Finally, it is possible to specify a sequence of refinement actions as a list of dicts.
+Note in the following example, the list contains a set of dicts, each defined as before.
+It is not possible to specify different actions for differing phases or histograms
+with this method. Note that a
+separate refinement step will be performed for each element in the list.
+An example follows:
+
+.. code-block::  python
+
+    reflist = [
+            {"set": { "Limits": { "low": 0.7 },
+                      "Background": { "no. coeffs": 3,
+                                      "refine": True }}},
+            {"set": { "LeBail": True,
+                      "Cell": True }},
+            {"set": { "Sample Parameters": ["DisplaceX"]}},
+            {"set": { "Instrument Parameters": ["U", "V", "W", "X", "Y"]}},
+            {"set": { "Mustrain": { "type": "uniaxial",
+                                    "refine": "equatorial",
+                                    "direction": [0, 0, 1]}}},
+            {"set": { "Mustrain": { "type": "uniaxial",
+                                    "refine": "axial"}}},
+            {"clear": { "LeBail": True},
+             "set": { "Atoms": { "Mn": "X" }}},
+            {"set": { "Atoms": { "O1": "X", "O2": "X" }}},]
+    my_project.do_refinements(reflist)
+    
+Note that in the second from last refinement step (``reflist[6]``), parameters are both set and cleared. To perform a single refinement without changing any parameters, use this
+call:
+
+.. code-block::  python
+
+    my_project.do_refinements([])
+
+
 
 ============================
 Refinement specifiers format
@@ -56,17 +190,6 @@ Histogram parameters
 
 This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
 and :func:`G2PwdrData.clear_refinements`.
-
-Example:
-
-.. code-block::  python
-
-    params = {'set': { 'Limits': [0.8, 12.0],
-                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True}},
-              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
-    some_histogram.set_refinements(params['set'])
-    some_histogram.clear_refinements(params['clear'])
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
@@ -114,16 +237,6 @@ Phase parameters
 This table describes the dictionaries supplied to :func:`G2Phase.set_refinements`
 and :func:`G2Phase.clear_refinements`.
 
-Example:
-
-.. code-block::  python
-
-    params = { 'LeBail': True, 'Cell': True,
-               'Atoms': { 'Mn1': 'X',
-                          'O3': 'XU',
-                          'V4': 'FXU'}}
-    some_histogram.set_refinements(params)
-
 .. tabularcolumns:: |l|p{4.5in}|
 
 ===================== ============================================
@@ -149,17 +262,6 @@ Histogram-and-phase parameters
 This table describes the dictionaries supplied to :func:`G2Phase.set_HAP_refinements`
 and :func:`G2Phase.clear_HAP_refinements`.
 
-Example:
-
-.. code-block::  python
-
-    params = { 'Babinet': 'BabA',
-               'Extinction': True,
-               'Mustrain': { 'type': 'uniaxial',
-                             'direction': [0, 0, 1],
-                             'refine': True}}
-    some_phase.set_HAP_refinements(params)
-
 .. tabularcolumns:: |l|l|p{3.5in}|
 
 ===================== ====================  =================================================
@@ -170,10 +272,9 @@ Babinet                                      Should be a **list** of the followi
                                              BabA and BabU
 \                     BabA
 \                     BabU
-Extinction                                   Should be boolean, whether or not to
-                                             refine.
-HStrain                                      Should be boolean, whether or not to
-                                             refine.
+Extinction                                   Boolean, True to refine.
+HStrain                                      Boolean, True to refine all appropriate
+                                             $D_ij$ terms.
 Mustrain
 \                     type                   Mustrain model. One of 'isotropic',
                                              'uniaxial', or 'generalized'
@@ -239,10 +340,11 @@ def LoadG2fil():
 
 def LoadDictFromProjFile(ProjFile):
     '''Read a GSAS-II project file and load items to dictionary
+    
     :param str ProjFile: GSAS-II project (name.gpx) full file name
     :returns: Project,nameList, where
 
-      * Project (dict) is a representation of gpx file following the GSAS-II tree struture
+      * Project (dict) is a representation of gpx file following the GSAS-II tree structure
         for each item: key = tree name (e.g. 'Controls','Restraints',etc.), data is dict
         data dict = {'data':item data whch may be list, dict or None,'subitems':subdata (if any)}
       * nameList (list) has names of main tree entries & subentries used to reconstruct project file
@@ -334,7 +436,7 @@ def ImportPowder(reader,filename):
     :param str reader: a scriptable reader
     :param str filename: full name of powder data file; can be "multi-Bank" data
 
-    :returns list rdlist: list of reader objects containing powder data, one for each
+    :returns: list rdlist: list of reader objects containing powder data, one for each
         "Bank" of data encountered in file. Items in reader object of interest are:
 
           * rd.comments: list of str: comments found on powder file
@@ -1197,6 +1299,14 @@ class G2Project(G2ObjectWrapper):
         refinement and yields this project, to allow error checking or
         logging of intermediate results.
 
+        :param list refinements: A list of dictionaries defining refinements
+        :param str histogram: Name of histogram for refinements to be applied
+            to, a list of histograms or 'all'.
+            See :func:`set_refinement` for more details
+        :param str phase: Name of phase for refinements to be applied to, a
+            list of phases or 'all'. 
+            See :func:`set_refinement` for more details
+            
         >>> def checked_refinements(proj):
         ...     for p in proj.iter_refinements(refs):
         ...         # Track intermediate results
@@ -1206,11 +1316,7 @@ class G2Project(G2ObjectWrapper):
         ...         if is_something_wrong(p):
         ...             raise Exception("I need a human!")
 
-        :param list refinements: A list of dictionaries defining refinements
-        :param str histogram: Name of histogram for refinements to be applied
-            to, or 'all'
-        :param str phase: Name of phase for refinements to be applied to, or
-            'all'
+            
         """
         if outputnames:
             if len(refinements) != len(outputnames):
@@ -1242,18 +1348,26 @@ class G2Project(G2ObjectWrapper):
     def set_refinement(self, refinement, histogram='all', phase='all'):
         """Apply specified refinements to a given histogram(s) or phase(s).
 
-        Refinement parameters are categorize in three groups:
+        :param dict refinement: The refinements to be conducted
+        :param histogram: Specifies either 'all' (default), a single histogram or
+          a list of histograms. Histograms may be specified as histogram objects
+          (see :class:`G2PwdrData`), the histogram name (str) or the index number (int)
+          of the histogram in the project, numbered starting from 0.
+          Omitting the parameter or the string 'all' indicates that parameters in
+          all histograms should be set. 
+        :param phase: Specifies either 'all' (default), a single phase or
+          a list of phases. Phases may be specified as phase objects
+          (see :class:`G2Phase`), the phase name (str) or the index number (int)
+          of the phase in the project, numbered starting from 0.
+          Omitting the parameter or the string 'all' indicates that parameters in
+          all phases should be set. 
+
+        Note that refinement parameters are categorized as one of three types:
 
         1. Histogram parameters
         2. Phase parameters
         3. Histogram-and-Phase (HAP) parameters
-
-        :param dict refinement: The refinements to be conducted
-        :param histogram: Either a name of a histogram (str), a list of
-            histogram names, or 'all' (default)
-        :param phase: Either a name of a phase (str), a list of phase names, or
-            'all' (default)
-
+        
         .. seealso::
             :meth:`G2PwdrData.set_refinements`
             :meth:`G2PwdrData.clear_refinements`
@@ -1264,17 +1378,31 @@ class G2Project(G2ObjectWrapper):
 
         if histogram == 'all':
             hists = self.histograms()
+        elif isinstance(histogram, list) or isinstance(histogram, tuple):
+            hists = []
+            for h in histogram:
+                if isinstance(h, str) or isinstance(h, int):
+                    hists.append(self.histogram(h))
+                else:
+                    hists.append(h)
         elif isinstance(histogram, str) or isinstance(histogram, int):
             hists = [self.histogram(histogram)]
         else:
-            hists = [self.histogram(name) for name in histogram]
+            hists = [histogram]
 
         if phase == 'all':
             phases = self.phases()
+        elif isinstance(phase, list) or isinstance(phase, tuple):
+            phases = []
+            for ph in phase:
+                if isinstance(ph, str) or isinstance(ph, int):
+                    phases.append(self.phase(ph))
+                else:
+                    phases.append(ph)
         elif isinstance(phase, str) or isinstance(phase, int):
             phases = [self.phase(phase)]
         else:
-            phases = [self.phase(name) for name in phase]
+            phases = [phase]
 
         # TODO: HAP parameters:
         #   Babinet
@@ -2025,7 +2153,7 @@ class G2Phase(G2ObjectWrapper):
                         h['Extinction'][1] = bool(val)
                 elif key == 'HStrain':
                     for h in histograms:
-                        hist['HStrain'][1] = [bool(val) for p in hist['Hstrain'][0]]
+                        h['HStrain'][1] = [bool(val) for p in h['HStrain'][1]]
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = h['Mustrain']
@@ -2090,6 +2218,8 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Scale':
                     for h in histograms:
                         h['Scale'][1] = bool(val)
+                else:
+                    print(u'Unknown HAP key: '+key)
 
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and
@@ -2124,7 +2254,7 @@ class G2Phase(G2ObjectWrapper):
                         h['Extinction'][1] = False
                 elif key == 'HStrain':
                     for h in histograms:
-                        hist['HStrain'][1] = [False for p in hist['Hstrain'][0]]
+                        h['HStrain'][1] = [False for p in h['HStrain'][1]]
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = h['Mustrain']
@@ -2144,6 +2274,8 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Scale':
                     for h in histograms:
                         h['Scale'][1] = False
+                else:
+                    print(u'Unknown HAP key: '+key)
 
 
 ##########################

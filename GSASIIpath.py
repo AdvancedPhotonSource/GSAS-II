@@ -324,7 +324,7 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
             changed.append(i.attrib.get('path'))
     return changed
 
-def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
+def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
     '''This performs an update of the files in a local directory from a server. 
 
     :param str fpath: path to repository dictionary, defaults to directory where
@@ -340,20 +340,27 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
         verstr = '-r' + str(version)
     else:
         verstr = '-rHEAD'
+    if verbose: print(u"Updating files at "+fpath)
     cmd = [svn,'update',fpath,verstr,
            '--non-interactive',
            '--accept','theirs-conflict','--force']
     if svnVersionNumber() >= 1.6:
         cmd += ['--trust-server-cert']
     if proxycmds: cmd += proxycmds
+    if verbose:
+        s = 'subversion command:\n  '
+        for i in cmd: s += i + ' '
+        print(s)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
         print(60*"=")
-        print ("****** An error was noted, see below *********")
+        print("****** An error was noted, see below *********")
         print(60*"=")
-        print err
+        print(err)
         sys.exit()
+    elif verbose:
+        print(out)
 
 def svnUpgrade(fpath=os.path.split(__file__)[0]):
     '''This reformats subversion files, which may be needed if an upgrade of subversion is

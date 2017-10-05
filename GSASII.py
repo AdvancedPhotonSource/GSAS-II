@@ -22,7 +22,20 @@ import GSASIIpath
 __version__ = '1.0.0'
 
 if __name__ == '__main__':
-    GSASIIpath.SetBinaryPath()
+    try:
+        GSASIIpath.SetBinaryPath()
+    except:
+        print('Unable to run with current setup, do you want to update to the')
+        try:
+            ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+        except:
+            ans = 'no'
+        if ans.strip().lower() == "no":
+            import sys
+            print('Exiting')
+            sys.exit()
+        print('Updating...')
+        GSASIIpath.svnUpdateProcess()
     GSASIIpath.SetVersionNumber("$Revision$")
     GSASIIpath.InvokeDebugOpts()
     import GSASIIdataGUI as G2gd    

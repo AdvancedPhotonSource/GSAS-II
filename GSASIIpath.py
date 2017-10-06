@@ -203,8 +203,8 @@ def svnVersion(svn=None):
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print 'subversion error!\nout=',out
-        print 'err=',err
+        print ('subversion error!\nout=%s'%out)
+        print ('err=%s'%err)
         return None
     return out.strip()
 
@@ -245,8 +245,8 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print 'out=',out
-        print 'err=',err
+        print ('out=%s'%out)
+        print ('err=%s'%err)
         return None
     x = ET.fromstring(out)
     d = {}
@@ -287,8 +287,8 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print 'svn failed\n',out
-        print 'err=',err
+        print ('svn failed\n%s'%out)
+        print ('err=%s'%err)
         global svnLastError
         svnLastError = err
         return None
@@ -377,7 +377,7 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
     out,err = s.communicate()
     if err:
         print("svn upgrade did not happen (this is probably OK). Messages:")
-        print err
+        print (err)
             
 def svnUpdateProcess(version=None,projectfile=None,branch=None):
     '''perform an update of GSAS-II in a separate python process'''
@@ -385,7 +385,7 @@ def svnUpdateProcess(version=None,projectfile=None,branch=None):
         projectfile = ''
     else:
         projectfile = os.path.realpath(projectfile)
-        print 'restart using',projectfile
+        print ('restart using %s'%projectfile)
     if branch:
         version = branch
     elif not version:
@@ -430,8 +430,8 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         print(60*"=")
         print ("****** An error was noted, see below *********")
         print(60*"=")
-        print 'out=',out
-        print 'err=',err
+        print ('out=%s'%out)
+        print ('err=%s'%err)
         return False
     if verbose:
         print('=== Output from svn switch'+(43*'='))
@@ -458,7 +458,7 @@ def svnInstallDir(URL,loadpath):
         print(60*"=")
         print ("****** An error was noted, see below *********")
         print(60*"=")
-        print err
+        print (err)
         return False
     print ("Files installed at: "+loadpath)
     return True
@@ -501,8 +501,8 @@ def DownloadG2Binaries(g2home,verbose=True):
     if proxycmds: cmd += proxycmds
     if verbose:
         print('Running svn command')
-        for item in cmd: print item,
-        print ""
+        for item in cmd: print (item,)
+        print ("")
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     res,err = p.communicate()
     versions = {}
@@ -588,7 +588,7 @@ def IPyBreak_base(userMsg=None):
             # try the IPython 0.12 approach
             from IPython.frontend.terminal.embed import InteractiveShellEmbed
         except ImportError:
-            print 'IPython InteractiveShellEmbed not found'
+            print ('IPython InteractiveShellEmbed not found')
             return
     import inspect
     ipshell = InteractiveShellEmbed()
@@ -618,7 +618,7 @@ def exceptHook(*args):
             # try the IPython 0.12 approach
             from IPython.frontend.terminal.embed import InteractiveShellEmbed
         except ImportError:
-            print 'IPython InteractiveShellEmbed not found'
+            print ('IPython InteractiveShellEmbed not found')
             return
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
@@ -644,7 +644,7 @@ pdbBreak = DoNothing
 def InvokeDebugOpts():
     'Called in GSASII.py to set up debug options'
     if GetConfigValue('debug'):
-        print 'Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()'
+        print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
         sys.excepthook = exceptHook
         import pdb
         global pdbBreak
@@ -801,7 +801,7 @@ def SetBinaryPath(printInfo=True):
                     print(75*'*')
                     print('Use of GSAS-II binary directory {} failed!'.format(binpath))
                     print(75*'*')
-                raise Exception,"**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****"
+                raise Exception("**** ERROR GSAS-II binary libraries not found, GSAS-II cannot run ****")
 
     # add the data import and export directory to the search path
     newpath = os.path.join(path2GSAS2,'imports')
@@ -817,7 +817,7 @@ def SetBinaryPath(printInfo=True):
         import inspect
         vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
         if printInfo:
-            print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
+            print (str(len(vals))+' values read from config file '+os.path.abspath(config.__file__))
     except ImportError:
         configDict = {'Clip_on':True}
     except Exception as err:
@@ -852,5 +852,5 @@ if __name__ == '__main__':
     else:
         print("Restart GSAS-II without a project file ")
         subprocess.Popen([ex,os.path.join(loc,'GSASII.py')])
-    print 'exiting update process'
+    print ('exiting update process')
     sys.exit()

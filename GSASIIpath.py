@@ -133,7 +133,7 @@ def getsvnProxy():
         setsvnProxy(host,port)
         if not host.strip(): return '',''
         return host,port
-    return None,None
+    return '',''
 
 def setsvnProxy(host,port):
     '''Sets the svn commands needed to use a proxy
@@ -599,6 +599,7 @@ def IPyBreak_base(userMsg=None):
     ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
+from IPython.core import ultratb
 def exceptHook(*args):
     '''A routine to be called when an exception occurs. It prints the traceback
     with fancy formatting and then calls an IPython shell with the environment
@@ -606,7 +607,7 @@ def exceptHook(*args):
     
     This routine is only used when debug=True is set in config.py    
     '''
-    from IPython.core import ultratb
+    #from IPython.core import ultratb
     if 'win' in sys.platform:
         ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
     else:

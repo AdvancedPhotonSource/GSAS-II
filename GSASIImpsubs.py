@@ -96,7 +96,7 @@ def ComputeFobsSqCWbatch(profList):
             resList.append((icod[0],iref))
             sInt += icod[1]
         elif icod == -1:
-            res.append((None,iref))
+            resList.append((None,iref))
         elif icod == -2:
             break
     return sInt,resList

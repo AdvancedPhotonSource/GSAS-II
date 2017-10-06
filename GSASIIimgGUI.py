@@ -2211,7 +2211,9 @@ def Read_imctrl(imctrl_file):
             elif key == 'fullIntegrate':
                 fullIntegrate = eval(val)
             elif key == 'LRazimuth':
-                save['LRazimuth_min'],save['LRazimuth_max'] = eval(val)[0:2]
+                vals = eval(val)
+                save['LRazimuth_min'] = float(vals[0])
+                save['LRazimuth_max'] = float(vals[1])
             elif key == 'IOtth':
                 save['IOtth_min'],save['IOtth_max'] = eval(val)[0:2]
             elif key == 'center':
@@ -2226,7 +2228,7 @@ def Read_imctrl(imctrl_file):
             S = File.readline()
     finally:
         File.close()
-        if fullIntegrate: save['LRazimuth_min'],save['LRazimuth_max'] = 0.,0.
+        if fullIntegrate: save['LRazimuth_min'],save['LRazimuth_max'] = 0.,360.
     return save
     
 class AutoIntFrame(wx.Frame):
@@ -3127,12 +3129,8 @@ class IntegParmTable(wx.Dialog):
             if not files:
                 wx.CallAfter(self.EndModal,wx.ID_CANCEL)
                 return
-        mainSizer = self.G2frame.dataWindow.GetSizer()
-        self.list = ImgIntLstCtrl(self, wx.ID_ANY,
-                      style=wx.LC_REPORT 
-                          | wx.BORDER_SUNKEN
-                         #| wx.BORDER_NONE
-                         )
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.list = ImgIntLstCtrl(self, wx.ID_ANY,style=wx.LC_REPORT| wx.BORDER_SUNKEN)
         mainSizer.Add(self.list,1,wx.EXPAND,1)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self, wx.ID_OK)
@@ -3198,7 +3196,7 @@ class IntegParmTable(wx.Dialog):
         # option 2, read in a list of files
         for file in files: # read all files; place in dict by distance
             imgDict = Read_imctrl(file)
-            dist = imgDict.get('setdist')
+            dist = imgDict.get('setdist',imgDict['distance'])
             if dist is None:
                 print('Skipping old file, redo: {}'.format(file))
             tmpDict[dist] = imgDict
@@ -3266,14 +3264,14 @@ class IntegParmTable(wx.Dialog):
 class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEditMixin):
     '''Creates a custom ListCtrl for editing Image Integration parameters
     '''
-    def __init__(self, parent, ID, pos=wx.DefaultPosition,
-                 size=(1000,200), style=0):
+    def __init__(self, parent, ID, pos=wx.DefaultPosition,size=(1000,200),style=0):
         self.parent=parent
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.ListCtrlAutoWidthMixin.__init__(self)
         listmix.TextEditMixin.__init__(self)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnDouble)
         #self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick)
+        
     def FillList(self,parms):
         'Places the current parms into the table'
         self.ClearAll()
@@ -3282,6 +3280,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             self.InsertColumn(i, lbl)
         for r,d in enumerate(parms[0]):
             if d is None: continue
+            if d == 'None': continue
             if float(d) < 0: continue
             index = self.InsertStringItem(sys.maxint, d)
             for j in range(1,len(parms)):
@@ -3297,8 +3296,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         if not pth: pth = '.'
         try:
             dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', pth,
-                                style=wx.OPEN,
-                                wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
+                style=wx.OPEN,wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 fil = dlg.GetPath()

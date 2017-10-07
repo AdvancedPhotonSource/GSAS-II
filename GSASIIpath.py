@@ -500,9 +500,9 @@ def DownloadG2Binaries(g2home,verbose=True):
     cmd = [svn, 'list', g2home + '/Binaries/','--non-interactive', '--trust-server-cert']
     if proxycmds: cmd += proxycmds
     if verbose:
-        print('Running svn command')
-        for item in cmd: print (item,)
-        print ("")
+        s = 'Running svn command:\n  '
+        for i in cmd: s += i + ' '
+        print(s)
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     res,err = p.communicate()
     versions = {}

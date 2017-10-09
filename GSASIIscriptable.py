@@ -62,8 +62,8 @@ There are several ways to set parameters using different objects, as described b
 ------------------------
 Histogram/Phase objects
 ------------------------
-Each histogram and phase has an object. 
-Parameters within each individual object can be turned on and off by calling
+Each phase and powder histogram in a :class:`G2Project` object has an associated
+object. Parameters within each individual object can be turned on and off by calling
 :meth:`G2PwdrData.set_refinements` or :meth:`G2PwdrData.clear_refinements`
 for histogram parameters;
 :meth:`G2Phase.set_refinements` or :meth:`G2Phase.clear_refinements`
@@ -74,7 +74,7 @@ for phase parameters; and :meth:`G2Phase.set_HAP_refinements` or
 
     params = { 'Limits': [0.8, 12.0],
                'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-               'Background': {'type': 'chebyschev', 'refine': True}
+               'Background': {'type': 'chebyschev', 'refine': True}}
     some_histogram.set_refinements(params)
 
 Likewise to turn refinement flags on, use code such as this:
@@ -1740,6 +1740,13 @@ class G2PwdrData(G2ObjectWrapper):
         except ImportError:
             pass
 
+    def get_wR(self):
+        """returns the overall weighted profile R factor for a histogram
+        
+        :returns: a wR value as a percentage or None if not defined
+        """
+        return self['data'][0].get('wR')
+
     def set_refinements(self, refs):
         """Sets the refinement parameter 'key' to the specification 'value'
 
@@ -2210,8 +2217,14 @@ class G2Phase(G2ObjectWrapper):
                     for h in histograms:
                         h['Show'] = bool(val)
                 elif key == 'Size':
-                    # TODO
-                    raise NotImplementedError()
+                    for h in histograms:
+                        if h['Size'][0] == 'isotropic':
+                            h['Size'][2][0] = bool(val)
+                        elif h['Size'][0] == 'uniaxial':
+                            h['Size'][2][1] = bool(val)
+                            h['Size'][2][2] = bool(val)
+                        else:   # TODO
+                            raise NotImplementedError()
                 elif key == 'Use':
                     for h in histograms:
                         h['Use'] = bool(val)

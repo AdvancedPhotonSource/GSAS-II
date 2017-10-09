@@ -3008,7 +3008,6 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     refDict['RefList'][irefl][8+im] = refl8im
                                     if parmDict[phfx+'LeBail']:
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
-                        MPpool.terminate()
                 elif 'T' in calcControls[hfx+'histType']:
                     for iref,refl in enumerate(refDict['RefList']):
                         if useMP: 
@@ -3035,7 +3034,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                     refDict['RefList'][irefl][8+im] = refl8im
                                     if parmDict[phfx+'LeBail']:
                                         refDict['RefList'][irefl][9+im] = refDict['RefList'][irefl][8+im]
-                        MPpool.terminate()
+                if useMP: MPpool.terminate()
                 sumFo = 0.0
                 sumdF = 0.0
                 sumFosq = 0.0
@@ -4146,6 +4145,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                     else: 
                        dMdvh += dmdv
                        for key in depDerivs.keys(): depDerivDict[key] += depDerivs[key]                        
+                MPpool.terminate()
             else:
                 dMdvh,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
                     varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])

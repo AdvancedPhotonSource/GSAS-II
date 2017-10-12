@@ -277,17 +277,26 @@ HStrain                                      Boolean, True to refine all appropr
                                              $D_ij$ terms.
 Mustrain
 \                     type                   Mustrain model. One of 'isotropic',
-                                             'uniaxial', or 'generalized'
-\                     direction              For uniaxial. A list of three integers,
+                                             'uniaxial', or 'generalized'. Should always
+                                             be specified.
+\                     direction              For uniaxial only. A list of three
+                                             integers,
                                              the [hkl] direction of the axis.
-\                     refine                 Usually boolean, whether or not to refine.
+\                     refine                 Usually boolean, set to True to refine.
                                              When in doubt, set it to true.
                                              For uniaxial model, can specify list
-                                             of 'axial' or 'equatorial'. If boolean
-                                             given sets both axial and equatorial.
+                                             of 'axial' or 'equatorial' or a single
+                                             boolean sets both axial and equatorial.
+Size                                         Not implemented
+\                     type                   Size broadening model. One of 'isotropic',
+                                             'uniaxial', or 'ellipsoid'. Should always
+                                             be specified.
+\                     direction              For uniaxial only. A list of three
+                                             integers,
+                                             the [hkl] direction of the axis.
+\                     refine                 A boolean, True to refine.
 Pref.Ori.                                    Boolean, True to refine
 Show                                         Boolean, True to refine
-Size                                         Not implemented
 Use                                          Boolean, True to refine
 Scale                                        Phase fraction; Boolean, True to refine
 ===================== ====================  =================================================
@@ -2165,6 +2174,7 @@ class G2Phase(G2ObjectWrapper):
                     for h in histograms:
                         mustrain = h['Mustrain']
                         newType = None
+                        direction = None
                         if isinstance(val, (unicode, str)):
                             if val in ['isotropic', 'uniaxial', 'generalized']:
                                 newType = val
@@ -2206,25 +2216,46 @@ class G2Phase(G2ObjectWrapper):
                                 mustrain[2] = [False for p in mustrain[1]]
 
                         if direction:
-                            direction = [int(n) for n in direction]
                             if len(direction) != 3:
                                 raise ValueError("Expected hkl, found", direction)
+                            direction = [int(n) for n in direction]
                             mustrain[3] = direction
+                elif key == 'Size':
+                    for h in histograms:
+                        size = h['Size']
+                        newType = None
+                        direction = None
+                        if isinstance(val, (unicode, str)):
+                            if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
+                                newType = val
+                            else:
+                                raise ValueError("Not a valid Size type: " + val)
+                        elif isinstance(val, dict):
+                            newType = val.get('type', None)
+                            direction = val.get('direction', None)
+
+                        if newType:
+                            size[0] = newType
+                            refine = val.get('refine')
+                            if newType == 'isotropic' and refine is not None:
+                                size[2][0] = bool(refine)
+                            elif newType == 'uniaxial' and refine is not None:
+                                size[2][1] = bool(refine)
+                                size[2][2] = bool(refine)
+                            elif newType == 'ellipsoidal' and refine is not None:
+                                size[5] = [bool(refine) for p in size[5]]
+
+                        if direction:
+                            if len(direction) != 3:
+                                raise ValueError("Expected hkl, found", direction)
+                            direction = [int(n) for n in direction]
+                            size[3] = direction
                 elif key == 'Pref.Ori.':
                     for h in histograms:
                         h['Pref.Ori.'][2] = bool(val)
                 elif key == 'Show':
                     for h in histograms:
                         h['Show'] = bool(val)
-                elif key == 'Size':
-                    for h in histograms:
-                        if h['Size'][0] == 'isotropic':
-                            h['Size'][2][0] = bool(val)
-                        elif h['Size'][0] == 'uniaxial':
-                            h['Size'][2][1] = bool(val)
-                            h['Size'][2][2] = bool(val)
-                        else:   # TODO
-                            raise NotImplementedError()
                 elif key == 'Use':
                     for h in histograms:
                         h['Use'] = bool(val)
@@ -2271,7 +2302,7 @@ class G2Phase(G2ObjectWrapper):
                 elif key == 'Mustrain':
                     for h in histograms:
                         mustrain = h['Mustrain']
-                        mustrain[2] = [False for p in mustrain[1]]
+                        mustrain[2] = [False for p in mustrain[2]]
                         mustrain[5] = [False for p in mustrain[4]]
                 elif key == 'Pref.Ori.':
                     for h in histograms:
@@ -2280,7 +2311,10 @@ class G2Phase(G2ObjectWrapper):
                     for h in histograms:
                         h['Show'] = False
                 elif key == 'Size':
-                    raise NotImplementedError()
+                    for h in histograms:
+                        size = h['Size']
+                        size[2] = [False for p in size[2]]
+                        size[5] = [False for p in size[5]]
                 elif key == 'Use':
                     for h in histograms:
                         h['Use'] = False

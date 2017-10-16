@@ -484,6 +484,24 @@ def GetBinaryPrefix():
     items = [prefix,bits,pyver]
     return '_'.join(items)
 
+def svnList(URL,verbose=True):
+    '''Get a list of subdirectories from and svn repository
+    '''    
+    svn = whichsvn()
+    if not svn:
+        print('**** unable to load files: svn not found ****')
+        return ''
+    # get binaries matching the required type -- other than for the numpy version
+    cmd = [svn, 'list', URL,'--non-interactive', '--trust-server-cert']
+    if proxycmds: cmd += proxycmds
+    if verbose:
+        s = 'Running svn command:\n  '
+        for i in cmd: s += i + ' '
+        print(s)
+    p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    res,err = p.communicate()
+    return res
+
 def DownloadG2Binaries(g2home,verbose=True):
     '''Download GSAS-II binaries from appropriate section of the
     GSAS-II svn repository based on the platform, numpy and Python

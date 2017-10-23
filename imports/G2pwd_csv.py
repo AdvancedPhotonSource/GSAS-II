@@ -15,6 +15,7 @@ column-oriented variable
 
 '''
 
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -32,9 +33,10 @@ class csv_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         good = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if i > 1000: break
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) >= 2:
@@ -43,23 +45,28 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                     try:
                         float(v)
                     except ValueError:
-                        if good > 1: return False
+                        if good > 1: 
+                            fp.close()
+                            return False
                         continue
                 good += 1
                 continue
             elif good > 1:
+                fp.close()
                 return False
+        fp.close()
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a csv file'
         x = []
         y = []
         w = []
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) < 2 and i > 0:
-                print 'Line '+str(i+1)+' cannot be read:\n\t'+S
+                print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
                 continue
             try:
                 x.append(float(vals[0]))
@@ -82,9 +89,10 @@ class csv_ReaderClass(G2obj.ImportPowderData):
                 msg = 'Error in line '+str(i+1)
             if err and i > 0:
                 if GSASIIpath.GetConfigValue('debug'):
-                    print msg
-                    print S.strip()
+                    print (msg)
+                    print (S.strip())
                 break
+        fp.close()
         N = len(x)
         self.powderdata = [
             np.array(x), # x-axis values

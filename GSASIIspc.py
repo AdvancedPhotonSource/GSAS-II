@@ -492,10 +492,10 @@ def SpaceGroup(SGSymbol):
     '''
     E,A = SpcGroup(SGSymbol)
     if E > 0:
-        print SGErrors(E)
+        print (SGErrors(E))
         return
     for l in SGPrint(A):
-        print l
+        print (l)
 ################################################################################
 #### Magnetic space group stuff
 ################################################################################
@@ -973,7 +973,7 @@ def GenMagOps(SGData):
 def GetOpNum(Opr,SGData):
     Nops = len(SGData['SGOps'])
     opNum = abs(Opr)%100
-    cent = abs(Opr)/100
+    cent = abs(Opr)//100
     if Opr < 0:
         opNum += Nops
     if SGData['SGInv']:
@@ -1098,7 +1098,7 @@ def SSpcGroup(SGData,SSymbol):
                             OpCtxt = OpCtxt.replace(' ','')
                             OpDtxt = OpDtxt.replace(' ','')
                             Txt = OpCtxt+' conflict with '+OpDtxt
-                            print Txt
+                            print (Txt)
                             return False,Txt
         return True,SSGOps
         
@@ -1451,13 +1451,13 @@ def SSpcGroup(SGData,SSymbol):
     if E:
         SSGData['SSGOps'] = Result
         if DEBUG:
-            print 'Super spacegroup operators for '+SSGData['SSpGrp']
+            print ('Super spacegroup operators for '+SSGData['SSpGrp'])
             for Op in Result:
-                print SSMT2text(Op).replace(' ','')
+                print (SSMT2text(Op).replace(' ',''))
             if SGData['SGInv']:                                 
                 for Op in Result:
                     Op = [-Op[0],-Op[1]%1.]
-                    print SSMT2text(Op).replace(' ','')                                 
+                    print (SSMT2text(Op).replace(' ',''))                                 
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
@@ -1601,14 +1601,14 @@ def SSpaceGroup(SGSymbol,SSymbol):
 
     E,A = SpcGroup(SGSymbol)
     if E > 0:
-        print SGErrors(E)
+        print (SGErrors(E))
         return
     E,B = SSpcGroup(A,SSymbol)    
     if E > 0:
-        print E
+        print (E)
         return
     for l in SSGPrint(B):
-        print l
+        print (l)
         
 def SGProd(OpA,OpB):
     '''
@@ -1712,9 +1712,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     if len(Uij):
                         UijEquiv.append(newUij)                    
     if len(Uij):
-        return zip(XYZEquiv,UijEquiv,Idup,Cell)
+        return list(zip(XYZEquiv,UijEquiv,Idup,Cell))
     else:
-        return zip(XYZEquiv,Idup,Cell)
+        return list(zip(XYZEquiv,Idup,Cell))
         
 def GenHKL(HKL,SGData):
     ''' Generates all equivlent reflections including Friedel pairs
@@ -1752,7 +1752,7 @@ def GenHKLf(HKL,SGData):
     import pyspg
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
-    Uniq=np.array(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq]))
+    Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
     
@@ -2046,7 +2046,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
     for opr in dupDir:
-        if '-1' in siteSym and SpnFlp[len(SpnFlp)/2-1] < 0:
+        if '-1' in siteSym and SpnFlp[len(SpnFlp)//2-1] < 0:
             return [[0,0,0],[0.,0.,0.]]
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
@@ -2183,7 +2183,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                         else:
                             fsc[i] = 0
                     FSC &= fsc
-                    if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,fsc
+                    if debug: print (SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,fsc)
         n = -1
         for i,F in enumerate(FSC):
             if F:
@@ -2271,10 +2271,10 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                             CSI[1][:2] = [[1.,0,0],[mul,0,0]]
                             xsc[:2] = 0
             XSC &= xsc
-            if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,xsc
+            if debug: print (SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,xsc)
         if waveType == 'Fourier':
             n = -1
-            if debug: print XSC
+            if debug: print (XSC)
             for i,X in enumerate(XSC):
                 if X:
                     n += 1
@@ -2368,9 +2368,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                             usc[4:6] = 0
                             usc[6:8] = 0
                         
-                if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc
+                if debug: print (SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc)
             USC &= usc
-        if debug: print USC
+        if debug: print (USC)
         if not np.any(dtau%.5):
             n = -1
             for i,U in enumerate(USC):
@@ -2381,7 +2381,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
 
         return CSI,dU,dUTP
         
-    if debug: print 'super space group: ',SSGData['SSpGrp']
+    if debug: print ('super space group: '+SSGData['SSpGrp'])
     CSI = {'Sfrac':[[[1,0],[2,0]],[[1.,0.],[1.,0.]]],
         'Spos':[[[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],
             [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]],    #sin & cos
@@ -2395,7 +2395,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     SGOps = copy.deepcopy(SGData['SGOps'])
     laue = SGData['SGLaue']
     siteSym = SytSym(XYZ,SGData)[0].strip()
-    if debug: print 'siteSym: ',siteSym
+    if debug: print ('siteSym: '+siteSym)
     if siteSym == '1':   #"1" site symmetry
         if debug:
             return CSI,None,None,None,None
@@ -2430,7 +2430,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             epsinv = ssopinv[3][3]
             Sdtau.append(np.sum(mst*(XYZ-SGOps[iop][1])-epsinv*SSGOps[iop][1][3]))
     SdIndx = np.argsort(np.array(Sdtau))     # just to do in sensible order
-    if debug: print 'special pos super operators: ',[SSMT2text(ss).replace(' ','') for ss in SSop]
+    if debug: print ('special pos super operators: ',[SSMT2text(ss).replace(' ','') for ss in SSop])
     #setup displacement arrays
     tau = np.linspace(-1,1,49,True)
     #make modulation arrays - one parameter at a time
@@ -2676,7 +2676,7 @@ def SytSym(XYZ,SGData):
     Jdup = 0
     Ndup = 0
     dupDir = {}
-    Xeqv = GenAtom(XYZ,SGData,True)
+    Xeqv = list(GenAtom(XYZ,SGData,True))
     IRT = PackRot(SGData['SGOps'])
     L = -1
     for ic,cen in enumerate(SGData['SGCen']):
@@ -2694,7 +2694,7 @@ def SytSym(XYZ,SGData):
                             dupDir[px] = io
                         Isym += 2**(jx[2]-1)
     if Isym == 1073741824: Isym = 0
-    Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)/Jdup
+    Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)//Jdup
           
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
     
@@ -2713,11 +2713,11 @@ def ElemPosition(SGData):
     if Inv:
         opM = np.concatenate((opM,-opM))
         opT = np.concatenate((opT,-opT))
-    opMT = zip(opM,opT)
+    opMT = list(zip(opM,opT))
     for M,T in opMT[1:]:        #skip I
         Dt = int(nl.det(M))
         Tr = int(np.trace(M))
-        Dt = -(Dt-1)/2
+        Dt = -(Dt-1)//2
         Es = eleSym[Tr][Dt]
         if Dt:              #rotation-inversion
             I = np.eye(3)
@@ -2725,23 +2725,23 @@ def ElemPosition(SGData):
                 if np.any(T):       #glide
                     M2 = np.inner(M,M)
                     MT = np.inner(M,T)+T
-                    print 'glide',Es,MT
-                    print M2
+                    print ('glide',Es,MT)
+                    print (M2)
                 else:               #mirror
-                    print 'mirror',Es,T
-                    print I-M
+                    print ('mirror',Es,T)
+                    print (I-M)
                 X = [-1,-1,-1]
             elif Tr == -3:  # pure inversion
                 X = np.inner(nl.inv(I-M),T)
-                print 'inversion',Es,X
+                print ('inversion',Es,X)
             else:           #other rotation-inversion
                 M2 = np.inner(M,M)
                 MT = np.inner(M,T)+T
-                print 'rot-inv',Es,MT
-                print M2
+                print ('rot-inv',Es,MT)
+                print (M2)
                 X = [-1,-1,-1]
         else:               #rotations
-            print 'rotation',Es
+            print ('rotation',Es)
             X = [-1,-1,-1]
         #SymElements.append([Es,X])
         
@@ -2758,7 +2758,7 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         iC = 1
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
-    cA = Ax[0]/100
+    cA = Ax[0]//100
     Cen = SGCen[cA]
     M,T = SGOps[nA]
     if len(Ax)>1:
@@ -2796,7 +2796,7 @@ def StringOpsProd(A,B,SGData):
         iC = 1
     Ax[0] = abs(Ax[0]); Bx[0] = abs(Bx[0])
     nA = Ax[0]%100-1;  nB = Bx[0]%100-1
-    cA = Ax[0]/100;  cB = Bx[0]/100
+    cA = Ax[0]//100;  cB = Bx[0]//100
     Cen = (SGCen[cA]+SGCen[cB])%1.0
     cC = np.nonzero([np.allclose(C,Cen) for C in SGCen])[0][0]
     Ma,Ta = SGOps[nA]; Mb,Tb = SGOps[nB]
@@ -3861,8 +3861,8 @@ def test2():
         'Compare output from GSASIIspc.SpcGroup with results from cctbx.sgtbx'
         cctbx = cctbx_in[:] # make copy so we don't delete from the original
         spc = (SpcGroup(spcname))[1]
-        if debug: print spc['SpGrp']
-        if debug: print spc['SGCen']
+        if debug: print (spc['SpGrp'])
+        if debug: print (spc['SGCen'])
         latticetype = spcname.strip().upper()[0]
         # lattice type of R implies Hexagonal centering", fix the rhombohedral settings
         if latticetype == "R" and len(spc['SGCen']) == 1: latticetype = 'P'
@@ -3875,12 +3875,12 @@ def test2():
                     noff = off + cen
                     noff = MoveToUnitCell(noff)[0]
                     mult = tuple((op*inv).ravel().tolist())
-                    if debug: print "\n%s: %s + %s" % (spcname,mult,noff)
+                    if debug: print ("\n%s: %s + %s" % (spcname,mult,noff))
                     for refop in cctbx:
-                        if debug: print refop
+                        if debug: print (refop)
                         # check the transform
                         if refop[:9] != mult: continue
-                        if debug: print "mult match"
+                        if debug: print ("mult match")
                         # check the translation
                         reftrans = list(refop[-3:])
                         reftrans = MoveToUnitCell(reftrans)[0]
@@ -3905,7 +3905,7 @@ def test3():
         for t in crdlist:
             symb, m, n, od = SytSym(t[0],S)
             if symb.strip() != t[2].strip() or m != t[1]:
-                print spc,t[0],m,n,symb,t[2],od
+                print (spc,t[0],m,n,symb,t[2],od)
             assert m == t[1]
             #assert symb.strip() == t[2].strip()
 
@@ -3971,4 +3971,4 @@ if __name__ == '__main__':
     selftestquiet = False
     for test in selftestlist:
         test()
-    print "OK"
+    print ("OK")

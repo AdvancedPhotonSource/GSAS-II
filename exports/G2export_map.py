@@ -17,17 +17,12 @@ that is supported by FOX and DrawXTL
 (:class:`ExportMapASCII`) and the CCP4 format that
 is used by COOT (:class:`ExportMapCCP4`) are implemented.
 '''
+from __future__ import division, print_function
 import os
 import GSASIIpath
 import numpy as np
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-#import GSASIIstrIO as G2stIO
-#import GSASIImath as G2mth
-#import GSASIIlattice as G2lat
-#import GSASIIspc as G2spc
-#import GSASIIphsGUI as G2pg
-#import GSASIIstrMain as G2stMn
 
 class ExportMapASCII(G2IO.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -57,7 +52,7 @@ class ExportMapASCII(G2IO.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             rho = phasedict['General']['Map'].get('rho',[])
             if not len(rho):
-                print "There is no map for phase "+phasenam
+                print ("There is no map for phase "+phasenam)
                 continue
             if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
                 i = self.Phases[phasenam]['pId']
@@ -116,7 +111,7 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
             rho = mapData.get('rho',[])
             
             if not len(rho):
-                print "There is no map for phase "+phasenam
+                print ("There is no map for phase "+phasenam)
                 continue
             if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
                 i = self.Phases[phasenam]['pId']

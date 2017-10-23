@@ -12,11 +12,22 @@
 Routine to import powder data from GSAS-II .gpx files
 
 '''
-import cPickle
+from __future__ import division, print_function
+import platform
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import _pickle as cPickle
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
+
+def cPickleLoad(fp):
+    if '2' in platform.python_version_tuple()[0]:
+        return cPickle.load(fp)
+    else:
+        return cPickle.load(fp,encoding='latin-1')
 
 class GSAS2_ReaderClass(G2obj.ImportPowderData):
     """Routines to import powder data from a GSAS-II file
@@ -31,18 +42,20 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
         
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
+        fp = open(filename,'rb')
         try: 
-            cPickle.load(filepointer)
+            data = cPickleLoad(fp)
         except:
             self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
+            fp.close()
             return False
-        filepointer.seek(0)
+        fp.seek(0)
         nhist = 0
         while True:
             try:
-                data = cPickle.load(filepointer)
+                data = cPickleLoad(fp)
             except EOFError:
                 break
             if data[0][0][:4] == 'PWDR':
@@ -51,11 +64,13 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
         if nhist:
             if not len(self.selections):    #no PWDR entries
                 self.selections = range(nhist)
+                fp.close()
                 return True
         self.errors = 'No powder entries found'
+        fp.close()
         return False
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read a dataset from a .GPX file.
         If multiple datasets are requested, use self.repeat and buffer caching.
         '''
@@ -69,11 +84,11 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
             histnames = rdbuffer.get('histnames')
         else:
             try:
-                fl = open(filename,'rb')
+                fp = open(filename,'rb')
                 while True:
-                    pos = fl.tell()
+                    pos = fp.tell()
                     try:
-                        data = cPickle.load(fl)
+                        data = cPickleLoad(fp)
                     except EOFError:
                         break
                     if data[0][0][:4] == 'PWDR':
@@ -83,7 +98,7 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                 self.errors = 'Reading of histogram names failed'
                 return False
             finally:
-                fl.close()
+                fp.close()
         if not histnames:
             return False            # no blocks with powder data
         elif len(histnames) == 1: # one block, no choices
@@ -104,9 +119,9 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                     rdbuffer['histnames'] = histnames
                     rdbuffer['selections'] = self.selections
 
-        fl = open(filename,'rb')
-        fl.seek(poslist[selblk])
-        data = cPickle.load(fl)
+        fp = open(filename,'rb')
+        fp.seek(poslist[selblk])
+        data = cPickleLoad(fp)
         N = len(data[0][1][1][0])
         #self.powderdata = data[0][1][1]
         self.powderdata = [
@@ -133,5 +148,5 @@ class GSAS2_ReaderClass(G2obj.ImportPowderData):
                     break
         self.idstring = data[0][0][5:]
         self.repeat_instparm = False # prevent reuse of iparm when several hists are read
-        fl.close()
+        fp.close()
         return True

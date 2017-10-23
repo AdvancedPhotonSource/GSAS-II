@@ -15,6 +15,8 @@ Module that defines GUI routines and classes for the main GUI Frame (window)
 and the main routines that define the GSAS-II tree panel and much of the
 data editing panel. 
 '''
+from __future__ import division, print_function
+import platform
 import time
 import math
 import random as ran
@@ -24,6 +26,10 @@ import os
 import glob
 import imp
 import inspect
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import _pickle as cPickle
 import numpy as np
 import numpy.ma as ma
 import matplotlib as mpl
@@ -280,19 +286,19 @@ def GUIpatches():
         print('*******************************************************')
         def install_with_easyinstall(package):
             try: 
-                print "trying a system-wide PyOpenGl install"
+                print ("trying a system-wide PyOpenGl install")
                 easy_install.main(['-f',os.path.split(__file__)[0],package])
                 return
             except:
                 pass
             try: 
-                print "trying a user level PyOpenGl install"
+                print ("trying a user level PyOpenGl install")
                 easy_install.main(['-f',os.path.split(__file__)[0],'--user',package])
                 return
             except:
-                print u"Install of '+package+u' failed. Please report this information:"
+                print (u"Install of '+package+u' failed. Please report this information:")
                 import traceback
-                print traceback.format_exc()
+                print (traceback.format_exc())
                 sys.exit()
         from setuptools.command import easy_install
         install_with_easyinstall('PyOpenGl')
@@ -317,14 +323,14 @@ def ShowVersions():
     import matplotlib as mpl
     import OpenGL as ogl
     import GSASIIpath
-    # print versions
-    print "Python module versions loaded:"
-    print "  Python:     ",sys.version.split()[0]
-    print "  wx:         ",wx.__version__
-    print "  matplotlib: ",mpl.__version__
-    print "  numpy:      ",np.__version__
-    print "  scipy:      ",sp.__version__
-    print "  OpenGL:     ",ogl.__version__
+    # print (versions)
+    print ("Python module versions loaded:")
+    print ("  Python:     %s"%sys.version.split()[0])
+    print ("  wx:         %s"%wx.__version__)
+    print ("  matplotlib: %s"%mpl.__version__)
+    print ("  numpy:      %s"%np.__version__)
+    print ("  scipy:      %s"%sp.__version__)
+    print ("  OpenGL:     %s"%ogl.__version__)
     # TODO: not sure this prints the right message with pillow
     try:
         from PIL import Image
@@ -333,22 +339,20 @@ def ShowVersions():
             version = PILLOW_VERSION
         except:
             version = Image.VERSION
-        print "  PIL.Image:  ",version
+        print ("  PIL.Image:  %s"%version)
     except ImportError:
         try:
             import Image
-            print "Image (PIL):",Image.VERSION
+            print ("Image (PIL):%s"%Image.VERSION)
         except ImportError:
-            print "Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations"
-    import platform
-    print "  Platform:   ",sys.platform,platform.architecture()[0],platform.machine()
+            print ("Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations")
+    print ("  Platform:   %s%s%s"%(sys.platform,platform.architecture()[0],platform.machine()))
     try:
         import mkl
-        print "  Max threads:",mkl.get_max_threads()
+        print ("  Max threads:%s"%mkl.get_max_threads())
     except:
         pass
-    #print "wxPython description",wx.PlatformInfo
-    print "This is GSAS-II revision "+str(GSASIIpath.GetVersionNumber())+'\n'
+    print ("This is GSAS-II revision %s"%str(GSASIIpath.GetVersionNumber())+'\n')
     
 ###############################################################################
 # Main application
@@ -384,10 +388,10 @@ class GSASIIGUI(wx.App):
     '''
     def OnInit(self):
         '''Called automatically when the app is created.'''
-        import platform
-        if '2.7' not in sys.version[:5]:
+        knownVersions = ['2.7','3.6']
+        if platform.python_version()[:3] not in knownVersions: 
             dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x\n Yours is '+sys.version.split()[0],
+                'GSAS-II requires Python 2.7.x or 3.6.x\n Yours is '+sys.version.split()[0],
                 'Python version error',  wx.OK)
             try:
                 dlg.ShowModal()
@@ -423,57 +427,45 @@ class GSASII(wx.Frame):
         '''
         log.InvokeMenuCommand(event.GetId(),self,event)
             
-    def Bind(self,eventtype,handler,*args,**kwargs):
-        '''Override the Bind function so that we can wrap calls that will be logged.
-        
-        N.B. This is a bit kludgy. Menu bindings with an id are wrapped and
-        menu bindings with an object and no id are not. 
-        '''
-        if eventtype == wx.EVT_MENU and 'id' in kwargs:
-            menulabels = log.SaveMenuCommand(kwargs['id'],self,handler)
-            if menulabels:
-                wx.Frame.Bind(self,eventtype,self.MenuBinding,*args,**kwargs)
-                return
-        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
+#    def Bind(self,eventtype,handler,*args,**kwargs):
+#        '''Override the Bind function so that we can wrap calls that will be logged.
+#        
+#        N.B. This is a bit kludgy. Menu bindings with an id are wrapped and
+#        menu bindings with an object and no id are not. 
+#        '''
+#        if eventtype == wx.EVT_MENU and 'id' in kwargs:
+#            menulabels = log.SaveMenuCommand(kwargs['id'],self,handler)
+#            if menulabels:
+#                wx.Frame.Bind(self,eventtype,self.MenuBinding,*args,**kwargs)
+#                return
+#        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
     
     def _Add_FileMenuItems(self, parent):
-        item = parent.Append(
-            help='Open a GSAS-II project file (*.gpx)', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='&Open project...')
+        item = parent.Append(wx.ID_ANY,'&Open project...','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
-        item = parent.Append(
-            help='Save project under current name', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='&Save project')
+        item = parent.Append(wx.ID_ANY,'&Save project','Save project under current name')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
-        item = parent.Append(
-            help='Save current project to new file', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='Save project as...')
+        item = parent.Append(wx.ID_ANY,'Save project as...','Save current project to new file')
         self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=item.GetId())
-        item = parent.Append(
-            help='Create empty new project, saving current is optional', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='&New project')
+        item = parent.Append(wx.ID_ANY,'&New project','Create empty new project, saving current is optional')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
-        item = parent.Append(wx.ID_PREFERENCES, text = "&Preferences")
+        item = parent.Append(wx.ID_PREFERENCES,"&Preferences",'')
         self.Bind(wx.EVT_MENU, self.OnPreferences, item)
         if GSASIIpath.whichsvn():
-            item = parent.Append(
-                help='Edit proxy internet information (used for updates)', id=wx.ID_ANY,
-                kind=wx.ITEM_NORMAL,text='Edit proxy...')
+            item = parent.Append(wx.ID_ANY,'Edit proxy...','Edit proxy internet information (used for updates)')
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
             def OnIPython(event):
                 GSASIIpath.IPyBreak()
-            item = parent.Append(wx.ID_ANY, text = "IPython Console")
+            item = parent.Append(wx.ID_ANY,"IPython Console",'')
             self.Bind(wx.EVT_MENU, OnIPython, item)
             def OnwxInspect(event):
                 import wx.lib.inspection as wxeye
                 wxeye.InspectionTool().Show()
-            item = parent.Append(wx.ID_ANY, text = "wx inspection tool")
+            item = parent.Append(wx.ID_ANY,"wx inspection tool",'')
             self.Bind(wx.EVT_MENU, OnwxInspect, item)
             
-        item = parent.Append(
-            help='Exit from GSAS-II', id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,text='&Exit')
+        item = parent.Append(wx.ID_ANY,'&Exit','Exit from GSAS-II')
         self.Bind(wx.EVT_MENU, self.ExitMain, id=item.GetId())
         
     def _Add_DataMenuItems(self,parent):
@@ -482,73 +474,47 @@ class GSASII(wx.Frame):
         #     kind=wx.ITEM_NORMAL,
         #     text='Read image data...')
         # self.Bind(wx.EVT_MENU, self.OnImageRead, id=item.GetId())
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Read Powder Pattern Peaks...')
+        item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Sum powder data')
+        item = parent.Append(wx.ID_ANY,'Sum powder data','')
         self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=item.GetId())
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Sum image data')
+        item = parent.Append(wx.ID_ANY,'Sum image data','')
         self.Bind(wx.EVT_MENU, self.OnImageSum, id=item.GetId())
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Add new phase')
+        item = parent.Append(wx.ID_ANY,'Add new phase','')
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=item.GetId())
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Delete phase')
+        item = parent.Append(wx.ID_ANY,'Delete phase','')
         self.Bind(wx.EVT_MENU, self.OnDeletePhase, id=item.GetId())
-        item = parent.Append(
-            help='Rename the selected data tree item (PWDR, HKLF or IMG)',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Rename tree item') 
+        item = parent.Append(wx.ID_ANY,'Rename tree item','Rename the selected data tree item (PWDR, HKLF or IMG)')
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
-        item = parent.Append(
-            help='Delete selected data items from data tree',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Delete tree items')
+        item = parent.Append(wx.ID_ANY,'Delete tree items','Delete selected data items from data tree')
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
         expandmenu = wx.Menu()
-        item = parent.AppendMenu(
-            wx.ID_ANY, 'Expand tree items', expandmenu, 
-            help='Expand items of type in GSAS-II data tree')
+        item = parent.AppendSubMenu(expandmenu,'Expand tree items',  
+            'Expand items of type in GSAS-II data tree')
         for s in 'all','IMG','PWDR','PDF','HKLF','SASD','REFD':
             if s == 'all':
                 help = 'Expand all items in GSAS-II data tree'
             else:
                 help = 'Expand '+s+' type items in GSAS-II data tree'
-            item = expandmenu.Append(wx.ID_ANY,kind=wx.ITEM_NORMAL,text=s,help=help)
+            item = expandmenu.Append(wx.ID_ANY,s,help)
             self.Bind(wx.EVT_MENU,self.ExpandAll,id=item.GetId())
         movemenu = wx.Menu()
-        item = parent.AppendMenu(
-            wx.ID_ANY, 'Move tree items', movemenu, 
-            help='Move items of type items to end of GSAS-II data tree')
+        item = parent.AppendSubMenu(movemenu,'Move tree items',  
+            'Move items of type items to end of GSAS-II data tree')
         for s in 'IMG','PWDR','PDF','HKLF','SASD','REFD','Phase':
             help = 'Move '+s+' type items to end of GSAS-II data tree'
-            item = movemenu.Append(wx.ID_ANY,kind=wx.ITEM_NORMAL,text=s,help=help)
+            item = movemenu.Append(wx.ID_ANY,s,help)
             self.Bind(wx.EVT_MENU,self.MoveTreeItems,id=item.GetId())
 
     def _Add_CalculateMenuItems(self,parent):
-        item = parent.Append(help='Create PDF tree entries for selected powder patterns', 
-            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='Setup PDFs')
+        item = parent.Append(wx.ID_ANY,'Setup PDFs','Create PDF tree entries for selected powder patterns')
         self.MakePDF.append(item)
         self.Bind(wx.EVT_MENU, self.OnMakePDFs, id=item.GetId())
         
-        item = parent.Append(help='View least squares parameters', 
-            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='&View LS parms')
+        item = parent.Append(wx.ID_ANY,'&View LS parms','View least squares parameters')
         self.Bind(wx.EVT_MENU, self.OnShowLSParms, id=item.GetId())
         
-        item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-            text='&Refine')
+        item = parent.Append(wx.ID_ANY,'&Refine','') 
         if len(self.Refine): # extend state for new menus to match main (on mac)
             state = self.Refine[0].IsEnabled()
         else:
@@ -557,8 +523,7 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
         
-        item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-            text='Sequential refine')
+        item = parent.Append(wx.ID_ANY,'Sequential refine','')
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
         if len(self.SeqRefine): # extend state for new menus to match main (on mac)
             state = self.SeqRefine[0].IsEnabled()
@@ -595,8 +560,9 @@ class GSASII(wx.Frame):
         else:
             for i in self.SeqRefine: i.Enable(False)
 
-    def PreviewFile(self,filename,fp):
+    def PreviewFile(self,filename):
         'confirm we have the right file'
+        fp = open(filename,'r')
         rdmsg = u'File '+ filename +u' begins:\n\n'
         try:
             rdmsg += fp.read(80)
@@ -711,9 +677,9 @@ class GSASII(wx.Frame):
                 choices += "|any file (*.*)|*.*"
         # get the file(s)
         if multiple:
-            mode = wx.OPEN|wx.MULTIPLE
+            mode = wx.FD_OPEN|wx.FD_MULTIPLE
         else:
-            mode = wx.OPEN
+            mode = wx.FD_OPEN
         filelist = G2G.GetImportFile(self,message="Choose "+label+" input file",
                     defaultFile="",wildcard=choices,style=mode)
         rd_list = []
@@ -757,9 +723,8 @@ class GSASII(wx.Frame):
 
             fp = None
             msg = ''
-            fp = open(filename,'Ur')
             if len(filelist) == 1 and Preview:
-                if self.PreviewFile(filename,fp): return []
+                if self.PreviewFile(filename): return []
             self.lastimport = filename # this is probably not what I want to do -- it saves only the
             # last name in a series. See rd.readfilename for a better name.
 
@@ -771,9 +736,8 @@ class GSASII(wx.Frame):
                     rd.selections = []
                     rd.dnames = []
                 rd.ReInitialize() # purge anything from a previous read
-                fp.seek(0)  # rewind
                 rd.errors = "" # clear out any old errors
-                if not rd.ContentsValidator(fp): # rejected on cursory check
+                if not rd.ContentsValidator(filename): # rejected on cursory check
                     errorReport += "\n  "+rd.formatName + ' validator error'
                     if rd.errors: 
                         errorReport += ': '+rd.errors
@@ -787,18 +751,17 @@ class GSASII(wx.Frame):
                 repeat = True
                 rdbuffer = {} # create temporary storage for file reader
                 block = 0
-                fp.seek(0)  # rewind
                 while repeat: # loop if the reader asks for another pass on the file
                     block += 1
                     repeat = False
                     rd.objname = os.path.basename(filename)
                     flag = False
                     if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
-                        flag = rd.Reader(filename,fp,self,buffer=rdbuffer,blocknum=block,
+                        flag = rd.Reader(filename,self,buffer=rdbuffer,blocknum=block,
                             usedRanIdList=usedRanIdList,)
                     else:
                         try:
-                            flag = rd.Reader(filename,fp,self,buffer=rdbuffer,
+                            flag = rd.Reader(filename,self,buffer=rdbuffer,
                                 blocknum=block,usedRanIdList=usedRanIdList,)
                         except rd.ImportException as detail:
                             rd.errors += "\n  Read exception: "+str(detail)
@@ -858,15 +821,12 @@ class GSASII(wx.Frame):
         '''configure the Import Phase menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Phase',
-            submenu, help='Import phase data')
+        item = parent.AppendSubMenu(submenu,'Phase','Import phase data')
         for reader in self.ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,help='Import phase data, use file to try to determine format',
-            kind=wx.ITEM_NORMAL,text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,'guess format from file','Import phase data, use file to try to determine format')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
         
     def OnImportPhase(self,event):
@@ -882,7 +842,7 @@ class GSASII(wx.Frame):
         
         # make a list of phase names, ranId's and the histograms used in those phases
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
+        phaseNameList = list(usedHistograms.keys()) # phase names in use
         usedHKLFhists = [] # used single-crystal histograms
         for p in usedHistograms:
             for h in usedHistograms[p]:
@@ -1037,15 +997,12 @@ class GSASII(wx.Frame):
         '''configure the Import Image menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Image',
-            submenu, help='Import image file')
+        item = parent.AppendSubMenu(submenu, 'Image','Import image file')
         for reader in self.ImportImageReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,help='Import image data, use file to try to determine format',
-            kind=wx.ITEM_NORMAL,text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,'guess format from file','Import image data, use file to try to determine format')
         self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
         
     def OnImportImage(self,event):
@@ -1070,17 +1027,12 @@ class GSASII(wx.Frame):
         '''configure the Import Structure Factor menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Structure Factor',
-            submenu, help='Import Structure Factor data')
+        item = parent.AppendSubMenu(submenu,'Structure Factor','Import Structure Factor data')
         for reader in self.ImportSfactReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,                
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)               
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,
-            help='Import Structure Factor, use file to try to determine format',
-            kind=wx.ITEM_NORMAL,
-            text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,'guess format from file','Import Structure Factor, use file to try to determine format')
         self.Bind(wx.EVT_MENU, self.OnImportSfact, id=item.GetId())
 
     def OnImportSfact(self,event):
@@ -1122,9 +1074,9 @@ class GSASII(wx.Frame):
             # make new histogram names unique
             if len(rd.Banks):
                 for Bank in rd.Banks:
-                    valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
+                    valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                     HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                    print u'Read structure factor table '+HistName+u' from file '+self.lastimport
+                    print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
                     Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
                     if not Bank['RefDict'].get('FF'):
                         Bank['RefDict']['FF'] = {}
@@ -1135,9 +1087,9 @@ class GSASII(wx.Frame):
                         self.GPXtree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
                     newHistList.append(HistName)
             else:
-                valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
+                valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-                print u'Read structure factor table '+HistName+u' from file '+self.lastimport
+                print (u'Read structure factor table '+HistName+u' from file '+self.lastimport)
                 if not rd.RefDict.get('FF'):
                     rd.RefDict['FF'] = {}
                 Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
@@ -1155,7 +1107,7 @@ class GSASII(wx.Frame):
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
+        phaseNameList = list(usedHistograms.keys()) # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
         header = 'Select phase(s) to add the new\nsingle crystal dataset(s) to:'
         for Name in newHistList:
@@ -1220,21 +1172,15 @@ class GSASII(wx.Frame):
         '''configure the Powder Data menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Powder Data',
-            submenu, help='Import Powder data')
+        item = parent.AppendSubMenu(submenu,'Powder Data','Import Powder data')
         for reader in self.ImportPowderReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,
-            help='Import powder data, use file to try to determine format',
-            kind=wx.ITEM_NORMAL,text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,'guess format from file','Import powder data, use file to try to determine format')
         self.Bind(wx.EVT_MENU, self.OnImportPowder, id=item.GetId())
         submenu.AppendSeparator()
-        item = submenu.Append(wx.ID_ANY,
-            help='Create a powder data set entry that will be simulated',
-            kind=wx.ITEM_NORMAL,text='Simulate a dataset')
+        item = submenu.Append(wx.ID_ANY,'Simulate a dataset','Create a powder data set entry that will be simulated')
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
         
     def OpenPowderInstprm(self,instfile):
@@ -1542,7 +1488,7 @@ class GSASII(wx.Frame):
                 pth, '',
                 'GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|'
                 'GSAS-II iparm file (*.instprm)|*.instprm|'
-                'All files (*.*)|*.*', wx.OPEN)
+                'All files (*.*)|*.*', wx.FD_OPEN)
             if os.path.exists(lastIparmfile):
                 dlg.SetFilename(lastIparmfile)
             if dlg.ShowModal() == wx.ID_OK:
@@ -1647,7 +1593,10 @@ class GSASII(wx.Frame):
                     if key in rd.instdict:
                         Iparm1[key] = rd.instdict[key]
             lastdatafile = rd.powderentry[0]
-            HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
+            if 'phoenix' in wx.version():
+                HistName = 'PWDR '+rd.idstring
+            else:
+                HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
             # make new histogram names unique
             if HistName in PWDRlist:
                 dlg = wx.MessageDialog(self,'Skip %s?'%(HistName),'Duplicate data name',wx.YES_NO)
@@ -1694,7 +1643,7 @@ class GSASII(wx.Frame):
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
-                'ranId':ran.randint(0,sys.maxint),
+                'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                 }
@@ -1764,7 +1713,7 @@ class GSASII(wx.Frame):
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
+        phaseNameList = list(usedHistograms.keys()) # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
         header = 'Select phase(s) to link\nto the newly-read data:'
         for Name in newHistList:
@@ -1895,7 +1844,7 @@ class GSASII(wx.Frame):
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':True,
-            'ranId':ran.randint(0,sys.maxint),
+            'ranId':ran.randint(0,sys.maxsize),
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
             }
@@ -1936,7 +1885,7 @@ class GSASII(wx.Frame):
 
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
-        phaseNameList = usedHistograms.keys() # phase names in use
+        phaseNameList = list(usedHistograms.keys()) # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
         header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
         result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
@@ -1999,11 +1948,9 @@ class GSASII(wx.Frame):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Small Angle Data',
-            submenu, help='Import small angle data')
+        item = parent.AppendSubMenu(submenu,'Small Angle Data','Import small angle data')
         for reader in self.ImportSmallAngleReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2049,8 +1996,8 @@ class GSASII(wx.Frame):
             HistName = 'SASD '+HistName
             # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,SASDlist)
-            print 'Read small angle data '+HistName+ \
-                ' from file '+self.lastimport
+            print ('Read small angle data '+HistName+ \
+                ' from file '+self.lastimport)
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
             Iparm1,Iparm2 = GetSASDIparm(rd)
@@ -2079,7 +2026,7 @@ class GSASII(wx.Frame):
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
-                'ranId':ran.randint(0,sys.maxint),
+                'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
@@ -2114,11 +2061,9 @@ class GSASII(wx.Frame):
         '''configure the reflectometry Data menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'Reflectometry Data',
-            submenu, help='Import reflectometry data')
+        item = parent.AppendSubMenu(submenu,'Reflectometry Data','Import reflectometry data')
         for reader in self.ImportReflectometryReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportReflectometry, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2164,8 +2109,8 @@ class GSASII(wx.Frame):
             HistName = 'REFD '+HistName
             # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,REFDlist)
-            print 'Read reflectometry data '+HistName+ \
-                ' from file '+self.lastimport
+            print ('Read reflectometry data '+HistName+ \
+                ' from file '+self.lastimport)
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
             Iparm1,Iparm2 = GetREFDIparm(rd)
@@ -2195,7 +2140,7 @@ class GSASII(wx.Frame):
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
-                'ranId':ran.randint(0,sys.maxint),
+                'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],
                 'ifDQ':ifDQ
                 }
@@ -2231,11 +2176,9 @@ class GSASII(wx.Frame):
         '''configure the PDF Data menus accord to the readers found in _init_Imports
         '''
         submenu = wx.Menu()
-        item = parent.AppendMenu(wx.ID_ANY, 'PDF G(R) Data',
-            submenu, help='Import PDF G(R) data')
+        item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
         for reader in self.ImportPDFReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text=u'from '+reader.formatName+u' file')
+            item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
@@ -2275,14 +2218,14 @@ class GSASII(wx.Frame):
             HistName = 'PDF '+HistName
             # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,PDFlist)
-            print 'Read PDF G(R) data '+HistName+ \
-                ' from file '+self.lastimport
+            print ('Read PDF G(R) data '+HistName+ \
+                ' from file '+self.lastimport)
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(self.root,text=HistName)
             Ymin = np.min(rd.pdfdata[1])                 
             Ymax = np.max(rd.pdfdata[1])                 
             valuesdict = {
-                'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),
+                'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                 }
@@ -2337,11 +2280,11 @@ class GSASII(wx.Frame):
             help='Show logged commands', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Show log')
         def OnShowLog(event):
-            print 70*'='
-            print 'List of logged actions'
+            print (70*'=')
+            print ('List of logged actions')
             for i,line in enumerate(log.G2logList):
-                if line: print i,line
-            print 70*'='
+                if line: print ('%d %s'%(i,line))
+            print (70*'=')
         self.Bind(wx.EVT_MENU, OnShowLog, item)
 
         item = menu.Append(
@@ -2354,7 +2297,6 @@ class GSASII(wx.Frame):
             help='Save logged commands to file', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Save log')
         def OnSaveLog(event):
-            import cPickle
             defnam = os.path.splitext(os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
             dlg = wx.FileDialog(self,
                 'Choose an file to save past actions', '.', defnam, 
@@ -2383,13 +2325,12 @@ class GSASII(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Load log')
         def OnLoadLog(event):
             # this appends. Perhaps we should ask to clear? 
-            import cPickle
             defnam = os.path.splitext(
                 os.path.split(self.GSASprojectfile)[1])[0]+'.gcmd'
             dlg = wx.FileDialog(self,
                 'Choose an file to read saved actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.OPEN)
+                wx.FD_OPEN)
             dlg.CenterOnParent()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -2418,39 +2359,22 @@ class GSASII(wx.Frame):
         '''
         # set up the top-level menus
         projectmenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Entire project as',
-            projectmenu, help='Export entire project')
+        item = menu.AppendSubMenu(projectmenu,'Entire project as','Export entire project')
 
         phasemenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Phase as',
-            phasemenu, help='Export phase or sometimes phases')
+        item = menu.AppendSubMenu(phasemenu,'Phase as','Export phase or sometimes phases')
 
         powdermenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Powder data as',
-            powdermenu, help='Export powder diffraction histogram(s)')
+        item = menu.AppendSubMenu(powdermenu,'Powder data as','Export powder diffraction histogram(s)')
 
         singlemenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Single crystal data as',
-            singlemenu, help='Export single crystal histogram(s)')
+        item = menu.AppendSubMenu(singlemenu,'Single crystal data as','Export single crystal histogram(s)')
 
         imagemenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Image data as',
-            imagemenu, help='Export powder image(s) data')
+        item = menu.AppendSubMenu(imagemenu,'Image data as','Export powder image(s) data')
 
         mapmenu = wx.Menu()
-        item = menu.AppendMenu(
-            wx.ID_ANY, 'Maps as',
-            mapmenu, help='Export density map(s)')
-
-        # pdfmenu = wx.Menu()
-        # item = menu.AppendMenu(
-        #     wx.ID_ANY, 'PDFs as',
-        #     pdfmenu, help='Export pair distribution function(s)')
+        item = menu.AppendSubMenu(mapmenu,'Maps as','Export density map(s)')
 
         # find all the exporter files
         if not self.exporterlist: # this only needs to be done once
@@ -2507,17 +2431,11 @@ class GSASII(wx.Frame):
                 else:
                     print("Error, unknown type in "+str(obj))
                     break
-                item = submenu.Append(
-                    wx.ID_ANY,
-                    help=obj.longFormatName,
-                    kind=wx.ITEM_NORMAL,
-                    text=obj.formatName)
+                item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
-        item = imagemenu.Append(wx.ID_ANY,
-                        help='Export image controls and masks for multiple images',
-                        kind=wx.ITEM_NORMAL,
-                        text='Multiple image controls and masks')
+        item = imagemenu.Append(wx.ID_ANY,'Multiple image controls and masks',
+            'Export image controls and masks for multiple images')
         self.Bind(wx.EVT_MENU, self.OnSaveMultipleImg, id=item.GetId())
         #code to debug an Exporter. hard-code the routine below, to allow a reload before use
         # def DebugExport(event):
@@ -2546,26 +2464,16 @@ class GSASII(wx.Frame):
         # item.Enable(False)
         # self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=item.GetId())
 
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export All Peak Lists...')
+        item = parent.Append(wx.ID_ANY,'Export All Peak Lists...','')
         self.ExportPeakList.append(item)
         item.Enable(True)
         self.Bind(wx.EVT_MENU, self.OnExportPeakList, id=item.GetId())
 
-        item = parent.Append(
-            help='',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export HKLs...')
+        item = parent.Append(wx.ID_ANY,'Export HKLs...','')
         self.ExportHKL.append(item)
         self.Bind(wx.EVT_MENU, self.OnExportHKL, id=item.GetId())
 
-        item = parent.Append(
-            help='Select PDF item to enable',
-            id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export PDF...')
+        item = parent.Append(wx.ID_ANY,'Export PDF...','Select PDF item to enable')
         self.ExportPDF.append(item)
         item.Enable(False)
         self.Bind(wx.EVT_MENU, self.OnExportPDF, id=item.GetId())
@@ -2609,8 +2517,7 @@ class GSASII(wx.Frame):
             # special debug code
             # or ----------------------------------------------------------------------
             # filename = '/Users/toby/projects/branton/subgroup_cif.txt'
-            # fp = open(filename,'Ur')
-            # if not rd.ContentsValidator(fp):
+            # if not rd.ContentsValidator(filename):
             #     print 'not validated'
             #     # make a list of used phase ranId's
             # phaseRIdList = []
@@ -2622,7 +2529,7 @@ class GSASII(wx.Frame):
             #         ranId = self.GPXtree.GetItemPyData(item).get('ranId')
             #         if ranId: phaseRIdList.append(ranId)
             #         item, cookie = self.GPXtree.GetNextChild(sub, cookie)
-            # if rd.Reader(filename,fp,usedRanIdList=phaseRIdList):
+            # if rd.Reader(filename,usedRanIdList=phaseRIdList):
             #     print 'read OK'
         # item = Import.Append(
         #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
@@ -2728,7 +2635,10 @@ class GSASII(wx.Frame):
             img = self.Image.Scale(22, 22).ConvertToBitmap()
         else:
             img = self.Image.ConvertToBitmap()
-        self.SetIcon(wx.IconFromBitmap(img))
+        if 'phoenix' in wx.version():
+            self.SetIcon(wx.Icon(img))
+        else:
+            self.SetIcon(wx.IconFromBitmap(img))
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
         # various defaults
         self.oldFocus = None
@@ -2808,9 +2718,9 @@ class GSASII(wx.Frame):
                 self.StartProject()         #open the file if possible
                 return
             except Exception:
-                print 'Error opening or reading file',arg[1]
+                print ('Error opening or reading file'+arg[1])
                 import traceback
-                print traceback.format_exc()
+                print (traceback.format_exc())
                 
         if GSASIIpath.GetConfigValue('Starting_directory'):
             try:
@@ -2841,7 +2751,7 @@ class GSASII(wx.Frame):
         by G2frame.dataWindow.SetDataSize
         '''
         # TOTO: diagnostic patch
-        print 'G2frame.SetDataSize called rather than dataWindow.SetDataSize'
+        print ('G2frame.SetDataSize called rather than dataWindow.SetDataSize')
         G2obj.HowDidIgetHere(True)
         self.dataWindow.SetDataSize()
                                 
@@ -2983,7 +2893,7 @@ class GSASII(wx.Frame):
         pth = G2G.GetImportPath(self)
         if not pth: pth = '.'
         dlg = wx.FileDialog(self, 'Choose file with peak list', pth, '', 
-            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN)
+            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.HKL = []
@@ -3156,7 +3066,7 @@ class GSASII(wx.Frame):
                 self.FindWindowById(id).SetValue('%.3f'%(self.data[id][0]))
             except ValueError:
                 if value and '-' not in value[0]:
-                    print 'bad input - numbers only'
+                    print ('bad input - numbers only')
                     self.FindWindowById(id).SetValue('0.000')
                     
         def OnAllScale(self,event):
@@ -3171,7 +3081,7 @@ class GSASII(wx.Frame):
                     entries[2*i].GetWindow().SetValue('%.3f'%(scale))
                  
             except ValueError:
-                print 'bad input - numbers only'
+                print ('bad input - numbers only')
                 self.FindWindowById(id).SetValue('')
                     
             
@@ -3293,7 +3203,7 @@ class GSASII(wx.Frame):
                         valuesdict = {
                             'wtFactor':1.0,
                             'Dummy':False,
-                            'ranId':ran.randint(0,sys.maxint),
+                            'ranId':ran.randint(0,sys.maxsize),
                             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
                             'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
                             }
@@ -3558,7 +3468,7 @@ class GSASII(wx.Frame):
                 try:
                     TextList.remove('PWDR'+pdfName[4:])
                 except ValueError:
-                    print u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found'
+                    print (u'PWDR'+pdfName[4:]+u' for '+pdfName+u' not found')
             dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -3625,7 +3535,7 @@ class GSASII(wx.Frame):
             else:
                 pth = '.'
             dlg = wx.FileDialog(self, 'Choose GSAS-II project file', pth, 
-                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN)
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN)
             try:
                 if dlg.ShowModal() != wx.ID_OK: return
                 self.GSASprojectfile = dlg.GetPath()
@@ -3652,9 +3562,9 @@ class GSASII(wx.Frame):
         try:
             self.StartProject()         #open the file if possible
         except:
-            print '\nError opening file ',filename
+            print ('\nError opening file '+filename)
             import traceback
-            print traceback.format_exc()
+            print (traceback.format_exc())
 
     def StartProject(self):
         '''Opens a GSAS-II project file & selects the 1st available data set to 
@@ -3857,7 +3767,7 @@ class GSASII(wx.Frame):
                             dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
                                 esds = {'pos':0.,'int':0.,'alp':0.,'bet':0.,'sig':0.,'gam':0.}
-                                for name in esds.keys():
+                                for name in list(esds.keys()):
                                     esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[8])
                                 gam = peak[10]
@@ -3868,7 +3778,7 @@ class GSASII(wx.Frame):
                             else:               #CW
                                 #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
                                 esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}
-                                for name in esds.keys():
+                                for name in list(esds.keys()):
                                     esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[4]) #var -> sig
                                 gam = peak[6]
@@ -4036,7 +3946,7 @@ class GSASII(wx.Frame):
         PWDRdata['Sample Parameters'] = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,PWDRname,'Sample Parameters'))
         PWDRdata['Reflection Lists'] = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,PWDRname,'Reflection Lists'))
         if 'ranId' not in PWDRdata:  # patch, add a random Id
-            PWDRdata['ranId'] = ran.randint(0,sys.maxint)
+            PWDRdata['ranId'] = ran.randint(0,sys.maxsize)
         if 'ranId' not in PWDRdata['Sample Parameters']:  # I hope this becomes obsolete at some point
             PWDRdata['Sample Parameters']['ranId'] = PWDRdata['ranId']
         return PWDRdata
@@ -4078,7 +3988,7 @@ class GSASII(wx.Frame):
                 phaseName = self.GPXtree.GetItemText(item)
                 phaseData[phaseName] =  self.GPXtree.GetItemPyData(item)
                 if 'ranId' not in phaseData[phaseName]:
-                    phaseData[phaseName]['ranId'] = ran.randint(0,sys.maxint)          
+                    phaseData[phaseName]['ranId'] = ran.randint(0,sys.maxsize)          
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
         return phaseData
 
@@ -4104,7 +4014,7 @@ class GSASII(wx.Frame):
                 if ranId: phaseRIdList.append(ranId)
                 data = self.GPXtree.GetItemPyData(item)
                 UseList = data['Histograms']
-                usedHistograms[phaseName] = UseList.keys()
+                usedHistograms[phaseName] = list(UseList.keys())
                 item, cookie = self.GPXtree.GetNextChild(sub, cookie)
         return phaseRIdList,usedHistograms
 
@@ -4214,7 +4124,7 @@ class GSASII(wx.Frame):
         for phase in Phases:
             if 'pId' not in Phases[phase]:
                 self.ErrorDialog('View parameter error','You must run least squares at least once')
-                raise Exception,'No pId for phase '+phase
+                raise Exception('No pId for phase '+phase)
         rigidbodyDict = self.GPXtree.GetItemPyData(   
             GetGPXtreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
@@ -4239,7 +4149,6 @@ class GSASII(wx.Frame):
                 parmDict[parm] = [parmDict[parm],'F']
         # for i in parmDict: print i,'\t',parmDict[i]
         # fl = open('parmDict.dat','wb')
-        # import cPickle
         # cPickle.dump(parmDict,fl,1)
         # fl.close()
         return parmDict,varyList
@@ -4587,7 +4496,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         if Sizer:
             Sizer.Clear(True)
         else:
-            print 'No sizer in dataWindow'
+            print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
 
     def OnResize(self,event):
@@ -4605,7 +4514,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         '''
         Sizer = self.GetSizer()
         if not Sizer:
-            print 'No sizer in dataWindow'
+            print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception
             return
         #if Sizer.GetItemCount() == 1: # not wx 2.8
@@ -4686,20 +4595,17 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 (G2G.wxID_CONSGLOBAL,'Global'),
                 (G2G.wxID_CONSSYM,'Sym-Generated'),
                 ):
-            self.ConstraintTab.Append(id=id, kind=wx.ITEM_NORMAL,text=txt,
-                help='Select '+txt+' constraint editing tab')
+            self.ConstraintTab.Append(id,txt,'Select '+txt+' constraint editing tab')
         self.ConstraintEdit = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit Constr.') # renamed from Edit due to Mac adding extra items to menu
-        self.ConstraintEdit.Append(id=G2G.wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
-            help='Prevent refinement of parameter values')
-        self.ConstraintEdit.Append(id=G2G.wxID_EQUIVADD, kind=wx.ITEM_NORMAL,text='Add equivalence',
-            help='Force parameter values to be equivalent')
-        self.ConstraintEdit.Append(id=G2G.wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint equation',
-            help='Add a constraint equation to apply to parameter values')
-        self.ConstraintEdit.Append(id=G2G.wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
-            help='Create a variable composed of existing parameters')
-        self.ConstraintEdit.Append(id=G2G.wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Make atoms equivalent',
-            help='Force atom parameter values to be equivalent')
+        self.ConstraintEdit.Append(G2G.wxID_HOLDADD,'Add hold','Prevent refinement of parameter values')
+        self.ConstraintEdit.Append(G2G.wxID_EQUIVADD,'Add equivalence','Force parameter values to be equivalent')
+        self.ConstraintEdit.Append(G2G.wxID_CONSTRAINTADD,'Add constraint equation',
+            'Add a constraint equation to apply to parameter values')
+        self.ConstraintEdit.Append(G2G.wxID_FUNCTADD,'Add New Var',
+            'Create a variable composed of existing parameters')
+        self.ConstraintEdit.Append(G2G.wxID_EQUIVALANCEATOMS,'Make atoms equivalent',
+            'Force atom parameter values to be equivalent')
         self.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
 #        self.ConstraintEdit.Append(id=G2G.wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
 #            help='Add H atom riding constraints between atom parameter values')
@@ -4712,20 +4618,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RigidBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RigidBodyMenu)
         self.ResidueRBMenu = wx.Menu(title='')
-        self.ResidueRBMenu.Append(id=G2G.wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ',
-            help='Import rigid body XYZ from file')
-        self.ResidueRBMenu.Append(id=G2G.wxID_RESIDUETORSSEQ, kind=wx.ITEM_NORMAL,text='Define sequence',
-            help='Define torsion sequence')
-        self.ResidueRBMenu.Append(id=G2G.wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Import residues',
-            help='Import residue rigid bodies from macro file')
+        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYIMPORT,'Import XYZ','Import rigid body XYZ from file')
+        self.ResidueRBMenu.Append(G2G.wxID_RESIDUETORSSEQ,'Define sequence','Define torsion sequence')
+        self.ResidueRBMenu.Append(G2G.wxID_RIGIDBODYADD,'Import residues','Import residue rigid bodies from macro file')
         self.RigidBodyMenu.Append(menu=self.ResidueRBMenu, title='Edit Body')
         self.PostfillDataMenu()
 
         self.VectorBodyMenu = wx.MenuBar()
         self.PrefillDataMenu(self.VectorBodyMenu)
         self.VectorRBEdit = wx.Menu(title='')
-        self.VectorRBEdit.Append(id=G2G.wxID_VECTORBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
-            help='Add vector rigid body')
+        self.VectorRBEdit.Append(G2G.wxID_VECTORBODYADD,'Add rigid body','Add vector rigid body')
         self.VectorBodyMenu.Append(menu=self.VectorRBEdit, title='Edit Vector Body')
         self.PostfillDataMenu()
 
@@ -4734,23 +4636,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'wxID_RESTCHANGEESD', 'wxID_AARESTRAINTADD', 'wxID_AARESTRAINTPLOT',)
         self.RestraintTab = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
-        self.RestraintEdit.Append(id=G2G.wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
-            help='Select phase')
-        self.RestraintEdit.Append(id=G2G.wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraints',
-            help='Add restraints')
+        self.RestraintEdit.Append(G2G.wxID_RESTSELPHASE,'Select phase','Select phase')
+        self.RestraintEdit.Append(G2G.wxID_RESTRAINTADD,'Add restraints','Add restraints')
         self.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)    #gets disabled if macromolecule phase
-        self.RestraintEdit.Append(id=G2G.wxID_AARESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add residue restraints',
-            help='Add residue based restraints for macromolecules from macro file')
+        self.RestraintEdit.Append(G2G.wxID_AARESTRAINTADD,'Add residue restraints',
+            'Add residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(G2G.wxID_AARESTRAINTADD,False)    #gets enabled if macromolecule phase
-        self.RestraintEdit.Append(id=G2G.wxID_AARESTRAINTPLOT, kind=wx.ITEM_NORMAL,text='Plot residue restraints',
-            help='Plot selected residue based restraints for macromolecules from macro file')
+        self.RestraintEdit.Append(G2G.wxID_AARESTRAINTPLOT,'Plot residue restraints',
+            'Plot selected residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(G2G.wxID_AARESTRAINTPLOT,False)    #gets enabled if macromolecule phase
-        self.RestraintEdit.Append(id=G2G.wxID_RESRCHANGEVAL, kind=wx.ITEM_NORMAL,text='Change value',
-            help='Change observed value')
-        self.RestraintEdit.Append(id=G2G.wxID_RESTCHANGEESD, kind=wx.ITEM_NORMAL,text='Change esd',
-            help='Change esd in observed value')
-        self.RestraintEdit.Append(id=G2G.wxID_RESTDELETE, kind=wx.ITEM_NORMAL,text='Delete restraints',
-            help='Delete selected restraints')
+        self.RestraintEdit.Append(G2G.wxID_RESRCHANGEVAL,'Change value','Change observed value')
+        self.RestraintEdit.Append(G2G.wxID_RESTCHANGEESD,'Change esd','Change esd in observed value')
+        self.RestraintEdit.Append(G2G.wxID_RESTDELETE,'Delete restraints','Delete selected restraints')
 
         self.RestraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RestraintMenu)
@@ -4766,59 +4663,36 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.SequentialMenu)
         self.SequentialFile = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialFile, title='Columns')
-        self.SequentialFile.Append(id=G2G.wxID_SELECTUSE, kind=wx.ITEM_NORMAL,text='Select used',
-            help='Select rows to be used in plots/equation fitting')
-        self.SequentialFile.Append(id=G2G.wxID_RENAMESEQSEL, kind=wx.ITEM_NORMAL,text='Rename selected',
-            help='Rename selected sequential refinement columns')
-        self.SequentialFile.Append(id=G2G.wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save selected as text',
-            help='Save selected sequential refinement results as a text file')
-        self.SequentialFile.Append(id=G2G.wxID_SAVESEQCSV, kind=wx.ITEM_NORMAL,text='Save all as CSV',
-            help='Save all sequential refinement results as a CSV spreadsheet file')
-        self.SequentialFile.Append(id=G2G.wxID_SAVESEQSELCSV, kind=wx.ITEM_NORMAL,text='Save selected as CSV',
-            help='Save selected sequential refinement results as a CSV spreadsheet file')
-        self.SequentialFile.Append(id=G2G.wxID_PLOTSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
-            help='Plot selected sequential refinement results')
-        self.SequentialFile.Append(id=G2G.wxID_AVESEQSEL, kind=wx.ITEM_NORMAL,text='Compute average',
-            help='Compute average for selected parameter')            
+        self.SequentialFile.Append(G2G.wxID_SELECTUSE,'Select used''Select rows to be used in plots/equation fitting')
+        self.SequentialFile.Append(G2G.wxID_RENAMESEQSEL,'Rename selected',
+            'Rename selected sequential refinement columns')
+        self.SequentialFile.Append(G2G.wxID_SAVESEQSEL,'Save selected as text',
+            'Save selected sequential refinement results as a text file')
+        self.SequentialFile.Append(G2G.wxID_SAVESEQCSV,'Save all as CSV',
+            'Save all sequential refinement results as a CSV spreadsheet file')
+        self.SequentialFile.Append(G2G.wxID_SAVESEQSELCSV,'Save selected as CSV',
+            'Save selected sequential refinement results as a CSV spreadsheet file')
+        self.SequentialFile.Append(G2G.wxID_PLOTSEQSEL,'Plot selected',
+            'Plot selected sequential refinement results')
+        self.SequentialFile.Append(G2G.wxID_AVESEQSEL,'Compute average','Compute average for selected parameter')            
 #        self.SequentialFile.Append(id=G2G.wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
 #            help='Reorganize variables where variables change')
-        self.SequentialFile.Append(id=G2G.wxID_ORGSEQINC, kind=wx.ITEM_NORMAL,text='Hide columns...',
-            help='Select columns to remove from displayed table')
+        self.SequentialFile.Append(G2G.wxID_ORGSEQINC,'Hide columns...','Select columns to remove from displayed table')
         self.SequentialPvars = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
-        self.SequentialPvars.Append(
-            id=G2G.wxID_ADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add Formula',
-            help='Add a new custom pseudo-variable')
-        self.SequentialPvars.Append(
-            id=G2G.wxID_ADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add Distance',
-            help='Add a new bond distance pseudo-variable')
-        self.SequentialPvars.Append(
-            id=G2G.wxID_ADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Add Angle',
-            help='Add a new bond angle pseudo-variable')
-        self.SequentialPvars.Append(
-            id=G2G.wxID_DELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
-            help='Delete an existing pseudo-variable')
-        self.SequentialPvars.Append(
-            id=G2G.wxID_EDITSEQVAR, kind=wx.ITEM_NORMAL,text='Edit',
-            help='Edit an existing pseudo-variable')
+        self.SequentialPvars.Append(G2G.wxID_ADDSEQVAR,'Add Formula','Add a new custom pseudo-variable')
+        self.SequentialPvars.Append(G2G.wxID_ADDSEQDIST,'Add Distance','Add a new bond distance pseudo-variable')
+        self.SequentialPvars.Append(G2G.wxID_ADDSEQANGLE,'Add Angle','Add a new bond angle pseudo-variable')
+        self.SequentialPvars.Append(G2G.wxID_DELSEQVAR,'Delete','Delete an existing pseudo-variable')
+        self.SequentialPvars.Append(G2G.wxID_EDITSEQVAR,'Edit','Edit an existing pseudo-variable')
 
         self.SequentialPfit = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPfit, title='Parametric Fit')
-        self.SequentialPfit.Append(
-            id=G2G.wxID_ADDPARFIT, kind=wx.ITEM_NORMAL,text='Add equation',
-            help='Add a new equation to minimize')
-        self.SequentialPfit.Append(
-            id=G2G.wxID_COPYPARFIT, kind=wx.ITEM_NORMAL,text='Copy equation',
-            help='Copy an equation to minimize - edit it next')
-        self.SequentialPfit.Append(
-            id=G2G.wxID_DELPARFIT, kind=wx.ITEM_NORMAL,text='Delete equation',
-            help='Delete an equation for parametric minimization')
-        self.SequentialPfit.Append(
-            id=G2G.wxID_EDITPARFIT, kind=wx.ITEM_NORMAL,text='Edit equation',
-            help='Edit an existing parametric minimization equation')
-        self.SequentialPfit.Append(
-            id=G2G.wxID_DOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to equation(s)',
-            help='Perform a parametric minimization')
+        self.SequentialPfit.Append(G2G.wxID_ADDPARFIT,'Add equation','Add a new equation to minimize')
+        self.SequentialPfit.Append(G2G.wxID_COPYPARFIT,'Copy equation','Copy an equation to minimize - edit it next')
+        self.SequentialPfit.Append(G2G.wxID_DELPARFIT,'Delete equation','Delete an equation for parametric minimization')
+        self.SequentialPfit.Append(G2G.wxID_EDITPARFIT,'Edit equation','Edit an existing parametric minimization equation')
+        self.SequentialPfit.Append(G2G.wxID_DOPARFIT,'Fit to equation(s)','Perform a parametric minimization')
         # fill sequential Export menu
         # for an exporter to be used for sequential exports, it must have a Writer method and
         # that Writer method must offer a mode argument. 
@@ -4841,10 +4715,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                         objlist.append(obj)
             if objlist:
                 submenu = wx.Menu()
-                item = self.SequentialEx.AppendMenu(wx.ID_ANY, lbl+' as',submenu, help=txt)
+                item = self.SequentialEx.AppendSubMenu(submenu,lbl+' as',txt)
                 for obj in objlist:
-                    item = submenu.Append(wx.ID_ANY,help=obj.longFormatName,
-                        kind=wx.ITEM_NORMAL,text=obj.formatName)
+                    item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                     self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
         
         self.PostfillDataMenu()
@@ -4856,18 +4729,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.PWDRMenu)
         self.ErrorAnal = wx.Menu(title='')
         self.PWDRMenu.Append(menu=self.ErrorAnal,title='Commands')
-        self.ErrorAnal.Append(id=G2G.wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
-            help='Error analysis on powder pattern')
-        self.ErrorAnal.Append(id=G2G.wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
-            help='Copy of PWDR parameters')
-        self.ErrorAnal.Append(id=G2G.wxID_PLOTCTRLCOPY,kind=wx.ITEM_NORMAL,text='Copy plot controls',
-            help='Copy of PWDR plot controls')
-        self.moveDiffCurve = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move diff. curve',
-            help='Click on position where difference curve is placed')
-        self.moveTickLoc = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move ticks',
-            help='Move mouse to where tick marks should be positioned')
-        self.moveTickSpc = self.ErrorAnal.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Set tick space',
-            help='Click to set spacing between phase tick marks')
+        self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on powder pattern')
+        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of PWDR parameters')
+        self.ErrorAnal.Append(G2G.wxID_PLOTCTRLCOPY,'Copy plot controls','Copy of PWDR plot controls')
+        self.moveDiffCurve = self.ErrorAnal.Append(wx.ID_ANY,'Move diff. curve',
+            'Click on position where difference curve is placed')
+        self.moveTickLoc = self.ErrorAnal.Append(wx.ID_ANY,'Move ticks','Move mouse to where tick marks should be positioned')
+        self.moveTickSpc = self.ErrorAnal.Append(wx.ID_ANY,'Set tick space','Click to set spacing between phase tick marks')
         self.PostfillDataMenu()
             
         # HKLF - wxIDs defined in PWDR & SASD above
@@ -4875,16 +4743,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.HKLFMenu)
         self.ErrorAnal = wx.Menu(title='')
         self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
-        self.ErrorAnal.Append(id=G2G.wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
-            help='Error analysis on single crystal data')
-        self.ErrorAnal.Append(id=G2G.wxID_MERGEHKL,kind=wx.ITEM_NORMAL,text='Merge HKLs',
-            help='Transform & merge HKLF data to new histogram')
-        self.ErrorAnal.Append(id=G2G.wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
-            help='Plot HKLs from single crystal data in 3D')
-        self.ErrorAnal.Append(id=G2G.wxID_3DALLHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot all 3D HKLs',
-            help='Plot HKLs from all single crystal data in 3D')
-        self.ErrorAnal.Append(id=G2G.wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
-            help='Copy of HKLF parameters')
+        self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
+        self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
+        self.ErrorAnal.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from single crystal data in 3D')
+        self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
+        self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters')
         self.PostfillDataMenu()
             
         # PWDR / Limits
@@ -4893,10 +4756,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.LimitMenu)
         self.LimitEdit = wx.Menu(title='')
         self.LimitMenu.Append(menu=self.LimitEdit, title='Edit Limits')
-        self.LimitEdit.Append(id=G2G.wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy limits to other histograms')
-        self.LimitEdit.Append(id=G2G.wxID_ADDEXCLREGION, kind=wx.ITEM_NORMAL,text='Add exclude',
-            help='Add excluded region - select a point on plot; drag to adjust')            
+        self.LimitEdit.Append(G2G.wxID_LIMITCOPY,'Copy','Copy limits to other histograms')
+        self.LimitEdit.Append(G2G.wxID_ADDEXCLREGION,'Add exclude',
+            'Add excluded region - select a point on plot; drag to adjust')            
         self.PostfillDataMenu()
             
         # PDR / Background
@@ -4906,33 +4768,26 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.BackMenu)
         self.BackEdit = wx.Menu(title='')
         self.BackMenu.Append(menu=self.BackEdit, title='File')
-        self.BackEdit.Append(id=G2G.wxID_BACKCOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy background parameters to other histograms')
-        self.BackEdit.Append(id=G2G.wxID_BACKFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy background refinement flags to other histograms')
-        self.BackEdit.Append(id=G2G.wxID_BACKPEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks',
-            help='Move background peaks to Peak List')
-        self.BackEdit.Append(id=G2G.wxID_MAKEBACKRDF, kind=wx.ITEM_NORMAL,text='Plot RDF',
-            help='Plot radial distribution from differences')
+        self.BackEdit.Append(G2G.wxID_BACKCOPY,'Copy','Copy background parameters to other histograms')
+        self.BackEdit.Append(G2G.wxID_BACKFLAGCOPY,'Copy flags',
+            'Copy background refinement flags to other histograms')
+        self.BackEdit.Append(G2G.wxID_BACKPEAKSMOVE,'Move peaks','Move background peaks to Peak List')
+        self.BackEdit.Append(G2G.wxID_MAKEBACKRDF,'Plot RDF','Plot radial distribution from differences')
         self.BackFixed = wx.Menu(title='') # fixed background point menu
         self.BackMenu.Append(menu=self.BackFixed, title='Fixed Points')
         self.wxID_BackPts = {}
         self.wxID_BackPts['Add'] = wx.NewId() # N.B. not using wxID_ global as for other menu items
-        self.BackFixed.Append(id=self.wxID_BackPts['Add'], kind=wx.ITEM_RADIO,text='Add',
-            help='Add fixed background points with mouse clicks')
+        self.BackFixed.AppendRadioItem(self.wxID_BackPts['Add'],'Add','Add fixed background points with mouse clicks')
         self.wxID_BackPts['Move'] = wx.NewId() 
-        item = self.BackFixed.Append(id=self.wxID_BackPts['Move'], kind=wx.ITEM_RADIO,text='Move',
-            help='Move selected fixed background points with mouse drags')
+        item = self.BackFixed.AppendRadioItem(self.wxID_BackPts['Move'],'Move','Move selected fixed background points with mouse drags')
         item.Check(True)
         self.wxID_BackPts['Del'] = wx.NewId()
-        self.BackFixed.Append(id=self.wxID_BackPts['Del'], kind=wx.ITEM_RADIO,text='Delete',
-            help='Delete fixed background points with mouse clicks')
+        self.BackFixed.AppendRadioItem(self.wxID_BackPts['Del'],'Delete','Delete fixed background points with mouse clicks')
         self.wxID_BackPts['Clear'] = wx.NewId() 
-        self.BackFixed.Append(id=self.wxID_BackPts['Clear'], kind=wx.ITEM_NORMAL,text='Clear',
-            help='Clear fixed background points')
+        self.BackFixed.Append(self.wxID_BackPts['Clear'],'Clear','Clear fixed background points')
         self.wxID_BackPts['Fit'] = wx.NewId() 
-        self.BackFixed.Append(id=self.wxID_BackPts['Fit'], kind=wx.ITEM_NORMAL,text='Fit background',
-            help='Fit background function to fixed background points')
+        self.BackFixed.Append(self.wxID_BackPts['Fit'],'Fit background',
+            'Fit background function to fixed background points')
         self.PostfillDataMenu()
             
         # PDR / Instrument Parameters
@@ -4942,22 +4797,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.InstMenu)
         self.InstEdit = wx.Menu(title='')
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
-        self.InstEdit.Append(help='Calibrate from indexed peaks', 
-            id=G2G.wxID_INSTCALIB, kind=wx.ITEM_NORMAL,text='Calibrate')            
-        self.InstEdit.Append(help='Reset instrument profile parameters to default', 
-            id=G2G.wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')            
-        self.InstEdit.Append(help='Load instrument profile parameters from file', 
-            id=G2G.wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')            
-        self.InstEdit.Append(help='Save instrument profile parameters to file', 
-            id=G2G.wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
-        self.InstEdit.Append(help='Save all instrument profile parameters to one file', 
-            id=G2G.wxID_INSTSAVEALL, kind=wx.ITEM_NORMAL,text='Save all profile...')            
-        self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
-            id=G2G.wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
-        self.InstEdit.Append(id=G2G.wxID_INSTFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy instrument parameter refinement flags to other histograms')
-        self.InstEdit.Append(id=G2G.wxID_INST1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
-            help='Set one instrument parameter value across multiple histograms')
+        self.InstEdit.Append(G2G.wxID_INSTCALIB,'Calibrate','Calibrate from indexed peaks')
+        self.InstEdit.Append(G2G.wxID_INSTPRMRESET,'Reset profile','Reset instrument profile parameters to default')
+        self.InstEdit.Append(G2G.wxID_INSTLOAD,'Load profile...','Load instrument profile parameters from file')
+        self.InstEdit.Append(G2G.wxID_INSTSAVE,'Save profile...','Save instrument profile parameters to file')
+        self.InstEdit.Append(G2G.wxID_INSTSAVEALL,'Save all profile...','Save all instrument profile parameters to one file')
+        self.InstEdit.Append(G2G.wxID_INSTCOPY,'Copy','Copy instrument profile parameters to other histograms')
+        self.InstEdit.Append(G2G.wxID_INSTFLAGCOPY,'Copy flags','Copy instrument parameter refinement flags to other histograms')
+        self.InstEdit.Append(G2G.wxID_INST1VAL,'Set one value','Set one instrument parameter value across multiple histograms')
         self.PostfillDataMenu()
         
         # PDR / Sample Parameters
@@ -4967,24 +4814,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.SampleMenu)
         self.SampleEdit = wx.Menu(title='')
         self.SampleMenu.Append(menu=self.SampleEdit, title='Command')
-        self.SetScale = self.SampleEdit.Append(id=G2G.wxID_SETSCALE, kind=wx.ITEM_NORMAL,text='Set scale',
-            help='Set scale by matching to another histogram')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load',
-            help='Load sample parameters from file')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLESAVE, kind=wx.ITEM_NORMAL,text='Save',
-            help='Save sample parameters to file')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy refinable and most other sample parameters to other histograms')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLECOPYSOME, kind=wx.ITEM_NORMAL,text='Copy selected...',
-            help='Copy selected sample parameters to other histograms')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy sample parameter refinement flags to other histograms')
-        self.SampleEdit.Append(id=G2G.wxID_SAMPLE1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
-            help='Set one sample parameter value across multiple histograms')
-        self.SampleEdit.Append(id=G2G.wxID_ALLSAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load all',
-            help='Load sample parmameters over multiple histograms')
-        self.SampleEdit.Append(id=G2G.wxID_RESCALEALL, kind=wx.ITEM_NORMAL,text='Rescale all',
-            help='Rescale all data with selected range')
+        self.SetScale = self.SampleEdit.Append(G2G.wxID_SETSCALE,'Set scale','Set scale by matching to another histogram')
+        self.SampleEdit.Append(G2G.wxID_SAMPLELOAD,'Load','Load sample parameters from file')
+        self.SampleEdit.Append(G2G.wxID_SAMPLESAVE,'Save','Save sample parameters to file')
+        self.SampleEdit.Append(G2G.wxID_SAMPLECOPY,'Copy','Copy refinable and most other sample parameters to other histograms')
+        self.SampleEdit.Append(G2G.wxID_SAMPLECOPYSOME,'Copy selected...','Copy selected sample parameters to other histograms')
+        self.SampleEdit.Append(G2G.wxID_SAMPLEFLAGCOPY,'Copy flags','Copy sample parameter refinement flags to other histograms')
+        self.SampleEdit.Append(G2G.wxID_SAMPLE1VAL,'Set one value','Set one sample parameter value across multiple histograms')
+        self.SampleEdit.Append(G2G.wxID_ALLSAMPLELOAD,'Load all','Load sample parmameters over multiple histograms')
+        self.SampleEdit.Append(G2G.wxID_RESCALEALL,'Rescale all','Rescale all data with selected range')
         self.PostfillDataMenu()
         self.SetScale.Enable(False)
 
@@ -4995,28 +4833,19 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.PeakMenu)
         self.PeakEdit = wx.Menu(title='')
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
-        self.peaksSel = self.PeakEdit.Append(wx.ID_ANY,help='Set refinement flags for selected peaks',
-            kind=wx.ITEM_NORMAL,text='Set sel. ref flags...')
-        self.peaksAll = self.PeakEdit.Append(wx.ID_ANY,help='Set refinement flags for all peaks',
-            kind=wx.ITEM_NORMAL,text='Set all ref flags...')
-        self.AutoSearch = self.PeakEdit.Append(help='Automatic peak search', 
-            id=G2G.wxID_AUTOSEARCH, kind=wx.ITEM_NORMAL,text='Auto search')
-        self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
-            id=G2G.wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
-        self.PeakFit = self.PeakEdit.Append(id=G2G.wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='Peakfit', 
-            help='Peak fitting' )
-        self.PFOneCycle = self.PeakEdit.Append(id=G2G.wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='Peakfit one cycle', 
-            help='One cycle of Peak fitting' )
-        self.PeakEdit.Append(id=G2G.wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
-            text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
-        self.PeakCopy = self.PeakEdit.Append(help='Copy peaks to other histograms', 
-            id=G2G.wxID_PEAKSCOPY, kind=wx.ITEM_NORMAL,text='Peak copy')
-        self.SeqPeakFit = self.PeakEdit.Append(id=G2G.wxID_SEQPEAKFIT, kind=wx.ITEM_NORMAL,text='Seq PeakFit', 
-            help='Sequential Peak fitting for all histograms' )
-        self.PeakEdit.Append(id=G2G.wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
-            help='Clear the peak list' )
-        self.movePeak = self.PeakEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Move selected peak',
-            help='Select a peak in the table, then use this to move it with the mouse.')
+        self.peaksSel = self.PeakEdit.Append(wx.ID_ANY,'Set sel. ref flags...','Set refinement flags for selected peaks')
+        self.peaksAll = self.PeakEdit.Append(wx.ID_ANY,'Set all ref flags...','Set refinement flags for all peaks')
+        self.AutoSearch = self.PeakEdit.Append(G2G.wxID_AUTOSEARCH,'Auto search','Automatic peak search')
+        self.UnDo = self.PeakEdit.Append(G2G.wxID_UNDO,'UnDo','Undo last least squares refinement')
+        self.PeakFit = self.PeakEdit.Append(G2G.wxID_LSQPEAKFIT,'Peakfit','Peak fitting' )
+        self.PFOneCycle = self.PeakEdit.Append(G2G.wxID_LSQONECYCLE,'Peakfit one cycle','One cycle of Peak fitting' )
+        self.PeakEdit.Append(G2G.wxID_RESETSIGGAM,'Reset sig and gam','Reset sigma and gamma to global fit' )
+        self.PeakCopy = self.PeakEdit.Append(G2G.wxID_PEAKSCOPY,'Peak copy','Copy peaks to other histograms')
+        self.SeqPeakFit = self.PeakEdit.Append(G2G.wxID_SEQPEAKFIT,'Seq PeakFit', 
+            'Sequential Peak fitting for all histograms' )
+        self.PeakEdit.Append(G2G.wxID_CLEARPEAKS,'Clear peaks','Clear the peak list' )
+        self.movePeak = self.PeakEdit.Append(wx.ID_ANY,'Move selected peak',
+            'Select a peak in the table, then use this to move it with the mouse.')
         self.PostfillDataMenu()
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
@@ -5029,8 +4858,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.IndPeaksMenu)
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndPeaksMenu.Append(menu=self.IndPeaksEdit,title='Operations')
-        self.IndPeaksEdit.Append(help='Load/Reload index peaks from peak list',id=G2G.wxID_INDXRELOAD, 
-            kind=wx.ITEM_NORMAL,text='Load/Reload')
+        self.IndPeaksEdit.Append(G2G.wxID_INDXRELOAD,'Load/Reload','Load/Reload index peaks from peak list') 
         self.PostfillDataMenu()
         
         # PDR / Unit Cells List
@@ -5040,16 +4868,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        self.IndexPeaks = self.IndexEdit.Append(help='', id=G2G.wxID_INDEXPEAKS, kind=wx.ITEM_NORMAL,
-            text='Index Cell')
-        self.CopyCell = self.IndexEdit.Append( id=G2G.wxID_COPYCELL, kind=wx.ITEM_NORMAL,text='Copy Cell', 
-            help='Copy selected unit cell from indexing to cell refinement fields')
-        self.RefineCell = self.IndexEdit.Append( id=G2G.wxID_REFINECELL, kind=wx.ITEM_NORMAL, 
-            text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
-        self.MakeNewPhase = self.IndexEdit.Append( id=G2G.wxID_MAKENEWPHASE, kind=wx.ITEM_NORMAL,
-            text='Make new phase',help='Make new phase from selected unit cell')
-        self.ExportCells = self.IndexEdit.Append( id=G2G.wxID_EXPORTCELLS, kind=wx.ITEM_NORMAL,
-            text='Export cell list',help='Export cell list to csv file')
+        self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell','')
+        self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
+            'Copy selected unit cell from indexing to cell refinement fields')
+        self.RefineCell = self.IndexEdit.Append(G2G.wxID_REFINECELL,'Refine Cell',
+            'Refine unit cell parameters from indexed peaks')
+        self.MakeNewPhase = self.IndexEdit.Append(G2G.wxID_MAKENEWPHASE,'Make new phase',
+            'Make new phase from selected unit cell')
+        self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         self.PostfillDataMenu()
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)
@@ -5062,12 +4888,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.ReflMenu)
         self.ReflEdit = wx.Menu(title='')
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
-        self.SelectPhase = self.ReflEdit.Append(help='Select phase for reflection list',id=G2G.wxID_SELECTPHASE, 
-            kind=wx.ITEM_NORMAL,text='Select phase')
-        self.ReflEdit.Append(id=G2G.wxID_PWDHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot HKLs',
-            help='Plot HKLs from powder pattern')
-        self.ReflEdit.Append(id=G2G.wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
-            help='Plot HKLs from powder pattern in 3D')
+        self.SelectPhase = self.ReflEdit.Append(G2G.wxID_SELECTPHASE,'Select phase','Select phase for reflection list')
+        self.ReflEdit.Append(G2G.wxID_PWDHKLPLOT,'Plot HKLs','Plot HKLs from powder pattern')
+        self.ReflEdit.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from powder pattern in 3D')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters
@@ -5076,8 +4899,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.SASDInstMenu)
         self.SASDInstEdit = wx.Menu(title='')
         self.SASDInstMenu.Append(menu=self.SASDInstEdit, title='Operations')
-        self.SASDInstEdit.Append(help='Copy instrument profile parameters to other histograms', 
-            id=G2G.wxID_SASDINSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
+        self.SASDInstEdit.Append(G2G.wxID_SASDINSTCOPY,'Copy','Copy instrument profile parameters to other histograms')
         self.PostfillDataMenu()
         
         #SASD & REFL/ Substance editor
@@ -5087,20 +4909,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.SubstanceMenu)
         self.SubstanceEdit = wx.Menu(title='')
         self.SubstanceMenu.Append(menu=self.SubstanceEdit, title='Edit substance')
-        self.SubstanceEdit.Append(id=G2G.wxID_LOADSUBSTANCE, kind=wx.ITEM_NORMAL,text='Load substance',
-            help='Load substance from file')
-        self.SubstanceEdit.Append(id=G2G.wxID_RELOADSUBSTANCES, kind=wx.ITEM_NORMAL,text='Reload substances',
-            help='Reload all substances from file')
-        self.SubstanceEdit.Append(id=G2G.wxID_ADDSUBSTANCE, kind=wx.ITEM_NORMAL,text='Add substance',
-            help='Add new substance to list')
-        self.SubstanceEdit.Append(id=G2G.wxID_COPYSUBSTANCE, kind=wx.ITEM_NORMAL,text='Copy substances',
-            help='Copy substances')
-        self.SubstanceEdit.Append(id=G2G.wxID_DELETESUBSTANCE, kind=wx.ITEM_NORMAL,text='Delete substance',
-            help='Delete substance from list')            
-        self.SubstanceEdit.Append(id=G2G.wxID_ELEMENTADD, kind=wx.ITEM_NORMAL,text='Add elements',
-            help='Add elements to substance')
-        self.SubstanceEdit.Append(id=G2G.wxID_ELEMENTDELETE, kind=wx.ITEM_NORMAL,text='Delete elements',
-            help='Delete elements from substance')
+        self.SubstanceEdit.Append(G2G.wxID_LOADSUBSTANCE,'Load substance','Load substance from file')
+        self.SubstanceEdit.Append(G2G.wxID_RELOADSUBSTANCES,'Reload substances','Reload all substances from file')
+        self.SubstanceEdit.Append(G2G.wxID_ADDSUBSTANCE,'Add substance','Add new substance to list')
+        self.SubstanceEdit.Append(G2G.wxID_COPYSUBSTANCE,'Copy substances','Copy substances')
+        self.SubstanceEdit.Append(G2G.wxID_DELETESUBSTANCE,'Delete substance','Delete substance from list')            
+        self.SubstanceEdit.Append(G2G.wxID_ELEMENTADD,'Add elements','Add elements to substance')
+        self.SubstanceEdit.Append(G2G.wxID_ELEMENTDELETE,'Delete elements','Delete elements from substance')
         self.PostfillDataMenu()
         
         # SASD/ Models
@@ -5110,19 +4925,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.ModelMenu)
         self.ModelEdit = wx.Menu(title='')
         self.ModelMenu.Append(menu=self.ModelEdit, title='Models')
-        self.ModelEdit.Append(id=G2G.wxID_MODELADD,kind=wx.ITEM_NORMAL,text='Add',
-            help='Add new term to model')
-        self.ModelEdit.Append(id=G2G.wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
-            help='Fit model parameters to data')
-        self.SasdUndo = self.ModelEdit.Append(id=G2G.wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
-            help='Undo model fit')
+        self.ModelEdit.Append(G2G.wxID_MODELADD,'Add','Add new term to model')
+        self.ModelEdit.Append(G2G.wxID_MODELFIT,'Fit','Fit model parameters to data')
+        self.SasdUndo = self.ModelEdit.Append(G2G.wxID_MODELUNDO,'Undo','Undo model fit')
         self.SasdUndo.Enable(False)            
-        self.ModelEdit.Append(id=G2G.wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Sequential fit',
-            help='Sequential fit of model parameters to all SASD data')
-        self.ModelEdit.Append(id=G2G.wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy model parameters to other histograms')
-        self.ModelEdit.Append(id=G2G.wxID_MODELCOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy model refinement flags to other histograms')
+        self.ModelEdit.Append(G2G.wxID_MODELFITALL,'Sequential fit','Sequential fit of model parameters to all SASD data')
+        self.ModelEdit.Append(G2G.wxID_MODELCOPY,'Copy','Copy model parameters to other histograms')
+        self.ModelEdit.Append(G2G.wxID_MODELCOPYFLAGS,'Copy flags','Copy model refinement flags to other histograms')
         self.PostfillDataMenu()
         
         # REFD/ Models - wxIDs as for SASD/Models
@@ -5130,17 +4939,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.REFDModelMenu)
         self.REFDModelEdit = wx.Menu(title='')
         self.REFDModelMenu.Append(menu=self.REFDModelEdit, title='Models')
-        self.REFDModelEdit.Append(id=G2G.wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
-            help='Fit model parameters to data')
-        self.REFDUndo = self.REFDModelEdit.Append(id=G2G.wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
-            help='Undo model fit')
+        self.REFDModelEdit.Append(G2G.wxID_MODELFIT,'Fit','Fit model parameters to data')
+        self.REFDUndo = self.REFDModelEdit.Append(G2G.wxID_MODELUNDO,'Undo','Undo model fit')
         self.REFDUndo.Enable(False)            
-        self.REFDModelEdit.Append(id=G2G.wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Sequential fit',
-            help='Sequential fit of model parameters to all REFD data')
-        self.REFDModelEdit.Append(id=G2G.wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy model parameters to other histograms')
-        self.REFDModelEdit.Append(id=G2G.wxID_MODELPLOT, kind=wx.ITEM_NORMAL,text='Plot',
-            help='Plot model SDL for selected histograms')
+        self.REFDModelEdit.Append(G2G.wxID_MODELFITALL,'Sequential fit','Sequential fit of model parameters to all REFD data')
+        self.REFDModelEdit.Append(G2G.wxID_MODELCOPY,'Copy','Copy model parameters to other histograms')
+        self.REFDModelEdit.Append(G2G.wxID_MODELPLOT,'Plot','Plot model SDL for selected histograms')
         self.PostfillDataMenu()
 
         # IMG / Image Controls
@@ -5151,40 +4955,26 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.ImageMenu)
         self.ImageEdit = wx.Menu(title='')
         self.ImageMenu.Append(menu=self.ImageEdit, title='Calibration')
-        self.ImageEdit.Append(help='Calibrate detector by fitting to calibrant lines', 
-            id=G2G.wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
-        self.ImageEdit.Append(help='Recalibrate detector by fitting to calibrant lines', 
-            id=G2G.wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Recalibrate')
-        self.ImageEdit.Append(help='Recalibrate all images by fitting to calibrant lines', 
-            id=G2G.wxID_IMRECALIBALL, kind=wx.ITEM_NORMAL,text='Recalibrate all')            
-        self.ImageEdit.Append(help='Clear calibration data points and rings',
-            id=G2G.wxID_IMCLEARCALIB, kind=wx.ITEM_NORMAL,text='Clear calibration')
+        self.ImageEdit.Append(G2G.wxID_IMCALIBRATE,'Calibrate','Calibrate detector by fitting to calibrant lines')
+        self.ImageEdit.Append(G2G.wxID_IMRECALIBRATE,'Recalibrate','Recalibrate detector by fitting to calibrant lines')
+        self.ImageEdit.Append(G2G.wxID_IMRECALIBALL,'Recalibrate all','Recalibrate all images by fitting to calibrant lines')
+        self.ImageEdit.Append(G2G.wxID_IMCLEARCALIB,'Clear calibration','Clear calibration data points and rings')
         
         ImageIntegrate = wx.Menu(title='')
         self.ImageMenu.Append(menu=ImageIntegrate, title='Integration')
-        ImageIntegrate.Append(help='Integrate selected image',id=G2G.wxID_IMINTEGRATE, 
-            kind=wx.ITEM_NORMAL,text='Integrate')
-        ImageIntegrate.Append(help='Integrate all images selected from list',id=G2G.wxID_INTEGRATEALL,
-            kind=wx.ITEM_NORMAL,text='Integrate all')
-        ImageIntegrate.Append(help='Open Auto-integration window to integrate a series of images', 
-            id=G2G.wxID_IMAUTOINTEG, kind=wx.ITEM_NORMAL,text='Auto Integrate')
+        ImageIntegrate.Append(G2G.wxID_IMINTEGRATE,'Integrate','Integrate selected image')
+        ImageIntegrate.Append(G2G.wxID_INTEGRATEALL,'Integrate all','Integrate all images selected from list')
+        ImageIntegrate.Append(G2G.wxID_IMAUTOINTEG,'Auto Integrate','Open Auto-integration window to integrate a series of images')
 
         ImageParams = wx.Menu(title='')
         self.ImageMenu.Append(menu=ImageParams, title='Parms')
-        ImageParams.Append(help='Copy image controls to other images', 
-            id=G2G.wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
-        ImageParams.Append(help='Copy selected image controls to other images', 
-            id=G2G.wxID_IMCOPYSELECTED, kind=wx.ITEM_NORMAL,text='Copy Selected')
-        ImageParams.Append(help='Save image controls to file', 
-            id=G2G.wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
-        ImageParams.Append(help='Save controls from selected images to file', 
-            id=G2G.wxID_SAVESELECTEDCONTROLS, kind=wx.ITEM_NORMAL,text='Save Multiple Controls')
-        ImageParams.Append(help='Load image controls from file',
-            id=G2G.wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
-        ImageParams.Append(help='Transfer integration range for other detector distances', 
-            id=G2G.wxID_IMXFERCONTROLS, kind=wx.ITEM_NORMAL,text='Xfer angles')
-        ImageParams.Append(help='Reset all detector dist to set dist', 
-            id=G2G.wxID_IMRESETDIST, kind=wx.ITEM_NORMAL,text='Reset dist')
+        ImageParams.Append(G2G.wxID_IMCOPYCONTROLS,'Copy Controls','Copy image controls to other images')
+        ImageParams.Append(G2G.wxID_IMCOPYSELECTED,'Copy Selected','Copy selected image controls to other images')
+        ImageParams.Append(G2G.wxID_IMSAVECONTROLS,'Save Controls','Save image controls to file')
+        ImageParams.Append(G2G.wxID_SAVESELECTEDCONTROLS,'Save Multiple Controls','Save controls from selected images to file')
+        ImageParams.Append(G2G.wxID_IMLOADCONTROLS,'Load Controls','Load image controls from file')
+        ImageParams.Append(G2G.wxID_IMXFERCONTROLS,'Xfer angles','Transfer integration range for other detector distances')
+        ImageParams.Append(G2G.wxID_IMRESETDIST,'Reset dist','Reset all detector dist to set dist')
         self.PostfillDataMenu()
             
         # IMG / Masks
@@ -5195,29 +4985,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MaskEdit = wx.Menu(title='')
         self.MaskMenu.Append(menu=self.MaskEdit, title='Operations')
         submenu = wx.Menu()
-        self.MaskEdit.AppendMenu(wx.ID_ANY,'Create new', submenu,help='')
-        self.MaskEdit.Append(help='Copy mask to other images', 
-            id=G2G.wxID_MASKCOPY, kind=wx.ITEM_NORMAL,text='Copy mask')
-        self.MaskEdit.Append(help='Save mask to file', 
-            id=G2G.wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
-        self.MaskEdit.Append(help='Load mask from file; ignoring threshold', 
-            id=G2G.wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask')
-        self.MaskEdit.Append(help='Load mask from file keeping the threshold value', 
-            id=G2G.wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask w/threshold')
-        self.MaskEdit.Append(help='Auto search for spot masks; NB: will clear old spot masks', 
-            id=G2G.wxID_FINDSPOTS, kind=wx.ITEM_NORMAL,text='Auto spot masks')
-        self.MaskEdit.Append(help='Delete all spot masks', 
-            id=G2G.wxID_DELETESPOTS, kind=wx.ITEM_NORMAL,text='Delete spot masks')        
-        submenu.Append(help='Create an arc mask with mouse input', 
-            id=G2G.wxID_NEWMASKARC, kind=wx.ITEM_NORMAL,text='Arc mask')
-        submenu.Append(help='Create a frame mask with mouse input', 
-            id=G2G.wxID_NEWMASKFRAME, kind=wx.ITEM_NORMAL,text='Frame mask')
-        submenu.Append(help='Create a polygon mask with mouse input', 
-            id=G2G.wxID_NEWMASKPOLY, kind=wx.ITEM_NORMAL,text='Polygon mask')
-        submenu.Append(help='Create a ring mask with mouse input', 
-            id=G2G.wxID_NEWMASKRING, kind=wx.ITEM_NORMAL,text='Ring mask')
-        submenu.Append(help='Create spot masks with mouse input', 
-            id=G2G.wxID_NEWMASKSPOT, kind=wx.ITEM_NORMAL,text='Spot mask')
+        self.MaskEdit.AppendSubMenu( submenu,'Create new','')
+        self.MaskEdit.Append(G2G.wxID_MASKCOPY,'Copy mask','Copy mask to other images')
+        self.MaskEdit.Append(G2G.wxID_MASKSAVE,'Save mask','Save mask to file')
+        self.MaskEdit.Append(G2G.wxID_MASKLOADNOT,'Load mask','Load mask from file; ignoring threshold')
+        self.MaskEdit.Append(G2G.wxID_MASKLOAD,'Load mask w/threshold','Load mask from file keeping the threshold value')
+        self.MaskEdit.Append(G2G.wxID_FINDSPOTS,'Auto spot masks','Auto search for spot masks; NB: will clear old spot masks')
+        self.MaskEdit.Append(G2G.wxID_DELETESPOTS,'Delete spot masks','Delete all spot masks')
+        submenu.Append(G2G.wxID_NEWMASKARC,'Arc mask','Create an arc mask with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKFRAME,'Frame mask','Create a frame mask with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKPOLY,'Polygon mask','Create a polygon mask with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKRING,'Ring mask','Create a ring mask with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKSPOT,'Spot mask','Create spot masks with mouse input')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain
@@ -5227,26 +5006,16 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.StrStaMenu)
         self.StrStaEdit = wx.Menu(title='')
         self.StrStaMenu.Append(menu=self.StrStaEdit, title='Operations')
-        self.StrStaEdit.Append(help='Append d-zero for one ring', 
-            id=G2G.wxID_APPENDDZERO, kind=wx.ITEM_NORMAL,text='Append d-zero')
-        self.StrStaEdit.Append(help='Fit stress/strain data', 
-            id=G2G.wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
-        self.StrStaEdit.Append(help='Plot intensity distribution', 
-            id=G2G.wxID_STRSTAPLOT, kind=wx.ITEM_NORMAL,text='Plot intensity distribution')
-        self.StrStaEdit.Append(help='Save intensity distribution', 
-            id=G2G.wxID_STRRINGSAVE, kind=wx.ITEM_NORMAL,text='Save intensity distribution')
-        self.StrStaEdit.Append(help='Update d-zero from ave d-zero',
-            id=G2G.wxID_UPDATEDZERO, kind=wx.ITEM_NORMAL,text='Update d-zero')        
-        self.StrStaEdit.Append(help='Fit stress/strain data for all images', 
-            id=G2G.wxID_STRSTAALLFIT, kind=wx.ITEM_NORMAL,text='All image fit')
-        self.StrStaEdit.Append(help='Copy stress/strain data to other images', 
-            id=G2G.wxID_STRSTACOPY, kind=wx.ITEM_NORMAL,text='Copy stress/strain')
-        self.StrStaEdit.Append(help='Save stress/strain data to file', 
-            id=G2G.wxID_STRSTASAVE, kind=wx.ITEM_NORMAL,text='Save stress/strain')
-        self.StrStaEdit.Append(help='Load stress/strain data from file', 
-            id=G2G.wxID_STRSTALOAD, kind=wx.ITEM_NORMAL,text='Load stress/strain')
-        self.StrStaEdit.Append(help='Load sample data from file', 
-            id=G2G.wxID_STRSTSAMPLE, kind=wx.ITEM_NORMAL,text='Load sample data')
+        self.StrStaEdit.Append(G2G.wxID_APPENDDZERO,'Append d-zero','Append d-zero for one ring')
+        self.StrStaEdit.Append(G2G.wxID_STRSTAFIT,'Fit stress/strain','Fit stress/strain data')
+        self.StrStaEdit.Append(G2G.wxID_STRSTAPLOT,'Plot intensity distribution','Plot intensity distribution')
+        self.StrStaEdit.Append(G2G.wxID_STRRINGSAVE,'Save intensity distribution','Save intensity distribution')
+        self.StrStaEdit.Append(G2G.wxID_UPDATEDZERO,'Update d-zero','Update d-zero from ave d-zero')        
+        self.StrStaEdit.Append(G2G.wxID_STRSTAALLFIT,'All image fit','Fit stress/strain data for all images')
+        self.StrStaEdit.Append(G2G.wxID_STRSTACOPY,'Copy stress/strain','Copy stress/strain data to other images')
+        self.StrStaEdit.Append(G2G.wxID_STRSTASAVE,'Save stress/strain','Save stress/strain data to file')
+        self.StrStaEdit.Append(G2G.wxID_STRSTALOAD,'Load stress/strain','Load stress/strain data from file')
+        self.StrStaEdit.Append(G2G.wxID_STRSTSAMPLE,'Load sample data','Load sample data from file')
         self.PostfillDataMenu()
             
         # PDF / PDF Controls
@@ -5256,21 +5025,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.PDFMenu)
         self.PDFEdit = wx.Menu(title='')
         self.PDFMenu.Append(menu=self.PDFEdit, title='PDF Controls')
-        self.PDFEdit.Append(help='Add one or more elements to sample composition',id=G2G.wxID_PDFADDELEMENT, kind=wx.ITEM_NORMAL,
-            text='Add elements')
-        self.PDFEdit.Append(help='Delete element from sample composition',id=G2G.wxID_PDFDELELEMENT, kind=wx.ITEM_NORMAL,
-            text='Delete element')
-        self.PDFEdit.Append(help='Copy PDF controls', id=G2G.wxID_PDFCOPYCONTROLS, kind=wx.ITEM_NORMAL,
-            text='Copy controls')
-        self.PDFEdit.Append(help='Load PDF controls from file',id=G2G.wxID_PDFLOADCONTROLS, kind=wx.ITEM_NORMAL,
-            text='Load Controls')
-        self.PDFEdit.Append(help='Save PDF controls to file', id=G2G.wxID_PDFSAVECONTROLS, kind=wx.ITEM_NORMAL,
-            text='Save controls')
-        self.PDFEdit.Append(help='Compute PDF', id=G2G.wxID_PDFCOMPUTE, kind=wx.ITEM_NORMAL,
-            text='Compute PDF')
-        self.PDFEdit.Append(help='Compute all PDFs with or w/o optimization',
-            id=G2G.wxID_PDFCOMPUTEALL, kind=wx.ITEM_NORMAL,
-            text='Compute all PDFs')
+        self.PDFEdit.Append(G2G.wxID_PDFADDELEMENT,'Add elements','Add one or more elements to sample composition')
+        self.PDFEdit.Append(G2G.wxID_PDFDELELEMENT,'Delete element','Delete element from sample composition')
+        self.PDFEdit.Append(G2G.wxID_PDFCOPYCONTROLS,'Copy controls','Copy PDF controls')
+        self.PDFEdit.Append(G2G.wxID_PDFLOADCONTROLS,'Load Controls','Load PDF controls from file')
+        self.PDFEdit.Append(G2G.wxID_PDFSAVECONTROLS,'Save controls','Save PDF controls to file')
+        self.PDFEdit.Append(G2G.wxID_PDFCOMPUTE,'Compute PDF','Compute PDF')
+        self.PDFEdit.Append(G2G.wxID_PDFCOMPUTEALL,'Compute all PDFs','Compute all PDFs with or w/o optimization')
         self.PostfillDataMenu()
         
         # PDF / PDF Peaks
@@ -5279,14 +5040,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.PDFPksMenu)
         self.PDFPksEdit = wx.Menu(title='')
         self.PDFPksMenu.Append(menu=self.PDFPksEdit, title='PDF Peaks')
-        self.PDFPksEdit.Append(help='Fit PDF peaks', id=G2G.wxID_PDFPKSFIT, kind=wx.ITEM_NORMAL,
-            text='PDF peak fit')
-        self.PDFPksEdit.Append(help='Sequential Peak fitting for all PDFs', id=G2G.wxID_PDFPKSFITALL, kind=wx.ITEM_NORMAL,
-            text='Seq PDF peak fit')
-        self.PDFPksEdit.Append(help='Copy PDF peaks', id=G2G.wxID_PDFCOPYPEAKS, kind=wx.ITEM_NORMAL,
-            text='Copy peaks')
-        self.PDFPksEdit.Append(help='Clear PDF peaks', id=G2G.wxID_CLEARPDFPEAKS, kind=wx.ITEM_NORMAL,
-            text='Clear peaks')        
+        self.PDFPksEdit.Append(G2G.wxID_PDFPKSFIT,'PDF peak fit','Fit PDF peaks')
+        self.PDFPksEdit.Append(G2G.wxID_PDFPKSFITALL,'Seq PDF peak fit','Sequential Peak fitting for all PDFs')
+        self.PDFPksEdit.Append(G2G.wxID_PDFCOPYPEAKS,'Copy peaks','Copy PDF peaks')
+        self.PDFPksEdit.Append(G2G.wxID_CLEARPDFPEAKS,'Clear peaks','Clear PDF peaks')        
         self.PostfillDataMenu()
 
         # Phase / General tab
@@ -5297,23 +5054,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
         self.GeneralCalc = wx.Menu(title='')
         self.DataGeneral.Append(menu=self.GeneralCalc,title='Compute')
-        self.GeneralCalc.Append(help='Compute Fourier map',id=G2G.wxID_FOURCALC, kind=wx.ITEM_NORMAL,
-            text='Fourier map')
-        self.GeneralCalc.Append(help='Search Fourier map',id=G2G.wxID_FOURSEARCH, kind=wx.ITEM_NORMAL,
-            text='Search map')
-        self.GeneralCalc.Append(help='Run charge flipping',id=G2G.wxID_CHARGEFLIP, kind=wx.ITEM_NORMAL,
-            text='Charge flipping')
-        self.GeneralCalc.Append(help='Run 4D charge flipping',id=G2G.wxID_4DCHARGEFLIP, kind=wx.ITEM_NORMAL,
-            text='4D Charge flipping')
+        self.GeneralCalc.Append(G2G.wxID_FOURCALC,'Fourier map','Compute Fourier map',)
+        self.GeneralCalc.Append(G2G.wxID_FOURSEARCH,'Search map','Search Fourier map')
+        self.GeneralCalc.Append(G2G.wxID_CHARGEFLIP,'Charge flipping','Run charge flipping')
+        self.GeneralCalc.Append(G2G.wxID_4DCHARGEFLIP,'4D Charge flipping','Run 4D charge flipping')
         self.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)   
-        self.GeneralCalc.Append(help='Clear map',id=G2G.wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
-            text='Clear map')
-        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=G2G.wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,
-            text='MC/SA')
-        self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=G2G.wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
-            text='Multi MC/SA')            #currently not useful
-        self.GeneralCalc.Append(help='Transform crystal structure',id=G2G.wxID_TRANSFORMSTRUCTURE, kind=wx.ITEM_NORMAL,
-            text='Transform')
+        self.GeneralCalc.Append(G2G.wxID_FOURCLEAR,'Clear map','Clear map')
+        self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
+        self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
+        self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
         self.PostfillDataMenu()
         
         # Phase / Data tab
@@ -5324,20 +5073,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DataEdit = wx.Menu(title='')
         self.DataMenu.Append(menu=self.DataEdit, title='Edit Phase')
-        self.DataEdit.Append(id=G2G.wxID_DATACOPY, kind=wx.ITEM_NORMAL,text='Copy data',
-            help='Copy phase data to other histograms')
-        self.DataEdit.Append(id=G2G.wxID_DATACOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
-            help='Copy phase data flags to other histograms')
-        self.DataEdit.Append(id=G2G.wxID_DATASELCOPY, kind=wx.ITEM_NORMAL,text='Copy selected data',
-            help='Copy selected phase data to other histograms')
-        self.DataEdit.Append(id=G2G.wxID_DATAUSE, kind=wx.ITEM_NORMAL,text='Select used data',
-            help='Select all histograms to use')
-        self.DataEdit.Append(id=G2G.wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
-            help='Select new powder histograms to be used for this phase')
-        self.DataEdit.Append(id=G2G.wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
-            help='Select new single crystal histograms to be used for this phase')
-        self.DataEdit.Append(id=G2G.wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Remove histograms',
-            help='Remove histograms from use for this phase')
+        self.DataEdit.Append(G2G.wxID_DATACOPY,'Copy data','Copy phase data to other histograms')
+        self.DataEdit.Append(G2G.wxID_DATACOPYFLAGS,'Copy flags','Copy phase data flags to other histograms')
+        self.DataEdit.Append(G2G.wxID_DATASELCOPY,'Copy selected data','Copy selected phase data to other histograms')
+        self.DataEdit.Append(G2G.wxID_DATAUSE,'Select used data','Select all histograms to use')
+        self.DataEdit.Append(G2G.wxID_PWDRADD,'Add powder histograms','Select new powder histograms to be used for this phase')
+        self.DataEdit.Append(G2G.wxID_HKLFADD,'Add single crystal histograms','Select new single crystal histograms to be used for this phase')
+        self.DataEdit.Append(G2G.wxID_DATADELETE,'Remove histograms','Remove histograms from use for this phase')
         self.PostfillDataMenu()
             
         # Phase / Atoms tab
@@ -5355,61 +5097,37 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit Atoms')
         self.AtomsMenu.Append(menu=self.AtomCompute, title='Compute')
         submenu = wx.Menu()
-        self.AtomEdit.AppendMenu(wx.ID_ANY, 'On selected atoms...', submenu, 
-            help='Set/Act on selected atoms')
-        submenu.Append(G2G.wxID_ATOMSSETSEL,help='Set refinement flags for selected atoms',
-            kind=wx.ITEM_NORMAL,text='Refine selected')
-        submenu.Append(id=G2G.wxID_ATOMSMODIFY, kind=wx.ITEM_NORMAL,text='Modify parameters',
-            help='Modify parameters values for all selected atoms')
-        submenu.Append(id=G2G.wxID_ATOMSEDITINSERT, kind=wx.ITEM_NORMAL,text='Insert atom',
-            help='Inserts an H atom before all selected atoms')
-        submenu.Append(id=G2G.wxID_ADDHATOM, kind=wx.ITEM_NORMAL,text='Calc H atoms',
-            help='Insert H atoms in expected bonding positions for selected atoms')
-        submenu.Append(id=G2G.wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
-            help='Delete selected atoms')
-        submenu.Append(id=G2G.wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
-            help='Symmetry transform selected atoms')
-#        self.AtomEdit.Append(id=G2G.wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
-#            help='Select atoms to rotate first')
-        submenu.Append(G2G.wxID_ATOMSSETALL,help='Set refinement flags for all atoms',
-            kind=wx.ITEM_NORMAL,text='Select All')
+        self.AtomEdit.AppendSubMenu(submenu,'On selected atoms...','Set/Act on selected atoms')
+        submenu.Append(G2G.wxID_ATOMSSETSEL,'Refine selected','Set refinement flags for selected atoms')
+        submenu.Append(G2G.wxID_ATOMSMODIFY,'Modify parameters','Modify parameters values for all selected atoms')
+        submenu.Append(G2G.wxID_ATOMSEDITINSERT,'Insert atom','Inserts an H atom before all selected atoms')
+        submenu.Append(G2G.wxID_ADDHATOM,'Calc H atoms','Insert H atoms in expected bonding positions for selected atoms')
+        submenu.Append(G2G.wxID_ATOMSEDITDELETE,'Delete atom','Delete selected atoms')
+        submenu.Append(G2G.wxID_ATOMSTRANSFORM,'Transform atoms','Symmetry transform selected atoms')
+        submenu.Append(G2G.wxID_ATOMSSETALL,'Select All','Set refinement flags for all atoms')
         
-        self.AtomEdit.Append(id=G2G.wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
-            help='Appended as an H atom')
-        self.AtomEdit.Append(id=G2G.wxID_ATOMSVIEWADD, kind=wx.ITEM_NORMAL,text='Append view point',
-            help='Appended as an H atom')
-        self.AtomEdit.Append(id=G2G.wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
-            help='Select atom row to insert before; inserted as an H atom')
-        self.AtomEdit.Append(id=G2G.wxID_UPDATEHATOM, kind=wx.ITEM_NORMAL,text='Update H atoms',
-            help='Update H atoms in standard positions')
-        self.AtomEdit.Append(id=G2G.wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move selected atom to view point',
-            help='Select a single atom to be moved to view point in plot')
-        self.AtomEdit.Append(id=G2G.wxID_MAKEMOLECULE, kind=wx.ITEM_NORMAL,text='Assemble molecule',
-            help='Select a single atom to assemble as a molecule from scattered atom positions')
-        self.AtomEdit.Append(id=G2G.wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
-            help='Reload atom drawing list')
+        self.AtomEdit.Append(G2G.wxID_ATOMSEDITADD,'Append atom','Appended as an H atom')
+        self.AtomEdit.Append(G2G.wxID_ATOMSVIEWADD,'Append view point','Appended as an H atom')
+        self.AtomEdit.Append(G2G.wxID_ATOMVIEWINSERT,'Insert view point','Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(G2G.wxID_UPDATEHATOM,'Update H atoms','Update H atoms in standard positions')
+        self.AtomEdit.Append(G2G.wxID_ATOMMOVE,'Move selected atom to view point','Select a single atom to be moved to view point in plot')
+        self.AtomEdit.Append(G2G.wxID_MAKEMOLECULE,'Assemble molecule','Select a single atom to assemble as a molecule from scattered atom positions')
+        self.AtomEdit.Append(G2G.wxID_RELOADDRAWATOMS,'Reload draw atoms','Reload atom drawing list')
         submenu = wx.Menu()
-        self.AtomEdit.AppendMenu(wx.ID_ANY, 'Reimport atoms', submenu, 
-            help='Reimport atoms from file; sequence must match')
+        self.AtomEdit.AppendSubMenu(submenu,'Reimport atoms','Reimport atoms from file; sequence must match')
         # setup a cascade menu for the formats that have been defined
         self.ReImportMenuId = {}  # points to readers for each menu entry
         for reader in self.parent.GetTopLevelParent().ImportPhaseReaderlist:
-            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
-                kind=wx.ITEM_NORMAL,text='reimport coordinates from '+reader.formatName+' file')
+            item = submenu.Append(wx.ID_ANY,'reimport coordinates from '+reader.formatName+' file',reader.longFormatName)
             self.ReImportMenuId[item.GetId()] = reader
-        item = submenu.Append(wx.ID_ANY,help='Reimport coordinates, try to determine format from file',
-            kind=wx.ITEM_NORMAL,text='guess format from file')
+        item = submenu.Append(wx.ID_ANY,'guess format from file','Reimport coordinates, try to determine format from file')
         self.ReImportMenuId[item.GetId()] = None # try all readers
-        self.AtomCompute.Append(id=G2G.wxID_ATOMSDISAGL, kind=wx.ITEM_NORMAL,text='Show Distances && Angles',
-            help='Compute distances & angles for selected atoms')
-        self.AtomCompute.Append(id=G2G.wxID_ATOMSPDISAGL, kind=wx.ITEM_NORMAL,text='Save Distances && Angles',
-            help='Compute distances & angles for selected atoms')
-        self.AtomCompute.Append(id=G2G.wxID_ATOMSDENSITY, kind=wx.ITEM_NORMAL,
-            text='Density',help='Compute density for current phase')
-        self.AtomCompute.Append(id=G2G.wxID_VALIDPROTEIN, kind=wx.ITEM_NORMAL,
-            text='Protein quality',help='Protein quality analysis')
-        self.AtomCompute.ISOcalc = self.AtomCompute.Append(id=G2G.wxID_ISODISP, kind=wx.ITEM_NORMAL,
-            text='ISODISTORT mode values',help='Compute values of ISODISTORT modes from atom parameters')
+        self.AtomCompute.Append(G2G.wxID_ATOMSDISAGL,'Show Distances && Angles','Compute distances & angles for selected atoms')
+        self.AtomCompute.Append(G2G.wxID_ATOMSPDISAGL,'Save Distances && Angles','Compute distances & angles for selected atoms')
+        self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
+        self.AtomCompute.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
+        self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,'ISODISTORT mode values',
+            'Compute values of ISODISTORT modes from atom parameters')
         
         self.PostfillDataMenu()
         
@@ -5420,8 +5138,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.WavesDataEdit = wx.Menu(title='')
         self.WavesData.Append(menu=self.WavesDataEdit, title='Edit Wave')
-        self.WavesDataEdit.Append(id=G2G.wxID_WAVEVARY, kind=wx.ITEM_NORMAL,text='Global wave vary',
-            help='Global setting of wave vary flags')
+        self.WavesDataEdit.Append(G2G.wxID_WAVEVARY,'Global wave vary','Global setting of wave vary flags')
         self.PostfillDataMenu()
         
         # Phase / Layer tab 
@@ -5431,16 +5148,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.LayerData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.LayerDataEdit = wx.Menu(title='')
         self.LayerData.Append(menu=self.LayerDataEdit, title='Operations')
-        self.LayerDataEdit.Append(id=G2G.wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
-            help='Load layer info from DIFFaX file')
-        self.LayerDataEdit.Append(id=G2G.wxID_COPYPHASE, kind=wx.ITEM_NORMAL,text='Copy phase cell',
-            help='Copy phase cell from another project')
-        self.LayerDataEdit.Append(id=G2G.wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate pattern',
-            help='Simulate diffraction pattern from layer stacking')
-        self.LayerDataEdit.Append(id=G2G.wxID_LAYERSFIT, kind=wx.ITEM_NORMAL,text='Fit pattern',
-            help='Fit diffraction pattern with layer stacking model')
-        self.LayerDataEdit.Append(id=G2G.wxID_SEQUENCESIMULATE, kind=wx.ITEM_NORMAL,text='Sequence simulations',
-            help='Sequence simulation changing one parameter')
+        self.LayerDataEdit.Append(G2G.wxID_LOADDIFFAX,'Load from DIFFaX file','Load layer info from DIFFaX file')
+        self.LayerDataEdit.Append(G2G.wxID_COPYPHASE,'Copy phase cell','Copy phase cell from another project')
+        self.LayerDataEdit.Append(G2G.wxID_LAYERSIMULATE,'Simulate pattern','Simulate diffraction pattern from layer stacking')
+        self.LayerDataEdit.Append(G2G.wxID_LAYERSFIT,'Fit pattern','Fit diffraction pattern with layer stacking model')
+        self.LayerDataEdit.Append(G2G.wxID_SEQUENCESIMULATE,'Sequence simulations','Sequence simulation changing one parameter')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab
@@ -5466,46 +5178,30 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DrawAtomsMenu.Append(menu=self.DrawAtomCompute,title='Compute')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomRestraint, title='Restraints')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomRigidBody, title='Rigid body')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWATOMSTYLE, kind=wx.ITEM_NORMAL,text='Atom style',
-            help='Select atoms first')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWATOMLABEL, kind=wx.ITEM_NORMAL,text='Atom label',
-            help='Select atoms first')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWATOMCOLOR, kind=wx.ITEM_NORMAL,text='Atom color',
-            help='Select atoms first')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWATOMRESETCOLOR, kind=wx.ITEM_NORMAL,text='Reset atom colors',
-            help='Resets all atom colors to defaults')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRWAEDITRADII, kind=wx.ITEM_NORMAL,text='Edit atom radii',
-            help='Edit drawing atom radii')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWVIEWPOINT, kind=wx.ITEM_NORMAL,text='View point',
-            help='View point is 1st atom selected')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
-            help='Add symmetry & cell equivalents to drawing set from selected atoms')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWADDSPHERE, kind=wx.ITEM_NORMAL,text='Add sphere of atoms',
-            help='Add atoms within sphere of enclosure')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform draw atoms',
-            help='Transform selected atoms by symmetry & cell translations')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',
-            help='Fill coordination sphere for selected atoms')            
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWFILLCELL, kind=wx.ITEM_NORMAL,text='Fill unit cell',
-            help='Fill unit cell with selected atoms')
-        self.DrawAtomEdit.Append(id=G2G.wxID_DRAWDELETE, kind=wx.ITEM_NORMAL,text='Delete atoms',
-            help='Delete atoms from drawing set')
-        self.DrawAtomCompute.Append(id=G2G.wxID_DRAWDISTVP, kind=wx.ITEM_NORMAL,text='View pt. dist.',
-            help='Compute distance of selected atoms from view point')   
-        self.DrawAtomCompute.Append(id=G2G.wxID_DRAWDISAGLTOR, kind=wx.ITEM_NORMAL,text='Dist. Ang. Tors.',
-            help='Compute distance, angle or torsion for 2-4 selected atoms')   
-        self.DrawAtomCompute.Append(id=G2G.wxID_DRAWPLANE, kind=wx.ITEM_NORMAL,text='Best plane',
-            help='Compute best plane for 4+ selected atoms')   
-        self.DrawAtomRestraint.Append(id=G2G.wxID_DRAWRESTRBOND, kind=wx.ITEM_NORMAL,text='Add bond restraint',
-            help='Add bond restraint for selected atoms (2)')
-        self.DrawAtomRestraint.Append(id=G2G.wxID_DRAWRESTRANGLE, kind=wx.ITEM_NORMAL,text='Add angle restraint',
-            help='Add angle restraint for selected atoms (3: one end 1st)')
-        self.DrawAtomRestraint.Append(id=G2G.wxID_DRAWRESTRPLANE, kind=wx.ITEM_NORMAL,text='Add plane restraint',
-            help='Add plane restraint for selected atoms (4+)')
-        self.DrawAtomRestraint.Append(id=G2G.wxID_DRAWRESTRCHIRAL, kind=wx.ITEM_NORMAL,text='Add chiral restraint',
-            help='Add chiral restraint for selected atoms (4: center atom 1st)')
-        self.DrawAtomRigidBody.Append(id=G2G.wxID_DRAWDEFINERB, kind=wx.ITEM_NORMAL,text='Define rigid body',
-            help='Define rigid body with selected atoms')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMSTYLE,'Atom style','Select atoms first')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMLABEL,'Atom label','Select atoms first')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMCOLOR,'Atom color','Select atoms first')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWATOMRESETCOLOR,'Reset atom colors','Resets all atom colors to defaults')
+        self.DrawAtomEdit.Append(G2G.wxID_DRWAEDITRADII,'Edit atom radii','Edit drawing atom radii')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWVIEWPOINT,'View point','View point is 1st atom selected')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWADDEQUIV,'Add atoms','Add symmetry & cell equivalents to drawing set from selected atoms')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWADDSPHERE,'Add sphere of atoms','Add atoms within sphere of enclosure')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWTRANSFORM,'Transform draw atoms','Transform selected atoms by symmetry & cell translations')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCOORD,'Fill CN-sphere','Fill coordination sphere for selected atoms')            
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWFILLCELL,'Fill unit cell','Fill unit cell with selected atoms')
+        self.DrawAtomEdit.Append(G2G.wxID_DRAWDELETE,'Delete atoms','Delete atoms from drawing set')
+        self.DrawAtomCompute.Append(G2G.wxID_DRAWDISTVP,'View pt. dist.','Compute distance of selected atoms from view point')   
+        self.DrawAtomCompute.Append(G2G.wxID_DRAWDISAGLTOR,'Dist. Ang. Tors.',
+            'Compute distance, angle or torsion for 2-4 selected atoms')   
+        self.DrawAtomCompute.Append(G2G.wxID_DRAWPLANE,'Best plane','Compute best plane for 4+ selected atoms')   
+        self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRBOND,'Add bond restraint','Add bond restraint for selected atoms (2)')
+        self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRANGLE,'Add angle restraint',
+            'Add angle restraint for selected atoms (3: one end 1st)')
+        self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRPLANE,'Add plane restraint',
+            'Add plane restraint for selected atoms (4+)')
+        self.DrawAtomRestraint.Append(G2G.wxID_DRAWRESTRCHIRAL,'Add chiral restraint',
+            'Add chiral restraint for selected atoms (4: center atom 1st)')
+        self.DrawAtomRigidBody.Append(G2G.wxID_DRAWDEFINERB,'Define rigid body','Define rigid body with selected atoms')
         self.PostfillDataMenu()
 
         # Phase / MCSA tab
@@ -5515,16 +5211,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MCSAMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MCSAEdit = wx.Menu(title='')
         self.MCSAMenu.Append(menu=self.MCSAEdit, title='MC/SA')
-        self.MCSAEdit.Append(id=G2G.wxID_ADDMCSAATOM, kind=wx.ITEM_NORMAL,text='Add atom', 
-            help='Add single atom to MC/SA model')
-        self.MCSAEdit.Append(id=G2G.wxID_ADDMCSARB, kind=wx.ITEM_NORMAL,text='Add rigid body', 
-            help='Add rigid body to MC/SA model' )
-        self.MCSAEdit.Append(id=G2G.wxID_CLEARMCSARB, kind=wx.ITEM_NORMAL,text='Clear rigid bodies', 
-            help='Clear all atoms & rigid bodies from MC/SA model' )
-        self.MCSAEdit.Append(id=G2G.wxID_MOVEMCSA, kind=wx.ITEM_NORMAL,text='Move MC/SA solution', 
-            help='Move MC/SA solution to atom list' )
-        self.MCSAEdit.Append(id=G2G.wxID_MCSACLEARRESULTS, kind=wx.ITEM_NORMAL,text='Clear results', 
-            help='Clear table of MC/SA results' )
+        self.MCSAEdit.Append(G2G.wxID_ADDMCSAATOM,'Add atom','Add single atom to MC/SA model')
+        self.MCSAEdit.Append(G2G.wxID_ADDMCSARB,'Add rigid body','Add rigid body to MC/SA model' )
+        self.MCSAEdit.Append(G2G.wxID_CLEARMCSARB,'Clear rigid bodies','Clear all atoms & rigid bodies from MC/SA model' )
+        self.MCSAEdit.Append(G2G.wxID_MOVEMCSA,'Move MC/SA solution','Move MC/SA solution to atom list' )
+        self.MCSAEdit.Append(G2G.wxID_MCSACLEARRESULTS,'Clear results','Clear table of MC/SA results' )
         self.PostfillDataMenu()
             
         # Phase / Texture tab
@@ -5534,10 +5225,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
-        self.TextureEdit.Append(id=G2G.wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
-            help='Refine the texture coefficients from sequential results')
-#        self.TextureEdit.Append(id=G2G.wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
-#            help='Clear the texture coefficients' )
+        self.TextureEdit.Append(G2G.wxID_REFINETEXTURE,'Refine texture','Refine the texture coefficients from sequential results')
         self.PostfillDataMenu()
             
         # Phase / Pawley tab
@@ -5548,20 +5236,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PawleyMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.PawleyEdit = wx.Menu(title='')
         self.PawleyMenu.Append(menu=self.PawleyEdit,title='Operations')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYSET, kind=wx.ITEM_NORMAL,text='Pawley settings',
-            help='Change Pawley refinement settings')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYLOAD, kind=wx.ITEM_NORMAL,text='Pawley create',
-            help='Initialize Pawley reflection list')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYESTIMATE, kind=wx.ITEM_NORMAL,text='Pawley estimate',
-            help='Estimate initial Pawley intensities')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYUPDATE, kind=wx.ITEM_NORMAL,text='Pawley update',
-            help='Update negative Pawley intensities with -0.5*Fobs and turn off refinement')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYSELALL, kind=wx.ITEM_NORMAL,text='Select all',
-            help='Select all reflections to be refined')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYSELNONE, kind=wx.ITEM_NORMAL,text='Select none',
-            help='Set flag for all reflections for no refinement')
-        self.PawleyEdit.Append(id=G2G.wxID_PAWLEYSELTOGGLE, kind=wx.ITEM_NORMAL,text='Toggle Selection',
-            help='Toggle Selection flag for all reflections to opposite setting')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSET,'Pawley settings','Change Pawley refinement settings')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYLOAD,'Pawley create','Initialize Pawley reflection list')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYESTIMATE,'Pawley estimate','Estimate initial Pawley intensities')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYUPDATE,'Pawley update','Update negative Pawley intensities with -0.5*Fobs and turn off refinement')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELALL,'Select all','Select all reflections to be refined')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELNONE,'Select none','Set flag for all reflections for no refinement')
+        self.PawleyEdit.Append(G2G.wxID_PAWLEYSELTOGGLE,'Toggle Selection','Toggle Selection flag for all reflections to opposite setting')
         self.PostfillDataMenu()
             
         # Phase / Map peaks tab
@@ -5572,24 +5253,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MapPeaksMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MapPeaksEdit = wx.Menu(title='')
         self.MapPeaksMenu.Append(menu=self.MapPeaksEdit, title='Map peaks')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks', 
-            help='Move selected peaks to atom list')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSVIEWPT, kind=wx.ITEM_NORMAL,text='View point',
-            help='View point is 1st peak selected')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSDISTVP, kind=wx.ITEM_NORMAL,text='View pt. dist.',
-            help='Compute distance of selected peaks from view point')   
-        self.MapPeaksEdit.Append(id=G2G.wxID_SHOWBONDS, kind=wx.ITEM_NORMAL,text='Hide bonds',
-            help='Hide or show bonds between peak positions')   
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSDA, kind=wx.ITEM_NORMAL,text='Calc dist/ang', 
-            help='Calculate distance or angle for selection')
-        self.MapPeaksEdit.Append(id=G2G.wxID_FINDEQVPEAKS, kind=wx.ITEM_NORMAL,text='Equivalent peaks', 
-            help='Find equivalent peaks')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSUNIQUE, kind=wx.ITEM_NORMAL,text='Unique peaks', 
-            help='Select unique set')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSDELETE, kind=wx.ITEM_NORMAL,text='Delete peaks', 
-            help='Delete selected peaks')
-        self.MapPeaksEdit.Append(id=G2G.wxID_PEAKSCLEAR, kind=wx.ITEM_NORMAL,text='Clear peaks', 
-            help='Clear the map peak list')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSMOVE,'Move peaks','Move selected peaks to atom list')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSVIEWPT,'View point','View point is 1st peak selected')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSDISTVP,'View pt. dist.','Compute distance of selected peaks from view point')   
+        self.MapPeaksEdit.Append(G2G.wxID_SHOWBONDS,'Hide bonds','Hide or show bonds between peak positions')   
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSDA,'Calc dist/ang','Calculate distance or angle for selection')
+        self.MapPeaksEdit.Append(G2G.wxID_FINDEQVPEAKS,'Equivalent peaks','Find equivalent peaks')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSUNIQUE,'Unique peaks','Select unique set')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSDELETE,'Delete peaks','Delete selected peaks')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSCLEAR,'Clear peaks','Clear the map peak list')
         self.PostfillDataMenu()
 
         # Phase / Rigid bodies tab
@@ -5601,81 +5273,22 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.RigidBodiesEdit = wx.Menu(title='')
         self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit Body')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',
-            help='Select & position rigid body in structure of existing atoms')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_AUTOFINDRESRB, kind=wx.ITEM_NORMAL,text='Auto find residues',
-            help='Auto find of residue RBs in macromolecule')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_COPYRBPARMS, kind=wx.ITEM_NORMAL,text='Copy rigid body parms',
-            help='Copy rigid body location & TLS parameters')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_GLOBALTHERM, kind=wx.ITEM_NORMAL,text='Global thermal motion',
-            help='Global setting of residue thermal motion models')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_GLOBALRESREFINE, kind=wx.ITEM_NORMAL,text='Global residue refine',
-            help='Global setting of residue RB refinement flags')
-        self.RigidBodiesEdit.Append(id=G2G.wxID_RBREMOVEALL, kind=wx.ITEM_NORMAL,text='Remove all rigid bodies',
-            help='Remove all rigid body assignment for atoms')
+        self.RigidBodiesEdit.Append(G2G.wxID_ASSIGNATMS2RB,'Assign atoms to rigid body',
+            'Select & position rigid body in structure of existing atoms')
+        self.RigidBodiesEdit.Append(G2G.wxID_AUTOFINDRESRB,'Auto find residues',
+            'Auto find of residue RBs in macromolecule')
+        self.RigidBodiesEdit.Append(G2G.wxID_COPYRBPARMS,'Copy rigid body parms',
+            'Copy rigid body location & TLS parameters')
+        self.RigidBodiesEdit.Append(G2G.wxID_GLOBALTHERM,'Global thermal motion',
+            'Global setting of residue thermal motion models')
+        self.RigidBodiesEdit.Append(G2G.wxID_GLOBALRESREFINE,'Global residue refine',
+            'Global setting of residue RB refinement flags')
+        self.RigidBodiesEdit.Append(G2G.wxID_RBREMOVEALL,'Remove all rigid bodies',
+            'Remove all rigid body assignment for atoms')
         self.PostfillDataMenu()
     # end of GSAS-II menu definitions
     
         
-#TODO - remove         
-#    def _init_ctrls(self, parent,name=None,size=None,pos=None):
-#        wx.Frame.__init__(
-#            self,parent=parent,
-#            #style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX | wx.FRAME_FLOAT_ON_PARENT ,
-#            style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
-#            size=size,pos=pos,title='GSAS-II data display')
-#        self._init_menus()
-#        if name:
-#            self.SetLabel(name)
-#        self.Show()
-#
-#    def __init__(self,parent,frame,data=None,name=None, size=None,pos=None):
-#        self.G2frame = frame
-#        self._init_ctrls(parent,name,size,pos)
-#        self.data = data
-#        clientSize = wx.ClientDisplayRect()
-#        Size = self.GetSize()
-#        xPos = clientSize[2]-Size[0]
-#        self.SetPosition(wx.Point(xPos,clientSize[1]+250))
-#        self.AtomGrid = []
-#        self.selectedRow = 0
-#        self.lastSize = Size        
-#        self.manualPhaseSize = None
-#        self.userReSize = False
-#        wx.Frame.Bind(self,wx.EVT_SIZE,self.OnReSize)
-#            
-#    def OnReSize(self,event):
-#        '''Keep track of size changes for Phase windows
-#        '''
-#        id = self.G2frame.GPXtree.GetSelection()
-#        try:
-#            parent = self.G2frame.GPXtree.GetItemParent(id)
-#        except:         #avoid bad tree item on start via gpx file selection 
-#            parent = 0
-#        if self.userReSize and parent and self.G2frame.GPXtree.GetItemText(parent) == "Phases":
-#            newSize = event.EventObject.GetSize()
-#            if newSize[1] < 200: return             #avois spurious small window after Refine
-#            if self.lastSize == newSize:
-##                if GSASIIpath.GetConfigValue('debug'):
-##                    print 'no save size=',self.lastSize
-#                return
-#            self.manualPhaseSize = newSize
-#            self.lastSize = event.EventObject.GetSize()
-##            if GSASIIpath.GetConfigValue('debug'):
-##                print 'Saving Phase size=',self.manualPhaseSize
-#                #HowDidIgetHere()
-#        event.Skip()
-#
-#    def SendSizeEvent(self):
-#        '''Prevent SendSizeEvent from overriding the saved size
-#        '''
-#        self.userReSize = False
-#        wx.Frame.SendSizeEvent(self)
-#        self.userReSize = True
-#                
-#    def Clear(self):
-#        self.ClearBackground()
-#        self.DestroyChildren()
                    
 ################################################################################
 #####  Notebook Tree Item editor
@@ -6069,7 +5682,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 info = ma.array(items,mask=useCol+noneMask)
                 ave = ma.mean(ma.compressed(info))
                 sig = ma.std(ma.compressed(info))
-                print u' Average for '+G2frame.SeqTable.GetColLabelValue(col)+u': '+'%.6g'%(ave)+u' +/- '+u'%.6g'%(sig)
+                print (u' Average for '+G2frame.SeqTable.GetColLabelValue(col)+u': '+'%.6g'%(ave)+u' +/- '+u'%.6g'%(sig))
         else:
             G2frame.ErrorDialog('Select columns',
                 'No columns selected in table. Click on column labels to select fields for averaging.')
@@ -6258,7 +5871,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def DelPseudoVar(event):
         'Ask the user to select a pseudo var expression to delete'
-        choices = data['SeqPseudoVars'].keys()
+        choices = list(data['SeqPseudoVars'].keys())
         selected = G2G.ItemSelector(
             choices,G2frame,
             multiple=True,
@@ -6272,7 +5885,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def EditPseudoVar(event):
         'Edit an existing pseudo var expression'
-        choices = data['SeqPseudoVars'].keys()
+        choices = list(data['SeqPseudoVars'].keys())
         if len(choices) == 1:
             selected = 0
         else:
@@ -6554,7 +6167,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         varyList = varyValueDict.keys()
         values = varyValues = [varyValueDict[key] for key in varyList]
         if not varyList:
-            print 'no variables to refine!'
+            print ('no variables to refine!')
             return
         try:
             result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
@@ -6572,7 +6185,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             print('====> Fit failed')
             return
         print('==== Fit Results ====')
-        print '  chisq =  %.2f, GOF = %.2f'%(chisq,GOF)
+        print ('  chisq =  %.2f, GOF = %.2f'%(chisq,GOF))
         for obj in eqObjList:
             obj.UpdateVariedVars(varyList,values)
             ind = '      '
@@ -6700,7 +6313,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         (from data['variableLabels']) or the default name
         '''
         if col < 0 or col > len(colLabels):
-            print 'Illegal column #',col
+            print ('Illegal column #%d'%col)
             return
         var = colLabels[col]
         return variableLabels.get(var,G2obj.fmtVarDescr(var))
@@ -6746,7 +6359,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnCellChange(event):
         r = event.GetRow()
         val = G2frame.SeqTable.GetValue(r,0)
-        print r,val
+#        print (r,val)
         G2frame.SeqTable.SetValue(r,0, val)
     
     # lookup table for unique cell parameters by symmetry
@@ -6767,7 +6380,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # start processing sequential results here (UpdateSeqResults)
     #======================================================================
     if not data:
-        print 'No sequential refinement results'
+        print ('No sequential refinement results')
         return
     variableLabels = data.get('variableLabels',{})
     data['variableLabels'] = variableLabels
@@ -6879,7 +6492,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if missing < 5:
                 print(" Warning: "+name+" not found")
             elif missing == 5:
-                print ' Warning: more are missing'
+                print (' Warning: more are missing')
             missing += 1
             continue
         foundNames.append(name)
@@ -6905,7 +6518,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 posdict[name][combinedVaryList.index(svar)] = svar
             VaryListChanges.append(name)
     if missing:
-        print ' Warning: Total of %d data sets missing from sequential results'%(missing)
+        print (' Warning: Total of %d data sets missing from sequential results'%(missing))
     #if len(VaryListChanges) > 1:
     #    G2frame.dataWindow.SequentialFile.Enable(G2G.wxID_ORGSEQSEL,True)
     #else:
@@ -7071,7 +6684,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colList += [depValDict[var]]
 
     # add atom parameters to table
-    colLabels += atomLookup.keys()
+    colLabels += list(atomLookup.keys())
     for parm in sorted(atomLookup):
         G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
@@ -7199,7 +6812,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+    if 'phoenix' in wx.version():
+        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+    else:
+        G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
@@ -7374,10 +6990,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         mergeRef = np.array(mergeRef)
         if sumFo:
             mtext = ' merge R = %6.2f%s for %d reflections in %s'%(100.*sumDf/sumFo,'%',mergeRef.shape[0],Laue)
-            print mtext
+            print (mtext)
             Comments.append(mtext)
         else:
-            print 'nothing to merge for %s reflections'%(mergeRef.shape[0])
+            print( 'nothing to merge for %s reflections'%(mergeRef.shape[0]))
         HKLFlist = []
         newName = Name+u' '+Laue
         if G2frame.GPXtree.GetCount():
@@ -7389,7 +7005,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         newName = G2obj.MakeUniqueLabel(newName,HKLFlist)
         newData = copy.deepcopy(data)
-        newData[0]['ranId'] = ran.randint(0,sys.maxint)
+        newData[0]['ranId'] = ran.randint(0,sys.maxsize)
         newData[1]['RefList'] = mergeRef
         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=newName)
         G2frame.GPXtree.SetItemPyData(
@@ -7594,7 +7210,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         #if GSASIIpath.GetConfigValue('debug'): print 'Testing grid edit in',grid
         try: 
             if grid.IsCellEditControlEnabled(): # complete any grid edits in progress
-                if GSASIIpath.GetConfigValue('debug'): print 'Completing grid edit in',grid
+                if GSASIIpath.GetConfigValue('debug'): print ('Completing grid edit in%s'%str(grid))
                 grid.HideCellEditControl()
                 grid.DisableCellEditControl()
         except:
@@ -7653,7 +7269,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         except IndexError:
             G2frame.dataWindow.helpKey = ''
             if GSASIIpath.GetConfigValue('debug'):
-                print 'bug: why here?'
+                print ('bug: why here?')
                 G2obj.HowDidIgetHere()
         
     # clear out the old panel contents
@@ -7706,7 +7322,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             Phases = G2frame.GetPhaseData()
             phaseName = ''
             if Phases:
-                phaseName = Phases.keys()[0]
+                phaseName = list(Phases.keys())[0]
             G2restG.UpdateRestraints(G2frame,data,Phases,phaseName)
         elif G2frame.GPXtree.GetItemText(item).startswith('IMG '):
             G2frame.Image = item
@@ -7898,7 +7514,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(item)
         G2frame.RefList = ''
         if len(data):
-            G2frame.RefList = data.keys()[0]
+            G2frame.RefList = list(data.keys())[0]
         G2pdG.UpdateReflectionGrid(G2frame,data)
         wx.CallAfter(G2plt.PlotPatterns,G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections

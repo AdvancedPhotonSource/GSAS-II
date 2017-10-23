@@ -262,7 +262,7 @@ def GetXsectionCoeff(El):
     try:
         xsec = open(filename,'Ur')
     except:
-        print '**** ERROR - File Xsect.dat not found in directory %s' % os.path.split(filename)[0]
+        print ('**** ERROR - File Xsect.dat not found in directory %s'%os.path.split(filename)[0])
         sys.exit()
     S = '1'
     Orbs = []

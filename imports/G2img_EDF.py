@@ -12,6 +12,7 @@
 
 '''
 
+from __future__ import division, print_function
 import os
 import numpy as np
 import GSASIIobj as G2obj
@@ -29,7 +30,7 @@ class EDF_ReaderClass(G2obj.ImportImage):
             longFormatName = 'European Data Format image file'
             )
 
-    def ContentsValidator(self, filepointer):        
+    def ContentsValidator(self, filename):        
         '''no test used at this time
         '''
         return True
@@ -44,10 +45,10 @@ class EDF_ReaderClass(G2obj.ImportImage):
 def GetEdfData(filename,imageOnly=False):    
     'Read European detector data edf file'
     if not imageOnly:
-        print 'Read European detector data edf file: ',filename
+        print ('Read European detector data edf file: '+filename)
     File = open(filename,'rb')
     fileSize = os.stat(filename).st_size
-    head = File.read(3072)
+    head = File.read(3072).decode(encoding='latin-1')
     lines = head.split('\n')
     sizexy = [0,0]
     pixSize = [154,154]     #Pixium4700?

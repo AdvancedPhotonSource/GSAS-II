@@ -7,6 +7,7 @@
 # $Id: $
 ########### SVN repository information ###################
 
+from __future__ import division, print_function
 import os
 import numpy as np
 import GSASIIobj as G2obj
@@ -35,14 +36,15 @@ class Rigaku_ReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         self.vals = None
         self.stepsize = None
         j = 0
         prevAngle = None
         header = True
         self.skip = -1
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,line in enumerate(fp):
             sline = line.split()
             vals = len(sline)
             if header:
@@ -60,12 +62,13 @@ class Rigaku_ReaderClass(G2obj.ImportPowderData):
                 header = False # found first non-header line
             if vals < 2:
                 print('Too few values for Rigaku .txt file')
+                fp.close()
                 return False
             if self.vals is None:
                 self.vals = vals
             elif self.vals != vals:
-                print('Inconsistent numbers values for Rigaku .txt file on line '+
-                      str(i+1))
+                print('Inconsistent numbers values for Rigaku .txt file on line '+str(i+1))
+                fp.close()
                 return False
             else:
                 j += 1
@@ -73,6 +76,7 @@ class Rigaku_ReaderClass(G2obj.ImportPowderData):
                 angle = float(sline[0])
             except:
                 print('Unable to read angle on line '+str(i+1))
+                fp.close()
                 return False
             if prevAngle is None:
                 prevAngle = angle
@@ -84,16 +88,21 @@ class Rigaku_ReaderClass(G2obj.ImportPowderData):
             elif abs(self.stepsize - stepsize) > max(abs(stepsize),abs(self.stepsize))/10000. :
                 print('Inconsistent step size for Rigaku .txt file on line '+
                         str(i+1) + ' here '+ repr(stepsize) + ' prev '+ repr(self.stepsize))
+                fp.close()
                 return False
-            if j > 30: return True
+            if j > 30:
+                fp.close()
+                return True
+        fp.close()
         return False
             
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Rigaku .txt file'
         x = []
         y = []
         w = []
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,line in enumerate(fp):
             if i < self.skip: continue
             sline = line.split()
             try: 

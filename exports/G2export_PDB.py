@@ -15,17 +15,13 @@ ASCII PDB format. Also defines exporter :class:`ExportPhaseCartXYZ`
 which writes atom positions in orthogonal coordinates for a phase.
 
 '''
+from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIstrIO as G2stIO
-#import GSASIImath as G2mth
 import GSASIIlattice as G2lat
-import GSASIIspc as G2spc
-#import GSASIIphsGUI as G2pg
-#import GSASIIstrMain as G2stMn
 
 class ExportPhasePDB(G2IO.ExportBaseclass):
     '''Used to create a PDB file for a phase
@@ -104,7 +100,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             self.Write('DBREF')
             
         def PDBseqres(seqList):
-            chains = seqList.keys()
+            chains = list(seqList.keys())
             chains.sort()
             nSeq = 0
             for chain in chains:
@@ -132,7 +128,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
             if General['Type'] != 'macromolecular':
-                print 'phase '+phasenam+' not macromolecular, skipping'
+                print ('phase '+phasenam+' not macromolecular, skipping')
                 continue
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #

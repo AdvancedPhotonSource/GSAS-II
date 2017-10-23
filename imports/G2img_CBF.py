@@ -12,6 +12,7 @@
 
 '''
 
+from __future__ import division, print_function
 import time
 import GSASIIobj as G2obj
 import GSASIIpath
@@ -29,12 +30,12 @@ class CBF_ReaderClass(G2obj.ImportImage):
             longFormatName = 'CIF Binary Data Format image file (NB: Slow!)'
             )
 
-    def ContentsValidator(self, filepointer):        
+    def ContentsValidator(self, filename):        
         '''no test used at this time
         '''
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         '''Read using Bob's routine :func:`GetCbfData`
         '''
         self.Comments,self.Data,self.Npix,self.Image = GetCbfData(self,filename)
@@ -48,7 +49,7 @@ def GetCbfData(self,filename):
     
     import numpy as np
     if GSASIIpath.GetConfigValue('debug'):
-        print 'Read cif binary detector data cbf file: ',filename
+        print ('Read cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')
     sizexy = [0,0]
     pixSize = [154,154]     #Pixium4700?
@@ -57,7 +58,8 @@ def GetCbfData(self,filename):
     dist = 1000.
     byteOrd = '<'
     stream = File.read()
-    File.close()
+    if 'bytes' in str(type(stream)):
+        stream = stream.decode('latin-1')
     starter = '\x0c\x1a\x04\xd5'
     imageBeg = stream.find(starter)+4
     head = stream[:imageBeg]
@@ -96,7 +98,7 @@ def GetCbfData(self,filename):
     nimg = len(compImage)
     image = cbf.unpack_cbf(nimg,compImage,nxy,image)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    print 'import time:',time.time()-time0
+    print ('import time: %.3f'%(time.time()-time0))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
     

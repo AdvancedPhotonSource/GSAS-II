@@ -14,7 +14,7 @@ Cf2py depend(MX,MY) IMG
       INTEGER*4 IMG(0:MX-1,0:MY-1),NEXTINT
       INTEGER*4 SPILL,ROW,COL,PIXNUM,MM1
       INTEGER*2 TMP
-      CHARACTER*1 CMPR(0:N-1)
+      LOGICAL*1 CMPR(0:N-1)
       DATA BITDECODE /0,4,5,6,7,8,16,32/
       DATA SETBITS /Z'0000',Z'0001',Z'0003',Z'0007',
      1  Z'000F',Z'001F',Z'003F',Z'007F',Z'00FF',
@@ -39,7 +39,8 @@ Cf2py depend(MX,MY) IMG
             VALIDS = VALIDS + SPILLBITS
             SPILLBITS = 0
           ELSE
-            SPILL = ICHAR(CMPR(IN))
+            SPILL = CMPR(IN)
+C            SPILL = ICHAR(CMPR(IN))
             IN = IN+1
             SPILLBITS = 8
           END IF
@@ -63,7 +64,8 @@ Cf2py depend(MX,MY) IMG
                   VALIDS = 32
                 END IF
               ELSE
-                SPILL = ICHAR(CMPR(IN))
+                SPILL = CMPR(IN)
+C                SPILL = ICHAR(CMPR(IN))
                 IN = IN+1
                 SPILLBITS = 8
               END IF                

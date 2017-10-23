@@ -14,6 +14,7 @@
 Module to provide logging services, e.g. track and replay "actions"
 such as menu item, tree item, button press, value change and so on. 
 '''
+from __future__ import division, print_function
 try:
     import wx
 except ImportError:
@@ -88,7 +89,7 @@ class VarLogEntry(LogEntry):
         self.treeRefs = treeRefs
         self.indexRefs = indexRefs
         self.value = value
-        if debug: print 'Logging var change: w/treeRefs',treeRefs,'indexRefs',indexRefs,'new value=',value
+        if debug: print ('Logging var change: w/treeRefs',treeRefs,'indexRefs',indexRefs,'new value=',value)
     def __str__(self):
         treeList = self.treeRefs[:]
         if type(treeList[0]) is tuple:
@@ -129,7 +130,7 @@ class MenuLogEntry(LogEntry):
             for item in t:
                 if l: l += ' -> '
                 l += item
-            print 'Logging menu command: '+l
+            print ('Logging menu command: '+l)
     def __str__(self):
         return 'Menu press: From '+_l2s(self.menulabellist,'/')
     def Replay(self):
@@ -151,12 +152,12 @@ class TabLogEntry(LogEntry):
     def __init__(self,title,tabname):
         self.wintitle = title
         self.tablabel = tabname
-        if debug: print 'Logging tab: "'+tabname+'" on window titled '+title
+        if debug: print ('Logging tab: "'+tabname+'" on window titled '+title)
     def __str__(self):
         return 'Tab press: Tab='+_l2s([self.tablabel])+' on window labeled '+str(self.wintitle)
     def Repaint(self):
         'Used to redraw a window created in response to a Tab press'
-        if debug: print 'Repaint'
+        if debug: print ('Repaint')
         saveval = LogInfo['LastPaintAction']
         self.Replay()
         LogInfo['LastPaintAction'] = saveval
@@ -166,16 +167,16 @@ class TabLogEntry(LogEntry):
         tabname = self.tablabel
         LogInfo['LastPaintAction'] = self
         if LogInfo['Tree'].G2frame.GetTitle() != wintitle:
-            print LogInfo['Tree'].G2frame.GetTitle(),' != ',wintitle
+            print (LogInfo['Tree'].G2frame.GetTitle()+' != '+wintitle)
             raise Exception('tab in wrong window')
         for PageNum in range(LogInfo['Tree'].G2frame.dataDisplay.GetPageCount()):
             if tabname == LogInfo['Tree'].G2frame.dataDisplay.GetPageText(PageNum):
                 LogInfo['Tree'].G2frame.dataDisplay.SetSelection(PageNum)
                 return
         else:
-            print tabname,'not in',[
+            print (tabname+'not in'+[
                 LogInfo['Tree'].G2frame.dataDisplay.GetPageText(PageNum) for
-                PageNum in range(LogInfo['Tree'].G2frame.dataDisplay.GetPageCount())]
+                PageNum in range(LogInfo['Tree'].G2frame.dataDisplay.GetPageCount())])
             raise Exception('tab not found')
 def MakeTabLog(title,tabname):
     'Create a TabLogEntry action log'
@@ -185,7 +186,7 @@ class TreeLogEntry(LogEntry):
     'Object to track when tree items are pressed in the main window'
     def __init__(self,itemlist):
         self.treeItemList = itemlist
-        if debug: print 'Logging press on tree: ',itemlist
+        if debug: print ('Logging press on tree: '+itemlist)
     def __str__(self):
         treeList = self.treeItemList[:]
         if type(treeList[0]) is tuple:
@@ -195,7 +196,7 @@ class TreeLogEntry(LogEntry):
         return 'Tree item pressed: '+_l2s(treeList)
     def Repaint(self):
         'Used to redraw a window created in response to a click on a data tree item'
-        if debug: print 'Repaint'
+        if debug: print ('Repaint')
         saveval = LogInfo['LastPaintAction']
         LogInfo['Tree'].SelectItem(LogInfo['Tree'].root) # need to select something else
         wx.Yield()
@@ -212,7 +213,7 @@ class TreeLogEntry(LogEntry):
                 txt = LogInfo['Tree'].ConvertRelativePhaseNum(txt)
             item = G2gd.GetGPXtreeItemId(LogInfo['Tree'].G2frame,parent,txt)
             if not item:
-                print 'Not found',txt
+                print ('Not found',+txt)
                 return
             else:
                 parent = item
@@ -227,7 +228,7 @@ class ButtonLogEntry(LogEntry):
     def __init__(self,locationcode,label):
         self.locationcode = locationcode
         self.label = label
-        if debug: print 'Logging '+label+' button press in '+locationcode
+        if debug: print ('Logging '+label+' button press in '+locationcode)
     def __str__(self):
         return 'Press of '+self.label+' button in '+self.locationcode
     def Replay(self):
@@ -353,11 +354,11 @@ def LogVarChange(result,key):
         if type(lastLog) is VarLogEntry:
             if lastLog.treeRefs == treevars and lastLog.indexRefs == fullrefs:
                 lastLog.value = result[key]
-                if debug: print 'update last log to ',result[key]
+                if debug: print ('update last log to '+result[key])
                 return
         G2logList.append(VarLogEntry(treevars,fullrefs,result[key]))
     else:
-        print key,'Error: var change has no provenance info'
+        print (key+' Error: var change has no provenance info')
 
 #===========================================================================
 # menu command tracking
@@ -409,7 +410,7 @@ def _getmenuinfo(id,G2frame,handler):
                 break
         else:
             # menu not found in menu, something is wrong
-            print 'error tracing menuitem to parent menu',menuLabelList
+            print ('error tracing menuitem to parent menu'+menuLabelList)
             #raise Exception('debug1: error tracing menuitem')
             return
         menu = parentmenu
@@ -427,7 +428,7 @@ def _getmenuinfo(id,G2frame,handler):
             return menuLabelList,menuitem
 
     # menu not found in menubar, something is wrong
-    print 'error tracing menuitem to menubar',menuLabelList
+    print ('error tracing menuitem to menubar'+menuLabelList)
     #raise Exception('debug2: error tracing menuitem')
     return
 
@@ -460,19 +461,19 @@ def InvokeMenuCommand(id,G2frame,event):
         handler = MenuBindingLookup[key][0]
         handler(event)
     else:
-        print 'Error no binding for menu command',menuLabelList,'id=',id
+        print ('Error no binding for menu command'+menuLabelList+'id=%d'%id)
         return
 
 #===========================================================================
 # Misc externally callable routines
 def LogOn():
     'Turn On logging of actions'
-    if debug: print 'LogOn'
+    if debug: print ('LogOn')
     LogInfo['Logging'] = True
 
 def LogOff():
     'Turn Off logging of actions'
-    if debug: print 'LogOff'
+    if debug: print ('LogOff')
     LogInfo['Logging'] = False
     
 def ShowLogStatus():
@@ -495,11 +496,11 @@ def OnReplayPress(event):
         return
     logstat = ShowLogStatus()
     if logstat: LogOff()
-    if debug: print 70*'='
+    if debug: print (70*'=')
     for i in sels:
         i += 1
         item = G2logList[i]
-        if debug: print 'replaying',item
+        if debug: print ('replaying'+item)
         item.Replay()
         wx.Yield()
     if i >= len(G2logList)-1:
@@ -507,7 +508,7 @@ def OnReplayPress(event):
     else:
         clb.DeselectAll()
         clb.SetSelection(i)
-    if debug: print 70*'='
+    if debug: print (70*'=')
     # if the last command did not display a window, repaint it in
     # case something on that window changed. 
     if item != LogInfo['LastPaintAction'] and hasattr(LogInfo['LastPaintAction'],'Repaint'):

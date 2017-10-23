@@ -14,6 +14,7 @@ Read structure factors from a CIF reflection table.
 '''
 # routines to read in structure factors from a CIF
 # 
+from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
@@ -32,11 +33,13 @@ class CIFhklReader(G2obj.ImportStructFactor):
             longFormatName = 'CIF format structure factor file (.cif or .hkl)'
             )
     # Validate the contents
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Use standard CIF validator'
-        return self.CIFValidator(filepointer)
+        fp = open(filename,'r')
+        return self.CIFValidator(fp)
+        fp.close()
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):
         '''Read single crystal data from a CIF.
         If multiple datasets are requested, use self.repeat and buffer caching.
         '''
@@ -91,7 +94,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         cf = None
         if self.repeat and rdbuffer is not None:
             cf = rdbuffer.get('lastcif')
-            print 'Reusing previously parsed CIF'
+            print ('Reusing previously parsed CIF')
         if cf is None:
             cf = G2obj.ReadCIF(filename)
         # scan blocks for reflections

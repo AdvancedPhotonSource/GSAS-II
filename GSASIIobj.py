@@ -896,12 +896,17 @@ letter or string flag value (such as I or A for iso/anisotropic).
 ----------------------
 
 '''
+from __future__ import division, print_function
+import platform
 import re
 import imp
 import random as ran
 import sys
 import os.path as ospath
-import cPickle
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import pickle as cPickle
 import GSASIIpath
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
@@ -938,7 +943,8 @@ def StripUnicode(string,subs='.'):
             s += c
         else:
             s += subs
-    return s.encode('ascii','replace')
+    return s
+#    return s.encode('ascii','replace')
 
 def MakeUniqueLabel(lbl,labellist):
     '''Make sure that every a label is unique against a list by adding
@@ -1058,7 +1064,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
     if SGData is None: SGData = P1SGData
     if cell is None: cell=[1.0,1.0,1.0,90.,90,90.,1.]
     phaseData = {
-        'ranId':ran.randint(0,sys.maxint),
+        'ranId':ran.randint(0,sys.maxsize),
         'General':{
             'Name':Name,
             'Type':'nuclear',
@@ -1149,7 +1155,7 @@ def IndexAllIds(Histograms,Phases):
         while ranId in PhaseRanIdLookup:
             # Found duplicate random Id! note and reassign
             print ("\n\n*** Phase "+str(ph)+" has repeated ranId. Fixing.\n")
-            Phases[ph]['ranId'] = ranId = ran.randint(0,sys.maxint)
+            Phases[ph]['ranId'] = ranId = ran.randint(0,sys.maxsize)
         pId = str(Phases[ph]['pId'])
         PhaseIdLookup[pId] = (ph,ranId)
         PhaseRanIdLookup[ranId] = pId
@@ -1163,7 +1169,7 @@ def IndexAllIds(Histograms,Phases):
             ranId = at[cia+8]
             while ranId in AtomRanIdLookup[pId]: # check for dups
                 print ("\n\n*** Phase "+str(ph)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
-                at[cia+8] = ranId = ran.randint(0,sys.maxint)
+                at[cia+8] = ranId = ran.randint(0,sys.maxsize)
             AtomRanIdLookup[pId][ranId] = str(iatm)
             if Phases[ph]['General']['Type'] == 'macromolecular':
                 label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
@@ -1179,7 +1185,7 @@ def IndexAllIds(Histograms,Phases):
         while ranId in HistRanIdLookup:
             # Found duplicate random Id! note and reassign
             print ("\n\n*** Histogram "+str(hist)+" has repeated ranId. Fixing.\n")
-            Histograms[hist]['ranId'] = ranId = ran.randint(0,sys.maxint)
+            Histograms[hist]['ranId'] = ranId = ran.randint(0,sys.maxsize)
         hId = str(Histograms[hist]['hId'])
         HistIdLookup[hId] = (hist,ranId)
         HistRanIdLookup[ranId] = hId
@@ -1197,14 +1203,14 @@ def LookupAtomId(pId,ranId):
     :returns: the index number of the atom (str)
     '''
     if not AtomRanIdLookup:
-        raise Exception,'Error: LookupAtomId called before IndexAllIds was run'
+        raise Exception('Error: LookupAtomId called before IndexAllIds was run')
     if pId is None or pId == '':
-        raise KeyError,'Error: phase is invalid (None or blank)'
+        raise KeyError('Error: phase is invalid (None or blank)')
     pId = str(pId)
     if pId not in AtomRanIdLookup:
-        raise KeyError,'Error: LookupAtomId does not have phase '+pId
+        raise KeyError('Error: LookupAtomId does not have phase '+pId)
     if ranId not in AtomRanIdLookup[pId]:
-        raise KeyError,'Error: LookupAtomId, ranId '+str(ranId)+' not in AtomRanIdLookup['+pId+']'
+        raise KeyError('Error: LookupAtomId, ranId '+str(ranId)+' not in AtomRanIdLookup['+pId+']')
     return AtomRanIdLookup[pId][ranId]
 
 def LookupAtomLabel(pId,index):
@@ -1216,14 +1222,14 @@ def LookupAtomLabel(pId,index):
     :returns: the label for the atom (str) and the random Id of the atom (int)
     '''
     if not AtomIdLookup:
-        raise Exception,'Error: LookupAtomLabel called before IndexAllIds was run'
+        raise Exception('Error: LookupAtomLabel called before IndexAllIds was run')
     if pId is None or pId == '':
-        raise KeyError,'Error: phase is invalid (None or blank)'
+        raise KeyError('Error: phase is invalid (None or blank)')
     pId = str(pId)
     if pId not in AtomIdLookup:
-        raise KeyError,'Error: LookupAtomLabel does not have phase '+pId
+        raise KeyError('Error: LookupAtomLabel does not have phase '+pId)
     if index not in AtomIdLookup[pId]:
-        raise KeyError,'Error: LookupAtomLabel, ranId '+str(index)+' not in AtomRanIdLookup['+pId+']'
+        raise KeyError('Error: LookupAtomLabel, ranId '+str(index)+' not in AtomRanIdLookup['+pId+']')
     return AtomIdLookup[pId][index]
 
 def LookupPhaseId(ranId):
@@ -1233,9 +1239,9 @@ def LookupPhaseId(ranId):
     :returns: the sequential Id (pId) number for the phase (str)
     '''
     if not PhaseRanIdLookup:
-        raise Exception,'Error: LookupPhaseId called before IndexAllIds was run'
+        raise Exception('Error: LookupPhaseId called before IndexAllIds was run')
     if ranId not in PhaseRanIdLookup:
-        raise KeyError,'Error: LookupPhaseId does not have ranId '+str(ranId)
+        raise KeyError('Error: LookupPhaseId does not have ranId '+str(ranId))
     return PhaseRanIdLookup[ranId]
 
 def LookupPhaseName(pId):
@@ -1246,12 +1252,12 @@ def LookupPhaseName(pId):
       and ranId is the random # id for the phase (int)
     '''
     if not PhaseIdLookup:
-        raise Exception,'Error: LookupPhaseName called before IndexAllIds was run'
+        raise Exception('Error: LookupPhaseName called before IndexAllIds was run')
     if pId is None or pId == '':
-        raise KeyError,'Error: phase is invalid (None or blank)'
+        raise KeyError('Error: phase is invalid (None or blank)')
     pId = str(pId)
     if pId not in PhaseIdLookup:
-        raise KeyError,'Error: LookupPhaseName does not have index '+pId
+        raise KeyError('Error: LookupPhaseName does not have index '+pId)
     return PhaseIdLookup[pId]
 
 def LookupHistId(ranId):
@@ -1261,9 +1267,9 @@ def LookupHistId(ranId):
     :returns: the sequential Id (hId) number for the histogram (str)
     '''
     if not HistRanIdLookup:
-        raise Exception,'Error: LookupHistId called before IndexAllIds was run'
+        raise Exception('Error: LookupHistId called before IndexAllIds was run')
     if ranId not in HistRanIdLookup:
-        raise KeyError,'Error: LookupHistId does not have ranId '+str(ranId)
+        raise KeyError('Error: LookupHistId does not have ranId '+str(ranId))
     return HistRanIdLookup[ranId]
 
 def LookupHistName(hId):
@@ -1274,12 +1280,12 @@ def LookupHistName(hId):
       and ranId is the random # id for the histogram (int)
     '''
     if not HistIdLookup:
-        raise Exception,'Error: LookupHistName called before IndexAllIds was run'
+        raise Exception('Error: LookupHistName called before IndexAllIds was run')
     if hId is None or hId == '':
-        raise KeyError,'Error: histogram is invalid (None or blank)'
+        raise KeyError('Error: histogram is invalid (None or blank)')
     hId = str(hId)
     if hId not in HistIdLookup:
-        raise KeyError,'Error: LookupHistName does not have index '+hId
+        raise KeyError('Error: LookupHistName does not have index '+hId)
     return HistIdLookup[hId]
 
 def fmtVarDescr(varname):
@@ -1701,7 +1707,7 @@ class G2VarObj(object):
                 elif len(lst) == 3:
                     pass
                 else:
-                    raise Exception,"Too many colons in var name "+str(args[0])
+                    raise Exception("Too many colons in var name "+str(args[0]))
             self.name = lst[2]
         elif len(args) == 4:
             if args[0] == '*':
@@ -1719,7 +1725,7 @@ class G2VarObj(object):
                 self.histogram = HistIdLookup.get(str(args[1]),[None,None])[1]
             self.name = args[2]
         else:
-            raise Exception,"Incorrectly called GSAS-II parameter name"
+            raise Exception("Incorrectly called GSAS-II parameter name")
 
         #print "DEBUG: created ",self.phase,self.histogram,self.name,self.atom
 
@@ -1797,16 +1803,16 @@ class G2VarObj(object):
 
     def _show(self):
         'For testing, shows the current lookup table'
-        print 'phases', self.IDdict['phases']
-        print 'hists', self.IDdict['hists']
-        print 'atomDict', self.IDdict['atoms']
+        print ('phases'+ self.IDdict['phases'])
+        print ('hists'+ self.IDdict['hists'])
+        print ('atomDict'+ self.IDdict['atoms'])
 
 #==========================================================================
 def SetDefaultSample():
     'Fills in default items for the Sample dictionary for Debye-Scherrer & SASD'
     return {
         'InstrName':'',
-        'ranId':ran.randint(0,sys.maxint),
+        'ranId':ran.randint(0,sys.maxsize),
         'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
         'Temperature':300.,'Pressure':0.1,'Time':0.0,
@@ -1894,22 +1900,25 @@ class ImportBaseclass(object):
             if sys.platform == 'windows': ext = ext.lower()
             if ext in self.extensionlist: return True
             if self.strictExtension: return False
-        return None
+        return 
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''This routine will attempt to determine if the file can be read
         with the current format.
         This will typically be overridden with a method that
         takes a quick scan of [some of]
         the file contents to do a "sanity" check if the file
         appears to match the selected format.
+        the file must be opened here with the correct format (binary/text)
         '''
         #filepointer.seek(0) # rewind the file pointer
         return True
 
-    def CIFValidator(self, filepointer):
+    def CIFValidator(self, filename):
         '''A :meth:`ContentsValidator` for use to validate CIF files.
         '''
+        filepointer = open(filename,'r')
+        filepointer.seek(0)
         for i,l in enumerate(filepointer):
             if i >= 1000: return True
             '''Encountered only blank lines or comments in first 1000
@@ -2593,9 +2602,9 @@ class ExpressionCalcObj(object):
         for v in self.eObj.assgnVars:
             varname = self.eObj.assgnVars[v]
             if '*' in varname:
-                varlist = LookupWildCard(varname,parmDict.keys())
+                varlist = LookupWildCard(varname,list(parmDict.keys()))
                 if len(varlist) == 0:
-                    raise Exception,"No variables match "+str(v)
+                    raise Exception("No variables match "+str(v))
                 for var in varlist:
                     self.lblLookup[var] = v
                 if parmsInList:
@@ -2658,7 +2667,7 @@ class ExpressionCalcObj(object):
             angle = G2mth.CalcAngle(self.eObj.angle_dict, self.eObj.angle_atoms, self.parmDict)
             return angle
         if self.compiledExpr is None:
-            raise Exception,"EvalExpression called before SetupCalc"
+            raise Exception("EvalExpression called before SetupCalc")
         try:
             val = eval(self.compiledExpr,globals(),self.exprDict)
         except TypeError:
@@ -2682,9 +2691,9 @@ def HowDidIgetHere(wherecalledonly=False):
         i = traceback.format_list(traceback.extract_stack()[:-1])[-2]
         print(i.strip().rstrip())
     else:
-        print 70*'*'
+        print (70*'*')
         for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip().rstrip())
-        print 70*'*'
+        print (70*'*')
 
 def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
@@ -2738,6 +2747,7 @@ class ShowTiming(object):
        tim0.show()
        
     '''
+    import time
     def __init__(self):
         self.timeSum =  []
         self.timeStart = []
@@ -2769,10 +2779,10 @@ class ShowTiming(object):
 if __name__ == "__main__":
     # test equation evaluation
     def showEQ(calcobj):
-        print 50*'='
-        print calcobj.eObj.expression,'=',calcobj.EvalExpression()
+        print (50*'=')
+        print (calcobj.eObj.expression+'='+calcobj.EvalExpression())
         for v in sorted(calcobj.varLookup):
-            print "  ",v,'=',calcobj.exprDict[v],'=',calcobj.varLookup[v]
+            print ("  "+v+'='+calcobj.exprDict[v]+'='+calcobj.varLookup[v])
         # print '  Derivatives'
         # for v in calcobj.derivStep.keys():
         #     print '    d(Expr)/d('+v+') =',calcobj.EvalDeriv(v)
@@ -2802,14 +2812,14 @@ if __name__ == "__main__":
     showEQ(calcobj2)
 
     parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
-    print '\nDict = ',parmDict1
+    print ('\nDict = '+parmDict1)
     calcobj.SetupCalc(parmDict1)
     showEQ(calcobj)
     calcobj1.SetupCalc(parmDict1)
     showEQ(calcobj1)
 
     parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
-    print 'Dict = ',parmDict2
+    print ('Dict = '+parmDict2)
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
     calcobj1.SetupCalc(parmDict2)

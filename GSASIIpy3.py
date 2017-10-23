@@ -6,7 +6,7 @@ Module to hold python 3-compatible code, to keep it separate from
 code that will break with __future__ options.
 
 '''
-from __future__ import division
+from __future__ import division, print_function
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -115,7 +115,7 @@ def FormatValue(val,maxdigits=None):
     try:
         return fmt.format(float(val)).strip()
     except ValueError:
-        print 'FormatValue Error with val,maxdigits,fmt=',val,maxdigits,fmt
+        print ('FormatValue Error with val,maxdigits,fmt= %f %d %s'%(val,maxdigits,fmt))
         return str(val)
 
 def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
@@ -168,15 +168,15 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
     try:
         return fmt.format(float(val)).strip()
     except ValueError:
-        print 'FormatValue Error with val,maxdigits, sigfigs, fmt=',val, maxdigits,sigfigs, fmt
+        print ('FormatValue Error with val,maxdigits, sigfigs, fmt=%f %d %d %s'%(val, maxdigits,sigfigs, fmt))
         return str(val)
 
 if __name__ == '__main__':
     for i in (1.23456789e-129,1.23456789e129,1.23456789e-99,1.23456789e99,-1.23456789e-99,-1.23456789e99):
-        print FormatSigFigs(i),i
+        print (FormatSigFigs(i),i)
     for i in (1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000):
-        print FormatSigFigs(1.23456789e-9*i),1.23456789e-9*i
+        print (FormatSigFigs(1.23456789e-9*i),1.23456789e-9*i)
     for i in (1,10,100,1000,10000,100000,1000000,10000000,100000000):
-        print FormatSigFigs(1.23456789e9/i),1.23456789e9/i
+        print (FormatSigFigs(1.23456789e9/i),1.23456789e9/i)
 
-    print FormatSigFigs(200,10,3)
+    print (FormatSigFigs(200,10,3))

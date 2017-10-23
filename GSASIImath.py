@@ -14,6 +14,7 @@
 Routines for least-squares minimization and other stuff
 
 '''
+from __future__ import division, print_function
 import random as rn
 import numpy as np
 import numpy.linalg as nl
@@ -154,7 +155,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     lamMax = lam
     nfev = 0
     if Print:
-        print ' Hessian Levenburg-Marquardt SVD refinement on %d variables:'%(n)
+        print (' Hessian Levenburg-Marquardt SVD refinement on %d variables:'%(n))
     Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()
@@ -170,7 +171,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            print 'initial chi^2 %.5g'%(chisq0)
+            print ('initial chi^2 %.5g'%(chisq0))
         chitol = ftol
         while True:
             Lam = np.eye(Amat.shape[0])*lam
@@ -178,7 +179,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             try:
                 Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
             except nl.LinAlgError:
-                print 'ouch #1 bad SVD inversion; change parameterization'
+                print ('ouch #1 bad SVD inversion; change parameterization')
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
             Xvec = np.inner(Ainv,Yvec)      #solve
@@ -189,23 +190,23 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             if chisq1 > chisq0*(1.+chitol):
                 lam *= 10.
                 if Print:
-                    print 'new chi^2 %.5g, %d SVD zeros ; matrix modification needed; lambda now %.1e'%(chisq1,Nzeros,lam)
+                    print ('new chi^2 %.5g, %d SVD zeros ; matrix modification needed; lambda now %.1e'%(chisq1,Nzeros,lam))
             else:
                 x0 += Xvec
                 lam /= 10.
                 break
             if lam > 10.e3:
-                print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
+                print ('ouch #3 chisq1 %g.4 stuck > chisq0 %g.4'%(chisq1,chisq0))
                 break
             chitol *= 2
         lamMax = max(lamMax,lam)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print ' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Lambda: %.3g,  Delta: %.3g'%(
-                icycle,time.time()-time0,chisq1,lamMax,deltaChi2)
+            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Lambda: %.3g,  Delta: %.3g'%(
+                icycle,time.time()-time0,chisq1,lamMax,deltaChi2))
         if deltaChi2 < ftol:
             ifConverged = True
-            if Print: print "converged"
+            if Print: print ("converged")
             break
         icycle += 1
     M = func(x0,*args)
@@ -218,12 +219,12 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     try:
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
 #        if Print:
-        print 'Found %d SVD zeros'%(Nzero)
+        if Print: print ('Found %d SVD zeros'%(Nzero))
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
-        print 'ouch #2 linear algebra error in making v-cov matrix'
+        print ('ouch #2 linear algebra error in making v-cov matrix')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -284,7 +285,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     icycle = 0
     nfev = 0
     if Print:
-        print ' Hessian SVD refinement on %d variables:'%(n)
+        print (' Hessian SVD refinement on %d variables:'%(n))
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
@@ -299,11 +300,11 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            print 'initial chi^2 %.5g'%(chisq0)
+            print ('initial chi^2 %.5g'%(chisq0))
         try:
             Ainv,Nzeros = pinv(Amat,xtol)    #do Moore-Penrose inversion (via SVD)
         except nl.LinAlgError:
-            print 'ouch #1 bad SVD inversion; change parameterization'
+            print ('ouch #1 bad SVD inversion; change parameterization')
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
         Xvec = np.inner(Ainv,Yvec)      #solve
@@ -313,11 +314,11 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         chisq1 = np.sum(M2**2)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print ' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
-                icycle,time.time()-time0,chisq1,deltaChi2)
+            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
+                icycle,time.time()-time0,chisq1,deltaChi2))
         if deltaChi2 < ftol:
             ifConverged = True
-            if Print: print "converged"
+            if Print: print ("converged")
             break
         icycle += 1
     M = func(x0,*args)
@@ -328,13 +329,13 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Amat = Amat/Anorm        
     try:
         Bmat,Nzero = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-        print 'Found %d SVD zeros'%(Nzero)
+        print ('Found %d SVD zeros'%(Nzero))
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':[],
             'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
-        print 'ouch #2 linear algebra error in making v-cov matrix'
+        print ('ouch #2 linear algebra error in making v-cov matrix')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -1685,33 +1686,33 @@ def ApplyModulation(data,tau):
 #          area += w[i]*f(x[i])                                    
 
 def gaulegf(a, b, n):
-  x = range(n+1) # x[0] unused
-  w = range(n+1) # w[0] unused
-  eps = 3.0E-14
-  m = (n+1)/2
-  xm = 0.5*(b+a)
-  xl = 0.5*(b-a)
-  for i in range(1,m+1):
-    z = math.cos(3.141592654*(i-0.25)/(n+0.5))
-    while True:
-      p1 = 1.0
-      p2 = 0.0
-      for j in range(1,n+1):
-        p3 = p2
-        p2 = p1
-        p1 = ((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j
+    x = range(n+1) # x[0] unused
+    w = range(n+1) # w[0] unused
+    eps = 3.0E-14
+    m = (n+1)/2
+    xm = 0.5*(b+a)
+    xl = 0.5*(b-a)
+    for i in range(1,m+1):
+        z = math.cos(3.141592654*(i-0.25)/(n+0.5))
+        while True:
+            p1 = 1.0
+            p2 = 0.0
+            for j in range(1,n+1):
+                p3 = p2
+                p2 = p1
+                p1 = ((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j
+        
+            pp = n*(z*p1-p2)/(z*z-1.0)
+            z1 = z
+            z = z1 - p1/pp
+            if abs(z-z1) <= eps:
+                break
 
-      pp = n*(z*p1-p2)/(z*z-1.0)
-      z1 = z
-      z = z1 - p1/pp
-      if abs(z-z1) <= eps:
-	    break
-
-    x[i] = xm - xl*z
-    x[n+1-i] = xm + xl*z
-    w[i] = 2.0*xl/((1.0-z*z)*pp*pp)
-    w[n+1-i] = w[i]
-  return np.array(x), np.array(w)
+        x[i] = xm - xl*z
+        x[n+1-i] = xm + xl*z
+        w[i] = 2.0*xl/((1.0-z*z)*pp*pp)
+        w[n+1-i] = w[i]
+    return np.array(x), np.array(w)
 # end gaulegf 
     
     
@@ -1773,7 +1774,7 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     if symNo < 0:
         inv = -1
         symNo *= -1
-    cen = symNo/100
+    cen = symNo//100
     op = symNo%100-1
     M,T = distance_dict['SGData']['SGOps'][op]
     D = T*inv+distance_dict['SGData']['SGCen'][cen]
@@ -1813,7 +1814,7 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
         inv = 1
         if symNo[i] < 0:
             inv = -1
-        cen = inv*symNo[i]/100
+        cen = inv*symNo[i]//100
         op = inv*symNo[i]%100-1
         M,T = angle_dict['SGData']['SGOps'][op]
         D = T*inv+angle_dict['SGData']['SGCen'][cen]
@@ -1861,9 +1862,9 @@ def getSyXYZ(XYZ,ops,SGData):
             if len(oprs)>1:
                 unit = np.array(list(eval(oprs[1])))
             syop =int(oprs[0])
-            inv = syop/abs(syop)
+            inv = syop//abs(syop)
             syop *= inv
-            cent = syop/100
+            cent = syop//100
             syop %= 100
             syop -= 1
             M,T = SGData['SGOps'][syop]
@@ -2135,7 +2136,7 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
         return np.sqrt(np.sum(np.inner(Amat,(TxT-Ox))**2))
         
     inv = Top/abs(Top)
-    cent = abs(Top)/100
+    cent = abs(Top)//100
     op = abs(Top)%100-1
     M,T = SGData['SGOps'][op]
     C = SGData['SGCen'][cent]
@@ -2162,7 +2163,7 @@ def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
             inv = 1
             if symNo[i] < 0:
                 inv = -1
-            cen = inv*symNo[i]/100
+            cen = inv*symNo[i]//100
             op = inv*symNo[i]%100-1
             M,T = SGData['SGOps'][op]
             D = T*inv+SGData['SGCen'][cen]
@@ -2223,10 +2224,10 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
     OxAN,OxA,TxAN,TxA,unitA,TopA = VA
     OxBN,OxB,TxBN,TxB,unitB,TopB = VB
     invA = invB = 1
-    invA = TopA/abs(TopA)
-    invB = TopB/abs(TopB)
-    centA = abs(TopA)/100
-    centB = abs(TopB)/100
+    invA = TopA//abs(TopA)
+    invB = TopB//abs(TopB)
+    centA = abs(TopA)//100
+    centB = abs(TopB)//100
     opA = abs(TopA)%100-1
     opB = abs(TopB)%100-1
     MA,TA = SGData['SGOps'][opA]
@@ -2289,9 +2290,9 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
     for i,atom in enumerate(Oatoms):
         names += atom[-1]
         Op,unit = Atoms[i][-1]
-        inv = Op/abs(Op)
+        inv = Op//abs(Op)
         m,t = SGData['SGOps'][abs(Op)%100-1]
-        c = SGData['SGCen'][abs(Op)/100]
+        c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Dist = calcDist(Oatoms,SyOps,Amat)
     
@@ -2300,7 +2301,7 @@ def GetDistSig(Oatoms,Atoms,Amat,SGData,covData={}):
         dx = .00001
         dadx = np.zeros(6)
         for i in range(6):
-            ia = i/3
+            ia = i//3
             ix = i%3
             Oatoms[ia][ix+1] += dx
             a0 = calcDist(Oatoms,SyOps,Amat)
@@ -2344,9 +2345,9 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
     for i,atom in enumerate(Oatoms):
         names += atom[-1]
         Op,unit = Atoms[i][-1]
-        inv = Op/abs(Op)
+        inv = Op//abs(Op)
         m,t = SGData['SGOps'][abs(Op)%100-1]
-        c = SGData['SGCen'][abs(Op)/100]
+        c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Angle = calcAngle(Oatoms,SyOps,Amat)
     
@@ -2355,7 +2356,7 @@ def GetAngleSig(Oatoms,Atoms,Amat,SGData,covData={}):
         dx = .00001
         dadx = np.zeros(9)
         for i in range(9):
-            ia = i/3
+            ia = i//3
             ix = i%3
             Oatoms[ia][ix+1] += dx
             a0 = calcAngle(Oatoms,SyOps,Amat)
@@ -2406,9 +2407,9 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
     for i,atom in enumerate(Oatoms):
         names += atom[-1]
         Op,unit = Atoms[i][-1]
-        inv = Op/abs(Op)
+        inv = Op//abs(Op)
         m,t = SGData['SGOps'][abs(Op)%100-1]
-        c = SGData['SGCen'][abs(Op)/100]
+        c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     Tors = calcTorsion(Oatoms,SyOps,Amat)
     
@@ -2417,7 +2418,7 @@ def GetTorsionSig(Oatoms,Atoms,Amat,SGData,covData={}):
         dx = .00001
         dadx = np.zeros(12)
         for i in range(12):
-            ia = i/3
+            ia = i//3
             ix = i%3
             Oatoms[ia][ix+1] -= dx
             a0 = calcTorsion(Oatoms,SyOps,Amat)
@@ -2494,9 +2495,9 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
     for i,atom in enumerate(Oatoms):
         names += atom[-1]
         Op,unit = Atoms[i][-1]
-        inv = Op/abs(Op)
+        inv = Op//abs(Op)
         m,t = SGData['SGOps'][abs(Op)%100-1]
-        c = SGData['SGCen'][abs(Op)/100]
+        c = SGData['SGCen'][abs(Op)//100]
         SyOps.append([inv,m,t,c,unit])
     M = len(Oatoms)
     if M == 2:
@@ -2513,7 +2514,7 @@ def GetDATSig(Oatoms,Atoms,Amat,SGData,covData={}):
         N = M*3
         dadx = np.zeros(N)
         for i in range(N):
-            ia = i/3
+            ia = i//3
             ix = i%3
             Oatoms[ia][ix+1] += dx
             if M == 2:
@@ -2785,7 +2786,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     def printSpHarm(textureData,SHtextureSig):
-        print '\n Spherical harmonics texture: Order:' + str(textureData['Order'])
+        print ('\n Spherical harmonics texture: Order:' + str(textureData['Order']))
         names = ['omega','chi','phi']
         namstr = '  names :'
         ptstr =  '  values:'
@@ -2797,14 +2798,14 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                 sigstr += '%12.3f'%(SHtextureSig['Sample '+name])
             else:
                 sigstr += 12*' '
-        print namstr
-        print ptstr
-        print sigstr
-        print '\n Texture coefficients:'
+        print (namstr)
+        print (ptstr)
+        print (sigstr)
+        print ('\n Texture coefficients:')
         SHcoeff = textureData['SH Coeff'][1]
-        SHkeys = SHcoeff.keys()
+        SHkeys = list(SHcoeff.keys())
         nCoeff = len(SHcoeff)
-        nBlock = nCoeff/10+1
+        nBlock = nCoeff//10+1
         iBeg = 0
         iFin = min(iBeg+10,nCoeff)
         for block in range(nBlock):
@@ -2819,9 +2820,9 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                         sigstr += '%12.3f'%(SHtextureSig[name])
                     else:
                         sigstr += 12*' '
-            print namstr
-            print ptstr
-            print sigstr
+            print (namstr)
+            print (ptstr)
+            print (sigstr)
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
             
@@ -2833,10 +2834,10 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     def Values2Dict(parmdict, varylist, values):
         ''' Use after call to leastsq to update the parameter dictionary with 
         values corresponding to keys in varylist'''
-        parmdict.update(zip(varylist,values))
+        parmdict.update(list(zip(varylist,values)))
         
     def errSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
-        parmDict.update(zip(varyList,values))
+        parmDict.update(list(zip(varyList,values)))
         Mat = np.empty(0)
         sumObs = 0
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
@@ -2862,7 +2863,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         sumD = np.sum(np.abs(Mat))
         R = min(100.,100.*sumD/sumObs)
         pgbar.Update(R,newmsg='Residual = %5.2f'%(R))
-        print ' Residual: %.3f%%'%(R)
+        print (' Residual: %.3f%%'%(R))
         return Mat
         
     def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
@@ -2893,10 +2894,10 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                 Mat = np.concatenate((Mat,mat.T))
             else:
                 Mat = mat.T
-        print 'deriv'
+        print ('deriv')
         return Mat
 
-    print ' Fit texture for '+General['Name']
+    print (' Fit texture for '+General['Name'])
     SGData = General['SGData']
     cell = General['Cell'][1:7]
     Texture = General['SH Texture']
@@ -2909,27 +2910,27 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         if Texture[item][0]:
             varyList.append(item)
     if Texture['SH Coeff'][0]:
-        varyList += Texture['SH Coeff'][1].keys()
+        varyList += list(Texture['SH Coeff'][1].keys())
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,ftol=1.e-6,
             args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList,pgbar))
-        ncyc = int(result[2]['nfev']/2)
+        ncyc = int(result[2]['nfev']//2)
         if ncyc:
             runtime = time.time()-begin    
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             GOF = chisq/(len(result[2]['fvec'])-len(varyList))       #reduced chi^2
-            print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',len(result[2]['fvec']),' Number of parameters: ',len(varyList)
-            print 'refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+            print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(result[2]['fvec']),len(varyList)))
+            print ('refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
             try:
                 sig = np.sqrt(np.diag(result[1])*GOF)
                 if np.any(np.isnan(sig)):
-                    print '*** Least squares aborted - some invalid esds possible ***'
+                    print ('*** Least squares aborted - some invalid esds possible ***')
                 break                   #refinement succeeded - finish up!
             except ValueError:          #result[1] is None on singular matrix
-                print '**** Refinement failed - singular matrix ****'
+                print ('**** Refinement failed - singular matrix ****')
                 return None
         else:
             break
@@ -2976,7 +2977,7 @@ def OmitMap(data,reflDict,pgbar=None):
     '''
     generalData = data['General']
     if not generalData['Map']['MapType']:
-        print '**** ERROR - Fourier map not defined'
+        print ('**** ERROR - Fourier map not defined')
         return
     mapData = generalData['Map']
     dmin = mapData['Resolution']
@@ -3011,7 +3012,7 @@ def OmitMap(data,reflDict,pgbar=None):
                 Fhkl[h,k,l] = F*phasem
     rho0 = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     M = np.mgrid[0:4,0:4,0:4]
-    blkIds = np.array(zip(M[0].flatten(),M[1].flatten(),M[2].flatten()))
+    blkIds = np.array(list(zip(M[0].flatten(),M[1].flatten(),M[2].flatten())))
     iBeg = blkIds*rho0.shape/4
     iFin = (blkIds+1)*rho0.shape/4
     rho_omit = np.zeros_like(rho0)
@@ -3030,7 +3031,7 @@ def OmitMap(data,reflDict,pgbar=None):
     mapData['rho'] = np.real(rho_omit)/cell[6]
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    print ('Omit map time: %.4f no. elements: %d'%(time.time()-time0,Fhkl.size))
     return mapData
     
 def FourierMap(data,reflDict):
@@ -3096,7 +3097,7 @@ def FourierMap(data,reflDict):
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = complex(Fosq,0.)
     rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
-    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    print ('Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size))
     mapData['Type'] = reflDict['Type']
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
@@ -3167,7 +3168,7 @@ def Fourier4DMap(data,reflDict):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    print ('Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size))
 
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
@@ -3188,11 +3189,11 @@ def printRho(SGLaue,rho,rhoMax):
             for i in range(ix):
                 r = int(100*rho[i,j]/rhoMax)
                 line += '%4d'%(r)
-            print line+'\n'
+            print (line+'\n')
     else:
         ix,jy,kz = rho.shape
         for k in range(kz):
-            print 'k = ',k
+            print ('k = %d'%k)
             for j in range(jy):
                 line = ''
                 if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
@@ -3200,7 +3201,7 @@ def printRho(SGLaue,rho,rhoMax):
                 for i in range(ix):
                     r = int(100*rho[i,j,k]/rhoMax)
                     line += '%4d'%(r)
-                print line+'\n'
+                print (line+'\n')
 ## keep this
                 
 def findOffset(SGData,A,Fhkl):    
@@ -3223,7 +3224,7 @@ def findOffset(SGData,A,Fhkl):
         if F == 0.:
             break
         Fdict['%.6f'%(np.absolute(F))] = hkl
-    Flist = np.flipud(np.sort(Fdict.keys()))
+    Flist = np.flipud(np.sort(list(Fdict.keys())))
     F = str(1.e6)
     i = 0
     DH = []
@@ -3240,8 +3241,8 @@ def findOffset(SGData,A,Fhkl):
         Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhkl[hkl[0],hkl[1],hkl[2]]
         ang0 = np.angle(Fh0,deg=True)/360.
-        for H,phi in zip(Uniq,Phi)[1:]:
-            ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-phi)
+        for H,phi in list(zip(Uniq,Phi))[1:]:
+            ang = (np.angle(Fhkl[int(H[0]),int(H[1]),int(H[2])],deg=True)/360.-phi)
             dH = H-hkl
             dang = ang-ang0
             DH.append(dH)
@@ -3250,11 +3251,11 @@ def findOffset(SGData,A,Fhkl):
             break
         i += 1
     DH = np.array(DH)
-    print ' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist))
+    print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
     Dphi = np.array(Dphi)
     steps = np.array(hklShape)
     X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
-    XYZ = np.array(zip(X.flatten(),Y.flatten(),Z.flatten()))
+    XYZ = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten())))
     Dang = (np.dot(XYZ,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
@@ -3262,7 +3263,7 @@ def findOffset(SGData,A,Fhkl):
 #        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print ' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2])
+    print (' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2]))
 #    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
@@ -3355,9 +3356,9 @@ def ChargeFlip(data,reflDict,pgbar):
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
-    print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
+    print (' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.  #? to get on same scale as e-map
-    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
+    print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
     roll = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
         
     mapData['Rcf'] = Rcf
@@ -3387,7 +3388,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
         if F == 0.:
             break
         Fdict['%.6f'%(np.absolute(F))] = hklm
-    Flist = np.flipud(np.sort(Fdict.keys()))
+    Flist = np.flipud(np.sort(list(Fdict.keys())))
     F = str(1.e6)
     i = 0
     DH = []
@@ -3405,7 +3406,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
         Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
         Fh0 = Fhklm[hklm[0],hklm[1],hklm[2],hklm[3]]
         ang0 = np.angle(Fh0,deg=True)/360.
-        for H,phi in zip(Uniq,Phi)[1:]:
+        for H,phi in list(zip(Uniq,Phi))[1:]:
             ang = (np.angle(Fhklm[H[0],H[1],H[2],H[3]],deg=True)/360.-phi)
             dH = H-hklm
             dang = ang-ang0
@@ -3415,11 +3416,11 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
             break
         i += 1
     DH = np.array(DH)
-    print ' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist))
+    print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
     Dphi = np.array(Dphi)
     steps = np.array(hklmShape)
     X,Y,Z,T = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2],0:1:1./steps[3]]
-    XYZT = np.array(zip(X.flatten(),Y.flatten(),Z.flatten(),T.flatten()))
+    XYZT = np.array(list(zip(X.flatten(),Y.flatten(),Z.flatten(),T.flatten())))
     Dang = (np.dot(XYZT,DH.T)+.5)%1.-Dphi
     Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
     hist,bins = np.histogram(Mmap,bins=1000)
@@ -3427,7 +3428,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
 #        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print ' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3])
+    print (' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3]))
 #    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
@@ -3515,10 +3516,10 @@ def SSChargeFlip(data,reflDict,pgbar):
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
-    print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
+    print (' Charge flip time: %.4f no. elements: %d'%(time.time()-time0,Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))/10.    #? to get on same scale as e-map
     SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.                  #? ditto
-    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
+    print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
     roll = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
 
     mapData['Rcf'] = Rcf
@@ -3655,7 +3656,7 @@ def SearchMap(generalData,drawingData,Neg=False):
         step = max(1.0,1./res)+1
         steps = np.array((3*[step,]),dtype='int32')
     except KeyError:
-        print '**** ERROR - Fourier map not defined'
+        print ('**** ERROR - Fourier map not defined')
         return peaks,mags
     rhoMask = ma.array(rho,mask=(rho<contLevel))
     indices = (-1,0,1)
@@ -3670,9 +3671,9 @@ def SearchMap(generalData,drawingData,Neg=False):
         rho = rollMap(rho,ind)
         rMM = mapHalf-steps
         rMP = mapHalf+steps+1
-        rhoPeak = rho[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+        rhoPeak = rho[int(rMM[0]):int(rMP[0]),int(rMM[1]):int(rMP[1]),int(rMM[2]):int(rMP[2])]
         peakInt = np.sum(rhoPeak)*res**3
-        rX,rY,rZ = np.mgrid[rMM[0]:rMP[0],rMM[1]:rMP[1],rMM[2]:rMP[2]]
+        rX,rY,rZ = np.mgrid[int(rMM[0]):int(rMP[0]),int(rMM[1]):int(rMP[1]),int(rMM[2]):int(rMP[2])]
         x0 = [peakInt,mapHalf[0],mapHalf[1],mapHalf[2],2.0]          #magnitude, position & width(sig)
         result = HessianLSQ(peakFunc,x0,Hess=peakHess,
             args=(rX,rY,rZ,rhoPeak,res,SGData['SGLaue']),ftol=.01,maxcyc=10)
@@ -4215,7 +4216,7 @@ def anneal(func, x0, args=(), schedule='fast',
     We give a brief description of how the three temperature schedules
     generate new points and vary their temperature. Temperatures are
     only updated with iterations in the outer loop. The inner loop is
-    over xrange(dwell), and new points are generated for
+    over range(dwell), and new points are generated for
     every iteration in the inner loop. (Though whether the proposed
     new points are accepted is probabilistic.)
 
@@ -4268,7 +4269,7 @@ def anneal(func, x0, args=(), schedule='fast',
     bestn = 0
     while keepGoing:
         retval = 0
-        for n in xrange(dwell):
+        for n in range(dwell):
             current_state.x = schedule.update_guess(last_state.x)
             current_state.cost = func(current_state.x,*args)
             schedule.feval += 1
@@ -4308,14 +4309,14 @@ def anneal(func, x0, args=(), schedule='fast',
         fqueue.pop(0)
         af = asarray(fqueue)*1.0
         if retval == 5:
-            print ' User terminated run; incomplete MC/SA'
+            print (' User terminated run; incomplete MC/SA')
             keepGoing = False
             break
         if all(abs((af-af[0])/af[0]) < feps):
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-                print " Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1)
+                print (" Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1))
             break
         if (Tf is not None) and (schedule.T < Tf):
 #            print ' Minimum T reached in %d steps'%(iters-1)
@@ -4325,7 +4326,7 @@ def anneal(func, x0, args=(), schedule='fast',
             retval = 2
             break
         if (iters > maxiter):
-            print  " Warning: Maximum number of iterations exceeded."
+            print  (" Warning: Maximum number of iterations exceeded.")
             retval = 3
             break
         if (maxaccept is not None) and (schedule.accepted > maxaccept):
@@ -4345,7 +4346,7 @@ def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,out_t,out_n,nprocess
         outlist.append(result[0])
         timelist.append(result[1])
         nsflist.append(result[2])
-        print ' MC/SA final fit: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1])
+        print (' MC/SA final fit: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1]))
     out_q.put(outlist)
     out_t.put(timelist)
     out_n.put(nsflist)
@@ -4751,13 +4752,13 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     allFF = np.array(allFF).T
     refs = np.array(refs).T
     if start:
-        print ' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef)
-        print ' Number of parameters varied: %d'%(len(varyList))
+        print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
+        print (' Number of parameters varied: %d'%(len(varyList)))
         start = False
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
-    bounds = np.array(zip(lower,upper))
+    bounds = np.array(list(zip(lower,upper)))
     if MCSA['Algorithm'] == 'Basin Hopping':
 #        import basinhopping as bs
         take_step = RandomDisplacementBounds(np.array(lower), np.array(upper))
@@ -4774,7 +4775,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             quench=MCSA['fast parms'][0], c=MCSA['fast parms'][1], 
             lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
             ranRange=MCSA.get('ranRange',10.)/100.,autoRan=MCSA.get('autoRan',False),dlg=pgbar)
-        print ' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1])
+        print (' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1]))
         results = so.minimize(mcsaCalc,results[0],method='L-BFGS-B',args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
             bounds=bounds,)
     mcsaCalc(results['x'],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)
@@ -4962,16 +4963,15 @@ def annealtests():
     from numpy import cos
     # minimum expected at ~-0.195
     func = lambda x: cos(14.5*x-0.3) + (x+0.2)*x
-    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='cauchy')
-    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='fast')
-    print anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='boltzmann')
+    print (anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='cauchy'))
+    print (anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='fast'))
+    print (anneal(func,1.0,full_output=1,upper=3.0,lower=-3.0,feps=1e-4,maxiter=2000,schedule='boltzmann'))
 
     # minimum expected at ~[-0.195, -0.1]
     func = lambda x: cos(14.5*x[0]-0.3) + (x[1]+0.2)*x[1] + (x[0]+0.2)*x[0]
-    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy')
-    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast')
-    print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann')
-
+    print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy'))
+    print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast'))
+    print (anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann'))
 
 if __name__ == '__main__':
     annealtests()

@@ -31,7 +31,21 @@ New key values will be added to the list of options.
 If a key is duplicated, the information in  `UserCalibrants.py` will
 override the information in this file. 
 
-Note, some useful Bravais numbers are: F-cubic=0, I-cubic=1, P-cubic=2, R3/m (hex)=3, P6=4, P4mmm=6
+Note, the Bravais numbers are: 
+            * 0 F cubic
+            * 1 I cubic
+            * 2 P cubic
+            * 3 R hexagonal (trigonal not rhombohedral)
+            * 4 P hexagonal
+            * 5 I tetragonal
+            * 6 P tetragonal
+            * 7 F orthorhombic
+            * 8 I orthorhombic
+            * 9 C orthorhombic
+            * 10 P orthorhombic
+            * 11 C monoclinic
+            * 12 P monoclinic
+            * 13 P triclinic
 """
 Calibrants={
 '':([0,],['',],[(0,0,0,0,0,0),],0,(1.0,10,10.)),

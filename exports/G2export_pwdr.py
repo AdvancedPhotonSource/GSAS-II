@@ -14,6 +14,7 @@
 Creates files used by GSAS (FXYE) & TOPAS (XYE) as input
 
 '''
+from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath

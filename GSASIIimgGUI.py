@@ -14,6 +14,7 @@
 Control image display and processing
 
 '''
+from __future__ import division, print_function
 import os
 import copy
 import glob
@@ -186,7 +187,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 G2frame.EnablePlot = False
                 for item in items:
                     name = Names[item]
-                    print 'calibrating',name
+                    print ('calibrating'+name)
                     G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
                     G2frame.ImageZ = GetImageZ(G2frame,Data)
@@ -208,7 +209,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 G2frame.GPXtree.SetItemPyData(Id,SeqResult)
         finally:
             dlg.Destroy()
-        print 'All selected images recalibrated - results in Sequential image calibration results'
+        print ('All selected images recalibrated - results in Sequential image calibration results')
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
         G2frame.GPXtree.SelectItem(Id)
@@ -437,7 +438,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', pth, '', 
-            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
+            'image control files (*.imctrl)|*.imctrl',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1242,7 +1243,7 @@ def CleanupMasks(data):
         data[key] = [i for i in data[key] if len(i)]
         l2 = len(data[key])
         if GSASIIpath.GetConfigValue('debug') and l1 != l2:
-            print 'Mask Cleanup:',key,'was',l1,'entries','now',l2
+            print ('Mask Cleanup: %s was %d entries, now %d'%(key,l1,l2))
     
 def UpdateMasks(G2frame,data):
     '''Shows and handles the controls on the "Masks" data tree entry
@@ -1332,7 +1333,7 @@ def UpdateMasks(G2frame,data):
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose image mask file', pth, '', 
-            'image mask files (*.immask)|*.immask',wx.OPEN)
+            'image mask files (*.immask)|*.immask',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1636,7 +1637,10 @@ def UpdateMasks(G2frame,data):
         SpotGrid.SetColSize(1,80)
         for r in range(len(Spots)):
             SpotGrid.SetCellStyle(r,0,VERY_LIGHT_GREY,True)
-        SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnSpotChange)
+        if 'phoenix' in wx.version():
+            SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnSpotChange)
+        else:
+            SpotGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnSpotChange)
         mainSizer.Add(SpotGrid,0,)
     if Rings:
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Ring masks')
@@ -1774,7 +1778,7 @@ def UpdateStressStrain(G2frame,data):
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', pth, '', 
-            'image control files (*.strsta)|*.strsta',wx.OPEN)
+            'image control files (*.strsta)|*.strsta',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1823,7 +1827,7 @@ def UpdateStressStrain(G2frame,data):
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', pth, '', 
-            'metadata file (*.*)|*.*',wx.OPEN)
+            'metadata file (*.*)|*.*',wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1925,7 +1929,7 @@ def UpdateStressStrain(G2frame,data):
         Controls = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
         G2img.FitStrSta(G2frame.ImageZ,data,Controls)
-        print 'Strain fitting finished'
+        print ('Strain fitting finished')
         UpdateStressStrain(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
         G2plt.PlotStrain(G2frame,data,newPlot=True)
@@ -1961,7 +1965,7 @@ def UpdateStressStrain(G2frame,data):
             varyList = []
             variables = []
             for i,name in enumerate(names):
-                print ' Sequential strain fit for ',name
+                print (' Sequential strain fit for '+name)
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
@@ -2008,13 +2012,13 @@ def UpdateStressStrain(G2frame,data):
             else:
                 SeqResult['histNames'] = goodnames
                 dlg.Destroy()
-                print ' ***** Sequential strain refinement successful *****'
+                print (' ***** Sequential strain refinement successful *****')
         finally:
             wx.EndBusyCursor()    
         SeqResult['histNames'] = choices
         G2frame.GPXtree.SetItemPyData(Id,SeqResult)
         G2frame.GPXtree.SelectItem(Id)
-        print 'All images fitted'
+        print ('All images fitted')
         
     def SamSizer():
         
@@ -2044,7 +2048,7 @@ def UpdateStressStrain(G2frame,data):
     def DzeroSizer():
                 
         def OnStrainChange(event):
-            print event
+#            print (event)
             r,c = event.GetRow(),event.GetCol()
             if c == 0:
                 data['d-zero'][r]['Dset'] = min(max(float(StrainGrid.GetCellValue(r,c)),0.25),20.)
@@ -2095,7 +2099,10 @@ def UpdateStressStrain(G2frame,data):
             StrainGrid.SetCellStyle(r,7,VERY_LIGHT_GREY,True)
             StrainGrid.SetCellStyle(r,9,VERY_LIGHT_GREY,True)
             StrainGrid.SetCellStyle(r,10,VERY_LIGHT_GREY,True)
-        StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnStrainChange)
+        if 'phoenix' in wx.version():
+            StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGED, OnStrainChange)
+        else:
+            StrainGrid.Bind(wg.EVT_GRID_CELL_CHANGE, OnStrainChange)
         StrainGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnSetCol)
         return StrainGrid
 # patches
@@ -2532,7 +2539,7 @@ class AutoIntFrame(wx.Frame):
             autoscale = wx.CheckBox(mnpnl,label='Do autoscaling with:')
             autoscale.Bind(wx.EVT_CHECKBOX,OnAutoScale)
             sizer.Add(autoscale,0,WACV)
-            scalename = wx.ComboBox(mnpnl,value=self.AutoScaleName,choices=self.AutoScales.keys(),
+            scalename = wx.ComboBox(mnpnl,value=self.AutoScaleName,choices=list(self.AutoScales.keys()),
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             scalename.Bind(wx.EVT_COMBOBOX,OnAutoScaleName)
             sizer.Add(scalename,0,WACV)
@@ -2733,7 +2740,7 @@ class AutoIntFrame(wx.Frame):
             # write out the images in the selected formats
             Sdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Sample Parameters'))
             if self.AutoScale:
-                print 'Rescale by %.4f'%(Scale)
+                print ('Rescale by %.4f'%(Scale))
                 y,w = G2frame.GPXtree.GetItemPyData(Id)[1][1:3]
                 y *= Scale
                 w /= Scale**2
@@ -2773,7 +2780,7 @@ class AutoIntFrame(wx.Frame):
         #dist = self.controlsDict['distance']
         interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
         if GSASIIpath.GetConfigValue('debug'):
-            print 'interpolated values: ',interpDict
+            print ('interpolated values: ',interpDict)
         self.ImageControls = ReadControls(imgctrl)
         self.ImageControls.update(interpDict)
         self.ImageControls['showLines'] = True
@@ -3118,7 +3125,7 @@ class IntegParmTable(wx.Dialog):
                 pth = G2G.GetImportPath(self.G2frame)
                 if not pth: pth = '.'
                 dlg = wx.FileDialog(parent, 'Read previous table or build new table by selecting image control files', pth,
-                    style=wx.OPEN| wx.MULTIPLE,
+                    style=wx.FD_OPEN| wx.MULTIPLE,
                     wildcard='Integration table (*.imtbl)|*.imtbl|image control files (.imctrl)|*.imctrl')
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:
@@ -3282,7 +3289,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             if d is None: continue
             if d == 'None': continue
             if float(d) < 0: continue
-            index = self.InsertStringItem(sys.maxint, d)
+            index = self.InsertStringItem(sys.maxsize, d)
             for j in range(1,len(parms)):
                 self.SetStringItem(index, j, parms[j][r])
         for i,lbl in enumerate(self.parent.ParmList):
@@ -3296,7 +3303,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         if not pth: pth = '.'
         try:
             dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', pth,
-                style=wx.OPEN,wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
+                style=wx.FD_OPEN,wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 fil = dlg.GetPath()

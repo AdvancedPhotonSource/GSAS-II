@@ -13,15 +13,11 @@
 Module to select elements from a periodic table and
 to delete an element from a list of selected elements.
 '''
-"""ElementGUI: class defn. for element GUIs
-   Copyright: 2008, Robert B. Von Dreele & Brian H. Toby (Argonne National Laboratory)
-"""
-
+from __future__ import division, print_function
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import wx
 import os
-import sys
 import wx.lib.colourselect as wscs
 class PickElement(wx.Dialog):
     '''Makes periodic table widget for picking element. Modes:
@@ -349,6 +345,6 @@ if __name__ == '__main__':
 
     PE = PickElement(G2frame)
     if PE.ShowModal() == wx.ID_OK:
-        print PE.Elem
+        print (PE.Elem)
     PE.Destroy()
 

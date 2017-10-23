@@ -12,7 +12,12 @@
 
 '''
 
-import cPickle
+from __future__ import division, print_function
+import platform
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import pickle as cPickle
 import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -29,16 +34,18 @@ class G2_ReaderClass(G2obj.ImportImage):
             longFormatName = 'cPickled image from GSAS-II'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''test by trying to unpickle (should be quick)
         '''
         try:
-            cPickle.load(filepointer)
+            fp = open(filename,'rb')
+            cPickle.load(fp)
+            fp.close()
         except:
             return False
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         '''Read using cPickle
         '''
         Fp = open(filename,'rb')

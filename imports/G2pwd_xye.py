@@ -14,6 +14,7 @@ Routine to read in powder data from a Topas-compatible .xye file
 
 '''
 
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -31,16 +32,17 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid Topas file'
         gotCcomment = False
         begin = True
         self.GSAS = False
         self.Chi = False
-        if '.chi' in filepointer.name:
+        fp = open(filename,'r')
+        if '.chi' in filename:
             self.Chi = True
         if2theta = False
-        for i,S in enumerate(filepointer):
+        for i,S in enumerate(fp):
             if not S:
                 break
             if i > 1000: break
@@ -68,6 +70,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             #vals = S.split()
             if not if2theta:
                 self.errors = 'Not a 2-theta chi file'
+                fp.close()
                 return False
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) == 2 or len(vals) == 3:
@@ -78,17 +81,20 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     self.errors += '  '+str(S)
                 else: 
                     self.errors += '  (binary)'
+                fp.close()
                 return False
+        fp.close()
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a Topas file'
         x = []
         y = []
         w = []
         gotCcomment = False
         begin = True
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             self.errors = 'Error reading line: '+str(i+1)
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#'
@@ -116,7 +122,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             #vals = S.split()
             vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) < 2:
-                print 'Line '+str(i+1)+' cannot be read:\n\t'+S
+                print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
                 continue
             try:
                 x.append(float(vals[0]))
@@ -133,14 +139,14 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             except ValueError:
                 msg = 'Error parsing number in line '+str(i+1)
                 if GSASIIpath.GetConfigValue('debug'):
-                    print msg
-                    print S.strip()
+                    print (msg)
+                    print (S.strip())
                 break
             except:
                 msg = 'Error in line '+str(i+1)
                 if GSASIIpath.GetConfigValue('debug'):
-                    print msg
-                    print S.strip()
+                    print (msg)
+                    print (S.strip())
                 break
         N = len(x)
         self.powderdata = [
@@ -164,5 +170,5 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                 except:
                     pass
         self.Sample['Temperature'] = Temperature
-
+        fp.close()
         return True

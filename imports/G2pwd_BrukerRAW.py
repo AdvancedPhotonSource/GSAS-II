@@ -14,7 +14,7 @@ Routine to read in powder data from a Bruker versions 1-3 .raw file
 
 '''
 
-#import sys
+from __future__ import division, print_function
 import os.path as ospath
 import struct as st
 import numpy as np
@@ -33,9 +33,10 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid Bruker RAW file'
-        head = filepointer.read(7)
+        fp = open(filename,'rb')
+        head = fp.read(7)
         if head[:4] == 'RAW ':
             self.formatName = 'Bruker RAW ver. 1'
         elif head[:4] == 'RAW2':
@@ -48,6 +49,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             self.errors += "We need documentation for it so that it can be implemented in GSAS-II. "
             self.errors += "Use PowDLL (http://users.uoi.gr/nkourkou/powdll/) to convert it to ASCII xy."
             print(self.errors)
+            fp.close()
             return False
         else:
             self.errors = 'Unexpected information in header: '
@@ -55,142 +57,144 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                 self.errors += '  '+str(head)
             else: 
                 self.errors += '  (binary)'
+            fp.close()
             return False
+        fp.close()
         return True
             
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Bruker RAW file'
         self.comments = []
         self.powderentry[0] = filename
-        File = open(filename,'rb')
+        fp = open(filename,'rb')
         if 'ver. 1' in self.formatName:
             raise Exception    #for now
         elif 'ver. 2' in self.formatName:
-            File.seek(4)
-            nBlock = int(st.unpack('<i',File.read(4))[0])
-            File.seek(168)
-            self.comments.append('Date/Time='+File.read(20))
-            self.comments.append('Anode='+File.read(2))
-            self.comments.append('Ka1=%.5f'%(st.unpack('<f',File.read(4))[0]))
-            self.comments.append('Ka2=%.5f'%(st.unpack('<f',File.read(4))[0]))
-            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<f',File.read(4))[0]))
-            File.seek(206)
-            self.comments.append('Kb=%.5f'%(st.unpack('<f',File.read(4))[0]))
+            fp.seek(4)
+            nBlock = int(st.unpack('<i',fp.read(4))[0])
+            fp.seek(168)
+            self.comments.append('Date/Time='+fp.read(20))
+            self.comments.append('Anode='+fp.read(2))
+            self.comments.append('Ka1=%.5f'%(st.unpack('<f',fp.read(4))[0]))
+            self.comments.append('Ka2=%.5f'%(st.unpack('<f',fp.read(4))[0]))
+            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<f',fp.read(4))[0]))
+            fp.seek(206)
+            self.comments.append('Kb=%.5f'%(st.unpack('<f',fp.read(4))[0]))
             pos = 256
-            File.seek(pos)
+            fp.seek(pos)
             blockNum = kwarg.get('blocknum',0)
             self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
-                    headLen = int(st.unpack('<H',File.read(2))[0])
-                    nSteps = int(st.unpack('<H',File.read(2))[0])
+                    headLen = int(st.unpack('<H',fp.read(2))[0])
+                    nSteps = int(st.unpack('<H',fp.read(2))[0])
                     if iBlock+1 == blockNum:
-                        File.seek(pos+12)
-                        step = st.unpack('<f',File.read(4))[0]
-                        start2Th = st.unpack('<f',File.read(4))[0]
+                        fp.seek(pos+12)
+                        step = st.unpack('<f',fp.read(4))[0]
+                        start2Th = st.unpack('<f',fp.read(4))[0]
                         pos += headLen      #position at start of data block
-                        File.seek(pos)                                    
+                        fp.seek(pos)                                    
                         x = np.array([start2Th+i*step for i in range(nSteps)])
-                        y = np.array([max(1.,st.unpack('<f',File.read(4))[0]) for i in range(nSteps)])
+                        y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
                         y = np.where(y<0.,y,1.)
                         w = 1./y
                         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                         break
                     pos += headLen+4*nSteps
-                    File.seek(pos)
+                    fp.seek(pos)
                 if blockNum == nBlock:
                     self.repeat = False                                   
                 else:
                     self.repeat = True
-            File.close()
+            fp.close()
         elif 'ver. 3' in self.formatName:
-            File.seek(12)
-            nBlock = int(st.unpack('<i',File.read(4))[0])
-            self.comments.append('Date='+File.read(10))
-            self.comments.append('Time='+File.read(10))
-            File.seek(326)
-            self.comments.append('Sample='+File.read(60))
-            File.seek(564)
-            radius = st.unpack('<f',File.read(4))[0]
+            fp.seek(12)
+            nBlock = int(st.unpack('<i',fp.read(4))[0])
+            self.comments.append('Date='+fp.read(10))
+            self.comments.append('Time='+fp.read(10))
+            fp.seek(326)
+            self.comments.append('Sample='+fp.read(60))
+            fp.seek(564)
+            radius = st.unpack('<f',fp.read(4))[0]
             self.comments.append('Gonio. radius=%.2f'%(radius))
             self.Sample['Gonio. radius'] = radius
-            File.seek(608)
-            self.comments.append('Anode='+File.read(4))
-            File.seek(616)
-            self.comments.append('Ka mean=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka2=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Kb=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
+            fp.seek(608)
+            self.comments.append('Anode='+fp.read(4))
+            fp.seek(616)
+            self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka2=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             pos = 712
-            File.seek(pos)      #position at 1st block header
+            fp.seek(pos)      #position at 1st block header
             blockNum = kwarg.get('blocknum',0)
             self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
             if blockNum <= nBlock:
                 for iBlock in range(blockNum):
-                    headLen = int(st.unpack('<i',File.read(4))[0])
-                    nSteps = int(st.unpack('<i',File.read(4))[0])
+                    headLen = int(st.unpack('<i',fp.read(4))[0])
+                    nSteps = int(st.unpack('<i',fp.read(4))[0])
                     if not nSteps: break
                     if nBlock > 1:
-                        File.seek(pos+256)
-                        headLen += st.unpack('<i',File.read(4))[0]
+                        fp.seek(pos+256)
+                        headLen += st.unpack('<i',fp.read(4))[0]
                     if iBlock+1 == blockNum:
-                        File.seek(pos+8)
-                        st.unpack('<d',File.read(8))[0]
-                        start2Th = st.unpack('<d',File.read(8))[0]
-                        File.seek(pos+212)
-                        temp = st.unpack('<f',File.read(4))[0]
+                        fp.seek(pos+8)
+                        st.unpack('<d',fp.read(8))[0]
+                        start2Th = st.unpack('<d',fp.read(8))[0]
+                        fp.seek(pos+212)
+                        temp = st.unpack('<f',fp.read(4))[0]
                         if temp > 0.:
                             self.Sample['Temperature'] = temp                                                        
-                        File.seek(pos+176)
-                        step = st.unpack('<d',File.read(8))[0]
+                        fp.seek(pos+176)
+                        step = st.unpack('<d',fp.read(8))[0]
                         pos += headLen      #position at start of data block
-                        File.seek(pos)                                    
+                        fp.seek(pos)                                    
                         x = np.array([start2Th+i*step for i in range(nSteps)])
-                        y = np.array([max(1.,st.unpack('<f',File.read(4))[0]) for i in range(nSteps)])
+                        y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
                         w = 1./y
                         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                         break
                     pos += headLen+4*nSteps
-                    File.seek(pos)
+                    fp.seek(pos)
                 if blockNum == nBlock:
                     self.repeat = False
                 else:
                     self.repeat = True
-            File.close()
+            fp.close()
             
         elif 'ver. 4' in self.formatName:   #does not work - format still elusive
-            File.seek(12)   #ok
-            self.comments.append('Date='+File.read(10))
-            self.comments.append('Time='+File.read(10))
-            File.seek(144)
-            self.comments.append('Sample='+File.read(60))
-            File.seek(564)  # where is it?
-            radius = st.unpack('<f',File.read(4))[0]
+            fp.seek(12)   #ok
+            self.comments.append('Date='+fp.read(10))
+            self.comments.append('Time='+fp.read(10))
+            fp.seek(144)
+            self.comments.append('Sample='+fp.read(60))
+            fp.seek(564)  # where is it?
+            radius = st.unpack('<f',fp.read(4))[0]
             self.comments.append('Gonio. radius=%.2f'%(radius))
             self.Sample['Gonio. radius'] = radius
-            File.seek(516)  #ok
-            self.comments.append('Anode='+File.read(4))
-            File.seek(472)  #ok
-            self.comments.append('Ka mean=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka2=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Kb=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
-            File.seek(pos)  #deliberate fail here - pos not known from file contents
+            fp.seek(516)  #ok
+            self.comments.append('Anode='+fp.read(4))
+            fp.seek(472)  #ok
+            self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka2=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Kb=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
+            fp.seek(pos)  #deliberate fail here - pos not known from file contents
             self.idstring = ospath.basename(filename) + ' Scan '+str(1)
-            nSteps = int(st.unpack('<i',File.read(4))[0])
-            st.unpack('<d',File.read(8))[0]
-            start2Th = st.unpack('<d',File.read(8))[0]
-            File.seek(pos+176)
-            step = st.unpack('<d',File.read(8))[0]
+            nSteps = int(st.unpack('<i',fp.read(4))[0])
+            st.unpack('<d',fp.read(8))[0]
+            start2Th = st.unpack('<d',fp.read(8))[0]
+            fp.seek(pos+176)
+            step = st.unpack('<d',fp.read(8))[0]
             pos += headLen      #position at start of data block
-            File.seek(pos)                                    
+            fp.seek(pos)                                    
             x = np.array([start2Th+i*step for i in range(nSteps)])
-            y = np.array([max(1.,st.unpack('<f',File.read(4))[0]) for i in range(nSteps)])
+            y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
             w = 1./y
             self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
-            File.close()
+            fp.close()
         else:
             return False
             

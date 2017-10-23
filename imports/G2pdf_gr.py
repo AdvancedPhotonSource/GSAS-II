@@ -15,6 +15,7 @@ Angstrom steps.
 
 '''
 
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -53,7 +54,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
         return True # no errors encountered
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+        print ('Read a q-step text file')
         x = []
         y = []
         ifData = False
@@ -73,7 +74,7 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
                         y.append(float(data[1]))
                     except ValueError:
                         msg = 'Error in line '+str(i+1)
-                        print msg
+                        print (msg)
                         continue
         self.pdfdata = np.array([
             np.array(x), # x-axis values r

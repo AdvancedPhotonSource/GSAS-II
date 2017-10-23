@@ -14,6 +14,7 @@
 Used to define restraints.
 
 '''
+from __future__ import division, print_function
 import wx
 import wx.grid as wg
 import numpy as np
@@ -56,10 +57,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     '''
     
     def OnSelectPhase(event):
-        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',Phases.keys())
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',list(Phases.keys()))
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                phaseName = Phases.keys()[dlg.GetSelection()]
+                phaseName = list(Phases.keys())[dlg.GetSelection()]
                 UpdateRestraints(G2frame,data,Phases,phaseName)
         finally:
             dlg.Destroy()
@@ -68,7 +69,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' restraint macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
-            style=wx.OPEN | wx.CHANGE_DIR)
+            style=wx.FD_OPEN | wx.CHANGE_DIR)
         try:
             macro = ''
             if dlg.ShowModal() == wx.ID_OK:
@@ -76,8 +77,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 macro = open(macfile,'Ur')
                 head = macro.readline()
                 if macName not in head:
-                    print head
-                    print '**** ERROR - wrong restraint macro file selected, try again ****'
+                    print (head)
+                    print ('**** ERROR - wrong restraint macro file selected, try again ****')
                     macro = []
         finally:
             dlg.Destroy()
@@ -87,7 +88,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         page = G2frame.restrBook.GetSelection()
         if 'Torsion' in G2frame.restrBook.GetPageText(page):
             torNames = []
-            torNames += restrData['Torsion']['Coeff'].keys()
+            torNames += list(restrData['Torsion']['Coeff'].keys())
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Torsion data',torNames)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -113,7 +114,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             
         elif 'Rama' in G2frame.restrBook.GetPageText(page):
             ramaNames = ['All',]
-            ramaNames += restrData['Rama']['Coeff'].keys()
+            ramaNames += list(restrData['Rama']['Coeff'].keys())
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Ramachandran data',ramaNames)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -407,7 +408,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 if plane not in restrData['Planes']:
                     restrData['Planes'].append(plane)
             else:
-                print '**** ERROR - not enough atoms for a plane restraint - try again ****'
+                print ('**** ERROR - not enough atoms for a plane restraint - try again ****')
         UpdatePlaneRestr(restrData)                
 
     def AddAAPlaneRestraint(planeRestData):
@@ -535,10 +536,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     if '+' in atm:
                         pAtms[i] = atm.strip('+')
                 ids = np.array([0,0,0,0])
-                chains = Chains.keys()
+                chains = list(Chains.keys())
                 chains.sort()
                 for chain in chains:
-                    residues = Chains[chain].keys()
+                    residues = list(Chains[chain].keys())
                     residues.sort()
                     for residue in residues:
                         if residue == residues[-1] and Res == '*':
@@ -609,10 +610,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     elif '-' in atm:
                         mAtms[i] = atm.strip('-')
                 ids = np.array([0,0,0,0,0])
-                chains = Chains.keys()
+                chains = list(Chains.keys())
                 chains.sort()
                 for chain in chains:
-                    residues = Chains[chain].keys()
+                    residues = list(Chains[chain].keys())
                     residues.sort()
                     if not (any(mAtms) or any(pAtms)):
                         for residue in residues:
@@ -689,7 +690,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         chemcompRestData['Sites'].append(comp)
                 UpdateChemcompRestr(chemcompRestData)
             else:
-                print '**** ERROR - not enough atoms for a composition restraint - try again ****'
+                print ('**** ERROR - not enough atoms for a composition restraint - try again ****')
         
     def AddTextureRestraint(textureRestData):
         dlg = wx.TextEntryDialog(G2frame,'Enter h k l for pole figure restraint','Enter HKL','')
@@ -703,7 +704,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         textureRestData['HKLs'].append(texture)
                 UpdateTextureRestr(textureRestData)
             except (ValueError,IndexError):
-                print '**** ERROR - bad input of h k l - try again ****'
+                print ('**** ERROR - bad input of h k l - try again ****')
         dlg.Destroy()
                
     def WtBox(wind,restData):
@@ -836,7 +837,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name[:-3],calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))                
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             else:
                 colLabels = ['A+SymOp - B+SymOp','calc','target','esd','delt/sig']
@@ -850,7 +851,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([names[0]+'+('+ops[0]+') - '+names[1]+'+('+ops[1]+')',calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -866,7 +867,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         Bonds.SetReadOnly(r,c,True)
                         Bonds.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Bonds.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.version():
+                    Bonds.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    Bonds.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
@@ -960,7 +964,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name[:-3],calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))                                
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             else:
                 colLabels = ['A+SymOp - B+SymOp - C+SymOp','calc','target','esd','delt/sig']
@@ -976,7 +980,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -992,7 +996,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         Angles.SetReadOnly(r,c,True)
                         Angles.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Angles.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.version():
+                    Angles.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    Angles.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
@@ -1083,7 +1090,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name[:-3],calc,obs,esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             else:                                
                 colLabels = ['atom+SymOp','calc','target','esd']
@@ -1102,7 +1109,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name[:-1],calc,obs,esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -1119,7 +1126,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         Planes.SetReadOnly(r,c,True)
                         Planes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Planes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.version():
+                    Planes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    Planes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
@@ -1215,7 +1225,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             else:
                 colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp)','calc','target','esd','delt/sig']
@@ -1231,7 +1241,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name,calc,obs,esd,(obs-calc)/esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -1247,8 +1257,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         Volumes.SetReadOnly(r,c,True)
                         Volumes.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 Volumes.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-                G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
+                if 'phoenix' in wx.version():
+                    Volumes.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    Volumes.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
@@ -1332,7 +1344,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name,cofName,tor,calc,restr,esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -1348,7 +1360,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         TorsionRestr.Torsions.SetReadOnly(r,c,True)
                         TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.vrsion():
+                    TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(TorsionRestr,-1,
@@ -1452,7 +1467,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         table.append([name,cofName,phi,psi,calc,restr,esd])
                         rowLabels.append(str(i))
                     except KeyError:
-                        print '**** WARNING - missing atom - restraint deleted ****'
+                        print ('**** WARNING - missing atom - restraint deleted ****')
                         bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -1468,7 +1483,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         RamaRestr.Ramas.SetReadOnly(r,c,True)
                         RamaRestr.Ramas.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 RamaRestr.Ramas.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.version():
+                    RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    RamaRestr.Ramas.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
@@ -1590,7 +1608,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     table.append(['Sum','','',np.sum(calcs),obs,esd])
                     rowLabels.append('Restr:'+str(i))
                 except KeyError:
-                    print '**** WARNING - missing atom - restraint deleted ****'
+                    print ('**** WARNING - missing atom - restraint deleted ****')
                     bad.append(i)
             if len(bad):
                 bad.reverse()
@@ -1619,7 +1637,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             ChemComps.SetCellTextColour(r,c,VERY_LIGHT_GREY)
                             
                 ChemComps.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+                if 'phoenix' in wx.version():
+                    ChemComps.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+                else:
+                    ChemComps.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
                 G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
@@ -1699,7 +1720,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     Textures.SetCellStyle(r,4,VERY_LIGHT_GREY,True)
                     Textures.SetCellTextColour(r,4,VERY_LIGHT_GREY)
             Textures.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-            Textures.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            if 'phoenix' in wx.version():
+                Textures.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
+            else:
+                Textures.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
             G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
             mainSizer.Add(Textures,0,)
         else:
@@ -1789,7 +1813,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         # lookup the menu item that called us and get its text
         tabname = TabSelectionIdDict.get(event.GetId())
         if not tabname:
-            print 'Warning: menu item not in dict! id=',event.GetId()
+            print ('Warning: menu item not in dict! id= %d'%event.GetId())
             return
         # find the matching tab
         for PageNum in range(G2frame.restrBook.GetPageCount()):
@@ -1797,14 +1821,14 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.restrBook.SetSelection(PageNum)
                 return
         else:
-            print "Warning: tab "+tabname+" was not found"
+            print ("Warning: tab "+tabname+" was not found")
 
     # UpdateRestraints execution starts here
     if not Phases:
-        print 'There are no phases to form restraints'
+        print ('There are no phases to form restraints')
         return
     if not len(Phases):
-        print 'There are no phases to form restraints'
+        print ('There are no phases to form restraints')
         return
     phasedata = Phases[phaseName]
     if phaseName not in data:
@@ -1921,5 +1945,5 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if menu.FindItem(page) >= 0: continue # is tab already in menu?
         Id = wx.NewId()
         TabSelectionIdDict[Id] = page
-        menu.Append(id=Id,kind=wx.ITEM_NORMAL,text=page)
+        menu.Append(Id,page,'')
         G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)

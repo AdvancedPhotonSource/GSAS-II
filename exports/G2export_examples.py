@@ -19,7 +19,7 @@ of export. Also see :class:`G2export_map.ExportMapASCII` for an
 example of a map export.
 
 '''
-import os.path
+from __future__ import division, print_function
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")

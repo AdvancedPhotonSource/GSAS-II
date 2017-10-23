@@ -15,6 +15,7 @@ two-theta or Q steps.
 
 '''
 
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -35,10 +36,11 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
+        fp = open(filename,'r')
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        for i,S in enumerate(fp):
             if '#' in S[0]:
                 continue
             vals = S.split()
@@ -48,20 +50,22 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         sq = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -96,8 +100,9 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
                         sq.append(0.)
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
@@ -121,7 +126,6 @@ class txt_XRayReaderClass(G2obj.ImportReflectometryData):
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
         self.Sample['Temperature'] = Temperature
-
         return True
 
 class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
@@ -135,10 +139,11 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if '#' in S[0]:
                 continue
             vals = S.split()
@@ -148,20 +153,22 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         sq = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -196,8 +203,9 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
                         sq.append(0.)
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
@@ -221,7 +229,6 @@ class txt_NeutronReaderClass(G2obj.ImportReflectometryData):
         self.idstring = ospath.basename(filename)
         # scan comments for temperature
         self.Sample['Temperature'] = Temperature
-
         return True
 
 class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
@@ -235,11 +242,12 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
         self.wavelength = 0.
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if '#' in S[0]:
                 if 'wavelength' in S[:-1].lower():
                     self.wavelength = float(S[:-1].split('=')[1])
@@ -253,6 +261,7 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
@@ -261,15 +270,16 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         sq = []
         wave = self.wavelength
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -304,8 +314,9 @@ class txt_XRayThetaReaderClass(G2obj.ImportReflectometryData):
                         sq.append(0.)
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:

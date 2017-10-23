@@ -14,7 +14,7 @@
 Ellipse fitting & image integration
 
 '''
-
+from __future__ import division, print_function
 import math
 import time
 import numpy as np
@@ -90,7 +90,7 @@ def FitEllipse(xy):
     def ellipse_center(p):
         ''' gives ellipse center coordinates
         '''
-        b,c,d,f,a = p[1]/2, p[2], p[3]/2, p[4]/2, p[0]
+        b,c,d,f,a = p[1]/2., p[2], p[3]/2., p[4]/2., p[0]
         num = b*b-a*c
         x0=(c*d-b*f)/num
         y0=(a*f-b*d)/num
@@ -100,13 +100,13 @@ def FitEllipse(xy):
         ''' gives rotation of ellipse major axis from x-axis
         range will be -90 to 90 deg
         '''
-        b,c,a = p[1]/2, p[2], p[0]
+        b,c,a = p[1]/2., p[2], p[0]
         return 0.5*npatand(2*b/(a-c))
     
     def ellipse_axis_length( p ):
         ''' gives ellipse radii in [minor,major] order
         '''
-        b,c,d,f,g,a = p[1]/2, p[2], p[3]/2, p[4]/2, p[5], p[0]
+        b,c,d,f,g,a = p[1]/2., p[2], p[3]/2., p[4]/2, p[5], p[0]
         up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
         down1=(b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
         down2=(b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
@@ -137,7 +137,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     'Needs a doc string'
         
     def CalibPrint(ValSig,chisq,Npts):
-        print 'Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts)
+        print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -151,9 +151,9 @@ def FitDetector(rings,varyList,parmDict,Print=True):
                 sigstr += Fmt[name] % (sig)
             else:
                 sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr        
+        print (ptlbls)
+        print (ptstr)
+        print (sigstr)        
         
     def ellipseCalcD(B,xyd,varyList,parmDict):
         
@@ -224,7 +224,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
         ZMin = image[ypix-w2:ypix+w2,xpix-w2:xpix+w2]
         Zmin = np.argmin(ZMin)
         xpix += Zmax%w2-w
-        ypix += Zmax/w2-w
+        ypix += Zmax//w2-w
         return xpix,ypix,np.ravel(ZMax)[Zmax],max(0.0001,np.ravel(ZMin)[Zmin])   #avoid neg/zero minimum
     else:
         return 0,0,0,0      
@@ -235,7 +235,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         'compute estimate of ellipse circumference'
         if radii[0] < 0:        #hyperbola
             theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
-            print theta
+#            print (theta)
             return 0
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
@@ -491,8 +491,8 @@ def MakeFrameMask(data,frame):
     scaley = pixelSize[1]/1000.
     blkSize = 512
     Nx,Ny = data['size']
-    nXBlks = (Nx-1)/blkSize+1
-    nYBlks = (Ny-1)/blkSize+1
+    nXBlks = (Nx-1)//blkSize+1
+    nYBlks = (Ny-1)//blkSize+1
     tam = ma.make_mask_none(data['size'])
     for iBlk in range(nXBlks):
         iBeg = iBlk*blkSize
@@ -520,7 +520,7 @@ def ImageRecalibrate(G2frame,data,masks):
     calibration is done initially to improve the fit.
     '''
     import ImageCalibrants as calFile
-    print 'Image recalibration:'
+    print ('Image recalibration:')
     time0 = time.time()
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -532,7 +532,7 @@ def ImageRecalibrate(G2frame,data,masks):
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     if not data['calibrant']:
-        print 'no calibration material selected'
+        print ('no calibration material selected')
         return []    
     skip = data['calibskip']
     dmin = data['calibdmin']
@@ -559,11 +559,11 @@ def ImageRecalibrate(G2frame,data,masks):
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
-        if debug:   print H 
+        if debug:   print (H) 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
-            print 'next line is a hyperbola - search stopped'
+            print ('next line is a hyperbola - search stopped')
             break
         ellipse = GetEllipse(dsp,data)
         Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(G2frame.ImageZ,mask=tam))[0]
@@ -578,7 +578,7 @@ def ImageRecalibrate(G2frame,data,masks):
             data['ellipses'].append([])
             continue
     if not data['rings']:
-        print 'no rings found; try lower Min ring I/Ib'
+        print ('no rings found; try lower Min ring I/Ib')
         return []    
         
     rings = np.concatenate((data['rings']),axis=0)
@@ -595,7 +595,7 @@ def ImageRecalibrate(G2frame,data,masks):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
-    print 'calibration time = %.3f'%(time.time()-time0)
+    print ('calibration time = %.3f'%(time.time()-time0))
     G2plt.PlotImage(G2frame,newImage=True)        
     return [vals,varyList,sigList,parmDict]
             
@@ -605,7 +605,7 @@ def ImageCalibrate(G2frame,data):
     '''
     import copy
     import ImageCalibrants as calFile
-    print 'Image calibration:'
+    print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']
     pixelSize = data['pixelSize']
@@ -615,10 +615,10 @@ def ImageCalibrate(G2frame,data):
     cutoff = data['cutoff']
     varyDict = data['varyList']
     if varyDict['dist'] and varyDict['wave']:
-        print 'ERROR - you can not simultaneously calibrate distance and wavelength'
+        print ('ERROR - you can not simultaneously calibrate distance and wavelength')
         return False
     if len(ring) < 5:
-        print 'ERROR - not enough inner ring points for ellipse'
+        print ('ERROR - not enough inner ring points for ellipse')
         return False
         
     #fit start points on inner ring
@@ -628,7 +628,7 @@ def ImageCalibrate(G2frame,data):
     fmt  = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f'
     fmt2 = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f, chi**2: %.3f, Np: %d'
     if outE:
-        print fmt%('start ellipse: ',outE[0][0],outE[0][1],outE[1],outE[2][0],outE[2][1])
+        print (fmt%('start ellipse: ',outE[0][0],outE[0][1],outE[1],outE[2][0],outE[2][1]))
         ellipse = outE
     else:
         return False
@@ -641,11 +641,11 @@ def ImageCalibrate(G2frame,data):
         Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]    #do again
         ellipse = FitEllipse(Ring)
     else:
-        print '1st ring not sufficiently complete to proceed'
+        print ('1st ring not sufficiently complete to proceed')
         return False
     if debug:
-        print fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],
-            ellipse[2][0],ellipse[2][1],0.,len(Ring))     #cent,phi,radii
+        print (fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],
+            ellipse[2][0],ellipse[2][1],0.,len(Ring)))     #cent,phi,radii
     data['ellipses'].append(ellipse[:]+('r',))
     data['rings'].append(np.array(Ring))
     G2plt.PlotImage(G2frame,newImage=True)
@@ -653,7 +653,7 @@ def ImageCalibrate(G2frame,data):
 #setup for calibration
     data['rings'] = []
     if not data['calibrant']:
-        print 'no calibration material selected'
+        print ('no calibration material selected')
         return True
     
     skip = data['calibskip']
@@ -674,7 +674,7 @@ def ImageCalibrate(G2frame,data):
 #set up 1st ring
     elcent,phi,radii = ellipse              #from fit of 1st ring
     dsp = HKL[0][3]
-    print '1st ring: try %.4f'%(dsp)
+    print ('1st ring: try %.4f'%(dsp))
     if varyDict['dist']:
         wave = data['wavelength']
         tth = 2.0*asind(wave/(2.*dsp))
@@ -689,8 +689,8 @@ def ImageCalibrate(G2frame,data):
     if varyDict['tilt']:
         tilt = npasind(np.sqrt(max(0.,1.-(radii[0]/radii[1])**2))*ctth)
         if not tilt:
-            print 'WARNING - selected ring was fitted as a circle'
-            print ' - if detector was tilted we suggest you skip this ring - WARNING'
+            print ('WARNING - selected ring was fitted as a circle')
+            print (' - if detector was tilted we suggest you skip this ring - WARNING')
     else:
         tilt = data['tilt']
 #1st estimate of dist: sample to detector normal to plane
@@ -713,10 +713,10 @@ def ImageCalibrate(G2frame,data):
         i2 = 1
         while fail:
             dsp = HKL[i2][3]
-            print '2nd ring: try %.4f'%(dsp)
+            print ('2nd ring: try %.4f'%(dsp))
             tth = 2.0*asind(wave/(2.*dsp))
             ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-            print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
+            print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
             Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
                 'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
@@ -730,7 +730,7 @@ def ImageCalibrate(G2frame,data):
             else:
                 chip = 1e6
             ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-            print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
+            print (fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1]))
             Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
@@ -767,12 +767,12 @@ def ImageCalibrate(G2frame,data):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
-            print 'next line is a hyperbola - search stopped'
+            print ('next line is a hyperbola - search stopped')
             break
-        if debug:   print 'HKLD:',H[:4],'2-theta: %.4f'%(tth)
+        if debug:   print ('HKLD:'+str(H[:4])+'2-theta: %.4f'%(tth))
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
-        if debug:   print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
+        if debug:   print (fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1]))
         Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
         if Ring:
             data['rings'].append(np.array(Ring))
@@ -786,16 +786,16 @@ def ImageCalibrate(G2frame,data):
                 data['DetDepth'] = parmDict['dep']
                 data['chisq'] = chisq
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
-                if debug:   print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
+                if debug:   print (fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings)))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
 #            G2plt.PlotImage(G2frame,newImage=True)
         else:
-            if debug:   print 'insufficient number of points in this ellipse to fit'
+            if debug:   print ('insufficient number of points in this ellipse to fit')
 #            break
     G2plt.PlotImage(G2frame,newImage=True)
     fullSize = len(G2frame.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
-        print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
+        print ('Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib')
     N = len(data['ellipses'])
     if N > 2:
         FitDetector(rings,varyList,parmDict)[0]
@@ -808,7 +808,7 @@ def ImageCalibrate(G2frame,data):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    print 'calibration time = %.3f'%(time.time()-time0)
+    print ('calibration time = %.3f'%(time.time()-time0))
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
     
@@ -879,7 +879,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
-    print 'Begin image integration'
+    print ('Begin image integration')
     CancelPressed = False
     LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
@@ -905,8 +905,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     Nx,Ny = data['size']
-    nXBlks = (Nx-1)/blkSize+1
-    nYBlks = (Ny-1)/blkSize+1
+    nXBlks = (Nx-1)//blkSize+1
+    nYBlks = (Ny-1)//blkSize+1
     tbeg = time.time()
     times = [0,0,0,0,0]
     tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
@@ -964,10 +964,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
         #NB: in G2pwd.Polarization azm is defined from plane of polarization, not image x axis!
         H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     times[4] += time.time()-t0
-    print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
-        \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
-    print "Elapsed time:","%8.3fs"%(time.time()-tbeg)
-    print 'Integration complete'
+    print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
+        \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))
+    print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))
+    print ('Integration complete')
     if returnN:     #As requested by Steven Weigand
         return H0,H1,H2,NST,CancelPressed
     else:
@@ -1022,7 +1022,7 @@ def FitStrSta(Image,StrSta,Controls):
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
             ring['covMat'] = covMat
-            print 'Variance in normalized ring intensity: %.3f'%(ring['Ivar'])
+            print ('Variance in normalized ring intensity: %.3f'%(ring['Ivar']))
     CalcStrSta(StrSta,Controls)
     
 def IntStrSta(Image,StrSta,Controls):
@@ -1041,7 +1041,7 @@ def IntStrSta(Image,StrSta,Controls):
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
-            print ' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)))
+            print (' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint))))
             RingsAI.append(np.array(zip(ringazm,ringint)).T)
     return RingsAI
     
@@ -1093,7 +1093,7 @@ def calcFij(omg,phi,azm,th):
 def FitStrain(rings,p0,dset,wave,phi,StaType):
     'Needs a doc string'
     def StrainPrint(ValSig,dset):
-        print 'Strain tensor for Dset: %.6f'%(dset)
+        print ('Strain tensor for Dset: %.6f'%(dset))
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -1104,9 +1104,9 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
                 sigstr += fmt % (sig)
             else:
                 sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr
+        print (ptlbls)
+        print (ptstr)
+        print (sigstr)
         
     def strainCalc(p,xyd,dset,wave,phi,StaType):
         E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
@@ -1132,7 +1132,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     return vals,sig,covMatrix
     
 def AutoSpotMasks(Image,Masks,Controls):
-    print 'auto spot search'
+    print ('auto spot search')
     maxPks = 500
     dmax = 1.5         #just beyond diamond 111 @ 2.0596
     wave = Controls['wavelength']
@@ -1155,14 +1155,14 @@ def AutoSpotMasks(Image,Masks,Controls):
         M = np.sqrt(np.sum((pts[A]-pts[B])**2,axis=-1))
         MX = ma.array(M,mask=(M<10.))
         Indx = ma.nonzero(ma.getmask(MX))
-        print 'Spots found: ',mul,len(pts),distort,len(Indx[0])
+        print ('Spots found: %d %d %.2f %d'%(mul,len(pts),distort,len(Indx[0])))
         if distort < .3:
             break
     if not len(Indx[0]):
-        print 'no auto search spots found'
+        print ('no auto search spots found')
         return None
     if distort > 2.:
-        print 'no big spots found'
+        print ('no big spots found')
         return None
     #use clustered points to get position & spread
     

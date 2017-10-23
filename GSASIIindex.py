@@ -16,6 +16,7 @@ Cell indexing program: variation on that of A. Coehlo
 includes cell refinement from peak positions
 '''
 
+from __future__ import division, print_function
 import math
 import time
 import numpy as np
@@ -384,7 +385,7 @@ def IndexSSPeaks(peaks,HKL):
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
             if pos >= N:
-                print pos,N
+                print ('%.4f %d'%(pos,N))
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
@@ -930,15 +931,15 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
     Nobs = len(peaks)-notUse
     zero,ncno = controls[1:3]
     ncMax = Nobs*ncno
-    print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)
-    print "%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs)
+    print ("%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax))
+    print ("%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs))
     cells = []
     lastcell = np.zeros(7)
     for ibrav in range(14):
         begin = time.time()
         if bravais[ibrav]:
-            print 'cell search for ',bravaisNames[ibrav]
-            print '      M20  X20  Nc       a          b          c        alpha       beta      gamma     volume      V-test'
+            print ('cell search for ',bravaisNames[ibrav])
+            print ('      M20  X20  Nc       a          b          c        alpha       beta      gamma     volume      V-test')
             V1 = controls[3]
             bestM20 = 0
             topM20 = 0
@@ -985,8 +986,8 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                                         cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
                                         newcell = np.array(cell[3:10])
                                         if not np.allclose(newcell,lastcell):
-                                            print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f"  \
-                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
+                                            print ("%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f"  \
+                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1))
                                             cells.append(cell)
                                         lastcell = np.array(cell[3:10])
                             if not GoOn:
@@ -1009,14 +1010,14 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                                     V1 = 25
                                 ncMax += Nobs
                                 cycle += 1
-                                print 'Restart search, new Max Nc = ',ncMax
+                                print ('Restart search, new Max Nc = %d'%ncMax)
                             else:
                                 cycle = 10
                 finally:
                     pass
 #                dlg.Destroy()
-            print '%s%s%s%s'%('finished cell search for ',bravaisNames[ibrav], \
-                ', elapsed time = ',G2lat.sec2HMS(time.time()-begin))
+            print ('%s%s%s%s'%('finished cell search for ',bravaisNames[ibrav], \
+                ', elapsed time = ',G2lat.sec2HMS(time.time()-begin)))
             
     if cells:
         return True,dmin,cells
@@ -1095,35 +1096,35 @@ def TestData():
 def test0():
     if NeedTestData: TestData()
     ibrav,cell,bestcell,Pwr,peaks = TestData
-    print 'best cell:',bestcell
-    print 'old cell:',cell
+    print ('best cell:',bestcell)
+    print ('old cell:',cell)
     Peaks = np.array(peaks)
     HKL = Peaks[4:7]
-    print calc_M20(peaks,HKL)
+    print (calc_M20(peaks,HKL))
     A = G2lat.cell2A(cell)
     OK,smin,A,result = FitHKL(ibrav,peaks,A,Pwr)
-    print 'new cell:',G2lat.A2cell(A)    
-    print 'x:',result[0]
-    print 'cov_x:',result[1]
-    print 'infodict:'
+    print ('new cell:',G2lat.A2cell(A))    
+    print ('x:',result[0])
+    print ('cov_x:',result[1])
+    print ('infodict:')
     for item in result[2]:
-        print item,result[2][item]
-    print 'msg:',result[3]
-    print 'ier:',result[4]
+        print (item,result[2][item])
+    print ('msg:',result[3])
+    print ('ier:',result[4])
     result = refinePeaks(peaks,ibrav,A)
     N,M20,X20,A = result
-    print 'refinePeaks:',N,M20,X20,G2lat.A2cell(A)
-    print 'compare bestcell:',bestcell
+    print ('refinePeaks:',N,M20,X20,G2lat.A2cell(A))
+    print ('compare bestcell:',bestcell)
 #
 def test1():
     if NeedTestData: TestData()
     ibrav,A,Pwr,peaks = TestData2
-    print 'bad cell:',G2lat.A2cell(A)
-    print 'FitHKL'
+    print ('bad cell:',G2lat.A2cell(A))
+    print ('FitHKL')
     OK,smin,A,result = FitHKL(ibrav,peaks,A,Pwr)
     result = refinePeaks(peaks,ibrav,A)
     N,M20,X20,A = result
-    print 'refinePeaks:',N,M20,X20,A
+    print ('refinePeaks:',N,M20,X20,A)
 #    Peaks = np.array(peaks)
 #    HKL = Peaks[4:7]
 #    print calc_M20(peaks,HKL)
@@ -1148,4 +1149,4 @@ if __name__ == '__main__':
 #    test6()
 #    test7()
 #    test8()
-    print "OK"
+    print ("OK")

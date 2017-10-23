@@ -15,6 +15,7 @@ more than a single image.
 
 '''
 
+from __future__ import division, print_function
 import os
 import numpy as np
 import GSASIIobj as G2obj
@@ -38,19 +39,21 @@ class GE_ReaderClass(G2obj.ImportImage):
             longFormatName = 'Summed GE image file'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''just a test on file size
         '''
-        if '.sum' not in str(filepointer):
+        if '.sum' not in str(filename):
             try:
-                statinfo = os.stat(str(filepointer).split("'")[1])
+                fp = open(filename,'rb')
+                statinfo = os.stat(str(fp).split("'")[1])
                 fsize = statinfo.st_size
                 self.nimages = (fsize-8192)/(2*2048**2)
+                fp.close()
             except:
                 return False    #bad file size
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read using GE file reader, :func:`GetGEsumData`
         '''
         #rdbuffer = kwarg.get('buffer')
@@ -84,18 +87,20 @@ class GEsum_ReaderClass(G2obj.ImportImage):
             longFormatName = 'sum of GE multi-image file'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''just a test on file size
         '''
         try:
-            statinfo = os.stat(str(filepointer).split("'")[1])
+            fp = open(filename,'rb')
+            statinfo = os.stat(str(fp).split("'")[1])
             fsize = statinfo.st_size
             nimages = (fsize-8192)/(2*2048**2)
+            fp.close()
         except:
             return False    #bad file size
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read using GE file reader, :func:`GetGEsumData`
         '''
         #rdbuffer = kwarg.get('buffer')
@@ -115,7 +120,11 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     with Detector Pool detector. Also sums multiple image files if desired
     '''
     import struct as st
-    import cPickle
+    import platform
+    if '2' in platform.python_version_tuple()[0]:
+        import cPickle
+    else:
+        import _pickle as cPickle
     import time
     more = False
     time0 = time.time()
@@ -158,15 +167,15 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             return 0,0,0,0,False            
         head += ['file: '+filename+' image #'+str(imagenum),]
         if sum:    #will ignore imagenum
-            print 'Frames to read %d'%(nframes),
+            print ('Frames to read %d,'%(nframes),end='')
             while nframes > 1: #OK, this will sum the frames.
                 try:
                     image += np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
                 except ValueError:
                     break
                 nframes -= 1
-                print '%d'%(nframes),
-            print ''   
+                print ('%d,'%(nframes),end='')
+            print ('') 
             more = False
             filename = os.path.splitext(filename)[0]+'.G2img'
             File = open(filename,'wb')
@@ -180,7 +189,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()
-    print 'Image read time %.2fs'%(time.time()-time0)
+    print ('Image read time %.2fs'%(time.time()-time0))
     if GSASIIpath.GetConfigValue('debug'):
-        print 'Read GE file: '+filename+' image #'+'%04d'%(imagenum)
+        print ('Read GE file: '+filename+' image #'+'%04d'%(imagenum))
     return head,data,Npix,image,more

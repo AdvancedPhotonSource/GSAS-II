@@ -29,6 +29,7 @@ The "*A* tensor" terms are defined as
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+from __future__ import division, print_function
 import math
 import copy
 import sys
@@ -63,8 +64,8 @@ def sec2HMS(sec):
     :return: H:M:S string (to nearest 100th second)
     
     """
-    H = int(sec/3600)
-    M = int(sec/60-H*60)
+    H = int(sec//3600)
+    M = int(sec//60-H*60)
     S = sec-3600*H-60*M
     return '%d:%2d:%.2f'%(H,M,S)
     
@@ -333,7 +334,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
-        atom[cia+8] = ran.randint(0,sys.maxint)
+        atom[cia+8] = ran.randint(0,sys.maxsize)
         if cm:
             mag = np.sqrt(np.sum(np.array(atom[cm:cm+3])**2))
             if mag:
@@ -345,7 +346,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     newPhase['Atoms'] = newAtoms
     newPhase['Atoms'],atCodes = GetUnique(newPhase,atCodes)
     newPhase['Drawing'] = []
-    newPhase['ranId'] = ran.randint(0,sys.maxint)
+    newPhase['ranId'] = ran.randint(0,sys.maxsize)
     return newPhase,atCodes
     
 def FillUnitCell(Phase):
@@ -475,7 +476,7 @@ def Gmat2AB(G):
     A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
     A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
-    A[2][2] = 1/cellstar[2]         # 1/c*
+    A[2][2] = 1./cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
     
@@ -496,7 +497,7 @@ def cell2AB(cell):
     A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
     A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
     A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
-    A[2][2] = 1/cellstar[2]         # 1/c*
+    A[2][2] = 1./cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
     
@@ -629,7 +630,7 @@ def CellBlock(nCells):
         N3 = N*N*N
         cellArray = []
         A = np.array(range(N3))
-        cellGen = np.array([A/N2-1,A/N%N-1,A%N-1]).T
+        cellGen = np.array([A//N2-1,A//N%N-1,A%N-1]).T
         for cell in cellGen:
             cellArray.append(cell)
         return cellArray
@@ -882,7 +883,7 @@ def Hx2Rh(Hx):
     if itk%3 != 0:
         return 0        #error - not rhombohedral reflection
     else:
-        Rh[1] = itk/3
+        Rh[1] = itk//3
         Rh[0] = Rh[1]+Hx[0]
         Rh[2] = Rh[1]-Hx[1]
         if Rh[0] < 0:
@@ -946,7 +947,7 @@ def GetBraviasNum(center,system):
         return 12
     elif center.upper() == 'P' and system.lower() == 'triclinic':
         return 13
-    raise ValueError,'non-standard Bravais lattice center=%s, cell=%s' % (center,system)
+    raise ValueError('non-standard Bravais lattice center=%s, cell=%s' % (center,system))
 
 def GenHBravais(dmin,Bravais,A):
     """Generate the positionally unique powder diffraction reflections
@@ -1110,7 +1111,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            HKL.append([h,k,l,1./math.sqrt(rdsq)])
     elif SGLaue == '2/m':                #monoclinic
         axisnum = 1 + ['a','b','c'].index(SGUniq)
         Hmax = SwapIndx(axisnum,Hmax)
@@ -1125,7 +1126,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            HKL.append([h,k,l,1./math.sqrt(rdsq)])
                     [h,k,l] = SwapIndx(axisnum,[h,k,l])
     elif SGLaue in ['mmm','4/m','6/m']:            #orthorhombic
         for l in range(Hmax[2]+1):
@@ -1138,7 +1139,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            HKL.append([h,k,l,1./math.sqrt(rdsq)])
     elif SGLaue in ['4/mmm','6/mmm']:                  #tetragonal & hexagonal
         for l in range(Hmax[2]+1):
             for h in range(Hmax[0]+1):
@@ -1148,7 +1149,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            HKL.append([h,k,l,1./math.sqrt(rdsq)])
     elif SGLaue in ['3m1','31m','3','3R','3mR']:                  #trigonals
         for l in range(-Hmax[2],Hmax[2]+1):
             hmin = 0
@@ -1170,7 +1171,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([H[0],H[1],H[2],1/math.sqrt(rdsq)])
+                            HKL.append([H[0],H[1],H[2],1./math.sqrt(rdsq)])
     else:                                   #cubic
         for h in range(Hmax[0]+1):
             for k in range(h+1):
@@ -1185,7 +1186,7 @@ def GenHLaue(dmin,SGData,A):
                     if H:
                         rdsq = calc_rDsq(H,A)
                         if 0 < rdsq <= dminsq:
-                            HKL.append([h,k,l,1/math.sqrt(rdsq)])
+                            HKL.append([h,k,l,1./math.sqrt(rdsq)])
     return sortHKLd(HKL,True,True)
     
 def GenPfHKLs(nMax,SGData,A):    
@@ -1224,7 +1225,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
             if dH:
                 DH = SSdH[dH]
                 H = [h+DH[0],k+DH[1],l+DH[2]]
-                d = 1/np.sqrt(calc_rDsq(H,A))
+                d = 1./np.sqrt(calc_rDsq(H,A))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSLaue([h,k,l,dH],SGData,SSGData) and G2spc.checkSSextc(HKLM,SSGData):
@@ -1575,21 +1576,21 @@ def OdfChk(SGLaue,L,M):
         elif SGLaue == 'm3':
             if M > 0:
                 if L%12 == 2:
-                    if M <= L/12: return True
+                    if M <= L//12: return True
                 else:
-                    if M <= L/12+1: return True
+                    if M <= L//12+1: return True
         elif SGLaue == 'm3m':
             if M > 0:
                 if L%12 == 2:
-                    if M <= L/12: return True
+                    if M <= L//12: return True
                 else:
-                    if M <= L/12+1: return True
+                    if M <= L//12+1: return True
     return False
         
 def GenSHCoeff(SGLaue,SamSym,L,IfLMN=True):
     'needs doc string'
     coeffNames = []
-    for iord in [2*i+2 for i in range(L/2)]:
+    for iord in [2*i+2 for i in range(L//2)]:
         for m in [i-iord for i in range(2*iord+1)]:
             if OdfChk(SamSym,iord,m):
                 for n in [i-iord for i in range(2*iord+1)]:
@@ -1775,7 +1776,7 @@ def GetKcl(L,N,SGLaue,phi,beta):
         else:
             Kcl = 0.
         for j in range(0,L+1,4):
-            im = j/4
+            im = j//4
             if 'array' in str(type(phi)) and np.any(phi.shape):
                 pcrs = ptx.pyplmpsi(L,j,len(phi),phi)[0]
             else:
@@ -1836,7 +1837,7 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     if SGLaue in ['m3','m3m']:
         Kcl = 0.0
         for j in range(0,L+1,4):
-            im = j/4
+            im = j//4
             pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
             Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)        
     else:
@@ -1891,7 +1892,7 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
         if SGData['SGLaue'] in ['m3','m3m']:
             Kcl = 0.0
             for j in range(0,l+1,4):
-                im = j/4
+                im = j//4
                 pcrs,dum = ptx.pyplmpsi(l,j,1,phi)
                 Kcl += BOH['L='+str(l)][n-1][im]*pcrs*cosd(j*beta)        
         else:                #all but cubic
@@ -1948,7 +1949,7 @@ def invpolfcal(ODFln,SGData,phi,beta):
             if SGData['SGLaue'] in ['m3','m3m']:
                 Kcl = 0.0
                 for j in range(0,l+1,4):
-                    im = j/4
+                    im = j//4
                     pcrs,dum = ptx.pyplmpsi(l,j,len(beta),phi)
                     Kcl += BOH['L=%d'%(l)][n-1][im]*pcrs*cosd(j*beta)        
             else:                #all but cubic
@@ -2319,7 +2320,7 @@ def test9():
         err = True
         for H in hklO:
             if H not in hklN:
-                print H,' missing from hkl from GSASII'
+                print ('%d %s'%(H,' missing from hkl from GSASII'))
                 err = False
         assert(err)
 if __name__ == '__main__': selftestlist.append(test9)
@@ -2332,4 +2333,4 @@ if __name__ == '__main__':
     selftestquiet = False
     for test in selftestlist:
         test()
-    print "OK"
+    print ("OK")

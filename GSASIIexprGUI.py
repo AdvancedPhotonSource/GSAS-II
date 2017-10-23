@@ -22,14 +22,13 @@ Default expressions are read from file DefaultExpressions.txt using
 :func:`GSASIIpath.LoadConfigFile`.
 
 '''
+from __future__ import division, print_function
 import re
 import wx
-import math
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
@@ -382,7 +381,7 @@ class ExpressionDialog(wx.Dialog):
                 msg += 'No variable for '+str(v)
             elif self.varSelect.get(v) > 0:
                if '*' in varname:
-                   l = G2obj.LookupWildCard(varname,self.parmDict.keys())
+                   l = G2obj.LookupWildCard(varname,list(self.parmDict.keys()))
                    if len(l) == 0:
                        invalid += 1
                        if msg: msg += "; "
@@ -609,8 +608,6 @@ class ExpressionDialog(wx.Dialog):
             else:
                 var = self.varName[v]
                 if '*' in var:
-                    #[self.parmDict[v] for v in LookupWildCard(var,self.parmDict.keys())]
-                    #print self.varValue[v]
                     vs = G2obj.LookupWildCard(var,self.parmDict.keys())
                     s = '('+str(len(vs))+' values)'
                 elif var in self.parmDict:
@@ -699,7 +696,7 @@ class BondDialog(wx.Dialog):
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
-        self.pName = Phases.keys()[0]
+        self.pName = list(Phases.keys())[0]
         DisAglCtls = {}
         dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
         if dlg.ShowModal() == wx.ID_OK:
@@ -736,7 +733,7 @@ class BondDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
-        pNames = self.Phases.keys()
+        pNames = list(self.Phases.keys())
         phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
         phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
         phase = wx.ComboBox(self.panel,value=self.pName,choices=pNames,
@@ -820,7 +817,7 @@ class AngleDialog(wx.Dialog):
         self.Phases = Phases
         self.parmDict = parmDict
         self.header = header
-        self.pName = Phases.keys()[0]
+        self.pName = list(Phases.keys())[0]
         DisAglCtls = {}
         dlg = G2G.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
         if dlg.ShowModal() == wx.ID_OK:
@@ -857,7 +854,7 @@ class AngleDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
-        pNames = self.Phases.keys()
+        pNames = list(self.Phases.keys())
         phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
         phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
         phase = wx.ComboBox(self.panel,value=self.pName,choices=pNames,
@@ -944,24 +941,27 @@ if __name__ == "__main__":
                            #VarLabel="New PseudoVar",                           
                            )
     newobj = dlg.Show(True)
-    print dlg.GetDepVar()
+    print (dlg.GetDepVar())
     dlg = ExpressionDialog(frm,PSvarDict,
                            header="Edit the PseudoVar expression",
                            fit=True)
     newobj = dlg.Show(True)
-    print dlg.GetDepVar()
+    print (dlg.GetDepVar())
 
     #app.MainLoop()
 
-
-    import cPickle
+    import platform
+    if '2' in platform.python_version_tuple()[0]:
+        import cPickle
+    else:
+        import pickle as cPickle
     def showEQ(calcobj):
         print
-        print calcobj.eObj.expression
+        print (calcobj.eObj.expression)
         for v in sorted(calcobj.eObj.freeVars.keys()+calcobj.eObj.assgnVars.keys()):
-            print "  ",v,'=',calcobj.exprDict[v]
-        print calcobj.EvalExpression()
-    print "starting test"
+            print ("  ",v,'=',calcobj.exprDict[v])
+        print (calcobj.EvalExpression())
+    print ("starting test")
     obj = G2obj.ExpressionObj()
     obj.expression = "A*np.exp(B)"
     obj.assgnVars =  {'B': '0::Afrac:*'}

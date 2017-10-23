@@ -216,6 +216,7 @@ Note that parameter names in GSAS-II are strings of form ``<ph>:<hst>:<nam>``
 
 """
 
+from __future__ import division, print_function
 import numpy as np
 import sys
 import GSASIIpath
@@ -345,7 +346,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
     for cdict in constrDict:
         # N.B. No "_" names in holds
         if len(cdict) == 1:
-            fixVlist.append(cdict.keys()[0])
+            fixVlist.append(list(cdict.keys())[0])
     
     # process equivalences: make a list of dependent and independent vars
     #    and check for repeated uses (repetition of a parameter as an
@@ -406,7 +407,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
             s += str(var)            
         errmsg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
-    if debug: print 'equivVarList',equivVarList
+    if debug: print ('equivVarList',equivVarList)
     inboth = set(fixVlist).intersection(set(equivVarList))
     if len(inboth) > 0:
         errmsg += "\nThe following parameter(s) are used in both Equivalence and Fixed constraints:\n"
@@ -562,7 +563,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     # process fixed (held) variables
     for cdict in constrDict:
         if len(cdict) == 1:
-            fixedVarList.append(cdict.keys()[0])
+            fixedVarList.append(list(cdict.keys())[0])
     
     # process equivalences: make a list of dependent and independent vars
     #    and check for repeated uses (repetition of a parameter as an
@@ -583,13 +584,13 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     if notvaried: notvaried += ', '
                     notvaried += mv
                 if parmDict is not None and mv not in parmDict:
-                    print "Dropping equivalence for variable "+str(mv)+". Not defined in this refinement"
+                    print ("Dropping equivalence for variable "+str(mv)+". Not defined in this refinement")
                     if mv not in dropVarList: dropVarList.append(mv)
                     #msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
                     #continue
             for v,m in zip(varlist,invmultarr):
                 if parmDict is not None and v not in parmDict:
-                    print "Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement"
+                    print ("Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement")
                     if v not in dropVarList: dropVarList.append(v)
                     continue
                 if m == 0: zeromult = True
@@ -657,17 +658,17 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     # if there were errors found, go no farther
     if shortmsg and SeqHist is not None:
         if msg:
-            print ' *** ERROR in constraint definitions! ***'
-            print msg
+            print (' *** ERROR in constraint definitions! ***')
+            print (msg)
             raise Exception
-        print '*** Sequential refinement: ignoring constraint definition(s): ***'
-        print shortmsg
+        print ('*** Sequential refinement: ignoring constraint definition(s): ***')
+        print (shortmsg)
         msg = ''
     elif shortmsg:
         msg += shortmsg
     if msg:
-        print ' *** ERROR in constraint definitions! ***'
-        print msg
+        print (' *** ERROR in constraint definitions! ***')
+        print (msg)
         raise Exception
                 
     # now process each group and create the relations that are needed to form
@@ -757,9 +758,9 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         indParmList.append(mapvar)
         symGenList.append(False)
     if msg:
-        print ' *** ERROR in constraint definitions! ***'
-        print msg
-        print VarRemapShow(varyList)
+        print (' *** ERROR in constraint definitions! ***')
+        print (msg)
+        print (VarRemapShow(varyList))
         raise Exception
     # setup dictionary containing the fixed values
     global fixedDict 
@@ -785,10 +786,10 @@ def _setVarLists(dropVarList):
             if mv in dropVarList: continue
             if mv not in dependentVars: dependentVars.append(mv)
     if debug: # on debug, show what is parsed & generated, semi-readable
-        print 50*'-'
-        print VarRemapShow(varyList)
-        print 'Varied: ',varyList
-        print 'Not Varied: ',fixedVarList
+        print (50*'-')
+        print (VarRemapShow(varyList))
+        print ('Varied: ',varyList)
+        print ('Not Varied: ',fixedVarList)
 
 def StoreEquivalence(independentVar,dependentList,symGen=True):
     '''Takes a list of dependent parameter(s) and stores their
@@ -808,7 +809,7 @@ def StoreEquivalence(independentVar,dependentList,symGen=True):
     mapList = []
     multlist = []
     for var in dependentList:
-        if isinstance(var, basestring):
+        if isinstance(var, str):
             mult = 1.0
         elif len(var) == 2:
             var,mult = var
@@ -858,15 +859,15 @@ def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
     s1 = ''
     s2 = ''
     s3 = ''
-    print >>pFile,130*'-'
-    print >>pFile,"Variables generated by constraints"
+    pFile.write(130*'-'+'\n')
+    pFile.write("Variables generated by constraints\n")
     printlist.append(3*[None])
     for name,val,esd in printlist:
         if len(s1) > 120 or name is None:
-            print >>pFile,''
-            print >>pFile,s1
-            print >>pFile,s2
-            print >>pFile,s3
+            pFile.write(''+'\n')
+            pFile.write(s1+'\n')
+            pFile.write(s2+'\n')
+            pFile.write(s3+'\n')
             s1 = ''
             if name is None: break
         if s1 == "":
@@ -956,7 +957,7 @@ def VarRemapShow(varyList,inputOnly=False):
                     s1 = '   ' + str(mv) + ' is equivalent to parameters: '
                 j = 0
                 for v,m in zip(varlist,invmultarr):
-                    if debug: print 'v,m[0]: ',v,m[0]
+                    if debug: print ('v,m[0]: ',v,m[0])
                     if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
                     if j > 0: s1 += ' & '
                     j += 1
@@ -1009,7 +1010,7 @@ def GetSymEquiv():
                 s1 = str(mv) + ' = '
                 j = 0
                 for v,m in zip(varlist,invmultarr):
-                    if debug: print 'v,m[0]: ',v,m[0]
+                    if debug: print ('v,m[0]: ',v,m[0])
                     if len(s1.split('\n')[-1]) > 75: s1 += '\n        '
                     if j > 0: s1 += ' =  '
                     j += 1
@@ -1026,7 +1027,7 @@ def GetSymEquiv():
                     if j > 0: s += ' + '
                     j += 1
                     s += '(%s * %s)' % (m,v)
-                print 'unexpected sym op=',s
+                print ('unexpected sym op='+s)
     return symout
 
 def Dict2Deriv(varyList,derivDict,dMdv):
@@ -1050,14 +1051,14 @@ def Dict2Deriv(varyList,derivDict,dMdv):
             if name not in varyList: continue # skip if independent var not varied
             if multarr is None:
                 for v,m in zip(varlist,invmultarr):
-                    if debug: print 'start dMdv',dMdv[varyList.index(name)]
-                    if debug: print 'add derv',v,'/',m[0],'to derv',name,'add=',derivDict[v] / m[0]
+                    if debug: print ('start dMdv',dMdv[varyList.index(name)])
+                    if debug: print ('add derv',v,'/',m[0],'to derv',name,'add=',derivDict[v] / m[0])
                     if m == 0: continue
                     dMdv[varyList.index(name)] += derivDict[v] / m[0]
             else:
                 for v,m in zip(varlist,multarr[i,:]):
-                    if debug: print 'start dMdv',dMdv[varyList.index(name)]
-                    if debug: print 'add derv',v,'*',m,'to derv',name,'add=',m * derivDict[v]
+                    if debug: print ('start dMdv',dMdv[varyList.index(name)])
+                    if debug: print ('add derv',v,'*',m,'to derv',name,'add=',m * derivDict[v])
                     if m == 0: continue
                     dMdv[varyList.index(name)] += m * derivDict[v]
 
@@ -1160,7 +1161,7 @@ def GramSchmidtOrtho(a,nkeep=0):
         for i in range(j):
             a[j] -= proj(a[i],a[j])
         if np.allclose(np.linalg.norm(a[j]),0.0):
-            raise Exception,"Singular input to GramSchmidtOrtho"
+            raise Exception("Singular input to GramSchmidtOrtho")
         a[j] /= np.linalg.norm(a[j])
     return a
 
@@ -1195,7 +1196,7 @@ def _SwapColumns(i,m,v):
             v[i],v[j] = v[j],v[i]
             return
     else:
-        raise Exception,'Singular input'
+        raise Exception('Singular input')
 
 def _RowEchelon(m,arr,collist):
     '''Convert the first m rows in Matrix arr to row-echelon form
@@ -1247,16 +1248,16 @@ if __name__ == "__main__":
 
     errmsg, warnmsg = CheckConstraints(varylist,constrDict,fixedList)
     if errmsg:
-        print "*** Error ********************"
-        print errmsg
+        print ("*** Error ********************")
+        print (errmsg)
     if warnmsg:
-        print "*** Warning ********************"
-        print warnmsg
+        print ("*** Warning ********************")
+        print (warnmsg)
     if errmsg or warnmsg:
         sys.exit()
     groups,parmlist = GroupConstraints(constrDict)
     GenerateConstraints(groups,parmlist,varylist,constrDict,fixedList)
-    print VarRemapShow(varylist)
+    print (VarRemapShow(varylist))
     parmdict.update( {
         '0:12:Scale': 1.0, '0:11:Scale': 1.0, '0:14:Scale': 1.0, '0:13:Scale': 1.0, '0:0:Scale': 2.0,
         '0:0:eA': 0.0,
@@ -1266,21 +1267,21 @@ if __name__ == "__main__":
         '0::A0': 0.0,
         '2::atomx:3':0.23,'2::atomy:3':-.23, '2::atomz:3':-0.11,
         })
-    print 'parmdict start',parmdict
-    print 'varylist start',varylist
+    print ('parmdict start',parmdict)
+    print ('varylist start',varylist)
     before = parmdict.copy()
     Map2Dict(parmdict,varylist)
-    print 'parmdict before and after Map2Dict'
-    print '  key / before / after'
-    for key in sorted(parmdict.keys()):
-        print '  '+key,'\t',before.get(key),'\t',parmdict[key]
-    print 'varylist after',varylist
+    print ('parmdict before and after Map2Dict')
+    print ('  key / before / after')
+    for key in sorted(list(parmdict.keys())):
+        print ('  '+key,'\t',before.get(key),'\t',parmdict[key])
+    print ('varylist after',varylist)
     before = parmdict.copy()
     Dict2Map(parmdict,varylist)
-    print 'after Dict2Map'
-    print '  key / before / after'
-    for key in sorted(parmdict.keys()):
-        print '  '+key,'\t',before.get(key),'\t',parmdict[key]
+    print ('after Dict2Map')
+    print ('  key / before / after')
+    for key in sorted(list(parmdict.keys())):
+        print ('  '+key,'\t',before.get(key),'\t',parmdict[key])
 #    dMdv = len(varylist)*[0]
 #    deriv = {}
 #    for i,v in enumerate(parmdict.keys()): deriv[v]=i

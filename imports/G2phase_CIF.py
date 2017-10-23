@@ -18,6 +18,7 @@ added to the phase entry and constraints are generated.
 
 '''
 # Routines to import Phase information from CIF files
+from __future__ import division, print_function
 import sys
 import random as ran
 import numpy as np
@@ -42,15 +43,17 @@ class CIFPhaseReader(G2obj.ImportPhase):
             longFormatName = 'Crystallographic Information File import'
             )
         
-    def ContentsValidator(self, filepointer):
-        return self.CIFValidator(filepointer)
+    def ContentsValidator(self, filename):
+        fp = open(filename,'r')
+        return self.CIFValidator(fp)
+        fp.close()
 
-    def Reader(self,filename,filepointer, ParentFrame=None, usedRanIdList=[], **unused):
+    def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
         self.isodistort_warnings = ''
         self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         # make sure the ranId is really unique!
         while self.Phase['ranId'] in usedRanIdList:
-            self.Phase['ranId'] = ran.randint(0,sys.maxint)
+            self.Phase['ranId'] = ran.randint(0,sys.maxsize)
         returnstat = False
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',
@@ -217,9 +220,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
             ranIdlookup = {}
             for aitem in atomloop:
                 atomlist = ['','','',0,0,0,1.0,'',0,'I',0.01,0,0,0,0,0,0,0]
-                atomlist[-1] = ran.randint(0,sys.maxint) # add a random Id
+                atomlist[-1] = ran.randint(0,sys.maxsize) # add a random Id
                 while atomlist[-1] in ranIdlookup:
-                    atomlist[-1] = ran.randint(0,sys.maxint) # make it unique
+                    atomlist[-1] = ran.randint(0,sys.maxsize) # make it unique
                 for val,key in zip(aitem,atomkeys):
                     col = G2AtomDict.get(key)
                     if col >= 3:
@@ -377,11 +380,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     (self.Phase['ranId'],None,var,ranIdlookup[albl])
                     ))
             if error:
-                raise Exception,"Error decoding variable labels"
+                raise Exception("Error decoding variable labels")
 
             if len(G2varObj) != len(modelist):
-                print "non-square input"
-                raise Exception,"Rank of _iso_displacivemode != _iso_deltacoordinate"
+                print ("non-square input")
+                raise Exception("Rank of _iso_displacivemode != _iso_deltacoordinate")
 
             error = False
             ParentCoordinates = {}
@@ -414,8 +417,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 else:
                     ParentCoordinates[albl][i] = G2p3.FormulaEval(exp)
             if error:
-                print self.warnings
-                raise Exception,"Error decoding variable labels"
+                print (self.warnings)
+                raise Exception("Error decoding variable labels")
             # get mapping of modes to atomic coordinate displacements
             displacivemodematrix = np.zeros((len(G2varObj),len(G2varObj)))
             for row,col,val in zip(
@@ -494,11 +497,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     (self.Phase['ranId'],None,var,ranIdlookup[albl])
                     ))
             if error:
-                raise Exception,"Error decoding variable labels"
+                raise Exception("Error decoding variable labels")
 
             if len(G2varObj) != len(modelist):
-                print "non-square input"
-                raise Exception,"Rank of _iso_occupancymode != _iso_deltaoccupancy"
+                print ("non-square input")
+                raise Exception("Rank of _iso_occupancymode != _iso_deltaoccupancy")
 
             error = False
             ParentCoordinates = {}
@@ -526,7 +529,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         continue
                     ParentCoordinates[albl] = val
             if error:
-                raise Exception,"Error decoding occupancy labels"
+                raise Exception("Error decoding occupancy labels")
             # get mapping of modes to atomic coordinate displacements
             occupancymodematrix = np.zeros((len(G2varObj),len(G2varObj)))
             for row,col,val in zip(

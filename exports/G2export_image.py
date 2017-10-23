@@ -14,6 +14,7 @@
 Demonstrates how an image is retrieved and written. Uses
 a SciPy routine to write a PNG format file. 
 '''
+from __future__ import division, print_function
 import os.path
 import scipy.misc
 import GSASIIpath

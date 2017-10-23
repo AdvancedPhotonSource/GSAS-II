@@ -14,6 +14,7 @@ Reads all images found in a HDF5 file.
 
 '''
 
+from __future__ import division, print_function
 try:
     import h5py
 except ImportError:
@@ -46,17 +47,17 @@ class HDF5_Reader(G2obj.ImportImage):
                                              longFormatName = 'HDF5 image file'
                                              )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''Test if valid by seeing if the HDF5 library recognizes the file.
         '''
         try:
-            f = h5py.File(filepointer.name, 'r')
-            f.close()
+            fp = h5py.File(filename, 'r')
+            fp.close()
             return True
         except IOError:
             return False               
 
-    def Reader(self, filename, filepointer, ParentFrame=None, **kwarg):
+    def Reader(self, filename, ParentFrame=None, **kwarg):
         '''Scan file structure using :meth:`visit` and map out locations of image(s)
         then read one image using :meth:`readDataset`. Save map of file structure in
         buffer arg, if used. 
@@ -83,7 +84,7 @@ class HDF5_Reader(G2obj.ImportImage):
             if GSASIIpath.GetConfigValue('debug'): print('Read image #'+str(imagenum)+' from file '+filename)
             return True
         except IOError:
-            print 'cannot open file ', filename
+            print ('cannot open file '+ filename)
             return False
         finally:
             fp.close()

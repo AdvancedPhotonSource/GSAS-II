@@ -13,6 +13,7 @@ Routine to read in powder data in a variety of formats
 that are defined for GSAS.
 
 '''
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -34,12 +35,13 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- look for a bank line
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Validrate by checking to see if the file has BANK lines & count them'
         #print 'ContentsValidator: '+self.formatName
         nBanks= 0
-        fname = ospath.basename(filepointer.name)
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        fname = ospath.basename(fp.name)
+        for i,line in enumerate(fp):
             self.GSAS = True
             if i==0: # first line is always a comment
                 continue
@@ -62,11 +64,13 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         if nBanks:
             if not len(self.selections):
                 self.selections = range(nBanks)
+            fp.close()
             return True
         self.errors = 'No BANK records found'
+        fp.close()
         return False # no bank records
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
         If multiple datasets are requested, use self.repeat and buffer caching.
         '''
@@ -266,7 +270,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
-
+        fp = open(filename,'r')
         # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')
@@ -283,7 +287,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             i = -1
             while True:
                 i += 1
-                S = filepointer.readline()
+                S = fp.readline()
                 if len(S) == 0: break
                     
                 if i==0: # first line is always a comment
@@ -305,20 +309,20 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     self.errors += '  '+str(S)
                     comments.append([title,])
                     Banks.append(S)
-                    Pos.append(filepointer.tell())
+                    Pos.append(fp.tell())
                 if S[:8] == 'TIME_MAP':     #assumes one time map; HIPPO has multiple time maps
                     if len(Banks) == 0:
                         self.errors = 'Error reading time map before any bank lines'
                     else:
                         self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
-                    timemap,clockwd,mapNo = GetTimeMap(filepointer,filepointer.tell(),S)
+                    timemap,clockwd,mapNo = GetTimeMap(fp,fp.tell(),S)
                     self.TimeMap[mapNo] = timemap
                     self.clockWd[mapNo] = clockwd 
                     
 
         # Now select the bank to read
         if not Banks: # use of ContentsValidator should prevent this error
-            print self.formatName+' scan error: no BANK records'
+            print (self.formatName+' scan error: no BANK records')
             selblk = None # no block to choose
             self.errors = 'No BANK records found (strange!)'
             return False
@@ -349,22 +353,22 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             bnkNo = 1
         if 'FXYE' in Bank:
             self.errors = 'Error reading FXYE data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetFXYEdata(fp,Pos[selblk],Banks[selblk])
         elif 'FXY' in Bank:
             self.errors = 'Error reading FXY data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetFXYdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetFXYdata(fp,Pos[selblk],Banks[selblk])
         elif 'ESD' in Bank:
             self.errors = 'Error reading ESD data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetESDdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetESDdata(fp,Pos[selblk],Banks[selblk])
         elif 'STD' in Bank:
             self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetSTDdata(fp,Pos[selblk],Banks[selblk])
         elif 'ALT' in Bank:
             self.errors = 'Error reading ALT data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetALTdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetALTdata(fp,Pos[selblk],Banks[selblk])
         else:
             self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
-            self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
+            self.powderdata = GetSTDdata(fp,Pos[selblk],Banks[selblk])
 
         self.errors = 'Error processing information after read complete'
         if comments is not None:
@@ -403,6 +407,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                 except:
                     pass                    
         self.Sample['Temperature'] = Temperature
+        fp.close()
         return True        
 
 def sfloat(S):

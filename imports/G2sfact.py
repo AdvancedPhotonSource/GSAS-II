@@ -13,6 +13,7 @@ Read structure factors from a simple hkl file. Two routines are
 provided to read from files containing F or F\ :sup:`2` values.
 
 '''
+from __future__ import division, print_function
 import sys
 import numpy as np
 import GSASIIobj as G2obj
@@ -52,13 +53,17 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
             longFormatName = 'Simple [hkl, Fo, sig(Fo)] Structure factor text file'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers'
-        return ColumnValidator(self, filepointer)
+        fp = open(filename,'r')
+        valid = ColumnValidator(self, fp)
+        fp.close()
+        return valid
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             h,k,l,Fo,sigFo = S.split()
@@ -69,6 +74,7 @@ class HKLF_ReaderClass(G2obj.ImportStructFactor):
             sigFo = float(sigFo)
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
             self.RefDict['RefList'].append([h,k,l,1,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -86,13 +92,17 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
             longFormatName = 'REMOS [hklm, Fo] Structure factor text file'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers'
-        return ColumnValidator(self, filepointer)
+        fp = open(filename,'r')
+        valid = ColumnValidator(self, fp)
+        fp.close()
+        return valid
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             h,k,l,m,Fo= S.split()
@@ -105,6 +115,7 @@ class HKLMF_ReaderClass(G2obj.ImportStructFactor):
                 sigFo2 = 1.0
            # h,k,l,m,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
             self.RefDict['RefList'].append([h,k,l,m,1,0,Fo**2,sigFo2,0,Fo**2,0,0,0])
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -127,14 +138,15 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             formatName=formatName,
             longFormatName=longFormatName)
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers'
         return True
 #        return ColumnValidator(self, filepointer)
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             h,k,l = S[:12].split()
@@ -148,6 +160,7 @@ class SHELX4_ReaderClass(G2obj.ImportStructFactor):
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
             self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0])
             #self.RefDict['FF'].append({}) # now done in OnImportSfact
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -171,29 +184,32 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             longFormatName=longFormatName)
         self.Super = 0
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''Discover how many columns before F^2 are in the SHELX HKL5 file 
         - could be 3-6 depending on satellites'''
         numCols = 0
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,line in enumerate(fp):
             for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
                 if '.' in item:
                     numCols = max(numCols,j)
                     break
             if i > 20:
                 break
+        fp.close()
         self.Super = numCols-3     #= 0,1,2,or 3
         if self.Super > 1:
             raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
         return True
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         TwDict = {}
         TwSet = {}
         TwMax = [-1,[]]
         first = True
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if self.Super == 0:
                 SH = S[:12]
@@ -242,6 +258,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
                 elif self.Super == 1:
                     self.RefDict['RefList'].append([h,k,l,m1,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
             TwMax[0] = max(TwMax[0],TwId)
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -267,30 +284,33 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
             longFormatName=longFormatName)
         self.Super = 0
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''Discover how many columns before F^2 are in the SHELX HKL6 file 
         - could be 3-6 depending on satellites'''
         numCols = 0
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,line in enumerate(fp):
             for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
                 if '.' in item:
                     numCols = max(numCols,j)
                     break
             if i > 20:
                 break
+        fp.close()
         if numCols != 6:
             self.warnings += '\nInvalid hk6 file; wrong number of columns'
             raise self.ImportException('Invalid hk6 file; wrong number of columns')
         self.Super = 1
         return True
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
         TwDict = {}
         TwSet = {}
         TwMax = [-1,[]]
         first = True
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             h,k,l,m1,m2,m3,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:20],S[20:24],S[24:32],S[32:40],S[40:44]
             h,k,l,m1,m2,m3 = [int(h),int(k),int(l),int(m1),int(m2),int(m3)]
@@ -327,6 +347,7 @@ class SHELX6_ReaderClass(G2obj.ImportStructFactor):
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,m1,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
             TwMax[0] = max(TwMax[0],TwId)
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -351,18 +372,20 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
             )
         self.Super = 0
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Discover how many columns are in the m90 file - could be 9-12 depending on satellites'
         numCols = 0
-        for i,line in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,line in enumerate(fp):
             if 'Data' in line:
                 startData = i
                 break
-        for i,line in enumerate(filepointer):
+        for i,line in enumerate(fp):
             if i > startData:
                 numCols = max(numCols,len(line.split()))
             if i > startData+20:
                 break
+        fp.close()
         self.Super = numCols-9     #= 0,1,2,or 3
         if self.Super > 1:
             raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
@@ -370,7 +393,8 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             try:
@@ -394,6 +418,7 @@ class M90_ReaderClass(G2obj.ImportStructFactor):
                 self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0])
             elif self.Super == 1:
                 self.RefDict['RefList'].append([h,k,l,m1,1,0,Fo,sigFo,0,Fo,0,0,0])
+        fp.close()
         self.errors = 'Error after reading reflections (unexpected!)'
         self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
         self.RefDict['Type'] = 'SXC'
@@ -416,10 +441,11 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             formatName=formatName,
             longFormatName=longFormatName)
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             if not S:   #empty line terminates read
                 break
             if S[0] == '#': continue       #ignore comments, if any
@@ -429,13 +455,15 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             if bankNo != oldNo:
                 self.Banks.append({'RefDict':{'RefList':[],}})
                 oldNo = bankNo
-        filepointer.seek(0)
-        return ColumnValidator(self, filepointer,nCol=8)
+        fp.seek(0)
+        valid = ColumnValidator(self, fp,nCol=8)
+        fp.close()
+        return valid
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read the file'
-        filepointer.seek(0)
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             data = S.split()
@@ -452,6 +480,7 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
             else:
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+        fp.close()
         if len(self.Banks):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             for Bank in self.Banks:
@@ -481,10 +510,11 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             formatName=formatName,
             longFormatName=longFormatName)
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             if not S:   #empty line terminates read
                 break
             if S[0] in ['#','(']: continue       #ignore comments & fortran format line
@@ -492,13 +522,15 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             if bankNo != oldNo:
                 self.Banks.append({'RefDict':{'RefList':[],}})
                 oldNo = bankNo
-        filepointer.seek(0)
-        return ColumnValidator(self, filepointer,nCol=10)
+        fp.seek(0)
+        valid = ColumnValidator(self, fp,nCol=10)
+        fp.close()
+        return valid
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
-        filepointer.seek(0)
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] in ['#','(']: continue       #ignore comments & fortran format line
             data = S.split()
@@ -515,6 +547,7 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             else:
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+        fp.close()
         if len(self.Banks):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             for Bank in self.Banks:
@@ -544,10 +577,11 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
             formatName=formatName,
             longFormatName=longFormatName)
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
         oldNo = -1
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             if not S:   #empty line terminates read
                 break
             if S[0] == '#': continue       #ignore comments, if any
@@ -556,13 +590,15 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
             if bankNo != oldNo:
                 self.Banks.append({'RefDict':{'RefList':[],}})
                 oldNo = bankNo
-        filepointer.seek(0)
-        return ColumnValidator(self, filepointer,nCol=8)
+        fp.seek(0)
+        valid = ColumnValidator(self, fp,nCol=8)
+        fp.close()
+        return valid
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
-        filepointer.seek(0)
-        for line,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             if S[0] == '(': continue        #ignore the format line
@@ -580,6 +616,7 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
             else:
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+        fp.close()
         if len(self.Banks):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             for Bank in self.Banks:

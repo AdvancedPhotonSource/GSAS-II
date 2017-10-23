@@ -24,14 +24,13 @@ in this module are used.
 # $URL: $
 # $Id: $
 ########### SVN repository information ###################
+from __future__ import division, print_function
 import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
-import numpy.linalg as nl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 2895 $")
 import GSASIIpwd as G2pwd
-import GSASIIstrMath as G2stMth
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -110,7 +109,7 @@ def ComputeFobsSqTOFbatch(profList):
             resList.append((icod[0],iref))
             sInt += icod[1]
         elif icod == -1:
-            res.append((None,iref))
+            resList.append((None,iref))
         elif icod == -2:
             break
     return sInt,resList

@@ -13,6 +13,7 @@
 Routine to read in powder data from a CIF. 
 
 '''
+from __future__ import division, print_function
 import numpy as np
 import os.path
 import GSASIIobj as G2obj
@@ -31,11 +32,13 @@ class CIFpwdReader(G2obj.ImportPowderData):
             longFormatName = 'Powder data from CIF'
             )
     # Validate the contents
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Use standard CIF validator'
-        return self.CIFValidator(filepointer)
+        fp = open(filename,'r')
+        return self.CIFValidator(fp)
+        fp.close()
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         '''Read powder data from a CIF.
         If multiple datasets are requested, use self.repeat and buffer caching.
         '''
@@ -90,12 +93,12 @@ class CIFpwdReader(G2obj.ImportPowderData):
         if self.repeat and rdbuffer is not None:
             cf = rdbuffer.get('lastcif')
             choicelist = rdbuffer.get('choicelist')
-            print 'debug: Reuse previously parsed CIF'
+            print ('debug: Reuse previously parsed CIF')
             selections = rdbuffer.get('selections')
         if cf is None:
             if GSASIIpath.GetConfigValue('debug'): print("Starting parse of {} as CIF".format(filename))
             cf = G2obj.ReadCIF(filename)
-            if GSASIIpath.GetConfigValue('debug'): print "CIF file parsed"
+            if GSASIIpath.GetConfigValue('debug'): print ("CIF file parsed")
         # scan all blocks for sets of data
         if choicelist is None:
             choicelist = []
@@ -153,7 +156,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
                     if yldict.get(l) is None: continue
                     choicelist.append([blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])])
                     #print blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])
-            print "CIF file scanned for blocks with data"
+            print ("CIF file scanned for blocks with data")
         if not choicelist:
             selblk = None # no block to choose
             self.errors = "No powder diffraction blocks found"
@@ -162,7 +165,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             selblk = 0
         elif self.repeat and selections is not None:
             # we were called to repeat the read
-            print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
+            print ('debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount])
             selblk = selections[self.repeatcount]
             self.repeatcount += 1
             if self.repeatcount >= len(selections): self.repeat = False
@@ -297,7 +300,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             y /= np.array(vl)
             w /= np.array(vl)
         N = len(x)
-        print "CIF file, read from selected block"
+        print ("CIF file, read from selected block")
 
         self.errors = "Error while storing read values"
         self.powderdata = [

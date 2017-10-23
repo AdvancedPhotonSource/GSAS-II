@@ -12,6 +12,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+from __future__ import division, print_function
 import os
 import math
 
@@ -923,16 +924,16 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
         chisq = sum(z*z)                            # report this ChiSq
 
         if report:
-            print " MaxEnt trial/max: %3d/%3d" % ((iter+1), IterMax)
-            print " Residual: %5.2lf%% Entropy: %8lg" % (100*test, S)
-            print " Function sum: %.6lg Change from last: %.2lf%%\n" % (fSum,100*fChange/fSum)
+            print (" MaxEnt trial/max: %3d/%3d" % ((iter+1), IterMax))
+            print (" Residual: %5.2lf%% Entropy: %8lg" % (100*test, S))
+            print (" Function sum: %.6lg Change from last: %.2lf%%\n" % (fSum,100*fChange/fSum))
 
         # See if we have finished our task.
         # do the hardest test first
         if (abs(chisq/chizer-1.0) < CHI_SQR_LIMIT) and  (test < TEST_LIMIT):
-            print ' Convergence achieved.'
+            print (' Convergence achieved.')
             return chisq,f,image_to_data(f, G)     # solution FOUND returns here
-    print ' No convergence! Try increasing Error multiplier.'
+    print (' No convergence! Try increasing Error multiplier.')
     return chisq,f,image_to_data(f, G)       # no solution after IterMax iterations
 
     
@@ -990,7 +991,7 @@ def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=Fa
         chisq = np.sum(((datum-calc)/sigma)**2)
         err = chisq/len(datum)
         if report:
-            print ' Iteration: %d, chisq: %.3g, sum(shift^2): %.3g'%(nIter,chisq,np.sum(shift**2))
+            print (' Iteration: %d, chisq: %.3g, sum(shift^2): %.3g'%(nIter,chisq,np.sum(shift**2)))
     return chisq,Xw,calc
 
 ###############################################################################
@@ -1071,7 +1072,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
             Power=data['Size']['IPG']['Power'],report=True)
     Ib[:] = Back[0]
     Ic[Ibeg:Ifin] += Back[0]
-    print ' Final chi^2: %.3f'%(chisq)
+    print (' Final chi^2: %.3f'%(chisq))
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
         
 ################################################################################
@@ -1142,34 +1143,34 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         return levelTypes,parmDict,varyList,values
         
     def SetModelParms():
-        print ' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale'])
+        print (' Refined parameters: Histogram scale: %.4g'%(parmDict['Scale']))
         if 'Back' in varyList:
             Model['Back'][0] = parmDict['Back']
-            print '  %15s %15.4f esd: %15.4g'%('Background:',parmDict['Back'],sigDict['Back'])
+            print ('  %15s %15.4f esd: %15.4g'%('Background:',parmDict['Back'],sigDict['Back']))
         partData = Model['Particle']
         for i,level in enumerate(partData['Levels']):
             controls = level['Controls']
             Type = controls['DistType']
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
-                print ' Component %d: Type: %s: Structure Factor: %s Contrast: %12.3f'  \
-                    %(i,Type,controls['StrFact'],controls['Contrast'])                
+                print (' Component %d: Type: %s: Structure Factor: %s Contrast: %12.3f'  \
+                    %(i,Type,controls['StrFact'],controls['Contrast']))              
             else:
-                print ' Component %d: Type: %s: '%(i,Type,)
+                print (' Component %d: Type: %s: '%(i,Type,))
             cid = str(i)+';'
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
                 for item in FFparmOrder:
                     if cid+item in varyList:
                         controls['FFargs'][item][0] = parmDict[cid+item]
-                        print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+                        print (' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item]))
                 for item in SFparmOrder:
                     if cid+item in varyList:
                         controls['SFargs'][item][0] = parmDict[cid+item]
-                        print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+                        print (' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item]))
             distDict = controls['DistType']
             for item in level[distDict]:
                 if cid+item in varyList:
                     level[distDict][item][0] = parmDict[cid+item]
-                    print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+                    print (' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item]))
                     
     def calcSASD(values,Q,Io,wt,Ifb,levelTypes,parmDict,varyList):
         parmDict.update(zip(varyList,values))
@@ -1279,9 +1280,9 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         if len(covM):
             sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
             sigDict = dict(zip(varyList,sig))
-        print ' Results of small angle data modelling fit:'
-        print 'Number of function calls:',ncalc,' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
-        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+        print (' Results of small angle data modelling fit:')
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
+        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
         SetModelParms()
         covMatrix = covM*Rvals['GOF']
         return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
@@ -1434,22 +1435,22 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
 def print_vec(text, a):
     '''print the contents of a vector to the console'''
     n = a.shape[0]
-    print "%s[ = (" % text,
+    print ("%s[ = (" % text,end='')
     for i in range(n):
         s = " %g, " % a[i]
-        print s,
-    print ")"
+        print (s,end='')
+    print (")")
 
 def print_arr(text, a):
     '''print the contents of an array to the console'''
     n, m = a.shape
-    print "%s[][] = (" % text
+    print ("%s[][] = (" % text)
     for i in range(n):
-        print " (",
+        print (" (",end='')
         for j in range(m):
-            print " %g, " % a[i][j],
-        print "),"
-    print ")"
+            print (" %g, " % a[i][j],end='')
+        print ("),")
+    print (")")
 
 def test_MaxEnt_SB(report=True):
     def readTextData(filename):
@@ -1462,7 +1463,7 @@ def test_MaxEnt_SB(report=True):
         I  = np.array(buf[1], dtype=np.float64)
         dI = np.array(buf[2], dtype=np.float64)
         return q, I, dI
-    print "MaxEnt_SB: "
+    print ("MaxEnt_SB: ")
     test_data_file = os.path.join( 'testinp', 'test.sas')
     rhosq = 100     # scattering contrast, 10^20 1/cm^-4
     bkg   = 0.1     #   I = I - bkg
@@ -1481,12 +1482,12 @@ def test_MaxEnt_SB(report=True):
     
     chisq,f_dr,Ic = MaxEnt_SB(I - bkg, dI*errFac, b, IterMax, G, report=report)
     if f_dr is None:
-        print "no solution"
+        print ("no solution")
         return
     
-    print "solution reached"
+    print ("solution reached")
     for a,b,c in zip(r.tolist(), dr.tolist(), f_dr.tolist()):
-        print '%10.4f %10.4f %12.4g'%(a,b,c)
+        print ('%10.4f %10.4f %12.4g'%(a,b,c))
 
 def tests():
     test_MaxEnt_SB(report=True)

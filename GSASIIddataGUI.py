@@ -16,6 +16,7 @@ information that is shown in the data display window
 (when a phase is selected.)
 
 '''
+from __future__ import division, print_function
 import wx
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -492,7 +493,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
     
         ODFSizer = wx.FlexGridSizer(0,8,2,2)
-        ODFkeys = POData[5].keys()
+        ODFkeys = list(POData[5].keys())
         ODFkeys.sort()
         for odf in ODFkeys:
             ODFSizer.Add(wx.StaticText(DData,wx.ID_ANY,odf),0,WACV)
@@ -775,15 +776,18 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if oldFocus: wx.CallAfter(oldFocus.SetFocus)
        
     def RepaintHistogramInfo(Scroll=0):
-        G2frame.bottomSizer.DeleteWindows()
-        Indx.clear()
-        G2frame.bottomSizer = ShowHistogramInfo()
-        mainSizer.Add(G2frame.bottomSizer)
-        mainSizer.Layout()
-        G2frame.dataWindow.Refresh()
-        DData.SetVirtualSize(mainSizer.GetMinSize())
-        DData.Scroll(0,Scroll)
-        G2frame.dataWindow.SendSizeEvent()
+        if 'phoenix' in wx.version():
+            G2frame.bottomSizer.Clear(True)
+        else:
+            G2frame.bottomSizer.DeleteWindows()
+            Indx.clear()
+            G2frame.bottomSizer = ShowHistogramInfo()
+            mainSizer.Add(G2frame.bottomSizer)
+            mainSizer.Layout()
+            G2frame.dataWindow.Refresh()
+            DData.SetVirtualSize(mainSizer.GetMinSize())
+            DData.Scroll(0,Scroll)
+            G2frame.dataWindow.SendSizeEvent()
         
     def ShowHistogramInfo():
         '''This creates a sizer with all the information pulled out from the Phase/data dict
@@ -868,7 +872,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         fixBox.Add(wx.StaticText(DData,label=' In sequential refinement, fix these in '+generalData['Name']+' for this histogram: '),0,WACV)
         fixVals = wx.ComboBox(DData,value=UseList[G2frame.hist]['Fix FXU'],choices=parmChoice,
             style=wx.CB_DROPDOWN)
-        fixVals.Bind(wx.wx.EVT_COMBOBOX,OnFixVals)
+        fixVals.Bind(wx.EVT_COMBOBOX,OnFixVals)
         fixBox.Add(fixVals,0,WACV)
         bottomSizer.Add(fixBox)
         #TODO - put Sequential refinement fix F? fix X? fix U? CheckBox here

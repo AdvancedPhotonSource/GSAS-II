@@ -12,6 +12,7 @@
 
 '''
 
+from __future__ import division, print_function
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
@@ -27,12 +28,12 @@ class ADSC_ReaderClass(G2obj.ImportImage):
             longFormatName = 'ADSC image file'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''no test at this time
         '''
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         self.Comments,self.Data,self.Npix,self.Image = GetImgData(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -43,7 +44,7 @@ def GetImgData(filename,imageOnly=False):
     'Read an ADSC image file'
     import array as ar
     if not imageOnly:
-        print 'Read ADSC img file: ',filename
+        print ('Read ADSC img file: '+filename)
     File = open(filename,'rb')
     head = File.read(511)
     lines = head.split('\n')

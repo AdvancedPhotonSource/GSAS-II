@@ -14,6 +14,7 @@
 A library of GUI controls for reuse throughout GSAS-II
 
 '''
+from __future__ import division, print_function
 import os
 import sys
 try:
@@ -39,7 +40,10 @@ except ImportError:
             return Placeholder([])
     wx = Placeholder(vals)
     wxscroll = Placeholder(['ScrolledPanel'])
-    wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
+    if 'phoenix' in wx.version():
+        wg = Placeholder('Grid GridTableBase GridCellEditor'.split())
+    else:
+        wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
 import time
 import copy
 import webbrowser     # could postpone this for quicker startup
@@ -71,9 +75,9 @@ def Define_wxId(*args):
     '''
     for arg in args:
         if GSASIIpath.GetConfigValue('debug') and not arg.startswith('wxID_'):
-            print 'Problem in name',arg
+            print ('Problem in name'+arg)
         if arg in globals():
-            if GSASIIpath.GetConfigValue('debug'): print arg,'already defined'
+            if GSASIIpath.GetConfigValue('debug'): print (arg+'already defined')
             continue
         exec('global '+arg+';'+arg+' = wx.NewId()')
 
@@ -115,6 +119,18 @@ class G2TreeCtrl(wx.TreeCtrl):
             textlist.insert(0,self.GetItemText(parent))
             parent = self.GetItemParent(parent)
         return textlist
+    
+    def GetItemPyData(self,id):
+        if 'phoenix' in wx.version():
+            return wx.TreeCtrl.GetItemData(self,id)
+        else:
+            return wx.TreeCtrl.GetItemPyData(self,id)
+
+    def SetItemPyData(self,id,data):
+        if 'phoenix' in wx.version():
+            return wx.TreeCtrl.SetItemData(self,id,data)
+        else:
+            return wx.TreeCtrl.SetItemPyData(self,id,data)
 
     def onSelectionChanged(self,event):
         '''Log each press on a tree item here. 
@@ -441,10 +457,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.invalid = False
                 self.Bind(wx.EVT_CHAR,self._GetStringValue)
         elif val is None:
-            raise Exception,("ValidatedTxtCtrl error: value of "+str(key)+
+            raise Exception("ValidatedTxtCtrl error: value of "+str(key)+
                              " element is None and typeHint not defined as int or float")
         else:
-            raise Exception,("ValidatedTxtCtrl error: Unknown element ("+str(key)+
+            raise Exception("ValidatedTxtCtrl error: Unknown element ("+str(key)+
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
@@ -539,8 +555,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.SetSelection(0,0)   # unselect
             self.SetInsertionPoint(ins) # put insertion point back 
         else: # valid input
-            self.SetBackgroundColour(
-                wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             self.SetForegroundColour("black")
             self.Refresh()
 
@@ -665,7 +680,10 @@ class NumberValidator(wx.PyValidator):
     def __init__(self, typ, positiveonly=False, min=None, max=None,exclLim=[False,False],
         result=None, key=None, OKcontrol=None, CIFinput=False):
         'Create the validator'
-        wx.PyValidator.__init__(self)
+        if 'phoenix' in wx.version():
+            wx.Validator.__init__(self)
+        else:
+            wx.PyValidator.__init__(self)
         # save passed parameters
         self.typ = typ
         self.positiveonly = positiveonly
@@ -768,8 +786,7 @@ class NumberValidator(wx.PyValidator):
             tc.SetInsertionPoint(ins) # put insertion point back 
             return False
         else: # valid input
-            tc.SetBackgroundColour(
-                wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW))
+            tc.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
             tc.SetForegroundColour("black")
             tc.Refresh()
             return True
@@ -1193,9 +1210,9 @@ class ScrolledMultiEditor(wx.Dialog):
                  minvals=[],maxvals=[],sizevals=[],
                  checkdictlst=[], checkelemlst=[], checklabel=""):
         if len(dictlst) != len(elemlst):
-            raise Exception,"ScrolledMultiEditor error: len(dictlst) != len(elemlst) "+str(len(dictlst))+" != "+str(len(elemlst))
+            raise Exception("ScrolledMultiEditor error: len(dictlst) != len(elemlst) "+str(len(dictlst))+" != "+str(len(elemlst)))
         if len(checkdictlst) != len(checkelemlst):
-            raise Exception,"ScrolledMultiEditor error: len(checkdictlst) != len(checkelemlst) "+str(len(checkdictlst))+" != "+str(len(checkelemlst))
+            raise Exception("ScrolledMultiEditor error: len(checkdictlst) != len(checkelemlst) "+str(len(checkdictlst))+" != "+str(len(checkelemlst)))
         wx.Dialog.__init__( # create dialog & sizer
             self,parent,wx.ID_ANY,title,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -1609,7 +1626,10 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
 
     def OnChoice(event):
         'Respond when a parameter is selected in the Choice box'
-        valSizer.DeleteWindows()
+        if 'phoenix' in wx.version():
+            valSizer.Clear(True)
+        else:
+            valSizer.DeleteWindows()
         lbl = event.GetString()
         copyopts['currentsel'] = lbl
         i = labelLst.index(lbl)
@@ -1716,7 +1736,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,h)
         instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
         if len(hstData) != len(instData) or hstData['Type'][0] != instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
-            print h+' not copied - instrument parameters not commensurate'
+            print (h+' not copied - instrument parameters not commensurate')
             continue
         hData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,TreeItemType))
         if TreeItemType == 'Instrument Parameters':
@@ -2758,11 +2778,11 @@ class OrderBox(wxscroll.ScrolledPanel):
         self.FitInside()
         
 ################################################################################
-def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.OPEN,
+def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.FD_OPEN,
                   *args, **kwargs):
     '''Uses a customized dialog that gets files from the appropriate import directory. 
     Arguments are used the same as in :func:`wx.FileDialog`. Selection of
-    multiple files is allowed if argument style includes wx.MULTIPLE.
+    multiple files is allowed if argument style includes wx.FD_MULTIPLE.
 
     The default initial directory (unless overridden with argument defaultDir)
     is found in G2frame.TutorialImportDir, config setting Import_directory or
@@ -2779,13 +2799,13 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.OPEN
     if not defaultDir and pth: dlg.SetDirectory(pth)
     try:
         if dlg.ShowModal() == wx.ID_OK:
-            if style & wx.MULTIPLE:
+            if style & wx.FD_MULTIPLE:
                 filelist = dlg.GetPaths()
                 if len(filelist) == 0: return []
             else:
                 filelist = [dlg.GetPath(),]
             # not sure if we want to do this (why use wx.CHANGE_DIR?)
-            if style & wx.CHANGE_DIR: # to get Mac/Linux to change directory like windows!
+            if style & wx.FD_CHANGE_DIR: # to get Mac/Linux to change directory like windows!
                 os.chdir(dlg.GetDirectory())
         else: # cancel was pressed
             return []
@@ -3020,7 +3040,7 @@ class ShowLSParms(wx.Dialog):
         self.varyList = varyList
         self.fullVaryList = fullVaryList
 
-        self.parmNames = parmDict.keys()
+        self.parmNames = list(parmDict.keys())
         self.parmNames.sort()
         splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestring)]
         self.globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
@@ -3275,7 +3295,10 @@ class Table(wg.PyGridTableBase):
     '''Basic data table for use with GSgrid
     '''
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
-        wg.PyGridTableBase.__init__(self)
+        if 'phoenix' in wx.version():
+            wg.GridTableBase.__init__(self)
+        else:
+            wg.PyGridTableBase.__init__(self)
         self.colLabels = colLabels
         self.rowLabels = rowLabels
         self.dataTypes = types
@@ -3303,7 +3326,7 @@ class Table(wg.PyGridTableBase):
         self.SetData([])
         new = []
         for irow,row in enumerate(data):
-            if irow <> pos:
+            if irow != pos:
                 new.append(row)
         self.SetData(new)
         
@@ -3414,7 +3437,10 @@ class GridFractionEditor(wg.PyGridCellEditor):
     as sine and cosine values [as s() and c()]
     '''
     def __init__(self,grid):
-        wg.PyGridCellEditor.__init__(self)
+        if 'phoenix' in wx.version():
+            wg.GridCellEditor.__init__(self)
+        else:
+            wg.PyGridCellEditor.__init__(self)
 
     def Create(self, parent, id, evtHandler):
         self._tc = wx.TextCtrl(parent, id, "")
@@ -3587,17 +3613,12 @@ class MyHelp(wx.Menu):
         wx.Menu.__init__(self,'')
         self.HelpById = {}
         self.frame = frame
-        self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
-            text='&About GSAS-II')
+        self.Append(wx.ID_ABOUT,'&About GSAS-II','')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
         if GSASIIpath.whichsvn():
-            helpobj = self.Append(
-                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-                text='&Check for updates')
+            helpobj = self.Append(wx.ID_ANY,'&Check for updates','')
             frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
-            helpobj = self.Append(
-                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-                text='&Regress to an old GSAS-II version')
+            helpobj = self.Append(wx.ID_ANY,'&Regress to an old GSAS-II version','')
             frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
             # if GSASIIpath.svnTestBranch():
             #     msg = "&Switch back to standard GSAS-II version"
@@ -3608,18 +3629,16 @@ class MyHelp(wx.Menu):
             # frame.Bind(wx.EVT_MENU, self.OnSelectBranch, helpobj)
         # provide special help topic names for extra items in help menu
         for lbl,indx in morehelpitems:
-            helpobj = self.Append(text=lbl,
-                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            helpobj = self.Append(wx.ID_ANY,lbl,'')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
             self.HelpById[helpobj.GetId()] = indx
         # add help lookup(s) in gsasii.html
         self.AppendSeparator()
         if includeTree:
-            helpobj = self.Append(text='Help on Data tree',
-                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+            helpobj = self.Append(wx.ID_ANY,'Help on Data tree','')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
             self.HelpById[helpobj.GetId()] = 'Data tree'
-        helpobj = self.Append(text='Help on current data tree item',id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
+        helpobj = self.Append(wx.ID_ANY,'Help on current data tree item','')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
        
     def OnHelpById(self,event):
@@ -3635,7 +3654,7 @@ class MyHelp(wx.Menu):
             dW = self.frame.dataWindow
         else:
             print('help error: not called from standard menu?')
-            print self
+            print (self)
             return            
         try:
             helpKey = dW.helpKey # look up help from helpKey in data window
@@ -3705,7 +3724,7 @@ For DIFFaX use cite:
             dlg.ShowModal()
             dlg.Destroy()
             return
-        print 'Installed GSAS-II version: '+local
+        print ('Installed GSAS-II version: '+local)
         repos = GSASIIpath.svnGetRev(local=False)
         wx.EndBusyCursor()
         # has the current branch disappeared? If so, switch to the trunk -- not fully tested
@@ -3722,7 +3741,7 @@ For DIFFaX use cite:
             dlg.ShowModal()
             dlg.Destroy()
             return
-        print 'GSAS-II version on server: '+repos
+        print ('GSAS-II version on server: '+repos)
         if local == repos:
             dlg = wx.MessageDialog(self.frame,
                                    'GSAS-II is up-to-date. Version '+local+' is already loaded.',
@@ -3762,7 +3781,7 @@ For DIFFaX use cite:
                 dlg.Destroy()
                 return
             dlg.Destroy()
-        print 'start updates'
+        print ('start updates')
         dlg = wx.MessageDialog(self.frame,
                                'Your project will now be saved, GSAS-II will exit and an update '
                                'will be performed and GSAS-II will restart. Press Cancel to '
@@ -4229,11 +4248,14 @@ class SelectConfigSetting(wx.Dialog):
             self.vars['Contour_color'][1] = self.colSel.GetValue()
             self.OnChange(event)
 
-        self.varsizer.DeleteWindows()
+        if 'phoenix' in wx.version():
+            self.varsizer.Clear(True)
+        else:
+            self.varsizer.DeleteWindows()
         var = self.choice[0]
         showdef = True
         if var not in self.vars:
-            raise Exception,"How did this happen?"
+            raise Exception("How did this happen?")
         if type(self.vars[var][0]) is int:
             ed = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=int,OKcontrol=self.OnChange)
             self.varsizer.Add(ed, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
@@ -4926,8 +4948,8 @@ if __name__ == '__main__':
     dlg.SetSelections((1,5))
     if dlg.ShowModal() == wx.ID_OK:
         for sel in dlg.GetSelections():
-            print sel,choices[sel]
-    print od
+            print (sel,choices[sel])
+    print (od)
     od = {}
     dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
                               'Select dataset to include',

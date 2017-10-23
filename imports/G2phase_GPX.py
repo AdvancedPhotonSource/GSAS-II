@@ -14,8 +14,13 @@ Copies a phase from another GSAS-II project file into the
 current project.
 
 '''
+from __future__ import division, print_function
+import platform
 import sys
-import cPickle
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import _pickle as cPickle
 import random as ran
 import GSASIIobj as G2obj
 import GSASIIIO as G2IO
@@ -33,16 +38,23 @@ class PhaseReaderClass(G2obj.ImportPhase):
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
         
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
+        if True:
+            fp = open(filename,'rb')
         try: 
-            cPickle.load(filepointer)
+            if '2' in platform.python_version_tuple()[0]:
+                data = cPickle.load(fp)
+            else:
+                data = cPickle.load(fp,encoding='latin-1')
         except:
             self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
+            fp.close()
             return False
+        fp.close()
         return True
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         '''Read a phase from a .GPX file. Does not (yet?) support selecting and reading
         more than one phase at a time.'''
         try:
@@ -69,5 +81,5 @@ class PhaseReaderClass(G2obj.ImportPhase):
         if 'Map Peaks' in self.Phase:
             del self.Phase['Map Peaks']
         del self.Phase['General']['Map']
-        self.Phase['ranId'] = ran.randint(0,sys.maxint)
+        self.Phase['ranId'] = ran.randint(0,sys.maxsize)
         return True

@@ -14,6 +14,7 @@ Copies a phase from SHELX ins file into the
 current project.
 
 '''
+from __future__ import division, print_function
 import sys
 import numpy as np
 import random as ran
@@ -33,15 +34,18 @@ class PhaseReaderClass(G2obj.ImportPhase):
             longFormatName = 'SHELX input (*.ins, *.res) file import'
             )
         
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         "Test if the ins file has a CELL record"
-        for i,l in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,l in enumerate(fp):
             if l.startswith('CELL'):
                 break
         else:
             self.errors = 'no CELL record found'
             self.errors = 'This is not a valid .ins file.'
+            fp.close()
             return False
+        fp.close()
         return True
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
@@ -60,12 +64,12 @@ class PhaseReaderClass(G2obj.ImportPhase):
             'SUMP','L.S.','CGLS','BLOC','DAMP','STIR','WGHT','FVAR','BOND','CONF','MPLA',
             'HTAB','LIST','ACTA','SIZE','TEMP','WPDB','FMAP','GRID','PLAN','MOLE']
         self.errors = 'Error opening file'
-        file = open(filename, 'Ur')
+        fp = open(filename, 'Ur')
         Phase = {}
         Title = ''
         Atoms = []
         aTypes = []
-        S = file.readline()
+        S = fp.readline()
         line = 1
         SGData = None
         cell = None
@@ -132,11 +136,11 @@ class PhaseReaderClass(G2obj.ImportPhase):
                     Uij = Uij[0:3]+[Uij[5],Uij[4],Uij[3]]
                 Atom = [Aname,Atype,'',XYZ[0],XYZ[1],XYZ[2],Afrac,SytSym,Mult,IA,Uiso]
                 Atom += Uij
-                Atom.append(ran.randint(0,sys.maxint))
+                Atom.append(ran.randint(0,sys.maxsize))
                 Atoms.append(Atom)
-            S = file.readline()
+            S = fp.readline()
             line += 1
-        file.close()
+        fp.close()
         self.errors = 'Error after read complete'
         Phase = G2obj.SetNewPhase(Name='ShelX phase',SGData=SGData,cell=cell+[Volume,])
         Phase['General']['Name'] = Title

@@ -7,6 +7,7 @@
 # $Id: $
 ########### SVN repository information ###################
 
+from __future__ import division, print_function
 import os.path as ospath
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -32,22 +33,24 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
+        fp = open(filename,'r')
         self.vals = None
         self.stepsize = None
-        filepointer.seek(0)
+        fp.seek(0)
         try:
-            self.root = ET.parse(filepointer).getroot()
+            self.root = ET.parse(fp).getroot()
             tag = self.root.tag
             tag = tag.split('}')[0]+'}'
             self.root.find(tag+'comment')
-           
         except:
             self.errors = 'Bad xml file'
+            fp.close()
             return False
+        fp.close()
         return True
             
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+    def Reader(self,filename, ParentFrame=None, **kwarg):
         'Read a Panalytical .xrdml (.xml) file; already in self.root'
         blockNum = kwarg.get('blocknum',0)
         self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)

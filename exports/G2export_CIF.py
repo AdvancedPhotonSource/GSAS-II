@@ -19,11 +19,16 @@ publication. In addition, there are three subclasses of :class:`ExportCIF`:
 for the _Exporter() determine if a project, single phase or data set are written.
 '''
 
+from __future__ import division, print_function
+import platform
 import datetime as dt
 import os.path
 import sys
 import numpy as np
-import cPickle
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle as pickle
+else:
+    import pickle
 import copy
 import re
 try:
@@ -44,7 +49,6 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 try:
-    import GSASIIdataGUI as G2gd
     import GSASIIctrlGUI as G2G
 except ImportError:
     pass
@@ -1147,7 +1151,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteAtomsNuclear(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist)
             else:
-                raise Exception,"no export for "+str(phasedict['General']['Type'])+" coordinates implemented"
+                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
             # report cell contents
             WriteComposition(self.fp, self.Phases[phasenam], phasenam, self.parmDict)
             if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
@@ -2114,7 +2118,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             elif hist.startswith("HKLF"):
                 WriteSingleXtalData(hist)
             else:
-                print "should not happen"
+                print ("should not happen")
         elif oneblock:
             #====Single block, data & phase CIF ===================================
             WriteCIFitem(self.fp, 'data_'+self.CIFname)
@@ -2444,7 +2448,7 @@ class ExportHKLCIF(ExportCIF):
 def PickleCIFdict(fil):
     '''Loads a CIF dictionary, cherry picks out the items needed
     by local code and sticks them into a python dict and writes
-    that dict out as a cPickle file for later reuse.
+    that dict out as a pickle file for later reuse.
     If the write fails a warning message is printed,
     but no exception occurs.
 
@@ -2473,7 +2477,7 @@ def PickleCIFdict(fil):
     try:
         fil = os.path.splitext(fil)[0]+'.cpickle'
         fp = open(fil,'w')
-        cPickle.dump(cifdic,fp)
+        pickle.dump(cifdic,fp)
         fp.close()
         if DEBUG: print('wrote '+fil)
     except:
@@ -2497,7 +2501,7 @@ def LoadCIFdic():
             if not os.path.exists(fil): continue
             fp = open(fil,'r')
             try:
-                cifdic.update(cPickle.load(fp))
+                cifdic.update(pickle.load(fp))
                 if DEBUG: print('reloaded '+fil)
                 break
             finally:
@@ -2738,7 +2742,10 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
         self.ValidatedControlsList = []
         # delete any only contents
         if self.vbox:
-            self.vbox.DeleteWindows()
+            if 'phoenix' in wx.version():
+                self.vbox.Clear(True)
+            else:
+                self.vbox.DeleteWindows()
             self.vbox = None
             self.Update()
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -3004,9 +3011,9 @@ class CIFtemplateSelect(wx.BoxSizer):
         if ret == wx.ID_OK:
             cf = G2IO.ReadCIF(fil)
             if len(cf.keys()) == 0:
-                raise Exception,"No CIF data_ blocks found"
+                raise Exception("No CIF data_ blocks found")
             if len(cf.keys()) != 1:
-                raise Exception, 'Error, CIF Template has more than one block: '+fil
+                raise Exception('Error, CIF Template has more than one block: '+fil)
             self.dict["CIF_template"] = fil
             self.repaint() #EditCIFDefaults()
 

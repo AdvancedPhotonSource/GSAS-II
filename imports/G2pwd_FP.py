@@ -14,7 +14,7 @@ Routine to read in powder data from a FullProf .dat file
 
 '''
 
-import sys
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -32,13 +32,13 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid FullProf file'
         gotCcomment = False
         begin = True
-        steps = False
         self.GSAS = False
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if i > 1000: break
             if begin:
                 if gotCcomment and S.find('*/') > -1:
@@ -64,10 +64,12 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     self.errors += '  '+str(S)
                 else: 
                     self.errors += '  (binary)'
+                fp.close()
                 return False
+        fp.close()
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a FullProf file'
         x = []
         y = []
@@ -77,7 +79,8 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         steps = False
         Stop = False
         N = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             self.errors = 'Error reading line: '+str(i+1)
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#' or '!'
@@ -126,15 +129,16 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             except ValueError:
                 msg = 'Error parsing number in line '+str(i+1)
                 if GSASIIpath.GetConfigValue('debug'):
-                    print msg
-                    print S.strip()
+                    print (msg)
+                    print (S.strip())
                 break
             except:
                 msg = 'Error in line '+str(i+1)
                 if GSASIIpath.GetConfigValue('debug'):
-                    print msg
-                    print S.strip()
+                    print (msg)
+                    print (S.strip())
                 break
+        fp.close()
         N = len(x)
         if N <= 1: return False
         self.powderdata = [

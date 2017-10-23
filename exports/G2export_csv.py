@@ -15,6 +15,7 @@ Code to create .csv (comma-separated variable) files for
 GSAS-II data export to a spreadsheet program, etc.
 
 '''
+from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath

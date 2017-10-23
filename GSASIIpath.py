@@ -16,13 +16,13 @@ found.
 Accesses configuration options, as defined in config.py
 '''
 
+from __future__ import division, print_function
 import os
 import sys
 import platform
 import glob
 import subprocess
 import numpy as np
-
 g2home = 'https://subversion.xray.aps.anl.gov/pyGSAS'
 'Define the location of the GSAS-II subversion repository'
     

@@ -15,12 +15,11 @@ Code to export coordinates in the SHELX .ins format
 (as best as I can makes sense of it).
 
 '''
+from __future__ import division, print_function
 import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIstrIO as G2stIO
-import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 
 class ExportPhaseShelx(G2IO.ExportBaseclass):

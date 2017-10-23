@@ -11,6 +11,10 @@
 --------------------------------------
 '''
 
+from __future__ import division, print_function
+import platform
+import sys
+import struct as st
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
@@ -26,12 +30,12 @@ class MAR_ReaderClass(G2obj.ImportImage):
             longFormatName = 'MAR Research 345, 230 and 256 image files'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''no test at this time
         '''
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         self.Comments,self.Data,self.Npix,self.Image = GetMAR345Data(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -43,13 +47,13 @@ def GetMAR345Data(filename,imageOnly=False):
     try:
         import pack_f as pf
     except:
-        print '**** ERROR - Unable to load the GSAS MAR image decompression, pack_f'
+        print ('**** ERROR - Unable to load the GSAS MAR image decompression, pack_f')
         return None,None,None,None
 
     if not imageOnly:
-        print 'Read Mar345 file: ',filename
+        print ('Read Mar345 file: '+filename)
     File = open(filename,'rb')
-    head = File.read(4095)
+    head = File.read(4095).decode(encoding='latin-1')
     lines = head[128:].split('\n')
     head = []
     for line in lines:
@@ -78,17 +82,20 @@ def GetMAR345Data(filename,imageOnly=False):
     pos = 4096
     data['size'] = [sizex,sizey]
     File.seek(pos)
-    line = File.read(8)
+    line = File.read(8).decode(encoding='latin-1')
     while 'CCP4' not in line:       #get past overflow list for now
-        line = File.read(8)
+        line = File.read(8).decode(encoding='latin-1')
         pos += 8
     pos += 37
     File.seek(pos)
-    raw = File.read()
-    File.close()
-    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)
-    
+    if '2' in platform.python_version_tuple()[0]:
+        raw = File.read()
+    else:
+        raw = File.read()
+        print (type(raw),sys.getsizeof(raw),raw[:10])
+    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)    
     image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
+    File.close()
     if imageOnly:
         return image
     else:

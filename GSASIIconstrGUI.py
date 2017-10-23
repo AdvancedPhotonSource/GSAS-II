@@ -14,6 +14,7 @@
 Used to define constraints and rigid bodies.
 
 '''
+from __future__ import division, print_function
 import sys
 import wx
 import wx.grid as wg
@@ -157,14 +158,14 @@ def UpdateConstraints(G2frame,data):
                     cons[i][1] = G2obj.G2VarObj(cons[i][1])
                     j += 1
         if j:
-            print str(key) + ': '+str(j)+' variable(s) as strings converted to objects'
+            print (str(key) + ': '+str(j)+' variable(s) as strings converted to objects')
     ##################################################################################
     rigidbodyDict = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
     badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
-    globalList = rbDict.keys()
+    globalList = list(rbDict.keys())
     globalList.sort()
     try:
         AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
@@ -384,7 +385,7 @@ def UpdateConstraints(G2frame,data):
         elif page[1] == 'glb' or page[1] == 'sym':
             pass
         else:
-            raise Exception, 'Unknown constraint page '+ page[1]                    
+            raise Exception('Unknown constraint page '+ page[1])                    
         if len(choices):
             l1 = l2 = 1
             for i1,i2,i3 in choices:
@@ -486,7 +487,7 @@ def UpdateConstraints(G2frame,data):
             elif 'constraint' in constType:
                 return [constr+[1.0,None,'c']]
             else:
-                raise Exception,'Unknown constraint type: '+str(constType)
+                raise Exception('Unknown constraint type: '+str(constType))
         else:
             dlg = wx.MessageDialog(
                 G2frame,
@@ -536,11 +537,11 @@ def UpdateConstraints(G2frame,data):
             # reset error status
             errmsg,warnmsg = CheckConstraints(allcons1)
             if errmsg:
-                print errmsg
-                print G2mv.VarRemapShow([],True)
+                print (errmsg)
+                print (G2mv.VarRemapShow([],True))
             return False
         elif warnmsg:
-            print 'Unexpected contraint warning:\n',warnmsg
+            print ('Unexpected contraint warning:\n'+warnmsg)
         return True
 
     def CheckChangedConstraint():
@@ -565,11 +566,11 @@ def UpdateConstraints(G2frame,data):
             # reset error status
             errmsg,warnmsg = CheckConstraints(allcons1)
             if errmsg:
-                print errmsg
-                print G2mv.VarRemapShow([],True)
+                print (errmsg)
+                print (G2mv.VarRemapShow([],True))
             return False
         elif warnmsg:
-            print 'Unexpected contraint warning:\n',warnmsg
+            print ('Unexpected contraint warning:\n'+warnmsg)
         return True
              
     def PageSelection(page):
@@ -593,7 +594,7 @@ def UpdateConstraints(G2frame,data):
         elif page[1] == "sym":
             return None,None,None
         else:
-            raise Exception,'Should not happen!'
+            raise Exception('Should not happen!')
         return vartype,varList,constrDictEnt
 
     def OnAddHold(event):
@@ -770,7 +771,7 @@ def UpdateConstraints(G2frame,data):
             atName = G2obj.VarDescr(item)[0]
             if atName in Atoms:
                 Atoms[atName].append(item)
-        AtNames = Atoms.keys()
+        AtNames = list(Atoms.keys())
         AtNames.sort()
         dlg = G2G.G2SingleChoiceDialog(G2frame,'Select 1st atom:',
             title1,AtNames,monoFont=True,size=(625,400))
@@ -787,7 +788,7 @@ def UpdateConstraints(G2frame,data):
                 AtNames.remove(FrstAtom)
         dlg.Destroy()
         if FrstAtom == '':
-            print 'no atom selected'
+            print ('no atom selected')
             return
         dlg = G2G.G2MultiChoiceDialog(
             G2frame,title2+FrstAtom,
@@ -796,7 +797,7 @@ def UpdateConstraints(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             Selections = dlg.GetSelections()[:]
         else:
-            print 'no target atom selected'
+            print ('no target atom selected')
             dlg.Destroy()
             return
         dlg.Destroy()
@@ -948,10 +949,10 @@ def UpdateConstraints(G2frame,data):
                         helptext += "\n" + var + " ("+ varMean + ")"
                     typeString = 'EQUIV'
                 else:
-                    print 'Unexpected constraint',item
+                    print ('Unexpected constraint'+item)
                 
             else:
-                print 'Removing old-style constraints'
+                print ('Removing old-style constraints')
                 data[name] = []
                 return constSizer
             constDel = wx.Button(pageDisplay,wx.ID_ANY,'Delete',style=wx.BU_EXACTFIT)
@@ -1045,7 +1046,7 @@ def UpdateConstraints(G2frame,data):
                     data[name][Id] = prev
         except:
             import traceback
-            print traceback.format_exc()
+            print (traceback.format_exc())
         finally:
             dlg.Destroy()
         wx.CallAfter(OnPageChanged,None)
@@ -1091,7 +1092,7 @@ def UpdateConstraints(G2frame,data):
 #            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,True)
             if 'DELETED' in str(PhaseConstr):   #seems to be no other way to do this (wx bug)
                 if GSASIIpath.GetConfigValue('debug'):
-                    print 'wx error: PhaseConstr not cleanly deleted after Refine'
+                    print ('wx error: PhaseConstr not cleanly deleted after Refine')
                 return
             UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global':
@@ -1166,10 +1167,10 @@ def UpdateConstraints(G2frame,data):
         G2frame.ErrorDialog('Constraint Error',
                             'Error in constraints:\n'+errmsg+'\nCheck console output for more information',
                             parent=G2frame)
-        print errmsg
-        print G2mv.VarRemapShow([],True)
+        print (errmsg)
+        print (G2mv.VarRemapShow([],True))
     elif warnmsg:
-        print 'Unexpected contraint warning:\n',warnmsg
+        print ('Unexpected contraint warning:\n'+warnmsg)
 
 ################################################################################
 #### Make nuclear-magnetic phase constraints - called by OnTransform in G2phsGUI
@@ -1351,15 +1352,15 @@ def UpdateRigidBodies(G2frame,data):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' rigid body macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
-            style=wx.OPEN | wx.CHANGE_DIR)
+            style=wx.FD_OPEN | wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
                 macro = open(macfile,'Ur')
                 head = macro.readline()
                 if macName not in head:
-                    print head
-                    print '**** ERROR - wrong restraint macro file selected, try again ****'
+                    print (head)
+                    print ('**** ERROR - wrong restraint macro file selected, try again ****')
                     macro = []
             else: # cancel was pressed
                 macro = []
@@ -1371,7 +1372,7 @@ def UpdateRigidBodies(G2frame,data):
         dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
             "Sybyl mol2 file (*.mol2)|*.mol2|PDB file (*.pdb;*.ent)|*.pdb;*.ent",
-            wx.OPEN | wx.CHANGE_DIR)
+            wx.FD_OPEN | wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()
@@ -1398,7 +1399,7 @@ def UpdateRigidBodies(G2frame,data):
         dlg = G2G.MultiIntegerDialog(G2frame,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
             nAtoms,nTrans = dlg.GetValues()
-            rbId = ran.randint(0,sys.maxint)
+            rbId = ran.randint(0,sys.maxsize)
             vecMag = [1.0 for i in range(nTrans)]
             vecRef = [False for i in range(nTrans)]
             vecVal = [np.zeros((nAtoms,3)) for j in range(nTrans)]
@@ -1420,7 +1421,7 @@ def UpdateRigidBodies(G2frame,data):
         while macStr:
             items = macStr.split()
             if 'I' == items[0]:
-                rbId = ran.randint(0,sys.maxint)
+                rbId = ran.randint(0,sys.maxsize)
                 rbName = items[1]
                 rbTypes = []
                 rbXYZ = []
@@ -1453,7 +1454,7 @@ def UpdateRigidBodies(G2frame,data):
                     'atNames':atNames,'rbRef':[nOrig-1,mRef-1,nRef-1,True],'rbSeq':rbSeq,
                     'SelSeq':[0,0],'useCount':0}
                 data['RBIds']['Residue'].append(rbId)
-                print 'Rigid body '+rbName+' added'
+                print ('Rigid body '+rbName+' added')
             macStr = macro.readline()
         macro.close()
         UpdateResidueRB()
@@ -1463,7 +1464,7 @@ def UpdateRigidBodies(G2frame,data):
         text,ext = getTextFile()
         if not text:
             return
-        rbId = ran.randint(0,sys.maxint)
+        rbId = ran.randint(0,sys.maxsize)
         rbTypes = []
         rbXYZ = []
         atNames = []
@@ -1522,7 +1523,7 @@ def UpdateRigidBodies(G2frame,data):
             data['Residue'][rbId] = {'RBname':'UNKRB','rbXYZ':rbXYZ,'rbTypes':rbTypes,
                 'atNames':atNames,'rbRef':[0,1,2,False],'rbSeq':[],'SelSeq':[0,0],'useCount':0}
             data['RBIds']['Residue'].append(rbId)
-            print 'Rigid body UNKRB added'
+            print ('Rigid body UNKRB added')
         text.close()
         UpdateResidueRB()
         
@@ -1564,14 +1565,14 @@ def UpdateRigidBodies(G2frame,data):
         return riding[2:]
                         
     def OnDefineTorsSeq(event):
-        rbKeys = data['Residue'].keys()
+        rbKeys = list(data['Residue'].keys())
         rbKeys.remove('AtInfo')
         rbNames = [data['Residue'][k]['RBname'] for k in rbKeys]
         rbIds = dict(zip(rbNames,rbKeys))
         rbNames.sort()
         rbId = 0
         if len(rbNames) == 0:
-            print 'There are no rigid bodies defined'
+            print ('There are no rigid bodies defined')
             G2frame.ErrorDialog('No rigid bodies','There are no rigid bodies defined',
                                 parent=G2frame)
             return
@@ -1616,7 +1617,7 @@ def UpdateRigidBodies(G2frame,data):
         refChoice = {}
         if 'DELETED' in str(G2frame.GetStatusBar()):   #seems to be no other way to do this (wx bug)
             if GSASIIpath.GetConfigValue('debug'):
-                print 'wx error: Rigid Body/Status not cleanly deleted after Refine'
+                print ('wx error: Rigid Body/Status not cleanly deleted after Refine')
             return
         SetStatusLine(' You may use e.g. "c60" or "s60" for a vector entry')
         def rbNameSizer(rbId,rbData):
@@ -1769,7 +1770,10 @@ def UpdateRigidBodies(G2frame,data):
             vecTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             vecGrid = G2G.GSGrid(VectorRBDisplay)
             vecGrid.SetTable(vecTable, True)
-            vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            if 'phoenix' in wx.version():
+                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
+            else:
+                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             if not imag:
                 vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
@@ -1967,7 +1971,10 @@ def UpdateRigidBodies(G2frame,data):
             Indx[vecGrid.GetId()] = rbId
             resList.append(vecGrid)
             vecGrid.SetTable(vecTable, True)
-            vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
+            if 'phoenix' in wx.version():
+                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeCell)
+            else:
+                vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             vecGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             attr = wx.grid.GridCellAttr()

@@ -12,6 +12,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+from __future__ import division, print_function
 import sys
 import math
 import time
@@ -39,7 +40,7 @@ import pypowder as pyd
 try:
     import pydiffax as pyx
 except ImportError:
-    print 'pydiffax is not available for this platform - under develpment'
+    print ('pydiffax is not available for this platform - under develpment')
 
     
 # trig functions in degrees
@@ -433,7 +434,7 @@ def PDFPeakFit(peaks,data):
     Y = data[1][1][iBeg:iFin]
     parmDict,varyList = MakeParms(peaks)
     if not len(varyList):
-        print ' Nothing varied'
+        print (' Nothing varied')
         return newpeaks,None,None,None,None,None
     
     Rvals = {}
@@ -528,7 +529,7 @@ def makeFFTsizeList(nmin=1,nmax=1023,thresh=15):
     nmin = max(1,nmin)
     nmax = max(nmin+1,nmax)
     for p in range(nmin,nmax):
-        if max(factorize(p).keys()) < thresh:
+        if max(list(factorize(p).keys())) < thresh:
             plist.append(p)
     return plist
 
@@ -821,7 +822,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
         except KeyError:
             break
         except ValueError:
-            print '**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****'
+            print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break        
     return yb,sumBk
     
@@ -948,7 +949,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
         except KeyError:
             break
         except ValueError:
-            print '**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****'
+            print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break        
     return dydb,dyddb,dydpk
 
@@ -1431,7 +1432,7 @@ def DoCalibInst(IndexPeaks,Inst):
             Inst[name][1] = parmDict[name]
         
     def InstPrint(Inst,sigDict):
-        print 'Instrument Parameters:'
+        print ('Instrument Parameters:')
         if 'C' in Inst['Type'][0]:
             ptfmt = "%12.6f"
         else:
@@ -1447,9 +1448,9 @@ def DoCalibInst(IndexPeaks,Inst):
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr
+        print (ptlbls)
+        print (ptstr)
+        print (sigstr)
         
     def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
         parmDict.update(zip(varyList,values))
@@ -1472,7 +1473,7 @@ def DoCalibInst(IndexPeaks,Inst):
     parmDict.update(insDict)
     varyList = insVary
     if not len(varyList):
-        print '**** ERROR - nothing to refine! ****'
+        print ('**** ERROR - nothing to refine! ****')
         return False
     while True:
         begin = time.time()
@@ -1484,16 +1485,16 @@ def DoCalibInst(IndexPeaks,Inst):
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         GOF = chisq/(len(peakPos)-len(varyList))       #reduced chi^2
-        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',len(peakPos),' Number of parameters: ',len(varyList)
-        print 'calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-        print 'chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF)
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(peakPos),len(varyList)))
+        print ('calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
+        print ('chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF))
         try:
             sig = np.sqrt(np.diag(result[1])*GOF)
             if np.any(np.isnan(sig)):
-                print '*** Least squares aborted - some invalid esds possible ***'
+                print ('*** Least squares aborted - some invalid esds possible ***')
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
-            print '**** Refinement failed - singular matrix ****'
+            print ('**** Refinement failed - singular matrix ****')
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,Inst,varyList)
@@ -1558,7 +1559,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                 break
                 
     def BackgroundPrint(Background,sigDict):
-        print 'Background coefficients for',Background[0][0],'function'
+        print ('Background coefficients for '+Background[0][0]+' function')
         ptfmt = "%12.5f"
         ptstr =  'value: '
         sigstr = 'esd  : '
@@ -1571,19 +1572,19 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                 else:
                     sigstr += " "*12
             if len(ptstr) > 75:
-                print ptstr
-                if Background[0][1]: print sigstr
+                print (ptstr)
+                if Background[0][1]: print (sigstr)
                 ptstr =  'value: '
                 sigstr = 'esd  : '
         if len(ptstr) > 8:
-            print ptstr
-            if Background[0][1]: print sigstr
+            print (ptstr)
+            if Background[0][1]: print (sigstr)
 
         if Background[1]['nDebye']:
             parms = ['DebyeA;','DebyeR;','DebyeU;']
-            print 'Debye diffuse scattering coefficients'
+            print ('Debye diffuse scattering coefficients')
             ptfmt = "%12.5f"
-            print ' term       DebyeA       esd        DebyeR       esd        DebyeU        esd'
+            print (' term       DebyeA       esd        DebyeR       esd        DebyeU        esd')
             for term in range(Background[1]['nDebye']):
                 line = ' term %d'%(term)
                 for ip,name in enumerate(parms):
@@ -1592,9 +1593,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                         line += ptfmt%(sigDict[name+str(term)])
                     else:
                         line += " "*12
-                print line
+                print (line)
         if Background[1]['nPeaks']:
-            print 'Coefficients for Background Peaks'
+            print ('Coefficients for Background Peaks')
             ptfmt = "%15.3f"
             for j,pl in enumerate(Background[1]['peaksList']):
                 names =  'peak %3d:'%(j+1)
@@ -1609,9 +1610,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                         sigstr += ptfmt%(sigDict[prm])
                     else:
                         sigstr += " "*15
-                print names
-                print ptstr
-                print sigstr
+                print (names)
+                print (ptstr)
+                print (sigstr)
                             
     def SetInstParms(Inst):
         dataType = Inst['Type'][0]
@@ -1657,7 +1658,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                 break
         
     def InstPrint(Inst,sigDict):
-        print 'Instrument Parameters:'
+        print ('Instrument Parameters:')
         ptfmt = "%12.6f"
         ptlbls = 'names :'
         ptstr =  'values:'
@@ -1671,9 +1672,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                     sigstr += ptfmt % (sigDict[parm])
                 else:
                     sigstr += 12*' '
-        print ptlbls
-        print ptstr
-        print sigstr
+        print (ptlbls)
+        print (ptstr)
+        print (sigstr)
 
     def SetPeaksParms(dataType,Peaks):
         peakNames = []
@@ -1721,7 +1722,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                         peak[2*j] = G2mth.getTOFgamma(parmDict,dsp)
                         
     def PeaksPrint(dataType,parmDict,sigDict,varyList,ptsperFW):
-        print 'Peak coefficients:'
+        print ('Peak coefficients:')
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
         else:   #'T'
@@ -1733,7 +1734,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
             else:
                 head += name.center(10)+'esd'.center(10)
         head += 'bins'.center(8)
-        print head
+        print (head)
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
         else:
@@ -1752,7 +1753,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                     else:
                         ptstr += 10*' '
             ptstr += '%9.2f'%(ptsperFW[i])
-            print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
+            print ('%s'%(('Peak'+str(i+1)).center(8)),ptstr)
                 
     def devPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):
         parmdict.update(zip(varylist,values))
@@ -1808,23 +1809,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
         Values2Dict(parmDict, varyList, result[0])
         Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
         Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
-        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],xFin-xBeg,len(varyList)))
         if ncyc:
-            print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+            print ('fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
+        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
         sig = [0]*len(varyList)
         if len(varyList) == 0: break  # if nothing was refined
         try:
             sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
             if np.any(np.isnan(sig)):
-                print '*** Least squares aborted - some invalid esds possible ***'
+                print ('*** Least squares aborted - some invalid esds possible ***')
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
-            print '**** Refinement failed - singular matrix ****'
+            print ('**** Refinement failed - singular matrix ****')
             Ipvt = result[2]['ipvt']
             for i,ipvt in enumerate(Ipvt):
                 if not np.sum(result[2]['fjac'],axis=1)[i]:
-                    print 'Removing parameter: ',varyList[ipvt-1]
+                    print ('Removing parameter: '+varyList[ipvt-1])
                     badVary.append(varyList[ipvt-1])
                     del(varyList[ipvt-1])
                     break
@@ -1850,14 +1851,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
     if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
     if len(binsperFWHM):
         if min(binsperFWHM) < 1.:
-            print '*** Warning: calculated peak widths are too narrow to refine profile coefficients ***'
+            print ('*** Warning: calculated peak widths are too narrow to refine profile coefficients ***')
             if 'T' in Inst['Type'][0]:
-                print ' Manually increase sig-0, 1, or 2 in Instrument Parameters'
+                print (' Manually increase sig-0, 1, or 2 in Instrument Parameters')
             else:
-                print ' Manually increase W in Instrument Parameters'
+                print (' Manually increase W in Instrument Parameters')
         elif min(binsperFWHM) < 4.:
-            print '*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***'
-            print '*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM))
+            print ('*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***')
+            print ('*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM)))
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
     
 def calcIncident(Iparm,xdata):
@@ -1920,7 +1921,7 @@ def calcIncident(Iparm,xdata):
 ################################################################################
 
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
-    print 'fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0])
+    print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
     
     class RandomDisplacementBounds(object):
         """random displacement with bounds"""
@@ -1979,15 +1980,15 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if 'Scale' in varyList:
             data['Scale'][0] = parmDict['Scale']
             line += ' esd: %.4g'%(sigDict['Scale'])                                                             
-        print line
+        print (line)
         line = ' Flat background: %15.4g'%(parmDict['FltBack'])
         if 'FltBack' in varyList:
             data['FltBack'][0] = parmDict['FltBack']
             line += ' esd: %15.3g'%(sigDict['FltBack'])
-        print line
+        print (line)
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
-            print ' Parameters for layer: %d %s'%(ilay,name)
+            print (' Parameters for layer: %d %s'%(ilay,name))
             cid = str(ilay)+';'
             line = ' '
             line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
@@ -2001,8 +2002,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                     line += ' %s: %.3f'%(parm,layer[parm][0])
                     if cid+parm in varyList:
                         line += ' esd: %.3g'%(sigDict[cid+parm])
-            print line
-            print line2
+            print (line)
+            print (line2)
     
     def calcREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
@@ -2081,7 +2082,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             xyrng = np.array(bounds).T
             take_step = RandomDisplacementBounds(xyrng[0], xyrng[1])
             T0 = estimateT0(take_step)
-            print ' Estimated temperature: %.3g'%(T0)
+            print (' Estimated temperature: %.3g'%(T0))
             result = so.basinhopping(sumREFD,values,take_step=take_step,disp=True,T=T0,stepsize=Bfac,
                 interval=20,niter=200,minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
                 'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList)})
@@ -2101,7 +2102,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             chisq = result[1]
             ncalc = result[3]
             covM = []
-            print ' MC/SA final temperature: %.4g'%(result[2])
+            print (' MC/SA final temperature: %.4g'%(result[2]))
         elif data['Minimizer'] == 'L-BFGS-B':
             result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
@@ -2146,13 +2147,13 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             sig = np.zeros(len(varyList))
             covMatrix = []
         sigDict = dict(zip(varyList,sig))
-        print ' Results of reflectometry data modelling fit:'
-        print 'Number of function calls:',ncalc,' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
-        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+        print (' Results of reflectometry data modelling fit:')
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
+        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
         SetModelParms()
         return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
-        print Msg
+        print (Msg)
         return False,0,0,0,0,0,0,Msg
         
 def makeSLDprofile(data,Substances):
@@ -2335,7 +2336,7 @@ def SmearAbeles(kz,dq, depth, rho, irho=0, sigma=0):
     return y
         
 def makeRefdFFT(Limits,Profile):
-    print 'make fft'
+    print ('make fft')
     Q,Io = Profile[:2]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
@@ -2400,12 +2401,12 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     for name in path:
         if 'bin' in name:
             DIFFaX = name+'/DIFFaX.exe'
-            print ' Execute ',DIFFaX
+            print (' Execute '+DIFFaX)
             break
     # make form factor file that DIFFaX wants - atom types are GSASII style
     sf = open('data.sfc','w')
     sf.write('GSASII special form factor file for DIFFaX\n\n')
-    atTypes = Layers['AtInfo'].keys()
+    atTypes = list(Layers['AtInfo'].keys())
     if 'H' not in atTypes:
         atTypes.insert(0,'H')
     for atType in atTypes:
@@ -2519,7 +2520,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
             df.write('%.3f %.5f %.5f %.5f\n'%(p,dx,dy,dz))
             sumPx += p
         if sumPx != 1.0:    #this has to be picky since DIFFaX is.
-            print 'ERROR - Layer probabilities sum to ',sumPx,' DIFFaX will insist it = 1.0'
+            print ('ERROR - Layer probabilities sum to %.3f DIFFaX will insist it = 1.0'%sumPx)
             df.close()
             os.remove('data.sfc')
             os.remove('control.dif')
@@ -2530,8 +2531,8 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     try:
         subp.call(DIFFaX)
     except OSError:
-        print ' DIFFax.exe is not available for this platform - under development'
-    print ' DIFFaX time = %.2fs'%(time.time()-time0)
+        print (' DIFFax.exe is not available for this platform - under development')
+    print (' DIFFaX time = %.2fs'%(time.time()-time0))
     if os.path.exists('GSASII-DIFFaX.spc'):
         Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
         iFin = iBeg+Xpat.shape[1]
@@ -2627,7 +2628,7 @@ def SetStackingClay(Layers,Type):
 def SetCellAtoms(Layers):
     Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
 # atoms in layers
-    atTypes = Layers['AtInfo'].keys()
+    atTypes = list(Layers['AtInfo'].keys())
     AtomXOU = []
     AtomTp = []
     LayerSymm = []
@@ -2696,7 +2697,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     spec = np.zeros(Nspec,dtype='double')    
     time0 = time.time()
     pyx.pygetspc(controls,Nspec,spec)
-    print ' GETSPC time = %.2fs'%(time.time()-time0)
+    print (' GETSPC time = %.2fs'%(time.time()-time0))
     time0 = time.time()
     U = ateln2*inst['U'][1]/10000.
     V = ateln2*inst['V'][1]/10000.
@@ -2727,7 +2728,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
         profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
         profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
     profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
-    print ' Broadening time = %.2fs'%(time.time()-time0)
+    print (' Broadening time = %.2fs'%(time.time()-time0))
     
 def CalcStackingSADP(Layers,debug):
     
@@ -2762,7 +2763,7 @@ def CalcStackingSADP(Layers,debug):
             Sapd[:,p2] = spec[iB:iF]
         iB += Nblk
     Layers['Sadp']['Img'] = Sapd
-    print ' GETSAD time = %.2fs'%(time.time()-time0)
+    print (' GETSAD time = %.2fs'%(time.time()-time0))
 #    GSASIIpath.IPyBreak()
     
 #testing data
@@ -2819,7 +2820,7 @@ def test1():
     time0 = time.time()
     for i in range(100):
         getPeakProfile(parmDict1,xdata,varyList,bakType)
-    print '100+6*Ka1-2 peaks=1200 peaks',time.time()-time0
+    print ('100+6*Ka1-2 peaks=1200 peaks %.2f'%time.time()-time0)
     
 def test2(name,delt):
     if NeedTestData: TestData()
@@ -2857,5 +2858,5 @@ if __name__ == '__main__':
         test2(name,shft)
     for name,shft in [['pos',0.0001],['sig',0.01],['gam',0.0001],['shl',0.00005]]:
         test3(name,shft)
-    print "OK"
+    print ("OK")
     plotter.StartEventLoop()

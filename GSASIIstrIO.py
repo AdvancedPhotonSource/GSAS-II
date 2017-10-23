@@ -11,12 +11,17 @@
 -------------------------------------
 
 '''
+from __future__ import division, print_function
+import platform
 import os
 import os.path as ospath
 import time
 import math
 import copy
-import cPickle
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import pickle as cPickle
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
@@ -37,6 +42,12 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
 
+def cPickleLoad(fp):
+    if '2' in platform.python_version_tuple()[0]:
+        return cPickle.load(fp)
+    else:
+       return cPickle.load(fp,encoding='latin-1')
+
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
 
@@ -47,7 +58,7 @@ def GetControls(GPXfile):
     fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -65,7 +76,7 @@ def GetConstraints(GPXfile):
     fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -77,10 +88,10 @@ def GetConstraints(GPXfile):
             fl.close()
             constDict,fixedList,ignored = ProcessConstraints(constList)
             if ignored:
-                print ignored,'Constraints were rejected. Was a constrained phase, histogram or atom deleted?'
+                print ('%d Constraints were rejected. Was a constrained phase, histogram or atom deleted?'%ignored)
             return constDict,fixedList
     fl.close()
-    raise Exception,"No constraints in GPX file"
+    raise Exception("No constraints in GPX file")
     
 def ProcessConstraints(constList):
     """Interpret the constraints in the constList input into a dictionary, etc.
@@ -194,7 +205,7 @@ def ReadCheckConstraints(GPXfile):
         # print some diagnostic info on the constraints
         print('Error in constraints:\n'+errmsg+
               '\nRefinement not possible due to conflict in constraints, see below:\n')
-        print G2mv.VarRemapShow(varyList,True)
+        print (G2mv.VarRemapShow(varyList,True))
     return errmsg, warnmsg
     
 def makeTwinFrConstr(Phases,Histograms,hapVary):
@@ -221,7 +232,7 @@ def GetRestraints(GPXfile):
     fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -236,7 +247,7 @@ def GetRigidBodies(GPXfile):
     fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -250,7 +261,7 @@ def GetFprime(controlDict,Histograms):
     FFtables = controlDict['FFtables']
     if not FFtables:
         return
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if histogram[:4] in ['PWDR','HKLF']:
@@ -266,7 +277,7 @@ def GetFprime(controlDict,Histograms):
                     FFtables[El][hfx+'FPP'] = FPP
                     
 def PrintFprime(FFtables,pfx,pFile):
-    print >>pFile,'\n Resonant form factors:'
+    pFile.write('\n Resonant form factors:\n')
     Elstr = ' Element:'
     FPstr = " f'     :"
     FPPstr = ' f"     :'
@@ -274,9 +285,9 @@ def PrintFprime(FFtables,pfx,pFile):
         Elstr += ' %8s'%(El)
         FPstr += ' %8.3f'%(FFtables[El][pfx+'FP'])
         FPPstr += ' %8.3f'%(FFtables[El][pfx+'FPP'])
-    print >>pFile,Elstr
-    print >>pFile,FPstr
-    print >>pFile,FPPstr
+    pFile.write(Elstr+'\n')
+    pFile.write(FPstr+'\n')
+    pFile.write(FPPstr+'\n')
             
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -288,7 +299,7 @@ def GetPhaseNames(GPXfile):
     PhaseNames = []
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -308,7 +319,7 @@ def GetAllPhaseData(GPXfile,PhaseName):
     fl = open(GPXfile,'rb')
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -331,7 +342,7 @@ def GetHistograms(GPXfile,hNames):
     Histograms = {}
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -385,7 +396,7 @@ def GetHistogramNames(GPXfile,hType):
     HistogramNames = []
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -502,13 +513,13 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
                         
     import distutils.file_util as dfu
     GPXback = GPXBackup(GPXfile,makeBack)
-    print 'Read from file:',GPXback
-    print 'Save to file  :',GPXfile
+    print ('Read from file:'+GPXback)
+    print ('Save to file  :'+GPXfile)
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
         try:
-            data = cPickle.load(infile)
+            data = cPickleLoad(infile)
         except EOFError:
             break
         datum = data[0]
@@ -536,14 +547,14 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
         try:                        
             cPickle.dump(data,outfile,1)
         except AttributeError:
-            print 'ERROR - bad data in least squares result'
+            print ('ERROR - bad data in least squares result')
             infile.close()
             outfile.close()
             dfu.copy_file(GPXback,GPXfile)
-            print 'GPX file save failed - old version retained'
+            print ('GPX file save failed - old version retained')
             return
             
-    print 'GPX file save successful'
+    print ('GPX file save successful')
     
 def GetSeqResult(GPXfile):
     '''
@@ -555,7 +566,7 @@ def GetSeqResult(GPXfile):
     SeqResult = {}
     while True:
         try:
-            data = cPickle.load(fl)
+            data = cPickleLoad(fl)
         except EOFError:
             break
         datum = data[0]
@@ -571,13 +582,13 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     :param str GPXfile: full .gpx file name
     '''
     GPXback = GPXBackup(GPXfile)
-    print 'Read from file:',GPXback
-    print 'Save to file  :',GPXfile
+    print ('Read from file:'+GPXback)
+    print ('Save to file  :'+GPXfile)
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
         try:
-            data = cPickle.load(infile)
+            data = cPickleLoad(infile)
         except EOFError:
             break
         datum = data[0]
@@ -598,35 +609,35 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         cPickle.dump(data,outfile,1)
     infile.close()
     outfile.close()
-    print 'GPX file save successful'
+    print ('GPX file save successful')
                         
 def ShowBanner(pFile=None):
     'Print authorship, copyright and citation notice'
-    print >>pFile,80*'*'
-    print >>pFile,'   General Structure Analysis System-II Crystal Structure Refinement'
-    print >>pFile,'              by Robert B. Von Dreele & Brian H. Toby'
-    print >>pFile,'                Argonne National Laboratory(C), 2010'
-    print >>pFile,' This product includes software developed by the UChicago Argonne, LLC,' 
-    print >>pFile,'            as Operator of Argonne National Laboratory.'
-    print >>pFile,'                          Please cite:'
-    print >>pFile,'   B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)'
+    pFile.write(80*'*'+'\n')
+    pFile.write('   General Structure Analysis System-II Crystal Structure Refinement\n')
+    pFile.write('              by Robert B. Von Dreele & Brian H. Toby\n')
+    pFile.write('                Argonne National Laboratory(C), 2010\n')
+    pFile.write(' This product includes software developed by the UChicago Argonne, LLC,\n')
+    pFile.write('            as Operator of Argonne National Laboratory.\n')
+    pFile.write('                          Please cite:\n')
+    pFile.write('   B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)\n')
 
-    print >>pFile,80*'*','\n'
+    pFile.write(80*'*'+'\n')
 
 def ShowControls(Controls,pFile=None,SeqRef=False):
     'Print controls information'
-    print >>pFile,' Least squares controls:'
-    print >>pFile,' Refinement type: ',Controls['deriv type']
+    pFile.write(' Least squares controls:\n')
+    pFile.write(' Refinement type: %s\n'%Controls['deriv type'])
     if 'Hessian' in Controls['deriv type']:
-        print >>pFile,' Maximum number of cycles:',Controls['max cyc']
+        pFile.write(' Maximum number of cycles: %d\n'%Controls['max cyc'])
     else:
-        print >>pFile,' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
-    print >>pFile,' Regularize hydrogens (if any):',Controls.get('HatomFix',False)
-    print >>pFile,' Initial shift factor: ','%.3f'%(Controls['shift factor'])
+        pFile.write(' Minimum delta-M/M for convergence: %.2g\n'%(Controls['min dM/M']))
+    pFile.write(' Regularize hydrogens (if any): %s\n'%Controls.get('HatomFix',False))
+    pFile.write(' Initial shift factor: %.3f\n'%(Controls['shift factor']))
     if SeqRef:
-        print >>pFile,' Sequential refinement controls:'
-        print >>pFile,' Copy of histogram results to next: ',Controls['Copy2Next']
-        print >>pFile,' Process histograms in reverse order: ',Controls['Reverse Seq']
+        pFile.write(' Sequential refinement controls:\n')
+        pFile.write(' Copy of histogram results to next: %s\n'%(Controls['Copy2Next']))
+        pFile.write(' Process histograms in reverse order: %s\n'%(Controls['Reverse Seq']))
     
 def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
     'needs a doc string'
@@ -718,34 +729,34 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
         atNames = RBModel['atNames']
         rbRef = RBModel['rbRef']
         rbSeq = RBModel['rbSeq']
-        print >>pFile,'Residue RB name: ',RBModel['RBname'],' no.atoms: ',len(RBModel['rbTypes']), \
-            'No. times used: ',RBModel['useCount']
-        print >>pFile,'    At name       x          y          z'
+        pFile.write('Residue RB name: %s no.atoms: %d, No. times used: %d\n'%
+            (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
+        pFile.write('    At name       x          y          z\n')
         for name,xyz in zip(atNames,RBModel['rbXYZ']):
-            print >>pFile,'  %8s %10.4f %10.4f %10.4f'%(name,xyz[0],xyz[1],xyz[2])
-        print >>pFile,'Orientation defined by:',atNames[rbRef[0]],' -> ',atNames[rbRef[1]], \
-            ' & ',atNames[rbRef[0]],' -> ',atNames[rbRef[2]]
+            pFile.write('  %8s %10.4f %10.4f %10.4f\n'%(name,xyz[0],xyz[1],xyz[2]))
+        pFile.write('Orientation defined by: %s -> %s & %s -> %s\n'%
+            (atNames[rbRef[0]],atNames[rbRef[1]],atNames[rbRef[0]],atNames[rbRef[2]]))
         if rbSeq:
             for i,rbseq in enumerate(rbSeq):
-                print >>pFile,'Torsion sequence ',i,' Bond: '+atNames[rbseq[0]],' - ', \
-                    atNames[rbseq[1]],' riding: ',[atNames[i] for i in rbseq[3]]
+#                nameLst = [atNames[i] for i in rbseq[3]]
+                pFile.write('Torsion sequence %d Bond: %s - %s riding: %s\n'%
+                    (i,atNames[rbseq[0]],atNames[rbseq[1]],str([atNames[i] for i in rbseq[3]])))
         
     def PrintVecRBModel(RBModel):
         rbRef = RBModel['rbRef']
         atTypes = RBModel['rbTypes']
-        print >>pFile,'Vector RB name: ',RBModel['RBname'],' no.atoms: ',len(RBModel['rbTypes']), \
-            'No. times used: ',RBModel['useCount']
+        pFile.write('Vector RB name: %s no.atoms: No. times used: %d\n'%
+            (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
         for i in range(len(RBModel['VectMag'])):
-            print >>pFile,'Vector no.: ',i,' Magnitude: ', \
-                '%8.4f'%(RBModel['VectMag'][i]),' Refine? ',RBModel['VectRef'][i]
-            print >>pFile,'  No. Type     vx         vy         vz'
+            pFile.write('Vector no.: %d Magnitude: %8.4f Refine? %s\n'%(i,RBModel['VectMag'][i],RBModel['VectRef'][i]))
+            pFile.write('  No. Type     vx         vy         vz\n')
             for j,[name,xyz] in enumerate(zip(atTypes,RBModel['rbVect'][i])):
-                print >>pFile,'  %d   %2s %10.4f %10.4f %10.4f'%(j,name,xyz[0],xyz[1],xyz[2])
-        print >>pFile,'  No. Type      x          y          z'
+                pFile.write('  %d   %2s %10.4f %10.4f %10.4f\n'%(j,name,xyz[0],xyz[1],xyz[2]))
+        pFile.write('  No. Type      x          y          z\n')
         for i,[name,xyz] in enumerate(zip(atTypes,RBModel['rbXYZ'])):
-            print >>pFile,'  %d   %2s %10.4f %10.4f %10.4f'%(i,name,xyz[0],xyz[1],xyz[2])
-        print >>pFile,'Orientation defined by: atom ',rbRef[0],' -> atom ',rbRef[1], \
-            ' & atom ',rbRef[0],' -> atom ',rbRef[2]
+            pFile.write('  %d   %2s %10.4f %10.4f %10.4f\n'%(i,name,xyz[0],xyz[1],xyz[2]))
+        pFile.write('Orientation defined by: atom %s -> atom %s & atom %s -> atom %s\n'%
+            (rbRef[0],rbRef[1],rbRef[0],rbRef[2]))
     rbVary = []
     rbDict = {}
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -760,13 +771,13 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
                     if ref:
                         rbVary.append(pid)
                 if Print:
-                    print >>pFile,'\nVector rigid body model:'
+                    pFile.write('\nVector rigid body model:\n')
                     PrintVecRBModel(rigidbodyDict['Vector'][item])
     if len(rbIds['Residue']):
         for item in rbIds['Residue']:
             if rigidbodyDict['Residue'][item]['useCount']:
                 if Print:
-                    print >>pFile,'\nResidue rigid body model:'
+                    pFile.write('\nResidue rigid body model:\n')
                     PrintResRBModel(rigidbodyDict['Residue'][item])
     return rbVary,rbDict
     
@@ -774,7 +785,7 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
     'needs a doc string'
     
     def PrintRBVectandSig(VectRB,VectSig):
-        print >>pFile,'\n Rigid body vector magnitudes for '+VectRB['RBname']+':'
+        pFile.write('\n Rigid body vector magnitudes for %s:\n'%VectRB['RBname'])
         namstr = '  names :'
         valstr = '  values:'
         sigstr = '  esds  :'
@@ -785,9 +796,9 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
                 sigstr += '%12.4f'%(sig)
             else:
                 sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,valstr
-        print >>pFile,sigstr        
+        pFile.write(namstr+'\n')
+        pFile.write(valstr+'\n')
+        pFile.write(sigstr+'\n')        
         
     RBIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})  #these are lists of rbIds
     if not RBIds['Vector']:
@@ -810,40 +821,40 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
     'needs a doc string'
             
     def PrintFFtable(FFtable):
-        print >>pFile,'\n X-ray scattering factors:'
-        print >>pFile,'   Symbol     fa                                      fb                                      fc'
-        print >>pFile,99*'-'
+        pFile.write('\n X-ray scattering factors:\n')
+        pFile.write('   Symbol     fa                                      fb                                      fc\n')
+        pFile.write(99*'-'+'\n')
         for Ename in FFtable:
             ffdata = FFtable[Ename]
             fa = ffdata['fa']
             fb = ffdata['fb']
-            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
-                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc'])
+            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc']))
                 
     def PrintMFtable(MFtable):
-        print >>pFile,'\n <j0> Magnetic scattering factors:'
-        print >>pFile,'   Symbol     mfa                                    mfb                                     mfc'
-        print >>pFile,99*'-'
+        pFile.write('\n <j0> Magnetic scattering factors:\n')
+        pFile.write('   Symbol     mfa                                    mfb                                     mfc\n')
+        pFile.write(99*'-'+'\n')
         for Ename in MFtable:
             mfdata = MFtable[Ename]
             fa = mfdata['mfa']
             fb = mfdata['mfb']
-            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
-                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['mfc'])
-        print >>pFile,'\n <j2> Magnetic scattering factors:'
-        print >>pFile,'   Symbol     nfa                                    nfb                                     nfc'
-        print >>pFile,99*'-'
+            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['mfc']))
+        pFile.write('\n <j2> Magnetic scattering factors:\n')
+        pFile.write('   Symbol     nfa                                    nfb                                     nfc\n')
+        pFile.write(99*'-'+'\n')
         for Ename in MFtable:
             mfdata = MFtable[Ename]
             fa = mfdata['nfa']
             fb = mfdata['nfb']
-            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
-                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['nfc'])
+            pFile.write(' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f\n'%
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['nfc']))
                 
     def PrintBLtable(BLtable):
-        print >>pFile,'\n Neutron scattering factors:'
-        print >>pFile,'   Symbol   isotope       mass       b       resonant terms'
-        print >>pFile,99*'-'
+        pFile.write('\n Neutron scattering factors:\n')
+        pFile.write('   Symbol   isotope       mass       b       resonant terms\n')
+        pFile.write(99*'-'+'\n')
         for Ename in BLtable:
             bldata = BLtable[Ename]
             isotope = bldata[0]
@@ -857,7 +868,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
             for item in bres:
                 line += '%10.5g'%(item)
-            print >>pFile,line
+            pFile.write(line+'\n')
             
     def PrintRBObjects(resRBData,vecRBData):
         
@@ -867,62 +878,63 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             TLS = RB['ThermalMotion'][1]
             TLSvar = RB['ThermalMotion'][2]
             if 'T' in RB['ThermalMotion'][0]:
-                print >>pFile,'TLS data'
+                pFile.write('TLS data\n')
                 text = ''
                 for i in range(6):
                     text += 'T'+tlstr[i]+' %8.4f %s '%(TLS[i],str(TLSvar[i])[0])
-                print >>pFile,text
+                pFile.write(text+'\n')
                 if 'L' in RB['ThermalMotion'][0]: 
                     text = ''
                     for i in range(6,12):
                         text += 'L'+tlstr[i-6]+' %8.2f %s '%(TLS[i],str(TLSvar[i])[0])
-                    print >>pFile,text
+                    pFile.write(text+'\n')
                 if 'S' in RB['ThermalMotion'][0]:
                     text = ''
                     for i in range(12,20):
                         text += 'S'+sstr[i-12]+' %8.3f %s '%(TLS[i],str(TLSvar[i])[0])
-                    print >>pFile,text
+                    pFile.write(text+'\n')
             if 'U' in RB['ThermalMotion'][0]:
-                print >>pFile,'Uiso data'
+                pFile.write('Uiso data\n')
                 text = 'Uiso'+' %10.3f %s'%(TLS[0],str(TLSvar[0])[0])           
+                pFile.write(text+'\n')
             
         if len(resRBData):
             for RB in resRBData:
                 Oxyz = RB['Orig'][0]
                 Qrijk = RB['Orient'][0]
                 Angle = 2.0*acosd(Qrijk[0])
-                print >>pFile,'\nRBObject ',RB['RBname'],' at ',      \
-                    '%10.4f %10.4f %10.4f'%(Oxyz[0],Oxyz[1],Oxyz[2]),' Refine?',RB['Orig'][1]
-                print >>pFile,'Orientation angle,vector:',      \
-                    '%10.3f %10.4f %10.4f %10.4f'%(Angle,Qrijk[1],Qrijk[2],Qrijk[3]),' Refine? ',RB['Orient'][1]
+                pFile.write('\nRBObject %s at %10.4f %10.4f %10.4f Refine? %s\n'%
+                    (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
+                pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
+                    (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
                 Torsions = RB['Torsions']
                 if len(Torsions):
                     text = 'Torsions: '
                     for torsion in Torsions:
                         text += '%10.4f Refine? %s'%(torsion[0],torsion[1])
-                    print >>pFile,text
+                    pFile.write(text+'\n')
                 PrintRBThermals()
         if len(vecRBData):
             for RB in vecRBData:
                 Oxyz = RB['Orig'][0]
                 Qrijk = RB['Orient'][0]
                 Angle = 2.0*acosd(Qrijk[0])
-                print >>pFile,'\nRBObject ',RB['RBname'],' at ',      \
-                    '%10.4f %10.4f %10.4f'%(Oxyz[0],Oxyz[1],Oxyz[2]),' Refine?',RB['Orig'][1]           
-                print >>pFile,'Orientation angle,vector:',      \
-                    '%10.3f %10.4f %10.4f %10.4f'%(Angle,Qrijk[1],Qrijk[2],Qrijk[3]),' Refine? ',RB['Orient'][1]
+                pFile.write('\nRBObject %s',' at %10.4f %10.4f %10.4f Refine? %s\n'%
+                    (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
+                pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
+                    (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))
                 PrintRBThermals()
                 
     def PrintAtoms(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
-        print >>pFile,'\n Atoms:'
+        pFile.write('\n Atoms:\n')
         line = '   name    type  refine?   x         y         z    '+ \
             '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'macromolecular':
             line = ' res no residue chain'+line
-        print >>pFile,line
+        pFile.write(line+'\n')
         if General['Type'] in ['nuclear','magnetic','faulted',]:
-            print >>pFile,135*'-'
+            pFile.write(135*'-'+'\n')
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
                     '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
@@ -932,9 +944,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     line += 8*' '
                     for j in range(6):
                         line += '%8.5f'%(at[cia+2+j])
-                print >>pFile,line
+                pFile.write(line+'\n')
         elif General['Type'] == 'macromolecular':
-            print >>pFile,135*'-'            
+            pFile.write(135*'-'+'\n')            
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[0])+'%7s'%(at[1])+'%7s'%(at[2])+'%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
                     '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
@@ -944,37 +956,37 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     line += 8*' '
                     for j in range(6):
                         line += '%8.4f'%(at[cia+2+j])
-                print >>pFile,line
+                pFile.write(line+'\n')
                 
     def PrintMoments(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
         AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
-        print >>pFile,'\n Magnetic moments:'
+        pFile.write('\n Magnetic moments:\n')
         line = '   name    type  refine?  Mx        My        Mz    '
-        print >>pFile,line
-        print >>pFile,135*'-'
+        pFile.write(line+'\n')
+        pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
             if AtInfo[at[ct]]:
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
                     '%10.5f'%(at[cmx+2])
-                print >>pFile,line
+                pFile.write(line+'\n')
         
                 
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
-        print >>pFile,'\n Modulation waves'
+        pFile.write('\n Modulation waves\n')
         names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax'],
             'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
-        print >>pFile,135*'-'
+        pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
                 if len(Waves):
-                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
-                        %(at[ct-1],at[cs],Stype,AtomSS['waveType'])
+                    pFile.write(' atom: %s, site sym: %s, type: %s wave type: %s:\n'%
+                        (at[ct-1],at[cs],Stype,AtomSS['waveType']))
                 for iw,wave in enumerate(Waves):                    
                     line = ''
                     if AtomSS['waveType'] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
@@ -987,31 +999,31 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         else:
                             for item in names[Stype]:
                                 line += '%8s '%(item)
-                    print >>pFile,line
+                    pFile.write(line+'\n')
                     line = ''
                     for item in wave[0]:
                         line += '%8.4f '%(item)
                     line += ' Refine? '+str(wave[1])
-                    print >>pFile,line
+                    pFile.write(line+'\n')
         
     def PrintTexture(textureData):
         topstr = '\n Spherical harmonics texture: Order:' + \
             str(textureData['Order'])
         if textureData['Order']:
-            print >>pFile,topstr+' Refine? '+str(textureData['SH Coeff'][0])
+            pFile.write('%s Refine? %s\n'%(topstr,textureData['SH Coeff'][0]))
         else:
-            print >>pFile,topstr
+            pFile.write(topstr+'\n')
             return
         names = ['omega','chi','phi']
         line = '\n'
         for name in names:
             line += ' SH '+name+':'+'%12.4f'%(textureData['Sample '+name][1])+' Refine? '+str(textureData['Sample '+name][0])
-        print >>pFile,line
-        print >>pFile,'\n Texture coefficients:'
+        pFile.write(line+'\n')
+        pFile.write('\n Texture coefficients:\n')
         SHcoeff = textureData['SH Coeff'][1]
-        SHkeys = SHcoeff.keys()
+        SHkeys = list(SHcoeff.keys())
         nCoeff = len(SHcoeff)
-        nBlock = nCoeff/10+1
+        nBlock = nCoeff//10+1
         iBeg = 0
         iFin = min(iBeg+10,nCoeff)
         for block in range(nBlock):
@@ -1020,8 +1032,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             for item in SHkeys[iBeg:iFin]:
                 ptlbls += '%12s'%(item)
                 ptstr += '%12.4f'%(SHcoeff[item]) 
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
         
@@ -1085,7 +1097,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 phaseVary += [name,]
                     
     if Print:
-        print  >>pFile,'\n Phases:'
+        pFile.write('\n Phases:\n')
     phaseVary = []
     phaseDict = {}
     pawleyLookup = {}
@@ -1297,42 +1309,41 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         phaseVary.append(pfx+item)
                 
             if Print:
-                print >>pFile,'\n Phase name: ',General['Name']
-                print >>pFile,135*'='
+                pFile.write('\n Phase name: %s\n'%General['Name'])
+                pFile.write(135*'='+'\n')
                 PrintFFtable(FFtable)
                 PrintBLtable(BLtable)
                 if General['Type'] == 'magnetic':
                     PrintMFtable(MFtable)
-                print >>pFile,''
+                pFile.write('\n')
                 #how do we print magnetic symmetry table? TBD
                 if len(SSGtext):    #if superstructure
-                    for line in SSGtext: print >>pFile,line
+                    for line in SSGtext: pFile.write(line+'\n')
                     if len(SSGtable):
                         for item in SSGtable:
                             line = ' %s '%(item)
-                            print >>pFile,line   
+                            pFile.write(line+'\n') 
                     else:
-                        print >>pFile,' ( 1)    %s'%(SSGtable[0])
+                        pFile.write(' ( 1)    %s\n'%(SSGtable[0]))
                 else:
-                    for line in SGtext: print >>pFile,line
+                    for line in SGtext: pFile.write(line+'\n')
                     if len(SGtable):
                         for item in SGtable:
                             line = ' %s '%(item)
-                            print >>pFile,line   
+                            pFile.write(line+'\n') 
                     else:
-                        print >>pFile,' ( 1)    %s'%(SGtable[0])
+                        pFile.write(' ( 1)    %s\n'%(SGtable[0]))
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
                 if General['Type'] == 'magnetic':
                     PrintMoments(General,Atoms)
                 if General.get('Modulated',False):
                     PrintWaves(General,Atoms)
-                print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
-                    ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
-                    ' volume = %.3f'%(cell[7]),' Refine?',cell[0]
+                pFile.write('\n Unit cell: a = %.5f b = %.5f c = %.5f alpha = %.3f beta = %.3f gamma = %.3f volume = %.3f Refine? %s\n'%
+                    (cell[1],cell[2],cell[3],cell[4],cell[5],cell[6],cell[7],cell[0]))
                 if len(SSGtext):    #if superstructure
-                    print >>pFile,'\n Modulation vector: mV0 = %.4f'%(Vec[0]),' mV1 = %.4f'%(Vec[1]),   \
-                        ' mV2 = %.4f'%(Vec[2]),' max mod. index = %d'%(maxH),' Refine?',vRef
+                    pFile.write('\n Modulation vector: mV0 = %.4f mV1 = %.4f mV2 = %.4f max mod. index = %d Refine? %s\n'%
+                        (Vec[0],Vec[1],Vec[2],maxH,vRef))
                 if not seqRef:
                     PrintTexture(textureData)
                 if name in RestraintDict:
@@ -1341,31 +1352,30 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     
         elif PawleyRef:
             if Print:
-                print >>pFile,'\n Phase name: ',General['Name']
-                print >>pFile,135*'='
-                print >>pFile,''
+                pFile.write('\n Phase name: %s\n'%General['Name'])
+                pFile.write(135*'='+'\n')
+                pFile.write('\n')
                 if len(SSGtext):    #if superstructure
-                    for line in SSGtext: print >>pFile,line
+                    for line in SSGtext: pFile.write(line+'\n')
                     if len(SSGtable):
                         for item in SSGtable:
                             line = ' %s '%(item)
-                            print >>pFile,line   
+                            pFile.write(line+'\n')  
                     else:
-                        print >>pFile,' ( 1)    %s'%(SSGtable[0])
+                        pFile.write(' ( 1)    %s\n'%SSGtable[0])
                 else:
-                    for line in SGtext: print >>pFile,line
+                    for line in SGtext: pFile.write(line+'\n')
                     if len(SGtable):
                         for item in SGtable:
                             line = ' %s '%(item)
-                            print >>pFile,line   
+                            pFile.write(line+'\n')
                     else:
-                        print >>pFile,' ( 1)    %s'%(SGtable[0])
-                print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
-                    ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
-                    ' volume = %.3f'%(cell[7]),' Refine?',cell[0]
+                        pFile.write(' ( 1)    %s\n'%(SGtable[0]))
+                pFile.write('\n Unit cell: a = %.5f b = %.5f c = %.5f alpha = %.3f beta = %.3f gamma = %.3f volume = %.3f Refine? %s\n'%
+                    (cell[1],cell[2],cell[3],cell[4],cell[5],cell[6],cell[7],cell[0]))
                 if len(SSGtext):    #if superstructure
-                    print >>pFile,'\n Modulation vector: mV0 = %.4f'%(Vec[0]),' mV1 = %.4f'%(Vec[1]),   \
-                        ' mV2 = %.4f'%(Vec[2]),' max mod. index = %d'%(maxH),' Refine?',vRef
+                    pFile.write('\n Modulation vector: mV0 = %.4f mV1 = %.4f mV2 = %.4f max mod. index = %d Refine? %s\n'%
+                        (Vec[0],Vec[1],Vec[2],maxH,vRef))
             pawleyVary = []
             for i,refl in enumerate(PawleyRef):
                 phaseDict[pfx+'PWLref:'+str(i)] = refl[6+im]
@@ -1456,9 +1466,9 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
         for name,rest in names:
             itemRest = phaseRest[name]
             if rest in itemRest and itemRest[rest] and itemRest['Use']:
-                print >>pFile,'\n  %s %10.3f Use: %s'%(name+' restraint weight factor',itemRest['wtFactor'],str(itemRest['Use']))
+                pFile.write('\n  %s restraint weight factor %10.3f Use: %s\n'%(name,itemRest['wtFactor'],str(itemRest['Use'])))
                 if name in ['Bond','Angle','Plane','Chiral']:
-                    print >>pFile,'     calc       obs      sig   delt/sig  atoms(symOp): '
+                    pFile.write('     calc       obs      sig   delt/sig  atoms(symOp): \n')
                     for indx,ops,obs,esd in itemRest[rest]:
                         try:
                             AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
@@ -1479,11 +1489,11 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                                 calc = G2mth.getRestPlane(XYZ,Amat)
                             elif name == 'Chiral':
                                 calc = G2mth.getRestChiral(XYZ,Amat)
-                            print >>pFile,' %9.3f %9.3f %8.3f %8.3f   %s'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1])
+                            pFile.write(' %9.3f %9.3f %8.3f %8.3f   %s\n'%(calc,obs,esd,(obs-calc)/esd,AtName[:-1]))
                         except KeyError:
                             del itemRest[rest]
                 elif name in ['Torsion','Rama']:
-                    print >>pFile,'  atoms(symOp)  calc  obs  sig  delt/sig  torsions: '
+                    pFile.write('  atoms(symOp)  calc  obs  sig  delt/sig  torsions: \n')
                     coeffDict = itemRest['Coeff']
                     for indx,ops,cofName,esd in itemRest[rest]:
                         AtNames = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
@@ -1495,13 +1505,13 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         if name == 'Torsion':
                             tor = G2mth.getRestTorsion(XYZ,Amat)
                             restr,calc = G2mth.calcTorsionEnergy(tor,coeffDict[cofName])
-                            print >>pFile,' %8.3f %8.3f %.3f %8.3f %8.3f %s'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1])
+                            pFile.write(' %8.3f %8.3f %.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,tor,AtName[:-1]))
                         else:
                             phi,psi = G2mth.getRestRama(XYZ,Amat)
                             restr,calc = G2mth.calcRamaEnergy(phi,psi,coeffDict[cofName])                               
-                            print >>pFile,' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1])
+                            pFile.write(' %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %s\n'%(calc,obs,esd,(obs-calc)/esd,phi,psi,AtName[:-1]))
                 elif name == 'ChemComp':
-                    print >>pFile,'     atoms   mul*frac  factor     prod'
+                    pFile.write('     atoms   mul*frac  factor     prod\n')
                     for indx,factors,obs,esd in itemRest[rest]:
                         try:
                             atoms = G2mth.GetAtomItemsById(Atoms,AtLookup,indx,ct-1)
@@ -1510,8 +1520,8 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                             mulfrac = mul*frac
                             calcs = mul*frac*factors
                             for iatm,[atom,mf,fr,clc] in enumerate(zip(atoms,mulfrac,factors,calcs)):
-                                print >>pFile,' %10s %8.3f %8.3f %8.3f'%(atom,mf,fr,clc)
-                            print >>pFile,' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f'%(np.sum(calcs),obs,esd)
+                                pFile.write(' %10s %8.3f %8.3f %8.3f\n'%(atom,mf,fr,clc))
+                            pFile.write(' Sum:                   calc: %8.3f obs: %8.3f esd: %8.3f\n'%(np.sum(calcs),obs,esd))
                         except KeyError:
                             del itemRest[rest]
                 elif name == 'Texture' and textureData['Order']:
@@ -1519,7 +1529,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                     SHCoef = textureData['SH Coeff'][1]
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
                     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-                    print '    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd  '
+                    pFile.write ('    HKL  grid  neg esd  sum neg  num neg use unit?  unit esd \n')
                     for hkl,grid,esd1,ifesd2,esd2 in itemRest[rest]:
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
                         ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
@@ -1529,7 +1539,7 @@ def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFil
                         sum = 0
                         if num:
                             sum = np.sum(Z)
-                        print '   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2)
+                        pFile.write ('   %d %d %d  %d %8.3f %8.3f %8d   %s    %8.3f\n'%(hkl[0],hkl[1],hkl[2],grid,esd1,sum,num,str(ifesd2),esd2))
         
 def getCellEsd(pfx,SGData,A,covData):
     'needs a doc string'
@@ -1588,13 +1598,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     'needs a doc string'
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
-        print >>pFile,'\n Atoms:'
+        pFile.write('\n Atoms:\n')
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'macromolecular':
             line = ' res no residue chain '+line
         cx,ct,cs,cia = General['AtomPtrs']
-        print >>pFile,line
-        print >>pFile,135*'-'
+        pFile.write(line+'\n')
+        pFile.write(135*'-'+'\n')
         fmt = {0:'%7s',ct:'%7s',cx:'%10.5f',cx+1:'%10.5f',cx+2:'%10.5f',cx+3:'%8.3f',cia+1:'%8.5f',
             cia+2:'%8.5f',cia+3:'%8.5f',cia+4:'%8.5f',cia+5:'%8.5f',cia+6:'%8.5f',cia+7:'%8.5f'}
         noFXsig = {cx:[10*' ','%10s'],cx+1:[10*' ','%10s'],cx+2:[10*' ','%10s'],cx+3:[8*' ','%8s']}
@@ -1633,18 +1643,18 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
                         sigstr += 8*' '
-            print >>pFile,name
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(name+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
             
     def PrintMomentsAndSig(General,Atoms,atomsSig):
-        print >>pFile,'\n Magnetic Moments:'    #add magnitude & angle, etc.? TBD
+        pFile.write('\n Magnetic Moments:\n')    #add magnitude & angle, etc.? TBD
         line = '   name      Mx        My        Mz'
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
         AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
-        print >>pFile,line
-        print >>pFile,135*'-'
+        pFile.write(line+'\n')
+        pFile.write(135*'-'+'\n')
         fmt = {0:'%7s',ct:'%7s',cmx:'%10.5f',cmx+1:'%10.5f',cmx+2:'%10.5f'}
         noFXsig = {cmx:[10*' ','%10s'],cmx+1:[10*' ','%10s'],cmx+2:[10*' ','%10s']}
         for i,at in enumerate(Atoms):
@@ -1659,25 +1669,25 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
                         sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
-                print >>pFile,name
-                print >>pFile,valstr
-                print >>pFile,sigstr
+                pFile.write(name+'\n')
+                pFile.write(valstr+'\n')
+                pFile.write(sigstr+'\n')
             
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
-        print >>pFile,'\n Modulation waves'
+        pFile.write('\n Modulation waves\n')
         names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax'],
             'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
-        print >>pFile,135*'-'
+        pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
             AtomSS = at[-1]['SS1']
             waveType = AtomSS['waveType']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
                 if len(Waves):
-                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
-                        %(at[ct-1],at[cs],Stype,waveType)
+                    pFile.write(' atom: %s, site sym: %s, type: %s wave type: %s:\n'%
+                        (at[ct-1],at[cs],Stype,waveType))
                     for iw,wave in enumerate(Waves):
                         stiw = ':'+str(i)+':'+str(iw)
                         namstr = '  names :'
@@ -1728,9 +1738,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 else:
                                     sigstr += 12*' '
                                 
-                    print >>pFile,namstr
-                    print >>pFile,valstr
-                    print >>pFile,sigstr
+                    pFile.write(namstr+'\n')
+                    pFile.write(valstr+'\n')
+                    pFile.write(sigstr+'\n')
         
                 
     def PrintRBObjPOAndSig(rbfx,rbsx):
@@ -1753,16 +1763,16 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr += '%12.5f'%(sigDict[name])
             else:
                 sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,valstr
-        print >>pFile,sigstr
+        pFile.write(namstr+'\n')
+        pFile.write(valstr+'\n')
+        pFile.write(sigstr+'\n')
         
     def PrintRBObjTLSAndSig(rbfx,rbsx,TLS):
         namstr = '  names :'
         valstr = '  values:'
         sigstr = '  esds  :'
         if 'N' not in TLS:
-            print >>pFile,' Thermal motion:'
+            pFile.write(' Thermal motion:\n')
         if 'T' in TLS:
             for i,pt in enumerate(['T11:','T22:','T33:','T12:','T13:','T23:']):
                 name = pfx+rbfx+pt+rbsx
@@ -1772,9 +1782,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += '%12.5f'%(sigDict[name])
                 else:
                     sigstr += 12*' '
-            print >>pFile,namstr
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
         if 'L' in TLS:
             namstr = '  names :'
             valstr = '  values:'
@@ -1787,9 +1797,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += '%12.3f'%(sigDict[name])
                 else:
                     sigstr += 12*' '
-            print >>pFile,namstr
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
         if 'S' in TLS:
             namstr = '  names :'
             valstr = '  values:'
@@ -1802,9 +1812,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += '%12.4f'%(sigDict[name])
                 else:
                     sigstr += 12*' '
-            print >>pFile,namstr
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
         if 'U' in TLS:
             name = pfx+rbfx+'U:'+rbsx
             namstr = '  names :'+'%12s'%('Uiso')
@@ -1813,9 +1823,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr = '  esds  :'+'%12.5f'%(sigDict[name])
             else:
                 sigstr = '  esds  :'+12*' '
-            print >>pFile,namstr
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
         
     def PrintRBObjTorAndSig(rbsx):
         namstr = '  names :'
@@ -1823,19 +1833,19 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         sigstr = '  esds  :'
         nTors = len(RBObj['Torsions'])
         if nTors:
-            print >>pFile,' Torsions:'
+            pFile.write(' Torsions:\n')
             for it in range(nTors):
                 name = pfx+'RBRTr;'+str(it)+':'+rbsx
                 namstr += '%12s'%('Tor'+str(it))
                 valstr += '%12.4f'%(parmDict[name])
                 if name in sigDict:
                     sigstr += '%12.4f'%(sigDict[name])
-            print >>pFile,namstr
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
                 
     def PrintSHtextureAndSig(textureData,SHtextureSig):
-        print >>pFile,'\n Spherical harmonics texture: Order:' + str(textureData['Order'])
+        pFile.write('\n Spherical harmonics texture: Order: %d\n'%textureData['Order'])
         names = ['omega','chi','phi']
         namstr = '  names :'
         ptstr =  '  values:'
@@ -1847,14 +1857,14 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr += '%12.3f'%(SHtextureSig['Sample '+name])
             else:
                 sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,ptstr
-        print >>pFile,sigstr
-        print >>pFile,'\n Texture coefficients:'
+        pFile.write(namstr+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(sigstr+'\n')
+        pFile.write('\n Texture coefficients:\n')
         SHcoeff = textureData['SH Coeff'][1]
-        SHkeys = SHcoeff.keys()
+        SHkeys = list(SHcoeff.keys())
         nCoeff = len(SHcoeff)
-        nBlock = nCoeff/10+1
+        nBlock = nCoeff//10+1
         iBeg = 0
         iFin = min(iBeg+10,nCoeff)
         for block in range(nBlock):
@@ -1868,16 +1878,16 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += '%12.3f'%(SHtextureSig[name])
                 else:
                     sigstr += 12*' '
-            print >>pFile,namstr
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(sigstr+'\n')
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
             
-    print >>pFile,'\n Phases:'
+    pFile.write('\n Phases:\n')
     for phase in Phases:
-        print >>pFile,' Result for phase: ',phase
-        print >>pFile,135*'='
+        pFile.write(' Result for phase: %s\n'%phase)
+        pFile.write(135*'='+'\n')
         Phase = Phases[phase]
         General = Phase['General']
         SGData = General['SGData']
@@ -1892,7 +1902,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         if cell[0]:
             A,sigA = cellFill(pfx,SGData,parmDict,sigDict)
             cellSig = getCellEsd(pfx,SGData,A,covData)  #includes sigVol
-            print >>pFile,' Reciprocal metric tensor: '
+            pFile.write(' Reciprocal metric tensor: \n')
             ptfmt = "%15.9f"
             names = ['A11','A22','A33','A12','A13','A23']
             namstr = '  names :'
@@ -1905,12 +1915,12 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += ptfmt%(siga)
                 else:
                     sigstr += 15*' '
-            print >>pFile,namstr
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(sigstr+'\n')
             cell[1:7] = G2lat.A2cell(A)
             cell[7] = G2lat.calc_V(A)
-            print >>pFile,' New unit cell:'
+            pFile.write(' New unit cell:\n')
             ptfmt = ["%12.6f","%12.6f","%12.6f","%12.4f","%12.4f","%12.4f","%12.3f"]
             names = ['a','b','c','alpha','beta','gamma','Volume']
             namstr = '  names :'
@@ -1923,15 +1933,15 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                     sigstr += fmt%(siga)
                 else:
                     sigstr += 12*' '
-            print >>pFile,namstr
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+            pFile.write(namstr+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(sigstr+'\n')
         ik = 6  #for Pawley stuff below
         if General.get('Modulated',False):
             ik = 7
             Vec,vRef,maxH = General['SuperVec']
             if vRef:
-                print >>pFile,' New modulation vector:'
+                pFile.write(' New modulation vector:\n')
                 namstr = '  names :'
                 ptstr =  '  values:'
                 sigstr = '  esds  :'
@@ -1942,9 +1952,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += '%12.6f'%(sigDict[pfx+var])
                     else:
                         sigstr += 12*' '
-                print >>pFile,namstr
-                print >>pFile,ptstr
-                print >>pFile,sigstr
+                pFile.write(namstr+'\n')
+                pFile.write(ptstr+'\n')
+                pFile.write(sigstr+'\n')
             
         General['Mass'] = 0.
         if Phase['General'].get('doPawley'):
@@ -1963,13 +1973,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             for irb,RBObj in enumerate(RBModels.get('Vector',[])):
                 jrb = VRBIds.index(RBObj['RBId'])
                 rbsx = str(irb)+':'+str(jrb)
-                print >>pFile,' Vector rigid body parameters:'
+                pFile.write(' Vector rigid body parameters:\n')
                 PrintRBObjPOAndSig('RBV',rbsx)
                 PrintRBObjTLSAndSig('RBV',rbsx,RBObj['ThermalMotion'][0])
             for irb,RBObj in enumerate(RBModels.get('Residue',[])):
                 jrb = RRBIds.index(RBObj['RBId'])
                 rbsx = str(irb)+':'+str(jrb)
-                print >>pFile,' Residue rigid body parameters:'
+                pFile.write(' Residue rigid body parameters:\n')
                 PrintRBObjPOAndSig('RBR',rbsx)
                 PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                 PrintRBObjTorAndSig(rbsx)
@@ -2088,10 +2098,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.3f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line += '\n\t LG mixing coeff.: %12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
-            print >>pFile,line
+            pFile.write(line+'\n')
         else:
-            print >>pFile,'\n Size model    : %s'%(hapData[0])+ \
-                '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
+            pFile.write('\n Size model    : %s\n\t LG mixing coeff.:%12.4f Refine? %s\n'%
+                (hapData[0],hapData[1][2],hapData[2][2]))
             Snames = ['S11','S22','S33','S12','S13','S23']
             ptlbls = ' names :'
             ptstr =  ' values:'
@@ -2100,9 +2110,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.3f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,varstr
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(varstr+'\n')
         
     def PrintMuStrain(hapData,SGData):
         if hapData[0] in ['isotropic','uniaxial']:
@@ -2111,10 +2121,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             if hapData[0] == 'uniaxial':
                 line += ' axial:'+'%12.1f'%(hapData[1][1])+' Refine? '+str(hapData[2][1])
             line +='\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
-            print >>pFile,line
+            pFile.write(line+'\n')
         else:
-            print >>pFile,'\n Mustrain model: %s'%(hapData[0])+ \
-                '\n\t LG mixing coeff.:%12.4f'%(hapData[1][2])+' Refine? '+str(hapData[2][2])
+            pFile.write('\n Mustrain model: %s\n\t LG mixing coeff.:%12.4f Refine? %s\n'%
+                (hapData[0],hapData[1][2],hapData[2][2]))
             Snames = G2spc.MustrainNames(SGData)
             ptlbls = ' names :'
             ptstr =  ' values:'
@@ -2123,12 +2133,12 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.1f' % (hapData[4][i])
                 varstr += '%12s' % (str(hapData[5][i]))
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,varstr
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(varstr+'\n')
 
     def PrintHStrain(hapData,SGData):
-        print >>pFile,'\n Hydrostatic/elastic strain: '
+        pFile.write('\n Hydrostatic/elastic strain:\n')
         Hsnames = G2spc.HStrainNames(SGData)
         ptlbls = ' names :'
         ptstr =  ' values:'
@@ -2137,23 +2147,22 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             ptlbls += '%12s' % (name)
             ptstr += '%12.4g' % (hapData[0][i])
             varstr += '%12s' % (str(hapData[1][i]))
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,varstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(varstr+'\n')
 
     def PrintSHPO(hapData):
-        print >>pFile,'\n Spherical harmonics preferred orientation: Order:' + \
-            str(hapData[4])+' Refine? '+str(hapData[2])
+        pFile.write('\n Spherical harmonics preferred orientation: Order: %d Refine? %s\n'%(hapData[4],hapData[2]))
         ptlbls = ' names :'
         ptstr =  ' values:'
         for item in hapData[5]:
             ptlbls += '%12s'%(item)
             ptstr += '%12.3f'%(hapData[5][item]) 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
     
     def PrintBabinet(hapData):
-        print >>pFile,'\n Babinet form factor modification: '
+        pFile.write('\n Babinet form factor modification:\n')
         ptlbls = ' names :'
         ptstr =  ' values:'
         varstr = ' refine:'
@@ -2161,9 +2170,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             ptlbls += '%12s' % (name)
             ptstr += '%12.6f' % (hapData[name][0])
             varstr += '%12s' % (str(hapData[name][1]))
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,varstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(varstr+'\n')
         
     hapDict = {}
     hapVary = []
@@ -2178,7 +2187,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             SSGData = Phases[phase]['General']['SSGData']
             Vec,x,maxH = Phases[phase]['General']['SuperVec']
         pId = Phases[phase]['pId']
-        histoList = HistoPhase.keys()
+        histoList = list(HistoPhase.keys())
         histoList.sort()
         for histogram in histoList:
             try:
@@ -2286,20 +2295,20 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             hapVary.append(pfx+bab)
                                 
                 if Print: 
-                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                    print >>pFile,135*'='
+                    pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
+                    pFile.write(135*'='+'\n')
                     if hapDict[pfx+'LeBail']:
-                        print >>pFile,' Perform LeBail extraction'                        
+                        pFile.write(' Perform LeBail extraction\n')                     
                     else:
-                        print >>pFile,' Phase fraction  : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
-                        print >>pFile,' Extinction coeff: %10.4f'%(hapData['Extinction'][0]),' Refine?',hapData['Extinction'][1]
+                        pFile.write(' Phase fraction  : %10.4f Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
+                        pFile.write(' Extinction coeff: %10.4f Refine? %s\n'%(hapData['Extinction'][0],hapData['Extinction'][1]))
                         if hapData['Pref.Ori.'][0] == 'MD':
                             Ax = hapData['Pref.Ori.'][3]
-                            print >>pFile,' March-Dollase PO: %10.4f'%(hapData['Pref.Ori.'][1]),' Refine?',hapData['Pref.Ori.'][2], \
-                                ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
+                            pFile.write(' March-Dollase PO: %10.4f Refine? %s Axis: %d %d %d\n'%
+                                (hapData['Pref.Ori.'][1],hapData['Pref.Ori.'][2],Ax[0],Ax[1],Ax[2]))
                         else: #'SH' for spherical harmonics
                             PrintSHPO(hapData['Pref.Ori.'])
-                            print >>pFile,' Penalty hkl list: '+str(controlDict[pfx+'SHhkl'])+' tolerance: %.2f'%(controlDict[pfx+'SHtoler'])
+                            pFile.write(' Penalty hkl list: %s tolerance: %.2f\n'%(controlDict[pfx+'SHhkl'],controlDict[pfx+'SHtoler']))
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
@@ -2429,25 +2438,27 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 if len(Twins) > 1:    #force sum to unity
                     hapDict[pfx+'TwinFr:0'] = 1.-sumTwFr
                 if Print: 
-                    print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                    print >>pFile,135*'='
-                    print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
+                    pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
+                    pFile.write(135*'='+'\n')
+                    pFile.write(' Scale factor     : %10.4f Refine? %s\n'%(hapData['Scale'][0],hapData['Scale'][1]))
                     if extType != 'None':
-                        print >>pFile,' Extinction  Type: %15s'%(extType),' approx: %10s'%(extApprox)
+                        pFile.write(' Extinction  Type: %15s approx: %10s\n'%(extType,extApprox))
                         text = ' Parameters       :'
                         for eKey in Ekey:
                             text += ' %4s : %10.3e Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])
-                        print >>pFile,text
+                        pFile.write(text+'\n')
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
                     if not SGData['SGInv'] and len(Twins) == 1:
-                        print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
+                        pFile.write(' Flack parameter: %10.3f Refine? %s\n'%(hapData['Flack'][0],hapData['Flack'][1]))
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
                             if 'bool' in str(type(twin[0])):
-                                print >>pFile,' Nonmerohedral twin fr.: %5.3f Inv? %s Refine? '%(hapDict[pfx+'TwinFr:'+str(it)],str(controlDict[pfx+'TwinInv'][it])),Twins[0][1][1] 
+                                pFile.write(' Nonmerohedral twin fr.: %5.3f Inv? %s Refine?\n'%
+                                    (hapDict[pfx+'TwinFr:'+str(it)],str(controlDict[pfx+'TwinInv'][it])),Twins[0][1][1]) 
                             else:
-                                print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
+                                pFile.write(' Twin law: %s Twin fr.: %5.3f Refine? %s\n'%
+                                    (str(twin[0]).replace('\n',','),hapDict[pfx+'TwinFr:'+str(it)],Twins[0][1][1]))
                         
                 Histogram['Reflection Lists'] = phase       
                 
@@ -2474,7 +2485,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 refine = True
                 line += ', sig:%8.4f'%(sizeSig[0][2])
             if refine:
-                print >>pFile,line
+                pFile.write(line+'\n')
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if sizeSig[0][2]:
@@ -2493,13 +2504,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 else:
                     sigstr += 12*' '
             if refine:
-                print >>pFile,line
-                print >>pFile,ptlbls
-                print >>pFile,ptstr
-                print >>pFile,sigstr
+                pFile.write(line+'\n')
+                pFile.write(ptlbls+'\n')
+                pFile.write(ptstr+'\n')
+                pFile.write(sigstr+'\n')
         
     def PrintMuStrainAndSig(hapData,mustrainSig,SGData):
-        line = '\n Mustrain model: %9s'%(hapData[0])
+        line = '\n Mustrain model: %9s\n'%(hapData[0])
         refine = False
         if hapData[0] in ['isotropic','uniaxial']:
             line += ' equatorial:%12.1f'%(hapData[1][0])
@@ -2515,7 +2526,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 refine = True
                 line += ', sig:%8.3f'%(mustrainSig[0][2])
             if refine:
-                print >>pFile,line
+                pFile.write(line+'\n')
         else:
             line += ' LG mix coeff.:%12.4f'%(hapData[1][2])
             if mustrainSig[0][2]:
@@ -2534,10 +2545,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 else:
                     sigstr += 12*' '
             if refine:
-                print >>pFile,line
-                print >>pFile,ptlbls
-                print >>pFile,ptstr
-                print >>pFile,sigstr
+                pFile.write(line+'\n')
+                pFile.write(ptlbls+'\n')
+                pFile.write(ptstr+'\n')
+                pFile.write(sigstr+'\n')
             
     def PrintHStrainAndSig(hapData,strainSig,SGData):
         Hsnames = G2spc.HStrainNames(SGData)
@@ -2554,13 +2565,13 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             else:
                 sigstr += 12*' '
         if refine:
-            print >>pFile,'\n Hydrostatic/elastic strain: '
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+            pFile.write('\n Hydrostatic/elastic strain:\n')
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(sigstr+'\n')
         
     def PrintSHPOAndSig(pfx,hapData,POsig):
-        print >>pFile,'\n Spherical harmonics preferred orientation: Order:'+str(hapData[4])
+        pFile.write('\n Spherical harmonics preferred orientation: Order: %d\n'%hapData[4])
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
@@ -2571,12 +2582,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 sigstr += '%12.3f'%(POsig[pfx+item])
             else:
                 sigstr += 12*' ' 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,sigstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(sigstr+'\n')
         
     def PrintExtAndSig(pfx,hapData,ScalExtSig):
-        print >>pFile,'\n Single crystal extinction: Type: ',hapData[0],' Approx: ',hapData[1]
+        pFile.write('\n Single crystal extinction: Type: %s Approx: %s\n'%(hapData[0],hapData[1]))
         text = ''
         for item in hapData[2]:
             if pfx+item in ScalExtSig:
@@ -2584,10 +2595,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 text += '%12.2e'%(hapData[2][item][0])
                 if pfx+item in ScalExtSig:
                     text += ' sig: %12.2e'%(ScalExtSig[pfx+item])
-        print >>pFile,text        
+        pFile.write(text+'\n')    
         
     def PrintBabinetAndSig(pfx,hapData,BabSig):
-        print >>pFile,'\n Babinet form factor modification: '
+        pFile.write('\n Babinet form factor modification:\n')
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
@@ -2598,12 +2609,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 sigstr += '%12.3f'%(BabSig[pfx+item])
             else:
                 sigstr += 12*' ' 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,sigstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(sigstr+'\n')
         
     def PrintTwinsAndSig(pfx,twinData,TwinSig):
-        print >>pFile,'\n Twin Law fractions : '
+        pFile.write('\n Twin Law fractions :\n')
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
@@ -2617,9 +2628,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr:'+str(it)])
             else:
                 sigstr += 12*' ' 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,sigstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(sigstr+'\n')
         
     
     PhFrExtPOSig = {}
@@ -2633,7 +2644,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
         General = Phases[phase]['General']
         SGData = General['SGData']
         pId = Phases[phase]['pId']
-        histoList = HistoPhase.keys()
+        histoList = list(HistoPhase.keys())
         histoList.sort()
         for histogram in histoList:
             try:
@@ -2738,7 +2749,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             General = Phases[phase]['General']
             SGData = General['SGData']
             pId = Phases[phase]['pId']
-            histoList = HistoPhase.keys()
+            histoList = list(HistoPhase.keys())
             histoList.sort()
             for histogram in histoList:
                 try:
@@ -2753,27 +2764,27 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 hfx = ':%s:'%(hId)
                 if pfx+'Nref' not in Histogram['Residuals']:    #skip not used phase in histogram
                     continue
-                print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
-                print >>pFile,135*'='
+                pFile.write('\n Phase: %s in histogram: %s\n'%(phase,histogram))
+                pFile.write(135*'='+'\n')
                 if 'PWDR' in histogram:
-                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
-                    print >>pFile,' Durbin-Watson statistic = %.3f'%(Histogram['Residuals']['Durbin-Watson'])
-                    print >>pFile,' Bragg intensity sum = %.3g'%(Histogram['Residuals'][pfx+'sumInt'])
+                    pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections\n'%
+                        (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref']))
+                    pFile.write(' Durbin-Watson statistic = %.3f\n'%(Histogram['Residuals']['Durbin-Watson']))
+                    pFile.write(' Bragg intensity sum = %.3g\n'%(Histogram['Residuals'][pfx+'sumInt']))
                     
                     if parmDict[pfx+'LeBail']:
-                        print >>pFile,' Performed LeBail extraction for phase '+phase+' in histogram '+histogram
+                        pFile.write(' Performed LeBail extraction for phase %s in histogram %s\n'%(phase,histogram))
                     else:
                         if pfx+'Scale' in PhFrExtPOSig:
                             wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
                             sigwtFr = PhFrExtPOSig[pfx+'Scale']*wtFr/hapData['Scale'][0]
-                            print >>pFile,' Phase fraction  : %10.5f, sig %10.5f Weight fraction  : %8.5f, sig %10.5f' \
-                                %(hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr)
+                            pFile.write(' Phase fraction  : %10.5f, sig %10.5f Weight fraction  : %8.5f, sig %10.5f\n'%
+                                (hapData['Scale'][0],PhFrExtPOSig[pfx+'Scale'],wtFr,sigwtFr))
                         if pfx+'Extinction' in PhFrExtPOSig:
-                            print >>pFile,' Extinction coeff: %10.4f, sig %10.4f'%(hapData['Extinction'][0],PhFrExtPOSig[pfx+'Extinction'])
+                            pFile.write(' Extinction coeff: %10.4f, sig %10.4f\n'%(hapData['Extinction'][0],PhFrExtPOSig[pfx+'Extinction']))
                         if hapData['Pref.Ori.'][0] == 'MD':
                             if pfx+'MD' in PhFrExtPOSig:
-                                print >>pFile,' March-Dollase PO: %10.4f, sig %10.4f'%(hapData['Pref.Ori.'][1],PhFrExtPOSig[pfx+'MD'])
+                                pFile.write(' March-Dollase PO: %10.4f, sig %10.4f\n'%(hapData['Pref.Ori.'][1],PhFrExtPOSig[pfx+'MD']))
                         else:
                             PrintSHPOAndSig(pfx,hapData['Pref.Ori.'],PhFrExtPOSig)
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
@@ -2785,20 +2796,20 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     
                 elif 'HKLF' in histogram:
                     Inst = Histogram['Instrument Parameters'][0]
-                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)'   \
-                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
-                        Histogram['Residuals'][pfx+'Nrej'],Histogram['Residuals'][pfx+'Next'])
+                    pFile.write(' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)\n'%
+                        (Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
+                        Histogram['Residuals'][pfx+'Nrej'],Histogram['Residuals'][pfx+'Next']))
                     if FFtables != None and 'N' not in Inst['Type'][0]:
                         PrintFprime(FFtables,hfx,pFile)
-                    print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
+                    pFile.write(' HKLF histogram weight factor = %.3f\n'%(Histogram['wtFactor']))
                     if pfx+'Scale' in ScalExtSig:
-                        print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
+                        pFile.write(' Scale factor : %10.4f, sig %10.4f\n'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale']))
                     if hapData['Extinction'][0] != 'None':
                         PrintExtAndSig(pfx,hapData['Extinction'],ScalExtSig)
                     if len(BabSig):
                         PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     if pfx+'Flack' in ScalExtSig:
-                        print >>pFile,' Flack parameter : %10.3f, sig %10.3f'%(hapData['Flack'][0],ScalExtSig[pfx+'Flack'])
+                        pFile.write(' Flack parameter : %10.3f, sig %10.3f\n'%(hapData['Flack'][0],ScalExtSig[pfx+'Flack']))
                     if len(TwinFrSig):
                         PrintTwinsAndSig(pfx,hapData['Twins'],TwinFrSig)
 
@@ -2853,7 +2864,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         instDict = {}
         insVary = []
         pfx = ':'+str(hId)+':'
-        insKeys = Inst.keys()
+        insKeys = list(Inst.keys())
         insKeys.sort()
         for item in insKeys:
             insName = pfx+item
@@ -2893,41 +2904,41 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
     def PrintBackground(Background):
         Back = Background[0]
         DebyePeaks = Background[1]
-        print >>pFile,'\n Background function: ',Back[0],' Refine?',bool(Back[1])
+        pFile.write('\n Background function: %s Refine? %s\n'%(Back[0],Back[1]))
         line = ' Coefficients: '
         for i,back in enumerate(Back[3:]):
             line += '%10.3f'%(back)
             if i and not i%10:
                 line += '\n'+15*' '
-        print >>pFile,line
+        pFile.write(line+'\n')
         if DebyePeaks['nDebye']:
-            print >>pFile,'\n Debye diffuse scattering coefficients'
+            pFile.write('\n Debye diffuse scattering coefficients\n')
             parms = ['DebyeA','DebyeR','DebyeU']
             line = ' names :  '
             for parm in parms:
                 line += '%8s refine?'%(parm)
-            print >>pFile,line
+            pFile.write(line+'\n')
             for j,term in enumerate(DebyePeaks['debyeTerms']):
                 line = ' term'+'%2d'%(j)+':'
                 for i in range(3):
                     line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
-                print >>pFile,line
+                pFile.write(line+'\n')
         if DebyePeaks['nPeaks']:
-            print >>pFile,'\n Single peak coefficients'
+            pFile.write('\n Single peak coefficients\n')
             parms =    ['BkPkpos','BkPkint','BkPksig','BkPkgam']
             line = ' names :  '
             for parm in parms:
                 line += '%8s refine?'%(parm)
-            print >>pFile,line
+            pFile.write(line+'\n')
             for j,term in enumerate(DebyePeaks['peaksList']):
                 line = ' peak'+'%2d'%(j)+':'
                 for i in range(4):
                     line += '%12.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
-                print >>pFile,line
+                pFile.write(line+'\n')
         
     def PrintInstParms(Inst):
-        print >>pFile,'\n Instrument Parameters:'
-        insKeys = Inst.keys()
+        pFile.write('\n Instrument Parameters:\n')
+        insKeys = list(Inst.keys())
         insKeys.sort()
         iBeg = 0
         Ok = True
@@ -2944,19 +2955,19 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                         varstr += 12*' '
                     else:
                         varstr += '%12s' % (str(bool(Inst[item][2])))
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,varstr
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(varstr+'\n')
             iBeg = iFin
             if iBeg == len(insKeys):
                 Ok = False
             else:
-                print >>pFile,'\n'
+                pFile.write('\n')
         
     def PrintSampleParms(Sample):
-        print >>pFile,'\n Sample Parameters:'
-        print >>pFile,' Goniometer omega = %.2f, chi = %.2f, phi = %.2f'% \
-            (Sample['Omega'],Sample['Chi'],Sample['Phi'])
+        pFile.write('\n Sample Parameters:\n')
+        pFile.write(' Goniometer omega = %.2f, chi = %.2f, phi = %.2f\n'%
+            (Sample['Omega'],Sample['Chi'],Sample['Phi']))
         ptlbls = ' name  :'
         ptstr =  ' value :'
         varstr = ' refine:'
@@ -2972,14 +2983,14 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 ptstr += '%14.4f'%(Sample[item][0])
                 varstr += '%14s'%(str(bool(Sample[item][1])))
 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,varstr
+        pFile.write(ptlbls+'\n')
+        pFile.write(ptstr+'\n')
+        pFile.write(varstr+'\n')
         
     histDict = {}
     histVary = []
     controlDict = {}
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram:
@@ -3001,7 +3012,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             
             Inst = Histogram['Instrument Parameters']        #TODO ? ignores tabulated alp,bet & delt for TOF
             if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
-                print 'Warning: tabulated profile coefficients are ignored'
+                print ('Warning: tabulated profile coefficients are ignored')
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
             controlDict[pfx+'histType'] = Type
             if 'XC' in Type:
@@ -3020,17 +3031,17 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             
     
             if Print: 
-                print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
-                print >>pFile,135*'='
+                pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
+                pFile.write(135*'='+'\n')
                 Units = {'C':' deg','T':' msec'}
                 units = Units[controlDict[pfx+'histType'][2]]
                 Limits = controlDict[pfx+'Limits']
-                print >>pFile,' Instrument type: ',Sample['Type']
-                print >>pFile,' Histogram limits: %8.2f%s to %8.2f%s'%(Limits[0],units,Limits[1],units)
+                pFile.write(' Instrument type: %s\n'%Sample['Type'])
+                pFile.write(' Histogram limits: %8.2f%s to %8.2f%s\n'%(Limits[0],units,Limits[1],units))
                 if len(controlDict[pfx+'Exclude']):
                     excls = controlDict[pfx+'Exclude']
                     for excl in excls:
-                        print >>pFile,' Excluded region:  %8.2f%s to %8.2f%s'%(excl[0],units,excl[1],units)    
+                        pFile.write(' Excluded region:  %8.2f%s to %8.2f%s\n'%(excl[0],units,excl[1],units)) 
                 PrintSampleParms(Sample)
                 PrintInstParms(Inst[0])
                 PrintBackground(Background)
@@ -3077,7 +3088,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
         
     def SetInstParms(pfx,Inst,parmDict,sigDict):
         instSig = {}
-        insKeys = Inst.keys()
+        insKeys = list(Inst.keys())
         insKeys.sort()
         for item in insKeys:
             insName = pfx+item
@@ -3117,9 +3128,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
             else:
                 sigstr += 10*' '
         if refine:
-            print >>pFile,'\n Background function: ',Back[0]
-            print >>pFile,valstr
-            print >>pFile,sigstr 
+            pFile.write('\n Background function: %s\n'%Back[0])
+            pFile.write(valstr+'\n')
+            pFile.write(sigstr+'\n')
         if DebyePeaks['nDebye']:
             ifAny = False
             ptfmt = "%12.3f"
@@ -3133,17 +3144,17 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
                     ptstr += ptfmt%(parmDict[item])
                     sigstr += ptfmt%(sigDict[item])
             if ifAny:
-                print >>pFile,'\n Debye diffuse scattering coefficients'
-                print >>pFile,names
-                print >>pFile,ptstr
-                print >>pFile,sigstr
+                pFile.write('\n Debye diffuse scattering coefficients\n')
+                pFile.write(names+'\n')
+                pFile.write(ptstr+'\n')
+                pFile.write(sigstr+'\n')
         if DebyePeaks['nPeaks']:
-            print >>pFile,'\n Single peak coefficients:'
+            pFile.write('\n Single peak coefficients:\n')
             parms =    ['BkPkpos','BkPkint','BkPksig','BkPkgam']
             line = ' peak no. '
             for parm in parms:
                 line += '%14s%12s'%(parm.center(14),'esd'.center(12))
-            print >>pFile,line
+            pFile.write(line+'\n')
             for ip in range(DebyePeaks['nPeaks']):
                 ptstr = ' %4d '%(ip)
                 for parm in parms:
@@ -3158,14 +3169,14 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
                         ptstr += efmt%(sigDict[name])
                     else:
                         ptstr += 12*' '
-                print >>pFile,ptstr
+                pFile.write(ptstr+'\n')
         sumBk = np.array(Histogram['sumBk'])
-        print >>pFile,' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g'    \
-            %(sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk))
+        pFile.write(' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g\n'%
+            (sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk)))
         
     def PrintInstParmsSig(Inst,instSig):
         refine = False
-        insKeys = instSig.keys()
+        insKeys = list(instSig.keys())
         insKeys.sort()
         iBeg = 0
         Ok = True
@@ -3184,10 +3195,10 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
                     else:
                         sigstr += 12*' '
             if refine:
-                print >>pFile,'\n Instrument Parameters:'
-                print >>pFile,ptlbls
-                print >>pFile,ptstr
-                print >>pFile,sigstr
+                pFile.write('\n Instrument Parameters:\n')
+                pFile.write(ptlbls+'\n')
+                pFile.write(ptstr+'\n')
+                pFile.write(sigstr+'\n')
             iBeg = iFin
             if iBeg == len(insKeys):
                 Ok = False
@@ -3218,12 +3229,12 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
                     sigstr += 14*' '
 
         if refine:
-            print >>pFile,'\n Sample Parameters:'
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+            pFile.write('\n Sample Parameters:\n')
+            pFile.write(ptlbls+'\n')
+            pFile.write(ptstr+'\n')
+            pFile.write(sigstr+'\n')
         
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram:
@@ -3239,14 +3250,15 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
             Sample = Histogram['Sample Parameters']
             sampSig = SetSampleParms(pfx,Sample,parmDict,sigDict)
 
-            print >>pFile,'\n Histogram: ',histogram,' histogram Id: ',hId
-            print >>pFile,135*'='
-            print >>pFile,' PWDR histogram weight factor = '+'%.3f'%(Histogram['wtFactor'])
-            print >>pFile,' Final refinement wR = %.2f%% on %d observations in this histogram'%(Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs'])
-            print >>pFile,' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%'% \
-                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin'])
+            pFile.write('\n Histogram: %s histogram Id: %d\n'%(histogram,hId))
+            pFile.write(135*'='+'\n')
+            pFile.write(' PWDR histogram weight factor = '+'%.3f\n'%(Histogram['wtFactor']))
+            pFile.write(' Final refinement wR = %.2f%% on %d observations in this histogram\n'%
+                (Histogram['Residuals']['wR'],Histogram['Residuals']['Nobs']))
+            pFile.write(' Other residuals: R = %.2f%%, R-bkg = %.2f%%, wR-bkg = %.2f%% wRmin = %.2f%%\n'%
+                (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wR'],Histogram['Residuals']['wRmin']))
             if Print:
-                print >>pFile,' Instrument type: ',Sample['Type']
+                pFile.write(' Instrument type: %s\n'%Sample['Type'])
                 if FFtables != None and 'N' not in Inst['Type'][0]:
                     PrintFprime(FFtables,pfx,pFile)
                 PrintSampleParmsSig(Sample,sampSig)

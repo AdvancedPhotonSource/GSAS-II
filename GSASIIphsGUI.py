@@ -20,6 +20,7 @@ that respond to some tabs in the phase GUI in other modules
 (such as GSASIIddata).
 
 '''
+from __future__ import division, print_function
 import os.path
 import wx
 import wx.grid as wg
@@ -1195,13 +1196,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['vdWRadii'].append(Info['Vdrad'])
                 if atom[ct] in generalData['Isotope']:
                     if generalData['Isotope'][atom[ct]] not in generalData['Isotopes'][atom[ct]]:
-                        isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                        isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
                         generalData['Isotope'][atom[ct]] = isotope
                     generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]]['Mass'])
                 else:
                     generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
                     if 'Nat. Abund.' not in generalData['Isotopes'][atom[ct]]:
-                        isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                        isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
                         generalData['Isotope'][atom[ct]] = isotope
                     generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cx+3]*float(atom[cs+1])
@@ -1284,7 +1285,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 phaseNameList = usedHistograms.keys() # phase names in use
                 newName = NameTxt.GetValue().strip()
                 if newName and newName != oldName:
-                    newName = G2obj.MakeUniqueLabel(newName,phaseNameList)             
+                    newName = G2obj.MakeUniqueLabel(newName,list(phaseNameList))             
                     generalData['Name'] = newName
                     G2frame.G2plotNB.Rename(oldName,generalData['Name'])
                     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Phase Data for '+generalData['Name'])
@@ -1655,9 +1656,9 @@ entered the right symbol for your structure.
                 elemSizer.Add(typTxt,0,WACV)
             elemSizer.Add(wx.StaticText(General,label=' Isotope'),0,WACV)
             for elem in generalData['AtomTypes']:
-                choices = generalData['Isotopes'][elem].keys()
+                choices = list(generalData['Isotopes'][elem].keys())
                 isoSel = wx.ComboBox(General,-1,value=generalData['Isotope'][elem],choices=choices,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    style=wx.CB_READONLY)
                 isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
                 Indx[isoSel.GetId()] = elem
                 elemSizer.Add(isoSel,1,WACV|wx.EXPAND)
@@ -1898,7 +1899,7 @@ entered the right symbol for your structure.
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','2Fo-Fc Omit','Patterson']
-            refsList = data['Histograms'].keys()
+            refsList = list(data['Histograms'].keys())
             if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
                  Map['MapType'] = 'Patterson'
@@ -1967,7 +1968,7 @@ entered the right symbol for your structure.
                     HKL = Flip['testHKL'][id]
                 Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
-            refsList = data['Histograms'].keys()
+            refsList = list(data['Histograms'].keys())
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
@@ -2236,7 +2237,7 @@ entered the right symbol for your structure.
             
             if ifMag and ifConstr:
                 G2frame.GetUsedHistogramsAndPhasesfromTree()
-                G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vec,atCodes)     #data is old phase
+                G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
             G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################
@@ -2253,7 +2254,7 @@ entered the right symbol for your structure.
                 for row in range(Atoms.GetNumberRows()):
                     Atoms.SelectRow(row,True)                    
             if r < 0:                          #double click on col label! Change all atoms!
-                sel = -1
+                sel = [-1,]
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
@@ -2336,7 +2337,7 @@ entered the right symbol for your structure.
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'Uiso':       #this needs to ask for value
                     pass                                        #& then change all 'I' atoms
-                if sel >= 0 and noSkip:
+                if noSkip and sel[0] >= 0:
                     ui = colLabels.index('U11')
                     us = colLabels.index('Uiso')
                     ss = colLabels.index('site sym')
@@ -2679,7 +2680,10 @@ entered the right symbol for your structure.
         G2frame.GetStatusBar().SetStatusText('',1)
         if SGData['SGPolax']:
             G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
-        Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
+        if 'phoenix' in wx.version():
+            Atoms.Bind(wg.EVT_GRID_CELL_CHANGED, ChangeAtomCell)
+        else:
+            Atoms.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeAtomCell)
         Atoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshAtomGrid)
         Atoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -2717,7 +2721,7 @@ entered the right symbol for your structure.
     def AtomAdd(x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
         generalData = data['General']
-        atId = ran.randint(0,sys.maxint)
+        atId = ran.randint(0,sys.maxsize)
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         if generalData['Type'] == 'macromolecular':
@@ -2802,7 +2806,7 @@ entered the right symbol for your structure.
             bonds = {item[0]:item[1:] for item in neigh[1][0]}
             nextName = ''
             if len(bonds) == 1:
-                nextName = bonds.keys()[0]
+                nextName = list(bonds.keys())[0]
             for bond in bonds:
                 if 'C' in atom[ct]:
                     if 'C' in bond and bonds[bond][0] < 1.42:
@@ -2957,7 +2961,7 @@ entered the right symbol for your structure.
         generalData = data['General']
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
-        atId = ran.randint(0,sys.maxint)
+        atId = ran.randint(0,sys.maxsize)
         if generalData['Type'] == 'macromolecular':
             atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
@@ -3291,7 +3295,7 @@ entered the right symbol for your structure.
             FillAtomsGrid(Atoms)
 #                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
-            print "select one atom"
+            print ("select one atom")
             G2frame.ErrorDialog('Select one atom',"select one atom to begin molecule build then redo")
 
     def OnDensity(event):
@@ -3304,14 +3308,14 @@ entered the right symbol for your structure.
     def OnValidProtein(event):
         resNames,Probs1 = G2mth.validProtein(data,True)         #old version
         resNames,Probs2 = G2mth.validProtein(data,False)        #new version
-        print 'Plot 1 is Protein validation based on errat.f'
-        print 'Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).'
-        print 'Residue error scores >6 for 5% & >8 for 1% likelihood of being correct'
-        print 'NB: this calc. matches errat.f result'
-        print 'Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates (2002)'
-        print 'Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).'
-        print 'Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct'
-        print 'NB: this calc. gives a close approximate to original erratv2 result'
+        print ('Plot 1 is Protein validation based on errat.f')
+        print ('Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).')
+        print ('Residue error scores >6 for 5% & >8 for 1% likelihood of being correct')
+        print ('NB: this calc. matches errat.f result')
+        print ('Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates (2002)')
+        print ('Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).')
+        print ('Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct')
+        print ('NB: this calc. gives a close approximate to original erratv2 result')
         G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
             thresh=[[8.0,6.0],[17.191,11.527]])
 
@@ -3370,7 +3374,7 @@ entered the right symbol for your structure.
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
-            print "select one or more rows of atoms"
+            print ("select one or more rows of atoms")
             G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
                         
     def OnIsoDistortCalc(event):
@@ -3407,7 +3411,7 @@ entered the right symbol for your structure.
             return helptext
 
         if 'ISODISTORT' not in data:
-            raise Exception,"Should not happen: 'ISODISTORT' not in data"
+            raise Exception("Should not happen: 'ISODISTORT' not in data")
         if len(data.get('Histograms',[])) == 0:
             G2frame.ErrorDialog(
                 'No data',
@@ -3561,7 +3565,7 @@ entered the right symbol for your structure.
         G2frame.OnFileSave(event)
         # rd contains all info for a phase
         PhaseName = rd.Phase['General']['Name']
-        print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
+        print ('Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport))
         atomData = data['Atoms']
         atomNames = []
         All = False
@@ -3584,7 +3588,7 @@ entered the right symbol for your structure.
                             All = True
                             atomData.append(atom)
                         else:
-                            print atom[:ct+1], 'not in Atom array; not updated'
+                            print (atom[:ct+1]+ 'not in Atom array; not updated')
                     finally:
                         dlg.Destroy()
         SetupGeneral()
@@ -3770,7 +3774,7 @@ entered the right symbol for your structure.
                 
         def OnImportLayer(event):
             dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
-                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN| wx.CHANGE_DIR)
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     GPXFile = dlg.GetPath()
@@ -4221,7 +4225,7 @@ entered the right symbol for your structure.
         
     def OnCopyPhase(event):
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
-            wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN| wx.CHANGE_DIR)
+            wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 GPXFile = dlg.GetPath()
@@ -4251,7 +4255,7 @@ entered the right symbol for your structure.
             finally:
                 dlg.Destroy()
         dlg = wx.FileDialog(G2frame, 'Choose DIFFaX file name to read', '.', '',
-            'DIFFaX file (*.*)|*.*',style=wx.OPEN | wx.CHANGE_DIR)
+            'DIFFaX file (*.*)|*.*',style=wx.FD_OPEN | wx.CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 DIFFaXfile = dlg.GetPath()
@@ -4329,7 +4333,7 @@ entered the right symbol for your structure.
         wx.CallAfter(UpdateLayerData)
         
     def OnFitLayers(event):
-        print ' fit stacking fault model TBD'
+        print (' fit stacking fault model TBD')
 #        import scipy.optimize as opt
         wx.BeginBusyCursor()
 #        Min,Init,Done = SetupPDFEval()
@@ -4402,7 +4406,7 @@ entered the right symbol for your structure.
         vals = np.linspace(BegFin[0],BegFin[1],nSteps+1,True)
         simNames = []
         for val in vals:
-            print ' Stacking simulation step for '+pName+' = %.5f'%(val)
+            print (' Stacking simulation step for %s = %.5f'%(pName,val))
             simNames.append('%.3f'%(val))
             if 'cell' in pName:
                 cellId = cellSel.index(pName)
@@ -4430,10 +4434,10 @@ entered the right symbol for your structure.
                         Layers['Transitions'][Nx-iX][Nx-iY][0] = val
                         for i in range(Nx+1):
                             Layers['Transitions'][Nx-iY][Nx-i][0] = Layers['Transitions'][iY][i][0]
-                    print ' Transition matrix:'
+                    print (' Transition matrix:')
                     for trans in Layers['Transitions']:
                         line = str([' %.3f'%(item[0]) for item in trans])
-                        print line[1:-2].replace("'",'')
+                        print (line[1:-2].replace("'",''))
                 else:
                     Trans[iX][transId] = val
             G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile,False)
@@ -4787,7 +4791,7 @@ entered the right symbol for your structure.
                 restData[PhaseName]['Chiral'] = chiralData
             chiralData['Volumes'].append([atIndx,atSymOp,2.5,0.1])            
         else:
-            print '**** ERROR wrong number of atoms selected for this restraint'
+            print ('**** ERROR wrong number of atoms selected for this restraint')
             return
         G2frame.GPXtree.SetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints'),restData)
@@ -4816,7 +4820,7 @@ entered the right symbol for your structure.
             rbXYZ.append(np.inner(np.array(atomData[item][cx:cx+3]),Amat))
         rbXYZ = np.array(rbXYZ)
         rbXYZ -= rbXYZ[0]
-        rbId = ran.randint(0,sys.maxint)
+        rbId = ran.randint(0,sys.maxsize)
         rbName = 'UNKRB'
         dlg = wx.TextEntryDialog(G2frame,'Enter the name for the new rigid body',
             'Edit rigid body name',rbName ,style=wx.OK)
@@ -5002,7 +5006,10 @@ entered the right symbol for your structure.
         drawAtoms.AutoSizeColumns(True)
         drawAtoms.SetColSize(colLabels.index('Style'),80)
         drawAtoms.SetColSize(colLabels.index('Color'),50)
-        drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
+        if 'phoenix' in wx.version():
+            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGED, RefreshDrawAtomGrid)
+        else:
+            drawAtoms.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, RefreshDrawAtomGrid)
         drawAtoms.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -5461,7 +5468,7 @@ entered the right symbol for your structure.
     def OnDrawPlane(event):
         indx = drawAtoms.GetSelectedRows()
         if len(indx) < 4:
-            print '**** ERROR - need 4+ atoms for plane calculation'
+            print ('**** ERROR - need 4+ atoms for plane calculation')
             return
         PlaneData = {}
         drawingData = data['Drawing']
@@ -5483,13 +5490,13 @@ entered the right symbol for your structure.
         # distance to view point
         indx = drawAtoms.GetSelectedRows()
         if not indx:
-            print '***** ERROR - no atoms selected'
+            print ('***** ERROR - no atoms selected')
             return
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
         drawingData = data['Drawing']
         viewPt = np.array(drawingData['viewPoint'][0])
-        print ' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2])
+        print (' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2]))
         atomDData = drawingData['Atoms']
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cx = colLabels.index('x')
@@ -5498,13 +5505,13 @@ entered the right symbol for your structure.
             atom = atomDData[i]
             Dx = np.array(atom[cx:cx+3])-viewPt
             dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
-            print 'Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cx+3],dist)
+            print ('Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cx+3],dist))
     
     def OnDrawDAT(event):
         #distance, angle, torsion 
         indx = drawAtoms.GetSelectedRows()
         if len(indx) not in [2,3,4]:
-            print '**** ERROR - wrong number of atoms for distance, angle or torsion calculation'
+            print ('**** ERROR - wrong number of atoms for distance, angle or torsion calculation')
             return
         DATData = {}
         ocx,oct,ocs,cia = data['General']['AtomPtrs']
@@ -5598,7 +5605,7 @@ entered the right symbol for your structure.
 
             
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-            slideSizer = wx.FlexGridSizer(0,2)
+            slideSizer = wx.FlexGridSizer(0,2,0,0)
             slideSizer.AddGrowableCol(1,1)
     
             cameraPosTxt = wx.StaticText(drawOptions,-1,
@@ -5991,7 +5998,7 @@ entered the right symbol for your structure.
                     pfFile = dlg.GetPath()
             finally:
                 dlg.Destroy()
-            print 'popLA save '+pfFile
+            print ('popLA save '+pfFile)
             if pfFile:
                 pf = open(pfFile,'w')
                 pf.write(PhaseName+'\n')
@@ -6009,7 +6016,7 @@ entered the right symbol for your structure.
                     np.savetxt(pf,Z[iBeg:iFin],fmt='%4d',newline='')
                     pf.write('\n')                
                 pf.close()
-                print ' popLA %d %d %d pole figure saved to %s'%(PH[0],PH[1],PH[2],pfFile)
+                print (' popLA %d %d %d pole figure saved to %s'%(PH[0],PH[1],PH[2],pfFile))
 
         def OnCSV(event):
             pfName = PhaseName
@@ -6039,7 +6046,7 @@ entered the right symbol for your structure.
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     pfFile = dlg.GetPath()
-                    print 'CSV save '+pfFile
+                    print ('CSV save '+pfFile)
             finally:
                 dlg.Destroy()
             if pfFile:
@@ -6060,7 +6067,7 @@ entered the right symbol for your structure.
                         np.savetxt(pf,row,fmt='%10.4f,',newline='')
                         pf.write('\n')                
                     pf.close()
-                    print ' %s %d %d %d inverse pole figure saved to %s'%(PhaseName,int(PX[0]),int(PX[1]),int(PX[2]),pfFile)
+                    print (' %s %d %d %d inverse pole figure saved to %s'%(PhaseName,int(PX[0]),int(PX[1]),int(PX[2]),pfFile))
                 else:
                     pf.write('" %s %d %d %d pole figure"\n'%(PhaseName,PH[0],PH[1],PH[2]))
                     Psi,Gam = np.mgrid[0:19,0:72]
@@ -6076,7 +6083,7 @@ entered the right symbol for your structure.
                         np.savetxt(pf,row,fmt='%10.4f,',newline='')
                         pf.write('\n')               
                     pf.close()
-                    print ' %s %d %d %d pole figure saved to %s'%(PhaseName,PH[0],PH[1],PH[2],pfFile)
+                    print (' %s %d %d %d pole figure saved to %s'%(PhaseName,PH[0],PH[1],PH[2],pfFile))
 
         def SHPenalty(Penalty):
             
@@ -6203,7 +6210,7 @@ entered the right symbol for your structure.
             mainSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonic coefficients: '),0,WACV)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(0,8,2,2)
-            ODFkeys = textureData['SH Coeff'][1].keys()
+            ODFkeys = list(textureData['SH Coeff'][1].keys())
             ODFkeys.sort()
             for item in ODFkeys:
                 ODFSizer.Add(wx.StaticText(Texture,-1,item),0,WACV)
@@ -6791,7 +6798,10 @@ entered the right symbol for your structure.
            
         def RepaintRBInfo(rbId,Scroll=0):
             oldFocus = wx.Window.FindFocus()
-            G2frame.bottomSizer.DeleteWindows()
+            if 'phoenix' in wx.version():
+                G2frame.bottomSizer.Clear(True)
+            else:
+                G2frame.bottomSizer.DeleteWindows()
             Indx.clear()
             rbObj = data['RBModels']['Residue'][rbId]
             data['Drawing']['viewPoint'][0] = rbObj['Orig'][0]
@@ -6863,10 +6873,10 @@ entered the right symbol for your structure.
         for rbType in ['Vector','Residue']:            
             RBObjs += data['RBModels'].get(rbType,[])
         if not len(RBObjs):
-            print '**** ERROR - no rigid bodies defined ****'
+            print ('**** ERROR - no rigid bodies defined ****')
             return
         if len(RBObjs) == 1:
-            print '**** INFO - only one rigid body defined; nothing to copy to ****'
+            print ('**** INFO - only one rigid body defined; nothing to copy to ****')
             return
         Source = []
         sourceRB = {}
@@ -6901,7 +6911,7 @@ entered the right symbol for your structure.
             if rbRes != 'AtInfo':
                 rbNames[RBData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
         if not rbNames:
-            print '**** ERROR - no rigid bodies defined ****'
+            print ('**** ERROR - no rigid bodies defined ****')
             return
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
@@ -6934,8 +6944,8 @@ entered the right symbol for your structure.
                     Ids.append(Id)
                     atomData[id][cx:cx+3] = xyz
                 if dmax > 1.0:
-                    print '**** WARNING - some atoms not found or misidentified ****'
-                    print '****           check torsion angles & try again      ****'
+                    print ('**** WARNING - some atoms not found or misidentified ****')
+                    print ('****           check torsion angles & try again      ****')
                     OkBtn.SetLabel('Not Ready')
                     OkBtn.Enable(False)
                     return
@@ -7111,7 +7121,7 @@ entered the right symbol for your structure.
                     Xsizers.append(origX)
                 OriSizer.Add((5,0),)
                 if len(atomData):
-                    choice = atNames[0].keys()
+                    choice = list(atNames[0].keys())
                     choice.sort()
                     data['testRBObj']['Sizers']['Xsizers'] = Xsizers
                 OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,WACV)
@@ -7126,7 +7136,7 @@ entered the right symbol for your structure.
                 if len(atomData):
                     RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,WACV)
                     for i in [0,1,2]:
-                        choice = ['',]+atNames[i].keys()
+                        choice = ['',]+list(atNames[i].keys())
                         choice.sort()
                         RefSizer.Add(wx.StaticText(RigidBodies,-1,' '+refName[i]+': '),0,WACV)
                         atPick = wx.ComboBox(RigidBodies,-1,value='',
@@ -7166,7 +7176,7 @@ entered the right symbol for your structure.
                 mainSizer.Add((5,5),0)
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
                 topSizer.Add(wx.StaticText(RigidBodies,-1,'Select rigid body model'),0,WACV)
-                rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=rbNames.keys(),
+                rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=list(rbNames.keys()),
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 rbSel.Bind(wx.EVT_COMBOBOX, OnRBSel)
                 topSizer.Add((5,5),0)
@@ -7190,10 +7200,10 @@ entered the right symbol for your structure.
     def OnAutoFindResRB(event):
         RBData = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-        rbKeys = RBData['Residue'].keys()
+        rbKeys = list(RBData['Residue'].keys())
         rbKeys.remove('AtInfo')
         if not len(rbKeys):
-            print '**** ERROR - no residue rigid bodies are defined ****'
+            print ('**** ERROR - no residue rigid bodies are defined ****')
             return
         RBNames = [RBData['Residue'][k]['RBname'] for k in rbKeys]
         RBIds = dict(zip(RBNames,rbKeys))
@@ -7203,10 +7213,10 @@ entered the right symbol for your structure.
         Atoms = data['Atoms']
         AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
         if 'macro' not in general['Type']:
-            print '**** ERROR - this phase is not a macromolecule ****'
+            print ('**** ERROR - this phase is not a macromolecule ****')
             return
         if not len(Atoms):
-            print '**** ERROR - this phase has no atoms ****'
+            print ('**** ERROR - this phase has no atoms ****')
             return
         RBObjs = []
         cx,ct = general['AtomPtrs'][:2]
@@ -7676,7 +7686,10 @@ entered the right symbol for your structure.
            
         def RepaintRBInfo(rbId,Scroll=0):
             oldFocus = wx.Window.FindFocus()
-            G2frame.bottomSizer.DeleteWindows()
+            if 'phoenix' in wx.version():
+                G2frame.bottomSizer.Clear(True)
+            else:
+                G2frame.bottomSizer.DeleteWindows()
             Indx.clear()
             rbObj = data['MCSA']['Models'][rbId]
             G2frame.bottomSizer.Insert(0,rbSizer(rbObj))
@@ -7802,15 +7815,15 @@ entered the right symbol for your structure.
             covData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Covariance'))
             reflType = 'Pawley'
         else:
-            print '**** ERROR - No data defined for MC/SA run'
+            print ('**** ERROR - No data defined for MC/SA run')
             return
-        print 'MC/SA run:'
-        print 'Reflection type:',reflType,' Total No. reflections: ',len(reflData)
+        print ('MC/SA run:')
+        print ('Reflection type:'+reflType+' Total No. reflections: %d'%len(reflData))
         RBdata = G2frame.GPXtree.GetItemPyData(   
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
         MCSAmodels = MCSAdata['Models']
         if not len(MCSAmodels):
-            print '**** ERROR - no models defined for MC/SA run****'
+            print ('**** ERROR - no models defined for MC/SA run****')
             return
         time1 = time.time()
         nprocs = GSASIIpath.GetConfigValue('Multiprocessing_cores',0)
@@ -7832,16 +7845,16 @@ entered the right symbol for your structure.
                     pgbar.SetTitle('MC/SA run '+str(i+1)+' of '+str(nCyc))
                     Result,tsum,nsum,rcov = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
                     MCSAdata['Results'].append(Result)
-                    print ' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs Nsfcalc: %d'%(i,100*Result[2],tsum,nsum)
+                    print(' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs Nsfcalc: %d'%(i,100*Result[2],tsum,nsum))
                     tsf += tsum
-                print ' Total SF time: %.2fs'%(tsf)
+                print (' Total SF time: %.2fs'%(tsf))
                 XY = np.mgrid[0:rcov.shape[0],0:rcov.shape[1]]
                 G2plt.PlotXYZ(G2frame,XY,rcov,labelX='ref No.',labelY='ref No.',newPlot=False,
                     Title='Reflection covariance matrix',zrange=[-1.,1.],color='RdYlGn')
             else:
                 Results,sftime,numsf = G2mth.MPmcsaSearch(nCyc,data,RBdata,reflType,reflData,covData,nprocs)
                 MCSAdata['Results'] += Results   #+= to  any saved ones
-                print ' Total SF time: %.2fs MC/SA run time: %.2fs Nsfcalc: %d'%(sftime,time.time()-time1,numsf)
+                print (' Total SF time: %.2fs MC/SA run time: %.2fs Nsfcalc: %d'%(sftime,time.time()-time1,numsf))
         finally:
             if process == 'single' or not nprocs:
                 pgbar.Destroy()
@@ -7880,12 +7893,12 @@ entered the right symbol for your structure.
             if rbRes != 'AtInfo':
                 rbNames[rbData['Residue'][rbRes]['RBname']] = ['Residue',rbRes]
         if not rbNames:
-            print '**** ERROR - no rigid bodies defined ****'
+            print ('**** ERROR - no rigid bodies defined ****')
             return
-        dlg = wx.SingleChoiceDialog(G2frame,'Select','Rigid body',rbNames.keys())
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Rigid body',list(rbNames.keys()))
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
-            rbname = rbNames.keys()[sel]
+            rbname = list(rbNames.keys())[sel]
             rbType,rbId = rbNames[rbname]
             RB = rbData[rbType][rbId]
         body = {'name':RB['RBname']+'('+str(len(data['MCSA']['Models']))+')','RBId':rbId,'Type':rbType,
@@ -8121,7 +8134,7 @@ entered the right symbol for your structure.
         im = 0
         if generalData['Modulated']:
             im = 1
-        HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
+        HistoNames = filter(lambda a:Histograms[a]['Use']==True,list(Histograms.keys()))
         if not len(HistoNames):
             G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return
@@ -8174,7 +8187,7 @@ entered the right symbol for your structure.
         except KeyError:
             G2frame.ErrorDialog('Pawley update','No histograms defined for this phase')
             return
-        HistoNames = Histograms.keys()
+        HistoNames = list(Histograms.keys())
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,HistoNames[0])
         refData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,  \
             PatternId,'Reflection Lists'))[PhaseName]['RefList']
@@ -8196,7 +8209,7 @@ entered the right symbol for your structure.
                         ref[5+im] = False
                         ref[7+im] = 1.0
                 except IndexError:
-                    print 'skipped',ref
+                    print ('skipped',ref)
                     pass
         finally:
             wx.EndBusyCursor()
@@ -8346,8 +8359,7 @@ entered the right symbol for your structure.
                 wx.BeginBusyCursor()
                 try:
                     Ind = G2mth.PeaksUnique(data,Ind)
-                    print ' No. unique peaks: ',len(Ind),   \
-                        ' Unique peak fraction: %.3f'%(float(len(Ind))/len(mapPeaks))
+                    print (' No. unique peaks: %d Unique peak fraction: %.3f'%(len(Ind),float(len(Ind))/len(mapPeaks)))
                     for r in range(MapPeaks.GetNumberRows()):
                         if r in Ind:
                             MapPeaks.SelectRow(r,addToSelected=True)
@@ -8379,7 +8391,7 @@ entered the right symbol for your structure.
         mapPeaks = data['Map Peaks']
         drawingData = data['Drawing']
         viewPt = np.array(drawingData['viewPoint'][0])
-        print ' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2])
+        print (' Distance from view point at %.3f %.3f %.3f to:'%(viewPt[0],viewPt[1],viewPt[2]))
         colLabels = [MapPeaks.GetColLabelValue(c) for c in range(MapPeaks.GetNumberCols())]
         cx = colLabels.index('x')
         cm = colLabels.index('mag')
@@ -8387,7 +8399,7 @@ entered the right symbol for your structure.
             peak = mapPeaks[i]
             Dx = np.array(peak[cx:cx+3])-viewPt
             dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
-            print 'Peak: %5d mag= %8.2f distance = %.3f'%(i,peak[cm],dist)
+            print ('Peak: %5d mag= %8.2f distance = %.3f'%(i,peak[cm],dist))
 
     def OnPeaksDA(event):
         #distance, angle 
@@ -8402,9 +8414,9 @@ entered the right symbol for your structure.
         for i in indx:
             xyz.append(mapPeaks[i][1:4])
         if len(indx) == 2:
-            print ' distance for atoms %s = %.3f'%(str(indx),G2mth.getRestDist(xyz,Amat))
+            print (' distance for atoms %s = %.3f'%(str(indx),G2mth.getRestDist(xyz,Amat)))
         else:
-            print ' angle for atoms %s = %.2f'%(str(indx),G2mth.getRestAngle(xyz,Amat))
+            print (' angle for atoms %s = %.2f'%(str(indx),G2mth.getRestAngle(xyz,Amat)))
                                     
     def OnFourierMaps(event):
         generalData = data['General']
@@ -8438,7 +8450,7 @@ entered the right symbol for your structure.
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print (dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         
@@ -8459,11 +8471,11 @@ entered the right symbol for your structure.
                 for i in range(ix):
                     r = int(100*rho[i,j]/rhoMax)
                     line += '%4d'%(r)
-                print line+'\n'
+                print (line+'\n')
         else:
             ix,jy,kz = rho.shape
             for k in range(kz):
-                print 'k = ',k
+                print ('k = %d'%k)
                 for j in range(jy):
                     line = ''
                     if SGLaue in ['3','3m1','31m','6/m','6/mmm']:
@@ -8471,12 +8483,12 @@ entered the right symbol for your structure.
                     for i in range(ix):
                         r = int(100*rho[i,j,k]/rhoMax)
                         line += '%4d'%(r)
-                    print line+'\n'
+                    print (line+'\n')
 ## keep this                
     
     def OnSearchMaps(event):
                                     
-        print ' Begin fourier map search - can take some time'
+        print (' Begin fourier map search - can take some time')
         time0 = time.time()
         generalData = data['General']
         drawingData = data['Drawing']
@@ -8496,14 +8508,14 @@ entered the right symbol for your structure.
             if len(peaks):
                 mapPeaks = np.concatenate((mags,peaks,dzeros,dcents),axis=1)
                 data['Map Peaks'] = G2mth.sortArray(mapPeaks,0,reverse=True)            
-            print ' Map search finished, time = %.2fs'%(time.time()-time0)
-            print ' No.peaks found:',len(peaks)    
+            print (' Map search finished, time = %.2fs'%(time.time()-time0))
+            print (' No.peaks found: %d'%len(peaks))    
             Page = G2frame.phaseDisplay.FindPage('Map peaks')
             G2frame.phaseDisplay.SetSelection(Page)
             wx.CallAfter(FillMapPeaksGrid)
             UpdateDrawAtoms()
         else:
-            print 'No map available'
+            print ('No map available')
             
     def On4DChargeFlip(event):
         generalData = data['General']
@@ -8536,11 +8548,11 @@ entered the right symbol for your structure.
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print ' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print (' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end
         else:
-            print 'Bad charge flip map - no peak search done'
+            print ('Bad charge flip map - no peak search done')
         
     def OnChargeFlip(event):
         generalData = data['General']
@@ -8578,11 +8590,11 @@ entered the right symbol for your structure.
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print ' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print (' Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig))
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end
         else:
-            print 'Bad charge flip map - no peak search done'
+            print ('Bad charge flip map - no peak search done')
                             
     def OnTextureRefine(event):
         General = data['General']
@@ -8629,7 +8641,7 @@ entered the right symbol for your structure.
         G2plt.PlotTexture(G2frame,data,Start=False)            
             
     def OnTextureClear(event):
-        print 'clear texture? - does nothing'
+        print ('clear texture? - does nothing')
 
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
@@ -8640,7 +8652,7 @@ entered the right symbol for your structure.
             # lookup the menu item that called us and get its text
             tabname = TabSelectionIdDict.get(event.GetId())
             if not tabname:
-                print 'Warning: menu item not in dict! id=',event.GetId()
+                print ('Warning: menu item not in dict! id=%d'%event.GetId())
                 return                
             # find the matching tab
             for PageNum in range(G2frame.phaseDisplay.GetPageCount()):
@@ -8648,14 +8660,14 @@ entered the right symbol for your structure.
                     G2frame.phaseDisplay.SetSelection(PageNum)
                     return
             else:
-                print "Warning: tab "+tabname+" was not found"
+                print ("Warning: tab "+tabname+" was not found")
         mid = menuBar.FindMenu('Select tab')
         menu = menuBar.GetMenu(mid)
         for ipage,page in enumerate(Pages):
             if menu.FindItem(page) < 0: # is tab already in menu?
                 Id = wx.NewId()
                 TabSelectionIdDict[Id] = page
-                menu.Append(id=Id,kind=wx.ITEM_NORMAL,text=page)
+                menu.Append(Id,page,'')
                 G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
         
     def OnPageChanged(event):

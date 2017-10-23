@@ -15,6 +15,7 @@ two-theta or Q steps.
 
 '''
 
+from __future__ import division, print_function
 import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
@@ -33,10 +34,11 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -44,19 +46,21 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -84,8 +88,9 @@ class txt_XRayReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0/float(data[1]))
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
@@ -123,10 +128,11 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -134,19 +140,21 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -174,8 +182,9 @@ class txt_nmXRayReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0/float(data[1]))
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
@@ -213,10 +222,11 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -224,19 +234,21 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -264,8 +276,9 @@ class txt_CWNeutronReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0/float(data[1]))
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
@@ -305,10 +318,11 @@ class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid q-step file'
         Ndata = 0
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             vals = S.split()
             if len(vals) >= 2:
                 try:
@@ -316,19 +330,21 @@ class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
                     Ndata += 1
                 except ValueError:
                     pass
+        fp.close()
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
             return False
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        print 'Read a q-step text file'
+    def Reader(self,filename, ParentFrame=None, **unused):
+        print ('Read a q-step text file')
         x = []
         y = []
         w = []
         wave = 1.5428   #Cuka default
         Temperature = 300
-        for i,S in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,S in enumerate(fp):
             if len(S) == 1:     #skip blank line
                 continue
             if '=' in S:
@@ -356,8 +372,9 @@ class txt_nmCWNeutronReaderClass(G2obj.ImportSmallAngleData):
                         w.append(1.0/float(data[1]))
                 except ValueError:
                     msg = 'Error in line '+str(i+1)
-                    print msg
+                    print (msg)
                     continue
+        fp.close()
         N = len(x)
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:

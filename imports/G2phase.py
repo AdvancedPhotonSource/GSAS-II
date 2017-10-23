@@ -16,6 +16,7 @@ previously implemented in GSAS-II: PDB, GSAS .EXP and JANA m40-m50 file formats
 
 '''
 
+from __future__ import division, print_function
 import sys
 import os.path
 import math
@@ -41,23 +42,27 @@ class PDB_ReaderClass(G2obj.ImportPhase):
             formatName = 'PDB',
             longFormatName = 'Original Protein Data Bank (.pdb file) import'
             )
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''Taking a stab a validating a PDB file
         (look for cell & at least one atom)
         '''
-        for i,l in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,l in enumerate(fp):
             if l.startswith('CRYST1'):
                 break
         else:
             self.errors = 'no CRYST1 record found'
+            fp.close()
             return False
-        for i,l in enumerate(filepointer):
+        for i,l in enumerate(fp):
             if l.startswith('ATOM'):
+                fp.close()
                 return True
         self.errors = 'no ATOM records found after CRYST1 record'
+        fp.close()
         return False
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a PDF file using :meth:`ReadPDBPhase`'
         self.Phase = self.ReadPDBPhase(filename, ParentFrame)
         return True
@@ -99,7 +104,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     if SpGrpNorm:
                         E,SGData = G2spc.SpcGroup(SpGrpNorm)
                 while E:
-                    print G2spc.SGErrors(E)
+                    print (G2spc.SGErrors(E))
                     dlg = wx.TextEntryDialog(parent,
                         SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
                         'ERROR in space group symbol','',style=wx.OK)
@@ -112,7 +117,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
                 SGlines = G2spc.SGPrint(SGData)
-                for l in SGlines: print l
+                for l in SGlines: print (l)
             elif 'SCALE' in S[:5]:
                 V = S[10:41].split()
                 A[int(S[5])-1] = [float(V[0]),float(V[1]),float(V[2])]
@@ -134,7 +139,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
                 if S[16] in [' ','A']:      #remove disorered residues - can't handle them just now
                     Atom[3] = Atom[3][:3]
-                    Atom.append(ran.randint(0,sys.maxint))
+                    Atom.append(ran.randint(0,sys.maxsize))
                     Atoms.append(Atom)
             elif 'ANISOU' in S[:6]:
                 Uij = S[30:72].split()
@@ -142,7 +147,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     float(Uij[3])/10000.,float(Uij[4])/10000.,float(Uij[5])/10000.]
                 Atoms[-1] = Atoms[-1][:14]+Uij
                 Atoms[-1][12] = 'A'
-                Atoms[-1].append(ran.randint(0,sys.maxint))
+                Atoms[-1].append(ran.randint(0,sys.maxsize))
             S = file.readline()
             line += 1
         file.close()
@@ -173,16 +178,21 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             longFormatName = 'GSAS Experiment (.EXP file) import'
             )
         
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look for a VERSION tag in 1st line' 
-        if filepointer.read(13) == '     VERSION ':
+        fp = open(filename,'r')
+        if fp.read(13) == '     VERSION ':
+            fp.close()
             return True
         self.errors = 'File does not begin with VERSION tag'
+        fp.close()
         return False
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a phase from a GSAS .EXP file using :meth:`ReadEXPPhase`'
-        self.Phase = self.ReadEXPPhase(ParentFrame, filepointer)
+        fp = open(filename,'r')
+        self.Phase = self.ReadEXPPhase(ParentFrame, fp)
+        fp.close()
         return True
 
     def ReadEXPPhase(self, G2frame,filepointer):
@@ -222,7 +232,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             finally:
                 dlg.Destroy()        
         EXPphase = Expr[result]
-        keyList = EXPphase.keys()
+        keyList = list(EXPphase.keys())
         keyList.sort()
         SGData = {}
         if NPhas[result] == '1':
@@ -294,7 +304,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)[:2]
 #                        if Ptype == 'magnetic':
 #                            Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
-                        Atom.append(ran.randint(0,sys.maxint))
+                        Atom.append(ran.randint(0,sys.maxsize))
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':
                         S = EXPphase[key]
@@ -309,7 +319,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                         float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
                     XYZ = Atom[6:9]
                     Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)[:2]
-                    Atom.append(ran.randint(0,sys.maxint))
+                    Atom.append(ran.randint(0,sys.maxsize))
                     Atoms.append(Atom)
         Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
         if shNcof:
@@ -356,23 +366,27 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             formatName = 'JANA m50',
             longFormatName = 'JANA2006 phase import'
             )
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''Taking a stab a validating a .m50 file
         (look for cell & at least one atom)
         '''
-        for i,l in enumerate(filepointer):
+        fp = open(filename,'r')
+        for i,l in enumerate(fp):
             if l.startswith('cell'):
                 break
         else:
             self.errors = 'no cell record found'
+            fp.close()
             return False
-        for i,l in enumerate(filepointer):
+        for i,l in enumerate(fp):
             if l.startswith('spgroup'):
+                fp.close()
                 return True
         self.errors = 'no spgroup record found after cell record'
+        fp.close()
         return False
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         'Read a m50 file using :meth:`ReadJANAPhase`'
         self.Phase = self.ReadJANAPhase(filename, ParentFrame)
         return True
@@ -381,14 +395,14 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         '''Read a phase from a JANA2006 m50 & m40 files.
         '''
         self.errors = 'Error opening file'
-        file = open(filename, 'Ur') #contains only cell & spcgroup
+        fp = open(filename, 'Ur') #contains only cell & spcgroup
         Phase = {}
         Title = os.path.basename(filename)
         Type = 'nuclear'
         Atoms = []
         Atypes = []
         SuperVec = [[0,0,.1],False,4]
-        S = file.readline()
+        S = fp.readline()
         line = 1
         SGData = None
         SuperSg = ''
@@ -424,7 +438,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                 E,SGData = G2spc.SpcGroup(SpGrpNorm)
                 # space group processing failed, try to look up name in table
                 while E:
-                    print G2spc.SGErrors(E)
+                    print (G2spc.SGErrors(E))
                     dlg = wx.TextEntryDialog(parent,
                         SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
                         'ERROR in space group symbol','',style=wx.OK)
@@ -436,7 +450,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                         self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
-                SGlines = G2spc.SGPrint(SGData) #silent check of space group symbol
+                G2spc.SGPrint(SGData) #silent check of space group symbol
             elif 'qi' in S[:2]:
                 if nqi:
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
@@ -445,9 +459,9 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                 nqi += 1
             elif 'atom' in S[:4]:
                 Atypes.append(S.split()[1])
-            S = file.readline()
+            S = fp.readline()
             line += 1
-        file.close()
+        fp.close()
         #read atoms from m40 file
         if not SGData:
             self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
@@ -506,7 +520,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             if sum(S1N):    #if any waves: skip mystery line?
                 file2.readline()
             for i,it in enumerate(Sfrac):
-                print i,it
+                print (i,it)
                 if not i:
                     if 'Crenel' in waveType:
                         vals = [float(it),float(Sfrac[-1][:9])]
@@ -518,7 +532,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                     del Sfrac[-1]
                     break                
                 Sfrac[i] = [vals,False]
-                print Sfrac[i]
+                print (Sfrac[i])
             for i,it in enumerate(Spos):
                 if waveType in ['Sawtooth',] and not i:
                     vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36])]
@@ -535,7 +549,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
             Atom += Uij
-            Atom.append(ran.randint(0,sys.maxint))
+            Atom.append(ran.randint(0,sys.maxsize))
             Atom.append([])
             Atom.append([])
             Atom.append({'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.

@@ -16,6 +16,7 @@ tif files, so default parameters are for that.
 
 '''
 
+from __future__ import division, print_function
 import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -31,12 +32,12 @@ class png_ReaderClass(G2obj.ImportImage):
             longFormatName = 'PNG image from CheMin'
             )
 
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         '''no test at this time
         '''
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         '''Reads using standard scipy PNG reader
         '''
         import scipy.misc

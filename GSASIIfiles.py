@@ -20,14 +20,14 @@ Future refactoring: This module and GSASIIIO.py needs some work to
 move non-wx routines here. It may will likely make sense to rename the module(s)
 at that point.
 '''
-
+from __future__ import division, print_function
 import os
 import sys
 import glob
 import imp
 import inspect
-import traceback
 import platform
+import numpy as np
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 2957 $")
@@ -354,12 +354,12 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                         if reader.UseReader:
                             readerlist.append(reader)
         except AttributeError:
-            print 'Import_' + errprefix + ': Attribute Error ' + filename
+            print ('Import_' + errprefix + ': Attribute Error ' + filename)
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            print '\nImport_' + errprefix + ': Error importing file ' + filename
-            print u'Error message: {}\n'.format(exc)
+            print ('\nImport_' + errprefix + ': Error importing file ' + filename)
+            print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         finally:

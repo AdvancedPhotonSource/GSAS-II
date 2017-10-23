@@ -14,15 +14,13 @@
 Code to create .chi (Fit2D like) files for GSAS-II powder data export 
 
 '''
+from __future__ import division, print_function
 import os.path
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
-import GSASIImath as G2mth
-import GSASIIpwd as G2pwd
 
 class ExportPowderCHI(G2IO.ExportBaseclass):
     '''Used to create a CHI file for a powder data set

@@ -12,6 +12,7 @@
 
 '''
 
+from __future__ import division, print_function
 import os
 import GSASIIobj as G2obj
 import GSASIIpath
@@ -28,16 +29,16 @@ class Rigaku_ReaderClass(G2obj.ImportImage):
             longFormatName = 'Read Rigaku R-Axis IV image file'
             )
 
-    def ContentsValidator(self, filepointer):        
+    def ContentsValidator(self, filename):        
         '''Test by checking if the file size makes sense.
         '''
-        fileSize = os.stat(filepointer.name).st_size
+        fileSize = os.stat(filename).st_size
         Npix = (fileSize-6000)/2
         if Npix == 9000000 or Npix == 2250000 or Npix == 36000000:
             return True
         return False # not valid size
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename, ParentFrame=None, **unused):
         self.Comments,self.Data,self.Npix,self.Image = GetRigaku(filename)
         if self.Npix == 0 or not self.Comments:
             return False
@@ -48,15 +49,15 @@ def GetRigaku(filename,imageOnly=False):
     'Read Rigaku R-Axis IV image file'
     import array as ar
     if not imageOnly:
-        print 'Read Rigaku R-Axis IV file: ',filename    
+        print ('Read Rigaku R-Axis IV file: '+filename)   
     File = open(filename,'rb')
     fileSize = os.stat(filename).st_size
     Npix = (fileSize-6000)/2
     File.read(6000)
     head = ['Rigaku R-Axis IV detector data',]
     image = np.array(ar.array('H',File.read(fileSize-6000)),dtype=np.int32)
-    print fileSize,image.shape
-    print head
+    print ('%s %s'%(fileSize,str(image.shape)))
+    print (head)
     if Npix == 9000000:
         sizexy = [3000,3000]
         pixSize = [100.,100.]        

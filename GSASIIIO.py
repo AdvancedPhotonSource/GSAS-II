@@ -19,10 +19,8 @@ Also includes base classes for data import routines.
 
 This module needs some work to separate wx from non-wx routines
 '''
-"""GSASIIIO: functions for IO of data
-   Copyright: 2008, Robert B. Von Dreele (Argonne National Laboratory)
-"""
 # If this is being used for GSASIIscriptable, don't depend on wx
+from __future__ import division, print_function
 try:
     import wx
 except ImportError:
@@ -33,7 +31,11 @@ except ImportError:
 import math
 import numpy as np
 import copy
-import cPickle
+import platform
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import _pickle as cPickle
 import sys
 import re
 import random as ran
@@ -123,9 +125,9 @@ def GetPowderPeaks(fileName):
         S = File.readline()
     File.close()
     if Comments:
-       print 'Comments on file:'
+       print ('Comments on file:')
        for Comment in Comments: 
-            print Comment
+            print (Comment)
             if 'wavelength' in Comment:
                 wave = float(Comment.split('=')[1])
     Peaks = []
@@ -169,7 +171,7 @@ def GetCheckImageFile(G2frame,treeId):
     else:
         imagefile = Imagefile
     if not os.path.exists(imagefile):
-        print 'Image file '+imagefile+' not found'
+        print ('Image file '+imagefile+' not found')
         fil = imagefile.replace('\\','/') # windows?!
         # see if we can find a file with same name or in a similarly named sub-dir
         pth,fil = os.path.split(fil)
@@ -177,7 +179,7 @@ def GetCheckImageFile(G2frame,treeId):
         while pth and pth != prevpth:
             prevpth = pth
             if os.path.exists(os.path.join(G2frame.dirname,fil)):
-                print 'found image file '+os.path.join(G2frame.dirname,fil)
+                print ('found image file '+os.path.join(G2frame.dirname,fil))
                 imagefile = os.path.join(G2frame.dirname,fil)
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
@@ -201,7 +203,7 @@ def GetCheckImageFile(G2frame,treeId):
         while pth and pth != prevpth:
             prevpth = pth
             if os.path.exists(os.path.join(pth,fil)):
-                print 'found image file '+os.path.join(pth,fil)
+                print ('found image file '+os.path.join(pth,fil))
                 imagefile = os.path.join(pth,fil)
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
                 return Npix,imagefile,imagetag
@@ -213,7 +215,7 @@ def GetCheckImageFile(G2frame,treeId):
         prevext = os.path.splitext(imagefile)[1]
         wildcard = 'Image format (*'+prevext+')|*'+prevext
         dlg = wx.FileDialog(G2frame, 'Previous image file ('+prevnam+') not found; open here', '.', prevnam,
-                            wildcard,wx.OPEN)
+                            wildcard,wx.FD_OPEN)
         try:
             dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
@@ -389,16 +391,13 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
     if len(secondaryReaders) + len(primaryReaders) == 0:
         print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
-    fp = None
     errorReport = ''
     if not imagefile:
         return
-    fp = open(imagefile,'Ur')
     for rd in primaryReaders+secondaryReaders:
         rd.ReInitialize() # purge anything from a previous read
-        fp.seek(0)  # rewind
         rd.errors = "" # clear out any old errors
-        if not rd.ContentsValidator(fp): # rejected on cursory check
+        if not rd.ContentsValidator(imagefile): # rejected on cursory check
             errorReport += "\n  "+rd.formatName + ' validator error'
             if rd.errors: 
                 errorReport += ': '+rd.errors
@@ -408,11 +407,11 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
         else:
             ParentFrame = G2frame
         if GSASIIpath.GetConfigValue('debug'):
-            flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=ImageTag)
+            flag = rd.Reader(imagefile,ParentFrame,blocknum=ImageTag)
         else:
             flag = False
             try:
-                flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=ImageTag)
+                flag = rd.Reader(imagefile,ParentFrame,blocknum=ImageTag)
             except rd.ImportException as detail:
                 rd.errors += "\n  Read exception: "+str(detail)
             except Exception as detail:
@@ -423,7 +422,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
             if rd.Image is None:
                 raise Exception('No image read. Strange!')
             if GSASIIpath.GetConfigValue('Transpose'):
-                print 'Transposing Image!'
+                print ('Transposing Image!')
                 rd.Image = rd.Image.T
             #rd.readfilename = imagefile
             if imageOnly:
@@ -457,13 +456,11 @@ def ReadImages(G2frame,imagefile):
         print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     errorReport = ''
-    fp = open(imagefile,'Ur')
     rdbuffer = {} # create temporary storage for file reader
     for rd in primaryReaders+secondaryReaders:
         rd.ReInitialize() # purge anything from a previous read
-        fp.seek(0)  # rewind
         rd.errors = "" # clear out any old errors
-        if not rd.ContentsValidator(fp): # rejected on cursory check
+        if not rd.ContentsValidator(imagefile): # rejected on cursory check
             errorReport += "\n  "+rd.formatName + ' validator error'
             if rd.errors: 
                 errorReport += ': '+rd.errors
@@ -476,11 +473,11 @@ def ReadImages(G2frame,imagefile):
             block += 1
             repeat = False
             if GSASIIpath.GetConfigValue('debug'):
-                flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=block,Buffer=rdbuffer)
+                flag = rd.Reader(imagefile,ParentFrame,blocknum=block,Buffer=rdbuffer)
             else:
                 flag = False
                 try:
-                    flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=block,Buffer=rdbuffer)
+                    flag = rd.Reader(imagefile,ParentFrame,blocknum=block,Buffer=rdbuffer)
                 except rd.ImportException as detail:
                     rd.errors += "\n  Read exception: "+str(detail)
                 except Exception as detail:
@@ -491,7 +488,7 @@ def ReadImages(G2frame,imagefile):
                 if rd.Image is None:
                     raise Exception('No image read. Strange!')
                 if GSASIIpath.GetConfigValue('Transpose'):
-                    print 'Transposing Image!'
+                    print ('Transposing Image!')
                     rd.Image = rd.Image.T
                 rd.Data['ImageTag'] = rd.repeatcount
                 LoadImage2Tree(imagefile,G2frame,rd.Comments,rd.Data,rd.Npix,rd.Image)
@@ -506,7 +503,7 @@ def ReadImages(G2frame,imagefile):
 
 def SaveMultipleImg(G2frame):
     if not G2frame.GPXtree.GetCount():
-        print 'no images!'
+        print ('no images!')
         return
     choices = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
     if len(choices) == 1:
@@ -548,7 +545,7 @@ def SaveMultipleImg(G2frame):
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle - might be better as an .edf file?'
     File = open(filename,'wb')
-    cPickle.dump([Comments,Data,Npix,image],File,1)
+    cPickle.dump([Comments,Data,Npix,image],File,2)
     File.close()
     return
     
@@ -560,16 +557,19 @@ def ProjFileOpen(G2frame,showProvenance=True):
         return
     LastSavedUsing = None
     file = open(G2frame.GSASprojectfile,'rb')
-    if showProvenance: print 'loading from file: ',G2frame.GSASprojectfile
+    if showProvenance: print ('loading from file: '+G2frame.GSASprojectfile)
     #G2frame.SetTitle("GSAS-II data tree: "+
     #                 os.path.split(G2frame.GSASprojectfile)[1])
     G2frame.SetTitle("GSAS-II data tree: "+
-                     os.path.split(G2frame.GSASprojectfile)[1],1)
+        os.path.split(G2frame.GSASprojectfile)[1],1)
     wx.BeginBusyCursor()
     try:
         while True:
             try:
-                data = cPickle.load(file)
+                if '2' in platform.python_version_tuple()[0]:
+                    data = cPickle.load(file)
+                else:
+                    data = cPickle.load(file,encoding='latin-1')
             except EOFError:
                 break
             datum = data[0]
@@ -577,11 +577,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
             if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
-                    datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
+                    datum[1][0]['ranId'] = ran.randint(0,sys.maxsize)
                 G2frame.GPXtree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
             elif datum[0].startswith('HKLF'): 
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
-                    datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
+                    datum[1][0]['ranId'] = ran.randint(0,sys.maxsize)
                 G2frame.GPXtree.SetItemPyData(Id,datum[1])
             else:
                 G2frame.GPXtree.SetItemPyData(Id,datum[1])             
@@ -640,7 +640,7 @@ def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
     if not G2frame.GPXtree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
-        print 'save to file: ',G2frame.GSASprojectfile
+        print ('save to file: '+G2frame.GSASprojectfile)
         # stick the file name into the tree and version info into tree so they are saved.
         # (Controls should always be created at this point)
         try:
@@ -664,7 +664,7 @@ def ProjFileSave(G2frame):
                     data.append([name,G2frame.GPXtree.GetItemPyData(item2)])
                     item2, cookie2 = G2frame.GPXtree.GetNextChild(item, cookie2)                            
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)                            
-                cPickle.dump(data,file,1)
+                cPickle.dump(data,file,2)
             file.close()
             pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
             if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
@@ -765,7 +765,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':False,
-            'ranId':ran.randint(0,sys.maxint),
+            'ranId':ran.randint(0,sys.maxsize),
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
             }
@@ -800,7 +800,7 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
         for x,y in XY[i].T:
             File.write('%.3f,%.3f\n'%(x,y))   
     File.close()
-    print ' XY data saved to: ',filename
+    print (' XY data saved to: '+filename)
             
 def PDFSave(G2frame,exports,PDFsaves):
     'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
@@ -820,7 +820,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             for q,iq in iqnew:
                 iqfile.write("%15.6g %15.6g\n" % (q,iq))
             iqfile.close()
-            print ' I(Q) saved to: ',iqfilename
+            print (' I(Q) saved to: '+iqfilename)
             
         if PDFsaves[1]:     #S(Q)
             sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
@@ -834,7 +834,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             for q,sq in sqnew:
                 sqfile.write("%15.6g %15.6g\n" % (q,sq))
             sqfile.close()
-            print ' S(Q) saved to: ',sqfilename
+            print (' S(Q) saved to: '+sqfilename)
             
         if PDFsaves[2]:     #F(Q)
             fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
@@ -848,7 +848,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             for q,fq in fqnew:
                 fqfile.write("%15.6g %15.6g\n" % (q,fq))
             fqfile.close()
-            print ' F(Q) saved to: ',fqfilename
+            print (' F(Q) saved to: '+fqfilename)
             
         if PDFsaves[3]:     #G(R)
             grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
@@ -862,7 +862,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             for r,gr in grnew:
                 grfile.write("%15.6g %15.6g\n" % (r,gr))
             grfile.close()
-            print ' G(R) saved to: ',grfilename
+            print (' G(R) saved to: '+grfilename)
         
         if PDFsaves[4]: #pdfGUI file for G(R)
             pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
@@ -921,11 +921,11 @@ def PDFSave(G2frame,exports,PDFsaves):
             for r,gr in grnew:
                 grfile.write("%15.2F %15.6F\n" % (r,gr))
             grfile.close()
-            print ' G(R) saved to: ',grfilename
+            print (' G(R) saved to: '+grfilename)
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'
-    print 'save peak list to file: ',G2frame.peaklistfile
+    print ('save peak list to file: '+G2frame.peaklistfile)
     if not peaks:
         dlg = wx.MessageDialog(G2frame, 'No peaks!', 'Nothing to save!', wx.OK)
         try:
@@ -936,12 +936,12 @@ def PeakListSave(G2frame,file,peaks):
     for peak in peaks:
         file.write("%10.4f %12.2f %10.3f %10.3f \n" % \
             (peak[0],peak[2],peak[4],peak[6]))
-    print 'peak list saved'
+    print ('peak list saved')
               
 def IndexPeakListSave(G2frame,peaks):
     'Save powder peaks from the indexing list'
     file = open(G2frame.peaklistfile,'wa')
-    print 'save index peak list to file: ',G2frame.peaklistfile
+    print ('save index peak list to file: '+G2frame.peaklistfile)
     wx.BeginBusyCursor()
     try:
         if not peaks:
@@ -956,7 +956,7 @@ def IndexPeakListSave(G2frame,peaks):
         file.close()
     finally:
         wx.EndBusyCursor()
-    print 'index peak list saved'
+    print ('index peak list saved')
     
 class MultipleChoicesDialog(wx.Dialog):
     '''A dialog that offers a series of choices, each with a
@@ -1315,7 +1315,7 @@ class ExportBaseclass(object):
             multiple items will be written (as multiple files) are used
             *or* a complete file name is requested when a single file
             name is selected. self.dirname is always set and self.filename used
-            only when a single file is selected.
+            only when a single file is selected.  
           * if AskFile is 'default', creates a name of the file to be used from
             the name of the project (.gpx) file. If the project has not been saved,
             then the name of file is requested.
@@ -1517,7 +1517,7 @@ class ExportBaseclass(object):
             varyList = covDict.get('varyList')
         elif varyList is None:
             # old GPX file from before pre-constraint varyList is saved
-            print ' *** Old refinement: Please use Calculate/Refine to redo  ***'
+            print (' *** Old refinement: Please use Calculate/Refine to redo  ***')
             raise Exception(' *** Export aborted ***')
         else:
             varyList = list(varyList)
@@ -1526,10 +1526,10 @@ class ExportBaseclass(object):
             G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,self.parmDict)
         except:
             # this really should not happen
-            print ' *** ERROR - constraints are internally inconsistent ***'
+            print (' *** ERROR - constraints are internally inconsistent ***')
             errmsg, warnmsg = G2mv.CheckConstraints(varyList,constDict,fixedList)
-            print 'Errors',errmsg
-            if warnmsg: print 'Warnings',warnmsg
+            print ('Errors'+errmsg)
+            if warnmsg: print ('Warnings'+warnmsg)
             raise Exception(' *** CIF creation aborted ***')
         # add the constrained values to the parameter dictionary
         G2mv.Dict2Map(self.parmDict,varyList)
@@ -1561,7 +1561,7 @@ class ExportBaseclass(object):
             # if exporting phases load them here
             sub = G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Phases')
             if not sub:
-                print 'no phases found'
+                print ('no phases found')
                 return True
             item, cookie = self.G2frame.GPXtree.GetFirstChild(sub)
             while item:
@@ -1639,21 +1639,21 @@ class ExportBaseclass(object):
         '''
         if self.SeqRefdata and self.SeqRefhist:
             print('Note that dumpTree does not show sequential results')
-        print '\nOverall'
+        print ('\nOverall')
         if mode == 'type':
             def Show(arg): return type(arg)
         else:
             def Show(arg): return arg
         for key in self.OverallParms:
-            print '  ',key,Show(self.OverallParms[key])
-        print 'Phases'
+            print ('  '+key+Show(self.OverallParms[key]))
+        print ('Phases')
         for key1 in self.Phases:
-            print '    ',key1,Show(self.Phases[key1])
-        print 'Histogram'
+            print ('    '+key1+Show(self.Phases[key1]))
+        print ('Histogram')
         for key1 in self.Histograms:
-            print '    ',key1,Show(self.Histograms[key1])
+            print ('    '+key1+Show(self.Histograms[key1]))
             for key2 in self.Histograms[key1]:
-                print '      ',key2,Show(self.Histograms[key1][key2])
+                print ('      '+key2+Show(self.Histograms[key1][key2]))
 
     def defaultSaveFile(self):
         return os.path.abspath(
@@ -1927,9 +1927,8 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
             try:
                 obj.Writer(TreeName,filename)
                 return
-            except Exception,err:
+            except Exception:
                 print('Export Routine for '+extension+' failed.')
-                print err
     else:
         print('No Export routine supports extension '+extension)
 
@@ -1960,7 +1959,7 @@ def ExportSequential(G2frame,data,obj,exporttype):
             dlg.Destroy()
             return
     if exporttype == 'Phase':
-        phaselist = obj.Phases.keys()
+        phaselist = list(obj.Phases.keys())
         if len(obj.Phases) == 0:
             G2G.G2MessageBox(G2frame,'There are no phases in sequential ref.','Warning')
             return
@@ -2011,7 +2010,7 @@ def ExportSequential(G2frame,data,obj,exporttype):
         print('...done')
 
 def ReadDIFFaX(DIFFaXfile):
-    print 'read ',DIFFaXfile
+    print ('read '+DIFFaXfile)
     Layer = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],'Width':[[10.,10.],[False,False]],
         'Layers':[],'Stacking':[],'Transitions':[],'Toler':0.01,'AtInfo':{}}
     df = open(DIFFaXfile,'r')

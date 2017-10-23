@@ -10,6 +10,7 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+from __future__ import division, print_function
 import time
 import copy
 import numpy as np
@@ -376,7 +377,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                         pWsum[name] += wt*((obs-calc)/esd)**2
                         pWnum[name] += 1
                 elif name == 'Texture':
-                    SHkeys = textureData['SH Coeff'][1].keys()
+                    SHkeys = list(textureData['SH Coeff'][1].keys())
                     SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
                     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
                     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
@@ -470,7 +471,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
         Amat,Bmat = G2lat.cell2AB(cell)
         textureData = General['SH Texture']
 
-        SHkeys = textureData['SH Coeff'][1].keys()
+        SHkeys = list(textureData['SH Coeff'][1].keys())
         SHCoef = G2mth.GetSHCoeff(pId,parmDict,SHkeys)
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
@@ -709,15 +710,15 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SQ = 1./(2.*refDict['RefList'].T[4])**2
     if 'N' in calcControls[hfx+'histType']:
         dat = G2el.getBLvalues(BLtables)
-        refDict['FF']['El'] = dat.keys()
-        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
+        refDict['FF']['El'] = list(dat.keys())
+        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
         refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             if El in MFtables:
                 refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
     else:       #'X'
         dat = G2el.getFFvalues(FFtables,0.)
-        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
@@ -1096,7 +1097,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)      #problems U12 & U23 in sarc
 #        GSASIIpath.IPyBreak()
         iBeg += blkSize
-    print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
+    print (' %d derivative time %.4f\r'%(nRef,time.time()-time0))
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -1260,7 +1261,7 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
 #            fbs[0,:,nxs]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         iBeg += blkSize
 #        GSASIIpath.IPyBreak()
-    print ' %d derivative time %.4f\r'%(len(refDict['RefList']),time.time()-time0)
+    print (' %d derivative time %.4f\r'%(len(refDict['RefList']),time.time()-time0))
     #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):     #these all OK
         dFdvDict[pfx+'Afrac:'+str(i)] = np.sum(dFdfr.T[i]*TwinFr[:,nxs],axis=0)
@@ -1330,15 +1331,15 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     SQ = 1./(2.*refDict['RefList'].T[5])**2
     if 'N' in calcControls[hfx+'histType']:
         dat = G2el.getBLvalues(BLtables)
-        refDict['FF']['El'] = dat.keys()
-        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
+        refDict['FF']['El'] = list(dat.keys())
+        refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
         refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             if El in MFtables:
                 refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
     else:
         dat = G2el.getFFvalues(FFtables,0.)
-        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
@@ -1398,7 +1399,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             refl.T[8] = np.copy(refl.T[10])                
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         iBeg += blkSize
-    print 'nRef %d time %.4f\r'%(nRef,time.time()-time0)
+    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
 
 def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
@@ -1459,15 +1460,15 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         SQ = 1./(2.*refDict['RefList'].T[5])**2
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)
-            refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()
+            refDict['FF']['El'] = list(dat.keys())
+            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
             refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
             for iel,El in enumerate(refDict['FF']['El']):
                 if El in MFtables:
                     refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
         else:
             dat = G2el.getFFvalues(FFtables,0.)
-            refDict['FF']['El'] = dat.keys()
+            refDict['FF']['El'] = list(dat.keys())
             refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
             for iel,El in enumerate(refDict['FF']['El']):
                 refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
@@ -1538,7 +1539,7 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             np.sum(TwinFr*np.sum(TwMask[nxs,:,:]*fbs,axis=0)**2,axis=-1)                 #Fc sum over twins
         refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
         iBeg += blkSize
-    print 'nRef %d time %.4f\r'%(nRef,time.time()-time0)
+    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
 
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
@@ -1591,7 +1592,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
-        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
@@ -1719,7 +1720,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
         if not iref%100 :
-            print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
+            print (' %d derivative time %.4f\r'%(iref,time.time()-time0),end='')
     for i in range(len(Mdata)):     #loop over atoms
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
@@ -1805,7 +1806,7 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
-        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
     dFdvDict = {}
     dFdfr = np.zeros((nRef,mSize))
@@ -1942,7 +1943,7 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
 #        dFdbab[iBeg:iFin] = 2.*fas[0,:,nxs]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
 #            2.*fbs[0,:,nxs]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
-        print ' %d derivative time %.4f\r'%(iBeg,time.time()-time0),
+        print (' %d derivative time %.4f\r'%(iBeg,time.time()-time0),end='')
         iBeg += blkSize
     for i in range(len(Mdata)):     #loop over atoms
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -2035,7 +2036,7 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
-        refDict['FF']['El'] = dat.keys()
+        refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
     dFdvDict = {}
     dFdfr = np.zeros((nRef,nTwin,mSize))
@@ -2146,7 +2147,7 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
         if not iref%100 :
-            print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
+            print (' %d derivative time %.4f\r'%(iref,time.time()-time0),end='')
     for i in range(len(Mdata)):     #loop over atoms
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
@@ -2930,7 +2931,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
     '''
     if GSASIIpath.GetConfigValue('Show_timing',False):
         starttime = time.time() #; print 'start GetFobsSq'
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     Ka2 = shl = lamRatio = kRatio = None
     for histogram in histoList:
@@ -2943,7 +2944,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 shl = max(parmDict[hfx+'SH/L'],0.0005)
                 Ka2 = False
                 kRatio = 0.0
-                if hfx+'Lam1' in parmDict.keys():
+                if hfx+'Lam1' in list(parmDict.keys()):
                     Ka2 = True
                     lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
                     kRatio = parmDict[hfx+'I(L2)/I(L1)']
@@ -3059,7 +3060,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             Histogram = Histograms[histogram]
             Histogram['Residuals']['hId'] = Histograms[histogram]['hId']
     if GSASIIpath.GetConfigValue('Show_timing',False):
-        print 'GetFobsSq t=',time.time()-starttime
+        print ('GetFobsSq t=',time.time()-starttime)
                 
 def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
     'Computes the powder pattern for a histogram based on contributions from all used phases'
@@ -3104,7 +3105,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
         Ka2 = False
-        if hfx+'Lam1' in parmDict.keys():
+        if hfx+'Lam1' in (parmDict.keys()):
             wave = parmDict[hfx+'Lam1']
             Ka2 = True
             lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
@@ -3245,9 +3246,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 yc += y
             MPpool.terminate()
     if badPeak:
-        print 'ouch #4 bad profile coefficients yield negative peak width; some reflections skipped' 
+        print ('ouch #4 bad profile coefficients yield negative peak width; some reflections skipped')
     if GSASIIpath.GetConfigValue('Show_timing',False):
-        print 'getPowderProfile t=',time.time()-starttime
+        print ('getPowderProfile t=%.3f'%time.time()-starttime)
     return yc,yb
     
 # def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars):
@@ -3602,6 +3603,8 @@ def getPowderProfileDervMP(args):
     refined parameters.
     Multiprocessing version.
     '''
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics for each processor
     parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars = args[:9]
     prc=0
     tprc=1
@@ -3663,7 +3666,7 @@ def getPowderProfileDervMP(args):
     Ka2 = False #also for TOF!
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
-        if hfx+'Lam1' in parmDict.keys():
+        if hfx+'Lam1' in (parmDict.keys()):
             wave = parmDict[hfx+'Lam1']
             Ka2 = True
             lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
@@ -4056,7 +4059,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
     dMdv = np.empty(0)
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
@@ -4115,7 +4118,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     ApplyRBModels(parmDict,Phases,rigidbodyDict)        #,Update=True??
     Hess = np.empty(0)
     Vec = np.empty(0)
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
@@ -4152,7 +4155,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
-            if GSASIIpath.GetConfigValue('Show_timing',False): print 'getPowderProfileDerv t=',time.time()-starttime
+            if GSASIIpath.GetConfigValue('Show_timing',False): print ('getPowderProfileDerv t=%.3f'%time.time()-starttime)
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt
@@ -4212,7 +4215,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Next = 0
     ApplyRBModels(parmDict,Phases,rigidbodyDict)
     #fixup Hatom positions here....
-    histoList = Histograms.keys()
+    histoList = list(Histograms.keys())
     histoList.sort()
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
@@ -4381,7 +4384,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                                 next += 1
             Scale = sumFo2/sumFc2
             if (Scale < 0.8 or Scale > 1.2) and phfx+'Scale' in varylist:
-                print 'New scale:',Scale*parmDict[phfx+'Scale']
+                print ('New scale: %.4f'%Scale*parmDict[phfx+'Scale'])
                 indx = varylist.index(phfx+'Scale')
                 values[indx] = Scale*parmDict[phfx+'Scale']              
             Histogram['Residuals']['Nobs'] = nobs
@@ -4422,8 +4425,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         pSum = np.sum(pWt*pVals**2)
         for name in pWsum:
             if pWsum[name]:
-                print '  Penalty function for %5d %8ss = %12.5g'%(pWnum[name],name,pWsum[name])
-        print 'Total penalty function: %12.5g on %d terms'%(pSum,len(pVals))
+                print ('  Penalty function for %5d %8ss = %12.5g'%(pWnum[name],name,pWsum[name]))
+        print ('Total penalty function: %12.5g on %d terms'%(pSum,len(pVals)))
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
     return M

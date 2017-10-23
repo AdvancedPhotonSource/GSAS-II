@@ -458,10 +458,8 @@ def ImportPowder(reader,filename):
     if not rd.scriptable:
         print(u'**** ERROR: '+reader+u' is not a scriptable reader')
         return None
-    fl = open(filename,'rb')
     rdlist = []
-    if rd.ContentsValidator(fl):
-        fl.seek(0)
+    if rd.ContentsValidator(filename):
         repeat = True
         rdbuffer = {} # create temporary storage for file reader
         block = 0
@@ -469,7 +467,7 @@ def ImportPowder(reader,filename):
             block += 1
             repeat = False
             rd.objname = ospath.basename(filename)
-            flag = rd.Reader(filename,fl,None,buffer=rdbuffer,blocknum=block,)
+            flag = rd.Reader(filename,None,buffer=rdbuffer,blocknum=block,)
             if flag:
                 rdlist.append(copy.deepcopy(rd)) # save the result before it is written over
                 if rd.repeat:
@@ -616,13 +614,13 @@ def SetupGeneral(data, dirname):
             generalData['vdWRadii'].append(Info['Vdrad'])
             if atom[ct] in generalData['Isotope']:
                 if generalData['Isotope'][atom[ct]] not in generalData['Isotopes'][atom[ct]]:
-                    isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                    isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
                     generalData['Isotope'][atom[ct]] = isotope
                 generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]]['Mass'])
             else:
                 generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
                 if 'Nat. Abund.' not in generalData['Isotopes'][atom[ct]]:
-                    isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                    isotope = list(generalData['Isotopes'][atom[ct]].keys())[-1]
                     generalData['Isotope'][atom[ct]] = isotope
                 generalData['AtomMass'].append(Info['Mass'])
             generalData['NoAtoms'][atom[ct]] = atom[cx+3]*float(atom[cs+1])
@@ -724,9 +722,8 @@ def import_generic(filename, readerlist):
             rd.dnames = []
             rd.ReInitialize()
             # Rewind file
-            fp.seek(0)
             rd.errors = ""
-            if not rd.ContentsValidator(fp):
+            if not rd.ContentsValidator(filename):
                 # Report error
                 pass
             if len(rd.selections) > 1:
@@ -736,14 +733,13 @@ def import_generic(filename, readerlist):
 
             block = 0
             rdbuffer = {}
-            fp.seek(0)
             repeat = True
             while repeat:
                 repeat = False
                 block += 1
                 rd.objname = os.path.basename(filename)
                 try:
-                    flag = rd.Reader(filename, fp, buffer=rdbuffer, blocknum=block)
+                    flag = rd.Reader(filename,buffer=rdbuffer, blocknum=block)
                 except:
                     flag = False
                 if flag:
@@ -822,7 +818,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[]):
     Ymax = np.max(reader.powderdata[1])
     valuesdict = {'wtFactor': 1.0,
                   'Dummy': False,
-                  'ranId': ran.randint(0, sys.maxint),
+                  'ranId': ran.randint(0, sys.maxsize),
                   'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
                   'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
                   'qPlot': False, 'dPlot': False, 'sqrtPlot': False,
@@ -896,7 +892,7 @@ def _deep_copy_into(from_, into):
                 del into[key]
     elif isinstance(from_, list) and isinstance(into, list):
         if len(from_) == len(into):
-            for i in xrange(len(from_)):
+            for i in range(len(from_)):
                 both_dicts = (isinstance(from_[i], dict)
                               and isinstance(into[i], dict))
                 both_lists = (isinstance(from_[i], list)

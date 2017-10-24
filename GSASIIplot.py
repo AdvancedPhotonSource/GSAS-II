@@ -1379,8 +1379,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         elif event.key == 'd' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif Pattern[0]['Offset'][0] > 0.:
+            elif Pattern[0]['Offset'][0] > -100.:
                 Pattern[0]['Offset'][0] -= 1.
+        elif event.key == 'U':
+            if G2frame.Contour:
+                G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/5.
+            elif Pattern[0]['Offset'][0] < 100.:
+               Pattern[0]['Offset'][0] += 10.
+        elif event.key == 'D':
+            if G2frame.Contour:
+                G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
+            elif Pattern[0]['Offset'][0] > -100.:
+                Pattern[0]['Offset'][0] -= 10.
         elif event.key == 'l' and not G2frame.SinglePlot:
             Pattern[0]['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
@@ -1982,7 +1992,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot',
                         'w: toggle divide by sig','+: no selection')
                 else:
-                    Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up','o: reset offset',
+                    Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x','o: reset offset',
                         'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot',
                         'm: toggle multidata plot','f: select data','s: color scheme','w: toggle divide by sig','+: no selection')
             elif plottype in ['SASD','REFD']:
@@ -2520,12 +2530,18 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         elif event.key == 'd':
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif Page.Offset[1] > 0.:
+            elif Page.Offset[1] > -100.:
                 Page.Offset[1] -= 1.
         elif event.key == 'U':
-            G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/20.
+            if G2frame.Contour:
+                G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/5.
+            elif Page.Offset[1] < 100.:
+               Page.Offset[1] += 10.
         elif event.key == 'D':
-            G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/20.
+            if G2frame.Contour:
+                G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
+            elif Page.Offset[1] > -100.:
+                Page.Offset[1] -= 10.
         elif event.key == 'l':
             Page.Offset[0] -= 1.
         elif event.key == 'r':
@@ -2691,7 +2707,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 'i: interpolation method','s: color scheme','c: contour off','f: select data',
                 )
         else:
-            Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
+            Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x',
                 'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
                 'm: toggle multiplot','s: color scheme','f: select data' )
         Page.keyPress = OnPlotKeyPress

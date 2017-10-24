@@ -3563,6 +3563,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
         for page in range(numPage):
             if self.GetPageText(page) == name:
                 return page
+        return None
 
     def ChangeSelection(self,page):
         # in wx.Notebook ChangeSelection is like SetSelection, but it

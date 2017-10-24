@@ -1914,10 +1914,9 @@ class ImportBaseclass(object):
         #filepointer.seek(0) # rewind the file pointer
         return True
 
-    def CIFValidator(self, filename):
+    def CIFValidator(self, filepointer):
         '''A :meth:`ContentsValidator` for use to validate CIF files.
         '''
-        filepointer = open(filename,'r')
         filepointer.seek(0)
         for i,l in enumerate(filepointer):
             if i >= 1000: return True

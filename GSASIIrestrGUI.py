@@ -55,13 +55,16 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     '''Respond to selection of the Restraints item on the
     data tree
     '''
-    
+    global Pages
     def OnSelectPhase(event):
+        pageName = Pages[G2frame.restrBook.GetSelection()]
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',list(Phases.keys()))
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 phaseName = list(Phases.keys())[dlg.GetSelection()]
                 UpdateRestraints(G2frame,data,Phases,phaseName)
+                newPage = G2frame.restrBook.FindPage(pageName)
+                G2frame.restrBook.SetSelection(newPage)
         finally:
             dlg.Destroy()
     

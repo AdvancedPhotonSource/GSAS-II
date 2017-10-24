@@ -10,6 +10,12 @@
 #
 # Modified for PyCIFRW by JRH to allow external scanner
 #
+# To maximize python3/python2 compatibility
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+
 """ Detail of JRH modifications.
 
 The compiled module handles all token administration by itself, but
@@ -34,10 +40,22 @@ keeps track of the parse stack.
 # grammar to make a standalone module.
 
 import sys, re
-try:
-    import StarScan
-    have_star_scan = True
-except ImportError:
+
+
+# For normal installation this module is "CifFile.yapps3_compiled_rt"
+# and StarScan is an extension module within the parent CifFile module.
+if __name__.startswith('CifFile.'):
+    try:
+        from . import StarScan
+        have_star_scan = True
+    except ImportError:
+        have_star_scan = False
+# Otherwise assume this is imported from the yapps3/yapps2.py script
+# that is executed from Makefile to generate YappsStarParser sources.
+else:
+    assert __name__ == 'yapps3_compiled_rt', "Unexpected module name."
+    assert sys.argv[0].endswith('yapps2.py'), (
+        "This should be reached only when running yapps2.py in Makefile.")
     have_star_scan = False
 
 class SyntaxError(Exception):
@@ -86,20 +104,20 @@ class Scanner:
         self.input = input
         self.pos = 0
         self.ignore = ignore
-	self.scantype = scantype
+        self.scantype = scantype
         self.first_line_number = 1
-	if self.scantype == "flex" and have_star_scan:
-	    StarScan.prepare(input)
-	    self.scan = self.compiled_scan
-	    self.token = self.compiled_token
-	    self.__del__ = StarScan.cleanup
+        if self.scantype == "flex" and have_star_scan:
+            StarScan.prepare(input)
+            self.scan = self.compiled_scan
+            self.token = self.compiled_token
+            self.__del__ = StarScan.cleanup
         elif self.scantype == "flex":
-	    print "Warning: using Python scanner"
-	    self.scantype = "standard"
+            print("WARNING: using Python scanner although C scanner requested")
+            self.scantype = "standard"
         if self.scantype != "flex":
-	    self.scan = self.interp_scan
-	    self.token = self.interp_token
-        
+            self.scan = self.interp_scan
+            self.token = self.interp_token
+
         if patterns is not None:
             # Compile the regex strings into regex objects
             self.patterns = []
@@ -166,20 +184,20 @@ class Scanner:
         raise NoMoreTokens()
     
     def compiled_token(self,i,restrict=0):
-	try:
-	    return StarScan.token(i)
+        try:
+            return StarScan.token(i)
         except IndexError:
-	    raise NoMoreTokens()
+            raise NoMoreTokens()
     
     def __repr__(self):
         """Print the last 10 tokens that have been scanned in"""
         output = ''
-	if self.scantype != "flex":
+        if self.scantype != "flex":
             for t in self.tokens[-10:]:
                 output = '%s\n  (@%s)  %s  =  %s' % (output,t[0],t[2],repr(t[3]))
         else:
-	    out_tokens = StarScan.last_ten()
-	    for t in out_tokens:
+            out_tokens = StarScan.last_ten()
+            for t in out_tokens:
                 output = '%s\n  (~line %s)  %s  =  %s' % (output,t[0],t[2],repr(t[3]))
         return output
     
@@ -236,16 +254,16 @@ class Scanner:
                 self.pos = self.pos + best_match
 
     def compiled_scan(self,restrict):
-	token = StarScan.scan()
-	print "Calling compiled scan, got %s" % `token`
-	if token[2] not in restrict:
-	    msg = "Bad Token"
-	    if restrict:
-		msg = "Trying to find one of "+join(restrict,", ")
+        token = StarScan.scan()
+        print("Calling compiled scan, got %s" % repr(token))
+        if token[2] not in restrict:
+            msg = "Bad Token"
+            if restrict:
+               msg = "Trying to find one of "+join(restrict,", ")
             raise SyntaxError(self.pos,msg)
         self.tokens.append(token)
-	self.restrictions.append(restrict)
-	return
+        self.restrictions.append(restrict)
+        return
 
 class Parser:
     """Base class for Yapps-generated parsers.
@@ -340,8 +358,8 @@ def print_line_with_pointer(text, p):
         p = p - 7
 
     # Now print the string, along with an indicator
-    print >>sys.stderr, '> ',text
-    print >>sys.stderr, '> ',' '*p + '^'
+    print('> ',text,file=sys.stderr)
+    print('> ',' '*p + '^',file=sys.stderr)
     
 def print_error(input, err, scanner):
     """Print error messages, the parser stack, and the input text -- for human-readable error messages."""
@@ -349,7 +367,7 @@ def print_error(input, err, scanner):
     # Figure out the line number
     line_number = scanner.get_line_number()
     column_number = scanner.get_column_number()
-    print >>sys.stderr, '%d:%d: %s' % (line_number, column_number, err.msg)
+    print('%d:%d: %s' % (line_number, column_number, err.msg),file=sys.stderr)
 
     context = err.context
     if not context:
@@ -357,16 +375,16 @@ def print_error(input, err, scanner):
         
     while context:
         # TODO: add line number
-        print >>sys.stderr, 'while parsing %s%s:' % (context.rule, tuple(context.args))
+        print('while parsing %s%s:' % (context.rule, tuple(context.args)),file=sys.stderr)
         print_line_with_pointer(input, context.scanner.get_prev_char_pos(context.tokenpos))
         context = context.parent
 
 def wrap_error_reporter(parser, rule):
     try:
         return getattr(parser, rule)()
-    except SyntaxError, e:
+    except SyntaxError as e:
         input = parser._scanner.input
         print_error(input, e, parser._scanner)
     except NoMoreTokens:
-        print >>sys.stderr, 'Could not complete parsing; stopped around here:'
-        print >>sys.stderr, parser._scanner
+        print('Could not complete parsing; stopped around here:',file=sys.stderr)
+        print(parser._scanner,file=sys.stderr)

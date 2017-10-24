@@ -251,7 +251,10 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 v2.append(np.NaN)
             else:
                 vl.append(v)
-                v2.append(max(e,1.0))
+                if e is None:
+                    v2.append(np.sqrt(v))
+                else:
+                    v2.append(max(e,1.0))
         y = np.array(vl)
         w = 1./np.array(v2)**2
         # weights

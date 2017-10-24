@@ -135,20 +135,29 @@ from . import yapps3_compiled_rt as yappsrt
 class StarParserScanner(yappsrt.Scanner):
     def __init__(self, *args,**kwargs):
         patterns = [
+         ('":"', ':'),
+         ('","', ','),
          ('([ \t\n\r](?!;))|[ \t]', '([ \t\n\r](?!;))|[ \t]'),
          ('(#.*[\n\r](?!;))|(#.*)', '(#.*[\n\r](?!;))|(#.*)'),
          ('LBLOCK', '(L|l)(O|o)(O|o)(P|p)_'),
          ('GLOBAL', '(G|g)(L|l)(O|o)(B|b)(A|a)(L|l)_'),
          ('STOP', '(S|s)(T|t)(O|o)(P|p)_'),
-         ('save_heading', '(S|s)(A|a)(V|v)(E|e)_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_-]+'),
+         ('save_heading', u'(S|s)(A|a)(V|v)(E|e)_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_\xa0-\ud7ff\ue000-\ufdcf\ufdf0-\ufffd\U00010000-\U0001fffd\U00020000-\U0002fffd\U00030000-\U0003fffd\U00040000-\U0004fffd\U00050000-\U0005fffd\U00060000-\U0006fffd\U00070000-\U0007fffd\U00080000-\U0008fffd\U00090000-\U0009fffd\U000a0000-\U000afffd\U000b0000-\U000bfffd\U000c0000-\U000cfffd\U000d0000-\U000dfffd\U000e0000-\U000efffd\U000f0000-\U000ffffd\U00100000-\U0010fffd-]+'),
          ('save_end', '(S|s)(A|a)(V|v)(E|e)_'),
-         ('data_name', '_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_-]+'),
-         ('data_heading', '(D|d)(A|a)(T|t)(A|a)_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_-]+'),
+         ('data_name', u'_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_\xa0-\ud7ff\ue000-\ufdcf\ufdf0-\ufffd\U00010000-\U0001fffd\U00020000-\U0002fffd\U00030000-\U0003fffd\U00040000-\U0004fffd\U00050000-\U0005fffd\U00060000-\U0006fffd\U00070000-\U0007fffd\U00080000-\U0008fffd\U00090000-\U0009fffd\U000a0000-\U000afffd\U000b0000-\U000bfffd\U000c0000-\U000cfffd\U000d0000-\U000dfffd\U000e0000-\U000efffd\U000f0000-\U000ffffd\U00100000-\U0010fffd-]+'),
+         ('data_heading', u'(D|d)(A|a)(T|t)(A|a)_[][!%&\\(\\)*+,./:<=>?@0-9A-Za-z\\\\^`{}\\|~"#$\';_\xa0-\ud7ff\ue000-\ufdcf\ufdf0-\ufffd\U00010000-\U0001fffd\U00020000-\U0002fffd\U00030000-\U0003fffd\U00040000-\U0004fffd\U00050000-\U0005fffd\U00060000-\U0006fffd\U00070000-\U0007fffd\U00080000-\U0008fffd\U00090000-\U0009fffd\U000a0000-\U000afffd\U000b0000-\U000bfffd\U000c0000-\U000cfffd\U000d0000-\U000dfffd\U000e0000-\U000efffd\U000f0000-\U000ffffd\U00100000-\U0010fffd-]+'),
          ('start_sc_line', '(\n|\r\n);([^\n\r])*(\r\n|\r|\n)+'),
          ('sc_line_of_text', '[^;\r\n]([^\r\n])*(\r\n|\r|\n)+'),
          ('end_sc_line', ';'),
-         ('data_value_1', '((?!(((S|s)(A|a)(V|v)(E|e)_[^\\s]*)|((G|g)(L|l)(O|o)(B|b)(A|a)(L|l)_[^\\s]*)|((S|s)(T|t)(O|o)(P|p)_[^\\s]*)|((D|d)(A|a)(T|t)(A|a)_[^\\s]*)))[^\\s"#$\'_][^\\s]*)|\'((\'(?=\\S))|([^\n\r\x0c\']))*\'+|"(("(?=\\S))|([^\n\r"]))*"+'),
+         ('c_c_b', '\\}'),
+         ('o_c_b', '\\{'),
+         ('c_s_b', '\\]'),
+         ('o_s_b', '\\['),
+         ('dat_val_internal_sq', '\\[([^\\s\\[\\]]*)\\]'),
+         ('triple_quote_data_value', '(?s)\'\'\'.*?\'\'\'|""".*?"""'),
+         ('single_quote_data_value', '\'([^\n\r\x0c\'])*\'+|"([^\n\r"])*"+'),
          ('END', '$'),
+         ('data_value_1', '((?!(((S|s)(A|a)(V|v)(E|e)_[^\\s]*)|((G|g)(L|l)(O|o)(B|b)(A|a)(L|l)_[^\\s]*)|((S|s)(T|t)(O|o)(P|p)_[^\\s]*)|((D|d)(A|a)(T|t)(A|a)_[^\\s]*)))[^\\s"#$\',_\\{\\}\\[\\]][^\\s,\\{\\}\\[\\]]*)'),
         ]
         yappsrt.Scanner.__init__(self,patterns,['([ \t\n\r](?!;))|[ \t]', '(#.*[\n\r](?!;))|(#.*)'],*args,**kwargs)
 
@@ -159,7 +168,7 @@ class StarParser(yappsrt.Parser):
         _token = self._peek('END', 'data_heading')
         if _token == 'data_heading':
             dblock = self.dblock(prepared, _context)
-            allblocks = prepared;allblocks.merge_fast(dblock)
+            allblocks = prepared; allblocks.merge_fast(dblock)
             while self._peek('END', 'data_heading') == 'data_heading':
                 dblock = self.dblock(prepared, _context)
                 allblocks.merge_fast(dblock)
@@ -174,17 +183,17 @@ class StarParser(yappsrt.Parser):
     def dblock(self, prepared, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'dblock', [prepared])
         data_heading = self._scan('data_heading')
-        heading = data_heading[5:];thisbc=StarFile(characterset='unicode',standard=prepared.standard);newname = thisbc.NewBlock(heading,StarBlock(overwrite=False));act_block=thisbc[newname]
+        heading = data_heading[5:];thisbc=StarFile(characterset='unicode',standard=prepared.standard);act_heading = thisbc.NewBlock(heading,StarBlock(overwrite=False));stored_block = thisbc[act_heading]
         while self._peek('save_heading', 'LBLOCK', 'data_name', 'save_end', 'END', 'data_heading') in ['save_heading', 'LBLOCK', 'data_name']:
             _token = self._peek('save_heading', 'LBLOCK', 'data_name')
             if _token != 'save_heading':
-                dataseq = self.dataseq(thisbc[heading], _context)
+                dataseq = self.dataseq(stored_block, _context)
             else: # == 'save_heading'
                 save_frame = self.save_frame(_context)
-                thisbc.merge_fast(save_frame,parent=act_block)
+                thisbc.merge_fast(save_frame,parent=stored_block)
         if self._peek() not in ['save_heading', 'LBLOCK', 'data_name', 'save_end', 'END', 'data_heading']:
             raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['save_heading', 'LBLOCK', 'data_name', 'save_end', 'END', 'data_heading']))
-        thisbc[heading].setmaxnamelength(thisbc[heading].maxnamelength);return (monitor('dblock',thisbc))
+        stored_block.setmaxnamelength(stored_block.maxnamelength);return (monitor('dblock',thisbc))
 
     def dataseq(self, starblock, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'dataseq', [starblock])
@@ -202,7 +211,7 @@ class StarParser(yappsrt.Parser):
             makeloop(currentblock,top_loop)
         else: # == 'data_name'
             datakvpair = self.datakvpair(_context)
-            currentblock.AddItem(datakvpair[0],datakvpair[1],precheck=True)
+            currentblock.AddItem(datakvpair[0],datakvpair[1],precheck=False)
 
     def datakvpair(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'datakvpair', [])
@@ -212,14 +221,31 @@ class StarParser(yappsrt.Parser):
 
     def data_value(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'data_value', [])
-        _token = self._peek('data_value_1', 'start_sc_line')
+        _token = self._peek('data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b')
         if _token == 'data_value_1':
             data_value_1 = self._scan('data_value_1')
-            thisval = stripstring(data_value_1)
-        else: # == 'start_sc_line'
+            thisval = data_value_1
+        elif _token not in ['start_sc_line', 'o_s_b', 'o_c_b']:
+            delimited_data_value = self.delimited_data_value(_context)
+            thisval = delimited_data_value
+        elif _token == 'start_sc_line':
             sc_lines_of_text = self.sc_lines_of_text(_context)
             thisval = stripextras(sc_lines_of_text)
+        else: # in ['o_s_b', 'o_c_b']
+            bracket_expression = self.bracket_expression(_context)
+            thisval = bracket_expression
         return monitor('data_value',thisval)
+
+    def delimited_data_value(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, self._pos, 'delimited_data_value', [])
+        _token = self._peek('triple_quote_data_value', 'single_quote_data_value')
+        if _token == 'triple_quote_data_value':
+            triple_quote_data_value = self._scan('triple_quote_data_value')
+            thisval = striptriple(triple_quote_data_value)
+        else: # == 'single_quote_data_value'
+            single_quote_data_value = self._scan('single_quote_data_value')
+            thisval = stripstring(single_quote_data_value)
+        return thisval
 
     def sc_lines_of_text(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'sc_lines_of_text', [])
@@ -233,6 +259,16 @@ class StarParser(yappsrt.Parser):
         end_sc_line = self._scan('end_sc_line')
         lines.write(end_sc_line);return monitor('sc_line_of_text',lines.getvalue())
 
+    def bracket_expression(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, self._pos, 'bracket_expression', [])
+        _token = self._peek('o_s_b', 'o_c_b')
+        if _token == 'o_s_b':
+            square_bracket_expr = self.square_bracket_expr(_context)
+            return square_bracket_expr
+        else: # == 'o_c_b'
+            curly_bracket_expr = self.curly_bracket_expr(_context)
+            return curly_bracket_expr
+
     def top_loop(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'top_loop', [])
         LBLOCK = self._scan('LBLOCK')
@@ -242,40 +278,82 @@ class StarParser(yappsrt.Parser):
 
     def loopfield(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'loopfield', [])
-        toploop=[]
-        while self._peek('data_name', 'data_value_1', 'start_sc_line') == 'data_name':
+        loop_seq=[]
+        while self._peek('data_name', 'data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b') == 'data_name':
             data_name = self._scan('data_name')
-            toploop.append(data_name)
-        if self._peek() not in ['data_name', 'data_value_1', 'start_sc_line']:
-            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['data_name', 'data_value_1', 'start_sc_line']))
-        return toploop
+            loop_seq.append(data_name)
+        if self._peek() not in ['data_name', 'data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']:
+            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['data_name', 'data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']))
+        return loop_seq
 
     def loopvalues(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'loopvalues', [])
         data_value = self.data_value(_context)
         dataloop=[data_value]
-        while self._peek('data_value_1', 'start_sc_line', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading') in ['data_value_1', 'start_sc_line']:
+        while self._peek('data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading') in ['data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']:
             data_value = self.data_value(_context)
             dataloop.append(monitor('loopval',data_value))
-        if self._peek() not in ['data_value_1', 'start_sc_line', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading']:
-            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['data_value_1', 'start_sc_line', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading']))
+        if self._peek() not in ['data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading']:
+            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['data_value_1', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b', 'LBLOCK', 'data_name', 'save_heading', 'save_end', 'END', 'data_heading']))
         return dataloop
 
     def save_frame(self, _parent=None):
         _context = self.Context(_parent, self._scanner, self._pos, 'save_frame', [])
         save_heading = self._scan('save_heading')
-        savehead = save_heading[5:];savebc = StarFile();newname=savebc.NewBlock(savehead,StarBlock(overwrite=False));act_block=savebc[newname]
+        savehead = save_heading[5:];savebc = StarFile();newname = savebc.NewBlock(savehead,StarBlock(overwrite=False));stored_block = savebc[newname]
         while self._peek('save_end', 'save_heading', 'LBLOCK', 'data_name', 'END', 'data_heading') in ['save_heading', 'LBLOCK', 'data_name']:
             _token = self._peek('save_heading', 'LBLOCK', 'data_name')
             if _token != 'save_heading':
                 dataseq = self.dataseq(savebc[savehead], _context)
             else: # == 'save_heading'
                 save_frame = self.save_frame(_context)
-                savebc.merge_fast(save_frame,parent=act_block)
+                savebc.merge_fast(save_frame,parent=stored_block)
         if self._peek() not in ['save_end', 'save_heading', 'LBLOCK', 'data_name', 'END', 'data_heading']:
             raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['save_end', 'save_heading', 'LBLOCK', 'data_name', 'END', 'data_heading']))
         save_end = self._scan('save_end')
         return monitor('save_frame',savebc)
+
+    def square_bracket_expr(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, self._pos, 'square_bracket_expr', [])
+        o_s_b = self._scan('o_s_b')
+        this_list = []
+        while self._peek('c_s_b', 'data_value_1', '","', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b') not in ['c_s_b', '","']:
+            data_value = self.data_value(_context)
+            this_list.append(data_value)
+            while self._peek('","', 'data_value_1', 'c_s_b', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b') == '","':
+                self._scan('","')
+                data_value = self.data_value(_context)
+                this_list.append(data_value)
+            if self._peek() not in ['","', 'data_value_1', 'c_s_b', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']:
+                raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['","', 'data_value_1', 'c_s_b', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']))
+        if self._peek() not in ['c_s_b', 'data_value_1', '","', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', 'o_s_b', 'o_c_b']:
+            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['data_value_1', 'c_s_b', 'triple_quote_data_value', 'single_quote_data_value', 'start_sc_line', '","', 'o_s_b', 'o_c_b']))
+        c_s_b = self._scan('c_s_b')
+        return StarList(this_list)
+
+    def curly_bracket_expr(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, self._pos, 'curly_bracket_expr', [])
+        o_c_b = self._scan('o_c_b')
+        table_as_list = []
+        while self._peek('c_c_b', 'triple_quote_data_value', 'single_quote_data_value', '","') in ['triple_quote_data_value', 'single_quote_data_value']:
+            delimited_data_value = self.delimited_data_value(_context)
+            table_as_list = [delimited_data_value]
+            self._scan('":"')
+            data_value = self.data_value(_context)
+            table_as_list.append(data_value)
+            while self._peek('","', 'triple_quote_data_value', 'single_quote_data_value', 'c_c_b') == '","':
+                self._scan('","')
+                delimited_data_value = self.delimited_data_value(_context)
+                table_as_list.append(delimited_data_value)
+                self._scan('":"')
+                data_value = self.data_value(_context)
+                table_as_list.append(data_value)
+            if self._peek() not in ['","', 'triple_quote_data_value', 'single_quote_data_value', 'c_c_b']:
+                raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['","', 'triple_quote_data_value', 'single_quote_data_value', 'c_c_b']))
+        if self._peek() not in ['c_c_b', 'triple_quote_data_value', 'single_quote_data_value', '","']:
+            raise yappsrt.SyntaxError(charpos=self._scanner.get_prev_char_pos(), context=_context, msg='Need one of ' + ', '.join(['triple_quote_data_value', 'single_quote_data_value', 'c_c_b', '","']))
+        c_c_b = self._scan('c_c_b')
+        return StarDict(pairwise(table_as_list))
 
 
 def parse(rule, text):
@@ -283,6 +361,5 @@ def parse(rule, text):
     return yappsrt.wrap_error_reporter(P, rule)
 
 # End -- grammar generated by Yapps
-
 
 

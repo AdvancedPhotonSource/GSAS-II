@@ -224,7 +224,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 while atomlist[-1] in ranIdlookup:
                     atomlist[-1] = ran.randint(0,sys.maxsize) # make it unique
                 for val,key in zip(aitem,atomkeys):
-                    col = G2AtomDict.get(key)
+                    col = G2AtomDict.get(key,-1)
                     if col >= 3:
                         atomlist[col] = cif.get_number_with_esd(val)[0]
                         if col >= 11: atomlist[9] = 'A' # if any Aniso term is defined, set flag
@@ -235,7 +235,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         if val.lower() == 'uani':
                             atomlist[9] = 'A'
                     elif key == '_atom_site_u_iso_or_equiv':
-                        uisoval =cif.get_number_with_esd(val)[0]
+                        uisoval = cif.get_number_with_esd(val)[0]
                         if uisoval is not None: atomlist[10] = uisoval
                 if not atomlist[1] and atomlist[0]:
                     typ = atomlist[0].rstrip('0123456789-+')

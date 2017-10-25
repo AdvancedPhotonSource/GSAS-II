@@ -164,7 +164,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         # scan comments for temperature
         Temperature = 300
         for S in self.comments:
-            if 'Temp' in S.split('=')[0]:
+            if 'temp' in S.lower().split('=')[0]:
                 try:
                     Temperature = float(S.split('=')[1])
                 except:

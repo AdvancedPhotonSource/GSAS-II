@@ -302,43 +302,43 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
             phasDict = histblk['Reflection Lists'][phasenam]
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
+                WriteList(self,("h","k","l","m","d-sp",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:17]
                         FWHM = G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
+                        self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
                     else:        #convert to deg        
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:14]
                         s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
                         g = gam/100.    #-> deg
                         FWHM = G2pwd.getgamFW(g,s)
-                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,i))
+                        self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,i))
             else:
-                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
+                WriteList(self,("h","k","l","d-sp",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:16]
                         FWHM = G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,Prfo,i))
+                        self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,Prfo,i))
                     else:        #convert to deg        
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:13]
                         g = gam/100.
                         s = np.sqrt(max(sig,0.0001))/100.
                         FWHM = G2pwd.getgamFW(g,s)
-                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
+                        self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
         self.CloseFile()
-        print(hist+'reflections written to file '+self.fullpath)
+        print(hist+' reflections written to file '+self.fullpath)
 
 class ExportSingleCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
@@ -370,19 +370,19 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
             phasDict = histblk['Reflection Lists'][phasenam]
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                WriteList(self,("h","k","l","m",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
-                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,i))                
+                    self.Write(fmt.format(h,k,l,m,dsp,pos,Fobs,Fcalc,phase,mult,i))                
             else:
-                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                WriteList(self,("h","k","l",'d-sp',tname,"F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.5f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
-                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
+                    self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
         print(hist+' written to file '+self.fullname)                        
 

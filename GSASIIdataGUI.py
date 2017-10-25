@@ -1781,11 +1781,12 @@ class GSASII(wx.Frame):
             return
         Iparm1, Iparm2 = Iparm
         if 'T' in Iparm1['Type'][0]:
-            print('TOF simulation not supported yet')
-            return False
+            rd.idstring = ' TOF neutron simulation'
+            simType = 'TOF'
         else:
             # need to get name, 2theta start, end, step
             rd.idstring = ' CW'
+            simType = 'CW'
             if 'X' in Iparm1['Type'][0]:
                 rd.idstring = 'CW x-ray simulation'
             else:
@@ -1800,18 +1801,29 @@ class GSASII(wx.Frame):
                     wave = wave[0]
         N = 0
         while (N < 3): # insist on a dataset with a few points
-            names = ('dataset name', 'start angle', 'end angle', 'step size')
-            if not wave or wave < 1.0:
-                inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
+            if 'TOF' in rd.idstring:
+                names = ('dataset name', 'start TOF(ms)', 'end TOF(ms)', 'DT/T')
+                inp = [rd.idstring, 10.,80.,0.0005] # see names for what's what
+                dlg = G2G.ScrolledMultiEditor(
+                    self,[inp] * len(inp),range(len(inp)),names,
+                    header='Enter simulation name and range',
+                    minvals=(None,.5,1.0,0.0001),
+                    maxvals=(None,200.,200.,.001),
+                    sizevals=((225,-1),)
+                    )
             else:
-                inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
-            dlg = G2G.ScrolledMultiEditor(
-                self,[inp] * len(inp),range(len(inp)),names,
-                header='Enter simulation name and range',
-                minvals=(None,0.001,0.001,0.0001),
-                maxvals=(None,180.,180.,.1),
-                sizevals=((225,-1),)
-                )
+                names = ('dataset name', 'start angle', 'end angle', 'step size')
+                if not wave or wave < 1.0:
+                    inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
+                else:
+                    inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
+                dlg = G2G.ScrolledMultiEditor(
+                    self,[inp] * len(inp),range(len(inp)),names,
+                    header='Enter simulation name and range',
+                    minvals=(None,0.001,0.001,0.0001),
+                    maxvals=(None,180.,180.,.1),
+                    sizevals=((225,-1),)
+                    )
             dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 if inp[1] > inp[2]:
@@ -1821,9 +1833,14 @@ class GSASII(wx.Frame):
                 step = abs(step)
             else:
                 return False
-            N = int((end-start)/step)+1
-            x = np.linspace(start,end,N,True)
-            N = len(x)
+            if 'TOF' in rd.idstring:
+                N = (np.log(end)-np.log(start))/step
+                x = np.exp((np.arange(0,N))*step+np.log(start*1000.))
+                N = len(x)
+            else:            
+                N = int((end-start)/step)+1
+                x = np.linspace(start,end,N,True)
+                N = len(x)
         rd.powderdata = [
             np.array(x), # x-axis values
             np.zeros_like(x), # powder pattern intensities
@@ -1843,7 +1860,7 @@ class GSASII(wx.Frame):
         Ymax = np.max(rd.powderdata[1])
         valuesdict = {
             'wtFactor':1.0,
-            'Dummy':True,
+            'Dummy':True,'simType':simType,
             'ranId':ran.randint(0,sys.maxsize),
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
             'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
@@ -4284,8 +4301,8 @@ class GSASII(wx.Frame):
         require one (see G2plotNB.SetNoDelete).
         '''
         lastRaisedPlotTab = self.G2plotNB.lastRaisedPlotTab # save the last page saved
-        #print 'lastRaisedPlotTab=',lastRaisedPlotTab
         self.G2plotNB.lastRaisedPlotTab = None
+#        print ('lastRaisedPlotTab='+lastRaisedPlotTab)
         # mark displayed plots as invalid
         for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             frame.plotInvalid = True
@@ -6848,19 +6865,34 @@ def UpdatePWHKPlot(G2frame,kind,item):
     '''
     def onEditSimRange(event):
         'Edit simulation range'
-        inp = [
-            min(data[1][0]),
-            max(data[1][0]),
-            None
-            ]
-        inp[2] = (inp[1] - inp[0])/(len(data[1][0])-1.)
-        names = ('start angle', 'end angle', 'step size')
-        dlg = G2G.ScrolledMultiEditor(
-            G2frame,[inp] * len(inp), range(len(inp)), names,
-            header='Edit simulation range',
-            minvals=(0.001,0.001,0.0001),
-            maxvals=(180.,180.,.1),
-            )
+        if 'TOF' in data[0].get('simType','CW'):
+            inp = [
+                min(data[1][0])/1000.,
+                max(data[1][0])/1000.,
+                None
+                ]
+            inp[2] = (np.log(inp[1]) - np.log(inp[0]))/(len(data[1][0])-1.)
+            names = ('start TOF(ms)', 'end TOF(ms)', 'DT/T')
+            dlg = G2G.ScrolledMultiEditor(
+                G2frame,[inp] * len(inp), range(len(inp)), names,
+                header='Edit simulation range',
+                minvals=(0.5,1.0,0.0001),
+                maxvals=(200.,200.,.001),
+                )            
+        else:
+            inp = [
+                min(data[1][0]),
+                max(data[1][0]),
+                None
+                ]
+            inp[2] = (inp[1] - inp[0])/(len(data[1][0])-1.)
+            names = ('start angle', 'end angle', 'step size')
+            dlg = G2G.ScrolledMultiEditor(
+                G2frame,[inp] * len(inp), range(len(inp)), names,
+                header='Edit simulation range',
+                minvals=(0.001,0.001,0.0001),
+                maxvals=(180.,180.,.1),
+                )
         dlg.CenterOnParent()
         val = dlg.ShowModal()
         dlg.Destroy()
@@ -6870,9 +6902,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         else:                
             start,end,step = inp
         step = abs(step)
-        N = int((end-start)/step)+1
-        newdata = np.linspace(start,end,N,True)
-        if len(newdata) < 2: return # too small a range - reject
+        if 'TOF' in data[0].get('simType','CW'):
+            N = (np.log(end)-np.log(start))/step
+            newdata = np.exp((np.arange(0,N))*step+np.log(start*1000.))
+        else:
+            N = int((end-start)/step)+1
+            newdata = np.linspace(start,end,N,True)
+            if len(newdata) < 2: return # too small a range - reject
         data[1] = [newdata,np.zeros_like(newdata),np.ones_like(newdata),
             np.zeros_like(newdata),np.zeros_like(newdata),np.zeros_like(newdata)]
         Tmin = newdata[0]
@@ -7065,7 +7101,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
     
-    G2frame.dataWindow.ClearData()
+    if G2frame.dataWindow:
+        G2frame.dataWindow.ClearData() 
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -7086,17 +7123,21 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Tmin = min(data[1][0])
         Tmax = max(data[1][0])
         num = len(data[1][0])
-        step = (Tmax - Tmin)/(num-1)
-        t = u'2\u03b8' # 2theta
-        lbl =  u'Simulation range: {:.2f} to {:.2f} {:s}\nwith {:.4f} steps ({:d} points)'
+        if 'TOF' in data[0].get('simType','CW'):
+            step = (np.log(Tmax) - np.log(Tmin))/(num-1.)
+            t = u'\u00b5s'
+            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} resolution ({:d} points)'
+        else:
+            step = (Tmax - Tmin)/(num-1)
+            t = u'2\u03b8' # 2theta
+            lbl =  u'Simulation range: {:.2f} to {:.2f} {:s} with {:.4f} steps ({:d} points)'
         lbl += u'\n(Edit range resets observed intensities).'
         lbl = lbl.format(Tmin,Tmax,t,step,num)
-        simSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lbl),
-                    0,WACV)
+        simSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lbl),0,WACV)
         but = wx.Button(G2frame.dataWindow,wx.ID_ANY,"Edit range")
         but.Bind(wx.EVT_BUTTON,onEditSimRange)
-        simSizer.Add(but,0,WACV)
         mainSizer.Add(simSizer)
+        mainSizer.Add(but,0,WACV)
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
@@ -7158,6 +7199,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
+    G2frame.dataWindow.SetDataSize()
                  
 ################################################################################
 #####  Data (GPX) tree routines

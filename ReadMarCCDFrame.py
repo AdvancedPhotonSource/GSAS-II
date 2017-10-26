@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division, print_function
 '''
 *ReadMarCCDFrame: Read Mar Files*
 ---------------------------------
@@ -257,7 +258,6 @@ typedef struct frame_header_type {
 
 import struct as st
 import array as ar
-import string, re
 
 MAXIMAGES=9
 
@@ -282,12 +282,12 @@ class marFrame():
         self.TIFFxResolution = IFD[282][2][0] # pixels per resolutionUnit in X direction (ImageWidth direction)
         self.TIFFyResolution = IFD[283][2][0] # pixels per resolutionUnit in Y direction (ImageLength direction
         self.TIFFresolutionUnit = IFD[296][2][0] # 3 = centimeter
-        self.byteDepth = self.TIFFbitDepth/8
+        self.byteDepth = self.TIFFbitDepth//8
         self.arrayTypeCode = ['','B','H','I','I'][self.byteDepth]
         # MarCCD specific header info
         File.seek(IFD[34710][2][0])
         self.headerType = st.unpack(byteOrd+'I',File.read(4))[0] #/* flag for header type  (can be used as magic number) */
-        self.headerName = re.sub(r'\x00','',string.join(st.unpack(byteOrd+16*'c',File.read(16)),''))
+        self.headerName = st.unpack(byteOrd+16*'s',File.read(16))[0].replace(b'\x00',b'')
         self.headerMajorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_major_version (n.) */
         self.headerMinorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_minor_version (.n) */
         self.headerByteOrder = st.unpack(byteOrd+'I',File.read(4))[0] #/* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
@@ -360,7 +360,7 @@ class marFrame():
         self.pixelNoise = st.unpack(byteOrd+'I'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* 1000*base noise value (ADUs) */
 
         File.seek(IFD[34710][2][0]+256+128)
-        self.barcode = re.sub(r'\x00','',string.join(st.unpack(byteOrd+16*'c',File.read(16)),''))
+        self.barcode = st.unpack(byteOrd+16*'s',File.read(16))[0].replace(b'\x00',b'')
         self.barcodeAngle = st.unpack(byteOrd+'I',File.read(4))[0]
         self.barcodeStatus = st.unpack(byteOrd+'I',File.read(4))[0]
 
@@ -432,16 +432,16 @@ class marFrame():
         self.opticsPolarizationY = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
 
         File.seek(IFD[34710][2][0]+256+128+256+128+128+128)
-        self.filetitle = re.sub(r'\x00','',string.join(st.unpack(byteOrd+128*'c',File.read(128)),''))
-        self.filepath = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*128,File.read(128)),'')) #/* path name for data file*/
-        self.filename = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*64,File.read(64)),'')) #/* name of data file*/
-        self.acquireTimestamp = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*32,File.read(32)),'')) #/* date and time of acquisition*/
-        self.headerTimestamp = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*32,File.read(32)),'')) #/* date and time of header update*/
-        self.saveTimestamp = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*32,File.read(32)),'')) #/* date and time file saved */
-        self.fileComment = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*512,File.read(512)),'')) #/* comments  - can be used as desired */
-        self.datasetComment = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*512,File.read(512)),'')) #/* comments  - can be used as desired */
+        self.filetitle = st.unpack(byteOrd+128*'s',File.read(128))[0].replace(b'\x00',b'')
+        self.filepath = st.unpack(byteOrd+'s'*128,File.read(128))[0].replace(b'\x00',b'') #/* path name for data file*/
+        self.filename = st.unpack(byteOrd+'s'*64,File.read(64))[0].replace(b'\x00',b'') #/* name of data file*/
+        self.acquireTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time of acquisition*/
+        self.headerTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time of header update*/
+        self.saveTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time file saved */
+        self.fileComment = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'') #/* comments  - can be used as desired */
+        self.datasetComment = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'') #/* comments  - can be used as desired */
 
-        self.userData = re.sub(r'\x00','',string.join(st.unpack(byteOrd+'c'*512,File.read(512)),''))
+        self.userData = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'')
 
         File.seek(4096)
         self.image = ar.array(self.arrayTypeCode,File.read(self.byteDepth*self.TIFFsizeX*self.TIFFsizeY))

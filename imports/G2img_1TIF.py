@@ -134,7 +134,6 @@ def GetTifData(filename):
         return lines,0,0,0
     File.seek(IFD)                                                  #get number of directory entries
     NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
-    print (IFD,NED)
     IFD = {}
     nSlice = 1
     for ied in range(NED):

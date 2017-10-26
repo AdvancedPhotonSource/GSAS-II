@@ -3132,7 +3132,7 @@ class IntegParmTable(wx.Dialog):
                     files = dlg.GetPaths()
                     self.parms,self.IMfileList = self.ReadFiles(files)
             finally:
-                dlg.Destroy()
+                if dlg: dlg.Destroy()
             if not files:
                 wx.CallAfter(self.EndModal,wx.ID_CANCEL)
                 return
@@ -3281,6 +3281,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         
     def FillList(self,parms):
         'Places the current parms into the table'
+        maxint = 2**31-1
         self.ClearAll()
         self.rowlen = len(self.parent.ParmList)
         for i,lbl in enumerate(self.parent.HeaderList):
@@ -3289,7 +3290,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             if d is None: continue
             if d == 'None': continue
             if float(d) < 0: continue
-            index = self.InsertStringItem(sys.maxsize, d)
+            index = self.InsertStringItem(maxint, d)
             for j in range(1,len(parms)):
                 self.SetStringItem(index, j, parms[j][r])
         for i,lbl in enumerate(self.parent.ParmList):

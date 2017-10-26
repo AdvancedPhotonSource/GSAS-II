@@ -90,13 +90,16 @@ def GetCbfData(self,filename):
         elif 'Number-of-Elements' in line:
             Npix = int(fields[1])
     nxy = sizexy[0]*sizexy[1]
-    image = np.zeros(nxy,dtype=np.int32)
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
-    compImage = stream[imageBeg:imageBeg+compImageSize]
-#    GSASIIpath.IPyBreak()
+    File.seek(0)
+    img = File.read()[imageBeg:imageBeg+compImageSize]
+    nimg = len(img)
+    if 'bytes' in str(type(img)):
+        img = np.array(img,dtype='a')
+    image = np.zeros(nxy,dtype=np.int32)
     time0 = time.time()
-    nimg = len(compImage)
-    image = cbf.unpack_cbf(nimg,compImage,nxy,image)
+#    GSASIIpath.IPyBreak()
+    image = cbf.unpack_cbf(nimg,img,nxy,image)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}

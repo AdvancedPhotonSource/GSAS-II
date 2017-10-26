@@ -92,7 +92,7 @@ class scanCCD(wx.Frame):
         dlg = wx.FileDialog(self, 'Choose scanCCD image files', '.', '',\
         'Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         All files (*.*)|*.*',
-        wx.FD_OPEN | wx.MULTIPLE)
+        wx.FD_OPEN | wx.FD_MULTIPLE)
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:

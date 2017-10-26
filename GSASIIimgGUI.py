@@ -3125,7 +3125,7 @@ class IntegParmTable(wx.Dialog):
                 pth = G2G.GetImportPath(self.G2frame)
                 if not pth: pth = '.'
                 dlg = wx.FileDialog(parent, 'Read previous table or build new table by selecting image control files', pth,
-                    style=wx.FD_OPEN| wx.MULTIPLE,
+                    style=wx.FD_OPEN| wx.FD_MULTIPLE,
                     wildcard='Integration table (*.imtbl)|*.imtbl|image control files (.imctrl)|*.imctrl')
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:

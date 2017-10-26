@@ -88,7 +88,7 @@ def GetTifData(filename):
     '''
     import struct as st
     import array as ar
-    import ReadMarCCDFrame as rmf
+#    import ReadMarCCDFrame as rmf
     image = None
     File = open(filename,'rb')
     dataType = 5

@@ -16,6 +16,8 @@ from __future__ import division, print_function
 import time
 import GSASIIobj as G2obj
 import GSASIIpath
+import struct as st
+import numpy as np
 import unpack_cbf as cbf
 GSASIIpath.SetVersionNumber("$Revision: 2133 $")
 class CBF_ReaderClass(G2obj.ImportImage):
@@ -47,7 +49,6 @@ class CBF_ReaderClass(G2obj.ImportImage):
 def GetCbfData(self,filename):    
     'Read cif binarydetector data cbf file'
     
-    import numpy as np
     if GSASIIpath.GetConfigValue('debug'):
         print ('Read cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')
@@ -94,12 +95,13 @@ def GetCbfData(self,filename):
     File.seek(0)
     img = File.read()[imageBeg:imageBeg+compImageSize]
     nimg = len(img)
-    if 'bytes' in str(type(img)):
-        img = np.array(img,dtype='a')
     image = np.zeros(nxy,dtype=np.int32)
     time0 = time.time()
-#    GSASIIpath.IPyBreak()
-    image = cbf.unpack_cbf(nimg,img,nxy,image)
+    if 'bytes' in str(type(img)):
+        img = np.frombuffer(img,dtype=np.uint8)
+        image = cbf.unpack_cbf3(nimg,img,nxy,image)
+    else:
+        image = cbf.unpack_cbf(nimg,img,nxy,image)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}

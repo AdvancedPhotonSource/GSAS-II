@@ -88,13 +88,13 @@ def GetMAR345Data(filename,imageOnly=False):
         pos += 8
     pos += 37
     File.seek(pos)
+    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)    
     if '2' in platform.python_version_tuple()[0]:
         raw = File.read()
+        image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
     else:
-        raw = File.read()
-        print (type(raw),sys.getsizeof(raw),raw[:10])
-    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)    
-    image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
+        raw = np.frombuffer(File.read(),dtype=np.uint8)
+        image = np.flipud(pf.pack_f3(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
     File.close()
     if imageOnly:
         return image

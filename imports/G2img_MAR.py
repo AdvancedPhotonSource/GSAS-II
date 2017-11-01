@@ -13,8 +13,7 @@
 
 from __future__ import division, print_function
 import platform
-import sys
-import struct as st
+import time
 import GSASIIobj as G2obj
 import GSASIIpath
 import numpy as np
@@ -89,12 +88,14 @@ def GetMAR345Data(filename,imageOnly=False):
     pos += 37
     File.seek(pos)
     image = np.zeros(shape=(sizex,sizey),dtype=np.int32)    
+    time0 = time.time()
     if '2' in platform.python_version_tuple()[0]:
         raw = File.read()
         image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
     else:
         raw = np.frombuffer(File.read(),dtype=np.uint8)
         image = np.flipud(pf.pack_f3(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
+    print ('image read time: %.3f'%(time.time()-time0))
     File.close()
     if imageOnly:
         return image

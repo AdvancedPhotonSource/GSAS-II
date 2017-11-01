@@ -270,7 +270,7 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
-        fp = open(filename,'r')
+        fp = open(filename,'Ur')        #needs the 'U' to maintain py 2.7 compatibility
         # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')

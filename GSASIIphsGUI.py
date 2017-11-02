@@ -2254,7 +2254,6 @@ entered the right symbol for your structure.
                 for row in range(Atoms.GetNumberRows()):
                     Atoms.SelectRow(row,True)                    
             if r < 0:                          #double click on col label! Change all atoms!
-                sel = [-1,]
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
@@ -2337,7 +2336,7 @@ entered the right symbol for your structure.
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'Uiso':       #this needs to ask for value
                     pass                                        #& then change all 'I' atoms
-                if noSkip and sel[0] >= 0:
+                if noSkip:
                     ui = colLabels.index('U11')
                     us = colLabels.index('Uiso')
                     ss = colLabels.index('site sym')

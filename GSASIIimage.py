@@ -24,6 +24,7 @@ import polymask as pm
 from scipy.optimize import leastsq
 import scipy.signal as scsg
 import scipy.cluster.vq as scvq
+import scipy.interpolate as scint
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -943,10 +944,16 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False):
             times[3] += time.time()-t0
             del tax; del tay; del taz; del tad; del tabs
     t0 = time.time()
-    NST = np.array(NST,dtype=np.float)
-    H0 = np.divide(H0,NST)
-    H0 = np.nan_to_num(H0)
     H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
+    NST = np.array(NST,dtype=np.float)
+    #prepare masked arrays of bins with pixels for interpolation setup
+    H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
+    H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
+    #make linear interpolators; outside limits give NaN
+    H0int = [scint.interp1d(h2msk.compressed(),h0msk.compressed(),bounds_error=False) for h0msk,h2msk in zip(H0msk,H2msk)]
+    #do interpolation on all points - fills in the empty bins; leaves others the same
+    H0 = np.array([h0int(H2[:-1]) for h0int in H0int])
+    H0 = np.nan_to_num(H0)
     if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
     elif 'q' == data.get('binType','').lower():

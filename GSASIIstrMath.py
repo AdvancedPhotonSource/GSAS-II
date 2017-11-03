@@ -4058,9 +4058,9 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     dependentVars = G2mv.GetDependentVars()
-    dMdv = np.empty(0)
     histoList = list(Histograms.keys())
     histoList.sort()
+    First = True
     for histogram in histoList:
         if 'PWDR' in histogram[:4]:
             Histogram = Histograms[histogram]
@@ -4086,10 +4086,11 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
         else:
             continue        #skip non-histogram entries
-        if len(dMdv):
-            dMdv = np.concatenate((dMdv.T,np.sqrt(wtFactor)*dMdvh.T)).T
-        else:
+        if First:
             dMdv = np.sqrt(wtFactor)*dMdvh
+            First = False
+        else:
+            dMdv = np.concatenate((dMdv.T,np.sqrt(wtFactor)*dMdvh.T)).T
             
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)

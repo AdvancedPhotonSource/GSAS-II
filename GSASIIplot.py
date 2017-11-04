@@ -3603,13 +3603,16 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             r = xpos**2+ypos**2
             if r <= 1.0:
                 if 'equal' in G2frame.Projection:
-                    r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(ypos,xpos)
+                    r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(xpos,ypos)
                 else:
-                    r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
+                    r,p = 2.*npatand(np.sqrt(r)),npatan2d(xpos,ypos)
                 if p<0.:
                     p += 360.
                 ipf = lut(r*np.pi/180.,p*np.pi/180.)
-                xyz = np.inner(Bmat.T,np.array([rp2xyz(r,p)]))
+                p = 90.-p
+                if p<0.:
+                    p += 360.
+                xyz = np.inner(Bmat,np.array([rp2xyz(r,p)]))
                 x,y,z = list(xyz/np.max(np.abs(xyz)))
                 G2frame.G2plotNB.status.SetStatusText(
                     'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
@@ -3648,8 +3651,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     
     PHI = np.linspace(0.,360.,30,True)
     PSI = np.linspace(0.,180.,30,True)
-    X = np.outer(npsind(PHI),npsind(PSI))
-    Y = np.outer(npcosd(PHI),npsind(PSI))
+    X = np.outer(npcosd(PHI),npsind(PSI))
+    Y = np.outer(npsind(PHI),npsind(PSI))
     Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
         if plotDict[plotType]:
@@ -3798,13 +3801,13 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Rmd = np.array(Rmd)
         Rmd = np.where(Rmd<0.,0.,Rmd)
         if 'equal' in G2frame.Projection:
-            x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
+            x,y = np.sin(Beta)*np.cos(Phi),np.sin(Beta)*np.sin(Phi)        
         else:
             x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
         sq2 = 1.0/math.sqrt(2.0)
         npts = 201
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
-        R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
+        R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
         P=np.where(P<0.,P+360.,P)
         if 'equal' in G2frame.Projection:
             R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
@@ -3821,7 +3824,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 except ValueError:
                     sfac *= 1.05
             Z = [lut(ri*np.pi/180.,p*np.pi/180.) for ri,p in zip(list(R),list(P))]
-            print ('IVP for histogramn: %s: interpolate sfactor: %.2f'%(hist,sfac))
+#            print ('IVP for histogramn: %s: interpolate sfactor: %.2f'%(hist,sfac))
         except AttributeError:
             G2frame.G2plotNB.Delete(plotType)
             G2G.G2MessageBox(G2frame,'IVP interpolate error: scipy needs to be 0.11.0 or newer',
@@ -3835,7 +3838,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             pass
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
-        Plot.plot(-x,y,'+',picker=3)
+        Plot.plot(y,x,'+',picker=3)
         Page.figure.colorbar(Img)
         Plot.axis('off')
         Plot.set_title('0 0 1 Inverse pole figure for %s\n%s'%(phase,hist))
@@ -3881,12 +3884,12 @@ def PlotTexture(G2frame,data,Start=False):
                 r = xpos**2+ypos**2
                 if r <= 1.0:
                     if 'equal' in G2frame.Projection: 
-                        r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(ypos,xpos)
+                        r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(xpos,ypos)
                     else:
-                        r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
+                        r,p = 2.*npatand(np.sqrt(r)),npatan2d(xpos,ypos)
                     ipf = G2lat.invpolfcal(IODFln,SGData,np.array([r,]),np.array([p,]))
                     xyz = np.inner(Bmat,np.array([rp2xyz(r,p)]))
-                    y,x,z = list(xyz/np.max(np.abs(xyz)))
+                    x,y,z = list(xyz/np.max(np.abs(xyz)))
                     
                     G2frame.G2plotNB.status.SetStatusText(
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
@@ -3942,7 +3945,7 @@ def PlotTexture(G2frame,data,Start=False):
         npts = 201
         if 'Inverse' in SHData['PlotType']:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
-            R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
+            R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
             if 'equal' in G2frame.Projection:
                 R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
             else:

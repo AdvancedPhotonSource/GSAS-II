@@ -179,7 +179,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             more = False
             filename = os.path.splitext(filename)[0]+'.G2img'
             File = open(filename,'wb')
-            Data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
+            Data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
             image = np.reshape(image,(sizexy[1],sizexy[0]))
             cPickle.dump([head,Data,Npix,image],File,1)
             File.close()
@@ -187,7 +187,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             self.formatName = 'GSAS-II image'
             sum = False
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
+    data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()
     print ('Image read time %.2fs'%(time.time()-time0))
     if GSASIIpath.GetConfigValue('debug'):

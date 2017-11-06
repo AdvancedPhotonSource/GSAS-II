@@ -5131,6 +5131,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 3:
                     ToggleMultiSpotMask(G2frame)
                 else:
+                    #TODO - try a fit of spot to image?
                     spot = [Xpos,Ypos,G2frame.spotSize]
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=3)

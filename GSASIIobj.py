@@ -2186,7 +2186,7 @@ class ImportImage(ImportBaseclass):
       * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
         data items are needed:
 
-         * 'pixelSize': size of each pixel in microns (such as ``[200,200]``.
+         * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
          * 'wavelength': wavelength in Angstoms.
          * 'distance': distance of detector from sample in cm.
          * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.

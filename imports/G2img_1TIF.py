@@ -73,7 +73,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
             if ParentFrame:
                 self.SciPy = True
                 self.Comments = ['no metadata']
-                self.Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
+                self.Data = {'wavelength': 0.1, 'pixelSize': [200., 200.], 'distance': 100.0}
                 self.Data['size'] = list(self.Image.shape)
                 self.Data['center'] = [int(i/2) for i in self.Image.shape]
         if self.Npix == 0:

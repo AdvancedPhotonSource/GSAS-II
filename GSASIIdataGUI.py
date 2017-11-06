@@ -7295,7 +7295,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         try:    #don't know why we get here when opening new project
             parentID = G2frame.GPXtree.GetItemParent(item)
             # save name of calling tree item for help. N.B. may want to override this later
-            prfx = G2frame.GPXtree.GetItemText(item).split()[0].upper()
+            prfx = G2frame.GPXtree.GetItemText(item)
+            if prfx:
+                prfx = prfx.split()[0].upper()
+            else:   #just deleted item - escape!!
+                return
             prfx1 = G2frame.GPXtree.GetItemText(parentID).split()[0]
             if prfx in ('IMG','PKS','PWDR','SASD','HKLF','PDF','REFD',):
                 G2frame.dataWindow.helpKey = prfx
@@ -7311,7 +7315,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         except IndexError:
             G2frame.dataWindow.helpKey = ''
             if GSASIIpath.GetConfigValue('debug'):
-                print ('bug: why here?')
+                print ('bug: why here? prfx=%s prfx1=%s'%(prfx,prfx1))
                 G2obj.HowDidIgetHere()
         
     # clear out the old panel contents

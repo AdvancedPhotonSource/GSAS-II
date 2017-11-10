@@ -276,7 +276,7 @@ def GetTifData(filename):
 #                    image = np.fromfile(File,dtype=np.float32,count=4*Npix)[:Npix]
 #                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
                 else:
-                    image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int),dtype=np.int32)
+                    image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
 #                    image = np.fromfile(File,dtype=np.int,count=4*Npix)[:Npix]
 #                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 16: 

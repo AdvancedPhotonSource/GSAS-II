@@ -73,7 +73,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
         
         plotSizer = wx.BoxSizer(wx.VERTICAL)
-        choice = ['None','Mustrain','Size','Preferred orientation','Inv. pole figure']
+        choice = ['None','Mustrain','Size','Preferred orientation','St. proj. Inv. pole figure','Eq. area Inv. pole figure']
         plotSel = wx.RadioBox(DData,wx.ID_ANY,'Select plot type:',choices=choice,
             majorDimension=1,style=wx.RA_SPECIFY_COLS)
         plotSel.SetStringSelection(generalData['Data plot type'])
@@ -1011,7 +1011,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     if G2frame.hist:
         topSizer = wx.FlexGridSizer(1,2,5,5)
         DData.select = wx.ListBox(DData,choices=G2frame.dataWindow.HistsInPhase,
-                            style=wx.LB_SINGLE,size=(-1,120))
+                            style=wx.LB_SINGLE,size=(-1,160))
         DData.select.SetSelection(G2frame.dataWindow.HistsInPhase.index(G2frame.hist))
         DData.select.SetFirstItem(G2frame.dataWindow.HistsInPhase.index(G2frame.hist))
         DData.select.Bind(wx.EVT_LISTBOX,OnSelect)

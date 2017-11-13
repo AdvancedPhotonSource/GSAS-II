@@ -3582,7 +3582,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     '''
     
     def OnPick(event):
-        if plotType not in ['Inv. pole figure',]:
+        if 'Inv. pole figure' not in plotType:
             return
         ind = event.ind[0]
         h,k,l = RefSets[ind]
@@ -3595,14 +3595,14 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         return xy*npcosd(p),xy*npsind(p),z
         
     def OnMotion(event):
-        if plotType not in ['Inv. pole figure',]:
+        if 'Inv. pole figure' not in plotType:
             return
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = event.xdata
             ypos = event.ydata
             r = xpos**2+ypos**2
             if r <= 1.0:
-                if 'equal' in G2frame.Projection:
+                if 'Eq. area' in plotType:
                     r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(xpos,ypos)
                 else:
                     r,p = 2.*npatand(np.sqrt(r)),npatan2d(xpos,ypos)
@@ -3612,8 +3612,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 p = 90.-p
                 if p<0.:
                     p += 360.
-                xyz = np.inner(Bmat,np.array([rp2xyz(r,p)]))
-                x,y,z = list(xyz/np.max(np.abs(xyz)))
+                xyz = np.inner(Amat,np.array([rp2xyz(r,p)]))
+                y,x,z = list(xyz/np.max(np.abs(xyz)))
                 G2frame.G2plotNB.status.SetStatusText(
                     'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
     
@@ -3628,7 +3628,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     useList = data['Histograms']
     phase = generalData['Name']
     plotType = generalData['Data plot type']
-    plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.','Inv. pole figure':''}
+    plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.',
+        'St. proj. Inv. pole figure':'','Eq. area Inv. pole figure':''}
     for ptype in plotDict:
         G2frame.G2plotNB.Delete(ptype)
     if plotType in ['None'] or not useList:
@@ -3758,7 +3759,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase+'\n'+hist)
             Plot.set_xlabel(r'$\psi$',fontsize=16)
             Plot.set_ylabel('MRD',fontsize=14)
-    elif plotType in ['Inv. pole figure',]:
+    elif 'Inv. pole figure' in plotType:
+        sq2 = 1.0/math.sqrt(2.0)
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
         rId = G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists')
         RefData = G2frame.GPXtree.GetItemPyData(rId)[phase]
@@ -3800,21 +3802,19 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Phi=np.where(Phi<0.,Phi+2.*np.pi,Phi)
         Rmd = np.array(Rmd)
         Rmd = np.where(Rmd<0.,0.,Rmd)
-        if 'equal' in G2frame.Projection:
-            x,y = np.sin(Beta)*np.cos(Phi),np.sin(Beta)*np.sin(Phi)        
+        if 'Eq. area' in plotType:
+            x,y = np.sin(Beta/2.)*np.cos(Phi)/sq2,np.sin(Beta/2.)*np.sin(Phi)/sq2        
         else:
             x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
-        sq2 = 1.0/math.sqrt(2.0)
         npts = 201
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
         R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(Y,X).flatten()
         P=np.where(P<0.,P+360.,P)
-        if 'equal' in G2frame.Projection:
+        if 'Eq. area' in plotType:
             R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
         else:
             R = np.where(R <= 1.,2.*npatand(R),0.0)
         Z = np.zeros_like(R)
-#        GSASIIpath.IPyBreak()
         try:
             sfac = 0.1
             while True:
@@ -3888,8 +3888,8 @@ def PlotTexture(G2frame,data,Start=False):
                     else:
                         r,p = 2.*npatand(np.sqrt(r)),npatan2d(xpos,ypos)
                     ipf = G2lat.invpolfcal(IODFln,SGData,np.array([r,]),np.array([p,]))
-                    xyz = np.inner(Bmat,np.array([rp2xyz(r,p)]))
-                    x,y,z = list(xyz/np.max(np.abs(xyz)))
+                    xyz = np.inner(Amat,np.array([rp2xyz(r,p)]))
+                    y,x,z = list(xyz/np.max(np.abs(xyz)))
                     
                     G2frame.G2plotNB.status.SetStatusText(
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)

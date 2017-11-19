@@ -4612,7 +4612,7 @@ def ToggleMultiSpotMask(G2frame):
 def ShowSpotMaskInfo(G2frame,Page):
     if G2frame.MaskKey == 's':
         Page.figure.suptitle('Multiple spot mode on (size={}), press s or right-click to end'
-                             .format(G2frame.spotSize),color='r',fontweight='bold')
+            .format(G2frame.spotSize),color='r',fontweight='bold')
     else:
         Page.figure.suptitle('New spot size={}'.format(G2frame.spotSize),
                              color='r',fontweight='bold')
@@ -4665,6 +4665,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''
     from matplotlib.patches import Ellipse,Circle
     import numpy.ma as ma
+    G2frame.ShiftDown = False
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks,StrSta  # RVD: these are needed for multiple image controls/masks 
@@ -4729,6 +4730,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                      G2frame.G2plotNB.status.SetStatusText( \
                         'Radius=%.3fmm, 2-th=%.3fdeg, dsp=%.3fA, Q=%.5fA-1, azm=%.2fdeg, I=%6d'%(radius,tth,dsp,Q,azm,Int),1)
 
+    def OnImPlotKeyRelease(event):
+        if event.key == 'shift':
+            G2frame.ShiftDown = False
+
     def OnImPlotKeyPress(event):
         try:
             treeItem = G2frame.GPXtree.GetItemText(G2frame.PickId)
@@ -4783,6 +4788,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif event.key == 'd':
                 G2frame.MskDelete = True
                 OnStartMask(G2frame)
+            elif event.key == 'shift':
+                G2frame.ShiftDown = True
                 
         elif treeItem == 'Stress/Strain':
             if event.key in ['a',]:
@@ -4907,13 +4914,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if pickType == "Spot":
                 itemNum = G2frame.itemPicked.itemNumber
                 if event.button == 1:
-                    x = Masks['Points'][itemNum][0]+Xpos-XposBeforeDrag
-                    y = Masks['Points'][itemNum][1]+Ypos-YposBeforeDrag
-                    pick.center=[x,y]
-                elif event.button == 3:
-                    r = math.sqrt((Xpos-Masks['Points'][itemNum][0])**2+
-                              (Ypos-Masks['Points'][itemNum][1])**2)
-                    pick.radius = r
+                    if G2frame.ShiftDown:
+                        r = math.sqrt((Xpos-Masks['Points'][itemNum][0])**2+
+                                  (Ypos-Masks['Points'][itemNum][1])**2)
+                        pick.radius = r
+                    else:
+                        x = Masks['Points'][itemNum][0]+Xpos-XposBeforeDrag
+                        y = Masks['Points'][itemNum][1]+Ypos-YposBeforeDrag
+                        pick.center=[x,y]
                 Page.figure.gca().draw_artist(pick)
             elif pickType.startswith('Ring'):
                 wave = Data['wavelength']
@@ -5131,8 +5139,22 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 3:
                     ToggleMultiSpotMask(G2frame)
                 else:
-                    #TODO - try a fit of spot to image?
-                    spot = [Xpos,Ypos,G2frame.spotSize]
+                    if G2frame.ShiftDown:   #force user selection
+                        sig = G2frame.spotSize
+                    else:                   #optimize spot pick
+                        pixLimit = 5
+                        Xpix,Ypix = Xpos*scalex,Ypos*scaley
+                        Xpix,Ypix,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
+                        ind = [int(Xpix),int(Ypix)]
+                        nxy = 15
+                        ImMax = np.max(G2frame.ImageZ)
+                        result = G2img.FitImageSpots(G2frame.ImageZ,ImMax,ind,pixelSize,nxy)
+                        if result:
+                            Xpos,Ypos,sig = result
+                        else:
+                            print ('Not a spot')
+                            return
+                    spot = [Xpos,Ypos,sig]
                     Masks['Points'].append(spot)
                     artist = Circle((Xpos,Ypos),radius=spot[2]/2,fc='none',ec='r',picker=3)
                     Page.figure.gca().add_artist(artist)
@@ -5141,14 +5163,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2imG.UpdateMasks(G2frame,Masks)
                     Page.canvas.draw()
                 return 
-            elif G2frame.MaskKey == 's':
-                if event.button == 1:
-                    spot = [Xpos,Ypos,G2frame.spotSize]
-                    Masks['Points'].append(spot)
-                    G2imG.UpdateMasks(G2frame,Masks)
-                G2frame.MaskKey = ''
-                wx.CallAfter(PlotImage,G2frame,newImage=True)
-                return
             elif G2frame.MaskKey == 'r':
                 if event.button == 1:
                     tth = G2img.GetTth(Xpos,Ypos,Data)
@@ -5273,14 +5287,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.Lazim.SetValue(Data['LRazimuth'][0])
                 G2frame.Razim.SetValue(Data['LRazimuth'][1])
             elif pickType == "Spot" and treeItem == 'Masks':
+                spotnum = G2frame.itemPicked.itemNumber
                 if event.button == 1:
-                    spotnum = G2frame.itemPicked.itemNumber
-                    Masks['Points'][spotnum][0:2] = G2frame.itemPicked.center
-                elif event.button == 3:
+                    if G2frame.ShiftDown:
+                        Masks['Points'][spotnum] = list(G2frame.itemPicked.center) + [2.*G2frame.itemPicked.radius,]
+                    else:
                     # update the selected circle mask with the last drawn values
-                    spotnum = G2frame.itemPicked.itemNumber
-                    Masks['Points'][spotnum] = list(G2frame.itemPicked.center) + [
-                        2.*G2frame.itemPicked.radius]
+                        Masks['Points'][spotnum][0:2] = G2frame.itemPicked.center
+                elif event.button == 3:
+                    del Masks['Points'][spotnum]
                 G2imG.UpdateMasks(G2frame,Masks)
             elif pickType.startswith('Ring') and treeItem == 'Masks':
                 G2imG.UpdateMasks(G2frame,Masks) # changes saved during animation
@@ -5311,6 +5326,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xylim = lim
     else:
         Page.canvas.mpl_connect('key_press_event', OnImPlotKeyPress)
+        Page.canvas.mpl_connect('key_release_event', OnImPlotKeyRelease)
         Page.canvas.mpl_connect('motion_notify_event', OnImMotion)
         Page.canvas.mpl_connect('pick_event', OnImPick)
         Page.canvas.mpl_connect('button_release_event', OnImRelease)

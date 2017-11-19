@@ -32,6 +32,7 @@ import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
+import GSASIImath as G2mth
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -837,13 +838,14 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim,tamp,times): #most expensive part 
         if polygon:
             tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
                 tay,len(polygon),polygon,tamp)[:nI*nJ]))
-    try:
-        import spotmask as sm
-        spots = masks['Points'].T
-        if len(spots):
-            tam = ma.mask_or(tam,ma.getmask(sm.spotmask(nI*nJ,tax,
-                    tay,len(spots),spots,tamp)[:nI*nJ]))
-    except:
+    if True:
+#    try:
+#        import spotmask as sm
+#        spots = masks['Points'].T
+#        if len(spots):
+#            tam = ma.mask_or(tam,ma.getmask(sm.spotmask(nI*nJ,tax,
+#                    tay,len(spots),spots,tamp)[:nI*nJ]))
+#    except:
         for X,Y,rsq in masks['Points'].T:
             tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
@@ -1137,104 +1139,117 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig,dset)
     return vals,sig,covMatrix
+
+def FitImageSpots(Image,ImMax,ind,pixSize,nxy):
+    
+    def calcMean(nxy,pixSize,img):
+        gdx,gdy = np.mgrid[0:nxy,0:nxy]
+        gdx = ma.array((gdx-nxy//2)*pixSize[0]/1000.,mask=~ma.getmaskarray(ImBox))
+        gdy = ma.array((gdy-nxy//2)*pixSize[1]/1000.,mask=~ma.getmaskarray(ImBox))
+        posx = ma.sum(gdx)/ma.count(gdx)
+        posy = ma.sum(gdy)/ma.count(gdy)
+        return posx,posy
+    
+    def calcPeak(values,nxy,pixSize,img):
+        back,mag,px,py,sig = values
+        peak = np.zeros([nxy,nxy])+back
+        nor = 1./(2.*np.pi*sig**2)
+        gdx,gdy = np.mgrid[0:nxy,0:nxy]
+        gdx = (gdx-nxy//2)*pixSize[0]/1000.
+        gdy = (gdy-nxy//2)*pixSize[1]/1000.
+        arg = (gdx-px)**2+(gdy-py)**2        
+        peak += mag*nor*np.exp(-arg/(2.*sig**2))
+        return ma.compressed(img-peak)/np.sqrt(ma.compressed(img))
+    
+    def calc2Peak(values,nxy,pixSize,img):
+        back,mag,px,py,sigx,sigy,rho = values
+        peak = np.zeros([nxy,nxy])+back
+        nor = 1./(2.*np.pi*sigx*sigy*np.sqrt(1.-rho**2))
+        gdx,gdy = np.mgrid[0:nxy,0:nxy]
+        gdx = (gdx-nxy//2)*pixSize[0]/1000.
+        gdy = (gdy-nxy//2)*pixSize[1]/1000.
+        argnor = -1./(2.*(1.-rho**2))
+        arg = (gdx-px)**2/sigx**2+(gdy-py)**2/sigy**2-2.*rho*(gdx-px)*(gdy-py)/(sigx*sigy)        
+        peak += mag*nor*np.exp(argnor*arg)
+        return ma.compressed(img-peak)/np.sqrt(ma.compressed(img))        
+    
+    nxy2 = nxy//2
+    ImBox = Image[ind[1]-nxy2:ind[1]+nxy2+1,ind[0]-nxy2:ind[0]+nxy2+1]
+    back = np.min(ImBox)
+    mag = np.sum(ImBox-back)
+    vals = [back,mag,0.,0.,0.2,0.2,0.]
+    ImBox = ma.array(ImBox,dtype=float,mask=ImBox>0.75*ImMax)
+    px = (ind[0]+.5)*pixSize[0]/1000.
+    py = (ind[1]+.5)*pixSize[1]/1000.
+    if ma.any(ma.getmaskarray(ImBox)):
+        vals = calcMean(nxy,pixSize,ImBox)
+        posx,posy = [px+vals[0],py+vals[1]]
+        return [posx,posy,6.]
+    else:
+        result = leastsq(calc2Peak,vals,args=(nxy,pixSize,ImBox),full_output=True)
+        vals = result[0]
+        ratio = vals[4]/vals[5]
+        if 0.5 < ratio < 2.0 and vals[2] < 2. and vals[3] < 2.:
+            posx,posy = [px+vals[2],py+vals[3]]
+            return [posx,posy,min(6.*vals[4],6.)]
+        else:
+            return None
     
 def AutoSpotMasks(Image,Masks,Controls):
+    
     print ('auto spot search')
-    maxPks = 500
-    dmax = 1.5         #just beyond diamond 111 @ 2.0596
-    wave = Controls['wavelength']
-    tthMax = 2.0*asind(wave/(2.*dmax))
+    nxy = 15
+    rollImage = lambda rho,roll: np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1)
     pixelSize = Controls['pixelSize']
-    lap = np.array([[0,1,0],[1,-4,1],[0,1,0]],np.float32)
-    ck = scsg.cspline2d(Image.T,24.0)
-    spotMask1=-scsg.convolve2d(ck,lap,mode='same',boundary='symm')
-    for mul in range(10):
-        spotMask = ma.array(Image,mask=(spotMask1<(mul+1)*1.e4))
-        indx = np.transpose(spotMask.nonzero())
-        if not len(indx):       #smooth image - no sharp points
-            break
-        pts,distort = scvq.kmeans(np.array(indx,np.float32),maxPks,thresh=1.0)
-        peaks = pts*pixelSize/1000.
-        tths = GetTth(peaks.T[0],peaks.T[1],Controls)
-        masktths = ma.getmask(ma.array(tths,mask=tths>tthMax))
-        pts = pts[masktths,:]
-        A,B = np.mgrid[0:len(pts),0:len(pts)]   
-        M = np.sqrt(np.sum((pts[A]-pts[B])**2,axis=-1))
-        MX = ma.array(M,mask=(M<10.))
-        Indx = ma.nonzero(ma.getmask(MX))
-        print ('Spots found: %d %d %.2f %d'%(mul,len(pts),distort,len(Indx[0])))
-        if distort < .3:
-            break
-    if not len(Indx[0]):
-        print ('no auto search spots found')
-        return None
-    if distort > 2.:
-        print ('no big spots found')
-        return None
-    #use clustered points to get position & spread
-    
-    Indx = np.sort(Indx,axis=0).T
-    Nmax = np.max(Indx)
-    nums = [list(set([ind[1] for ind in Indx if ind[1]>=jnd and ind[0] == jnd])) for jnd in range(Nmax+1)]
-    delList = []
-    for Num in nums:
-        delList += list(np.sort(Num))[1:]
-    delList = list(set(delList))
-    Nums = [num for inum,num in enumerate(nums) if inum not in delList]
-    points = []
-    esds = []
-    for num in Nums:
-        points.append(np.mean(pts[num],axis=0))
-        esds.append(np.mean(np.var(pts[num],axis=0)))
-    peaks = (np.array(points)+np.array([.5,.5]))*pixelSize/1000.
-    Points = np.ones((peaks.shape[0],3))*2.
-    Points[:,2] += np.array(esds)*pixelSize[0]/1000.
-    Points[:,:2] = peaks
-    Masks['Points'] = list(Points)
+    spotMask = ma.array(Image,mask=(Image<np.mean(Image)))
+    indices = (-1,0,1)
+    rolls = np.array([[ix,iy] for ix in indices for iy in indices])
+    time0 = time.time()
+    for roll in rolls:
+        if np.any(roll):        #avoid [0,0]
+            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<0.),dtype=float)
+    mags = spotMask[spotMask.nonzero()]
+    indx = np.transpose(spotMask.nonzero())
+    size1 = mags.shape[0]
+    magind = [[indx[0][0],indx[0][1],mags[0]],]
+    for ind,mag in list(zip(indx,mags))[1:]:        #remove duplicates
+#            ind[0],ind[1],I,J = ImageLocalMax(Image,nxy,ind[0],ind[1])
+        if (magind[-1][0]-ind[0])**2+(magind[-1][1]-ind[1])**2 > 16:
+            magind.append([ind[0],ind[1],Image[ind[0],ind[1]]])  
+    magind = np.array(magind).T
+    indx = np.array(magind[0:2],dtype=np.int32)
+    mags = magind[2]
+    size2 = mags.shape[0]
+    print ('Initial search done: %d -->%d %.2fs'%(size1,size2,time.time()-time0))
+    nx,ny = Image.shape
+    ImMax = np.max(Image)
+    peaks = []
+    nxy2 = nxy//2
+    mult = 0.001
+    num = 1e6
+    while num>500:
+        mult += .0001            
+        minM = mult*np.max(mags)
+        num = ma.count(ma.array(mags,mask=mags<=minM))
+        print('try',mult,minM,num)
+    minM = mult*np.max(mags)
+    print ('Find biggest spots:',mult,num,minM)
+    for i,mag in enumerate(mags):
+        if mag > minM:
+            if (nxy2 < indx[0][i] < nx-nxy2-1) and (nxy2 < indx[1][i] < ny-nxy2-1):
+#                    print ('try:%d %d %d %.2f'%(i,indx[0][i],indx[1][i],mags[i]))
+                peak = FitImageSpots(Image,ImMax,[indx[1][i],indx[0][i]],pixelSize,nxy)
+                if peak and not any(np.isnan(np.array(peak))):
+                    peaks.append(peak)
+#                    print (' Spot found: %s'%str(peak))
+    peaks = G2mth.sortArray(G2mth.sortArray(peaks,1),0)
+    Peaks = [peaks[0],]
+    for peak in peaks[1:]:
+        if GetDsp(peak[0],peak[1],Controls) >= 1.:      #toss non-diamond low angle spots
+            continue
+        if (peak[0]-Peaks[-1][0])**2+(peak[1]-Peaks[-1][1])**2 > peak[2]*Peaks[-1][2] :
+            Peaks.append(peak)
+#            print (' Spot found: %s'%str(peak))
+    print ('Spots found: %d time %.2fs'%(len(Peaks),time.time()-time0))
+    Masks['Points'] = Peaks
     return None
-
-#    rollImage = lambda rho,roll: np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1)
-#    print 'auto spot search'
-#    pixelSize = Controls['pixelSize']
-#    spotMask = ma.array(Image,mask=(Image<np.mean(Image)))
-#    indices = (-1,0,1)
-#    rolls = np.array([[ix,iy] for ix in indices for iy in indices])
-#    for roll in rolls:
-#        if np.any(roll):        #avoid [0,0]
-#            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<0.))
-#    mags = spotMask[spotMask.nonzero()]
-#    indx = np.transpose(spotMask.nonzero())
-#    nx,ny = Image.shape
-#    jndx = []
-#    for [ind,mag] in zip(indx,mags):
-#        if (1 < ind[0] < nx-2) and (1 < ind[1] < ny-2):
-#            cent = np.zeros((3,3))
-#            cent[1,1] = mag
-#            msk = np.array(Image[ind[0]-2:ind[0]+3,ind[1]-2:ind[1]+3])
-#            msk = ma.array(msk,mask=(msk==mag))
-#            if mag > 1.5*ma.mean(msk):
-#                jndx.append([ind[1]+.5,ind[0]+.5])
-#    print 'Spots found: ',len(jndx)
-#    jndx = np.array(jndx)
-#    peaks = jndx*pixelSize/1000.
-#    tth = GetTth(peaks.T[0],peaks.T[1],Controls)
-#    histth,bins = np.histogram(tth,2500)
-#    for shft in [-1,1]:
-#        histmsk = ma.array(histth,mask=-(histth-np.roll(histth,shft)<2.))
-#    histmsk = ma.array(histmsk,mask=(histmsk>5))
-#    binmsk = np.array(ma.nonzero(histmsk))
-#    digts = np.digitize(tth,bins)-1
-#    PeaksList = []
-#    for digt,peak in zip(digts,peaks):
-#        if digt in binmsk:
-#            PeaksList.append(peak)
-#    #should be able to filter out spotty Bragg rings here
-#    PeaksList = np.array(PeaksList)
-#    Points = np.ones((PeaksList.shape[0],3))
-#    Points[:,:2] = PeaksList
-#    Masks['Points'] = list(Points)
-#    return None
-        
-                    
-    
-        

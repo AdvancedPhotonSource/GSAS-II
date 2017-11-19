@@ -233,7 +233,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dialog. In the latter case, event=None. 
         '''
         CleanupMasks(masks)
-        blkSize = 128   #this seems to be optimal; will break in polymask if >1024
+        blkSize = 1024   #this seems to be optimal; will break in polymask if >1024
+#        blkSize = 128   #this seems to be optimal; will break in polymask if >1024
         sumImg = GetImageZ(G2frame,data)
         wx.BeginBusyCursor()
         try:
@@ -1513,6 +1514,14 @@ def UpdateMasks(G2frame,data):
         # Plot color scaling uses limits as below:
         #   (Imin0, Imax0) => Range[0] = data['range'][0] # lowest to highest pixel intensity
         #   [Imin, Imax] => Range[1] = data['range'][1] #   lowest to highest pixel intensity on cmap scale
+        scaleChoices = ("100%","99%","95%","90%","80%","?")
+        scaleSel = wx.Choice(G2frame.dataWindow,choices=scaleChoices,size=(-1,-1))
+        if (Range[1][0] == Range[0][0] and Range[1][1] == Range[0][1]):
+            scaleSel.SetSelection(0)
+        else:
+            scaleSel.SetSelection(len(scaleChoices)-1)
+        scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
+        
         maxSizer = wx.GridBagSizer(0,0)
         r = c = 0
         maxSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max intensity'),(r,c))
@@ -1532,14 +1541,6 @@ def UpdateMasks(G2frame,data):
             max=Range[0][1],typeHint=int,OnLeave=OnNewVal)
         maxSizer.Add(maxVal,(r,c))
         c += 1
-        scaleChoices = ("100%","99%","95%","90%","80%","?")
-        scaleSel = wx.Choice(G2frame.dataWindow,choices=scaleChoices,size=(-1,-1))
-        if (Range[1][0] == Range[0][0] and
-            Range[1][1] == Range[0][1]):
-            scaleSel.SetSelection(0)
-        else:
-            scaleSel.SetSelection(len(scaleChoices)-1)
-        scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
         maxSizer.Add(scaleSel,(r,c),(2,1),flag=wx.ALIGN_CENTER)
         c = 0
         r = 1
@@ -1623,7 +1624,7 @@ def UpdateMasks(G2frame,data):
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     if len(Spots):
-        lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks')
+        lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL]

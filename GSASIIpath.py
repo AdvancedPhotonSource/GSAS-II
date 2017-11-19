@@ -628,7 +628,7 @@ def exceptHook(*args):
     
     This routine is only used when debug=True is set in config.py    
     '''
-    #from IPython.core import ultratb
+    from IPython.core import ultratb
     if 'win' in sys.platform:
         ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
     else:

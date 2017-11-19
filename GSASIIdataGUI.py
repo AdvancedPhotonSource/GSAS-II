@@ -3011,6 +3011,7 @@ class GSASII(wx.Frame):
     class SumDialog(wx.Dialog):
         '''Allows user to supply scale factor(s) when summing data - 
         TODO: CAN WE PREVIEW RESULT HERE?'''
+        #TODO: also add filter box for selection of items
         def __init__(self,parent,title,text,dataType,data,dataList):
             wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
                 pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)

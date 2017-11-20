@@ -2304,7 +2304,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))
                         
             else:   #not picked
-                icolor = 256*N/len(PlotList)
+                icolor = 256*N//len(PlotList)
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,color=mcolors.cmap(icolor),picker=False,nonposy='mask')

@@ -235,8 +235,6 @@ def GetTifData(filename):
             pixy = [200.,200.]*IFD[277][2][0]
             File.seek(IFD[273][2][0])
             print ('Read ImageJ tiff file: '+filename)
-#            image = ar.array('H',File.read(2*Npix))
-#            image = File.read(2*Npix,dtype=np.uint16)
             if IFD[258][2][0] == 32:
                 image = File.read(4*Npix)
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'i4'),dtype=np.int32)
@@ -244,10 +242,12 @@ def GetTifData(filename):
                 image = File.read(2*Npix)
                 pixy = [109.92,109.92]      #for LCLS ImageJ tif files
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'u2'),dtype=np.int32)
-#            if '>' in byteOrd:
-#                image.byteswap()
-#            image = np.array(np.frombuffer(image),dtype=np.int32)
-#            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
+        else:   #gain map from  11-ID-C?
+            pixy = [200.,200.]
+            tifType = 'Gain map'
+            image = File.read(4*Npix)
+            image = np.array(np.frombuffer(image,dtype=byteOrd+'f4')*1000,dtype=np.int32)
+            
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
         pixy = [158.,158.]

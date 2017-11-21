@@ -93,8 +93,14 @@ def GetImageZ(G2frame,data,newRange=False):
                     backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
                 if backImage is not None:
                     sumImg += np.array(backImage*backScale,dtype='int32')
-#    if darkImg: del darkImg         #force cleanup
-#    if backImg: del backImg
+    if 'Gain map' in data:
+        gainMap = data['Gain map']
+        if gainMap:
+            GMid = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, gainMap)
+            if GMid:
+                Npix,gainfile,imagetag = G2IO.GetCheckImageFile(G2frame,GMid)
+                GMimage = G2IO.GetImageData(G2frame,gainfile,True,ImageTag=imagetag,FormatName=formatName)
+                sumImg = sumImg*GMimage/1000
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     if 'range' not in data or newRange:
@@ -144,6 +150,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 #patch
     if 'Flat Bkg' not in data:
         data['Flat Bkg'] = 0.0
+    if 'Gain map' not in data:
+        data['Gain map'] = ''
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]
     if 'DetDepth' not in data:
@@ -993,8 +1001,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 
         def OnMult(invalid,value,tc):
             G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
-            ResetThresholds()
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            
+        def OnGainMap(event):
+            data['Gain map'] = gainMap.GetValue()
+            G2frame.ImageZ = GetImageZ(G2frame,data,newRange=True)
+            ResetThresholds()
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         backSizer = wx.FlexGridSizer(0,6,5,5)
         oldFlat = data.get('Flat Bkg',0.)
@@ -1025,6 +1038,11 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['background image'],1,nDig=(10,3),
             typeHint=float,OnLeave=OnMult)
         backSizer.Add(backMult,0,WACV)
+        backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Gain map'),0,WACV)
+        gainMap = wx.ComboBox(parent=G2frame.dataWindow,value=data['Gain map'],choices=Choices,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        gainMap.Bind(wx.EVT_COMBOBOX,OnGainMap)
+        backSizer.Add(gainMap)
         return backSizer
                         
     def CalibSizer():

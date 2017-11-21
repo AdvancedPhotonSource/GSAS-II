@@ -3072,18 +3072,19 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         W = parmDict[hfx+'W']
         X = parmDict[hfx+'X']
         Y = parmDict[hfx+'Y']
+        Z = parmDict[hfx+'Z']
         tanPos = tand(refl[5+im]/2.0)
         Ssig,Sgam = GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig = U*tanPos**2+V*tanPos+W+Ssig     #save peak sigma
         sig = max(0.001,sig)
-        gam = X/cosd(refl[5+im]/2.0)+Y*tanPos+Sgam     #save peak gamma
+        gam = X/cosd(refl[5+im]/2.0)+Y*tanPos+Sgam+Z     #save peak gamma
         gam = max(0.001,gam)
         return sig,gam
                 
     def GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict):
         sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4+im]**2+   \
-            parmDict[hfx+'sig-2']*refl[4+im]**4+parmDict[hfx+'sig-q']/refl[4+im]**2
-        gam = parmDict[hfx+'X']*refl[4+im]+parmDict[hfx+'Y']*refl[4+im]**2
+            parmDict[hfx+'sig-2']*refl[4+im]**4+parmDict[hfx+'sig-q']*refl[4+im]
+        gam = parmDict[hfx+'X']*refl[4+im]+parmDict[hfx+'Y']*refl[4+im]**2+parmDict[hfx+'Z']
         Ssig,Sgam = GetSampleSigGam(refl,im,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig += Ssig
         gam += Sgam
@@ -3793,7 +3794,7 @@ def getPowderProfileDervMP(args):
                 dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
-                    hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
+                    hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
                     hfx+'DisplaceY':[dpdY,'pos'],}
@@ -3806,10 +3807,10 @@ def getPowderProfileDervMP(args):
                 dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'difC':[dpdDC,'pos'],hfx+'difA':[dpdDA,'pos'],hfx+'difB':[dpdDB,'pos'],
-                    hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],
+                    hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],hfx+'Z':[1.0,'gam'],
                     hfx+'alpha':[1./refl[4+im],'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[1./refl[4+im]**4,'bet'],
                     hfx+'beta-q':[1./refl[4+im]**2,'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4+im]**2,'sig'],
-                    hfx+'sig-2':[refl[4+im]**4,'sig'],hfx+'sig-q':[1./refl[4+im]**2,'sig'],
+                    hfx+'sig-2':[refl[4+im]**4,'sig'],hfx+'sig-q':[refl[4+im],'sig'],
                     hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
             for name in names:
                 item = names[name]

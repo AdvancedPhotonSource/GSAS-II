@@ -655,17 +655,17 @@ def getFWHM(pos,Inst):
     ''' 
     
     sig = lambda Th,U,V,W: np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))
-    sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq/dsp**2)
-    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))
-    gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2
+    sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq*dsp)
+    gam = lambda Th,X,Y,Z: Z+X/cosd(Th)+Y*tand(Th)
+    gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
     if 'C' in Inst['Type'][0]:
         s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
-        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1])
+        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)/100.  #returns FWHM in deg
     else:
         dsp = pos/Inst['difC'][0]
         s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
-        g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1])
+        g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)
     
 def getgamFW(g,s):
@@ -1210,10 +1210,10 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
-                    dgdX = dgdY = 0
+                    dgdX = dgdY = dgdZ = 0
                 else:
                     gam = G2mth.getCWgam(parmDict,tth)
-                    dgdX,dgdY = G2mth.getCWgamDeriv(tth)
+                    dgdX,dgdY,dgdZ = G2mth.getCWgamDeriv(tth)
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
@@ -1256,6 +1256,8 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                     dMdv[varyList.index('X')] += dgdX*dervDict['gam']
                 if 'Y' in varyList:
                     dMdv[varyList.index('Y')] += dgdY*dervDict['gam']
+                if 'Z' in varyList:
+                    dMdv[varyList.index('Z')] += dgdZ*dervDict['gam']
                 if 'SH/L' in varyList:
                     dMdv[varyList.index('SH/L')] += dervDict['shl']         #problem here
                 if 'I(L2)/I(L1)' in varyList:
@@ -1303,10 +1305,10 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
-                    dsdX = dsdY = 0
+                    dsdX = dsdY = dsdZ = 0
                 else:
                     gam = G2mth.getTOFgamma(parmDict,dsp)
-                    dsdX,dsdY = G2mth.getTOFgammaDeriv(dsp)
+                    dsdX,dsdY,dsdZ = G2mth.getTOFgammaDeriv(dsp)
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsTOF(pos,alp,bet,sig,gam)
                 iBeg = np.searchsorted(xdata,pos-fmin)
@@ -1353,7 +1355,9 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 if 'X' in varyList:
                     dMdv[varyList.index('X')] += dsdX*dervDict['gam']
                 if 'Y' in varyList:
-                    dMdv[varyList.index('Y')] += dsdY*dervDict['gam']         #problem here
+                    dMdv[varyList.index('Y')] += dsdY*dervDict['gam']
+                if 'Z' in varyList:
+                    dMdv[varyList.index('Z')] += dsdZ*dervDict['gam']
                 iPeak += 1
             except KeyError:        #no more peaks to process
                 break
@@ -1622,12 +1626,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
         for parm in Inst:
             insNames.append(parm)
             insVals.append(Inst[parm][1])
-            if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+            if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
-        instDict['X'] = max(instDict['X'],0.01)
-        instDict['Y'] = max(instDict['Y'],0.01)
+#        instDict['X'] = max(instDict['X'],0.01)
+#        instDict['Y'] = max(instDict['Y'],0.01)
         if 'SH/L' in instDict:
             instDict['SH/L'] = max(instDict['SH/L'],0.002)
         return dataType,instDict,insVary
@@ -1664,7 +1668,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
         ptstr =  'values:'
         sigstr = 'esds  :'
         for parm in Inst:
-            if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+            if parm in  ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',]:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
@@ -2781,7 +2785,7 @@ def TestData():
         'pos1':11.4074,'int1':3922.3,'sig1':1.0,'gam1':1.0,
         'pos2':20.6426,'int2':1573.7,'sig2':1.0,'gam2':1.0,
         'pos3':26.9568,'int3':925.1,'sig3':1.0,'gam3':1.0,
-        'U':1.163,'V':-0.605,'W':0.093,'X':0.0,'Y':2.183,'SH/L':0.002,
+        'U':1.163,'V':-0.605,'W':0.093,'X':0.0,'Y':2.183,'Z':0.0,'SH/L':0.002,
         'Back0':5.384,'Back1':-0.015,'Back2':.004,
         }
     global parmDict1
@@ -2792,14 +2796,14 @@ def TestData():
         'pos3':33.7196,'int3':65349.4,'sig3':1.0,'gam3':1.0,
         'pos4':36.1119,'int4':115829.8,'sig4':1.0,'gam4':1.0,
         'pos5':39.0122,'int5':6916.9,'sig5':1.0,'gam5':1.0,
-        'U':22.75,'V':-17.596,'W':10.594,'X':1.577,'Y':5.778,'SH/L':0.002,
+        'U':22.75,'V':-17.596,'W':10.594,'X':1.577,'Y':5.778,'Z':0.0,'SH/L':0.002,
         'Back0':36.897,'Back1':-0.508,'Back2':.006,
         'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
         }
     global parmDict2
     parmDict2 = {
         'pos0':5.7,'int0':1000.0,'sig0':0.5,'gam0':0.5,
-        'U':2.,'V':-2.,'W':5.,'X':0.5,'Y':0.5,'SH/L':0.02,
+        'U':2.,'V':-2.,'W':5.,'X':0.5,'Y':0.5,'Z':0.0,'SH/L':0.02,
         'Back0':5.,'Back1':-0.02,'Back2':.004,
 #        'Lam1':1.540500,'Lam2':1.544300,'I(L2)/I(L1)':0.5,
         }
@@ -2852,9 +2856,9 @@ if __name__ == '__main__':
     global plotter
     plotter = plot.PlotNotebook()
 #    test0()
-#    for name in ['int0','pos0','sig0','gam0','U','V','W','X','Y','SH/L','I(L2)/I(L1)']:
+#    for name in ['int0','pos0','sig0','gam0','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)']:
     for name,shft in [['int0',0.1],['pos0',0.0001],['sig0',0.01],['gam0',0.00001],
-        ['U',0.1],['V',0.01],['W',0.01],['X',0.0001],['Y',0.0001],['SH/L',0.00005]]:
+        ['U',0.1],['V',0.01],['W',0.01],['X',0.0001],['Y',0.0001],['Z',0.0001],['SH/L',0.00005]]:
         test2(name,shft)
     for name,shft in [['pos',0.0001],['sig',0.01],['gam',0.0001],['shl',0.00005]]:
         test3(name,shft)

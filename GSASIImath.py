@@ -3810,23 +3810,23 @@ def getCWsigDeriv(pos):
 def getCWgam(ins,pos):
     '''get CW peak profile gamma
     
-    :param dict ins: instrument parameters with at least 'X' & 'Y' 
+    :param dict ins: instrument parameters with at least 'X', 'Y' & 'Z'
       as values only
     :param float pos: 2-theta of peak
     :returns: float getCWgam: peak gamma
     
     '''
-    return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)
+    return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)+ins['Z']
     
 def getCWgamDeriv(pos):
-    '''get derivatives of CW peak profile gamma wrt X & Y
+    '''get derivatives of CW peak profile gamma wrt X, Y & Z
     
     :param float pos: 2-theta of peak
     
     :returns: list getCWgamDeriv: d(gam)/dX & d(gam)/dY
     
     '''
-    return 1./cosd(pos/2.0),tand(pos/2.0)
+    return 1./cosd(pos/2.0),tand(pos/2.0),1.0
     
 def getTOFsig(ins,dsp):
     '''get TOF peak profile sigma^2
@@ -3838,7 +3838,7 @@ def getTOFsig(ins,dsp):
     :returns: float getTOFsig: peak sigma^2
     
     '''
-    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']/dsp**2
+    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']*dsp
     
 def getTOFsigDeriv(dsp):
     '''get derivatives of TOF peak profile sigma^2 wrt sig-0, sig-1, & sig-q
@@ -3848,29 +3848,29 @@ def getTOFsigDeriv(dsp):
     :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) & d(sig)/d(sig-q)
     
     '''
-    return 1.0,dsp**2,dsp**4,1./dsp**2
+    return 1.0,dsp**2,dsp**4,dsp
     
 def getTOFgamma(ins,dsp):
     '''get TOF peak profile gamma
     
-    :param dict ins: instrument parameters with at least 'X' & 'Y'
+    :param dict ins: instrument parameters with at least 'X', 'Y' & 'Z'
       as values only
     :param float dsp: d-spacing of peak
     
     :returns: float getTOFgamma: peak gamma
     
     '''
-    return ins['X']*dsp+ins['Y']*dsp**2
+    return ins['Z']+ins['X']*dsp+ins['Y']*dsp**2
     
 def getTOFgammaDeriv(dsp):
-    '''get derivatives of TOF peak profile gamma wrt X & Y
+    '''get derivatives of TOF peak profile gamma wrt X, Y & Z
     
     :param float dsp: d-spacing of peak
     
     :returns: list getTOFgammaDeriv: d(gam)/dX & d(gam)/dY
     
     '''
-    return dsp,dsp**2
+    return dsp,dsp**2,1.0
     
 def getTOFbeta(ins,dsp):
     '''get TOF peak profile beta
@@ -3936,8 +3936,8 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     if useFit:
         ind = 1
     ins = {}
-    if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
-        for x in ['U','V','W','X','Y']:
+    if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an else
+        for x in ['U','V','W','X','Y','Z']:
             ins[x] = Parms[x][ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
@@ -3951,13 +3951,13 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         else:
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
-            for x in ['sig-0','sig-1','sig-2','sig-q','X','Y']:
+            for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
                 ins[x] = Parms[x][ind]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:
-            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']:
+            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
                 ins[x] = Parms[x][ind]
             alp = getTOFalpha(ins,dsp)
             bet = getTOFbeta(ins,dsp)

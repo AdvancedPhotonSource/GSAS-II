@@ -41,7 +41,7 @@ defaultIparms.append([
     '#GSAS-II instrument parameter file for lab CuKa data\n',
     'Type:PXC;Bank:1\n',
     'Lam1:1.5405;Lam2:1.5443;Zero:0.0;Polariz.:0.7;Azimuth:0.0;I(L2)/I(L1):0.5\n',
-    'U:2.0;V:-2.0;W:5.0;X:0.0;Y:0.0;SH/L:0.002\n',
+    'U:2.0;V:-2.0;W:5.0;X:0.0;Y:0.0;Z:0.0;SH/L:0.002\n',
 ])
 
 defaultIparm_lbl.append('APS 30keV 11BM')
@@ -49,7 +49,7 @@ defaultIparms.append([
     '#GSAS-II instrument parameter file APS 11BM @ 30keV\n', 
     'Type:PXC;Bank:1\n',
     'Lam:0.413263;Polariz.:0.99;Azimuth:0.0;Zero:0.0\n',
-    'U:1.163;V:-0.126;W:0.063;X:0.0;Y:0.0;SH/L:0.002\n',
+    'U:1.163;V:-0.126;W:0.063;X:0.0;Y:0.0;Z:0.0;SH/L:0.002\n',
 ])
 
 defaultIparm_lbl.append('0.7A synchrotron data')
@@ -58,7 +58,7 @@ defaultIparms.append([
     'Type:PXC;Bank:1\n',
     'Lam:0.69968;Zero:0.0;Polariz.:0.99;Azimuth:0.0\n',
     'U:5.9840407759;V:-1.28771353531;W:0.118521878603\n',
-    'X:-0.0977791308891;Y:4.40147397286;SH/L:0.0264356231583\n',
+    'X:-0.0977791308891;Y:4.40147397286;Z:0.0;SH/L:0.0264356231583\n',
 ])
 
 defaultIparm_lbl.append('1.9A ILL D1A CW data')
@@ -67,7 +67,7 @@ defaultIparms.append([
     'Type:PNC;Bank:1\n',
     'Lam:1.909;Zero:0.0;Polariz.:0.0;Azimuth:0.0\n',
     'U:257.182710995;V:-640.525145369;W:569.378664828\n',
-    'X:0.0;Y:0.0;SH/L:0.002\n',
+    'X:0.0;Y:0.0;Z:0.0;SH/L:0.002\n',
 ])
 
 defaultIparm_lbl.append('9m HIPD 151deg bank TOF data')
@@ -79,7 +79,7 @@ defaultIparms.append([
     'alpha:5.0\n',
     'beta-0:0.0332763989665;beta-1:0.000964057827372;beta-q:0.0\n',
     'sig-0:0.0;sig-1:15.1402867268;sig-2:0.0;sig-q:0.0\n',
-    'X:0.0;Y:0.0\n',
+    'X:0.0;Y:0.0;Z:0.0\n',
 ])
 
 defaultIparm_lbl.append('10m TOF 90deg bank')
@@ -91,7 +91,7 @@ defaultIparms.append([
     'alpha:5.0\n',
     'beta-0:0.03;beta-1:0.004;beta-q:0.0\n',
     'sig-0:0.0;sig-1:80.0;sig-2:0.0;sig-q:0.0\n',
-    'X:0.0;Y:0.0\n',
+    'X:0.0;Y:0.0;Z:0.0\n',
 ])
 
 defaultIparm_lbl.append('63m POWGEN 90deg bank')
@@ -102,7 +102,7 @@ defaultIparms.append([
     'alpha:1.0\n',
     'beta-0:0.138077840635;beta-1:0.0029606795286;beta-q:0.0\n',
     'sig-0:24.8202075678;sig-1:-82.07196132;sig-2:269.925504862;sig-q:0.0\n',
-    'X:-1.80259010604;Y:4.47209435997\n',
+    'X:-1.80259010604;Y:4.47209435997;Z:0.0\n',
 ])
 
 defaultIparm_lbl.append('Generic TOF')
@@ -113,5 +113,5 @@ defaultIparms.append([
     'alpha:1.0\n',
     'beta-0:0.;beta-1:0.005;beta-q:0.0\n',
     'sig-0:0.;sig-1:-50.;sig-2:0.;sig-q:0.0\n',
-    'X:0.;Y:0.\n',
+    'X:0.;Y:0.;Z:0.\n',
 ])

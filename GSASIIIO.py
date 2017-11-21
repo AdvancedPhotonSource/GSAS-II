@@ -683,8 +683,8 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     name = name.replace('IMG ',data['type']+' ')
     Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Comments'))
     if 'PWDR' in name:
-        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-        codes = [0 for i in range(11)]
+        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+        codes = [0 for i in range(12)]
     elif 'SASD' in name:
         names = ['Type','Lam','Zero','Azimuth'] 
         codes = [0 for i in range(4)]

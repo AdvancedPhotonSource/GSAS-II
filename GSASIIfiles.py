@@ -90,13 +90,13 @@ def SetPowderInstParms(Iparm, rd):
         v = (wave1,wave2,
              sfloat(s[20:30])/100.,sfloat(s[55:65]),sfloat(s[40:50])) #get lam1, lam2, zero, pola & ratio
         if not v[1]:
-            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
+            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
             v = (v[0],v[2],v[4])
-            codes = [0,0,0,0]
+            codes = [0,0,0,0,0]
             rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
         else:
-            names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
-            codes = [0,0,0,0,0,0]
+            names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth']
+            codes = [0,0,0,0,0,0,0]
             rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
                 'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
         data.extend(v)
@@ -107,9 +107,9 @@ def SetPowderInstParms(Iparm, rd):
             azm = float(Iparm.get('INS  1DETAZM','0.0'))
             v = Iparm['INS  1PRCF 2'].split()
             if v1[0] == 3:
-                data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                data.extend([float(v[0]),float(v[1]),0.0,float(v[2])+float(v[3],azm)])  #get LX, LY, Z, S+H/L & azimuth
             else:
-                data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
+                data.extend([0.0,0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
         else:
             v1 = Iparm['INS  1PRCF1 '].split()
             v = Iparm['INS  1PRCF11'].split()
@@ -117,9 +117,9 @@ def SetPowderInstParms(Iparm, rd):
             azm = float(Iparm.get('INS  1DETAZM','0.0'))
             v = Iparm['INS  1PRCF12'].split()
             if v1[0] == 3:
-                data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                data.extend([float(v[0]),float(v[1]),0.0,float(v[2])+float(v[3],azm)])  #get LX, LY, Z, S+H/L & azimuth
             else:
-                data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
+                data.extend([0.0,0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
         codes.extend([0,0,0,0,0,0,0])
         Iparm1 = makeInstDict(names,data,codes)
         Iparm1['Source'] = [Irads[irad],Irads[irad]]
@@ -127,8 +127,8 @@ def SetPowderInstParms(Iparm, rd):
         return [Iparm1,{}]
     elif 'T' in DataType:
         names = ['Type','fltPath','2-theta','difC','difA', 'difB','Zero','alpha','beta-0','beta-1',
-            'beta-q','sig-0','sig-1','sig-2','sig-q', 'X','Y','Azimuth',]
-        codes = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,]
+            'beta-q','sig-0','sig-1','sig-2','sig-q', 'X','Y','Z','Azimuth',]
+        codes = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,]
         azm = 0.
         if 'INS  1DETAZM' in Iparm:
             azm = float(Iparm['INS  1DETAZM'])
@@ -152,17 +152,17 @@ def SetPowderInstParms(Iparm, rd):
             if abs(pfType) == 1:
                 data.extend([sfloat(s[1]),sfloat(s[2]),sfloat(s[3])]) #alpha, beta-0, beta-1
                 s = Iparm['INS  1PRCF 2'].split()
-                data.extend([0.0,0.0,sfloat(s[1]),sfloat(s[2]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                data.extend([0.0,0.0,sfloat(s[1]),sfloat(s[2]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
             elif abs(pfType) in [3,4,5]:
                 data.extend([sfloat(s[0]),sfloat(s[1]),sfloat(s[2])]) #alpha, beta-0, beta-1
                 if abs(pfType) == 4:
-                    data.extend([0.0,0.0,sfloat(s[3]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                    data.extend([0.0,0.0,sfloat(s[3]),0.0,0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
                 else:
                     s = Iparm['INS  1PRCF 2'].split()
-                    data.extend([0.0,0.0,sfloat(s[0]),sfloat(s[1]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                    data.extend([0.0,0.0,sfloat(s[0]),sfloat(s[1]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
             elif abs(pfType) == 2:
                 data.extend([sfloat(s[1]),0.0,1./sfloat(s[3])]) #alpha, beta-0, beta-1
-                data.extend([0.0,0.0,sfloat(s[1]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                data.extend([0.0,0.0,sfloat(s[1]),0.0,0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
         else:
             s = Iparm['INS  1PRCF1 '].split()
             pfType = int(s[0])
@@ -170,14 +170,14 @@ def SetPowderInstParms(Iparm, rd):
             if abs(pfType) == 1:
                 data.extend([sfloat(s[1]),sfloat(s[2]),sfloat(s[3])]) #alpha, beta-0, beta-1
                 s = Iparm['INS  1PRCF12'].split()
-                data.extend([0.0,0.0,sfloat(s[1]),sfloat(s[2]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                data.extend([0.0,0.0,sfloat(s[1]),sfloat(s[2]),0.0,0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
             elif abs(pfType) in [3,4,5]:
                 data.extend([sfloat(s[0]),sfloat(s[1]),sfloat(s[2])]) #alpha, beta-0, beta-1
                 if abs(pfType) == 4:
-                    data.extend([0.0,0.0,sfloat(s[3]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                    data.extend([0.0,0.0,sfloat(s[3]),0.0,0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
                 else:
                     s = Iparm['INS  1PRCF12'].split()
-                    data.extend([0.0,0.0,sfloat(s[0]),sfloat(s[1]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y
+                    data.extend([0.0,0.0,sfloat(s[0]),sfloat(s[1]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
         Inst1 = makeInstDict(names,data,codes)
         Inst1['Bank'] = [Bank,Bank,0]
         Inst2 = {}

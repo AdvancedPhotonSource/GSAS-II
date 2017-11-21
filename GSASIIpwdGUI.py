@@ -971,7 +971,7 @@ def UpdateBackground(G2frame,data):
             for parm in Inst:
                 insNames.append(parm)
                 insVals.append(Inst[parm][1])
-                if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+                if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
                     'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
                         Inst[parm][2] = False
 #                        insVary.append(parm)
@@ -1417,7 +1417,7 @@ def UpdateInstrumentGrid(G2frame,data):
     def keycheck(keys):
         good = []
         for key in keys:
-            if key in ['Type','Bank','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+            if key in ['Type','Bank','U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.',
                 'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
@@ -1794,7 +1794,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
                         instSizer.Add(RefineBox(item),0,WACV)
-                for item in ['U','V','W','X','Y','SH/L']:
+                for item in ['U','V','W','X','Y','Z','SH/L']:
                     nDig = (10,3)
                     if item == 'SH/L':
                         nDig = (10,5)
@@ -1823,7 +1823,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
                 if 'Pdabc' in Inst2:
-                    Items = ['sig-0','sig-1','sig-2','sig-q','X','Y']
+                    Items = ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']
                     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  difC: '),0,WACV)
                     txt = '%8.2f'%(insVal['difC'])
                     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,txt.strip()),0,WACV)
@@ -1833,7 +1833,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append(None)
                     subSizer.Add(wx.StaticText(G2frame.dataWindow,-1,'  alpha, beta: fixed by table'),0,WACV)
                 else:
-                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']
+                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']
                 mainSizer.Add((5,5),0)
                 mainSizer.Add(subSizer)
                 mainSizer.Add((5,5),0)
@@ -1929,6 +1929,8 @@ def UpdateInstrumentGrid(G2frame,data):
             data[key] = list(data[key])
             patched += 1
     if patched: print (patched,' instrument parameters changed from tuples')
+    if 'Z' not in data:
+        data['Z'] = [0.0,0.0,False]
     #end of patch
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
     instkeys = keycheck(data.keys())

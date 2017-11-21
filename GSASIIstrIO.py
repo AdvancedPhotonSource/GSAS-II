@@ -2859,7 +2859,10 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         backVary += peakVary
         return bakType,backDict,backVary            
         
-    def GetInstParms(hId,Inst):     
+    def GetInstParms(hId,Inst):
+        #patch
+        if 'Z' not in Inst:
+            Inst['Z'] = [0.0,0.0,False]
         dataType = Inst['Type'][0]
         instDict = {}
         insVary = []

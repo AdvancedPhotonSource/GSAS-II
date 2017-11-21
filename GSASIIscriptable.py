@@ -1667,7 +1667,7 @@ class G2PwdrData(G2ObjectWrapper):
             for parm in Inst:
                 insNames.append(parm)
                 insVals.append(Inst[parm][1])
-                if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+                if parm in ['U','V','W','X','Y','Z','SH/L','I(L2)/I(L1)','alpha',
                     'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
                         Inst[parm][2] = False
             instDict = dict(zip(insNames, insVals))

@@ -321,21 +321,12 @@ def GetTifData(filename):
                 File.seek(8)
                 print ('Read PE 4Kx4K tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32)/2.**4,dtype=np.int32)
-#                image = np.fromfile(File,dtype=np.uint,count=4*Npix)[:Npix]
-#                if np.max(image) > 2**31:
-#                    image = np.array(image-2**30,dtype=np.int32)
-#                else:
-#                    image = np.array(image,dtype=np.int32)
-#                arry = ar.array('I',File.read(4*Npix))
-#                image = np.array(arry)/2**16            
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
             pixy = [73.242,73.242]
             File.seek(4096)
             print ('Read Rayonix MX300HE tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#            image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [391,380]:
         pixy = [109.92,109.92]
         File.seek(8)
@@ -352,6 +343,10 @@ def GetTifData(filename):
         pixy = [109.92,109.92]
         File.seek(110)
         image = np.array(np.frombuffer(File.read(Npix),dtype=np.uint8),dtype=np.int32)
+    elif sizexy == [2880,2880]:
+        pixy = [150.,150.]
+        File.seek(8)
+        image = np.array(np.frombuffer(File.read(Npix*4),dtype=np.uint32)//1024,dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)

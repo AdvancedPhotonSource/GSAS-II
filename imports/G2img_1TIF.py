@@ -136,6 +136,7 @@ def GetTifData(filename):
     NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
     IFD = {}
     nSlice = 1
+    if DEBUG: print('byteorder:',byteOrd)
     for ied in range(NED):
         Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
         nVal = st.unpack(byteOrd+'i',File.read(4))[0]
@@ -346,7 +347,9 @@ def GetTifData(filename):
     elif sizexy == [2880,2880]:
         pixy = [150.,150.]
         File.seek(8)
-        image = np.array(np.frombuffer(File.read(Npix*4),dtype=np.uint32)//1024,dtype=np.int32)
+        dt = np.dtype(np.float32)
+        dt = dt.newbyteorder(byteOrd)
+        image = np.array(np.frombuffer(File.read(Npix*4),dtype=dt),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)

@@ -571,3 +571,150 @@ class JANA_ReaderClass(G2obj.ImportPhase):
         Phase['General']['AtomPtrs'] = [3,1,7,9]
         Phase['Atoms'] = Atoms
         return Phase
+    
+class PDF_ReaderClass(G2obj.ImportPhase):
+    'Routine to import Phase information from ICDD PDF Card files'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
+            extensionlist=('.str',),
+            strictExtension=True,
+            formatName = 'ICDD .str',
+            longFormatName = 'ICDD PDF Card (.str file) import'
+            )
+        
+    def ContentsValidator(self, filename):
+        'Look for a str tag in 1st line' 
+        fp = open(filename,'r')
+        if fp.read(3) == 'str':
+            fp.close()
+            return True
+        self.errors = 'File does not begin with str tag'
+        fp.close()
+        return False
+
+    def Reader(self,filename, ParentFrame=None, **unused):
+        'Read phase from a ICDD .str file using :meth:`ReadPDFPhase`'
+        fp = open(filename,'r')
+        self.Phase = self.ReadPDFPhase(ParentFrame, fp)
+        fp.close()
+        return True
+
+    def ReadPDFPhase(self, G2frame,fp):
+        '''Read a phase from a ICDD .str file.
+        '''
+        EightPiSq = 8.*math.pi**2
+        self.errors = 'Error opening file'
+        Phase = {}
+        Atoms = []
+        S = fp.readline()
+        line = 1
+        SGData = None
+        cell = []
+        cellkey = []
+        while S:
+            if 'space_group' in S:
+                break
+            S = fp.readline()                    
+        while S:
+            self.errors = 'Error reading at line '+str(line)
+            if 'phase_name' in S:
+                Title = S.split('"')[1]
+            elif 'Space group (HMS)' in S:
+                SpGrp = S.split()[-1]
+                SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                # space group processing failed, try to look up name in table
+                while E:
+                    print (G2spc.SGErrors(E))
+                    dlg = wx.TextEntryDialog(G2frame,
+                        SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
+                        'ERROR in space group symbol','',style=wx.OK)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        SpGrp = dlg.GetValue()
+                        E,SGData = G2spc.SpcGroup(SpGrp)
+                    else:
+                        SGData = G2obj.P1SGData # P 1
+                        self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
+                        self.warnings += "Change this in phase's General tab."            
+                    dlg.Destroy()
+                G2spc.SGPrint(SGData) #silent check of space group symbol
+            elif 'a a_' in S[:7]:
+                data = S.split()
+                cell.append(float(data[2]))
+                cellkey.append(data[1])
+            elif 'b b_' in S[:7]:
+                data = S.split()
+                cell.append(float(data[2]))
+                cellkey.append(data[1])
+            elif 'b =' in S[:6]:
+                data = S.split('=')
+                indx = cellkey.index(data[1].split(';')[0])
+                cell.append(cell[indx])
+            elif 'c c_' in S[:7]:
+                data = S.split()
+                cell.append(float(data[2]))
+            elif 'c =' in S[:6]:
+                data = S.split('=')
+                indx = cellkey.index(data[1].split(';')[0])
+                cell.append(cell[indx])
+            elif 'al' in S[:5]:
+                cell.append(float(S.split()[1]))
+            elif 'be' in S[:5]:
+                cell.append(float(S.split()[1]))
+            elif 'ga' in S[:5]:
+                cell.append(float(S.split()[1]))
+                Volume = G2lat.calc_V(G2lat.cell2A(cell))
+                break
+            S = fp.readline()
+        S = fp.readline()
+        while S:
+            if '/*' in S[:5]:
+                break
+            if 'site' in S[:7]:
+                atom = []
+                data = S.split()
+                atom.append(data[1])    #name
+                pos = data.index('occ')+1
+                atom.append(data[pos])  #type
+                atom.append('')         #refine
+                for xid in ['x =','y =','z =']:
+                    if xid in S:
+                        xpos = S.index(xid)+3
+                        xend = xpos+S[xpos:].index(';')
+                        atom.append(eval(S[xpos:xend]+'.'))
+                    else:
+                        xpos = data.index(xid[0])+2
+                        atom.append(float(data[xpos]))
+                atom.append(float(data[pos+2]))
+                SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]
+                atom.append(SytSym)
+                atom.append(Mult)
+                if 'beq' in S:
+                    atom.append('I')
+                    upos = data.index('beq')
+                    atom.append(float(data[upos+2])/EightPiSq)
+                    atom += [0.,0.,0.,0.,0.,0.,]
+                elif 'ADPs' in S:
+                    upos = data.index('ADPs')
+                    atom.append('A')
+                    atom.append(0.0)
+                    for uid in ['Bani11','Bani22','Bani33','Bani12','Bani13','Bani23']:
+                        upos = data.index(uid)+1
+                        atom.append(float(data[upos])/EightPiSq)
+                else:
+                    atom.append('I')
+                    atom += [0.02,0.,0.,0.,0.,0.,0.,]                    
+                atom.append(ran.randint(0,sys.maxsize))
+                Atoms.append(atom)
+            S = fp.readline()                
+        fp.close()
+        self.errors = 'Error after read complete'
+        if not SGData:
+            raise self.ImportException("No space group (spcgroup entry) found")
+        if not cell:
+            raise self.ImportException("No cell found")
+        Phase = G2obj.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
+        Phase['General']['Type'] = 'nuclear'
+        Phase['General']['AtomPtrs'] = [3,1,7,9]
+        Phase['Atoms'] = Atoms
+        return Phase

@@ -733,7 +733,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 except:
                     polariz = 0.99
         if 'PWDR' in Aname:
-            parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]
+            parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]

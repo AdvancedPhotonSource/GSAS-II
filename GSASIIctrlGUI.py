@@ -418,7 +418,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             kw['style'] += kw['style'] | wx.TE_PROCESS_ENTER
         else:
             kw['style'] = wx.TE_PROCESS_ENTER
-        if isinstance(val,int) or typeHint is int:
+        if 'int' in str(type(val)) or typeHint is int:
             self.type = int
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
                 validator=NumberValidator(int,result=loc,key=key,min=min,max=max,
@@ -429,7 +429,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.invalid = True
                 self._IndicateValidity()
 
-        elif isinstance(val,float) or typeHint is float:
+        elif 'float' in str(type(val)) or typeHint is float:
             self.type = float
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
                 validator=NumberValidator(float,result=loc,key=key,min=min,max=max,

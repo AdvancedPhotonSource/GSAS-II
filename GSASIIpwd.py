@@ -36,7 +36,10 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIImath as G2mth
-import pypowder as pyd
+try:
+    import pypowder as pyd
+except ImportError:
+    print ('pypowder is not available - profile calcs. not allowed')
 try:
     import pydiffax as pyx
 except ImportError:

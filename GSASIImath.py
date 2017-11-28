@@ -30,7 +30,10 @@ import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
 import numpy.fft as fft
 import scipy.optimize as so
-import pypowder as pwd
+try:
+    import pypowder as pyd
+except ImportError:
+    print ('pypowder is not available - profile calcs. not allowed')
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

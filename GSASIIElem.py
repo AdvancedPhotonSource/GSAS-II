@@ -395,8 +395,8 @@ def BlenResCW(Els,BLtables,wave):
             D0 = T0**2+gam**2
             D1 = T1**2+gam**2
             D2 = T2**2+gam**2
-            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)
-            FPP[i] = Im*(1/D0+A/D1+B/D2)
+            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL[i]['BW-LS'][0]
+            FPP[i] = -Im*(1/D0+A/D1+B/D2)
         else:
             FPP[i] = BL['SL'][1]    #for Li, B, etc.
     return FP,FPP
@@ -415,8 +415,8 @@ def BlenResTOF(Els,BLtables,wave):
             D0 = T0**2+gam**2
             D1 = T1**2+gam**2
             D2 = T2**2+gam**2
-            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)
-            FPP[i] = Im*(1/D0+A/D1+B/D2)
+            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)+BL[i]['BW-LS'][0]
+            FPP[i] = -Im*(1/D0+A/D1+B/D2)
         else:
             FPP[i] = np.ones(len(wave))*BL[i]['SL'][1]    #for Li, B, etc.
     return FP,FPP

@@ -672,6 +672,7 @@ class PDF_ReaderClass(G2obj.ImportPhase):
                 break
             if 'site' in S[:7]:
                 atom = []
+                xyzkey = []
                 data = S.split()
                 atom.append(data[1])    #name
                 pos = data.index('occ')+1
@@ -681,9 +682,13 @@ class PDF_ReaderClass(G2obj.ImportPhase):
                     if xid in S:
                         xpos = S.index(xid)+3
                         xend = xpos+S[xpos:].index(';')
-                        atom.append(eval(S[xpos:xend]+'.'))
+                        if S[xpos:xend] in xyzkey:
+                            atom.append(atom[3+xyzkey.index(S[xpos:xend])])
+                        else:
+                            atom.append(eval(S[xpos:xend]+'.'))
                     else:
                         xpos = data.index(xid[0])+2
+                        xyzkey.append(data[xpos-1][1:])
                         atom.append(float(data[xpos]))
                 atom.append(float(data[pos+2]))
                 SytSym,Mult = G2spc.SytSym(np.array(atom[3:6]),SGData)[:2]

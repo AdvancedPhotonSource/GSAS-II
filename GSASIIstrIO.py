@@ -859,12 +859,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             bldata = BLtable[Ename]
             isotope = bldata[0]
             mass = bldata[1]['Mass']
-            if 'SL' in bldata[1]:
+            if 'BW-LS' in bldata[1]:
+                bres = bldata[1]['BW-LS']
+                blen = 0
+            else:
                 blen = bldata[1]['SL'][0]
                 bres = []
-            else:
-                blen = 0
-                bres = bldata[1]['BW-LS']
             line = ' %8s%11s %10.3f %8.3f'%(Ename.ljust(8),isotope.center(11),mass,blen)
             for item in bres:
                 line += '%10.5g'%(item)

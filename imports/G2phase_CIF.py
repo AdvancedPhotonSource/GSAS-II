@@ -71,7 +71,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
             '_pd_phase_name',
             '_chemical_formula_sum'
             )
-        cf = G2obj.ReadCIF(filename)
+        try:
+            cf = G2obj.ReadCIF(filename)
+        except:
+            msg = 'Unreadable cif file'
+            self.errors = msg
+            self.warnings += msg
+            return False
         # scan blocks for structural info
         self.errors = 'Error during scan of blocks for datasets'
         str_blklist = []
@@ -92,7 +98,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 # accumumlate some info about this phase
                 choice[-1] += blknm + ': '
                 for i in phasenamefields: # get a name for the phase
-                    name = cf[blknm].get(i).strip()
+                    name = cf[blknm].get(i,'phase name').strip()
                     if name is None or name == '?' or name == '.':
                         continue
                     else:
@@ -133,9 +139,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_space_group_name_H-M_alt",'')
             if not SpGrp:
                 SpGrp = blk.get("_parent_space_group.name_H-M",'')
-                magnetic = True
-                self.Phase['General']['Type'] = 'magnetic'
-                self.Phase['General']['AtomPtrs'] = [3,1,10,12]
+                if SpGrp:
+                    magnetic = True
+                    self.Phase['General']['Type'] = 'magnetic'
+                    self.Phase['General']['AtomPtrs'] = [3,1,10,12]
             if Super:
                 sspgrp = blk.get("_space_group_ssg_name",'').split('(')
                 SpGrp = sspgrp[0]
@@ -178,9 +185,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     return False
                 waveloop = blk.GetLoop('_cell_wave_vector_seq_id')
                 waveDict = dict(waveloop.items())
-                SuperVec = [[float(waveDict['_cell_wave_vector_x'][0]),
-                    float(waveDict['_cell_wave_vector_y'][0]),
-                    float(waveDict['_cell_wave_vector_z'][0])],False,4]
+                SuperVec = [[float(waveDict['_cell_wave_vector_x'][0].replace('?','0')),
+                    float(waveDict['_cell_wave_vector_y'][0].replace('?','0')),
+                    float(waveDict['_cell_wave_vector_z'][0].replace('?','0'))],False,4]
             # read in atoms
             self.errors = 'Error during reading of atoms'
             atomlbllist = [] # table to look up atom IDs
@@ -333,15 +340,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if UijFdict:
                         nim = -1
                         Sadp = np.zeros((4,12))
-                        for i,item in enumerate(UijFdict['_atom_site_U_fourier_atom_site_label']):
+                        for i,item in enumerate(UijFdict['_atom_site_u_fourier_atom_site_label']):
                             if item == atomlist[0]:
-                                ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_U_fourier_tens_elem'][i])
-                                im = int(UijFdict['_atom_site_U_fourier_wave_vector_seq_id'][i])
+                                ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_u_fourier_tens_elem'][i])
+                                im = int(UijFdict['_atom_site_u_fourier_wave_vector_seq_id'][i])
                                 if im != nim:
                                     nim = im
-                                val = UijFdict['_atom_site_U_fourier_param_sin'][i]
+                                val = UijFdict['_atom_site_u_fourier_param_sin'][i]
                                 Sadp[im-1][ix] = cif.get_number_with_esd(val)[0]
-                                val = UijFdict['_atom_site_U_fourier_param_cos'][i]
+                                val = UijFdict['_atom_site_u_fourier_param_cos'][i]
                                 Sadp[im-1][ix+6] = cif.get_number_with_esd(val)[0]
                         if nim >= 0:
                             Sadp = [[sadp,False] for sadp in Sadp[:nim]]

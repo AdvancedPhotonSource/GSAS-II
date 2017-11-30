@@ -930,7 +930,7 @@ class StarBlock(object):
            one_pack= [a for a in my_loop if getattr(a,keyname)==keyvalue]
         if len(one_pack)!=1:
             raise ValueError("Bad packet key %s = %s: returned %d packets" % (keyname,keyvalue,len(one_pack)))
-        print("Keyed packet: %s" % one_pack[0])
+#        print("Keyed packet: %s" % one_pack[0])
         return one_pack[0]
 
     def GetCompoundKeyedPacket(self,keydict):
@@ -2191,13 +2191,15 @@ def ReadStar(filename,prepared = None, maxlength=-1,
             my_uri = urlunparse(relpath)
         # print("Full URL is: " + my_uri)
         filestream = urlopen(my_uri)
-        text = filestream.read().decode('utf8')
+#        text = filestream.read().decode('utf8')
+        text = filestream.read().decode('latin1')
         filestream.close()
     else:
         filestream = filename   #already opened for us
         text = filestream.read()
         if not isinstance(text,unicode):
-            text = text.decode('utf8')  #CIF is always ascii/utf8
+#            text = text.decode('utf8')  #CIF is always ascii/utf8
+            text = text.decode('latin1')  #CIF is always ascii/utf8
         my_uri = ""
     if not text:      # empty file, return empty block
         return prepared.set_uri(my_uri)

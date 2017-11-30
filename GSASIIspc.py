@@ -697,26 +697,27 @@ def CheckSpin(isym,SGData):
             else:
                 SGData['SGSpin'][:2] = [1,1]
     
-def MagSGSym(SGData):
+def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
     SGLaue = SGData['SGLaue']
     SpnFlp = SGData['SGSpin']
     GenSym = SGData['GenSym']
+    SGPtGrp = SGData['SGPtGrp']
     if not len(SpnFlp):
-        SGLaue['MagPtGp'] = SGLaue
+        SGLaue['MagPtGp'] = SGPtGrp
         return SGData['SpGrp']
     magSym = SGData['SpGrp'].split()
     if SGLaue in ['-1',]:
-        SGData['MagPtGp'] = SGLaue
+        SGData['MagPtGp'] = SGPtGrp
         if SpnFlp[0] == -1:
             magSym[1] += "'"
             SGData['MagPtGp'] += "'"
         if magSym[0] in ['A','B','C','I'] and SGData['SpGrp'] != 'I 41/a':
             if SpnFlp[1] < 0:
                 magSym[0] += '(P)'
-    elif SGLaue in ['mmm',]:
+    elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         SGData['MagPtGp'] = ''
         for i in [0,1,2]:
-            SGData['MagPtGp'] += 'm'
+            SGData['MagPtGp'] += SGPtGrp[i]
             if SpnFlp[i] < 0:
                 magSym[i+1] += "'"
                 SGData['MagPtGp'] += "'"
@@ -3445,7 +3446,7 @@ ssdict = {
     'P m c n':['(00g)','(00g)s00','(a00)','(a00)0s0','(0b0)','(0b0)s00'],
     'P n a m':['(00g)','(00g)0s0','(a00)','(a00)00s','(0b0)','(0b0)00s'],
     'P m n b':['(00g)','(00g)s00','(a00)','(a00)00s','(0b0)','(0b0)s00'],
-    'P c m n':['(00g)','(00g)0s0','(a00)','(a00)0s0','(0b0)','(0b0)s00'],
+    'P c m n':['(00g)','(00g)0s0','(00g)ss0','(a00)','(a00)0s0','(0b0)','(0b0)s00'],
 #63
     'C m c m':['(00g)','(00g)s00','(10g)','(10g)s00','(a00)','(a00)00s','(a00)0ss','(a00)0s0','(0b0)','(0b0)00s','(0b0)s0s','(0b0)s00',],
     'A m m a':['(a00)','(a00)0s0','(a10)','(a10)0s0','(0b0)','(0b0)s00','(0b0)s0s','(00g)00s','(00g)','(00g)s00','(00g)ss0','(00g)0s0',],

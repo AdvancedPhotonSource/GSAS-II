@@ -2252,7 +2252,9 @@ entered the right symbol for your structure.
             r,c =  event.GetRow(),event.GetCol()
             if r < 0 and c < 0:
                 for row in range(Atoms.GetNumberRows()):
-                    Atoms.SelectRow(row,True)                    
+                    Atoms.SelectRow(row,True)                   
+                wx.CallAfter(Paint)
+                return
             if r < 0:                          #double click on col label! Change all atoms!
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
@@ -4470,7 +4472,7 @@ entered the right symbol for your structure.
         SSGData = generalData['SSGData']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
-        D4Map = generalData['4DmapData']
+        D4Map = generalData.get('4DmapData',{'rho':[]})
         if waveData.GetSizer():
             waveData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5192,10 +5194,10 @@ entered the right symbol for your structure.
                             newOp = str(OprNum)+'+'+ \
                                 str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))                            
                             atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
-                            if cmx:
+                            if cmx:         #magnetic moment
                                 opNum = G2spc.GetOpNum(OprNum,SGData)
                                 mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-#                                print OprNum,newOp,opNum,SpnFlp
+#                                print (OprNum,newOp,opNum,nl.det(M),SpnFlp)
                                 atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                             if atom[cui] == 'A':
                                 Uij = atom[cuij:cuij+6]
@@ -6374,7 +6376,7 @@ entered the right symbol for your structure.
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 for sel in dlg.GetSelections():
-                    data['Histograms'][keyList[sel]].update(copyDict)
+                    data['Histograms'][keyList[sel]].update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()
         
@@ -6431,7 +6433,7 @@ entered the right symbol for your structure.
                                 for itm in ['Eg','Es','Ep']:
                                     data['Histograms'][item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
                             elif name == 'Twins':
-                                data['Histograms'][item]['Twins'][0][1][1] = copyDict['Twins']
+                                data['Histograms'][item]['Twins'][0][1][1] = copy.deepcopy(copyDict['Twins'])
                             else:
                                 try:
                                     data['Histograms'][item][name][1] = copy.deepcopy(copyDict[name])
@@ -6465,7 +6467,6 @@ entered the right symbol for your structure.
         if not keyList:
             G2G.G2MessageBox(G2frame,'No histograms to copy to')
             return
-        copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  

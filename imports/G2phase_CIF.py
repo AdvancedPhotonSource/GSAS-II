@@ -112,13 +112,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         cf[blknm].get(key))[0]
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
+                sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
-            selblk = G2IO.PhaseSelector(
-                choice,
-                ParentFrame=ParentFrame,
-                title= 'Select a phase from one the CIF data_ blocks below',
-                size=(600,100)
-                )
+            selblk = G2IO.PhaseSelector(choice,ParentFrame=ParentFrame,
+                title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
         self.errors = 'Error during reading of selected block'
         if selblk is None:
             returnstat = False # no block selected or available
@@ -127,6 +124,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
             blk = cf[str_blklist[selblk]]
             E = True
             Super = False
+            if blk.get("_space_group_ssg_name",''):
+                Super = True
             magnetic = False
             self.Phase['General']['Type'] = 'nuclear'
             SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
@@ -137,12 +136,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 magnetic = True
                 self.Phase['General']['Type'] = 'magnetic'
                 self.Phase['General']['AtomPtrs'] = [3,1,10,12]
-            if not SpGrp:
+            if Super:
                 sspgrp = blk.get("_space_group_ssg_name",'').split('(')
                 SpGrp = sspgrp[0]
                 SuperSg = '('+sspgrp[1].replace('\\','')
                 Super = True
                 SuperVec = [[0,0,.1],False,4]
+            SpGrp = SpGrp.replace('_','')
             # try normalizing the space group, to see if we can pick the space group out of a table
             SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
             if SpGrpNorm:
@@ -169,6 +169,18 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 cell.append(cif.get_number_with_esd(blk[lbl])[0])
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
             self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
+            if Super:
+                print(blk.get('_cell_modulation_dimension',''))
+                if int(blk.get('_cell_modulation_dimension','')) > 1:
+                    msg = 'more than 3+1 super symmetry is not allowed in GSAS-II'
+                    self.errors = msg
+                    self.warnings += msg
+                    return False
+                waveloop = blk.GetLoop('_cell_wave_vector_seq_id')
+                waveDict = dict(waveloop.items())
+                SuperVec = [[float(waveDict['_cell_wave_vector_x'][0]),
+                    float(waveDict['_cell_wave_vector_y'][0]),
+                    float(waveDict['_cell_wave_vector_z'][0])],False,4]
             # read in atoms
             self.errors = 'Error during reading of atoms'
             atomlbllist = [] # table to look up atom IDs
@@ -234,12 +246,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
             ranIdlookup = {}
             for aitem in atomloop:
                 if magnetic:
-                    atomlist = ['','','',0.,0.,0.,1.0,0.,0.,0.,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.,0.]
+                    atomlist = ['','','',0.,0.,0.,1.0,0.,0.,0.,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.]
                 else:
-                    atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.,0.]
-                atomlist[-1] = ran.randint(0,sys.maxsize) # add a random Id
-                while atomlist[-1] in ranIdlookup:
-                    atomlist[-1] = ran.randint(0,sys.maxsize) # make it unique
+                    atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.]
                 for val,key in zip(aitem,atomkeys):
                     col = G2AtomDict.get(key,-1)
                     if col >= 3:
@@ -294,6 +303,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 else:
                     atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
                 atomlist[1] = G2elem.FixValence(atomlist[1])
+                atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)
                 ranIdlookup[atomlist[0]] = atomlist[-1]
                 if atomlist[0] in atomlbllist:
@@ -305,16 +315,16 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     Sadp = []                      
                     Spos = np.zeros((4,6))
                     nim = -1
-                    for i,item in enumerate(displFdict['_atom_site_displace_Fourier_atom_site_label']):
+                    for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
                         if item == atomlist[0]:
                             waveType = 'Fourier'                                
-                            ix = ['x','y','z'].index(displFdict['_atom_site_displace_Fourier_axis'][i])
-                            im = int(displFdict['_atom_site_displace_Fourier_wave_vector_seq_id'][i])
+                            ix = ['x','y','z'].index(displFdict['_atom_site_displace_fourier_axis'][i])
+                            im = int(displFdict['_atom_site_displace_fourier_wave_vector_seq_id'][i])
                             if im != nim:
                                 nim = im
-                            val = displFdict['_atom_site_displace_Fourier_param_sin'][i]
+                            val = displFdict['_atom_site_displace_fourier_param_sin'][i]
                             Spos[im-1][ix] = cif.get_number_with_esd(val)[0]
-                            val = displFdict['_atom_site_displace_Fourier_param_cos'][i]
+                            val = displFdict['_atom_site_displace_fourier_param_cos'][i]
                             Spos[im-1][ix+3] = cif.get_number_with_esd(val)[0]
                     if nim >= 0:
                         Spos = [[spos,False] for spos in Spos[:nim]]
@@ -323,15 +333,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if UijFdict:
                         nim = -1
                         Sadp = np.zeros((4,12))
-                        for i,item in enumerate(UijFdict['_atom_site_U_Fourier_atom_site_label']):
+                        for i,item in enumerate(UijFdict['_atom_site_U_fourier_atom_site_label']):
                             if item == atomlist[0]:
-                                ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_U_Fourier_tens_elem'][i])
-                                im = int(UijFdict['_atom_site_U_Fourier_wave_vector_seq_id'][i])
+                                ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_U_fourier_tens_elem'][i])
+                                im = int(UijFdict['_atom_site_U_fourier_wave_vector_seq_id'][i])
                                 if im != nim:
                                     nim = im
-                                val = UijFdict['_atom_site_U_Fourier_param_sin'][i]
+                                val = UijFdict['_atom_site_U_fourier_param_sin'][i]
                                 Sadp[im-1][ix] = cif.get_number_with_esd(val)[0]
-                                val = UijFdict['_atom_site_U_Fourier_param_cos'][i]
+                                val = UijFdict['_atom_site_U_fourier_param_cos'][i]
                                 Sadp[im-1][ix+6] = cif.get_number_with_esd(val)[0]
                         if nim >= 0:
                             Sadp = [[sadp,False] for sadp in Sadp[:nim]]

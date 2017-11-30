@@ -168,8 +168,8 @@ def whichsvn():
         print('Using proxy host {} port {}'.format(host,port))
     # add likely places to find subversion when installed with GSAS-II
     pathlist = os.environ["PATH"].split(os.pathsep)
-    pathlist.append(os.path.split(sys.executable)[0])
-    pathlist.append(path2GSAS2)
+    pathlist.insert(0,os.path.split(sys.executable)[0])
+    pathlist.insert(1,path2GSAS2)
     for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',),('.'):
         pt = os.path.normpath(os.path.join(path2GSAS2,*rpt))
         if os.path.exists(pt):
@@ -206,7 +206,7 @@ def svnVersion(svn=None):
         print ('subversion error!\nout=%s'%out)
         print ('err=%s'%err)
         return None
-    return out.strip()
+    return out.strip().decode()
 
 def svnVersionNumber(svn=None):
     '''Get the version number of the current subversion executable
@@ -524,7 +524,7 @@ def DownloadG2Binaries(g2home,verbose=True):
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     res,err = p.communicate()
     versions = {}
-    for d in res.split():
+    for d in res.decode().split():
         if d.startswith(bindir):
             v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
             versions[v] = d

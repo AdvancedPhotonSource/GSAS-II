@@ -3676,13 +3676,16 @@ class MyHelp(wx.Menu):
     def OnHelpAbout(self, event):
         "Display an 'About GSAS-II' box"
         import GSASII
-        info = wx.AboutDialogInfo()
+        try:
+            import wx.adv as wxadv  # AboutBox moved here in Phoenix
+        except:
+            wxadv = wx
+        info = wxadv.AboutDialogInfo()
         info.Name = 'GSAS-II'
         ver = GSASIIpath.svnGetRev()
-        if ver: 
-            info.Version = 'Revision '+str(ver)+' (svn), version '+GSASII.__version__
-        else:
-            info.Version = 'Revision '+str(GSASIIpath.GetVersionNumber())+' (.py files), version '+GSASII.__version__
+        if not ver:
+            ver = GSASIIpath.GetVersionNumber()
+        info.SetVersion(ver)
         #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
         info.Copyright = ('(c) ' + time.strftime('%Y') +
 ''' Argonne National Laboratory
@@ -3701,7 +3704,7 @@ For DIFFaX use cite:
   Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
 '''
         info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
-        wx.AboutBox(info)
+        wxadv.AboutBox(info)
 
     def OnCheckUpdates(self,event):
         '''Check if the GSAS-II repository has an update for the current source files

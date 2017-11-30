@@ -54,9 +54,9 @@ if __name__ == '__main__':
     pythonexe = os.path.realpath(sys.executable)
     # Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
     if pythonexe.lower().endswith('pythonw.exe'):
-        print "  using python.exe rather than "+pythonexe
+        print("  using python.exe rather than "+pythonexe)
         pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
-        print "  now pythonexe="+pythonexe
+        print("  now pythonexe="+pythonexe)
     # create a GSAS-II script
     fp = open(os.path.join(G2bat),'w')
     fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     if ' ' in G2s: G2s = '"'+G2script+'"'
     fp.write(Script.format(pexe,G2s))
     fp.close()
-    print '\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath
+    print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
 
     # Associate a script and icon with .gpx files
     #gpxkey = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT, '.gpx')
@@ -83,18 +83,18 @@ if __name__ == '__main__':
     winreg.CloseKey(iconkey)
     winreg.CloseKey(openkey)
     winreg.CloseKey(gpxkey)
-    print 'Assigned icon and batch file to .gpx files'
+    print('Assigned icon and batch file to .gpx files')
 
     try:
         import win32com.shell.shell, win32com.shell.shellcon
         win32com.shell.shell.SHChangeNotify(
             win32com.shell.shellcon.SHCNE_ASSOCCHANGED, 0, None, None)
     except ImportError:
-        print 'Module pywin32 not present, login again to see file types properly'
+        print('Module pywin32 not present, login again to see file types properly')
     except:
-        print 'Unexpected error on explorer refresh. Please report:'
+        print('Unexpected error on explorer refresh. Please report:')
         import traceback
-        print traceback.format_exc()
+        print(traceback.format_exc())
 
     # make a desktop shortcut to GSAS-II
     try:
@@ -108,11 +108,11 @@ if __name__ == '__main__':
         #shobj.WorkingDirectory = wDir # could specify a default project location here
         shobj.IconLocation = G2icon
         shobj.save()
-        print 'Created shortcut to start GSAS-II on desktop'
+        print('Created shortcut to start GSAS-II on desktop')
     except ImportError:
-        print 'Module pywin32 not present, will not make desktop shortcut'
+        print('Module pywin32 not present, will not make desktop shortcut')
     except:
-        print 'Unexpected error making desktop shortcut. Please report:'
+        print('Unexpected error making desktop shortcut. Please report:')
         import traceback
-        print traceback.format_exc()
+        print(traceback.format_exc())
     

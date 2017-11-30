@@ -150,18 +150,10 @@ if __name__ == '__main__':
     os.remove('/tmp/testpython')
     #print testout,errout
     if testout.strip() != "OK":
-        print 'Run of python app failed, resorting to non-app version of Python, Alas!'
-        pythonapp = sys.executable
-        # is this brain-dead Canopy 1.4.0, if so, switch to pythonw
-        try:
-            import canopy.version
-            if canopy.version.version == '1.4.0':
-                print 'using pythonw for Canopy 1.4.0'
-                pythonapp = os.path.join(os.path.split(pythonapp)[0],'pythonw')
-                if not os.path.exists(pythonapp):
-                    raise Exception('no pythonw here: '+pythonapp)
-        except ImportError:
-            pass
+        print('Run of wx in python failed, looking for pythonw')
+        pythonapp = os.path.join(os.path.split(sys.executable)[0],'pythonw')
+        if not os.path.exists(pythonapp):
+            raise Exception('no pythonw found with '+sys.executable)
         newpython = pythonapp
     else:
         # new name to call python
@@ -178,10 +170,10 @@ if __name__ == '__main__':
 
     try: 
         subprocess.check_output(["osacompile","-o",apppath,shell],stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError, msg:
-        print '''Error compiling AppleScript.
-        Report the next message along with details about your Mac to toby@anl.gov'''
-        print msg.output
+    except subprocess.CalledProcessError as msg:
+        print('''Error compiling AppleScript.
+        Report the next message along with details about your Mac to toby@anl.gov''')
+        print(msg.output)
         sys.exit()
 
     # create a link to the python app, but named to match the project

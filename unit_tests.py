@@ -34,4 +34,4 @@ def test_GSASIIlattice():
 if __name__ == '__main__':
     test_GSASIIspc()
     test_GSASIIlattice()
-    print "OK"
+    print("OK")

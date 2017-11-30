@@ -166,7 +166,7 @@ class scanCCD(wx.Frame):
             return tax,tay,taz
         
         import histosigma2d as h2d
-        print 'Begin image integration'
+        print('Begin image integration')
         scaley = self.data['pixel'][1]/1000.
         tthStart,tthEnd,tthStep = self.data['2thScan']
         LUtth = [tthStart,tthEnd]
@@ -203,7 +203,7 @@ class scanCCD(wx.Frame):
                         for jBlk in range(N):
                             jBeg = jBlk*blkSize
                             jFin = jBeg+blkSize                
-                            print 'Process map block:',nBlk,iBlk,jBlk,' offset:',iBegi,' limits:',iBeg,iFin,jBeg,jFin
+                            print('Process map block:',nBlk,iBlk,jBlk,' offset:',iBegi,' limits:',iBeg,iFin,jBeg,jFin)
                             TA = Make2ThetaMap(self.data,(iBeg,iFin),(jBeg,jFin))           #2-theta & Y arrays & create position mask                       
                             Block = image[iBeg-iBegi:iFin-iBegi,jBeg:jFin]
                             tax,tay,taz = Fill2ThetaMap(self.data,TA,Block)                 #and apply masks
@@ -223,7 +223,7 @@ class scanCCD(wx.Frame):
                             if not GoOn:
                                 break
                 else:
-                    print 'file '+imagefile+' skipped'
+                    print('file '+imagefile+' skipped')
                     nBlk += N*N
                     GoOn = dlg.Update(nBlk)[0]
                     iFin += N*blkSize
@@ -239,11 +239,11 @@ class scanCCD(wx.Frame):
         finally:
             dlg.Destroy()
         Scale = np.sum(Qmat)/np.sum(H0)
-        print 'SumI: ',np.sum(H0),' SumV: ',np.sum(Qmat),' Scale:',Scale
-        print 'Integration complete'
-        print "Elapsed time:","%8.3f"%(t1-t0), "s"
+        print('SumI: ',np.sum(H0),' SumV: ',np.sum(Qmat),' Scale:',Scale)
+        print('Integration complete')
+        print("Elapsed time:","%8.3f"%(t1-t0), "s")
         self.Hxyw = [H1,Scale*H0.T[0],np.sqrt(Qmat.T[0])]
-        print 
+        print()
         self.PlotXY(self.Hxyw,True,type='Integration result')
         
     def OnOutput(self,event):
@@ -251,7 +251,7 @@ class scanCCD(wx.Frame):
         def powderSave(self,powderfile,Fxye=False):
             file = open(powderfile,'w')
             file.write('#%s\n'%('from scanCCD image '+self.imagefiles[0]))
-            print 'save powder pattern to file: ',powderfile
+            print('save powder pattern to file: ',powderfile)
             wx.BeginBusyCursor()
             try:
                 x,y,e = self.Hxyw
@@ -268,7 +268,7 @@ class scanCCD(wx.Frame):
                 file.close()
             finally:
                 wx.EndBusyCursor()
-            print 'powder pattern file written'
+            print('powder pattern file written')
         
         if not self.Hxyw:
             return
@@ -279,7 +279,7 @@ class scanCCD(wx.Frame):
             dlg.SetDirectory(self.dirname)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                print dlg.GetFilename()
+                print(dlg.GetFilename())
                 powderfile = dlg.GetPath()
                 if 'fxye' in powderfile:
                     powderSave(self,powderfile,Fxye=True)

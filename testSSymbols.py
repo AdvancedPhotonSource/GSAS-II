@@ -99,13 +99,13 @@ class testSSymbols(wx.Frame):
                 Data['SuperSg'] = SSymbol
                 msg = 'Superspace Group Information'
                 G2G.SGMessageBox(self,msg,text,table).Show()
-                print 'Super spacegroup operators for '+SSGData['SSpGrp']
+                print('Super spacegroup operators for '+SSGData['SSpGrp'])
                 for Op in SSGData['SSGOps']:
-                    print G2spc.SSMT2text(Op).replace(' ','')
+                    print(G2spc.SSMT2text(Op).replace(' ',''))
                 if SGData['SGInv']:                                 
                     for Op in SSGData['SSGOps']:
                         Op = [-Op[0],-Op[1]%1.]
-                        print G2spc.SSMT2text(Op).replace(' ','')                                 
+                        print(G2spc.SSMT2text(Op).replace(' ',''))
             else:
                 text = [E+'\nSuperspace Group set to previous']
                 superGp.SetValue(Data['SuperSg'])

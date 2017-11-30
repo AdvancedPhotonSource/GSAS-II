@@ -35,12 +35,12 @@ for fil in proc.stdout.readlines():
         #print fil+' doc'
         continue
     else:
-        print fil+' undocumented'
+        print(fil+' undocumented')
         undoc.append(fil)
 # generate code to place in a .rst file
 if undoc:
-    print "\n# place this code somewhere in the .rst files\n#"
+    print("\n# place this code somewhere in the .rst files\n#")
 for fil in undoc:
-    print ".. automodule:: "+os.path.splitext(os.path.split(fil)[1])[0]
-    print "    :members: "
-    print ""
+    print(".. automodule:: "+os.path.splitext(os.path.split(fil)[1])[0])
+    print("    :members: ")
+    print("")

@@ -104,8 +104,8 @@ class testDeriv(wx.Frame):
                 groups,parmlist = G2mv.GroupConstraints(self.constrDict)
                 G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
                 self.UpdateControls(event)
-                print G2mv.VarRemapShow(self.varylist)
-                print 'Dependent Vary List:',self.depVarList
+                print(G2mv.VarRemapShow(self.varylist))
+                print('Dependent Vary List:',self.depVarList)
         finally:
             dlg.Destroy()
             
@@ -164,9 +164,9 @@ class testDeriv(wx.Frame):
             s = StringIO.StringIO()
             sortby = 'tottime'
             ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
-            print 'Profiler of function calculation; top 50% of routines:'
+            print('Profiler of function calculation; top 50% of routines:')
             ps.print_stats("GSASII",.5)
-            print s.getvalue()
+            print(s.getvalue())
             fplot.plot(M,'r',label='M')
             fplot.legend(loc='best')
             
@@ -185,13 +185,13 @@ class testDeriv(wx.Frame):
                 sortby = 'tottime'
                 ps = pstats.Stats(pr, stream=s).strip_dirs().sort_stats(sortby)
                 ps.print_stats("GSASII",.5)
-                print 'Profiler of '+name+' derivative calculation; top 50% of routines:'
-                print s.getvalue()
+                print('Profiler of '+name+' derivative calculation; top 50% of routines:')
+                print(s.getvalue())
             M2 = dMdV[varyList.index(name)]
             hplot.plot(M2,'b',label='analytic deriv')
             mmin = np.min(dMdV[varyList.index(name)])
             mmax = np.max(dMdV[varyList.index(name)])
-            print 'parameter:',name,self.parmDict[name],delt,mmin,mmax
+            print('parameter:',name,self.parmDict[name],delt,mmin,mmax)
             if name in self.varylist:
                 self.values[self.varylist.index(name)] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,

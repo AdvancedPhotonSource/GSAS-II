@@ -29,14 +29,14 @@ for sg in ("P-1", # space groups for all 14 Bravais lattices
     ms = cs.build_miller_set(anomalous_flag=False, d_min=dmin)
     #ms.show_summary()
     spcg = ("%s" %  ms.space_group_info()).split(':')[0]
-    print spcg
+    print(spcg)
     fp.write("'%s': [\n" % spcg)
     fp.write("%s ,\n" % ms.unit_cell())
     hkllist = {}
     for hkl,d in ms.d_spacings():
         if hkllist.has_key(d):
             hkllist[d].append(hkl)
-            print hkllist[d]
+            print(hkllist[d])
         else:
             hkllist[d] = [hkl,]
     fp.write("  (\n")
@@ -88,7 +88,7 @@ for sg in spg:
     spcg = spcglist[0]
     if len(spcglist) > 1:
         if spcglist[1] == 'R': spcg += ' R'
-    print spcg
+    print(spcg)
     #fp.write("'%s': [\n" % spcg)
     fp.write("'%s': [\n" % sg)
     fp.write("%s ,\n" % ms.unit_cell())

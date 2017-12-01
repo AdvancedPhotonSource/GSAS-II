@@ -1,14 +1,11 @@
 #test
 import sys
 import wx
+import GSASIIpath
+GSASIIpath.SetBinaryPath()
 import GSASIIspc as G2spc
-import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
-import numpy as np
-import copy
 
-def create(parent):
-    return testDeriv(parent)
     
 [wxID_FILEEXIT, 
 ] = [wx.NewId() for _init_coll_File_Items in range(1)]
@@ -18,7 +15,7 @@ class testSSymbols(wx.Frame):
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='testSSymbols', parent=parent,
-            size=wx.Size(300, 150),style=wx.DEFAULT_FRAME_STYLE, title='Test SS symbols')
+            size=wx.DefaultSize,style=wx.DEFAULT_FRAME_STYLE, title='Test SS symbols')
         self.testSSMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
         self.File.Append(help='Exit from testSS', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
@@ -61,6 +58,24 @@ class testSSymbols(wx.Frame):
                     Style = wx.ICON_EXCLAMATION
                     Text = '\n'+E
                     wx.MessageBox(Text,caption=msg,style=Style)
+                    
+        def OnExhaustive(event):
+            SpGrp = Data['SGData']['SGLatt']+Data['SGData']['SGLaue']
+            SpGrp = G2spc.StandardizeSpcName(SpGrp)
+            SSList = G2spc.ssdict.get(SpGrp,['',])
+            for SSymbol in SSList:
+                E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
+                if SSGData:
+                    text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
+                    Data['SSGData'] = SSGData
+                    Data['SuperSg'] = SSymbol
+                    msg = 'Superspace Group Information'
+                    G2G.SGMessageBox(self,msg,text,table).Show()
+                else:
+                    msg = 'Superspace Group Error for'+SSymbol
+                    Style = wx.ICON_EXCLAMATION
+                    Text = '\n'+E
+                    wx.MessageBox(Text,caption=msg,style=Style)           
         
         def OnSpaceGroup(event):
             Flds = SGTxt.GetValue().split()
@@ -116,7 +131,6 @@ class testSSymbols(wx.Frame):
             self.UpdateData(Data)
         
         SGData = G2spc.SpcGroup(Data['SGData']['SpGrp'])[1]
-        SSGData = G2spc.SSpcGroup(SGData,Data['SuperSg'])[1]
         
         self.testSSPanel.DestroyChildren()
         mainSizer = wx.FlexGridSizer(0,2,5,5)
@@ -138,6 +152,10 @@ class testSSymbols(wx.Frame):
         SStry = wx.Button(self.testSSPanel,-1,'OK') 
         SStry.Bind(wx.EVT_BUTTON,OnTryAll)
         mainSizer.Add(SStry,0,WACV)
+        mainSizer.Add(wx.StaticText(self.testSSPanel,-1,' Exhaustive try: '),0,WACV)
+        ESStry = wx.Button(self.testSSPanel,-1,'OK') 
+        ESStry.Bind(wx.EVT_BUTTON,OnExhaustive)
+        mainSizer.Add(ESStry,0,WACV)
         self.testSSPanel.SetSizer(mainSizer)
         Size = mainSizer.Fit(self.testSSPanel)
         Size[0] = 800

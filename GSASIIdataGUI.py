@@ -2567,8 +2567,14 @@ class GSASII(wx.Frame):
             menubar.Append(menu=HelpMenu,title='&Help')
             
     def _init_ctrls(self, parent):
+        try:
+            size = GSASIIpath.GetConfigValue('Main_Size')
+            if type(size) is str:
+                size = eval(size)
+        except:
+            size = wx.Size(700,450)
         wx.Frame.__init__(self, name='GSASII', parent=parent,
-            size=wx.Size(700, 450),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
+            size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II main window')
         self._init_Imports()
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
@@ -2622,8 +2628,13 @@ class GSASII(wx.Frame):
         self.root = self.GPXtree.root        
 
 #        self.dataWindow.SetupScrolling()
-                
-        self.plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
+
+        try:
+            size = GSASIIpath.GetConfigValue('Plot_Size')
+            if type(size) is str: size = eval(size)
+        except:
+            size = wx.Size(700,600)                
+        self.plotFrame = wx.Frame(None,-1,'GSASII Plots',size=size,
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
         self.plotFrame.Show()
@@ -3769,8 +3780,13 @@ class GSASII(wx.Frame):
         rescord last position of data & plot windows; saved to config.py file
         NB: not called if console window closed
         '''
-        FramePos = {'Main_Pos':tuple(self.GetPosition()),'Plot_Pos':tuple(self.plotFrame.GetPosition())}
-        GSASIIpath.SetConfigValue(FramePos)
+        FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
+                     'Main_Size':tuple(self.GetSize()),
+                     'Plot_Pos':tuple(self.plotFrame.GetPosition()),
+                     'Plot_Size':tuple(self.plotFrame.GetSize())}
+        GSASIIpath.SetConfigValue(FrameInfo)
+#        FramePos = {'Main_Pos':tuple(self.GetPosition()),'Plot_Pos':tuple(self.plotFrame.GetPosition())}
+#        GSASIIpath.SetConfigValue(FramePos)
         config = G2G.GetConfigValsDocs()
         G2G.SaveConfigVars(config)
         if self.G2plotNB:
@@ -4491,14 +4507,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     which deletes the contents of the master sizer. After the contents are
     posted a call is made to 
 
-	    G2frame.dataWindow.SetDataSize()
+        G2frame.dataWindow.SetDataSize()
 
     which repaints the window. For routines [such as GSASIIpwdGUI.UpdatePeakGrid()]
     that are called repeatedly to update the entire contents of dataWindow
     themselves, it is important to add calls to 
         G2frame.dataWindow.ClearData()
     and
-	    G2frame.dataWindow.SetDataSize()
+    	 G2frame.dataWindow.SetDataSize()
     at the beginning and end respectively to clear and refresh. This is not
     needed for GSNoteBook repaints, which seem to be working mostly
     automatically. If there is a problem, a call like 
@@ -4605,7 +4621,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         menu.Append(menu=HelpMenu,title='&Help')
 
     def _initMenus(self):
-        'define all GSAS-II data window menus'
+        '''define all GSAS-II data window menus. 
+        NB: argument order conforms to both classic & phoenix variants for wx.
+        Do not use argument= for these as the argument names are different for classic & phoenix
+        '''
         
 #        G2G.Define_wxId('wxID_MCRON', 'wxID_MCRLIST', 'wxID_MCRSAVE', 'wxID_MCRPLAY',)
 
@@ -5338,8 +5357,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Remove all rigid body assignment for atoms')
         self.PostfillDataMenu()
     # end of GSAS-II menu definitions
-    
-        
                    
 ################################################################################
 #####  Notebook Tree Item editor

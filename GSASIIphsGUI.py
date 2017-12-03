@@ -1831,10 +1831,15 @@ entered the right symbol for your structure.
             ssSizer = wx.BoxSizer(wx.VERTICAL)
             modSizer = wx.BoxSizer(wx.HORIZONTAL)
             modSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
-            modSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
-            SSChoice = G2spc.ssdict.get(generalData['SGData']['SpGrp'],[])
+            modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%generalData['SGData']['SpGrp']),0,WACV)
+            SSGptgp = generalData['SGData']['SGLatt']+generalData['SGData']['SGPtGrp']
+            SSChoice = G2spc.ptssdict.get(SSGptgp,[])
+            Choice = []
+            for item in SSChoice:
+                E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)
+                if SSG: Choice.append(item)
             if SSChoice:
-                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
                 superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
             else:   #nonstandard space group symbol not in my dictionary

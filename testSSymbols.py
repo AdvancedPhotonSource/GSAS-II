@@ -60,9 +60,8 @@ class testSSymbols(wx.Frame):
                     wx.MessageBox(Text,caption=msg,style=Style)
                     
         def OnExhaustive(event):
-            SpGrp = Data['SGData']['SGLatt']+Data['SGData']['SGLaue']
-            SpGrp = G2spc.StandardizeSpcName(SpGrp)
-            SSList = G2spc.ssdict.get(SpGrp,['',])
+            latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
+            SSList = G2spc.ptssdict.get(latt,['',])
             for SSymbol in SSList:
                 E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
                 if SSGData:

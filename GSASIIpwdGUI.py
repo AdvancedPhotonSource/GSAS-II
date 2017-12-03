@@ -2767,6 +2767,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[13] = spcSel.GetString(spcSel.GetSelection())
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(event)
+        wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def SetCellValue(Obj,ObjId,value):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
@@ -3258,7 +3259,13 @@ def UpdateUnitCellsGrid(G2frame, data):
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
         SpSg = controls[13]
-        ssChoice = G2spc.ssdict[SpSg]
+        SGData = G2spc.SpcGroup(SpSg)[1]
+        SSGptgp = SGData['SGLatt']+SGData['SGPtGrp']
+        SSChoice = G2spc.ptssdict.get(SSGptgp,[])
+        ssChoice = []
+        for item in SSChoice:
+            E,SSG = G2spc.SSpcGroup(SGData,item)
+            if SSG: ssChoice.append(item)
         if ssopt['ssSymb'] not in ssChoice:
             ssopt['ssSymb'] = ssChoice[0]
         ssSizer = wx.BoxSizer(wx.HORIZONTAL)

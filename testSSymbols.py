@@ -100,12 +100,14 @@ class testSSymbols(wx.Frame):
                 SGTxt.SetValue(Data['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 G2G.SGMessageBox(self,msg,text,table).Show()
-            SSChoice = G2spc.ssdict.get(Data['SGData']['SpGrp'],['',])
+            latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
+            SSChoice = G2spc.ptssdict.get(latt,['',])
             Data['SuperSg'] = SSChoice[0]
             self.UpdateData(Data)
 
         def OnSuperGp(event):
             SSymbol = superGp.GetValue()
+            print('Try: %s%s'%(Data['SGData']['SpGrp'],SSymbol))
             E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
             if SSGData:
                 text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
@@ -127,7 +129,7 @@ class testSSymbols(wx.Frame):
                 Style = wx.ICON_EXCLAMATION
                 Text = '\n'.join(text)
                 wx.MessageBox(Text,caption=msg,style=Style)
-            self.UpdateData(Data)
+            wx.CallAfter(self.UpdateData,Data)
         
         SGData = G2spc.SpcGroup(Data['SGData']['SpGrp'])[1]
         
@@ -138,7 +140,8 @@ class testSSymbols(wx.Frame):
         SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
         mainSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Superspace group: '+Data['SGData']['SpGrp']),0,WACV)
-        SSChoice = G2spc.ssdict.get(Data['SGData']['SpGrp'],[])
+        latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
+        SSChoice = G2spc.ptssdict.get(latt,['',])
         if SSChoice:
             superGp = wx.ComboBox(self.testSSPanel,value=Data['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
             superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)

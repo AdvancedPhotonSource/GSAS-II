@@ -2571,7 +2571,7 @@ class GSASII(wx.Frame):
             size = GSASIIpath.GetConfigValue('Main_Size')
             if type(size) is str:
                 if size == 'None':
-                    size = wx.DefaultSize
+                    size = wx.Size(700,450)
                 else:
                     size = eval(size)
         except:
@@ -2636,7 +2636,7 @@ class GSASII(wx.Frame):
             size = GSASIIpath.GetConfigValue('Plot_Size')
             if type(size) is str: 
                 if size == 'None':
-                    size = wx.DefaultSize
+                    size = wx.Size(700,600)
                 else:
                     size = eval(size)
         except:

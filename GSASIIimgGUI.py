@@ -239,6 +239,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def OnIntegrate(event):
         '''Integrate image in response to a menu event or from the AutoIntegrate
         dialog. In the latter case, event=None. 
+        TODO: think of not repeating x,y-->2th,azm calc for unchanging calibrations?
         '''
         CleanupMasks(masks)
         blkSize = 1024   #this seems to be optimal; will break in polymask if >1024

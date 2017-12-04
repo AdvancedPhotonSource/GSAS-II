@@ -139,7 +139,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_space_group_name_H-M_alt",'')
             if not SpGrp:
                 SpGrp = blk.get("_parent_space_group.name_H-M",'')
-                if SpGrp:
+                if SpGrp:   #TODO need to decide if read nuclear phase or magnetic phase 
                     magnetic = True
                     self.Phase['General']['Type'] = 'magnetic'
                     self.Phase['General']['AtomPtrs'] = [3,1,10,12]
@@ -164,12 +164,23 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += "Change this in phase's General tab."
                 else:
                     self.warnings += 'ERROR in space group symbol '+SpGrp
+                    if 'X' in SpGrp:
+                        self.warnings += '\nAd hoc incommensurate space groups not allowed in GSAS-II'
                     self.warnings += '\nThe space group has been set to "P 1". '
                     self.warnings += "Change this in phase's General tab."
                     self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
                     self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
+            if Super:
+                E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
+                if E:
+                    self.warnings += 'Invalid super symmetry symbol '+SpGrp+SuperSg
+                    self.warnings += '\n'+E
+                    SuperSg = SuperSg[:SuperSg.index(')')+1]
+                    self.warnings += '\nNew super symmetry symbol '+SpGrp+SuperSg
+                    E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
+                self.Phase['General']['SSGData'] = SSGData
             # cell parameters
             cell = []
             for lbl in cellitems:
@@ -177,7 +188,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
             self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
             if Super:
-                print(blk.get('_cell_modulation_dimension',''))
                 if int(blk.get('_cell_modulation_dimension','')) > 1:
                     msg = 'more than 3+1 super symmetry is not allowed in GSAS-II'
                     self.errors = msg

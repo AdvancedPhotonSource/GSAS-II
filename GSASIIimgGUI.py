@@ -2937,6 +2937,7 @@ class AutoIntFrame(wx.Frame):
             ImageMasks = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,imgId, 'Masks'))
             if self.params['Mode'] == 'table': # look up parameter values from table
+                useTA = None        #force remake of x,y-->2th,azm map
                 self.ResetFromTable(controlsDict['setdist'])
             # update controls from master
             controlsDict.update(self.ImageControls)

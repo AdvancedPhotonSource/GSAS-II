@@ -744,7 +744,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=Aname)
         G2frame.IntgOutList.append(Id)
         G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Comments'),Comments)                    
-        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
+        G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Limits'),copy.deepcopy([tuple(Xminmax),Xminmax]))
         if 'PWDR' in Aname:
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])

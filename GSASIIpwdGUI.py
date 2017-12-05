@@ -1374,7 +1374,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
                     item = histList[i]
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
                     G2frame.GPXtree.SetItemPyData(
-                        G2gd.GetGPXtreeItemId(G2frame,Id,'Limits'),copy.copy(data))
+                        G2gd.GetGPXtreeItemId(G2frame,Id,'Limits'),copy.deepcopy(data))
         finally:
             dlg.Destroy()
             

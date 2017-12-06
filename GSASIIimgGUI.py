@@ -234,8 +234,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         Imax = np.max(G2frame.ImageZ)
         data['range'] = [(0,Imax),[Imin,Imax]]
         masks['Thresholds'] = [(0,Imax),[Imin,Imax]]
-        MaxSizer.GetChildren()[2].Window.SetValue(Imax)   #tricky 
-        MaxSizer.GetChildren()[5].Window.SetValue(Imin)   #tricky
+        G2frame.slideSizer.GetChildren()[1].Window.SetValue(Imax)   #tricky 
+        G2frame.slideSizer.GetChildren()[4].Window.SetValue(Imin)   #tricky
          
     def OnIntegrate(event,useTA=None):
         '''Integrate image in response to a menu event or from the AutoIntegrate
@@ -722,8 +722,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         #   (Imin0, Imax0) => Range[0] = data['range'][0] # lowest to highest pixel intensity
         #   [Imin, Imax] => Range[1] = data['range'][1] #   lowest to highest pixel intensity on cmap scale
         maxSizer = wx.BoxSizer(wx.VERTICAL)
-        slideSizer = wx.FlexGridSizer(2,3,5,5)
-        slideSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max intensity'),0,WACV)
+        G2frame.slideSizer = wx.FlexGridSizer(2,3,5,5)
+        G2frame.slideSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Max intensity'),0,WACV)
         # maxSel is a slider with 101 steps scaled from Imin+1 to Imax0 with sqrt scaling
         # slider value = sv = 100 * sqrt((Imax-Imin-1)/(Imax0-Imin-1))
         # Imax = (sv * sqrt(Imax0-Imin-1) / 100)**2 + Imin + 1
@@ -731,13 +731,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         sqrtDeltOne  = math.sqrt(max(1.0,Range[1][1]-max(0.0,Range[1][0])-1)) # sqrt(Imax-Imin-1)
         sv1 = min(100,max(0,int(0.5+100.*sqrtDeltOne/sqrtDeltZero)))
         maxSel = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,value=sv1)
-        slideSizer.AddGrowableCol(2)
+        G2frame.slideSizer.AddGrowableCol(2)
         maxSel.Bind(wx.EVT_SLIDER, OnMaxSlider)
         maxVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],1,min=Range[0][0]+1,
             max=Range[0][1],OnLeave=OnNewVal)
-        slideSizer.Add(maxVal,0,WACV)
-        slideSizer.Add(maxSel,flag=wx.EXPAND|wx.ALL)
-        slideSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min intensity'),0,WACV)
+        G2frame.slideSizer.Add(maxVal,0,WACV)
+        G2frame.slideSizer.Add(maxSel,flag=wx.EXPAND|wx.ALL)
+        G2frame.slideSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Min intensity'),0,WACV)
         # minSel is a slider with 101 steps scaled from Imin0 to Imax-1 with linear scaling
         # slider value = sv0 = 100 * (Imin-Imin0)/(Imax-Imin0-1)
         # Imin = sv0 * (Imax-Imin0-1) / 100 + Imin0
@@ -747,9 +747,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         minSel.Bind(wx.EVT_SLIDER, OnMinSlider)
         minVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Range[1],0,
             max=Range[0][1],typeHint=int,OnLeave=OnNewVal)
-        slideSizer.Add(minVal,0,WACV)
-        slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
-        maxSizer.Add(slideSizer,flag=wx.EXPAND|wx.ALL)
+        G2frame.slideSizer.Add(minVal,0,WACV)
+        G2frame.slideSizer.Add(minSel,flag=wx.EXPAND|wx.ALL)
+        maxSizer.Add(G2frame.slideSizer,flag=wx.EXPAND|wx.ALL)
         autoSizer = wx.BoxSizer(wx.HORIZONTAL)
         autoSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Auto scaler '),0,WACV)
         scaleChoices = ("100%","99%","95%","90%","80%","?")

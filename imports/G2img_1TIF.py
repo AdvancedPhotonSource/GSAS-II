@@ -213,10 +213,15 @@ def GetTifData(filename):
             image = np.array(np.asarray(image),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
-                tifType = 'GE'
-                pixy = [200.,200.]
+                if sizexy == [3888,3072]:
+                    tifType = 'Dexela'
+                    pixy = [74.8,74.8]
+                    print ('Read Dexela detector tiff file: '+filename)
+                else:
+                    tifType = 'GE'
+                    pixy = [200.,200.]
+                    print ('Read GE-detector tiff file: '+filename)
                 File.seek(8)
-                print ('Read GE-detector tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
 #                image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
 #                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)

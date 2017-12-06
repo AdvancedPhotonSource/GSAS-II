@@ -70,14 +70,19 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
+sq8ln2 = np.sqrt(8.0*np.log(2.0))
 if '2' in platform.python_version_tuple()[0]:
     GkDelta = unichr(0x0394)
     Gkrho = unichr(0x03C1)
     super2 = unichr(0xb2)
+    Angstr = unichr(0x00c5)
+    Pwrm1 = unichr(0x207b)+unichr(0x0b9)
 else:
     GkDelta = chr(0x0394)
     Gkrho = chr(0x03C1)
     super2 = chr(0xb2)
+    Angstr = chr(0x00c5)
+    Pwrm1 = chr(0x207b)+chr(0x0b9)
 nxs = np.newaxis
 #    GSASIIpath.IPyBreak()
 plotDebug = False
@@ -3416,6 +3421,12 @@ def PlotPeakWidths(G2frame,PatternName=None):
 #    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
 #    gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
 #    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            G2frame.G2plotNB.status.SetStatusText('q =%.3f%s %sq/q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
+
     if PatternName:
         G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
     PatternId = G2frame.PatternId
@@ -3444,6 +3455,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
+    Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
             xylim = lim
@@ -3471,8 +3483,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         data = G2mth.setPeakparms(Parms,Parms2,X,Z)
         s = np.sqrt(data[4])*np.pi/18000.   #var -> sig(radians)
         g = data[6]*np.pi/18000.    #centideg -> radians
-        G = G2pwd.getgamFW(g,s)/2.  #delt-theta
-        Y = s/nptand(X/2.)
+        G = G2pwd.getgamFW(g,s)     #/2.  #delt-theta from TCH fxn
+        Y = sq8ln2*s/nptand(X/2.)
         Z = g/nptand(X/2.)
         W = G/nptand(X/2.)
         Plot.plot(Q,Y,color='r',label='Gaussian')
@@ -3482,8 +3494,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
         fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
         sf = np.sqrt(fit[4])*np.pi/18000.
         gf = fit[6]*np.pi/18000.
-        Gf = G2pwd.getgamFW(gf,sf)/2.
-        Yf = sf/nptand(X/2.)
+        Gf = G2pwd.getgamFW(gf,sf)      #/2.
+        Yf = sq8ln2*sf/nptand(X/2.)
         Zf = gf/nptand(X/2.)
         Wf = Gf/nptand(X/2.)
         Plot.plot(Q,Yf,color='r',dashes=(5,5),label='Gaussian fit')
@@ -3501,8 +3513,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             except ValueError:
                 s = 0.01
             g = peak[6]*math.pi/18000.
-            G = G2pwd.getgamFW(g,s)/2.
-            Y.append(s/tand(peak[0]/2.))
+            G = G2pwd.getgamFW(g,s)         #/2.
+            Y.append(sq8ln2*s/tand(peak[0]/2.))
             Z.append(g/tand(peak[0]/2.))
             W.append(G/tand(peak[0]/2.))
         if len(peaks):

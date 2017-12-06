@@ -1677,6 +1677,11 @@ def UpdateInstrumentGrid(G2frame,data):
         if invalid: return
         updateData(insVal,insRef)
         
+    def NewProfile(invalid,value,tc):
+        if invalid: return
+        updateData(insVal,insRef)
+        G2plt.PlotPeakWidths(G2frame)
+        
     def OnItemRef(event):
         Obj = event.GetEventObject()
         item = RefObj[Obj.GetId()]
@@ -1803,7 +1808,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
                     instSizer.Add(wx.StaticText(G2frame.dataWindow,-1,lblWdef(item,nDig[1],insDef[item])),0,WACV)
-                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,insVal,item,nDig=nDig,typeHint=float,OnLeave=NewProfile)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
             elif 'T' in insVal['Type']:                                   #time of flight (neutrons)

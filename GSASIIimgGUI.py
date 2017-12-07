@@ -2746,7 +2746,7 @@ class AutoIntFrame(wx.Frame):
                     else:
                         msg += 'No files found to read in '+self.params['readdir']
             else:
-                msg1 = 'Warning: does not exist: '+self.params['readdir']
+                msg += 'Warning: does not exist: '+self.params['readdir']
         except IndexError:
             msg += 'Error searching for files named '+os.path.join(self.params['readdir'],self.params['filter'])
         self.ListBox.Clear()

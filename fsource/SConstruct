@@ -1,7 +1,7 @@
 # this is a build script that is intended to be run from scons (it will not work in python)
 # it compiles the Fortran files needed to be used as Python packages for GSAS-II
 #
-# if the default options need to be overridden for this to work on your system, please let me
+# if the default options need to be overridden for this to work on your system, please let us
 # know the details of what OS, compiler and python you are using as well as the command-line
 # options you need. 
 import platform
@@ -9,6 +9,7 @@ import sys
 import os
 import glob
 import subprocess
+import numpy as np
 #==========================================================================================
 def is_exe(fpath):
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
@@ -27,6 +28,25 @@ def which_path(program):
             if is_exe(exe_file):
                 return path
     return ""
+
+def GetBinaryDir():
+    # format current platform, Python & numpy version
+    if sys.platform == "win32":
+        prefix = 'win'
+    elif sys.platform == "darwin":
+        prefix = 'mac'
+    elif sys.platform.startswith("linux"):
+        prefix = 'linux'
+    else:
+        print(u'Unknown platform: '+sys.platform)
+        raise Exception('Unknown platform')
+    if platform.architecture()[0] == '64bit':
+        bits = '64'
+    else:
+        bits = '32'
+    pyver = 'p{}.{}'.format(*sys.version_info[0:2])
+    npver = 'n' + np.__version__[:np.__version__.find('.',2)]
+    return '_'.join([prefix,bits,pyver,npver])
 #==========================================================================================
 # misc initializations
 # need command-line options for fortran command and fortran options
@@ -73,7 +93,6 @@ FCompiler='gfortran'
 G77path = which_path('g77')     # path to compiler
 FORTpath = ""
 FORTflags = ""
-liblist = []
 LDFLAGS = ''
 #==========================================================================================
 # configure platform dependent options here: 
@@ -83,19 +102,26 @@ if sys.platform == "win32":
       FCompiler='g77'
     elif GFORTpath != "":
       FCompiler='gfortran'
-#      LDFLAGS = '-static-libgfortran -static-libgcc'
     else:
       print ('No Fortran compiler in path')
       sys.exit()
 elif sys.platform == "darwin":
-    LDFLAGS = '-undefined dynamic_lookup -bundle -static-libgfortran -static-libgcc'
+    LDFLAGS = '-undefined dynamic_lookup -bundle'
     F2PYsuffix = '.so'
-elif sys.platform == "linux2":
+elif sys.platform.startswith("linux"):
     #LDFLAGS = '-Wall -shared -static-libgfortran -static-libgcc' # does not work with gfortran 4.4.4 20100726 (Red Hat 4.4.4-13)
     F2PYsuffix = '.so'
 else:
     print ("Sorry, parameters for platform "+sys.platform+" are not yet defined")
     sys.exit()
+if FCompiler == 'gfortran':
+    if ARGUMENTS.get('LIBGCC', '').upper().startswith('T'):
+        LDFLAGS += ' -static-libgcc'
+        print('LIBGCC')
+    if ARGUMENTS.get('LIBGFORTRAN', '').upper().startswith('T'):
+        LDFLAGS += ' -static-libgfortran'
+        print('LIBGfortran')
+    
 #==========================================================================================
 # help
 if 'help' in COMMAND_LINE_TARGETS:
@@ -112,15 +138,18 @@ where the following options are defined (all are optional):
 
 -n      -- causes scons to show but not execute the commands it will perform
 
--c      -- clean: causes scons to delete previously created files (don't use
-   with install)
+-c      -- clean: causes scons to delete previously created files (but not from
+   install directory)
 
 help    -- causes this message to be displayed (no compiling is done)
 
-install -- causes the module files to be placed in an installation directory
-   (../bin<X>NNv.v) rather than ../bin (<X> is mac, win or linux; NN is 64-
-   or blank; v.v is the python version (2.6 or 2.7,...). Normally used only
-   by Brian or Bob for distribution of compiled software.
+install=T -- causes the module files to be placed in an installation directory
+   (../AllBinaries/<X>_NN_pv.v_nv.v) rather than ../bin, where:
+     <X> is mac, win or linux;
+     NN is 64 or 32;
+     pv.v is the Python version (p2.7 or p3.6,...) and
+     nv.v is the Numpy version (n1.13,...).
+   Normally used only by Brian or Bob for distribution of compiled software.
 
 The following options override defaults set in the scons script:
 
@@ -143,6 +172,16 @@ F2PYflags='string' -- defines optional flags to be supplied to f2py:
 F2PYsuffix='.xxx'  -- extension for output module files (default: win: '.pyd',
    mac/linux: '.so')
 
+LIBGCC=T -- adds the option -static-libgcc as an link option with gfortran. This
+   prevents use of the dynamic libgcc library, which must be then present on each
+   run-time computer. To use this, gfortran must be installed with the static
+   libraries.
+
+LIBGFORTRAN=T -- adds the option -static-libgfortran as an link option with
+   gfortran. This prevents use of the dynamic libgcc library, which then must be
+   present on each run-time computer. To use this, gfortran must be installed
+   with the static libraries.
+      
 LDFLAGS='string'   -- string of options to be used for f2py during link step
 
 Note that at present, this has been tested with 32-bit python on windows and
@@ -187,47 +226,39 @@ else:
 versions = platform.python_version_tuple()
 version = str(int(versions[0])) + '.' + str(int(versions[1]))
 PlatformBits = '64bits'
-if '32' in platform.python_compiler():
+if '32' in platform.architecture()[0]:
    PlatformBits = '32bits'
 #PlatformBits = versions[2][:-1]
 #
-print (version,PlatformBits)
-# Install location
-InstallLoc = '../bin'
-if len(COMMAND_LINE_TARGETS) == 0:
-    Default(InstallLoc)
-elif 'install' in COMMAND_LINE_TARGETS:
-    if PlatformBits == '64bit':
-        bits = '64-'
-    else:
-        bits = ''
-    if sys.platform == "win32":
-        prefix = 'binwin'
-    elif sys.platform == "darwin":
-        prefix = 'binmac'
-    elif sys.platform == "linux2":
-        prefix = 'binlinux'
-    InstallLoc = '../' + prefix + bits + version
-    Alias('install',InstallLoc)
+# Set install location
+if ARGUMENTS.get('install', '').upper().startswith('T'):
+    InstallLoc = os.path.join('..','AllBinaries', GetBinaryDir())
+else:
+    InstallLoc = os.path.join('..','bin')
 #==========================================================================================
 # use the compiler choice to set compiler options, but don't change anything
 # specified on the command line
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
-    if sys.platform == "linux2" and PlatformBits == '64bit':
+    if sys.platform.startswith("linux") and "64" in PlatformBits:
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'# --arch="-arch x86_64"'
-    elif sys.platform == "linux2":
+    elif sys.platform.startswith("linux"):
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m32'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
-    elif sys.platform == "darwin" and PlatformBits == '64bit':
+    elif sys.platform == "darwin": # now 64 bit only
+        #if "64" in PlatformBits:
         LDFLAGS += " -arch x86_64 -m64"
         if FORTflags == "": FORTflags = ' -w -O2 -m64'
         if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'
-    elif sys.platform == "darwin":
-        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
+    elif sys.platform == "win32" and "64" in PlatformBits:
+        if FORTflags == "": FORTflags = ' -w -O2 -m64'
+        if F2PYflags == "":
+            F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
     elif sys.platform == "win32":
-         if F2PYflags == "": F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
+        #if FORTflags == "": FORTflags = ' -w -O2 -m32'
+        if F2PYflags == "":
+            F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check"'
 elif FCompiler == 'g77':
     if FORTpath == "": FORTpath = G77path
     if sys.platform == "win32":
@@ -251,10 +282,15 @@ def generate_f2py(source, target, env, for_signature):
         for lib in liblist:
             module = module + ' ' + str(lib)
     f2pyprogram = os.path.normpath(os.path.join(F2PYpath,F2PYprog))
-    if os.path.splitext(F2PYprog)[1] == '.py':
-        return pythonprogram + ' ' + f2pyprogram + ' -c $SOURCE ' + ' -m ' + module + ' ' + F2PYflags
+    if os.path.splitext(F2PYprog)[1] == '.py':     # use f2py.py if no f2py[.exe] 
+        f2pycmd = pythonprogram + ' ' + f2pyprogram + ' -c $SOURCE ' + ' -m ' + module + ' ' + F2PYflags
     else:
-        return f2pyprogram + ' -c $SOURCE' + ' -m ' + module + ' ' + F2PYflags
+        f2pycmd = f2pyprogram + ' -c $SOURCE' + ' -m ' + module + ' ' + F2PYflags
+    if sys.platform == "win32":
+        installcmd = "copy " + os.path.splitext(str(source[0]))[0] + '*' + F2PYsuffix + ' ' + InstallLoc
+    else:
+        installcmd = "cp " + os.path.splitext(str(source[0]))[0] + '*' + F2PYsuffix + ' ' + InstallLoc
+    return [f2pycmd, installcmd]
 f2py = Builder(generator = generate_f2py)
 env.Append(BUILDERS = {'f2py' : f2py},)
 # create a builder for the fortran compiler for library compilation so we can control how it is done
@@ -281,11 +317,15 @@ if F2PYpath != "":  env.PrependENVPath('PATH', F2PYpath)
 if pythonpath != "" and pythonpath != F2PYpath: env.PrependENVPath('PATH', pythonpath)
 #   add other needed environment variables
 var = 'LDFLAGS'
-if eval(var) != "": env['ENV'][var] = eval(var)
+if eval(var) != "":
+    env['ENV'][var] = eval(var)
+    print("Setting environment variable {} to {}".format(var,eval(var)))
+if 'WINDIR' in os.environ: env['ENV']['WINDIR'] = os.environ['WINDIR']
 
 #==========================================================================================
 # finally ready to build something!
 # locate libraries to be built (subdirectories named *subs)
+liblist = []
 for sub in glob.glob('*subs'):
     filelist = []
     for file in glob.glob(os.path.join(sub,'*.for')):
@@ -300,15 +340,14 @@ for sub in glob.glob('*subs'):
        lib = Library(sub, filelist) # register library to be created
     liblist.append(lib[0].name)
     filename = str(lib[0])
-    #Install(InstallLoc,filename)
 # find modules that need to be built
 modlist = []
 for src in glob.glob('*.for'):
     target = os.path.splitext(src)[0] + F2PYsuffix
     out = env.f2py(target,src)
+    Clean(out, Glob(os.path.splitext(src)[0] + "*" + F2PYsuffix)) # this picks up old- & new-style .pyd/.so names
     Depends(target, liblist) # make sure libraries are rebuilt if old
     modlist.append(out[0].name)
-    env.Install(InstallLoc, out[0].name)
     #break # bail out early for testing
 #==========================================================================================
 # all done with setup, show the user the options and let scons do the work
@@ -327,3 +366,6 @@ print ("")
 print (80*'=')
 #print (env.Dump())
 if 'help' in COMMAND_LINE_TARGETS: sys.exit()
+if not os.path.exists(InstallLoc):
+    print('Creating '+InstallLoc)
+    os.makedirs(InstallLoc)

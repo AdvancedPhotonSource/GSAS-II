@@ -468,7 +468,7 @@ def GetBinaryPrefix():
         prefix = 'win'
     elif sys.platform == "darwin":
         prefix = 'mac'
-    elif sys.platform == "linux2":
+    elif sys.platform.startswith("linux"):
         prefix = 'linux'
     else:
         print(u'Unknown platform: '+sys.platform)
@@ -795,7 +795,7 @@ def SetBinaryPath(printInfo=True):
                     bindir = 'binmac%d.%d' % sys.version_info[0:2]
                 #if platform.mac_ver()[0].startswith('10.5.'):
                 #    bindir += '_10.5'
-            elif sys.platform == "linux2":
+            elif sys.platform.startswith("linux"):
                 if platform.architecture()[0] == '64bit':
                     bindir = 'binlinux64-%d.%d' % sys.version_info[0:2]
                 else:

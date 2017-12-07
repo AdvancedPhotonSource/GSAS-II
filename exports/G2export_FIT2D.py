@@ -51,7 +51,7 @@ class ExportPowderCHI(G2IO.ExportBaseclass):
         self.CloseFile()
         
     def Exporter(self,event=None):
-        '''Export a set of powder data as a Fit2D .chi file
+        '''Export a set of powder data as a Fit2D .qchi file
         '''
         # the export process starts here
         self.InitExport(event)
@@ -78,8 +78,8 @@ class ExportPowderQCHI(G2IO.ExportBaseclass):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
             formatName = 'Fit2D q-bin chi file',
-            extension='.chi',
-            longFormatName = 'Export powder data as q-bin Fit2D .chi file'
+            extension='.qchi',
+            longFormatName = 'Export powder data as q-bin Fit2D .qchi file'
             )
         self.exporttype = ['powder']
         self.multiple = True
@@ -100,7 +100,7 @@ class ExportPowderQCHI(G2IO.ExportBaseclass):
         self.CloseFile()
         
     def Exporter(self,event=None):
-        '''Export a set of powder data as a q-bin Fit2D .chi file
+        '''Export a set of powder data as a q-bin Fit2D .qchi file
         '''
         # the export process starts here
         self.InitExport(event)

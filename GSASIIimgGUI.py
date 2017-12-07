@@ -1231,6 +1231,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
             return
         PollTime = GSASIIpath.GetConfigValue('Autoint_PollTime',30.)
         G2frame.autoIntFrame = AutoIntFrame(G2frame,PollTime=PollTime)
+        # debug code to reload code for window on each use
+        #import GSASIIimgGUI
+        #reload(GSASIIimgGUI)
+        #G2frame.autoIntFrame = GSASIIimgGUI.AutoIntFrame(G2frame,PollTime=PollTime)
+
         G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close 
     G2frame.Bind(wx.EVT_MENU, OnAutoInt, id=G2G.wxID_IMAUTOINTEG)
 
@@ -2479,7 +2484,9 @@ class AutoIntFrame(wx.Frame):
 
         G2frame.GPXtree.GetSelection()
         size,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(self.imageBase) 
-        self.imagedir,fileroot = os.path.split(imagefile)
+        self.params['readdir'],fileroot = os.path.split(imagefile)
+        self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
+        self.params['outdir'] = os.path.abspath(self.params['readdir'])
         Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
             G2frame,self.imageBase, 'Comments'))
         DefaultAutoScaleNames = GSASIIpath.GetConfigValue('Autoscale_ParmNames')
@@ -2496,8 +2503,6 @@ class AutoIntFrame(wx.Frame):
                                 self.Scale[0] = float(val)
                         except ValueError:
                             continue
-        self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
-        self.params['outdir'] = os.path.abspath(self.imagedir)
         wx.Frame.__init__(self, G2frame, title='Automatic Integration',
                           style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.Status = self.CreateStatusBar()
@@ -2513,7 +2518,7 @@ class AutoIntFrame(wx.Frame):
         self.useActive.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
         self.useActive.SetLabel("Active Image: "+
                                 G2frame.GPXtree.GetItemText(self.imageBase))
-        lblsizr.Add(self.useActive,1,wx.EXPAND,1)
+        lblsizr.Add(self.useActive,0,wx.EXPAND,1)
         self.useActive.SetValue(True)
         minisizer = wx.BoxSizer(wx.HORIZONTAL)
         self.useTable = wx.RadioButton(mnpnl, wx.ID_ANY, "From distance look-up table")
@@ -2525,17 +2530,36 @@ class AutoIntFrame(wx.Frame):
         self.editTable.Bind(wx.EVT_BUTTON, OnEditTable)
         # bind button and deactivate be default
         lblsizr.Add(minisizer)
-        mnsizer.Add(lblsizr,1,wx.EXPAND,1)
+        mnsizer.Add(lblsizr,0,wx.EXPAND,0)
 
         # file filter stuff
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Image filter'))
-        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter',OnLeave=self.ShowMatchingFiles)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Read images from '))
+        self.readDir = G2G.ValidatedTxtCtrl(mnpnl,self.params,'readdir',
+                            OnLeave=self.ShowMatchingFiles,size=(200,-1))
+        sizer.Add(self.readDir,1,wx.EXPAND,1)
+        btn3 = wx.Button(mnpnl, wx.ID_ANY, "Browse")
+        btn3.Bind(wx.EVT_BUTTON, self.SetSourceDir)
+        sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        mnsizer.Add(sizer,0,wx.EXPAND,0)
+        # not yet implemented
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Keep read images in tree '))
+        self.params['keepReadImage'] = True
+        keepImage = G2G.G2CheckBox(mnpnl,'',self.params,'keepReadImage')
+        sizer.Add(keepImage)
+        keepImage.Enable(False)
+        sizer.Add((-1,-1),1,wx.EXPAND,1)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'  Image filter'))
+        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter',
+                                        OnLeave=self.ShowMatchingFiles)
         sizer.Add(flterInp)
-        mnsizer.Add(sizer,0,wx.ALIGN_RIGHT,1)
+        mnsizer.Add(sizer,0,wx.EXPAND,0)
+        
         self.ListBox = wx.ListBox(mnpnl,size=(-1,100))
-        mnsizer.Add(self.ListBox,0,wx.EXPAND,1)
+        mnsizer.Add(self.ListBox,1,wx.EXPAND,1)
         self.ShowMatchingFiles(self.params['filter'])
+
         # box for output selections
         lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Output settings")
         lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
@@ -2673,7 +2697,26 @@ class AutoIntFrame(wx.Frame):
                 msg += ' *** missing ***'
         return msg
     
+    def SetSourceDir(self,event):
+        '''Use a dialog to get a directory for image files
+        '''
+        dlg = wx.DirDialog(self, 'Select directory for image files',
+                        self.params['readdir'],wx.DD_DEFAULT_STYLE)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.params['readdir'] = dlg.GetPath()
+            self.readDir.SetValue(self.params['readdir'])
+            self.ShowMatchingFiles(None)
+        finally:
+            dlg.Destroy()
+        return
+        
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
+        '''Find and show images in the tree and the image files matching the image
+        file directory (self.params['readdir']) and the image file filter
+        (self.params['filter']) and add this information to the GUI list box
+        '''
         G2frame = self.G2frame
         if invalid: return
         msg = ''
@@ -2690,19 +2733,22 @@ class AutoIntFrame(wx.Frame):
         if msg: msg = "Loaded images to integrate:\n" + msg + "\n"
         msg1 = ""
         try:
-            imageList = sorted(
-                glob.glob(os.path.join(self.imagedir,value)))
-            if not imageList:
-                msg1 = 'Warning: No files match search string '+os.path.join(self.imagedir,value)
-            else:
-                for fil in imageList:
-                    if fil not in imageFileList: msg1 += '\n  '+fil
-                if msg1:
-                    msg += 'Files to integrate from '+os.path.join(self.imagedir,value)+msg1
+            if os.path.exists(self.params['readdir']): 
+                imageList = sorted(
+                    glob.glob(os.path.join(self.params['readdir'],self.params['filter'])))
+                if not imageList:
+                    msg1 = 'Warning: No files match search string '+os.path.join(self.params['readdir'],self.params['filter'])
                 else:
-                    msg += 'No files found to read'
+                    for fil in imageList:
+                        if fil not in imageFileList: msg1 += '\n  '+fil
+                    if msg1:
+                        msg += 'Files to integrate from '+os.path.join(self.params['readdir'],self.params['filter'])+msg1
+                    else:
+                        msg += 'No files found to read in '+self.params['readdir']
+            else:
+                msg1 = 'Warning: does not exist: '+self.params['readdir']
         except IndexError:
-            msg += 'Error searching for files named '+os.path.join(self.imagedir,value)
+            msg += 'Error searching for files named '+os.path.join(self.params['readdir'],self.params['filter'])
         self.ListBox.Clear()
         self.ListBox.AppendItems(msg.split('\n'))
         self.PreventReEntryShowMatch = False
@@ -2786,7 +2832,6 @@ class AutoIntFrame(wx.Frame):
                 else:
                     subdir = ''
                 fil = os.path.join(self.params['outdir'],subdir,fileroot)
-                print('writing file '+fil+dfmt)
                 G2IO.ExportPowder(G2frame,treename,fil,dfmt)
                 
     def EnableButtons(self,flag):
@@ -3020,7 +3065,7 @@ class AutoIntFrame(wx.Frame):
         G2frame = self.G2frame
         try:
             self.currImageList = sorted(
-                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
+                glob.glob(os.path.join(self.params['readdir'],self.params['filter'])))
             self.ShowMatchingFiles(self.params['filter'])
         except IndexError:
             self.currImageList = []
@@ -3032,6 +3077,7 @@ class AutoIntFrame(wx.Frame):
         # integrate the images that have already been read in, but
         # have not yet been processed            
         oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.}
+        self.useTA = None
         for img in G2gd.GetGPXtreeDataNames(G2frame,['IMG ']):
             imgId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,img)
             size,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(imgId)
@@ -3055,6 +3101,7 @@ class AutoIntFrame(wx.Frame):
             if self.Pause:
                 self.OnPause()
                 self.PreventReEntryTimer = False
+                self.Raise()
                 return
 
         # loop over image files matching glob, reading in any new ones
@@ -3067,11 +3114,13 @@ class AutoIntFrame(wx.Frame):
                 if self.Pause:
                     self.OnPause()
                     self.PreventReEntryTimer = False
+                    self.Raise()
                     return
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
             print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
         self.PreventReEntryTimer = False
+        self.Raise()
 
 def DefineEvaluator(dlg):
     '''Creates a function that provides interpolated values for a given distance value

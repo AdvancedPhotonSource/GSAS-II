@@ -1926,6 +1926,7 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
                 continue
             try:
                 obj.Writer(TreeName,filename)
+                print('wrote file '+filename)
                 return
             except Exception:
                 print('Export Routine for '+extension+' failed.')

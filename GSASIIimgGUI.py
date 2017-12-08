@@ -2832,7 +2832,7 @@ class AutoIntFrame(wx.Frame):
                 else:
                     subdir = ''
                 fil = os.path.join(self.params['outdir'],subdir,fileroot)
-                G2IO.ExportPowder(G2frame,treename,fil,dfmt)
+                G2IO.ExportPowder(G2frame,treename,fil+'.x',dfmt) # dummy extension (.x) is replaced before write)
                 
     def EnableButtons(self,flag):
         '''Relabels and enable/disables the buttons at window bottom when auto-integration is running

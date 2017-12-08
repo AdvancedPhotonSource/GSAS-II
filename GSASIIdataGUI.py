@@ -3967,7 +3967,7 @@ class GSASII(wx.Frame):
                     sumnum = 1.
                     for item in Comments:           #grab chemical formula from Comments
                         if 'formula' in item[:15].lower():
-                            formula = item.split('=')[1].split()
+                            formula = item.split('=')[1].replace('"','').split()
                             try:
                                 elems = formula[::2]
                                 nums = formula[1::2]

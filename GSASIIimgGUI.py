@@ -2572,8 +2572,9 @@ class AutoIntFrame(wx.Frame):
         sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s): '))
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s):'))
         for dfmt in self.fmtlist:
+            sizer.Add((6,2)) # add a bit of extra space
             fmt = dfmt[1:]
             self.params[fmt] = False
             btn = G2G.G2CheckBox(mnpnl,dfmt,self.params,fmt)

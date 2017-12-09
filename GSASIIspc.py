@@ -2848,11 +2848,11 @@ def StandardizeSpcName(spcgroup):
             if rspc == spc.replace(' ','').upper():
                 return spc + rhomb
     # how about the post-2002 orthorhombic names?
-    for i,spc in sgequiv_2002_orthorhombic:
-        if rspc == i.replace(' ','').upper():
-            return spc
+    if rspc in sgequiv_2002_orthorhombic:
+        return sgequiv_2002_orthorhombic[rspc]
+    else:
     # not found
-    return ''
+        return ''
 
 spgbyNum = []
 '''Space groups indexed by number'''
@@ -2944,7 +2944,9 @@ spglist = {
         'P 2/m','P 21/m','P 2/c','P 2/a','P 2/n','P 21/c','P 21/a','P 21/n',), #3-15
     'C2/m':('C 2','C m','C c','C n',
         'C 2/m','C 2/c','C 2/n',),
-    'Pmmm':('P 2 2 2',
+    'A2/m':('A 2','A m','A a','A n',
+        'A 2/m','A 2/a','A 2/n',),
+   'Pmmm':('P 2 2 2',
         'P 2 2 21','P 21 2 2','P 2 21 2',
         'P 21 21 2','P 2 21 21','P 21 2 21',
         'P 21 21 21',
@@ -3018,7 +3020,19 @@ spglist = {
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
         'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }
-
+sgequiv_2002_orthorhombic = {}
+''' A dictionary of orthorhombic space groups that were renamed in the 2002 Volume A,
+ along with the pre-2002 name. The e designates a double glide-plane
+'''
+sgequiv_2002_orthorhombic = {
+        'AEM2':'A b m 2','B2EM':'B 2 c m','CM2E':'C m 2 a',
+        'AE2M':'A c 2 m','BME2':'B m a 2','C2ME':'C 2 m b',
+        'AEA2':'A b a 2','B2EB':'B 2 c b','CC2E':'C c 2 a',
+        'AE2A':'A c 2 a','BBE2':'B b a 2','C2CE':'C 2 c b',
+        'CMCE':'C m c a','AEMA':'A b m a','BBEM':'B b c m',
+        'BMEB':'B m a b','CCME':'C c m b','AEAM':'A c a m',
+        'CMME':'C m m a','AEMM':'A b m m','BMEM':'B m c m',
+        'CCCE':'C c c a','AEAA':'A b a a','BBEB':'B b c b'}
 ptssdict = {}
 '''A dictionary of superspace group symbols allowed for each point group
 (except cubics). Monoclinics are all b-unique setting.
@@ -3165,13 +3179,6 @@ nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h',
                       'R -3 r', 'R 3 2 r','R 3 m h', 'R 3 m r',
                       'R 3 c r','R -3 c r','R -3 m r',),
 
-#A list of orthorhombic space groups that were renamed in the 2002 Volume A,
-# along with the pre-2002 name. The e designates a double glide-plane'''
-sgequiv_2002_orthorhombic= (('A e m 2', 'A b m 2',),
-                            ('A e a 2', 'A b a 2',),
-                            ('C m c e', 'C m c a',),
-                            ('C m m e', 'C m m a',),
-                            ('C c c e', 'C c c a'),)
 #Use the space groups types in this order to list the symbols in the 
 #order they are listed in the International Tables, vol. A'''
 symtypelist = ('triclinic', 'monoclinic', 'orthorhombic', 'tetragonal', 

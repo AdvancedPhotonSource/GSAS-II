@@ -22,8 +22,6 @@ import numpy.linalg as nl
 import numpy.ma as ma
 import polymask as pm
 from scipy.optimize import leastsq
-import scipy.signal as scsg
-import scipy.cluster.vq as scvq
 import scipy.interpolate as scint
 import copy
 import GSASIIpath
@@ -236,7 +234,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     def ellipseC():
         'compute estimate of ellipse circumference'
         if radii[0] < 0:        #hyperbola
-            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
+#            theta = npacosd(1./np.sqrt(1.+(radii[0]/radii[1])**2))
 #            print (theta)
             return 0
         apb = radii[1]+radii[0]
@@ -814,7 +812,7 @@ def ImageCalibrate(G2frame,data):
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
     
-def Make2ThetaAzimuthMap(data,iLim,jLim,times): #most expensive part of integration!
+def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     'Needs a doc string'
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
@@ -826,13 +824,11 @@ def Make2ThetaAzimuthMap(data,iLim,jLim,times): #most expensive part of integrat
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
-    t0 = time.time()
     TA = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
-    times[1] += time.time()-t0
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     return TA           #2-theta, azimuth & geom. corr. arrays
 
-def MakeMaskMap(data,masks,iLim,jLim,tamp,times):
+def MakeMaskMap(data,masks,iLim,jLim,tamp):
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
@@ -842,7 +838,6 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp,times):
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
-    t0 = time.time()
     #make position masks here
     frame = masks['Frames']
     tam = ma.make_mask_none((nI*nJ))
@@ -858,7 +853,6 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp,times):
         for X,Y,rsq in masks['Points'].T:
             tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
     if tam.shape: tam = np.reshape(tam,(nI,nJ))
-    times[0] += time.time()-t0
     return tam           #position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
@@ -885,7 +879,6 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     return tax,tay,taz,tad,tabs
 
 def MakeUseTA(data,blkSize=128):
-    times = [0,0,0,0,0]
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
@@ -897,12 +890,34 @@ def MakeUseTA(data,blkSize=128):
         for jBlk in range(nXBlks):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
-            TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin),times)          #2-theta & azimuth arrays & create position mask
+            TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))          #2-theta & azimuth arrays & create position mask
             useTAj.append(TA)
         useTA.append(useTAj)
     return useTA
 
-def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None):
+def MakeUseMask(data,masks,blkSize=128):
+    Masks = copy.deepcopy(masks)
+    Masks['Points'] = np.array(Masks['Points']).T           #get spots as X,Y,R arrays
+    if np.any(masks['Points']):
+        Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
+    Nx,Ny = data['size']
+    nXBlks = (Nx-1)//blkSize+1
+    nYBlks = (Ny-1)//blkSize+1
+    useMask = []
+    tamp = ma.make_mask_none((1024*1024))       #NB: this array size used in the fortran histogram2d
+    for iBlk in range(nYBlks):
+        iBeg = iBlk*blkSize
+        iFin = min(iBeg+blkSize,Ny)
+        useMaskj = []
+        for jBlk in range(nXBlks):
+            jBeg = jBlk*blkSize
+            jFin = min(jBeg+blkSize,Nx)
+            mask = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)          #2-theta & azimuth arrays & create position mask
+            useMaskj.append(mask)
+        useMask.append(useMaskj)
+    return useMask
+
+def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
     print ('Begin image integration')
@@ -943,15 +958,21 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
+            t0 = time.time()
             if useTA:
                 TA = useTA[iBlk][jBlk]
             else:
-                TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
-            tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp,times)
-            Block = image[iBeg:iFin,jBeg:jFin]
+                TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            times[1] += time.time()-t0
             t0 = time.time()
+            if useMask:
+                tam = useMask[iBlk][jBlk]
+            else:
+                tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
+            Block = image[iBeg:iFin,jBeg:jFin]
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
-            times[2] += time.time()-t0
+            times[0] += time.time()-t0
+            t0 = time.time()
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -964,6 +985,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data.get('binType','').lower():
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
+            times[2] += time.time()-t0
             t0 = time.time()
             taz = np.array((taz*tad/tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):

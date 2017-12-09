@@ -151,12 +151,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SuperVec = [[0,0,.1],False,4]
             SpGrp = SpGrp.replace('_','')
             # try normalizing the space group, to see if we can pick the space group out of a table
-            SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
-            if SpGrpNorm:
-                E,SGData = G2spc.SpcGroup(SpGrpNorm)
-            # nope, try the space group "out of the Box"
+            E,SGData = G2spc.SpcGroup(SpGrp)
             if E and SpGrp:
-                E,SGData = G2spc.SpcGroup(SpGrp)
+                SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                if SpGrpNorm:
+                    E,SGData = G2spc.SpcGroup(SpGrpNorm)
+            # nope, try the space group "out of the Box"
             if E:
                 if not SpGrp:
                     self.warnings += 'No space group name was found in the CIF.'
@@ -195,9 +195,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     return False
                 waveloop = blk.GetLoop('_cell_wave_vector_seq_id')
                 waveDict = dict(waveloop.items())
-                SuperVec = [[float(waveDict['_cell_wave_vector_x'][0].replace('?','0')),
-                    float(waveDict['_cell_wave_vector_y'][0].replace('?','0')),
-                    float(waveDict['_cell_wave_vector_z'][0].replace('?','0'))],False,4]
+                SuperVec = [[cif.get_number_with_esd(waveDict['_cell_wave_vector_x'][0].replace('?','0'))[0],
+                    cif.get_number_with_esd(waveDict['_cell_wave_vector_y'][0].replace('?','0'))[0],
+                    cif.get_number_with_esd(waveDict['_cell_wave_vector_z'][0].replace('?','0'))[0]],False,4]
             # read in atoms
             self.errors = 'Error during reading of atoms'
             atomlbllist = [] # table to look up atom IDs
@@ -262,31 +262,27 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
             ranIdlookup = {}
             for aitem in atomloop:
+                mc = 0
                 if magnetic:
-                    atomlist = ['','','',0.,0.,0.,1.0,0.,0.,0.,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.]
+                    atomlist = ['','','',0.,0.,0.,1.0, 0.,0.,0.,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
+                    mc = 3
                 else:
-                    atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01,0.,0.,0.,0.,0.,0.]
+                    atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
                 for val,key in zip(aitem,atomkeys):
                     col = G2AtomDict.get(key,-1)
                     if col >= 3:
                         atomlist[col] = cif.get_number_with_esd(val)[0]
-                        if col >= 11: atomlist[9] = 'A' # if any Aniso term is defined, set flag
-                    elif col is not None:
+                        if col >= 11: atomlist[9+mc] = 'A' # if any Aniso term is defined, set flag
+                    elif col is not None and col != -1:
                         atomlist[col] = val
                     elif key in ('_atom_site_thermal_displace_type',
                                '_atom_site_adp_type'):   #Iso or Aniso?
                         if val.lower() == 'uani':
-                            if magnetic:
-                                atomlist[12] = 'A'
-                            else:
-                                atomlist[9] = 'A'
+                            atomlist[9+mc] = 'A'
                     elif key == '_atom_site_u_iso_or_equiv':
                         uisoval = cif.get_number_with_esd(val)[0]
                         if uisoval is not None: 
-                            if magnetic:
-                                atomlist[13] = uisoval                                
-                            else:    
-                                atomlist[10] = uisoval
+                            atomlist[10+mc] = uisoval
                 if not atomlist[1] and atomlist[0]:
                     typ = atomlist[0].rstrip('0123456789-+')
                     if G2elem.CheckElement(typ):
@@ -295,18 +291,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         atomlist[1] = 'Xe'
                         self.warnings += ' Atom type '+typ+' not recognized; Xe assumed\n'
                 if atomlist[0] in anisolabels: # does this atom have aniso values in separate loop?
-                    if magnetic:
-                        atomlist[12] = 'A'
-                    else:
-                        atomlist[9] = 'A'
-                    for val,key in zip( # load the values
-                            anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]), 
-                            anisokeys):
+                    atomlist[9+mc] = 'A'
+                    for val,key in zip(anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]),anisokeys):
                         col = G2AtomDict.get(key)
-                        if magnetic:
-                            col += 3
                         if col:
-                            atomlist[col] = cif.get_number_with_esd(val)[0]
+                            atomlist[col+mc] = cif.get_number_with_esd(val)[0]
                 if magnetic:
                     for mitem in magatomloop:
                         matom = mitem[G2MagDict.get('_atom_site_moment_label',-1)]
@@ -316,9 +305,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 if mcol:
                                     atomlist[mcol] = cif.get_number_with_esd(mval)[0]
                             break                            
-                    atomlist[10],atomlist[11] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
-                else:
-                    atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+                atomlist[7+mc],atomlist[8+mc] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)

@@ -18,6 +18,7 @@ from __future__ import division, print_function
 import os
 import copy
 import glob
+import time
 import re
 import math
 import sys
@@ -143,7 +144,7 @@ def UpdateImageData(G2frame,data):
 ##### Image Controls
 ################################################################################                    
 blkSize = 1024   #this seems to be optimal; will break in polymask if >1024
-def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
+def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly=False):
     '''Shows and handles the controls on the "Image Controls"
     data tree entry
     '''
@@ -237,7 +238,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         G2frame.slideSizer.GetChildren()[1].Window.SetValue(Imax)   #tricky 
         G2frame.slideSizer.GetChildren()[4].Window.SetValue(Imin)   #tricky
          
-    def OnIntegrate(event,useTA=None):
+    def OnIntegrate(event,useTA=None,useMask=None):
         '''Integrate image in response to a menu event or from the AutoIntegrate
         dialog. In the latter case, event=None. 
         TODO: think of not repeating x,y-->2th,azm calc for unchanging calibrations?
@@ -246,7 +247,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
         sumImg = GetImageZ(G2frame,data)
         wx.BeginBusyCursor()
         try:
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA)            
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA,useMask=useMask)            
         finally:
             wx.EndBusyCursor()    
         G2frame.PauseIntegration = G2frame.Integrate[-1]
@@ -269,6 +270,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
                 try:
                     pId = 0
                     oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.}
+                    oldMhash = 0
                     for icnt,item in enumerate(items):
                         GoOn = dlgp.Update(icnt)
                         if not GoOn[0]:
@@ -282,12 +284,19 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
                             if Data[item] != oldData[item]:
                                 same = False
                         if not same:
-                            print('Use new image controls')
+                            t0 = time.time()
                             useTA = G2img.MakeUseTA(Data,blkSize)
+                            print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
                         Masks = G2frame.GPXtree.GetItemPyData(
                             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
+                        Mhash = hash(str(Masks))
+                        if  Mhash != oldMhash:
+                            t0 = time.time()
+                            useMask = G2img.MakeUseMask(Data,Masks,blkSize)
+                            print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
+                            oldMhash = Mhash
                         image = GetImageZ(G2frame,Data)
-                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA)
+                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
                         del image   #force cleanup
                         pId = G2IO.SaveIntegration(G2frame,CId,Data)
                         oldData = Data
@@ -1192,7 +1201,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,IntegrateOnly=False):
     #end fix
     
     if IntegrateOnly:
-        OnIntegrate(None,useTA=useTA)
+        OnIntegrate(None,useTA=useTA,useMask=useMask)
         return
     
     colorList = sorted([m for m in mpl.cm.datad.keys() ],key=lambda s: s.lower())   #if not m.endswith("_r")
@@ -2770,7 +2779,7 @@ class AutoIntFrame(wx.Frame):
                     'Press Resume to continue integration or Reset to prepare to reintegrate all images')
         self.Pause = True
             
-    def IntegrateImage(self,img,useTA=None):
+    def IntegrateImage(self,img,useTA=None,useMask=None):
         '''Integrates a single image. Ids for created PWDR entries (more than one is possible)
         are placed in G2frame.IntgOutList
         '''
@@ -2796,7 +2805,7 @@ class AutoIntFrame(wx.Frame):
         data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
         # simulate a Image Controls press, since that is where the
         # integration is hidden
-        UpdateImageControls(G2frame,data,masks,useTA=useTA,IntegrateOnly=True)
+        UpdateImageControls(G2frame,data,masks,useTA=useTA,useMask=useMask,IntegrateOnly=True)
         G2frame.IntegratedList.append(img) # note this as integrated
         # split name and control number
         s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
@@ -2973,7 +2982,7 @@ class AutoIntFrame(wx.Frame):
         Also optionally sets up and computes PDF. 
         This is called only after the "Start" button is pressed (then its label reads "Pause").
         '''
-        def AutoIntegrateImage(imgId,useTA=None):
+        def AutoIntegrateImage(imgId,useTA=None,useMask=None):
             '''Integrates an image that has been read into the data tree and updates the
             AutoInt window. 
             '''
@@ -2991,7 +3000,7 @@ class AutoIntFrame(wx.Frame):
             ImageMasks.update(self.ImageMasks)
             self.EnableButtons(False)
             try:
-                self.IntegrateImage(img,useTA=useTA)
+                self.IntegrateImage(img,useTA=useTA,useMask=useMask)
             finally:
                 self.EnableButtons(True)
             self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
@@ -3078,7 +3087,10 @@ class AutoIntFrame(wx.Frame):
         # integrate the images that have already been read in, but
         # have not yet been processed            
         oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.}
-        self.useTA = None
+        oldMhash = 0
+        if 'useTA' not in dir(self):    #initial definition; reuse if after Resume
+            self.useTA = None
+            self.useMask = None
         for img in G2gd.GetGPXtreeDataNames(G2frame,['IMG ']):
             imgId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,img)
             size,imagefile,imagetag = G2frame.GPXtree.GetImageLoc(imgId)
@@ -3088,14 +3100,23 @@ class AutoIntFrame(wx.Frame):
             if img in G2frame.IntegratedList: continue
             Data = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,imgId, 'Image Controls'))
-            same = True
+            sameTA = True
             for item in ['tilt','distance','rotation','center','DetDepth','azmthOff']:
                 if Data[item] != oldData[item]:
-                    same = False
-            if not same:
-                print('Use new image controls')
+                    sameTA = False
+            if not sameTA:
+                t0 = time.time()
                 self.useTA = G2img.MakeUseTA(Data,blkSize)
-            AutoIntegrateImage(imgId,self.useTA)
+                print(' Use new image controls; xy->th,azm mtime: %.3f'%(time.time()-t0))
+            Mask = G2frame.GPXtree.GetItemPyData(
+                G2gd.GetGPXtreeItemId(G2frame,imgId, 'Masks'))
+            Mhash = hash(str(Mask))
+            if  Mhash != oldMhash:
+                t0 = time.time()
+                self.useMask = G2img.MakeUseMask(Data,Mask,blkSize)
+                print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
+                oldMhash = Mhash
+            AutoIntegrateImage(imgId,self.useTA,self.useMask)
             oldData = Data
             if self.pdfControls: AutoComputePDF(imgId)
             self.Pause |= G2frame.PauseIntegration
@@ -3106,10 +3127,12 @@ class AutoIntFrame(wx.Frame):
                 return
 
         # loop over image files matching glob, reading in any new ones
+        if self.useTA is None or self.useMask is None:
+            print('Integration will not be fast; there is no beginning image controls')     #TODO: work this out??
         for newImage in self.currImageList:
             if newImage in imageFileList or self.Pause: continue # already read?
             for imgId in G2IO.ReadImages(G2frame,newImage):
-                AutoIntegrateImage(imgId,self.useTA)
+                AutoIntegrateImage(imgId,self.useTA,self.useMask)
                 if self.pdfControls: AutoComputePDF(imgId)
                 self.Pause |= G2frame.PauseIntegration
                 if self.Pause:

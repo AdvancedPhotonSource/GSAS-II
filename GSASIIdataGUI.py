@@ -3967,8 +3967,11 @@ class GSASII(wx.Frame):
                     sumnum = 1.
                     for item in Comments:           #grab chemical formula from Comments
                         if 'formula' in item[:15].lower():
-                            formula = item.split('=')[1].replace('"','').split()
+                            formula = item.split('=')[1].strip('"\n').split()
                             try:
+                                if len(formula) < 2:
+                                    formula = ['C',]
+                                    raise ValueError
                                 elems = formula[::2]
                                 nums = formula[1::2]
                                 Formula = zip(elems,nums)
@@ -3981,9 +3984,11 @@ class GSASII(wx.Frame):
                                 
                             except ValueError:
                                 ElData = G2elem.GetElInfo(formula[0],Parms)
+                                sumnum = 1.0
                                 ElData['FormulaNo'] = 1.0
                                 ElList[elem] = ElData
                     ElLists.append(ElList)
+                    print(sumnum)
                 id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if len(TextList) < 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')

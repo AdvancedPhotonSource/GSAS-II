@@ -1,0 +1,3 @@
+.. automodule:: GSASIIscriptable
+    :members: 
+

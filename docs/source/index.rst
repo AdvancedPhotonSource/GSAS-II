@@ -19,6 +19,7 @@ GSAS-II Developer's Documentation
   GSASIIplot.rst
   GSASIIpwd.rst
   SAS.rst
+  GSASIIscriptable.rst
   GSASIIscripts.rst
   exports.rst
   imports.rst

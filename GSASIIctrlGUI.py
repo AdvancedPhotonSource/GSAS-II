@@ -4558,6 +4558,18 @@ tutorialIndex = (
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title'],
     )
+'''A catalog of GSAS-II tutorials with headings. This is the master list of GSAS-II tutorials and must be updated when tutorials are
+added. Each item has either one or three items. 
+Titles are single item in a list or tuple. Tutorials have three items: (a) the name of the directory,
+(b) the name of the web page and (c) a title for the tutorial. 
+Tutorials that depend on a previous tutorial being completed should have the title for
+the tutorial indented by five spaces.
+
+Note that :data:`tutorialCatalog` is generated from this tuple. 
+Also see :mod:`makeTutorial` which is used to read this and create a web page.
+'''
+
+#A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
 tutorialCatalog = [l for l in tutorialIndex if len(l) == 3]
 
 class OpenTutorial(wx.Dialog):

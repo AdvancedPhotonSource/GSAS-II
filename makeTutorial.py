@@ -1,4 +1,20 @@
-# create an HTML page from the tutorials in GSASIIctrlGUI.tutorialCatalog
+# -*- coding: utf-8 -*-
+#makeTutorial.py
+########### SVN repository information ###################
+# $Date: $
+# $Author: toby $
+# $Revision: 3167 $
+# $URL: $
+# $Id: $
+########### SVN repository information ###################
+'''
+*makeTutorial: Make Tutorial Web Page*
+---------------------------------------------
+
+Creates an HTML page (``GSASII/help/Tutorials.html``) listing all the tutorials in
+:data:`GSASIIctrlGUI.tutorialIndex`. Run this after adding a new tutorial to that
+index.
+'''
 
 from __future__ import print_function
 import os

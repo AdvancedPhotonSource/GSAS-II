@@ -8,8 +8,8 @@
 # $Id: GSASIIIO.py 2777 2017-04-12 20:12:45Z vondreele $
 ########### SVN repository information ###################
 """
-*GSASIIscriptable: Scripting Tools*
-======================================
+*GSASIIscriptable: Scripting Interface*
+=======================================
 
 Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
 This file specifies several wrapper classes around GSAS-II data representations.
@@ -311,7 +311,11 @@ import argparse
 import os.path as ospath
 import datetime as dt
 import sys
-import cPickle
+import platform
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+else:
+    import _pickle as cPickle
 import imp
 import copy
 import os
@@ -1325,7 +1329,7 @@ class G2Project(G2ObjectWrapper):
         """
         if outputnames:
             if len(refinements) != len(outputnames):
-                raise ValueError("Should have same number of outuputs to"
+                raise ValueError("Should have same number of outputs to"
                                  "refinements")
         else:
             outputnames = [None for r in refinements]

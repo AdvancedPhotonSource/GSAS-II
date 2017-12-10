@@ -1,6 +1,3 @@
-.. automodule:: GSASIIscriptable
-    :members: 
-
 *GSAS-II Misc Scripts*
 ======================
 
@@ -17,6 +14,12 @@
     :members: 
 
 .. automodule:: makeBat
+    :members: 
+
+.. automodule:: makeLinux
+    :members: 
+
+.. automodule:: makeTutorial
     :members: 
 
 .. automodule:: unit_tests

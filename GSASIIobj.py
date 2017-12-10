@@ -2737,6 +2737,7 @@ class ShowTiming(object):
        tim0.start('start')
        tim0.start('in section 1')
        tim0.start('in section 2')
+       
     etc. (Note that each section should have a unique label.)
 
     After the last section, end timing with::

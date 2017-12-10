@@ -169,3 +169,8 @@ computations are performed in-line.
 
 Show_timing = False
 '''If True, shows various timing results.'''
+
+Image_1IDmetadata = False
+'''When True, when images are read, GSAS-II will read metadata from a 1-ID style
+.par and .lbls (or .lbls_EXT) file.
+'''

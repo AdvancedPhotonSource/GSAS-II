@@ -782,6 +782,8 @@ class GSASII(wx.Frame):
                             rd.Data['formatName'] = rd.formatName
                             if rd.sumfile:
                                 rd.readfilename = rd.sumfile
+                            if GSASIIpath.GetConfigValue('Image_1IDmetadata'):
+                                G2IO.Get1IDMetadata(rd)
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
                             rd_list.append(True) # save a stub the result before it is written over
                             del rd.Image

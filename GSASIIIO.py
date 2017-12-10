@@ -38,6 +38,7 @@ else:
     import _pickle as cPickle
 import sys
 import re
+import glob
 import random as ran
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -362,7 +363,9 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.Image = Id
 
 def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
-    '''Read a single image with an image importer. 
+    '''Read a single image with an image importer. This is called to reread an image
+    after it has already been imported with :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`
+    (or :func:`ReadImages` in Auto Integration) so it is not necessary to reload metadata.
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
     :param str imagefile: name of image file
@@ -438,6 +441,11 @@ def ReadImages(G2frame,imagefile):
     '''Read one or more images from a file and put them into the Tree
     using image importers. Called only in :meth:`AutoIntFrame.OnTimerLoop`.
 
+    ToDo: Images are most commonly read in :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`
+    which is called from :meth:`GSASIIdataGUI.GSASII.OnImportImage`
+    it would be good if these routines used a common code core so that changes need to
+    be made in only one place.
+
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
     :param str imagefile: name of image file 
 
@@ -491,6 +499,9 @@ def ReadImages(G2frame,imagefile):
                     print ('Transposing Image!')
                     rd.Image = rd.Image.T
                 rd.Data['ImageTag'] = rd.repeatcount
+                if GSASIIpath.GetConfigValue('Image_1IDmetadata'):
+                    rd.readfilename = imagefile
+                    Get1IDMetadata(rd)
                 LoadImage2Tree(imagefile,G2frame,rd.Comments,rd.Data,rd.Npix,rd.Image)
                 repeat = rd.repeat
             CreatedIMGitems.append(G2frame.Image)
@@ -2133,6 +2144,202 @@ def ReadDIFFaX(DIFFaXfile):
             for stack in Stack[2:]:
                 Layer['Stacking'][2] += ' '+stack
     return Layer
+
+def Read1IDpar(imagefile):
+    '''Reads image metadata from a 1-ID style .par file from the same directory
+    as the image. The .par file has any number of columns separated by spaces.
+    As an index to the .par file a second label file must be specified with the
+    same file name as the .par file but the extension must be .XXX_lbls (where
+    .XXX is the extension of the image) or if that is not present extension
+    .lbls
+
+    :param str imagefile: the full name of the image file (with directory and extension)
+
+    :returns: a dict with parameter values. Named parameters will have the type based on
+       the specified Python function, named columns will be character strings
+    
+    The contents of the label file will look like this::
+    
+        # define keywords
+        filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34
+        distance: float | 75
+        wavelength:lambda keV: 12.398425/float(keV)|9
+        pixelSize:lambda x: [74.8, 74.8]|0
+        ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4
+        # define other variables
+        0:day
+        1:month
+        2:date
+        3:time
+        4:year
+        7:I_ring
+
+    This file contains three types of lines in any order.
+     * Named parameters are evaluated with user-supplied Python code (see
+       subsequent information). Specific named parameters are used 
+       to determine values that are used for image interpretation (see table,
+       below). Any others are copied to the Comments subsection of the Image
+       tree item.
+     * Column labels are defined with a column number (integer) followed by
+       a colon (:) and a label to be assigned to that column. All labeled
+       columns are copied to the Image's Comments subsection.
+     * Comments are any line that does not contain a colon.
+
+    Note that columns are numbered starting at zero. 
+
+    Any named parameter may be defined provided it is not a valid integer,
+    but the named parameters in the table have special meanings, as descibed.
+    The parameter name is followed by a colon. After the colon, specify
+    Python code that defines or specifies a function that will be called to
+    generate a value for that parameter. After that code, supply a vertical
+    bar (|) and then a list of one more more columns that will be supplied
+    as arguments to that function. The examples above are discussed below:
+
+    ``filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34``
+        Here the function to be used is defined with a lambda statement:
+        
+          lambda x,y: "{}_{:0>6}".format(x,y)
+
+        This function will use the format function to create a file name from the
+        contents of columns 33 and 34. The first parameter (x, col. 33) is inserted directly into
+        the file name, followed by a underscore (_), followed by the second parameter (y, col. 34),
+        which will be left-padded with zeros to six characters (format directive ``:0>6``).
+        
+    ``distance: float | 75``
+        Here the contents of column 75 will be converted to a floating point number
+        by calling float on it. Note that the spaces here are ignored.
+        
+    ``wavelength:lambda keV: 12.398425/float(keV)|9``
+        Here we define an algebraic expression to convert an energy in keV to a
+        wavelength and pass the contents of column 9 as that input energy
+        
+    ``pixelSize:lambda x: [74.8, 74.8]|0``
+        In this case the pixel size is a constant (a list of two numbers). The first
+        column is passed as an argument as at least one argument is required, but that
+        value is not used in the expression.
+
+     ``ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4``
+        This example defines a parameter that takes items in the first five columns
+        and formats them in a different way. This parameter is not one of the pre-defined
+        parameter names below. Some external code could be used to change the month string
+        (argument ``m``) to a integer from 1 to 12. 
+            
+    **Pre-defined parameter names**
+    
+    =============  =========  ========  ====================================================
+     keyword       required    type      Description
+    =============  =========  ========  ====================================================
+       filename    yes         str      generates the file name prefix for the matching image
+                                        file (MyImage001 for file /tmp/MyImage001.tif).
+     polarization  no         float     generates the polarization expected based on the
+                                        monochromator angle, defaults to 0.99.
+       center      no         list of   generates the approximate beam center on the detector
+                              2 floats  in mm, such as [204.8, 204.8].
+       distance    yes        float     generates the distance from the sample to the detector
+                                        in mm
+       pixelSize   no         list of   generates the size of the pixels in microns such as
+                              2 floats  [200.0, 200.0]. 
+       wavelength  yes        float     generates the wavelength in Angstroms
+    =============  =========  ========  ====================================================
+
+    
+    '''
+    dir,fil = os.path.split(os.path.abspath(imagefile))
+    imageName,ext = os.path.splitext(fil)
+    parfiles = glob.glob(os.path.join(dir,'*.par'))
+    if len(parfiles) == 0:
+        print('Sorry, No 1-ID .par file found in '+dir)
+        return {}
+    for parFil in parfiles: # loop over all .par files (hope just 1) in image dir until image is found
+        parRoot = os.path.splitext(parFil)[0]
+        for e in (ext+'_lbls','.lbls'):
+            if os.path.exists(parRoot+e):
+                lblFil = parRoot+e
+                break
+        else:
+            print('Warning: No labels definitions found for '+parFil)
+            return {}
+        fp = open(lblFil,'Ur')         # read column labels
+        lbldict = {}
+        fmt = ""
+        keyExp = {}
+        keyCols = {}
+        for line in fp: # read label definitions
+            items = line.strip().split(':')
+            if len(items) < 2: continue # no colon, line is a comment
+            # is this line a definition for a named parameter?
+            key = items[0]
+            try: 
+                int(key)
+            except ValueError: # named parameters are not valid numbers
+                items = line.split(':',1)[1].split('|')
+                try:
+                    keyExp[key] = eval(items[0]) # compile the expression
+                    if not callable(keyExp[key]):
+                        raise Exception("Expression not a function")
+                except Exception as msg:
+                    print('Warning: Expression "{}" is not valid for key {}'.format(items[0],key))
+                    print(msg)
+                keyCols[key] = [int(i) for i in items[1].strip().split(',')]
+                continue
+            if len(items) == 2: # simple column definition
+                lbldict[int(items[0])] = items[1]
+        fp.close()
+        if 'filename' not in keyExp:
+            print("Warning: No valid filename expression in {} file, skipping .par".format(lblFil))
+            continue
+        # read the .par, looking for the matching image rootname
+        fp = open(parFil,'Ur')
+        for i,line in enumerate(fp):
+            items = line.strip().split(' ')
+            name = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+            if name == imageName: # got our match, parse the line and finish
+                metadata = {lbldict[i]:items[i] for i in lbldict}
+                metadata.update(
+                    {key:keyExp[key](*[items[j] for j in keyCols[key]]) for key in keyExp})
+                metadata['par file'] = parFil
+                metadata['lbls file'] = lblFil
+                print("Metadata read from {}".format(parFil))
+                return metadata
+        else:
+            print("Image {} not found in {}".format(imageName,parFil))
+            fp.close()
+            continue
+        fp.close()
+    else:
+        print("Warning: No 1-ID metadata for image {}".format(imageName))
+        return {}
+
+def Get1IDMetadata(reader):
+    '''Add 1-ID metadata to an image using a 1-ID .par file using :func:`Read1IDpar`
+    
+    :param reader: a reader object from reading an image
+    
+    '''
+    parParms = Read1IDpar(reader.readfilename)
+    if not parParms: return # check for read failure
+    specialKeys = ('filename',"polarization", "center", "distance", "pixelSize", "wavelength",)
+    reader.Comments = ['Metadata from {} assigned by {}'.format(parParms['par file'],parParms['lbls file'])]
+    for key in parParms:
+        if key in specialKeys+('par file','lbls file'): continue
+        reader.Comments += ["{} = {}".format(key,parParms[key])]
+    if "polarization" in parParms:
+        reader.Data['PolaVal'][0] = parParms["polarization"]
+    else:
+        reader.Data['PolaVal'][0] = 0.99
+    if "center" in parParms:
+        reader.Data['center'] = parParms["center"]
+    if "pixelSize" in parParms:
+        reader.Data['pixelSize'] = parParms["pixelSize"]
+    if "wavelength" in parParms:
+        reader.Data['wavelength'] = parParms['wavelength']
+    else:
+        print('Error: wavelength not defined in {}'.format(parParms['lbls file']))
+    if "distance" in parParms:
+        reader.Data['distance'] = parParms['distance']
+        reader.Data['setdist'] = parParms['distance']
+    else:
+        print('Error: distance not defined in {}'.format(parParms['lbls file']))
 
 if __name__ == '__main__':
     import GSASIIdataGUI

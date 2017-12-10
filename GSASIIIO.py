@@ -2151,7 +2151,7 @@ def Read1IDpar(imagefile):
     As an index to the .par file a second label file must be specified with the
     same file name as the .par file but the extension must be .XXX_lbls (where
     .XXX is the extension of the image) or if that is not present extension
-    .lbls
+    .lbls. Called by :func:`Get1IDMetadata`
 
     :param str imagefile: the full name of the image file (with directory and extension)
 

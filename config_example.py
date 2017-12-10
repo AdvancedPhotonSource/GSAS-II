@@ -171,6 +171,7 @@ Show_timing = False
 '''If True, shows various timing results.'''
 
 Image_1IDmetadata = False
-'''When True, when images are read, GSAS-II will read metadata from a 1-ID style
-.par and .lbls (or .lbls_EXT) file.
+'''When True and when images are read, GSAS-II will read metadata from a 1-ID
+style .par and a .EXT_lbls or .lbls file. See :func:`GSASIIIO.Read1IDpar` for
+information on how this is done. 
 '''

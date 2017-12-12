@@ -21,8 +21,8 @@ GSAS-II Developer's Documentation
   SAS.rst
   GSASIIscriptable.rst
   GSASIIscripts.rst
+  imports.rst 
   exports.rst
-  imports.rst
 
 *Required packages*
 --------------------

@@ -693,6 +693,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     name = G2frame.GPXtree.GetItemText(Id)
     name = name.replace('IMG ',data['type']+' ')
     Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Comments'))
+    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     if 'PWDR' in name:
         names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
         codes = [0 for i in range(12)]
@@ -743,6 +744,17 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                     polariz = float(item.split('=')[1])
                 except:
                     polariz = 0.99
+            for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
+                'Chi','Phi'):
+                if key.lower() in item.lower():
+                    try:
+                        Sample[key] = float(item.split('=')[1])
+                    except:
+                        pass
+            if 'label_prm' in item.lower():
+                for num in ('1','2','3'):
+                    if 'label_prm'+num in item.lower():
+                        Controls['FreePrm'+num] = item.split('=')[1].strip()
         if 'PWDR' in Aname:
             parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
@@ -2166,6 +2178,8 @@ def Read1IDpar(imagefile):
         wavelength:lambda keV: 12.398425/float(keV)|9
         pixelSize:lambda x: [74.8, 74.8]|0
         ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4
+        Temperature: float|53
+        FreePrm2: int | 34 | Free Parm2 Label
         # define other variables
         0:day
         1:month
@@ -2179,7 +2193,7 @@ def Read1IDpar(imagefile):
        subsequent information). Specific named parameters are used 
        to determine values that are used for image interpretation (see table,
        below). Any others are copied to the Comments subsection of the Image
-       tree item.
+       tree item. 
      * Column labels are defined with a column number (integer) followed by
        a colon (:) and a label to be assigned to that column. All labeled
        columns are copied to the Image's Comments subsection.
@@ -2191,9 +2205,21 @@ def Read1IDpar(imagefile):
     but the named parameters in the table have special meanings, as descibed.
     The parameter name is followed by a colon. After the colon, specify
     Python code that defines or specifies a function that will be called to
-    generate a value for that parameter. After that code, supply a vertical
-    bar (|) and then a list of one more more columns that will be supplied
-    as arguments to that function. The examples above are discussed below:
+    generate a value for that parameter.
+
+    Note that several keywords, if defined in the Comments, will be found and
+    placed in the appropriate section of the powder histogram(s)'s Sample
+    Parameters after an integration: 'Temperature','Pressure','Time',
+    'FreePrm1','FreePrm2','FreePrm3','Omega','Chi', and 'Phi'. 
+
+    After the Python code, supply a vertical bar (|) and then a list of one
+    more more columns that will be supplied as arguments to that function.
+
+    Note that the labels for the three FreePrm items can be changed by
+    including that label as a third item with an additional vertical bar. Labels
+    will be ignored for any other named parameters. 
+    
+    The examples above are discussed here:
 
     ``filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34``
         Here the function to be used is defined with a lambda statement:
@@ -2218,11 +2244,16 @@ def Read1IDpar(imagefile):
         column is passed as an argument as at least one argument is required, but that
         value is not used in the expression.
 
-     ``ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4``
+    ``ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4``
         This example defines a parameter that takes items in the first five columns
         and formats them in a different way. This parameter is not one of the pre-defined
         parameter names below. Some external code could be used to change the month string
-        (argument ``m``) to a integer from 1 to 12. 
+        (argument ``m``) to a integer from 1 to 12.
+        
+    ``FreePrm2: int | 34 | Free Parm2 Label``
+        In this example, the contents of column 34 will be converted to an integer and
+        placed as the second free-named parameter in the Sample Parameters after an
+        integration. The label for this parameter will be changed to "Free Parm2 Label".
             
     **Pre-defined parameter names**
     
@@ -2264,6 +2295,7 @@ def Read1IDpar(imagefile):
         fmt = ""
         keyExp = {}
         keyCols = {}
+        labels = {}
         for line in fp: # read label definitions
             items = line.strip().split(':')
             if len(items) < 2: continue # no colon, line is a comment
@@ -2281,6 +2313,8 @@ def Read1IDpar(imagefile):
                     print('Warning: Expression "{}" is not valid for key {}'.format(items[0],key))
                     print(msg)
                 keyCols[key] = [int(i) for i in items[1].strip().split(',')]
+                if key.lower().startswith('freeprm') and len(items) > 2:
+                    labels[key] = items[2]
                 continue
             if len(items) == 2: # simple column definition
                 lbldict[int(items[0])] = items[1]
@@ -2294,12 +2328,14 @@ def Read1IDpar(imagefile):
             items = line.strip().split(' ')
             name = keyExp['filename'](*[items[j] for j in keyCols['filename']])
             if name == imageName: # got our match, parse the line and finish
-                metadata = {lbldict[i]:items[i] for i in lbldict}
+                metadata = {lbldict[j]:items[j] for j in lbldict}
                 metadata.update(
                     {key:keyExp[key](*[items[j] for j in keyCols[key]]) for key in keyExp})
                 metadata['par file'] = parFil
                 metadata['lbls file'] = lblFil
-                print("Metadata read from {}".format(parFil))
+                for lbl in labels:
+                    metadata['label_'+lbl[4:].lower()] = labels[lbl]
+                print("Metadata read from {} line {}".format(parFil,i+1))
                 return metadata
         else:
             print("Image {} not found in {}".format(imageName,parFil))

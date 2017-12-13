@@ -54,6 +54,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
         # make sure the ranId is really unique!
         while self.Phase['ranId'] in usedRanIdList:
             self.Phase['ranId'] = ran.randint(0,sys.maxsize)
+        self.MPhase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
+        # make sure the ranId is really unique!
+        while self.MPhase['ranId'] in usedRanIdList:
+            self.MPhase['ranId'] = ran.randint(0,sys.maxsize)
         returnstat = False
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',
@@ -73,8 +77,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
             )
         try:
             cf = G2obj.ReadCIF(filename)
-        except:
-            msg = 'Unreadable cif file'
+        except cif.StarError as msg:
+            msg  = 'Unreadable cif file\n'+str(msg)
             self.errors = msg
             self.warnings += msg
             return False
@@ -108,7 +112,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if na == 1:
                     choice[-1] += '1 atom'
                 else:
-                    choice[-1] += ('%d' % nd) + ' atoms'
+                    choice[-1] += ('%d' % na) + ' atoms'
                 choice[-1] += ', cell: '
                 fmt = "%.2f,"
                 for i,key in enumerate(cellitems):
@@ -130,27 +134,58 @@ class CIFPhaseReader(G2obj.ImportPhase):
             blk = cf[str_blklist[selblk]]
             E = True
             Super = False
-            if blk.get("_space_group_ssg_name",''):
+            moddim = int(blk.get("_cell_modulation_dimension",'0'))
+            if moddim:
                 Super = True
+                if moddim > 1:
+                    msg = 'more than 3+1 super symmetry is not allowed in GSAS-II'
+                    self.errors = msg
+                    self.warnings += msg
+                    return False
+                if blk.get('_cell_subsystems_number'):
+                    msg = 'Composite super structures not allowed in GSAS-II'
+                    self.errors = msg
+                    self.warnings += msg
+                    return False
+                sspgrp = blk.get("_space_group_ssg_name",'')
+                if 'X' in sspgrp:
+                    self.warnings += '\nAd hoc incommensurate space group '+sspgrp+' is not allowed in GSAS-II'
+                    self.errors = 'Ad hoc incommensurate space groups not allowed in GSAS-II'
+                    return False
             magnetic = False
             self.Phase['General']['Type'] = 'nuclear'
             SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
             if not SpGrp:
                 SpGrp = blk.get("_space_group_name_H-M_alt",'')
             if not SpGrp:
-                SpGrp = blk.get("_parent_space_group.name_H-M",'')
+                MSpGrp = blk.get("_space_group.magn_name_BNS",'')
+                SpGrp = MSpGrp.replace("'",'')
+                if '_' in SpGrp: SpGrp = SpGrp.split('_')[1]
                 if SpGrp:   #TODO need to decide if read nuclear phase or magnetic phase 
                     magnetic = True
-                    self.Phase['General']['Type'] = 'magnetic'
-                    self.Phase['General']['AtomPtrs'] = [3,1,10,12]
+                    self.MPhase['General']['Type'] = 'magnetic'
+                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
             if Super:
-                sspgrp = blk.get("_space_group_ssg_name",'').split('(')
+                sspgrp = blk.get("_space_group_ssg_name",'')
+                sspgrp = sspgrp.split('(')
                 SpGrp = sspgrp[0]
                 SuperSg = '('+sspgrp[1].replace('\\','')
                 Super = True
                 SuperVec = [[0,0,.1],False,4]
             SpGrp = SpGrp.replace('_','')
             # try normalizing the space group, to see if we can pick the space group out of a table
+            if Super:
+                SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                if not SpGrp:
+                    msg = 'GSAS-II failed to find space group symbol; not a valid cif file'
+                    self.errors = msg
+                    self.warnings += msg
+                    return False
+            if not SpGrp:
+                msg = 'GSAS-II failed to find space group symbol; not a valid cif file'
+                self.errors = msg
+                self.warnings += msg
+                return False
             E,SGData = G2spc.SpcGroup(SpGrp)
             if E and SpGrp:
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
@@ -164,14 +199,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += "Change this in phase's General tab."
                 else:
                     self.warnings += 'ERROR in space group symbol '+SpGrp
-                    if 'X' in SpGrp:
-                        self.warnings += '\nAd hoc incommensurate space groups not allowed in GSAS-II'
                     self.warnings += '\nThe space group has been set to "P 1". '
                     self.warnings += "Change this in phase's General tab."
                     self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
                     self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
+            if magnetic:
+                self.MPhase['General']['SGData'] = SGData                
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:
@@ -187,12 +222,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 cell.append(cif.get_number_with_esd(blk[lbl])[0])
             Volume = G2lat.calc_V(G2lat.cell2A(cell))
             self.Phase['General']['Cell'] = [False,]+cell+[Volume,]
+            if magnetic:
+                self.MPhase['General']['Cell'] = [False,]+cell+[Volume,]                
             if Super:
-                if int(blk.get('_cell_modulation_dimension','')) > 1:
-                    msg = 'more than 3+1 super symmetry is not allowed in GSAS-II'
-                    self.errors = msg
-                    self.warnings += msg
-                    return False
                 waveloop = blk.GetLoop('_cell_wave_vector_seq_id')
                 waveDict = dict(waveloop.items())
                 SuperVec = [[cif.get_number_with_esd(waveDict['_cell_wave_vector_x'][0].replace('?','0'))[0],
@@ -223,8 +255,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 occCdict = {}
                 displSloop = None
                 displFloop = None
-                dispSdict = {}
-                dispFdict = {}
+                displSdict = {}
+                displFdict = {}
                 UijFloop = None
                 UijFdict = {}
                 if blk.get('_atom_site_occ_Fourier_atom_site_label'):
@@ -243,6 +275,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     UijFloop = blk.GetLoop('_atom_site_U_Fourier_atom_site_label')
                     UijFdict = dict(UijFloop.items())
             self.Phase['Atoms'] = []
+            if magnetic:
+                self.MPhase['Atoms'] = []
             G2AtomDict = {  '_atom_site_type_symbol' : 1,
                             '_atom_site_label' : 0,
                             '_atom_site_fract_x' : 3,
@@ -319,17 +353,19 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     Sadp = []                      
                     Spos = np.zeros((4,6))
                     nim = -1
-                    for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
-                        if item == atomlist[0]:
-                            waveType = 'Fourier'                                
-                            ix = ['x','y','z'].index(displFdict['_atom_site_displace_fourier_axis'][i])
-                            im = int(displFdict['_atom_site_displace_fourier_wave_vector_seq_id'][i])
-                            if im != nim:
-                                nim = im
-                            val = displFdict['_atom_site_displace_fourier_param_sin'][i]
-                            Spos[im-1][ix] = cif.get_number_with_esd(val)[0]
-                            val = displFdict['_atom_site_displace_fourier_param_cos'][i]
-                            Spos[im-1][ix+3] = cif.get_number_with_esd(val)[0]
+                    waveType = 'Fourier'                                
+                    if displFdict:
+                        for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
+                            if item == atomlist[0]:
+                                waveType = 'Fourier'                                
+                                ix = ['x','y','z'].index(displFdict['_atom_site_displace_fourier_axis'][i])
+                                im = int(displFdict['_atom_site_displace_fourier_wave_vector_seq_id'][i])
+                                if im != nim:
+                                    nim = im
+                                val = displFdict['_atom_site_displace_fourier_param_sin'][i]
+                                Spos[im-1][ix] = cif.get_number_with_esd(val)[0]
+                                val = displFdict['_atom_site_displace_fourier_param_cos'][i]
+                                Spos[im-1][ix+3] = cif.get_number_with_esd(val)[0]
                     if nim >= 0:
                         Spos = [[spos,False] for spos in Spos[:nim]]
                     else:

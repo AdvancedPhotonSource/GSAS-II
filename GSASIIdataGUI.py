@@ -802,6 +802,7 @@ class GSASII(wx.Frame):
                     break # success in reading, try no further
             else:
                 if singlereader:
+                    msg += '\n'+rd.warnings
                     print(u'The '+ rd.formatName+u' reader was not able to read file '+filename+msg)
                     try:
                         print(u'\n\nError message(s):\n\t'+errorReport)

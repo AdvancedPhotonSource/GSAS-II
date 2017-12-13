@@ -2814,13 +2814,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = cellList.index(Obj.GetId())
         valObj = valDict[Obj.GetId()]
-        if ObjId/2 < 3:
+        if ObjId//2 < 3:
             move = Obj.GetValue()*0.01
         else:
             move = Obj.GetValue()*0.1
         Obj.SetValue(0)
         value = float(valObj.GetValue())+move  
-        SetCellValue(valObj,ObjId/2,value)
+        SetCellValue(valObj,ObjId//2,value)
         OnHklShow(event)
         
     def OnExportCells(event):
@@ -2848,8 +2848,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         try:
             value = max(1.0,float(Obj.GetValue()))
         except ValueError:
-            if ObjId/2 < 3:               #bad cell edge - reset
-                value = controls[6+ObjId/2]
+            if ObjId//2 < 3:               #bad cell edge - reset
+                value = controls[6+ObjId//2]
             else:                       #bad angle
                 value = 90.
         SetCellValue(Obj,ObjId//2,value)

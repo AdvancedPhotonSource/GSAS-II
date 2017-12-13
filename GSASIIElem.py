@@ -196,8 +196,9 @@ def GetAtomInfo(El,ifMag=False):
     ElS = getElSym(El)
     if El not in atmdata.XrayFF and El not in atmdata.MagFF:
         if ElS not in atmdata.XrayFF:
-            print('Atom type '+El+' not found, using UNK')
-            return # not sure what this element should be!
+            print('Atom type '+El+' not found, using H')
+            ElS = 'H'
+#            return # not sure what this element should be!
         print('Atom type '+El+' not found, using '+ElS)
         El = ElS
     AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS])))

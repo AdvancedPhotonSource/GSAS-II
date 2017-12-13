@@ -37,7 +37,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
     'Implements a phase importer from a possibly multi-block CIF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            extensionlist=('.CIF','.cif','.txt','.mcif'),
+            extensionlist=('.CIF','.cif','.mcif'),
             strictExtension=False,
             formatName = 'CIF',
             longFormatName = 'Crystallographic Information File import'
@@ -160,7 +160,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if not SpGrp:
                 MSpGrp = blk.get("_space_group.magn_name_BNS",'')
                 SpGrp = MSpGrp.replace("'",'')
-                if '_' in SpGrp: SpGrp = SpGrp.split('_')[1]
+                SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
+                if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[1]
                 if SpGrp:   #TODO need to decide if read nuclear phase or magnetic phase 
                     magnetic = True
                     self.MPhase['General']['Type'] = 'magnetic'
@@ -240,6 +241,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if magnetic:
                 magatomloop = blk.GetLoop('_atom_site_moment_label')
                 magatomkeys = [i.lower() for i in magatomloop.keys()]
+                magatomlabels = blk.get('_atom_site_moment_label')
             if blk.get('_atom_site_aniso_label'):
                 anisoloop = blk.GetLoop('_atom_site_aniso_label')
                 anisokeys = [i.lower() for i in anisoloop.keys()]
@@ -296,27 +298,22 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
             ranIdlookup = {}
             for aitem in atomloop:
-                mc = 0
-                if magnetic:
-                    atomlist = ['','','',0.,0.,0.,1.0, 0.,0.,0.,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
-                    mc = 3
-                else:
-                    atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
+                atomlist = ['','','',0.,0.,0.,1.0,'',0.,'I',0.01, 0.,0.,0.,0.,0.,0.,]
                 for val,key in zip(aitem,atomkeys):
                     col = G2AtomDict.get(key,-1)
                     if col >= 3:
                         atomlist[col] = cif.get_number_with_esd(val)[0]
-                        if col >= 11: atomlist[9+mc] = 'A' # if any Aniso term is defined, set flag
+                        if col >= 11: atomlist[9] = 'A' # if any Aniso term is defined, set flag
                     elif col is not None and col != -1:
                         atomlist[col] = val
                     elif key in ('_atom_site_thermal_displace_type',
                                '_atom_site_adp_type'):   #Iso or Aniso?
                         if val.lower() == 'uani':
-                            atomlist[9+mc] = 'A'
+                            atomlist[9] = 'A'
                     elif key == '_atom_site_u_iso_or_equiv':
                         uisoval = cif.get_number_with_esd(val)[0]
                         if uisoval is not None: 
-                            atomlist[10+mc] = uisoval
+                            atomlist[10] = uisoval
                 if not atomlist[1] and atomlist[0]:
                     typ = atomlist[0].rstrip('0123456789-+')
                     if G2elem.CheckElement(typ):
@@ -325,21 +322,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         atomlist[1] = 'Xe'
                         self.warnings += ' Atom type '+typ+' not recognized; Xe assumed\n'
                 if atomlist[0] in anisolabels: # does this atom have aniso values in separate loop?
-                    atomlist[9+mc] = 'A'
+                    atomlist[9] = 'A'
                     for val,key in zip(anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]),anisokeys):
                         col = G2AtomDict.get(key)
                         if col:
-                            atomlist[col+mc] = cif.get_number_with_esd(val)[0]
-                if magnetic:
-                    for mitem in magatomloop:
-                        matom = mitem[G2MagDict.get('_atom_site_moment_label',-1)]
-                        if atomlist[0] == matom:
-                            for mval,mkey in zip(mitem,magatomkeys):
-                                mcol = G2MagDict.get(mkey,-1)
-                                if mcol:
-                                    atomlist[mcol] = cif.get_number_with_esd(mval)[0]
-                            break                            
-                atomlist[7+mc],atomlist[8+mc] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
+                            atomlist[col] = cif.get_number_with_esd(val)[0]
+                atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
                 atomlist[1] = G2elem.FixValence(atomlist[1])
                 atomlist.append(ran.randint(0,sys.maxsize)) # add a random Id
                 self.Phase['Atoms'].append(atomlist)
@@ -348,6 +336,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += ' ERROR: repeated atom label: '+atomlist[0]
                 else:
                     atomlbllist.append(atomlist[0])
+
+                if magnetic and atomlist[0] in magatomlabels:
+                    matomlist = atomlist[:7]+[0.,0.,0.,]+atomlist[7:]
+                    for mval,mkey in zip(magatomloop.GetKeyedPacket('_atom_site_moment_label',atomlist[0]),magatomkeys):
+                        mcol = G2MagDict.get(mkey,-1)
+                        if mcol:
+                            matomlist[mcol] = cif.get_number_with_esd(mval)[0]
+                    self.MPhase['Atoms'].append(matomlist)
                 if Super:
                     Sfrac = []
                     Sadp = []                      
@@ -406,7 +402,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
             self.Phase['General']['Name'] = name.strip()[:20]
             self.Phase['General']['Super'] = Super
             if magnetic:
-                self.Phase['General']['Type'] = 'magnetic'                
+                self.MPhase['General']['Type'] = 'magnetic'                
+                self.MPhase['General']['Name'] = name.strip()[:20]+' mag'
+                self.MPhase['General']['Super'] = Super
+            else:
+                self.MPhase = None
             if Super:
                 self.Phase['General']['Type'] = 'modulated'
                 self.Phase['General']['SuperVec'] = SuperVec

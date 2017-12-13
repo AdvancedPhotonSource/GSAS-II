@@ -884,6 +884,14 @@ class GSASII(wx.Frame):
                 sub = GetGPXtreeItemId(self,self.root,'Phases')
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
+            try:
+                rd.MPhase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName+' mag',phaseNameList)
+                PhaseName = rd.MPhase['General']['Name'][:]
+                newPhaseList.append(PhaseName)
+                psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
+                self.GPXtree.SetItemPyData(psub,rd.MPhase)
+            except TypeError:
+                pass
             self.GPXtree.Expand(self.root) # make sure phases are seen
             self.GPXtree.Expand(sub) 
             self.GPXtree.Expand(psub)

@@ -209,8 +209,7 @@ def GetTifData(filename):
             pixy = [172.,172.]
             File.seek(4096)
             print ('Read Pilatus tiff file: '+filename)
-            image = ar.array('I',File.read(4*Npix))
-            image = np.array(np.asarray(image),dtype=np.int32)
+            image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
                 if sizexy == [3888,3072]:
@@ -223,8 +222,6 @@ def GetTifData(filename):
                     print ('Read GE-detector tiff file: '+filename)
                 File.seek(8)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#                image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
-#                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 # includes CHESS & Pilatus files from Area Detector
                 tifType = 'CHESS'
@@ -260,16 +257,12 @@ def GetTifData(filename):
         File.seek(512)
         print ('Read DND SAX/WAX-detector tiff file: '+filename)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#        image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [1536,1536]:
         tifType = 'APS Gold'
         pixy = [150.,150.]
         File.seek(64)
         print ('Read Gold tiff file:'+filename)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#        image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
@@ -279,19 +272,14 @@ def GetTifData(filename):
                 print ('Read APS PE-detector tiff file: '+filename)
                 if dataType == 5:
                     image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32),dtype=np.int32)  #fastest
-#                    image = np.fromfile(File,dtype=np.float32,count=4*Npix)[:Npix]
-#                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
                 else:
                     image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
-#                    image = np.fromfile(File,dtype=np.int,count=4*Npix)[:Npix]
-#                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 16: 
                 tifType = 'MedOptics D1'
                 pixy = [46.9,46.9]
                 File.seek(8)
                 print ('Read MedOptics D1 tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                   
         elif IFD[273][2][0] == 4096:
             if sizexy[0] == 3072:
@@ -303,15 +291,12 @@ def GetTifData(filename):
             File.seek(4096)
             print ('Read MAR CCD tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#            image = np.fromfile(File,dtype=np.int16,count=2*Npix)[:Npix]
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 512:
             tifType = '11-ID-C'
             pixy = [200.,200.]
             File.seek(512)
             print ('Read 11-ID-C tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                     
     elif sizexy == [4096,4096]:
         if IFD[273][2][0] == 8:

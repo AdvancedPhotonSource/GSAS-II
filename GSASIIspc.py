@@ -930,6 +930,217 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
 #    print SpnFlp
     return ' '.join(magSym)
     
+def MagSGSpin(MagSym,SGData):
+    print(MagSym)
+    SGLaue = SGData['SGLaue']
+    SpnFlp = SGData['SGSpin']
+    GenSym = SGData['GenSym']
+    SGPtGrp = SGData['SGPtGrp']
+    magSym = MagSym.split()
+    if SGLaue in ['-1',]:
+        SGData['MagPtGp'] = SGPtGrp
+        if "'" in magSym[1]:
+            SpnFlp[0] = -1
+            SGData['MagPtGp'] += "'"
+        if magSym[0] in ['A','B','C','I'] and SGData['SpGrp'] != 'I 41/a':
+            if SpnFlp[1] < 0:
+                magSym[0] += '(P)'
+    elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
+        SGData['MagPtGp'] = ''
+        for i in [0,1,2]:
+            SGData['MagPtGp'] += SGPtGrp[i]
+            if "'" in magSym[i+1]:
+                SpnFlp[i] = -1
+                SGData['MagPtGp'] += "'"
+        if len(GenSym) > 3:
+            if 'F' in magSym[0]:
+                if 'A' in magSym[0]:
+                    SpnFlp[3] = 1
+                elif 'B' in magSym[0]:
+                    SpnFlp[4] = 1
+                elif 'C' in magSym[0]:
+                    SpnFlp[5] = 1
+                elif 'P' in magSym[0]:
+                    SpnFlp[3] = -1
+    elif SGLaue == '6/mmm': #ok
+        SGData['MagPtGp'] = ''
+        if len(GenSym) == 2:
+            for i in [0,1]:
+                SGData['MagPtGp'] += SGPtGrp[i]
+                if "'" in magSym[i+2]:
+                    SpnFlp[i] = -1
+                    SGData['MagPtGp'] += "'"
+        else:
+            for i in [0,1,2]:
+                SGData['MagPtGp'] += SGPtGrp[i]
+                if "'" in magSym[i+1]:
+                    SpnFlp[i] = -1
+                    SGData['MagPtGp'] += "'"
+    elif SGLaue == '4/mmm':
+        if len(GenSym) == 2:
+            for i in [0,1]:
+                SGData['MagPtGp'] += SGPtGrp[i]
+                if "'" in magSym[i+2]:
+                    SpnFlp[i] = -1
+                    SGData['MagPtGp'] += "'"
+#        else:
+#            if '/' in magSym[1]:    #P 4/m m m, etc.
+#                sym = magSym[1].split('/')
+#                Ptsym = ['4','m']
+#                magPtGp = ['','m','m']
+#                for i in [0,1,2]:
+#                    if SpnFlp[i] < 0:
+#                        if i:
+#                            magSym[i+1] += "'"
+#                            magPtGp[i] += "'"
+#                        else:
+#                            sym[1] += "'"
+#                            Ptsym[1] += "'"
+#                if SpnFlp[1]*SpnFlp[2] < 0:
+#                    sym[0] += "'"                    
+#                    Ptsym[0] += "'"                    
+#                magSym[1] = '/'.join(sym)
+#                magPtGp[0] = '/'.join(Ptsym)
+#                if SpnFlp[3] < 0:
+#                    magSym[0] += '(P)'
+#            else:
+#                for i in [0,1]:
+#                    if SpnFlp[i] < 0:
+#                        magSym[i+2] += "'"
+#                if SpnFlp[0]*SpnFlp[1] < 0:
+#                    magSym[1] += "'"
+#                if SpnFlp[2] < 0:
+#                    magSym[0] += '(P)'
+#        SGData['MagPtGp'] = ''.join(magPtGp)
+    elif SGLaue in ['2/m','4/m','6/m']: #all ok
+        Uniq = {'a':1,'b':2,'c':3,'':1}
+        SGData['MagPtGp'] = ''
+        Ptsym = SGLaue.split('/')
+        if len(GenSym) == 3:
+            MPtSym = magSym[1].split('/')
+            for i in [0,1,2]:
+                if i == 2 and 'P' in magSym[0]:
+                    SpnFlp[i] = -1
+                elif i < 2:
+                    SGData['MagPtGp'] += Ptsym[i]
+                    if "'" in MPtSym[i]:
+                        SpnFlp[i] = -1
+                        SGData['MagPtGp'] += "'"
+        else:
+            for i in range(len(GenSym)):
+                    if i and magSym[0] in ['A','B','C','I'] and SGData['SpGrp'] != 'I 41/a':
+                        if 'P' in magSym[0]:
+                            SpnFlp[i] = -1
+                    else:
+                        SGData['MagPtGp'] += Ptsym[i]
+                        if "'" in magSym[i+1]:
+                            SpnFlp[i] = -1
+                            SGData['MagPtGp'] += "'"
+#    elif SGLaue in ['3','3m1','31m']:   #ok 
+##        GSASIIpath.IPyBreak()
+#        Ptsym = list(SGLaue)
+#        if len(GenSym) == 1:    #all ok
+#            id = 2
+#            if (len(magSym) == 4) and (magSym[2] == '1'):
+#                id = 3
+#            if '3' in GenSym[0]:
+#                id = 1
+#            magSym[id].strip("'")
+#            if SpnFlp[0] < 0:
+#                magSym[id] += "'"
+#                Ptsym[id-1] += "'"
+#        elif len(GenSym) == 2:
+#            if 'R' in GenSym[1]:
+#                magSym[-1].strip("'")
+#                if SpnFlp[0] < 0:
+#                    magSym[-1] += "'"
+#                    Ptsym[-1] += "'"
+#            else:
+#                i,j = [1,2]
+#                if magSym[2] == '1':
+#                    i,j = [1,3]
+#                magSym[i].strip("'")
+#                Ptsym[i-1].strip("'")
+#                magSym[j].strip("'")
+#                Ptsym[j-1].strip("'")
+#                if SpnFlp[:2] == [1,-1]:
+#                    magSym[i] += "'"
+#                    Ptsym[i-1] += "'"
+#                elif SpnFlp[:2] == [-1,-1]:
+#                    magSym[j] += "'"
+#                    Ptsym[j-1] += "'"
+#                elif SpnFlp[:2] == [-1,1]:
+#                    magSym[i] += "'"
+#                    Ptsym[i-1] += "'"
+#                    magSym[j] += "'"
+#                    Ptsym[j-1] += "'"
+#        else:
+#            if 'c' not in magSym[2]:
+#                i,j = [1,2]
+#                magSym[i].strip("'")
+#                Ptsym[i-1].strip("'")
+#                magSym[j].strip("'")
+#                Ptsym[j-1].strip("'")
+#                if SpnFlp[:2] == [1,-1]:
+#                    magSym[i] += "'"
+#                    Ptsym[i-1] += "'"
+#                elif SpnFlp[:2] == [-1,-1]:
+#                    magSym[j] += "'"
+#                    Ptsym[j-1] += "'"
+#                elif SpnFlp[:2] == [-1,1]:
+#                    magSym[i] += "'"
+#                    Ptsym[i-1] += "'"
+#                    magSym[j] += "'"
+#                    Ptsym[j-1] += "'"
+#        SGData['MagPtGp'] = ''.join(Ptsym)
+#    elif SGData['SGPtGrp'] == '23' and len(magSym):
+#        SGData['MagPtGp'] = '23'
+#        if SpnFlp[0] < 0:
+#            magSym[0] += '(P)'
+#    elif SGData['SGPtGrp'] == 'm3':
+#        SGData['MagPtGp'] = "m3"
+#        if SpnFlp[0] < 0:
+#            magSym[1] += "'"
+#            magSym[2] += "'"
+#            SGData['MagPtGp'] = "m'3'"
+#        if SpnFlp[1] < 0:
+#            magSym[0] += '(P)'
+#            if not 'm' in magSym[1]:    #only Ia3
+#                magSym[1].strip("'")
+#                SGData['MagPtGp'] = "m3'"
+#    elif SGData['SGPtGrp'] in ['432','-43m']:
+#        Ptsym = SGData['SGPtGrp'].split('3')
+#        if SpnFlp[0] < 0:
+#            magSym[1] += "'"
+#            Ptsym[0] += "'"
+#            magSym[3] += "'"
+#            Ptsym[1] += "'"
+#        if SpnFlp[1] < 0:
+#            magSym[0] += '(P)'
+#        SGData['MagPtGp'] = '3'.join(Ptsym)
+#    elif SGData['SGPtGrp'] == 'm-3m':
+#        Ptsym = ['m','3','m']
+#        if SpnFlp[:2] == [-1,1]:
+#            magSym[1] += "'"
+#            Ptsym[0] += "'"
+#            magSym[2] += "'"
+#            Ptsym[1] += "'"
+#        elif SpnFlp[:2] == [1,-1]:
+#            magSym[3] += "'"
+#            Ptsym[2] += "'"
+#        elif SpnFlp[:2] == [-1,-1]:
+#            magSym[1] += "'"
+#            Ptsym[0] += "'"
+#            magSym[2] += "'"
+#            Ptsym[1] += "'"
+#            magSym[3] += "'"
+#            Ptsym[2] += "'"
+#        if SpnFlp[2] < 0:
+#            magSym[0] += '(P)'
+#        SGData['MagPtGp'] = ''.join(Ptsym)
+    print( SpnFlp)
+    return SpnFlp
+
 def GenMagOps(SGData):
     FlpSpn = SGData['SGSpin']
     Nsym = len(SGData['SGOps'])
@@ -2045,7 +2256,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
     for opr in dupDir:
-        if '-1' in siteSym and SpnFlp[len(SpnFlp)//2-1] < 0:
+        if '-1' in siteSym and SpnFlp[len(SpnFlp)//2] < 0:
             return [[0,0,0],[0.,0.,0.]]
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
@@ -2773,6 +2984,22 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         return [newX,newUij]
     else:
         return newX
+        
+def ApplyStringOpsMom(A,SGData,Mom):
+    'Needs a doc string'
+    SGOps = SGData['SGOps']
+    Ax = A.split('+')
+    Ax[0] = int(Ax[0])
+    Ax[0] = abs(Ax[0])
+    nA = Ax[0]%100-1
+    M,T = SGOps[nA]
+    if len(Ax)>1:
+        cellA = Ax[1].split(',')
+        cellA = np.array([int(a) for a in cellA])
+    else:
+        cellA = np.zeros(3)
+    newMom = -(np.inner(Mom,M).T)*SGData['SpnFlp'][nA-1]*nl.det(M)      #why -?
+    return newMom
         
 def StringOpsProd(A,B,SGData):
     """

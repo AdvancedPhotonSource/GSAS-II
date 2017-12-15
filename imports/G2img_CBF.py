@@ -53,7 +53,7 @@ def GetCbfData(self,filename):
         print ('Read cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')
     sizexy = [0,0]
-    pixSize = [154,154]     #Pixium4700?
+    pixSize = [172,172]     #Pixium4700?
     cent = [0,0]
     wave = 1.54187  #default <CuKa>
     dist = 1000.

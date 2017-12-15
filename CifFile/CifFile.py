@@ -2816,60 +2816,60 @@ def convert_single_value(type_spec):
         return lambda a:a.lower()
     return lambda a:a   #can't do anything numeric
 
-def convert_list_values(structure,dimension):
-    """Convert the values according to the element
-       structure given in [[structure]]"""
-    if isinstance(structure,(unicode,str)):   #simple repetition
-        func_def =  "element_convert = convert_single_value('%s')" % structure
-    else:
-        func_def =       "def element_convert(element):\n"
-        func_def +=      "   final_val = []\n"
-        for pos_no in range(len(structure)):
-            func_def +=  "   final_val.append("
-            type_spec = structure[pos_no]
-            if type_spec == 'Real':
-                cf = "float_with_esd("
-            elif type_spec in ('Count','Integer','Index','Binary','Hexadecimal','Octal'):
-                cf = 'int('
-            elif type_spec == 'Complex':
-                cf = 'complex('
-            elif type_spec == 'Imag':
-                cf = 'complex(0,'
-            elif type_spec in ('Code','Name','Tag'):
-                cf = '('
-            else: cf = ''
-            func_def += cf
-            func_def += "element[%d]" % pos_no
-            if "(" in cf: func_def +=")"
-            if type_spec in ('Code','Name','Tag'):
-                func_def +=".lower()"
-            func_def +=")\n"  # close append
-        func_def +=      "   return final_val\n"
-    print(func_def)
-    exec(func_def, globals()) #(re)defines element_convert in global namespace
-    if len(dimension)> 0 and int(dimension[0]) != 1:
-        return lambda a: list(map(element_convert,a))
-    else: return element_convert
-
-def convert_matrix_values(valtype):
-    """Convert a dREL String or Float valued List structure to a numpy matrix structure"""
-    # first convert to numpy array, then let numpy do the work
-    try: import numpy
-    except:
-        return lambda a:a   #cannot do it
-    func_def =     "def matrix_convert(a):\n"
-    func_def +=    "    import numpy\n"
-    func_def +=    "    p = numpy.array(a)\n"
-    if valtype == 'Real':
-        func_def+= "    return p.astype('float')\n"
-    elif valtype == 'Integer':
-        func_def +="    return p.astype('int')\n"
-    elif valtype == 'Complex':
-        func_def +="    return p.astype('complex')\n"
-    else:
-        raise ValueError('Unknown matrix value type')
-    exec(func_def,globals())  #matrix convert is defined
-    return matrix_convert
+#def convert_list_values(structure,dimension):
+#    """Convert the values according to the element
+#       structure given in [[structure]]"""
+#    if isinstance(structure,(unicode,str)):   #simple repetition
+#        func_def =  "element_convert = convert_single_value('%s')" % structure
+#    else:
+#        func_def =       "def element_convert(element):\n"
+#        func_def +=      "   final_val = []\n"
+#        for pos_no in range(len(structure)):
+#            func_def +=  "   final_val.append("
+#            type_spec = structure[pos_no]
+#            if type_spec == 'Real':
+#                cf = "float_with_esd("
+#            elif type_spec in ('Count','Integer','Index','Binary','Hexadecimal','Octal'):
+#                cf = 'int('
+#            elif type_spec == 'Complex':
+#                cf = 'complex('
+#            elif type_spec == 'Imag':
+#                cf = 'complex(0,'
+#            elif type_spec in ('Code','Name','Tag'):
+#                cf = '('
+#            else: cf = ''
+#            func_def += cf
+#            func_def += "element[%d]" % pos_no
+#            if "(" in cf: func_def +=")"
+#            if type_spec in ('Code','Name','Tag'):
+#                func_def +=".lower()"
+#            func_def +=")\n"  # close append
+#        func_def +=      "   return final_val\n"
+#    print(func_def)
+#    exec(func_def, globals()) #(re)defines element_convert in global namespace
+#    if len(dimension)> 0 and int(dimension[0]) != 1:
+#        return lambda a: list(map(element_convert,a))
+#    else: return element_convert
+#
+#def convert_matrix_values(valtype):
+#    """Convert a dREL String or Float valued List structure to a numpy matrix structure"""
+#    # first convert to numpy array, then let numpy do the work
+#    try: import numpy
+#    except:
+#        return lambda a:a   #cannot do it
+#    func_def =     "def matrix_convert(a):\n"
+#    func_def +=    "    import numpy\n"
+#    func_def +=    "    p = numpy.array(a)\n"
+#    if valtype == 'Real':
+#        func_def+= "    return p.astype('float')\n"
+#    elif valtype == 'Integer':
+#        func_def +="    return p.astype('int')\n"
+#    elif valtype == 'Complex':
+#        func_def +="    return p.astype('complex')\n"
+#    else:
+#        raise ValueError('Unknown matrix value type')
+#    exec(func_def,globals())  #matrix convert is defined
+#    return matrix_convert
 
 def interpret_structure(struc_spec):
     """Interpret a DDLm structure specification"""

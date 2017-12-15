@@ -207,7 +207,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
             if magnetic:
-                self.MPhase['General']['SGData'] = SGData                
+                self.MPhase['General']['SGData'] = SGData
+                GenSym,GenFlg = G2spc.GetGenSym(SGData)
+                self.MPhase['General']['SGData']['GenSym'] = GenSym
+                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
+                self.MPhase['General']['SGData']['SGSpin'] = G2spc.MagSGSpin(MSpGrp,SGData)
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:

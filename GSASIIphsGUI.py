@@ -2454,6 +2454,7 @@ entered the right symbol for your structure.
                 if 'Atoms' in data['Drawing']:
                     ci = colLabels.index('I/A')
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                    G2plt.PlotStructure(G2frame,data)
                 wx.CallAfter(Paint)
 
         def AtomTypeSelect(event):
@@ -2477,6 +2478,7 @@ entered the right symbol for your structure.
                 ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
+                    G2plt.PlotStructure(G2frame,data)
                 SetupGeneral()
             else:
                 event.Skip()
@@ -2611,7 +2613,7 @@ entered the right symbol for your structure.
                 if colM:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
                     CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
-#                    print SytSym,Nop,SpnFlp[Nop],CSI,dupDir
+                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
@@ -2931,6 +2933,7 @@ entered the right symbol for your structure.
         AA1letter = ['A','R','N','D','C','Q','E','G','H','I',
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SGData = generalData['SGData']
         if generalData['Type'] in ['nuclear','faulted',]:
             if oldatom:
@@ -2946,8 +2949,14 @@ entered the right symbol for your structure.
                     ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
             ct,cs = [1,8]         #type & color
         elif  generalData['Type'] == 'magnetic':
-            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
-                ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+            if oldatom:
+                opr = oldatom[8]
+                mom = np.inner(np.array(atom[7:10]),Bmat)
+                Mom = np.inner(G2spc.ApplyStringOpsMom(opr,SGData,mom),Amat)
+                atomInfo = oldatom[:5]+list(Mom)+oldatom[8:]    
+            else:
+                atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
+                    ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
             ct,cs = [1,11]         #type & color
         elif generalData['Type'] == 'macromolecular':
             try:
@@ -5389,7 +5398,6 @@ entered the right symbol for your structure.
             Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
-#            MagMom = SGData.get('MagMom',[])
             wx.BeginBusyCursor()
             try:
                 for ind in indx:

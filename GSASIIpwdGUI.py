@@ -2343,6 +2343,30 @@ def UpdateSampleGrid(G2frame,data):
         G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
         
+    def SearchAllComments(value,tc,*args,**kwargs):
+        '''Called when the label for a FreePrm is changed: the comments for all PWDR
+        histograms are searched for a "label=value" pair that matches the label (case
+        is ignored) and the values are then set to this value, if it can be converted
+        to a float.
+        '''
+        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        while id:
+            name = G2frame.GPXtree.GetItemText(id)
+            if 'PWDR' in name:
+                Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'Comments'))
+                Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'Sample Parameters'))
+                for i,item in enumerate(Comments):
+                    itemSp = item.split('=')
+                    if value.lower() == itemSp[0].lower():
+                        try:
+                            Sample[tc.key] = float(itemSp[1])
+                        except:
+                            print('"{}" has an invalid value in Comments from {}'
+                                  .format(item.strip(),name))
+            id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        wx.CallLater(100,UpdateSampleGrid,G2frame,data)
+        
+        
     ######## DEBUG #######################################################
     #import GSASIIpwdGUI
     #reload(GSASIIpwdGUI)
@@ -2463,10 +2487,10 @@ def UpdateSampleGrid(G2frame,data):
             refFlgElem.append(None)
         parmSizer.Add(parmVal,0,WACV)
     Info = {}
-        
+    
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
         parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,Controls,key,typeHint=str,
-                                        notBlank=False)
+                                        notBlank=False,OnLeave=SearchAllComments)
         parmSizer.Add(parmVal,1,wx.EXPAND)
         parmVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,key,typeHint=float)
         parmSizer.Add(parmVal,0,WACV)

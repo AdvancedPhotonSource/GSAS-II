@@ -175,6 +175,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 # Menu items
 
     def OnCalibrate(event):
+        if not data['calibrant']:
+            G2G.G2MessageBox(G2frame,'No calibrant material specified.\n'+
+                             'Please correct this and try again.')
+            return
         G2frame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick (shift key to force pick), RB on point to delete else RB to finish',1)
         G2frame.ifGetRing = True
                 

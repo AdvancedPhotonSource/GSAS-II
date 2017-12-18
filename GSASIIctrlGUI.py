@@ -1810,8 +1810,9 @@ class G2SingleChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        h = max(35,17*int(len(title)/26.+1)) # adjust height of title box with guessed # of lines
         topSizer.Add(
-            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            wx.StaticText(self,wx.ID_ANY,title,size=(-1,h)),
             1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
@@ -1821,7 +1822,7 @@ class G2SingleChoiceDialog(wx.Dialog):
                                          style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
-        topSizer.Add(self.filterBox,0,wx.ALL,0)
+            topSizer.Add(self.filterBox,0,wx.ALL,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.clb = wx.ListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         self.clb.Bind(wx.EVT_LEFT_DCLICK,self.onDoubleClick)
@@ -2030,6 +2031,16 @@ class PickTwoDialog(wx.Dialog):
 class SingleFloatDialog(wx.Dialog):
     '''Dialog to obtain a single float value from user
 
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell user what they are inputing
+    :param str value: default input value, if any
+    :param list limits: upper and lower value used to set bounds for entry, use [None,None]
+      for no bounds checking, [None,val] for only upper bounds, etc. Default is [0,1].
+      Values outside of limits will be ignored.
+    :param str format: string to format numbers. Defaults to '%.5g'. Use '%d' to have
+      integer input (but dlg.GetValue will still return a float). 
+    
     Typical usage::
 
             limits = (0,1)
@@ -2039,6 +2050,9 @@ class SingleFloatDialog(wx.Dialog):
             dlg.Destroy()    
 
     '''
+    # TODO: better to generalize this for int & float, use validated text control, OK as default.
+    # then make SingleFloatDialog & SingleIntDialog as wrappers. Would be good to remove the %-style
+    # format, too. 
     def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -2055,7 +2069,9 @@ class SingleFloatDialog(wx.Dialog):
             if event: event.Skip()
             try:
                 val = float(valItem.GetValue())
-                if val < self.limits[0] or val > self.limits[1]:
+                if self.limits[0] is not None and val < self.limits[0]:
+                    raise ValueError
+                if self.limits[1] is not None and val > self.limits[1]:
                     raise ValueError
             except ValueError:
                 val = self.value
@@ -2096,6 +2112,31 @@ class SingleFloatDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+
+class SingleIntDialog(SingleFloatDialog):
+    '''Dialog to obtain a single int value from user
+
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell user what they are inputing
+    :param str value: default input value, if any
+    :param list limits: upper and lower value used to set bounds for entries. Default
+      is [None,None] -- for no bounds checking; use [None,val] for only upper bounds, etc.
+      Default is [0,1]. Values outside of limits will be ignored.
+    
+    Typical usage::
+
+            limits = (0,None)  # allows zero or positive values only
+            dlg = G2G.SingleIntDialog(G2frame,'New value','Enter new value for...',default,limits)
+            if dlg.ShowModal() == wx.ID_OK:
+                parm = dlg.GetValue()
+            dlg.Destroy()    
+
+    '''
+    def __init__(self,parent,title,prompt,value,limits=[None,None]):
+        SingleFloatDialog.__init__(self,parent,title,prompt,value,limits=limits,format='%d')
+    def GetValue(self):
+        return int(self.value)
 
 ################################################################################
 class MultiFloatDialog(wx.Dialog):

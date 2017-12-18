@@ -782,8 +782,8 @@ class GSASII(wx.Frame):
                             rd.Data['formatName'] = rd.formatName
                             if rd.sumfile:
                                 rd.readfilename = rd.sumfile
-                            if GSASIIpath.GetConfigValue('Image_1IDmetadata'):
-                                G2IO.Get1IDMetadata(rd)
+                            # Load generic metadata, as configured
+                            G2IO.GetColumnMetadata(rd)
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
                             rd_list.append(True) # save a stub the result before it is written over
                             del rd.Image
@@ -2529,6 +2529,9 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_smallangle(Import)
         self._Add_ImportMenu_reflectometry(Import)
         self._Add_ImportMenu_PDF(Import)
+        
+        item = Import.Append(wx.ID_ANY,'Column metadata test','Test Column (.par) metadata import')
+        self.Bind(wx.EVT_MENU, self.OnColMetaTest, id=item.GetId())
 
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
@@ -2931,7 +2934,10 @@ class GSASII(wx.Frame):
     def SetLabel(self,text,location=0):
         'implement unfortunate synonym. with luck no longer used'
         self.SetTitle(text,location=0)
-        
+
+    def OnColMetaTest(self,event):
+        'Test the .par/.*lbls pair for contents'
+        G2IO.testColumnMetadata(self)
                 
     def OnReadPowderPeaks(self,event):
         'Bound to menu Data/Read Powder Peaks'

@@ -212,7 +212,7 @@ def GetTifData(filename):
             image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
-                if sizexy == [3888,3072]:
+                if sizexy == [3888,3072] or sizexy == [3072,3888]:
                     tifType = 'Dexela'
                     pixy = [74.8,74.8]
                     print ('Read Dexela detector tiff file: '+filename)

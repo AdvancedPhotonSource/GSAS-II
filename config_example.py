@@ -170,8 +170,8 @@ computations are performed in-line.
 Show_timing = False
 '''If True, shows various timing results.'''
 
-Image_1IDmetadata = False
-'''When True and when images are read, GSAS-II will read metadata from a 1-ID
-style .par and a .EXT_lbls or .lbls file. See :func:`GSASIIIO.Read1IDpar` for
-information on how this is done. 
+Column_Metadata_directory = None
+'''When specified and when images are read, GSAS-II will read metadata from a 1-ID
+style .par and a .EXT_lbls (EXT = image extension) or .lbls file. See :func:`GSASIIIO.readColMetadata` for
+information on how this is done.
 '''

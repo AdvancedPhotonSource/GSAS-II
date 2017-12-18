@@ -499,9 +499,9 @@ def ReadImages(G2frame,imagefile):
                     print ('Transposing Image!')
                     rd.Image = rd.Image.T
                 rd.Data['ImageTag'] = rd.repeatcount
-                if GSASIIpath.GetConfigValue('Image_1IDmetadata'):
-                    rd.readfilename = imagefile
-                    Get1IDMetadata(rd)
+                rd.readfilename = imagefile
+                # Load generic metadata, as configured
+                GetColumnMetadata(rd)
                 LoadImage2Tree(imagefile,G2frame,rd.Comments,rd.Data,rd.Npix,rd.Image)
                 repeat = rd.repeat
             CreatedIMGitems.append(G2frame.Image)
@@ -2157,15 +2157,19 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
-def Read1IDpar(imagefile):
-    '''Reads image metadata from a 1-ID style .par file from the same directory
-    as the image. The .par file has any number of columns separated by spaces.
-    As an index to the .par file a second label file must be specified with the
-    same file name as the .par file but the extension must be .XXX_lbls (where
+def readColMetadata(imagefile):
+    '''Reads image metadata from a column-oriented metadata table
+    (1-ID style .par file). Called by :func:`GetColumnMetadata`
+    
+    The .par file has any number of columns separated by spaces.
+    The directory for the file must be specified in
+    Config variable ``Column_Metadata_directory``.
+    As an index to the .par file a second "label file" must be specified with the
+    same file root name as the .par file but the extension must be .XXX_lbls (where
     .XXX is the extension of the image) or if that is not present extension
-    .lbls. Called by :func:`Get1IDMetadata`
+    .lbls. 
 
-    :param str imagefile: the full name of the image file (with directory and extension)
+    :param str imagefile: the full name of the image file (with extension, directory optional)
 
     :returns: a dict with parameter values. Named parameters will have the type based on
        the specified Python function, named columns will be character strings
@@ -2222,7 +2226,7 @@ def Read1IDpar(imagefile):
     The examples above are discussed here:
 
     ``filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34``
-        Here the function to be used is defined with a lambda statement:
+        Here the function to be used is defined with a lambda statement::
         
           lambda x,y: "{}_{:0>6}".format(x,y)
 
@@ -2230,7 +2234,15 @@ def Read1IDpar(imagefile):
         contents of columns 33 and 34. The first parameter (x, col. 33) is inserted directly into
         the file name, followed by a underscore (_), followed by the second parameter (y, col. 34),
         which will be left-padded with zeros to six characters (format directive ``:0>6``).
-        
+
+        When there will be more than one image generated per line in the .par file, an alternate way to
+        generate list of file names takes into account the number of images generated::
+
+          lambda x,y,z: ["{}_{:0>6}".format(x,int(y)+i) for i in range(int(z))]
+
+        Here a third parameter is used to specify the number of images generated, where
+        the image number is incremented for each image.
+          
     ``distance: float | 75``
         Here the contents of column 75 will be converted to a floating point number
         by calling float on it. Note that the spaces here are ignored.
@@ -2257,11 +2269,12 @@ def Read1IDpar(imagefile):
             
     **Pre-defined parameter names**
     
-    =============  =========  ========  ====================================================
+    =============  =========  ========  =====================================================
      keyword       required    type      Description
-    =============  =========  ========  ====================================================
-       filename    yes         str      generates the file name prefix for the matching image
-                                        file (MyImage001 for file /tmp/MyImage001.tif).
+    =============  =========  ========  =====================================================
+       filename    yes         str or   generates the file name prefix for the matching image
+                               list     file (MyImage001 for file /tmp/MyImage001.tif) or
+                                        a list of file names. 
      polarization  no         float     generates the polarization expected based on the
                                         monochromator angle, defaults to 0.99.
        center      no         list of   generates the approximate beam center on the detector
@@ -2271,15 +2284,16 @@ def Read1IDpar(imagefile):
        pixelSize   no         list of   generates the size of the pixels in microns such as
                               2 floats  [200.0, 200.0]. 
        wavelength  yes        float     generates the wavelength in Angstroms
-    =============  =========  ========  ====================================================
-
+    =============  =========  ========  =====================================================
     
     '''
     dir,fil = os.path.split(os.path.abspath(imagefile))
     imageName,ext = os.path.splitext(fil)
-    parfiles = glob.glob(os.path.join(dir,'*.par'))
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
+    parfiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
     if len(parfiles) == 0:
-        print('Sorry, No 1-ID .par file found in '+dir)
+        print('Sorry, No Column metadata (.par) file found in '+
+              GSASIIpath.GetConfigValue('Column_Metadata_directory'))
         return {}
     for parFil in parfiles: # loop over all .par files (hope just 1) in image dir until image is found
         parRoot = os.path.splitext(parFil)[0]
@@ -2289,70 +2303,114 @@ def Read1IDpar(imagefile):
                 break
         else:
             print('Warning: No labels definitions found for '+parFil)
-            return {}
-        fp = open(lblFil,'Ur')         # read column labels
-        lbldict = {}
-        fmt = ""
-        keyExp = {}
-        keyCols = {}
-        labels = {}
-        for line in fp: # read label definitions
-            items = line.strip().split(':')
-            if len(items) < 2: continue # no colon, line is a comment
-            # is this line a definition for a named parameter?
-            key = items[0]
-            try: 
-                int(key)
-            except ValueError: # named parameters are not valid numbers
-                items = line.split(':',1)[1].split('|')
-                try:
-                    keyExp[key] = eval(items[0]) # compile the expression
-                    if not callable(keyExp[key]):
-                        raise Exception("Expression not a function")
-                except Exception as msg:
-                    print('Warning: Expression "{}" is not valid for key {}'.format(items[0],key))
-                    print(msg)
-                keyCols[key] = [int(i) for i in items[1].strip().split(',')]
-                if key.lower().startswith('freeprm') and len(items) > 2:
-                    labels[key] = items[2]
-                continue
-            if len(items) == 2: # simple column definition
-                lbldict[int(items[0])] = items[1]
-        fp.close()
-        if 'filename' not in keyExp:
-            print("Warning: No valid filename expression in {} file, skipping .par".format(lblFil))
             continue
-        # read the .par, looking for the matching image rootname
+        labels,lbldict,keyCols,keyExp,errors = readColMetadataLabels(lblFil)
+        if errors:
+            print('Errors in labels file '+lblFil)
+            for i in errors: print('  '+i)
+            continue
+        else:
+            print('Read '+lblFil)
+        # scan through each line in this .par file, looking for the matching image rootname
         fp = open(parFil,'Ur')
-        for i,line in enumerate(fp):
+        for iline,line in enumerate(fp):
             items = line.strip().split(' ')
-            name = keyExp['filename'](*[items[j] for j in keyCols['filename']])
-            if name == imageName: # got our match, parse the line and finish
-                metadata = {lbldict[j]:items[j] for j in lbldict}
-                metadata.update(
-                    {key:keyExp[key](*[items[j] for j in keyCols[key]]) for key in keyExp})
-                metadata['par file'] = parFil
-                metadata['lbls file'] = lblFil
-                for lbl in labels:
-                    metadata['label_'+lbl[4:].lower()] = labels[lbl]
-                print("Metadata read from {} line {}".format(parFil,i+1))
-                return metadata
+            nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+            if type(nameList) is str:
+                if nameList != imageName: continue
+                name = nameList
+            else:
+                for name in nameList:
+                    if name == imageName: break # got a match
+                else:
+                    continue
+            # parse the line and finish
+            metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp)
+            metadata['par file'] = parFil
+            metadata['lbls file'] = lblFil
+            print("Metadata read from {} line {}".format(parFil,iline+1))
+            fp.close()
+            return metadata
         else:
             print("Image {} not found in {}".format(imageName,parFil))
             fp.close()
             continue
         fp.close()
     else:
-        print("Warning: No 1-ID metadata for image {}".format(imageName))
+        print("Warning: No .par metadata for image {}".format(imageName))
         return {}
 
-def Get1IDMetadata(reader):
-    '''Add 1-ID metadata to an image using a 1-ID .par file using :func:`Read1IDpar`
+def readColMetadataLabels(lblFil):
+    '''Read the .*lbls file and setup for metadata assignments
+    '''
+    lbldict = {}
+    keyExp = {}
+    keyCols = {}
+    labels = {}
+    errors = []
+    fp = open(lblFil,'Ur')         # read column labels
+    for iline,line in enumerate(fp): # read label definitions
+        line = line.strip()
+        if not line or line[0] == '#': continue # comments
+        items = line.split(':')
+        if len(items) < 2: continue # lines with no colon are also comments
+        # does this line a definition for a named parameter?
+        key = items[0]
+        try: 
+            int(key)
+        except ValueError: # try as named parameter since not a valid number
+            items = line.split(':',1)[1].split('|')
+            try:
+                f = eval(items[0]) # compile the expression
+                if not callable(f):
+                    errors += ['Expression "{}" for key {} is not a function (line {})'.
+                           format(items[0],key,iline)]
+                    continue
+                keyExp[key] = f
+            except Exception as msg:
+                errors += ['Expression "{}" for key {} is not valid (line {})'.
+                           format(items[0],key,iline)]
+                errors += [str(msg)]
+                continue
+            keyCols[key] = [int(i) for i in items[1].strip().split(',')]
+            if key.lower().startswith('freeprm') and len(items) > 2:
+                labels[key] = items[2]
+            continue
+        if len(items) == 2: # simple column definition
+            lbldict[int(items[0])] = items[1]
+    fp.close()
+    if 'filename' not in keyExp:
+        errors += ["File {} is invalid. No valid filename expression.".format(lblFil)]
+    return labels,lbldict,keyCols,keyExp,errors
+
+def evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,ShowError=False):
+    '''Evaluate the metadata for a line in the .par file
+    '''
+    metadata = {lbldict[j]:items[j] for j in lbldict}
+    named = {}
+    for key in keyExp:
+        try:
+            res = keyExp[key](*[items[j] for j in keyCols[key]])
+        except:
+            if ShowError:
+                res = "*** error ***"
+            else:
+                continue
+        named[key] = res
+    metadata.update(named)
+    for lbl in labels: # add labels for FreePrm's
+        metadata['label_'+lbl[4:].lower()] = labels[lbl]
+    return metadata
+
+def GetColumnMetadata(reader):
+    '''Add metadata to an image from a column-type metadata file
+    using :func:`readColMetadata`
     
     :param reader: a reader object from reading an image
     
     '''
-    parParms = Read1IDpar(reader.readfilename)
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
+    parParms = readColMetadata(reader.readfilename)
     if not parParms: return # check for read failure
     specialKeys = ('filename',"polarization", "center", "distance", "pixelSize", "wavelength",)
     reader.Comments = ['Metadata from {} assigned by {}'.format(parParms['par file'],parParms['lbls file'])]
@@ -2376,6 +2434,171 @@ def Get1IDMetadata(reader):
         reader.Data['setdist'] = parParms['distance']
     else:
         print('Error: distance not defined in {}'.format(parParms['lbls file']))
+
+def testColumnMetadata(G2frame):
+    '''Test the column-oriented metadata parsing, as implemented at 1-ID, by showing results
+    when using a .par and .lbls pair.
+    
+     * Select a .par file, if more than one in selected dir.
+     * Select the .*lbls file, if more than one matching .par file. 
+     * Parse the .lbls file, showing errors if encountered; loop until errors are fixed.
+     * Search for an image or a line in the .par file and show the results when interpreted
+     
+    See :func:`readColMetadata` for more details.
+    '''
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'):
+        G2G.G2MessageBox(G2frame,'The configuration option for I-ID Metadata is not set.\n'+
+                         'Please use the File/Preferences menu to set Column_Metadata_directory',
+                         'Warning')
+        return
+    parFiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
+    if not parFiles: 
+        G2G.G2MessageBox(G2frame,'No .par files found in directory {}. '
+                         .format(GSASIIpath.GetConfigValue('Column_Metadata_directory'))+
+                         '\nThis is set by config variable Column_Metadata_directory '+
+                         '(Set in File/Preferences menu).',
+                         'Warning')
+        return
+    parList = []
+    for parFile in parFiles:
+        lblList = []
+        parRoot = os.path.splitext(parFile)[0]
+        for f in glob.glob(parRoot+'.*lbls'):
+            if os.path.exists(f): lblList.append(f)
+        if not len(lblList):
+            continue
+        parList.append(parFile)
+    if len(parList) == 0:
+        G2G.G2MessageBox(G2frame,'No .lbls or .EXT_lbls file found for .par file(s) in directory {}. '
+                         .format(GSASIIpath.GetConfigValue('Column_Metadata_directory'))+
+                         '\nThis is set by config variable Column_Metadata_directory '+
+                         '(Set in File/Preferences menu).',
+                         'Warning')
+        return
+    elif len(parList) == 1:
+        parFile = parList[0]
+    else:
+        dlg = G2G.G2SingleChoiceDialog(G2frame,
+                'More than 1 .par file found. (Better if only 1!). Choose the one to test in '+
+                GSASIIpath.GetConfigValue('Column_Metadata_directory'),
+                'Choose .par file', [os.path.split(i)[1] for i in parList])
+        if dlg.ShowModal() == wx.ID_OK:
+            parFile = parList[dlg.GetSelection()]
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+    # got .par file; now work on .*lbls file
+    lblList = []
+    parRoot = os.path.splitext(parFile)[0]
+    for f in glob.glob(parRoot+'.*lbls'):
+        if os.path.exists(f): lblList.append(f)
+    if not len(lblList):
+        raise Exception('How did this happen! No .*lbls files for '+parFile)
+    elif len(lblList) == 1:
+        lblFile = lblList[0]
+    else:
+        dlg = G2G.G2SingleChoiceDialog(G2frame,
+                'Select label file for .par file '+parFile,
+                'Choose label file', [os.path.split(i)[1] for i in lblList])
+        if dlg.ShowModal() == wx.ID_OK:
+            lblFile = lblList[dlg.GetSelection()]
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+    # parse the labels file
+    errors = True
+    while errors:
+        labels,lbldict,keyCols,keyExp,errors = readColMetadataLabels(lblFile)
+        if errors:
+            t = "Error reading file "+lblFile
+            for l in errors:
+                t += '\n'
+                t += l
+            t += "\n\nPlease edit the file and press OK (or Cancel to quit)"
+            dlg = wx.MessageDialog(G2frame,message=t,
+                caption="Read Error",style=wx.ICON_ERROR| wx.OK|wx.STAY_ON_TOP|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return            
+    # request a line number, read that line
+    dlg = G2G.SingleStringDialog(G2frame,'Read what',
+                                 'Enter a line number or an image file name (-1=last line)',
+                                 '-1',size=(400,-1))
+    if dlg.Show():
+        fileorline = dlg.GetValue()
+        dlg.Destroy()
+    else:
+        dlg.Destroy()
+        return
+    # and report the generated key pairs in metadata dict
+    linenum = None
+    try:
+        linenum = int(fileorline)
+    except:
+        imageName = os.path.splitext(os.path.split(fileorline)[1])[0]
+
+    fp = open(parFile,'Ur')
+    for iline,line in enumerate(fp):
+        if linenum is not None:
+            if iline == linenum:
+                items = line.strip().split(' ')
+                n = "Line {}".format(iline)
+                break
+            else:
+                continue
+        else:
+            items = line.strip().split(' ')
+            nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+            if type(nameList) is str:
+                if nameList != imageName: continue
+                name = nameList
+                break
+            else:
+                for name in nameList:
+                    print (name,name == imageName)
+                    if name == imageName:
+                        n = "Image {} found in line {}".format(imageName,iline)
+                        break # got a match
+                else:
+                    continue
+                break
+    else:
+        if linenum is not None:
+            n = "Line {}".format(iline)
+        else:
+            n = "Image {} not found. Reporting line {}".format(imageName,iline)
+        items = line.strip().split(' ')
+    fp.close()
+    metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,True)
+    title = "Results: ("+n+")"
+    t = []
+    n = ["Named parameters:"]
+    l = ['',"Labeled columns:"]
+    for key in sorted(metadata):
+        if key == "filename" or key.startswith('label_prm'): continue
+        if key in keyCols:
+            n += ["  {} = {}".format(key,metadata[key])]
+        elif key in lbldict.values():
+            l += ["  {} = {}".format(key,metadata[key])]
+        else:
+            t += ["** Unexpected:  {}".format(key,metadata[key])]
+    if type(metadata['filename']) is str:
+        l += ["","Filename: "+ metadata['filename']]
+    else:
+        l += ["","Filename(s): "]
+        for i,j in enumerate(metadata['filename']):
+            if i: l[-1] += ', '
+            l[-1] += j
+    t += n + l + ['','Unused columns:']
+    usedCols = lbldict.keys()
+    for i in keyCols.values(): usedCols += i
+    for i in range(len(items)):
+        if i in usedCols: continue
+        t += ["  {}: {}".format(i,items[i])]
+    dlg = G2G.G2SingleChoiceDialog(None,title,'Column metadata parse results',t,
+                                   monoFont=True,filterBox=False,size=(400,600),
+                                   style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE|wx.OK)
+    dlg.ShowModal()
 
 if __name__ == '__main__':
     import GSASIIdataGUI

@@ -2213,8 +2213,8 @@ def readColMetadata(imagefile):
 
     Note that several keywords, if defined in the Comments, will be found and
     placed in the appropriate section of the powder histogram(s)'s Sample
-    Parameters after an integration: 'Temperature','Pressure','Time',
-    'FreePrm1','FreePrm2','FreePrm3','Omega','Chi', and 'Phi'. 
+    Parameters after an integration: ``Temperature``,``Pressure``,``Time``,
+    ``FreePrm1``,``FreePrm2``,``FreePrm3``,``Omega``,``Chi``, and ``Phi``. 
 
     After the Python code, supply a vertical bar (|) and then a list of one
     more more columns that will be supplied as arguments to that function.
@@ -2571,7 +2571,7 @@ def testColumnMetadata(G2frame):
     fp.close()
     metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,True)
     title = "Results: ("+n+")"
-    t = []
+    t = ['Files: '+parFile,lblFile,' ']
     n = ["Named parameters:"]
     l = ['',"Labeled columns:"]
     for key in sorted(metadata):

@@ -159,13 +159,20 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SpGrp = blk.get("_space_group_name_H-M_alt",'')
             if not SpGrp:
                 MSpGrp = blk.get("_space_group.magn_name_BNS",'')
+                if not MSpGrp:
+                    MSpGrp = blk.get("_space_group_magn.name_BNS",'')
+                    if not MSpGrp:
+                        self.warnings += 'No magnetic BNS space group name was found in the CIF.'
+                        self.errors = msg
+                        self.warnings += msg
+                        return False                    
                 SpGrp = MSpGrp.replace("'",'')
                 SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
-                if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[1]
-                if SpGrp:   #TODO need to decide if read nuclear phase or magnetic phase 
-                    magnetic = True
-                    self.MPhase['General']['Type'] = 'magnetic'
-                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+                if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
+                SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                magnetic = True
+                self.MPhase['General']['Type'] = 'magnetic'
+                self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
             if Super:
                 sspgrp = blk.get("_space_group_ssg_name",'')
                 sspgrp = sspgrp.split('(')
@@ -207,11 +214,37 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
             if magnetic:
+                SGData['SGFixed'] = True
+                try:
+                    sgoploop = blk.GetLoop('_space_group_symop_magn.id')
+                    sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
+                    opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
+                    centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]
+                    
+                except KeyError:        #old mag cif names
+                    sgoploop = blk.GetLoop('_space_group_symop.magn_id')
+                    sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
+                    opid = sgoploop.GetItemPosition('_space_group_symop.magn_operation_xyz')[1]
+                    centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
+                SGData['SGOps'] = []
+                SGData['SGCen'] = []
+                spnflp = []
+                for op in sgoploop:
+                    M,T,S = G2spc.MagText2MTS(op[opid])
+                    SGData['SGOps'].append([np.array(M,dtype=float),T])
+                    spnflp.append(S)
+                censpn = []
+                for cent in sgcenloop:
+                    M,C,S = G2spc.MagText2MTS(cent[centid])
+                    SGData['SGCen'].append(C)
+                    censpn += list(np.array(spnflp)*S)
                 self.MPhase['General']['SGData'] = SGData
-                GenSym,GenFlg = G2spc.GetGenSym(SGData)
-                self.MPhase['General']['SGData']['GenSym'] = GenSym
-                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
-                self.MPhase['General']['SGData']['SGSpin'] = G2spc.MagSGSpin(MSpGrp,SGData)
+                self.MPhase['General']['SGData']['SpnFlp'] = censpn
+                self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
+                self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
+#                GenSym,GenFlg = G2spc.GetGenSym(SGData)
+#                self.MPhase['General']['SGData']['GenSym'] = GenSym
+#                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:
@@ -243,9 +276,25 @@ class CIFPhaseReader(G2obj.ImportPhase):
             if not blk.get('_atom_site_type_symbol'):
                 self.isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
             if magnetic:
-                magatomloop = blk.GetLoop('_atom_site_moment_label')
-                magatomkeys = [i.lower() for i in magatomloop.keys()]
-                magatomlabels = blk.get('_atom_site_moment_label')
+                try:
+                    magmoment = '_atom_site_moment.label'
+                    magatomloop = blk.GetLoop(magmoment)
+                    magatomkeys = [i.lower() for i in magatomloop.keys()]
+                    magatomlabels = blk.get(magmoment)
+                    G2MagDict = {'_atom_site_moment.label': 0,
+                                 '_atom_site_moment.crystalaxis_x':7,
+                                 '_atom_site_moment.crystalaxis_y':8,
+                                 '_atom_site_moment.crystalaxis_z':9}
+                except KeyError:
+                    magmoment = '_atom_site_moment_label'
+                    magatomloop = blk.GetLoop(magmoment)
+                    magatomkeys = [i.lower() for i in magatomloop.keys()]
+                    magatomlabels = blk.get(magmoment)
+                    G2MagDict = {'_atom_site_moment_label': 0,
+                                 '_atom_site_moment_crystalaxis_x':7,
+                                 '_atom_site_moment_crystalaxis_y':8,
+                                 '_atom_site_moment_crystalaxis_z':9}
+                    
             if blk.get('_atom_site_aniso_label'):
                 anisoloop = blk.GetLoop('_atom_site_aniso_label')
                 anisokeys = [i.lower() for i in anisoloop.keys()]
@@ -295,10 +344,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             '_atom_site_aniso_u_12' : 14,
                             '_atom_site_aniso_u_13' : 15,
                             '_atom_site_aniso_u_23' : 16, }
-            G2MagDict = {'_atom_site_moment_label': 0,
-                         '_atom_site_moment_crystalaxis_x':7,
-                         '_atom_site_moment_crystalaxis_y':8,
-                         '_atom_site_moment_crystalaxis_z':9}
 
             ranIdlookup = {}
             for aitem in atomloop:
@@ -343,7 +388,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
 
                 if magnetic and atomlist[0] in magatomlabels:
                     matomlist = atomlist[:7]+[0.,0.,0.,]+atomlist[7:]
-                    for mval,mkey in zip(magatomloop.GetKeyedPacket('_atom_site_moment_label',atomlist[0]),magatomkeys):
+                    for mval,mkey in zip(magatomloop.GetKeyedPacket(magmoment,atomlist[0]),magatomkeys):
                         mcol = G2MagDict.get(mkey,-1)
                         if mcol:
                             matomlist[mcol] = cif.get_number_with_esd(mval)[0]

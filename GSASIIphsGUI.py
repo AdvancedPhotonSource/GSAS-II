@@ -73,7 +73,7 @@ atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 class SGMagSpinBox(wx.Dialog):
     ''' Special version of MessageBox that displays magnetic spin text
     '''
-    def __init__(self,parent,title,text,table,names,spins,):
+    def __init__(self,parent,title,text,table,Cents,names,spins,):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(420,350))
         self.text = text
@@ -85,7 +85,7 @@ class SGMagSpinBox(wx.Dialog):
         mainSizer.Add((0,10))
         first = text[0].split(':')[-1].strip()
         cents = [0,]
-        if 'P' != first[0]:
+        if len(Cents):
             cents = text[-1].split(';')
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
@@ -158,7 +158,7 @@ class SymOpDialog(wx.Dialog):
         self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
         mainSizer.Add(self.inv,0,WACV)
         if SGData['SGLatt'] != 'P':
-            LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
+            LattOp = G2spc.Latt2text(SGData['SGCen']).split(';')
             self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
             self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
             mainSizer.Add(self.latt,0,WACV)
@@ -407,9 +407,8 @@ class TransformDialog(wx.Dialog):
                 text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
                 SGTxt.SetValue(self.newSpGrp)
                 msg = 'Space Group Error'
-                Style = wx.ICON_EXCLAMATION
                 Text = '\n'.join(text)
-                wx.MessageBox(Text,caption=msg,style=Style)
+                wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
             else:
                 text,table = G2spc.SGPrint(SGData)
                 self.Phase['General']['SGData'] = SGData
@@ -1353,6 +1352,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     TypeTxt.SetValue(generalData['Type'])                
                 
             def OnSpaceGroup(event):
+                if generalData['SGData']['SGFixed']:
+                    msg = 'Fixed cif generated magnetic space group'
+                    text = 'space group can not be changed'
+                    wx.MessageBox(text,caption=msg,style=wx.ICON_EXCLAMATION)
+                    text,table = G2spc.SGPrint(generalData['SGData'])
+                    SGTxt.SetLabel(generalData['SGData']['SpGrp'])
+                    msg = 'cif based Space Group Information'
+                    G2G.SGMessageBox(General,msg,text,table).Show()
+                    return
                 helptext = '''\t\t\tGSAS-II space group information
                 
 Space groups are entered here as given in Volume I or Volume A of the
@@ -1393,8 +1401,7 @@ entered the right symbol for your structure.
                             SpcGp = G2spc.spgbyNum[spcnum]
                         else:
                             msg = 'Space Group Error'
-                            Style = wx.ICON_EXCLAMATION
-                            wx.MessageBox('Invalid space group number',caption=msg,style=Style)
+                            wx.MessageBox('Invalid space group number',caption=msg,style=wx.ICON_EXCLAMATION)
                             return
                     except:
                         #get rid of extra spaces between fields first
@@ -1413,9 +1420,8 @@ entered the right symbol for your structure.
                     text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
                     SGTxt.SetLabel(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Error'
-                    Style = wx.ICON_EXCLAMATION
                     Text = '\n'.join(text)
-                    wx.MessageBox(Text,caption=msg,style=Style)
+                    wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
                 else:
                     text,table = G2spc.SGPrint(SGData)
                     generalData['SGData'] = SGData
@@ -1726,6 +1732,12 @@ entered the right symbol for your structure.
         def MagSizer():
             
             def OnSpinOp(event):
+                if SGData['SGFixed']:
+                    msg = 'Fixed cif generated spins'
+                    text = 'Spin configuration can not be changed; it will be reset'
+                    wx.MessageBox(text,caption=msg,style=wx.ICON_EXCLAMATION)
+                    wx.CallAfter(UpdateGeneral)
+                    return
                 Obj = event.GetEventObject()
                 isym = Indx[Obj.GetId()]
                 spCode = {'red':-1,'black':1}                    
@@ -1736,34 +1748,38 @@ entered the right symbol for your structure.
             def OnShowSpins(event):
                 showSpins.SetValue(False)
                 msg = 'Magnetic spin operators for '+SGData['MagSpGrp']
-                text,table = G2spc.SGPrint(SGData,AddInv=True)
+                text,table = G2spc.SGPrint(SGData,AddInv=not SGData['SGFixed'])
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
                 text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
-                SGMagSpinBox(General,msg,text,table,OprNames,SpnFlp).Show()
+                SGMagSpinBox(General,msg,text,table,SGData['SGCen'],OprNames,SpnFlp).Show()
                                
             SGData = generalData['SGData']            
             Indx = {}
-            MagSym = generalData['SGData']['SpGrp'].split()
+            MagSym = generalData['SGData']['MagSpGrp']
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
-            if not len(GenSym):
-                magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
-                return magSizer
             spinSizer = wx.BoxSizer(wx.HORIZONTAL)
-            spinColor = ['black','red']
-            spCode = {-1:'red',1:'black'}
-            for isym,sym in enumerate(GenSym):
-                spinSizer.Add(wx.StaticText(General,label=' %s: '%(sym.strip())),0,WACV)                
-                spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym]],choices=spinColor,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)                
-                Indx[spinOp.GetId()] = isym
-                spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
-                spinSizer.Add(spinOp,0,WACV)
-            MagSym = G2spc.MagSGSym(SGData)
-            SGData['MagSpGrp'] = MagSym
-            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            if SGData['SGFixed']:
+                SpnFlp = SGData['SpnFlp']
+                OprNames = G2spc.GenMagOps(SGData)[0]
+            else:
+                if not len(GenSym):
+                    magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
+                else:
+                    spinColor = ['black','red']
+                    spCode = {-1:'red',1:'black'}
+                    for isym,sym in enumerate(GenSym):
+                        spinSizer.Add(wx.StaticText(General,label=' %s: '%(sym.strip())),0,WACV)                
+                        spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym]],choices=spinColor,
+                            style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+                        Indx[spinOp.GetId()] = isym
+                        spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+                        spinSizer.Add(spinOp,0,WACV)
+                    MagSym = G2spc.MagSGSym(SGData)
+                    SGData['MagSpGrp'] = MagSym
+                    OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+                    SGData['SpnFlp'] = SpnFlp
             SGData['OprNames'] = OprNames
-            SGData['SpnFlp'] = SpnFlp
             spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: %s  '%(MagSym)),0,WACV)
             showSpins = wx.CheckBox(General,label=' Show spins?')
             showSpins.Bind(wx.EVT_CHECKBOX,OnShowSpins)
@@ -2156,10 +2172,15 @@ entered the right symbol for your structure.
             mainSizer.Add(ElemSizer())
         G2G.HorizontalLine(mainSizer,General)
         
+        if 'SGFixed' not in generalData['SGData']:
+            generalData['SGData']['SGFixed'] = False
+        
         if generalData['Type'] == 'magnetic':
-            GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
-            generalData['SGData']['GenSym'] = GenSym
-            generalData['SGData']['GenFlg'] = GenFlg
+            if not generalData['SGData']['SGFixed']:
+                GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
+                generalData['SGData']['GenSym'] = GenSym
+                generalData['SGData']['GenFlg'] = GenFlg
+                generalData['SGData']['MagSpGrp'] = G2spc.MagSGSym(generalData['SGData'])
             mainSizer.Add(MagSizer())
             G2G.HorizontalLine(mainSizer,General)
 
@@ -2613,7 +2634,7 @@ entered the right symbol for your structure.
                 if colM:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
                     CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
-                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
+#                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
@@ -4746,6 +4767,7 @@ entered the right symbol for your structure.
             cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
         elif generalData['Type'] == 'magnetic':
             cx,ct,cs,ci = [2,1,9,20]         #x, type, style & index
+            drawingData['vdwScale'] = 0.20
         drawingData['atomPtrs'] = [cx,ct,cs,ci]
         if not drawingData.get('Atoms'):
             for atom in atomData:

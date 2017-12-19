@@ -2216,22 +2216,20 @@ class SingleStringDialog(wx.Dialog):
     :param str value: default input value, if any
     '''
     def __init__(self,parent,title,prompt,value='',size=(200,-1),help=''):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
-                           pos=wx.DefaultPosition,
-                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.value = value
         self.prompt = prompt
         self.CenterOnParent()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        if help:
-            sizer1 = wx.BoxSizer(wx.HORIZONTAL)   
-            sizer1.Add((-1,-1),1, wx.EXPAND, 0)
-            sizer1.Add(HelpButton(self.panel,help),0,wx.ALIGN_RIGHT|wx.ALL)
-            mainSizer.Add(sizer1,0,wx.ALIGN_RIGHT|wx.EXPAND)
         mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
         self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
-        mainSizer.Add(self.valItem,0,wx.ALIGN_CENTER)
+        sizer1.Add(self.valItem,0,wx.ALIGN_CENTER)
+        if help:
+            sizer1.Add(HelpButton(self.panel,help),0,wx.ALIGN_RIGHT|wx.ALL)
+        mainSizer.Add(sizer1,0,wx.ALIGN_CENTER)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()

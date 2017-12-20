@@ -122,78 +122,90 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         cf[blknm].get(key))[0]
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
+                #how about checking for super/magnetic ones as well? - reject 'X'?
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
             selblk = G2IO.PhaseSelector(choice,ParentFrame=ParentFrame,
                 title= 'Select a phase from one the CIF data_ blocks below',size=(600,100))
         self.errors = 'Error during reading of selected block'
+#process selected phase
         if selblk is None:
             returnstat = False # no block selected or available
-        else:
+        else:   #do space group symbol & phase type first
             blknm = str_blklist[selblk]
             blk = cf[str_blklist[selblk]]
             E = True
             Super = False
+            magnetic = False
             moddim = int(blk.get("_cell_modulation_dimension",'0'))
-            if moddim:
-                Super = True
+            if moddim:      #incommensurate
                 if moddim > 1:
                     msg = 'more than 3+1 super symmetry is not allowed in GSAS-II'
                     self.errors = msg
-                    self.warnings += msg
+                    self.warnings += '\n'+msg
                     return False
                 if blk.get('_cell_subsystems_number'):
                     msg = 'Composite super structures not allowed in GSAS-II'
                     self.errors = msg
-                    self.warnings += msg
+                    self.warnings += '\n'+msg
                     return False
                 sspgrp = blk.get("_space_group_ssg_name",'')
-                if 'X' in sspgrp:
-                    self.warnings += '\nAd hoc incommensurate space group '+sspgrp+' is not allowed in GSAS-II'
-                    self.errors = 'Ad hoc incommensurate space groups not allowed in GSAS-II'
-                    return False
-            magnetic = False
-            self.Phase['General']['Type'] = 'nuclear'
-            SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
-            if not SpGrp:
-                SpGrp = blk.get("_space_group_name_H-M_alt",'')
-            if not SpGrp:
-                MSpGrp = blk.get("_space_group.magn_name_BNS",'')
-                if not MSpGrp:
-                    MSpGrp = blk.get("_space_group_magn.name_BNS",'')
-                    if not MSpGrp:
-                        self.warnings += 'No magnetic BNS space group name was found in the CIF.'
+                if not sspgrp:          #might be incommensurate magnetic
+                    MSSpGrp = blk.get("_space_group.magn_ssg_name_BNS",'')
+                    if not MSSpGrp:
+                        MSSpGrp = blk.get("_space_group.magn_ssg_name",'')
+                    if not MSSpGrp:
+                        msg = 'No incommensurate space group name was found in the CIF.'
                         self.errors = msg
-                        self.warnings += msg
-                        return False                    
-                SpGrp = MSpGrp.replace("'",'')
-                SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
-                if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
-                SpGrp = G2spc.StandardizeSpcName(SpGrp)
-                magnetic = True
-                self.MPhase['General']['Type'] = 'magnetic'
-                self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
-            if Super:
-                sspgrp = blk.get("_space_group_ssg_name",'')
-                sspgrp = sspgrp.split('(')
-                SpGrp = sspgrp[0]
-                SuperSg = '('+sspgrp[1].replace('\\','')
-                Super = True
-                SuperVec = [[0,0,.1],False,4]
-            SpGrp = SpGrp.replace('_','')
-            # try normalizing the space group, to see if we can pick the space group out of a table
-            if Super:
-                SpGrp = G2spc.StandardizeSpcName(SpGrp)
-                if not SpGrp:
-                    msg = 'GSAS-II failed to find space group symbol; not a valid cif file'
+                        self.warnings += '\n'+msg
+                        return False                                                            
+                    if 'X' in MSSpGrp:
+                        msg = 'Ad hoc incommensurate magnetic space group '+MSSpGrp+' is not allowed in GSAS-II'
+                        self.warnings += '\n'+msg
+                        self.errors = msg
+                        return False
+                    magnetic = True
+                if 'X' in sspgrp:
+                    msg = 'Ad hoc incommensurate space group '+sspgrp+' is not allowed in GSAS-II'
+                    self.warnings += '\n'+msg
                     self.errors = msg
-                    self.warnings += msg
                     return False
-            if not SpGrp:
-                msg = 'GSAS-II failed to find space group symbol; not a valid cif file'
-                self.errors = msg
-                self.warnings += msg
-                return False
+                Super = True
+                if magnetic:
+                    sspgrp = MSSpGrp.split('(')
+                    SpGrp = sspgrp[0].replace("1'",'')
+                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                else:
+                    sspgrp = sspgrp.split('(')
+                    SpGrp = sspgrp[0]
+                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                    self.Phase['General']['Type'] = 'nuclear'
+                SuperSg = '('+sspgrp[1].replace('\\','')
+                SuperVec = [[0,0,.1],False,4]
+            else:   #not incommensurate
+                SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
+                if not SpGrp:
+                    SpGrp = blk.get("_space_group_name_H-M_alt",'')
+                if not SpGrp:   #try magnetic           
+                    MSpGrp = blk.get("_space_group.magn_name_BNS",'')
+                    if not MSpGrp:
+                        MSpGrp = blk.get("_space_group_magn.name_BNS",'')
+                        if not MSpGrp:
+                            msg = 'No magnetic BNS space group name was found in the CIF.'
+                            self.errors = msg
+                            self.warnings += '\n'+msg
+                            return False                    
+                    SpGrp = MSpGrp.replace("'",'')
+                    SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
+                    if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
+                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                    magnetic = True
+                    self.MPhase['General']['Type'] = 'magnetic'
+                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+                else:
+                    SpGrp = SpGrp.replace('_','')
+                    self.Phase['General']['Type'] = 'nuclear'
+#process space group symbol
             E,SGData = G2spc.SpcGroup(SpGrp)
             if E and SpGrp:
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
@@ -213,14 +225,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
-            if magnetic:
+
+            if magnetic and not Super:
                 SGData['SGFixed'] = True
                 try:
                     sgoploop = blk.GetLoop('_space_group_symop_magn.id')
                     sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
                     opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
-                    centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]
-                    
+                    centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
                 except KeyError:        #old mag cif names
                     sgoploop = blk.GetLoop('_space_group_symop.magn_id')
                     sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
@@ -245,6 +257,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
 #                GenSym,GenFlg = G2spc.GetGenSym(SGData)
 #                self.MPhase['General']['SGData']['GenSym'] = GenSym
 #                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
+
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:
@@ -254,6 +267,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += '\nNew super symmetry symbol '+SpGrp+SuperSg
                     E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 self.Phase['General']['SSGData'] = SSGData
+
             # cell parameters
             cell = []
             for lbl in cellitems:
@@ -268,6 +282,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 SuperVec = [[cif.get_number_with_esd(waveDict['_cell_wave_vector_x'][0].replace('?','0'))[0],
                     cif.get_number_with_esd(waveDict['_cell_wave_vector_y'][0].replace('?','0'))[0],
                     cif.get_number_with_esd(waveDict['_cell_wave_vector_z'][0].replace('?','0'))[0]],False,4]
+
             # read in atoms
             self.errors = 'Error during reading of atoms'
             atomlbllist = [] # table to look up atom IDs

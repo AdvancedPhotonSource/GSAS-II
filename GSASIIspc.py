@@ -371,7 +371,7 @@ def SGPrint(SGData,AddInv=False):
         SGText - list of strings with the space group details
         SGTable - list of strings for each of the operations
     '''
-    if SGData['SGFixed']:       #inverses included in ops for cif fixed
+    if SGData.get('SGFixed',False):       #inverses included in ops for cif fixed
         Mult = len(SGData['SGCen'])*len(SGData['SGOps'])
     else:
         Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)

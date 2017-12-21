@@ -105,7 +105,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             nSeq = 0
             for chain in chains:
                 nres = len(seqList[chain])
-                nrec = (nres-1)/13+1
+                nrec = (nres-1)//13+1
                 iB = 0
                 for irec in range(nrec):
                     iF = min(iB+13,nres)
@@ -230,7 +230,6 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
                 continue
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
                 self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
-            fp = self.OpenFile()
             cx,ct,cs,cia = General['AtomPtrs']
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)

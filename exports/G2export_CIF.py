@@ -392,9 +392,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             if self.ifHKLF:
                 controls = self.OverallParms['Controls']
                 if controls['F**2']:
-                    thresh = 'F**2>%.1fu(F**2)'%(controls['minF/sig'])
+                    thresh = 'F**2>%.1fu(F**2)'%(controls['UsrReject']['minF/sig'])
                 else:
-                    thresh = 'F>%.1fu(F)'%(controls['minF/sig'])
+                    thresh = 'F>%.1fu(F)'%(controls['UsrReject']['minF/sig'])
                 WriteCIFitem(self.fp, '_reflns_threshold_expression', thresh)
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))
@@ -1960,9 +1960,12 @@ class ExportCIF(G2IO.ExportBaseclass):
             #WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
             #    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
             #        +'\n'+FormatPhaseProfile(phasenam))
-            histblk = self.Histograms[hist]["Sample Parameters"]
+            if hist.startswith("PWDR"):
+                histblk = self.Histograms[hist]["Sample Parameters"]
+                WritePowderData(hist)
+            elif hist.startswith("HKLF"):
+                WriteSingleXtalData(hist)
             #writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
-            WritePowderData(hist)
             #self.CloseFile()
             return
         #elif IncludeOnlyHist is not None: # truncate histogram list to only selected (for sequential export)
@@ -2394,6 +2397,7 @@ class ExportPwdrCIF(ExportCIF):
         if self.ExportSelect( # set export parameters
             AskFile='ask' # get a file name/directory to save in
             ): return
+        self.OpenFile()
         self._Exporter(event=event,histOnly=self.histnam[0])
 
     def Writer(self,hist,mode='w'):
@@ -2440,6 +2444,7 @@ class ExportHKLCIF(ExportCIF):
         if self.ExportSelect( # set export parameters
             AskFile='ask' # get a file name/directory to save in
             ): return
+        self.OpenFile()
         self._Exporter(event=event,histOnly=self.histnam[0])
 
 #===============================================================================

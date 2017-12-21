@@ -122,6 +122,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         cf[blknm].get(key))[0]
                 sg = cf[blknm].get("_symmetry_space_group_name_H-M",'')
                 if not sg: sg = cf[blknm].get("_space_group_name_H-M_alt",'')
+                if not sg: sg = cf[blknm].get("_space_group_ssg_name",'')
+                if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name_BNS",'')
+                if not sg: sg = cf[blknm].get("_space_group.magn_ssg_name",'')
                 #how about checking for super/magnetic ones as well? - reject 'X'?
                 sg = sg.replace('_','')
                 if sg: choice[-1] += ', (' + sg.strip() + ')'
@@ -191,7 +194,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if not MSpGrp:
                         MSpGrp = blk.get("_space_group_magn.name_BNS",'')
                         if not MSpGrp:
-                            msg = 'No magnetic BNS space group name was found in the CIF.'
+                            msg = 'No recognizable space group name was found in the CIF.'
                             self.errors = msg
                             self.warnings += '\n'+msg
                             return False                    
@@ -205,6 +208,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 else:
                     SpGrp = SpGrp.replace('_','')
                     self.Phase['General']['Type'] = 'nuclear'
+            if not SpGrp:
+                print (sspgrp)
+                self.warnings += 'No space group name was found in the CIF.'
+                return False
 #process space group symbol
             E,SGData = G2spc.SpcGroup(SpGrp)
             if E and SpGrp:
@@ -213,16 +220,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     E,SGData = G2spc.SpcGroup(SpGrpNorm)
             # nope, try the space group "out of the Box"
             if E:
-                if not SpGrp:
-                    self.warnings += 'No space group name was found in the CIF.'
-                    self.warnings += '\nThe space group has been set to "P 1". '
-                    self.warnings += "Change this in phase's General tab."
-                else:
-                    self.warnings += 'ERROR in space group symbol '+SpGrp
-                    self.warnings += '\nThe space group has been set to "P 1". '
-                    self.warnings += "Change this in phase's General tab."
-                    self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
-                    self.warnings += G2spc.SGErrors(E)
+                self.warnings += 'ERROR in space group symbol '+SpGrp
+                self.warnings += '\nThe space group has been set to "P 1". '
+                self.warnings += "Change this in phase's General tab."
+                self.warnings += '\nAre there spaces separating axial fields?\n\nError msg: '
+                self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
 

@@ -190,10 +190,8 @@ Mac & 64 bit on linux. Python 3.x is not supported in GSAS-II yet.
 examples:
     scons -Q
        (builds into ../bin for current platform using default options)
-    scons -Q install
-       (builds into ../bin<platform> for module distribution)
-    scons -Q install F2PYpath=/Library/Frameworks/Python.framework/Versions/6.2/bin/
-       (builds with a non-default [e.g. older] version of python)
+    scons -Q install=t
+       (builds into ../bin<platform-dir> for module distribution)
     """)
     #sys.exit()
 #==========================================================================================

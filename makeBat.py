@@ -65,6 +65,11 @@ if __name__ == '__main__':
     if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
     G2s = G2script
     if ' ' in G2s: G2s = '"'+G2script+'"'
+    # is mingw-w64\bin present? If so add it to path.
+    d = os.path.split(pexe)[0]
+    mdir = os.path.join(d,'Library','mingw-w64','bin')
+    if os.path.exists(mdir):
+        fp.write('@path={};%path%\n'.format(mdir))
     fp.write(Script.format(pexe,G2s))
     fp.close()
     print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)

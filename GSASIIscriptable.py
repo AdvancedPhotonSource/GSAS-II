@@ -117,14 +117,24 @@ and here is an example for HAP parameters:
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
 
+.. _Project_objects:
+
 ------------------------
 Project objects
 ------------------------
-It is also possible to create a composite dictionary containing parameters of any type.
-In this case dictionaries are nested with keys at the outer level of "set" and "clear"
-to specify which function is used with function :meth:`G2Project.set_refinement`. Note
-that optionally a list of histograms and/or phases can be supplied to
-:meth:`G2Project.set_refinement`, where the default is to use all phases and histograms.
+It is also possible to create a composite dictionary
+that reference all three of the above types of refinement parameters.
+In this case dictionaries are nested with keys at the outer level, such as
+"set" and "clear" which determine function is used with function
+:meth:`G2Project.set_refinement`.
+
+Note that optionally a list of histograms and/or phases can be supplied to
+:meth:`G2Project.set_refinement` or :meth:`G2Project.do_refinements`,
+where the default is to use all phases and histograms, but more commonly for
+:meth:`G2Project.do_refinements` will be to define the "histograms" and "phases"
+items within individual dictionaries and these will override the call arguments. 
+
+
 As an example: 
 
 .. code-block::  python
@@ -135,14 +145,53 @@ As an example:
               'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
     my_project.set_refinement(pardict)
 
+.. _Refinement_recipe:
+    
 ------------------------
 Refinement recipe
 ------------------------
-Finally, it is possible to specify a sequence of refinement actions as a list of dicts.
-Note in the following example, the list contains a set of dicts, each defined as before.
-It is not possible to specify different actions for differing phases or histograms
-with this method. Note that a
-separate refinement step will be performed for each element in the list.
+Finally, it is possible to specify a sequence of refinement actions as a list of dicts
+that will be supplied as an argument to :meth:`G2Project.do_refinements`.
+These dicts in this list are each like those described in the
+:ref:`Project_objects` section,
+except that additional keys, as are described in the table below may be used. 
+
+========== ============================================================================
+key         explanation
+========== ============================================================================
+set                    Specifies a dict with keys and subkeys as described in the
+                       :ref:`Refinement_parameters_fmt` section. Items listed here
+                       will be set to be refined.
+clear                  Specifies a dict as above for set, except that parameters are
+                       cleared and thus will not be refined.
+once                   Specifies a dict as above for set, except that parameters are
+                       set for the next cycle of refinement and are cleared once the
+                       refinement step is completed.
+skip                   Normally, once parameters are processed with a set/clear/once
+                       action(s), a refinement is started. If skip is defined as True
+                       (or any other value) the refinement step is not performed.
+output                 If a file name is specified for output is will be used for
+                       the current refinement. 
+histograms             Should contain a list of histogram(s) to be used for the
+                       set/clear/once action(s) on :ref:`Histogram_parameters_table` or
+                       :ref:`HAP_parameters_table`. Note that this will be
+                       ignored for :ref:`Phase_parameters_table`. Histograms may be
+                       specified as a list of strings [('PWDR ...'),...], indices
+                       [0,1,2] or as list of objects [hist1, hist2]. 
+phases                 Should contain a list of phase(s) to be used for the
+                       set/clear/once action(s) on :ref:`Phase_parameters_table` or 
+                       :ref:`HAP_parameters_table`. Note that this will be
+                       ignored for :ref:`Histogram_parameters_table`.
+                       Phases may be specified as a list of strings
+                       [('Phase name'),...], indices [0,1,2] or as list of objects
+                       [phase0, phase2]. 
+call                   Specifies a function to call after a refinement is completed.
+                       No function is called if this is not specified.
+callargs               Provides a list of arguments that will be passed to the function
+                       in call (if any). If call is defined and callargs is not, the
+                       current <tt>G2Project</tt> is passed as a single argument. 
+========== ============================================================================
+
 An example follows:
 
 .. code-block::  python
@@ -165,14 +214,13 @@ An example follows:
             {"set": { "Atoms": { "O1": "X", "O2": "X" }}},]
     my_project.do_refinements(reflist)
     
-Note that in the second from last refinement step (``reflist[6]``), parameters are both set and cleared. To perform a single refinement without changing any parameters, use this
-call:
 
-.. code-block::  python
+In this example, the list contains a set of dicts, each defined as before.
+A separate refinement step will be performed for each element in the list unless
+"skip" is included. 
+Note that in the second from last refinement step, parameters are both set and cleared. 
 
-    my_project.do_refinements([])
-
-
+.. _Refinement_parameters_fmt:
 
 ============================
 Refinement specifiers format
@@ -239,9 +287,9 @@ and :func:`G2Phase.clear_refinements`.
 
 .. tabularcolumns:: |l|p{4.5in}|
 
-===================== ============================================
+======= ==========================================================
 key                   explanation
-===================== ============================================
+======= ==========================================================
 Cell                  Whether or not to refine the unit cell.
 Atoms                 Dictionary of atoms and refinement flags.
                       Each key should be an atom label, e.g.
@@ -251,7 +299,8 @@ Atoms                 Dictionary of atoms and refinement flags.
                       for fractional occupancy, 'X' for position,
                       and 'U' for Debye-Waller factor
 LeBail                Enables LeBail intensity extraction.
-===================== ============================================
+======= ==========================================================
+
 
 .. _HAP_parameters_table:
 
@@ -264,42 +313,42 @@ and :func:`G2Phase.clear_HAP_refinements`.
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
-===================== ====================  =================================================
-key                   subkey                 explanation
-===================== ====================  =================================================
-Babinet                                      Should be a **list** of the following
-                                             subkeys. If not, assumes both
-                                             BabA and BabU
-\                     BabA
-\                     BabU
-Extinction                                   Boolean, True to refine.
-HStrain                                      Boolean, True to refine all appropriate
-                                             $D_ij$ terms.
+=============  ==========  ============================================================
+key             subkey                 explanation
+=============  ==========  ============================================================
+Babinet                                Should be a **list** of the following
+                                       subkeys. If not, assumes both
+                                       BabA and BabU
+\               BabA
+\               BabU
+Extinction                             Boolean, True to refine.
+HStrain                                Boolean, True to refine all appropriate
+                                       $D_ij$ terms.
 Mustrain
-\                     type                   Mustrain model. One of 'isotropic',
-                                             'uniaxial', or 'generalized'. Should always
-                                             be specified.
-\                     direction              For uniaxial only. A list of three
-                                             integers,
-                                             the [hkl] direction of the axis.
-\                     refine                 Usually boolean, set to True to refine.
-                                             When in doubt, set it to true.
-                                             For uniaxial model, can specify list
-                                             of 'axial' or 'equatorial' or a single
-                                             boolean sets both axial and equatorial.
-Size                                         Not implemented
-\                     type                   Size broadening model. One of 'isotropic',
-                                             'uniaxial', or 'ellipsoid'. Should always
-                                             be specified.
-\                     direction              For uniaxial only. A list of three
-                                             integers,
-                                             the [hkl] direction of the axis.
-\                     refine                 A boolean, True to refine.
-Pref.Ori.                                    Boolean, True to refine
-Show                                         Boolean, True to refine
-Use                                          Boolean, True to refine
-Scale                                        Phase fraction; Boolean, True to refine
-===================== ====================  =================================================
+\               type                   Mustrain model. One of 'isotropic',
+                                       'uniaxial', or 'generalized'. Should always
+                                       be specified.
+\              direction               For uniaxial only. A list of three
+                                       integers,
+                                       the [hkl] direction of the axis.
+\               refine                 Usually boolean, set to True to refine.
+                                       When in doubt, set it to true.
+                                       For uniaxial model, can specify list
+                                       of 'axial' or 'equatorial' or a single
+                                       boolean sets both axial and equatorial.
+Size                                   Not yet implemented
+\               type                   Size broadening model. One of 'isotropic',
+                                       'uniaxial', or 'ellipsoid'. Should always
+                                       be specified.
+\              direction               For uniaxial only. A list of three
+                                       integers,
+                                       the [hkl] direction of the axis.
+\               refine                 A boolean, True to refine.
+Pref.Ori.                              Boolean, True to refine
+Show                                   Boolean, True to refine
+Use                                    Boolean, True to refine
+Scale                                  Phase fraction; Boolean, True to refine
+=============  ==========  ============================================================
 
 
 ============================
@@ -314,8 +363,10 @@ import sys
 import platform
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
+    strtypes = (str,unicode)
 else:
     import _pickle as cPickle
+    strtypes = (str,bytes)
 import imp
 import copy
 import os
@@ -333,6 +384,7 @@ import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
+
 
 # Delay imports to not slow down small scripts
 G2fil = None
@@ -667,16 +719,15 @@ def make_empty_project(author=None, filename=None):
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     if not filename:
-        filename = os.path.join(os.getcwd(), 'test_output.gpx')
-    else:
-        filename = os.path.abspath(filename)
+        filename = 'test_output.gpx'
+    filename = os.path.abspath(filename)
     gsasii_version = str(GSASIIpath.GetVersionNumber())
     LoadG2fil()
     import matplotlib as mpl
     python_library_versions = G2fil.get_python_versions([mpl, np, sp])
 
     controls_data = dict(G2obj.DefaultControls)
-    controls_data['LastSavedAs'] = unicode(filename)
+    controls_data['LastSavedAs'] = filename
     controls_data['LastSavedUsing'] = gsasii_version
     controls_data['PythonVersions'] = python_library_versions
     if author:
@@ -702,13 +753,14 @@ class G2ImportException(Exception):
     pass
 
 
-def import_generic(filename, readerlist):
+def import_generic(filename, readerlist, fmthint=None):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
     # Translated from OnImportGeneric method in GSASII.py
     primaryReaders, secondaryReaders = [], []
     for reader in readerlist:
+        if fmthint is not None and fmthint not in reader.formatName: continue
         flag = reader.ExtensionValidator(filename)
         if flag is None:
             secondaryReaders.append(reader)
@@ -811,7 +863,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[]):
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
     HistName = 'PWDR ' + G2obj.StripUnicode(reader.idstring, '_')
-    HistName = unicode(G2obj.MakeUniqueLabel(HistName, existingnames))
+    HistName = G2obj.MakeUniqueLabel(HistName, existingnames)
 
     try:
         Iparm1, Iparm2 = instprm
@@ -1034,7 +1086,7 @@ class G2Project(G2ObjectWrapper):
             raise AttributeError("No file name to save to")
         SaveDictToProjFile(self.data, self.names, self.filename)
 
-    def add_powder_histogram(self, datafile, iparams, phases=[]):
+    def add_powder_histogram(self, datafile, iparams, phases=[], fmthint=None):
         """Loads a powder data histogram into the project.
 
         Automatically checks for an instrument parameter file, or one can be
@@ -1044,6 +1096,11 @@ class G2Project(G2ObjectWrapper):
         :param str datafile: The powder data file to read, a filename.
         :param str iparams: The instrument parameters file, a filename.
         :param list phases: Phases to link to the new histogram
+        :param str fmthint: If specified, only importers where the format name
+          (reader.formatName, as shown in Import menu) containing the
+          supplied string will be tried as importers. If not specified, all
+          importers consistent with the file extension will be tried
+          (equivalent to "guess format" in menu).
 
         :returns: A :class:`G2PwdrData` object representing
             the histogram
@@ -1051,7 +1108,7 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
         iparams = os.path.abspath(os.path.expanduser(iparams))
-        pwdrreaders = import_generic(datafile, PwdrDataReaders)
+        pwdrreaders = import_generic(datafile, PwdrDataReaders,fmthint=fmthint)
         histname, new_names, pwdrdata = load_pwd_from_reader(
                                           pwdrreaders[0], iparams,
                                           [h.name for h in self.histograms()])
@@ -1070,13 +1127,18 @@ class G2Project(G2ObjectWrapper):
 
         return self.histogram(histname)
 
-    def add_phase(self, phasefile, phasename=None, histograms=[]):
+    def add_phase(self, phasefile, phasename=None, histograms=[], fmthint=None):
         """Loads a phase into the project from a .cif file
 
         :param str phasefile: The CIF file from which to import the phase.
         :param str phasename: The name of the new phase, or None for the default
         :param list histograms: The names of the histograms to associate with
             this phase
+        :param str fmthint: If specified, only importers where the format name
+          (reader.formatName, as shown in Import menu) containing the
+          supplied string will be tried as importers. If not specified, all
+          importers consistent with the file extension will be tried
+          (equivalent to "guess format" in menu).
 
         :returns: A :class:`G2Phase` object representing the
             new phase.
@@ -1086,7 +1148,7 @@ class G2Project(G2ObjectWrapper):
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
 
         # TODO handle multiple phases in a file
-        phasereaders = import_generic(phasefile, PhaseReaders)
+        phasereaders = import_generic(phasefile, PhaseReaders, fmthint=fmthint)
         phasereader = phasereaders[0]
         
         phasename = phasename or phasereader.Phase['General']['Name']
@@ -1131,7 +1193,7 @@ class G2Project(G2ObjectWrapper):
         else:
             phasenames = [u'Phases']
             self.names.append(phasenames)
-        phasenames.append(unicode(phasename))
+        phasenames.append(phasename)
 
         # TODO should it be self.filename, not phasefile?
         SetupGeneral(data, os.path.dirname(phasefile))
@@ -1289,14 +1351,34 @@ class G2Project(G2ObjectWrapper):
 
     def do_refinements(self, refinements, histogram='all', phase='all',
                        outputnames=None, makeBack=False):
-        """Conducts a series of refinements. Wrapper around iter_refinements
+        """Conducts one or a series of refinements according to the
+           input provided in parameter refinements. This is a wrapper
+           around :meth:`iter_refinements`
 
-        :param list refinements: A list of dictionaries defining refinements
+        :param list refinements: A list of dictionaries specifiying changes to be made to
+            parameters before refinements are conducted.
+            See the :ref:`Refinement_recipe` section for how this is defined. 
         :param str histogram: Name of histogram for refinements to be applied
-            to, or 'all'
+            to, or 'all'; note that this can be overridden for each refinement
+            step via a "histograms" entry in the dict.
         :param str phase: Name of phase for refinements to be applied to, or
-            'all'
+            'all'; note that this can be overridden for each refinement
+            step via a "phases" entry in the dict.
+        :param list outputnames: Provides a list of project (.gpx) file names
+            to use for each refinement step (specifying None skips the save step).
+            See :meth:`save`. 
+            Note that this can be overridden using an "output" entry in the dict.
+        :param bool makeBack: determines if a backup ).bckX.gpx) file is made
+            before a refinement is performed. The default is False.
+            
+        To perform a single refinement without changing any parameters, use this
+        call:
+
+        .. code-block::  python
+        
+            my_project.do_refinements([])
         """
+        
         for proj in self.iter_refinements(refinements, histogram, phase,
                                           outputnames, makeBack):
             pass
@@ -1306,16 +1388,9 @@ class G2Project(G2ObjectWrapper):
                          outputnames=None, makeBack=False):
         """Conducts a series of refinements, iteratively. Stops after every
         refinement and yields this project, to allow error checking or
-        logging of intermediate results.
+        logging of intermediate results. Parameter use is the same as for
+        :meth:`do_refinements` (which calls this method). 
 
-        :param list refinements: A list of dictionaries defining refinements
-        :param str histogram: Name of histogram for refinements to be applied
-            to, a list of histograms or 'all'.
-            See :func:`set_refinement` for more details
-        :param str phase: Name of phase for refinements to be applied to, a
-            list of phases or 'all'. 
-            See :func:`set_refinement` for more details
-            
         >>> def checked_refinements(proj):
         ...     for p in proj.iter_refinements(refs):
         ...         # Track intermediate results
@@ -1334,25 +1409,38 @@ class G2Project(G2ObjectWrapper):
         else:
             outputnames = [None for r in refinements]
 
-        for output, refinement in zip(outputnames, refinements):
-            self.set_refinement(refinement, histogram)
+        for output, refinedict in zip(outputnames, refinements):
+            if 'histograms' in refinedict:
+                hist = refinedict['histograms']
+            else:
+                hist = histogram
+            if 'phases' in refinedict:
+                ph = refinedict['phases']
+            else:
+                ph = phase
+            if 'output' in refinedict:
+                output = refinedict['output']
+            self.set_refinement(refinedict, hist, ph)
             # Handle 'once' args - refinements that are disabled after this
             # refinement
-            if 'once' in refinement:
-                temp = {'set': refinement['once']}
-                self.set_refinement(temp, histogram, phase)
+            if 'once' in refinedict:
+                temp = {'set': refinedict['once']}
+                self.set_refinement(temp, hist, ph)
 
             if output:
                 self.save(output)
 
-            self.refine(makeBack=makeBack)
+            if 'skip' not in refinedict:
+                self.refine(makeBack=makeBack)
             yield self
 
             # Handle 'once' args - refinements that are disabled after this
             # refinement
-            if 'once' in refinement:
-                temp = {'clear': refinement['once']}
-                self.set_refinement(temp, histogram, phase)
+            if 'once' in refinedict:
+                temp = {'clear': refinedict['once']}
+                self.set_refinement(temp, hist, ph)
+            if 'call' in refinedict:
+                refinedict['call'](*refinedict.get('callargs',[self]))
 
     def set_refinement(self, refinement, histogram='all', phase='all'):
         """Apply specified refinements to a given histogram(s) or phase(s).
@@ -1587,7 +1675,7 @@ class G2AtomRecord(G2ObjectWrapper):
         for c in other:
             if c not in ' FXU':
                 raise ValueError("Invalid atom refinement: ", other)
-        self.data[self.ct+1] = unicode(other)
+        self.data[self.ct+1] = other
 
     @property
     def coordinates(self):
@@ -2175,7 +2263,7 @@ class G2Phase(G2ObjectWrapper):
                         mustrain = h['Mustrain']
                         newType = None
                         direction = None
-                        if isinstance(val, (unicode, str)):
+                        if isinstance(val, strtypes):
                             if val in ['isotropic', 'uniaxial', 'generalized']:
                                 newType = val
                             else:
@@ -2192,7 +2280,7 @@ class G2Phase(G2ObjectWrapper):
                             elif newType == 'uniaxial':
                                 if 'refine' in val:
                                     types = val['refine']
-                                    if isinstance(types, (unicode, str)):
+                                    if isinstance(types, strtypes):
                                         types = [types]
                                     elif isinstance(types, bool):
                                         mustrain[2][0] = types
@@ -2225,7 +2313,7 @@ class G2Phase(G2ObjectWrapper):
                         size = h['Size']
                         newType = None
                         direction = None
-                        if isinstance(val, (unicode, str)):
+                        if isinstance(val, strtypes):
                             if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
                                 newType = val
                             else:

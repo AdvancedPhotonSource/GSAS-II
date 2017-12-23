@@ -2584,10 +2584,9 @@ class GSASII(wx.Frame):
         try:
             size = GSASIIpath.GetConfigValue('Main_Size')
             if type(size) is str:
-                if size == 'None':
-                    size = wx.Size(700,450)
-                else:
-                    size = eval(size)
+                size = eval(size)
+            else:
+                raise Exception
         except:
             size = wx.Size(700,450)
         wx.Frame.__init__(self, name='GSASII', parent=parent,
@@ -2648,11 +2647,10 @@ class GSASII(wx.Frame):
 
         try:
             size = GSASIIpath.GetConfigValue('Plot_Size')
-            if type(size) is str: 
-                if size == 'None':
-                    size = wx.Size(700,600)
-                else:
-                    size = eval(size)
+            if type(size) is str:
+                size = eval(size)
+            else:
+                raise Exception
         except:
             size = wx.Size(700,600)                
         self.plotFrame = wx.Frame(None,-1,'GSASII Plots',size=size,

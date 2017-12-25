@@ -15,15 +15,9 @@ Routines for reading, writing, modifying and creating GSAS-II project (.gpx) fil
 This file specifies several wrapper classes around GSAS-II data representations.
 They all inherit from :class:`G2ObjectWrapper`. The chief class is :class:`G2Project`,
 which represents an entire GSAS-II project and provides several methods to access
-phases, powder histograms, and execute Rietveld refinements.
-These routines can be accessed either by directly calling these routines
-or via a command line interface. Run::
-
-   python GSASIIscriptable.py --help
-
-to show the available subcommands, and inspect each subcommand with
-`python GSASIIscriptable.py <subcommand> --help`.
-
+phases, powder histograms, and execute Rietveld refinements. These routines are
+typically called by using the :ref:`CommandlineInterface` to access a number of features or
+the :ref:`API`, which allows much more versatile access. 
 
 .. _Refinement_parameters_kinds:
 
@@ -57,7 +51,7 @@ Note that parameters and refinement flags used in GSAS-II fall into three classe
       See the :ref:`HAP_parameters_table` table for the HAP parameters where access has
       been provided. 
 
-There are several ways to set parameters using different objects, as described below, 
+There are several ways to set parameters using different objects, as described below.
 
 ------------------------
 Histogram/Phase objects
@@ -119,11 +113,11 @@ Note that the parameters must match the object type and method (phase vs. histog
 
 .. _Project_objects:
 
-------------------------
-Project objects
-------------------------
+-----------------------------
+Project-level Parameter Dict
+-----------------------------
 It is also possible to create a composite dictionary
-that reference all three of the above types of refinement parameters.
+that references all three of the above types of refinement parameters.
 In this case dictionaries are nested with keys at the outer level, such as
 "set" and "clear" which determine function is used with function
 :meth:`G2Project.set_refinement`.
@@ -150,8 +144,9 @@ As an example:
 ------------------------
 Refinement recipe
 ------------------------
-Finally, it is possible to specify a sequence of refinement actions as a list of dicts
-that will be supplied as an argument to :meth:`G2Project.do_refinements`.
+Finally, it is possible to specify a sequence of refinement actions as a list of
+dicts that contain :ref:`Project_objects` objects. This list is 
+supplied as an argument to :meth:`G2Project.do_refinements`.
 These dicts in this list are each like those described in the
 :ref:`Project_objects` section,
 except that additional keys, as are described in the table below may be used. 
@@ -350,12 +345,80 @@ Use                                    Boolean, True to refine
 Scale                                  Phase fraction; Boolean, True to refine
 =============  ==========  ============================================================
 
+.. _CommandlineInterface:
 
-============================
-Scriptable API
-============================
+=======================================
+GSASIIscriptable Command-line Interface
+=======================================
+
+One way to access these routines is by calling this script 
+via a command line interface as a shell command, where it is expected to be called as::
+
+       python GSASIIscriptable.py <subcommand> <file.gpx> <options>
+
+    The following subcommands are defined:
+
+        * create, see :func:`create`
+        * add, see :func:`add`
+        * dump, see :func:`dump`
+        * refine, see :func:`refine`
+        * seqrefine, see :func:`seqrefine`
+        * export, :func:`export`
+        * browse, see :func:`IPyBrowse`
+        
+Run::
+
+   python GSASIIscriptable.py --help
+
+to show the available subcommands, and inspect each subcommand with
+`python GSASIIscriptable.py <subcommand> --help` or see the documentation for each of the above routines.
+
+.. _JsonFormat:
+
+-------------------------
+Parameters in JSON files
+-------------------------
+
+The refine command requires two inputs: an existing GSAS-II project (.gpx) file and
+a JSON format file
+(see `Introducing JSON <http://json.org/>`_) that contains a single dict.
+This dict may have two keys:
+
+refinements:
+  This defines the a set of refinement steps in a JSON representation of a
+  :ref:`Refinement_recipe` list. 
+
+code:
+  This optionally defines Python code that will be executed after the project is loaded,
+  but before the refinement is started. This can be used to execute Python code to change
+  parameters that are not accessible via a :ref:`Refinement_recipe` dict (note that the
+  project object is accessed with variable ``proj``) or to define code that will be called
+  later (see key ``call`` in the :ref:`Refinement_recipe` section.)
+    
+JSON website: `Introducing JSON <http://json.org/>`_.
+
+.. _API:
+
+===================================
+GSASIIscriptable Application Layer
+===================================
+
+This module provides a large number of classes and modules, as described below.
+Most commonly a script will create a G2Project object using :class:`G2Project` and then
+perform actions such as
+adding a histogram (method :meth:`G2Project.add_powder_histogram`),
+adding a phase (method :meth:`G2Project.add_phase`),
+or setting parameters and performing a refinement
+(method :meth:`G2Project.do_refinements`).
+
+In some cases, it may be easier or more options may be available by direct access to 
+methods inside :class:`G2PwdrData` or :class:`G2Phase`
+
+---------------------------------------
+GSASIIscriptable Classes and functions
+---------------------------------------
 """
-from __future__ import division, print_function # needed?
+from __future__ import division, print_function
 import argparse
 import os.path as ospath
 import datetime as dt
@@ -693,7 +756,7 @@ def SetupGeneral(data, dirname):
             msg += '\n\t' + key
             if badList[key] > 1:
                 msg += ' (' + str(badList[key]) + ' times)'
-        raise Exception("Phase error:\n" + msg)
+        raise G2ScriptException("Phase error:\n" + msg)
         # wx.MessageBox(msg,caption='Element symbol error')
     F000X = 0.
     F000N = 0.
@@ -752,6 +815,8 @@ def make_empty_project(author=None, filename=None):
 class G2ImportException(Exception):
     pass
 
+class G2ScriptException(Exception):
+    pass
 
 def import_generic(filename, readerlist, fmthint=None):
     """Attempt to import a filename, using a list of reader objects.
@@ -1440,7 +1505,13 @@ class G2Project(G2ObjectWrapper):
                 temp = {'clear': refinedict['once']}
                 self.set_refinement(temp, hist, ph)
             if 'call' in refinedict:
-                refinedict['call'](*refinedict.get('callargs',[self]))
+                fxn = refinedict['call']
+                if callable(fxn):
+                    fxn(*refinedict.get('callargs',[self]))
+                elif callable(eval(fxn)):
+                    eval(fxn)(*refinedict.get('callargs',[self]))
+                else:
+                    raise G2ScriptException("Error: call value {} is not callable".format(fxn))
 
     def set_refinement(self, refinement, histogram='all', phase='all'):
         """Apply specified refinements to a given histogram(s) or phase(s).
@@ -2154,7 +2225,7 @@ class G2Phase(G2ObjectWrapper):
                 cif.WriteAtomsNuclear(fp, self.data, self.name, parmDict, sigDict, [])
                 # self._WriteAtomsNuclear(fp, parmDict, sigDict)
             else:
-                raise Exception("no export for "+str(self.data['General']['Type'])+" coordinates implemented")
+                raise G2ScriptException("no export for "+str(self.data['General']['Type'])+" coordinates implemented")
             # report cell contents
             cif.WriteComposition(fp, self.data, self.name, parmDict)
             if not quickmode and self.data['General']['Type'] == 'nuclear':      # report distances and angles
@@ -2421,26 +2492,133 @@ class G2Phase(G2ObjectWrapper):
 # The argument specification for each is in the subcommands dictionary (see
 # below)
 
-
+commandhelp={}
+commandhelp["create"] = "creates a GSAS-II project, optionally adding histograms and/or phases"
 def create(args):
-    """The create subcommand."""
+    """The create subcommand. This creates a GSAS-II project, optionally adding histograms and/or phases::
+
+  usage: GSASIIscriptable.py create [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
+                                  [-i IPARAMS [IPARAMS ...]]
+                                  [-p PHASES [PHASES ...]]
+                                  filename
+                                  
+positional arguments::
+
+  filename              the project file to create. should end in .gpx
+
+optional arguments::
+
+  -h, --help            show this help message and exit
+  -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
+                        list of datafiles to add as histograms
+  -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
+                        instrument parameter file, must be one for every
+                        histogram
+  -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
+                        list of phases to add. phases are automatically
+                        associated with all histograms given.
+
+    """
     proj = G2Project(filename=args.filename)
 
     hist_objs = []
-    for h in args.histograms:
-        hist_objs.append(proj.add_powder_histogram(h, args.iparams))
+    if args.histograms:
+        for h,i in zip(args.histograms,args.iparams):
+            print("Adding histogram from",h,"with instparm ",i)
+            hist_objs.append(proj.add_powder_histogram(h, i))
 
-    for p in args.phases:
-        proj.add_phase(p, histograms=hist_objs)
+    if args.phases: 
+        for p in args.phases:
+            print("Adding phase from",p)
+            proj.add_phase(p, histograms=hist_objs)
+        print('Linking phase(s) to histogram(s):')
+        for h in hist_objs:
+            print ('   '+h.name)
+
+    proj.save()
+
+commandhelp["add"] = "adds histograms and/or phases to GSAS-II project"
+def add(args):
+    """The add subcommand. This adds histograms and/or phases to GSAS-II project::
+
+  usage: GSASIIscriptable.py add [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
+                               [-i IPARAMS [IPARAMS ...]]
+                               [-hf HISTOGRAMFORMAT] [-p PHASES [PHASES ...]]
+                               [-pf PHASEFORMAT] [-l HISTLIST [HISTLIST ...]]
+                               filename
+
+
+positional arguments::
+
+  filename              the project file to open. Should end in .gpx
+
+optional arguments::
+
+  -h, --help            show this help message and exit
+  -d HISTOGRAMS [HISTOGRAMS ...], --histograms HISTOGRAMS [HISTOGRAMS ...]
+                        list of datafiles to add as histograms
+  -i IPARAMS [IPARAMS ...], --iparams IPARAMS [IPARAMS ...]
+                        instrument parameter file, must be one for every
+                        histogram
+  -hf HISTOGRAMFORMAT, --histogramformat HISTOGRAMFORMAT
+                        format hint for histogram import. Applies to all
+                        histograms
+  -p PHASES [PHASES ...], --phases PHASES [PHASES ...]
+                        list of phases to add. phases are automatically
+                        associated with all histograms given.
+  -pf PHASEFORMAT, --phaseformat PHASEFORMAT
+                        format hint for phase import. Applies to all phases.
+                        Example: -pf CIF
+  -l HISTLIST [HISTLIST ...], --histlist HISTLIST [HISTLIST ...]
+                        list of histgram indices to associate with added
+                        phases. If not specified, phases are associated with
+                        all previously loaded histograms. Example: -l 2 3 4
+    
+    """
+    proj = G2Project(args.filename)
+
+    if args.histograms:
+        for h,i in zip(args.histograms,args.iparams):
+            print("Adding histogram from",h,"with instparm ",i)
+            proj.add_powder_histogram(h, i, fmthint=args.histogramformat)
+
+    if args.phases: 
+        if not args.histlist:
+            histlist = proj.histograms()
+        else:
+            histlist = [proj.histogram(i) for i in args.histlist]
+
+        for p in args.phases:
+            print("Adding phase from",p)
+            proj.add_phase(p, histograms=histlist, fmthint=args.phaseformat)
+            
+        if not args.histlist:
+            print('Linking phase(s) to all histogram(s)')
+        else:
+            print('Linking phase(s) to histogram(s):')
+            for h in histlist:
+                print ('   '+h.name)
 
     proj.save()
 
 
+commandhelp["dump"] = "Shows the contents of a GSAS-II project"
 def dump(args):
-    """The dump subcommand. This is intended to be called by the :func:`main` routine. 
-    This is typically called by invoking this script with a subcommand::
+    """The dump subcommand shows the contents of a GSAS-II project::
 
-       python GSASIIscriptable.py dump <file.gpx>
+       usage: GSASIIscriptable.py dump [-h] [-d] [-p] [-r] files [files ...]
+
+positional arguments::
+
+  files
+
+optional arguments::
+
+  -h, --help        show this help message and exit
+  -d, --histograms  list histograms in files, overrides --raw
+  -p, --phases      list phases in files, overrides --raw
+  -r, --raw         dump raw file contents, default
+  
     """
     if not args.histograms and not args.phases:
         args.raw = True
@@ -2467,8 +2645,20 @@ def dump(args):
                     print(fname, "phase", p.id, p.name)
 
 
+commandhelp["browse"] = "Load a GSAS-II project and then open a IPython shell to browse it"
 def IPyBrowse(args):
-    """Load a .gpx file and then open a IPython shell to browse it
+    """Load a .gpx file and then open a IPython shell to browse it::
+
+  usage: GSASIIscriptable.py browse [-h] files [files ...]
+
+positional arguments::
+
+  files       list of files to browse
+
+optional arguments::
+
+  -h, --help  show this help message and exit
+
     """
     for fname in args.files:
         proj, nameList = LoadDictFromProjFile(fname)
@@ -2477,8 +2667,26 @@ def IPyBrowse(args):
         break
 
 
+commandhelp["refine"] = '''
+Conducts refinements on GSAS-II projects according to a list of refinement
+steps in a JSON dict
+'''
 def refine(args):
-    """The refine subcommand"""
+    """Conducts refinements on GSAS-II projects according to a JSON refinement dict::
+    
+  usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
+
+positional arguments::
+
+  gpxfile      the project file to refine
+  refinements  json file of refinements to apply. if not present refines file
+               as-is
+
+optional arguments::
+
+  -h, --help   show this help message and exit
+  
+    """
     proj = G2Project(args.gpxfile)
     if args.refinements is None:
         proj.refine()
@@ -2486,17 +2694,37 @@ def refine(args):
         import json
         with open(args.refinements) as refs:
             refs = json.load(refs)
+        if type(refs) is not dict:
+            raise G2ScriptException("Error: JSON object must be a dict.")
+        if "code" in refs:
+            print("executing code:\n|  ",'\n|  '.join(refs['code']))
+            exec('\n'.join(refs['code']))
         proj.do_refinements(refs['refinements'])
 
 
+commandhelp["seqrefine"] = "Not implemented. Placeholder for eventual sequential refinement implementation"
 def seqrefine(args):
     """The seqrefine subcommand"""
     raise NotImplementedError("seqrefine is not yet implemented")
 
 
+commandhelp["export"] = "Export phase as CIF"
 def export(args):
-    """The export subcommand"""
-    # Export phase as CIF to args.exportfile
+    """The export subcommand: Exports phase as CIF::
+
+      usage: GSASIIscriptable.py export [-h] gpxfile phase exportfile
+
+positional arguments::
+
+  gpxfile     the project file from which to export
+  phase       identifier of phase to export
+  exportfile  the .cif file to export to
+
+optional arguments::
+
+  -h, --help  show this help message and exit
+
+    """
     proj = G2Project(args.gpxfile)
     phase = proj.phase(args.phase)
     phase.export_CIF(args.exportfile)
@@ -2509,23 +2737,62 @@ def _args_kwargs(*args, **kwargs):
 # of its associated function and a list of its arguments
 # The arguments are passed directly to the add_argument() method
 # of an argparse.ArgumentParser
+
 subcommands = {"create":
                (create, [_args_kwargs('filename',
                                       help='the project file to create. should end in .gpx'),
 
-                         _args_kwargs('-i', '--iparams',
-                                      help='instrument parameter file'),
-
                          _args_kwargs('-d', '--histograms',
                                       nargs='+',
                                       help='list of datafiles to add as histograms'),
+                                      
+                         _args_kwargs('-i', '--iparams',
+                                      nargs='+',
+                                      help='instrument parameter file, must be one'
+                                           ' for every histogram'
+                                      ),
 
                          _args_kwargs('-p', '--phases',
                                       nargs='+',
                                       help='list of phases to add. phases are '
                                            'automatically associated with all '
                                            'histograms given.')]),
+               "add": (add, [_args_kwargs('filename',
+                                      help='the project file to open. Should end in .gpx'),
 
+                         _args_kwargs('-d', '--histograms',
+                                      nargs='+',
+                                      help='list of datafiles to add as histograms'),
+                                      
+                         _args_kwargs('-i', '--iparams',
+                                      nargs='+',
+                                      help='instrument parameter file, must be one'
+                                           ' for every histogram'
+                                      ),
+                                      
+                         _args_kwargs('-hf', '--histogramformat',
+                                      help='format hint for histogram import. Applies to all'
+                                           ' histograms'
+                                      ),
+
+                         _args_kwargs('-p', '--phases',
+                                      nargs='+',
+                                      help='list of phases to add. phases are '
+                                           'automatically associated with all '
+                                           'histograms given.'),
+
+                         _args_kwargs('-pf', '--phaseformat',
+                                      help='format hint for phase import. Applies to all'
+                                           ' phases. Example: -pf CIF'
+                                      ),
+                                      
+                         _args_kwargs('-l', '--histlist',
+                                      nargs='+',
+                                      help='list of histgram indices to associate with added'
+                                           ' phases. If not specified, phases are'
+                                           ' associated with all previously loaded'
+                                           ' histograms. Example: -l 2 3 4')]),
+                                           
                "dump": (dump, [_args_kwargs('-d', '--histograms',
                                      action='store_true',
                                      help='list histograms in files, overrides --raw'),
@@ -2542,7 +2809,7 @@ subcommands = {"create":
                "refine":
                (refine, [_args_kwargs('gpxfile', help='the project file to refine'),
                          _args_kwargs('refinements',
-                                      help='json file of refinements to apply. if not present'
+                                      help='JSON file of refinements to apply. if not present'
                                            ' refines file as-is',
                                       default=None,
                                       nargs='?')]),
@@ -2557,37 +2824,39 @@ subcommands = {"create":
 
 
 def main():
-    '''The command line interface for GSASIIscriptable.
+    '''The command-line interface for calling GSASIIscriptable as a shell command,
+    where it is expected to be called as::
 
-    Executes one of the following subcommands:
+       python GSASIIscriptable.py <subcommand> <file.gpx> <options>
 
-        * :func:`create`
-        * :func:`dump`
-        * :func:`refine`
-        * :func:`seqrefine`
-        * :func:`export`
-        * browse (:func:`IPyBrowse`)
+    The following subcommands are defined:
 
-    These commands are typically called by invoking this script with a subcommand,
-    for example::
-
-       python GSASIIscriptable.py dump <file.gpx>
-        
+        * create, see :func:`create`
+        * add, see :func:`add`
+        * dump, see :func:`dump`
+        * refine, see :func:`refine`
+        * seqrefine, see :func:`seqrefine`
+        * export, :func:`export`
+        * browse, see :func:`IPyBrowse`
 
     .. seealso::
         :func:`create`
+        :func:`add`
         :func:`dump`
         :func:`refine`
         :func:`seqrefine`
         :func:`export`
         :func:`IPyBrowse`
     '''
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=
+        "Use of "+os.path.split(__file__)[1]+" Allows GSAS-II actions from command line."
+        )
     subs = parser.add_subparsers()
 
     # Create all of the specified subparsers
     for name, (func, args) in subcommands.items():
-        new_parser = subs.add_parser(name)
+        new_parser = subs.add_parser(name,help=commandhelp.get(name),
+                                     description='Command "'+name+'" '+commandhelp.get(name))
         for listargs, kwds in args:
             new_parser.add_argument(*listargs, **kwds)
         new_parser.set_defaults(func=func)

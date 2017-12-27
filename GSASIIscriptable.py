@@ -641,9 +641,9 @@ def PreSetup(data):
         data['MCSA']['Results'] = []
     if 'Modulated' not in data['General']:
         data['General']['Modulated'] = False
-    if 'modulated' in data['General']['Type']:
-        data['General']['Modulated'] = True
-        data['General']['Type'] = 'nuclear'
+#    if 'modulated' in data['General']['Type']:
+#        data['General']['Modulated'] = True
+#        data['General']['Type'] = 'nuclear'
 
 
 def SetupGeneral(data, dirname):
@@ -690,8 +690,7 @@ def SetupGeneral(data, dirname):
             generalData['AtomPtrs'] = [6,4,10,12]
         elif generalData['Type'] == 'magnetic':
             generalData['AtomPtrs'] = [3,1,10,12]
-    if generalData['Type'] in ['modulated',]:
-        generalData['Modulated'] = True
+    if generalData['Modulated']:
         generalData['Type'] = 'nuclear'
         if 'Super' not in generalData:
             generalData['Super'] = 1

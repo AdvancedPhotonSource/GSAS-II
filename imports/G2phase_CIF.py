@@ -156,7 +156,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if not sspgrp:          #might be incommensurate magnetic
                     MSSpGrp = blk.get("_space_group.magn_ssg_name_BNS",'')
                     if not MSSpGrp:
-                        MSSpGrp = blk.get("_space_group.magn_ssg_name",'')
+                        MSSpGrp = blk.get("_space_group.magn_ssg_name",'')  
                     if not MSSpGrp:
                         msg = 'No incommensurate space group name was found in the CIF.'
                         self.errors = msg
@@ -176,14 +176,21 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 Super = True
                 if magnetic:
                     sspgrp = MSSpGrp.split('(')
-                    SpGrp = sspgrp[0].replace("1'",'')
-                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
+                    sspgrp[1] = "("+sspgrp[1]
+                    SpGrp = G2spc.StandardizeSpcName(sspgrp[0])
+                    self.MPhase['General']['Type'] = 'magnetic'
+                    self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
                 else:
                     sspgrp = sspgrp.split('(')
+                    sspgrp[1] = "("+sspgrp[1]
                     SpGrp = sspgrp[0]
                     SpGrp = G2spc.StandardizeSpcName(SpGrp)
                     self.Phase['General']['Type'] = 'nuclear'
-                SuperSg = '('+sspgrp[1].replace('\\','')
+                if not SpGrp:
+                    print (sspgrp)
+                    self.warnings += 'No space group name was found in the CIF.'
+                    return False
+                SuperSg = sspgrp[1].replace('\\','')
                 SuperVec = [[0,0,.1],False,4]
             else:   #not incommensurate
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
@@ -205,13 +212,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     magnetic = True
                     self.MPhase['General']['Type'] = 'magnetic'
                     self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+                    if not SpGrp:
+                        print (MSpGrp)
+                        self.warnings += 'No space group name was found in the CIF.'
+                        return False
                 else:
                     SpGrp = SpGrp.replace('_','')
                     self.Phase['General']['Type'] = 'nuclear'
-            if not SpGrp:
-                print (sspgrp)
-                self.warnings += 'No space group name was found in the CIF.'
-                return False
 #process space group symbol
             E,SGData = G2spc.SpcGroup(SpGrp)
             if E and SpGrp:
@@ -255,7 +262,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.MPhase['General']['SGData'] = SGData
                 self.MPhase['General']['SGData']['SpnFlp'] = censpn
                 self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
-                self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
+                MagPtGp = blk.get('_space_group.magn_point_group')
+                if not MagPtGp:
+                    MagPtGp = blk.get('_space_group_magn.point_group_name')
+                self.MPhase['General']['SGData']['MagPtGp'] = MagPtGp
 #                GenSym,GenFlg = G2spc.GetGenSym(SGData)
 #                self.MPhase['General']['SGData']['GenSym'] = GenSym
 #                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
@@ -269,6 +279,16 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.warnings += '\nNew super symmetry symbol '+SpGrp+SuperSg
                     E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 self.Phase['General']['SSGData'] = SSGData
+                if magnetic:
+                    self.MPhase['General']['SGData'] = SGData
+#                    self.MPhase['General']['SGData']['SpnFlp'] = censpn
+                    self.MPhase['General']['SGData']['MagSpGrp'] = MSSpGrp.replace(',','').replace('\\','')
+                    self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
+                    self.MPhase['General']['SSGData'] = SSGData
+    #                GenSym,GenFlg = G2spc.GetGenSym(SGData)
+    #                self.MPhase['General']['SGData']['GenSym'] = GenSym
+    #                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
+                    
 
             # cell parameters
             cell = []
@@ -327,8 +347,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 occCdict = {}
                 displSloop = None
                 displFloop = None
+                MagFloop = None
                 displSdict = {}
                 displFdict = {}
+                MagFdict = {}
                 UijFloop = None
                 UijFdict = {}
                 if blk.get('_atom_site_occ_Fourier_atom_site_label'):
@@ -346,6 +368,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if blk.get('_atom_site_U_Fourier_atom_site_label'):
                     UijFloop = blk.GetLoop('_atom_site_U_Fourier_atom_site_label')
                     UijFdict = dict(UijFloop.items())
+                if blk.get('_atom_site_moment_Fourier_atom_site_label'):
+                    MagFloop = blk.GetLoop('_atom_site_moment_Fourier_atom_site_label')
+                    MagFdict = dict(MagFloop.items())                            
             self.Phase['Atoms'] = []
             if magnetic:
                 self.MPhase['Atoms'] = []
@@ -412,8 +437,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.MPhase['Atoms'].append(matomlist)
                 if Super:
                     Sfrac = []
-                    Sadp = []                      
+                    Sadp = np.zeros((4,12))
                     Spos = np.zeros((4,6))
+                    Smag = np.zeros((4,6))
                     nim = -1
                     waveType = 'Fourier'                                
                     if displFdict:
@@ -434,7 +460,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         Spos = []
                     if UijFdict:
                         nim = -1
-                        Sadp = np.zeros((4,12))
                         for i,item in enumerate(UijFdict['_atom_site_u_fourier_atom_site_label']):
                             if item == atomlist[0]:
                                 ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_u_fourier_tens_elem'][i])
@@ -445,12 +470,30 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 Sadp[im-1][ix] = cif.get_number_with_esd(val)[0]
                                 val = UijFdict['_atom_site_u_fourier_param_cos'][i]
                                 Sadp[im-1][ix+6] = cif.get_number_with_esd(val)[0]
+                    if nim >= 0:
+                        Sadp = [[sadp,False] for sadp in Sadp[:nim]]
+                    else:
+                        Sadp = []
+                    if MagFdict:
+                        nim = -1
+                        for i,item in enumerate(MagFdict['_atom_site_moment_fourier_atom_site_label']):
+                            if item == atomlist[0]:
+                                waveType = 'Fourier'                                
+                                ix = ['x','y','z'].index(MagFdict['_atom_site_moment_fourier_axis'][i])
+                                im = int(MagFdict['_atom_site_moment_fourier_wave_vector_seq_id'][i])
+                                if im != nim:
+                                    nim = im
+                                val = MagFdict['_atom_site_moment_fourier_param_sin'][i]
+                                Smag[im-1][ix] = cif.get_number_with_esd(val)[0]
+                                val = MagFdict['_atom_site_moment_fourier_param_cos'][i]
+                                Smag[im-1][ix+3] = cif.get_number_with_esd(val)[0]
                         if nim >= 0:
-                            Sadp = [[sadp,False] for sadp in Sadp[:nim]]
+                            Smag = [[smag,False] for smag in Smag[:nim]]
                         else:
-                            Sadp = []
-                    
-                    SSdict = {'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':[]}}
+                            Smag = []
+                    SSdict = {'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}}
+                    if magnetic and atomlist[0] in magatomlabels:
+                        matomlist.append(SSdict)
                     atomlist.append(SSdict)
             if len(atomlbllist) != len(self.Phase['Atoms']):
                 self.isodistort_warnings += '\nRepeated atom labels prevents ISODISTORT decode'
@@ -471,10 +514,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.MPhase['General']['Type'] = 'magnetic'                
                 self.MPhase['General']['Name'] = name.strip()[:20]+' mag'
                 self.MPhase['General']['Super'] = Super
+                if Super:
+                    self.MPhase['General']['Modulated'] = True
+                    self.MPhase['General']['SuperVec'] = SuperVec
+                    self.MPhase['General']['SuperSg'] = SuperSg
+                    self.MPhase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
             else:
                 self.MPhase = None
             if Super:
-                self.Phase['General']['Type'] = 'modulated'
+                self.Phase['General']['Modulated'] = True
                 self.Phase['General']['SuperVec'] = SuperVec
                 self.Phase['General']['SuperSg'] = SuperSg
                 self.Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]

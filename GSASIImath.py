@@ -1627,6 +1627,9 @@ def ApplyModulation(data,tau):
         Sfrac = atom[-1]['SS1']['Sfrac']
         Spos = atom[-1]['SS1']['Spos']
         Sadp = atom[-1]['SS1']['Sadp']
+        if generalData['Type'] == 'magnetic':
+            Smag = atom[-1]['SS1']['Smag']
+            atmom = np.array(atom[cx+4:cx+7])
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
         for ind in indx:
             drawatom = drawAtoms[ind]
@@ -1636,6 +1639,7 @@ def ApplyModulation(data,tau):
             tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)
+            mom = np.zeros(3)
             #how do I handle Sfrac? - fade the atoms?
             if len(Sfrac):
                 scof = []
@@ -1664,6 +1668,14 @@ def ApplyModulation(data,tau):
                         ccof.append(spos[0][3:])
                 if len(scof):
                     wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)
+            if generalData['Type'] == 'magnetic' and len(Smag):
+                scof = []
+                ccof = []
+                for i,spos in enumerate(Smag):
+                    scof.append(spos[0][:3])
+                    ccof.append(spos[0][3:])
+                if len(scof):
+                    mom += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)               
             if len(Sadp):
                 scof = []
                 ccof = []
@@ -1678,6 +1690,9 @@ def ApplyModulation(data,tau):
             else:
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X
+            if generalData['Type'] == 'magnetic':
+                M = G2spc.ApplyStringOpsMom(opr,SGData,atmom+mom)
+                drawatom[dcx+3:dcx+6] = M
     return drawAtoms,Fade
     
 # gauleg.py Gauss Legendre numerical quadrature, x and w computation 
@@ -3296,7 +3311,7 @@ def ChargeFlip(data,reflDict,pgbar):
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
     im = 0
-    if generalData['Type'] in ['modulated','magnetic',]:
+    if generalData['Modulated'] == True:
         im = 1
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
     adjHKLmax(SGData,Hmax)

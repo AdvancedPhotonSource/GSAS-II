@@ -6766,11 +6766,12 @@ def PlotStructure(G2frame,data,firstCall=False):
                     BackboneColor.append(list(atColor))
                     
             if generalData['Type'] == 'magnetic':
+                magMult = drawingData.get('magMult',1.0)
                 SymOp = int(atom[cs-1].split('+')[0])
                 OpNum = G2spc.GetOpNum(SymOp,SGData)-1
-                Moment = np.array(atom[cx+3:cx+6])
+                Moment = np.array(atom[cx+3:cx+6])*magMult
                 color = (Wt-Bc)/255.
-                if SpnFlp[OpNum] < 0:
+                if not SGData['SGGray'] and SpnFlp[OpNum] < 0:
                     color = Rd/255.
                 RenderMoment(x,y,z,Moment,color)                    
 

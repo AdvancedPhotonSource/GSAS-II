@@ -370,7 +370,7 @@ class TransformDialog(wx.Dialog):
                 A,B = G2lat.cell2AB(self.oldCell[:6])
                 self.newCell[2:5] = [A[2,2],90.,90.]
                 a,b = G2lat.cell2AB(self.newCell[:6])
-                self.Trans = np.inner(a.T,B)    #correct!
+                self.Trans = np.inner(a.T,B).T    #correct!
                 self.ifConstr = False
                 self.newSpGrp = 'P 1'
                 SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
@@ -421,9 +421,6 @@ class TransformDialog(wx.Dialog):
                 if SGData['SGInv']:
                     Nops *= 2
                 SGData['SpnFlp'] = Nops*[1,]
-#            if self.Phase['General']['Type'] in ['modulated',]:
-#                self.Phase['General']['SuperSg'] = SetDefaultSSsymbol()
-#                self.Phase['General']['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
 
         def OnTest(event):
             self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans)
@@ -1147,9 +1144,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['AtomPtrs'] = [6,4,10,12]
             elif generalData['Type'] == 'magnetic':
                 generalData['AtomPtrs'] = [3,1,10,12]
-        if generalData['Type'] in ['modulated',]:
+        if generalData['Modulated']:
             generalData['Modulated'] = True
-            generalData['Type'] = 'nuclear'
             if 'Super' not in generalData:
                 generalData['Super'] = 1
                 generalData['SuperVec'] = [[0,0,.1],False,4]
@@ -1763,8 +1759,9 @@ entered the right symbol for your structure.
                 SpnFlp = SGData['SpnFlp']
                 OprNames = G2spc.GenMagOps(SGData)[0]
             else:
-                if not len(GenSym):
+                if not len(GenSym) or SGData['SGGray']:
                     magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
+                    OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:
                     spinColor = ['black','red']
                     spCode = {-1:'red',1:'black'}
@@ -1852,7 +1849,10 @@ entered the right symbol for your structure.
             SSChoice = G2spc.ptssdict.get(SSGptgp,[])
             Choice = []
             for item in SSChoice:
-                E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)
+                if generalData['SGData']['SGGray']:
+                    E,SSG = G2spc.SSpcGroup(generalData['SGData'],item+'s')                    
+                else:
+                    E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)
                 if SSG: Choice.append(item)
             if SSChoice:
                 superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
@@ -2633,7 +2633,9 @@ entered the right symbol for your structure.
                         Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if colM:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
-                    CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+                    CSI = []
+                    if not SGData['SGGray']:
+                        CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
 #                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
                     for i in range(3):
                         ci = i+colM
@@ -4734,7 +4736,7 @@ entered the right symbol for your structure.
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
-            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
+            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
         V0 = np.array([0,0,1])
         V = np.inner(Amat,V0)
@@ -5435,7 +5437,10 @@ entered the right symbol for your structure.
                             M = SGData['SGOps'][Opr-1][0]
                             opNum = G2spc.GetOpNum(item[2],SGData)
                             mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            if SGData['SGGray']:
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)
+                            else:    
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
                         atom[cs-1] = str(item[2])+'+' \
                             +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                         atom[cuij:cuij+6] = item[1]
@@ -5628,6 +5633,11 @@ entered the right symbol for your structure.
                 drawingData['bondRadius'] = bondRadius.GetValue()/100.
                 bondRadiusTxt.SetLabel(' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
                 G2plt.PlotStructure(G2frame,data)
+
+            def OnMagMult(event):
+                drawingData['magMult'] = magMult.GetValue()/100.
+                magMultTxt.SetLabel(' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
+                G2plt.PlotStructure(G2frame,data)
                 
             def OnContourLevel(event):
                 drawingData['contourLevel'] = contourLevel.GetValue()/100.
@@ -5700,6 +5710,14 @@ entered the right symbol for your structure.
             bondRadius.SetRange(1,25)
             bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
             slideSizer.Add(bondRadius,1,wx.EXPAND|wx.RIGHT)
+            
+            if generalData['Type'] == 'magnetic':
+                magMultTxt = wx.StaticText(drawOptions,-1,' Mag. mom. mult.: '+'%.2f'%(drawingData['magMult']))
+                slideSizer.Add(magMultTxt,0,WACV)
+                magMult = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['magMult']))
+                magMult.SetRange(10,500)
+                magMult.Bind(wx.EVT_SLIDER, OnMagMult)
+                slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
             
             if generalData['Map']['rhoMax']:
                 contourLevelTxt = wx.StaticText(drawOptions,-1,' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))

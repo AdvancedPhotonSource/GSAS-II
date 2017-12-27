@@ -45,6 +45,7 @@ def SpcGroup(SGSymbol):
        
              * 'SpGrp': space group symbol, slightly cleaned up
              * 'SGFixed': True if space group data can not be changed, e.g. from magnetic cif; otherwise False
+             * 'SGGray': True if 1' in symbol - gray group for mag. incommensurate phases
              * 'SGLaue':  one of '-1', '2/m', 'mmm', '4/m', '4/mmm', '3R',
                '3mR', '3', '3m1', '31m', '6/m', '6/mmm', 'm3', 'm3m'
              * 'SGInv': boolean; True if centrosymmetric, False if not
@@ -69,6 +70,10 @@ def SpcGroup(SGSymbol):
     SGData = {}
     if ':R' in SGSymbol:
         SGSymbol = SGSymbol.replace(':',' ')    #get rid of ':' in R space group symbols from some cif files
+    SGData['SGGray'] = False
+    if "1'" in SGSymbol:        #set for incommensurate magnetic
+        SGData['SGGray'] = True
+        SGSymbol = SGSymbol.replace("1'",'')
     SGSymbol = SGSymbol.split(':')[0]   #remove :1/2 setting symbol from some cif files
     import pyspg
     SGInfo = pyspg.sgforpy(SGSymbol)
@@ -883,7 +888,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     Ptsym[i-1] += "'"
                     magSym[j] += "'"
                     Ptsym[j-1] += "'"
-        else:
+        elif len(GenSym):
             if 'c' not in magSym[2]:
                 i,j = [1,2]
                 magSym[i].strip("'")
@@ -1373,9 +1378,18 @@ def SSpcGroup(SGData,SSymbol):
     def checkGen(gensym):
         '''
     GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s']
+        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s',]
         '''
         sym = ''.join(gensym)
+        if SGData['SGGray'] and sym in ['s','0s','00s','000s','0000s']:
+            return True
+        if SGData.get('SGGray',False):
+            if sym[-1] == 's':
+                sym = sym[:-1]
+                if sym == '':
+                    return True
+            else:
+                return False
 # monoclinic - all done
         if str(SSGKl) == '[-1]' and sym == 's':
             return False
@@ -1446,7 +1460,7 @@ def SSpcGroup(SGData,SSymbol):
         '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
     LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
     GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s']
+        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s','0000s']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
     LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
@@ -1458,7 +1472,8 @@ def SSpcGroup(SGData,SSymbol):
     except ValueError:
         return 'Error in superspace symbol '+SSymbol,None
     if ''.join(gensym) not in GenSymList:
-        return 'unknown generator symbol '+''.join(gensym),None
+        if SGData['SGGray'] and ''.join(gensym[:-1]) not in GenSymList:
+            return 'unknown generator symbol '+''.join(gensym),None
     try:
         LaueModId = LaueModList.index(''.join(modsym))
     except ValueError:
@@ -1469,12 +1484,15 @@ def SSpcGroup(SGData,SSymbol):
     SSGKl = SGData['SSGKl'][:]
     if SGData['SGLaue'] in ['2/m','mmm']:
         SSGKl = fixMonoOrtho()
-    if len(gensym) and len(gensym) != len(SSGKl):
+    Ngen = len(gensym)
+    if SGData.get('SGGray',False):
+        Ngen -= 1
+    if len(gensym) and Ngen != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
     if not checkGen(gensym):
         return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
-    gensym = specialGen(gensym,modsym)
-    genQ = [Fracs[mod] for mod in gensym]
+    gensym = specialGen(gensym[:Ngen],modsym)
+    genQ = [Fracs[mod] for mod in gensym[:Ngen]]
     if not genQ:
         genQ = [0,0,0,0]
     SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
@@ -1510,6 +1528,10 @@ def splitSSsym(SSymbol):
     Splits supersymmetry symbol into two lists of strings
     '''
     modsym,gensym = SSymbol.replace(' ','').split(')')
+    modsym = modsym.replace(',','')
+    if "1'" in modsym:
+        gensym = gensym[:-1]
+    modsym = modsym.replace("1'",'')
     if gensym in ['0','00','000','0000']:       #get rid of extraneous symbols
         gensym = ''
     nfrac = modsym.count('/')
@@ -2834,7 +2856,10 @@ def ApplyStringOpsMom(A,SGData,Mom):
         cellA = np.array([int(a) for a in cellA])
     else:
         cellA = np.zeros(3)
-    newMom = -(np.inner(Mom,M).T)*SGData['SpnFlp'][nA-1]*nl.det(M)      #why -?
+    if SGData['SGGray']:
+        newMom = -(np.inner(Mom,M).T)*nl.det(M)
+    else:
+        newMom = -(np.inner(Mom,M).T)*SGData['SpnFlp'][nA-1]*nl.det(M)
     return newMom
         
 def StringOpsProd(A,B,SGData):
@@ -2903,16 +2928,20 @@ def StandardizeSpcName(spcgroup):
     if rspc[-1:] == 'R':
         rspc = rspc[:-1]
         rhomb = ' R'
+    gray = ''
+    if "1'" in rspc:
+        gray = " 1'"
+        rspc = rspc[:-2]
     elif rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
         rspc = rspc[:-1]
     # look for a match in the spacegroup lists
     for i in spglist.values():
         for spc in i:
             if rspc == spc.replace(' ','').upper():
-                return spc + rhomb
+                return spc+gray+rhomb
     # how about the post-2002 orthorhombic names?
     if rspc in sgequiv_2002_orthorhombic:
-        return sgequiv_2002_orthorhombic[rspc]
+        return sgequiv_2002_orthorhombic[rspc]+gray
     else:
     # not found
         return ''
@@ -3087,9 +3116,9 @@ spglist = {
         'P -6 2 c','P 6/m m m','P 6/m c c','P 63/m c m','P 63/m m c',),
     'Pm3m': ('P 2 3','P 21 3','P m 3','P n 3','P a 3','P 4 3 2','P 42 3 2',
         'P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n','P m 3 m','P n 3 n',
-        'P m 3 n','P n 3 m',),
+        'P m 3 n','P n 3 m','P n -3 n','P n -3 m','P m -3 n',),
     'Im3m':('I 2 3','I 21 3','I m -3','I a -3', 'I 4 3 2','I 41 3 2',
-        'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d',),
+        'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d','I n -3 n'),
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
         'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
 }

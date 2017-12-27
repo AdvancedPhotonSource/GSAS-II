@@ -18,18 +18,18 @@ Note that :func:`GSASIImpsubs.InitMP` should be called before any of the other r
 in this module are used. 
 '''
 ########### SVN repository information ###################
-# $Date: $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import multiprocessing as mp
 import numpy as np
 import numpy.ma as ma
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 2895 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIpwd as G2pwd
 
 sind = lambda x: np.sin(x*np.pi/180.)

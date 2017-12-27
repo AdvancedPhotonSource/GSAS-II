@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2017-04-12 15:12:45 -0500 (Wed, 12 Apr 2017) $
-# $Author: vondreele $
-# $Revision: 2777 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIscriptable.py $
-# $Id: GSASIIIO.py 2777 2017-04-12 20:12:45Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 """
 *GSASIIscriptable: Scripting Interface*
@@ -181,7 +181,11 @@ phases                 Should contain a list of phase(s) to be used for the
                        [('Phase name'),...], indices [0,1,2] or as list of objects
                        [phase0, phase2]. 
 call                   Specifies a function to call after a refinement is completed.
-                       No function is called if this is not specified.
+                       The value supplied can be the object (typically a function)
+                       that will be called or a string that will evaluate (in the
+                       namespace inside :meth:`G2Project.iter_refinements` where
+                       ``self`` references the project.)
+                       Nothing is called if this is not specified.
 callargs               Provides a list of arguments that will be passed to the function
                        in call (if any). If call is defined and callargs is not, the
                        current <tt>G2Project</tt> is passed as a single argument. 
@@ -1094,7 +1098,7 @@ class G2Project(G2ObjectWrapper):
     >>> phase = proj.add_phase('my_phase.cif', histograms=[hist])
 
     Parameters for Rietveld refinement can be turned on and off as well.
-    See :meth:`~G2Project.set_refinement`, :meth:`~G2Project.refine`,
+    See :meth:`~G2Project.set_refinement`, :meth:`~G2Project.clear_refinements`,
     :meth:`~G2Project.iter_refinements`, :meth:`~G2Project.do_refinements`.
     """
     def __init__(self, gpxfile=None, author=None, filename=None):

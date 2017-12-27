@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2016-01-22 13:05:12 -0600 (Fri, 22 Jan 2016) $
-# $Author: toby $
-# $Revision: 2133 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2img_CBF.py $
-# $Id: G2img_CBF.py 2133 2016-01-22 19:05:12Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_CBF: .cbf cif image file*
@@ -19,7 +19,7 @@ import GSASIIpath
 import struct as st
 import numpy as np
 import unpack_cbf as cbf
-GSASIIpath.SetVersionNumber("$Revision: 2133 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
     This is used by Pilatus. 

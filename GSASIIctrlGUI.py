@@ -4593,7 +4593,8 @@ tutorialIndex = (
     ['Other'],    
     ['MerohedralTwins', 'Merohedral twin refinement in GSAS.htm', 'Merohedral twin refinements'],
     ['TOF Single Crystal Refinement', 'TOF single crystal refinement in GSAS.htm', 'Single crystal refinement from TOF data'],
-    ['PythonScript','Scripting.htm','Scripting a GSAS-II Refinement from Python']
+    ['PythonScript','Scripting.htm','Scripting a GSAS-II Refinement from Python'],
+    ['PythonScript','CommandLine.htm','     Running a GSAS-II Refinement from the Command Line'],
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title'],
     )

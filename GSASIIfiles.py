@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIfile: data (non-GUI) I/O routines*
@@ -30,7 +30,7 @@ import platform
 import numpy as np
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 2957 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 # N.B. This is duplicated in G2IO
 def sfloat(S):

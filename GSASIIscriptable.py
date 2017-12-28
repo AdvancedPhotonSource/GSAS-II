@@ -562,42 +562,42 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
     finally:
         file.close()
 
-def ImportPowder(reader,filename):
-    '''Use a reader to import a powder diffraction data file
+# def ImportPowder(reader,filename):
+#     '''Use a reader to import a powder diffraction data file
 
-    :param str reader: a scriptable reader
-    :param str filename: full name of powder data file; can be "multi-Bank" data
+#     :param str reader: a scriptable reader
+#     :param str filename: full name of powder data file; can be "multi-Bank" data
 
-    :returns: list rdlist: list of reader objects containing powder data, one for each
-        "Bank" of data encountered in file. Items in reader object of interest are:
+#     :returns: list rdlist: list of reader objects containing powder data, one for each
+#         "Bank" of data encountered in file. Items in reader object of interest are:
 
-          * rd.comments: list of str: comments found on powder file
-          * rd.dnames: list of str: data nammes suitable for use in GSASII data tree NB: duplicated in all rd entries in rdlist
-          * rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed for a PWDR entry in  GSASII data tree.
-    '''
-    rdfile,rdpath,descr = imp.find_module(reader)
-    rdclass = imp.load_module(reader,rdfile,rdpath,descr)
-    rd = rdclass.GSAS_ReaderClass()
-    if not rd.scriptable:
-        print(u'**** ERROR: '+reader+u' is not a scriptable reader')
-        return None
-    rdlist = []
-    if rd.ContentsValidator(filename):
-        repeat = True
-        rdbuffer = {} # create temporary storage for file reader
-        block = 0
-        while repeat: # loop if the reader asks for another pass on the file
-            block += 1
-            repeat = False
-            rd.objname = ospath.basename(filename)
-            flag = rd.Reader(filename,None,buffer=rdbuffer,blocknum=block,)
-            if flag:
-                rdlist.append(copy.deepcopy(rd)) # save the result before it is written over
-                if rd.repeat:
-                    repeat = True
-        return rdlist
-    print(rd.errors)
-    return None
+#           * rd.comments: list of str: comments found on powder file
+#           * rd.dnames: list of str: data nammes suitable for use in GSASII data tree NB: duplicated in all rd entries in rdlist
+#           * rd.powderdata: list of numpy arrays: pos,int,wt,zeros,zeros,zeros as needed for a PWDR entry in  GSASII data tree.
+#     '''
+#     rdfile,rdpath,descr = imp.find_module(reader)
+#     rdclass = imp.load_module(reader,rdfile,rdpath,descr)
+#     rd = rdclass.GSAS_ReaderClass()
+#     if not rd.scriptable:
+#         print(u'**** ERROR: '+reader+u' is not a scriptable reader')
+#         return None
+#     rdlist = []
+#     if rd.ContentsValidator(filename):
+#         repeat = True
+#         rdbuffer = {} # create temporary storage for file reader
+#         block = 0
+#         while repeat: # loop if the reader asks for another pass on the file
+#             block += 1
+#             repeat = False
+#             rd.objname = ospath.basename(filename)
+#             flag = rd.Reader(filename,None,buffer=rdbuffer,blocknum=block,)
+#             if flag:
+#                 rdlist.append(copy.deepcopy(rd)) # save the result before it is written over
+#                 if rd.repeat:
+#                     repeat = True
+#         return rdlist
+#     print(rd.errors)
+#     return None
 
 def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
     '''Create an initial Histogram dictionary
@@ -1165,7 +1165,7 @@ class G2Project(G2ObjectWrapper):
         :param str iparams: The instrument parameters file, a filename.
         :param list phases: Phases to link to the new histogram
         :param str fmthint: If specified, only importers where the format name
-          (reader.formatName, as shown in Import menu) containing the
+          (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
@@ -1195,15 +1195,100 @@ class G2Project(G2ObjectWrapper):
 
         return self.histogram(histname)
 
+    def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep,
+                                       wavelength=None, scale=None, phases=[]):
+        """Loads a powder data histogram into the project.
+
+        Requires an instrument parameter file. 
+        Note that in unix fashion, "~" can be used to indicate the
+        home directory (e.g. ~/G2data/data.prm). The instrument parameter file
+        will determine if the histogram is x-ray, CW neutron, TOF, etc. as well
+        as the instrument type. 
+
+        :param str histname: A name for the histogram to be created.
+        :param str iparams: The instrument parameters file, a filename.
+        :param float Tmin: Minimum 2theta or TOF (ms) for dataset to be simulated
+        :param float Tmax: Maximum 2theta or TOF (ms) for dataset to be simulated
+        :param float Tstep: Step size in 2theta or TOF (ms) for dataset to be simulated       
+        :param float wavelength: Wavelength for CW instruments, overriding the value
+           in the instrument parameters file if specified.
+        :param float scale: Histogram scale factor which multiplies the pattern. Note that
+           simulated noise is added to the pattern, so that if the maximum intensity is
+           small, the noise will mask the computed pattern. The scale 
+           needs to be a large number for CW neutrons.
+           The default, None, provides a scale of 1 for x-rays and TOF; 10,000 for CW neutrons.
+        :param list phases: Phases to link to the new histogram. Use proj.phases() to link to
+           all defined phases.
+
+        :returns: A :class:`G2PwdrData` object representing the histogram
+        """
+        LoadG2fil()
+        iparams = os.path.abspath(os.path.expanduser(iparams))
+        if not os.path.exists(iparams):
+            raise G2ScriptException("File does not exist:"+iparams)
+        rd = G2obj.ImportPowderData( # Initialize a base class reader
+            extensionlist=tuple(),
+            strictExtension=False,
+            formatName = 'Simulate dataset',
+            longFormatName = 'Compute a simulated pattern')
+        rd.powderentry[0] = '' # no filename
+        rd.powderentry[2] = 1 # only one bank
+        rd.comments.append('This is a dummy dataset for powder pattern simulation')
+        #Iparm1, Iparm2 = load_iprms(iparams, rd)
+        if Tmax < Tmin:
+            Tmin,Tmax = Tmax,Tmin
+        Tstep = abs(Tstep)
+        if 'TOF' in rd.idstring:
+                N = (np.log(Tmax)-np.log(Tmin))/Tstep
+                x = np.exp((np.arange(0,N))*Tstep+np.log(Tmin*1000.))
+                N = len(x)
+        else:            
+                N = int((Tmax-Tmin)/Tstep)+1
+                x = np.linspace(Tmin,Tmax,N,True)
+                N = len(x)
+        if N < 3:
+            raise G2ScriptException("Error: Range is too small or step is too large, <3 points")
+        rd.powderdata = [
+            np.array(x), # x-axis values
+            np.zeros_like(x), # powder pattern intensities
+            np.ones_like(x), # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(x), # calc. intensities (zero)
+            np.zeros_like(x), # calc. background (zero)
+            np.zeros_like(x), # obs-calc profiles
+            ]
+        Tmin = rd.powderdata[0][0]
+        Tmax = rd.powderdata[0][-1]
+        rd.idstring = histname
+        histname, new_names, pwdrdata = load_pwd_from_reader(rd, iparams,
+                                                            [h.name for h in self.histograms()])
+        if histname in self.data:
+            print("Warning - redefining histogram", histname)
+        elif self.names[-1][0] == 'Phases':
+            self.names.insert(-1, new_names)
+        else:
+            self.names.append(new_names)
+        if scale is not None:
+            pwdrdata['Sample Parameters']['Scale'][0] = scale
+        elif pwdrdata['Instrument Parameters'][0]['Type'][0].startswith('PNC'):
+            pwdrdata['Sample Parameters']['Scale'][0] = 10000.
+        self.data[histname] = pwdrdata
+        self.update_ids()
+
+        for phase in phases:
+            phase = self.phase(phase)
+            self.link_histogram_phase(histname, phase)
+
+        return self.histogram(histname)
+    
     def add_phase(self, phasefile, phasename=None, histograms=[], fmthint=None):
         """Loads a phase into the project from a .cif file
 
         :param str phasefile: The CIF file from which to import the phase.
         :param str phasename: The name of the new phase, or None for the default
         :param list histograms: The names of the histograms to associate with
-            this phase
+            this phase. Use proj.Histograms() to add to all histograms.
         :param str fmthint: If specified, only importers where the format name
-          (reader.formatName, as shown in Import menu) containing the
+          (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
@@ -1368,8 +1453,9 @@ class G2Project(G2ObjectWrapper):
         """
         Gives an object representing the specified phase in this project.
 
-        :param str phasename: The name of the desired phase. Either the name
-            (str), the phase's ranId, or the phase's index
+        :param str phasename: A reference to the desired phase. Either the phase 
+            name (str), the phase's ranId, the phase's index (both int) or
+            a phase object (:class:`G2Phase`)
         :returns: A :class:`G2Phase` object
         :raises: KeyError
 
@@ -1378,6 +1464,9 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Project.phase`
             :meth:`G2Project.phases`
             """
+        if isinstance(phasename, G2Phase):
+            if phasename.proj == self:
+                return phasename
         phases = self.data['Phases']
         if phasename in phases:
             return G2Phase(phases[phasename], phasename, self)

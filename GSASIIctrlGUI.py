@@ -11,7 +11,95 @@
 *GSASIIctrlGUI: Custom GUI controls*
 ---------------------------------------------
 
-A library of GUI controls for reuse throughout GSAS-II
+A library of GUI controls for reuse throughout GSAS-II, as indexed below
+
+================================  =================================================================
+Class or function name             Description
+================================  =================================================================
+:class:`ValidatedTxtCtrl`          A text control with a built-in call back routine to set dict
+                                   or list elements. Optionally validates input as float, int or
+                                   for strings non-blank. Value is set when focus changes
+:class:`EnumSelector`              A combo box with a built-in call back routine that
+                                   automatically sets a dict or list entry.
+:class:`G2ChoiceButton`            A customized wx.Choice that automatically initializes to
+                                   the initial value and saves the choice directly into a dict
+                                   or list value. Optionally calls function when a
+                                   choice is selected
+:class:`G2CheckBox`                A customized wx.CheckBox that automatically initializes to
+                                   the initial value and saves the choice directly into a dict
+                                   or list value. Optionally calls function when a
+                                   choice is selected
+:func:`CallScrolledMultiEditor`    Routine for editing many dict- or list-contained items.
+                                   using the :class:`ScrolledMultiEditor` dialog
+:class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
+                                   with validation. Results are placed in dict or list.
+:class:`G2MultiChoiceDialog`       Dialog similar to wx.MultiChoiceDialog, but provides
+                                   a filter to select choices and buttons to make selection
+                                   of multiple items more simple.
+:class:`G2SingleChoiceDialog`      Dialog similar to wx.SingleChoiceDialog, but provides
+                                   a filter to help search through choices.
+:class:`FlagSetDialog`             Dialog that provides a table of items along with a
+                                   checkbox for each. 
+:class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
+                                   optional range validation.
+:class:`MultiFloatDialog`          Dialog to obtain multiple float values from user, 
+                                   with optional range validation.
+:class:`SingleStringDialog`        Dialog to obtain a single string value from user, 
+                                   with optional an optional default value.
+:class:`MultiStringDialog`         Dialog to obtain multiple string values from user, 
+                                   with a description for each value and optional
+                                   defaults.
+:class:`SingleIntDialog`           Dialog to obtain a single integer value from user,
+                                   with optional range validation.
+:class:`MultiIntegerDialog`        Dialog to obtain multiple integer values from user, 
+                                   with a description for each value and optional
+                                   defaults. 
+:class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
+                                   columns may be ignored.
+:class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
+:class:`OrderBox`                  Creates a wx.Panel with scrollbars where items can be
+                                   ordered into columns.
+:class:`HelpButton`                Creates a button labeled with a "?" that when pressed
+                                   displays help text in a modal message window.
+:func:`G2MessageBox`               Displays text typically used for errors or warnings. 
+:func:`HorizontalLine`             Places a line in a Frame or Dialog to separate sections.
+:func:`SelectEdit1Var`             Select a variable from a list, then edit it and select
+                                   histograms to copy it to.
+:func:`ItemSelector`               Select a single item or multiple items from list of choices.
+                                   Creates and then destroys a wx.Dialog and returns the
+                                   selections(s).
+:func:`GetItemOrder`               Creates a dialog for ordering items into columns
+:func:`GetImportFile`              Gets one ore more file from the appropriate import
+                                   directory, which can be overridden. Arguments follow those
+                                   of :func:`wx.FileDialog`
+:func:`Define_wxId`                Create a unique wx.Id symbol that is global to this
+                                   module (:mod:`GSASIIctrlGUI`). Such symbols are needed
+                                   when the menu item is defined in a different location
+                                   from the wx.Bind that links the menu item to a function.
+                                   This function allows menu Ids to be
+                                   defined where they are first used rather than be placed
+                                   yet a third location somewhere in this module.
+================================  =================================================================
+
+Other miscellaneous routines that may be of use:
+
+================================  =================================================================
+Function name                      Description
+================================  =================================================================
+:func:`StripIndents`               Regularizes the intentation from a string with multiple
+                                   newline characters by removing spaces at the beginning
+                                   of each line.
+:func:`StripUnicode`               Removes unicode characters from strings 
+:func:`GetImportPath`              Determines the default location to use for importing files.
+                                   Tries sequentially :attr:`G2frame.TutorialImportDir`,
+                                   config var ``Import_directory`` and
+                                   :attr:`G2frame.LastImportDir`.
+:func:`GetExportPath`              Determines the default location to use for writing files.
+                                   Tries sequentially :attr:`G2frame.LastExportDir` and
+                                   :attr:`G2frame.LastGPXdir`
+================================  =================================================================
+
+Documentation for all the routines in module :mod:`GSASIIctrlGUI`.
 
 '''
 from __future__ import division, print_function
@@ -1066,7 +1154,8 @@ class G2ChoiceButton(wx.Choice):
         if self.onChoice:
             self.onChoice()
 
-############################################################### Custom checkbox that saves values into dict/list as used
+##############################################################
+# Custom checkbox that saves values into dict/list as used
 class G2CheckBox(wx.CheckBox):
     '''A customized version of a CheckBox that automatically initializes
     the control to a supplied list or dict entry and updates that
@@ -2612,7 +2701,7 @@ def ItemSelector(ChoiceList, ParentFrame=None,
 
 ######################################################### Column-order selection dialog
 def GetItemOrder(parent,keylist,vallookup,posdict):
-    '''Creates a panel where items can be ordered into columns
+    '''Creates a dialog where items can be ordered into columns
     
     :param list keylist: is a list of keys for column assignments
     :param dict vallookup: is a dict keyed by names in keylist where each item is a dict. 

@@ -370,7 +370,16 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     UijFdict = dict(UijFloop.items())
                 if blk.get('_atom_site_moment_Fourier_atom_site_label'):
                     MagFloop = blk.GetLoop('_atom_site_moment_Fourier_atom_site_label')
+                    MagFdict = dict(MagFloop.items())
+                    Mnames =  ['_atom_site_moment_fourier_atom_site_label',
+                               '_atom_site_moment_fourier_axis','_atom_site_moment_fourier_wave_vector_seq_id',
+                               '_atom_site_moment_fourier_param_sin','_atom_site_moment_fourier_param_cos']
+                elif blk.get('_atom_site_moment_Fourier.atom_site_label'):
+                    MagFloop = blk.GetLoop('_atom_site_moment_Fourier.atom_site_label')
                     MagFdict = dict(MagFloop.items())                            
+                    Mnames =  ['_atom_site_moment_fourier.atom_site_label',
+                               '_atom_site_moment_fourier.axis','_atom_site_moment_fourier.wave_vector_seq_id',
+                               '_atom_site_moment_fourier_param.sin','_atom_site_moment_fourier_param.cos']
             self.Phase['Atoms'] = []
             if magnetic:
                 self.MPhase['Atoms'] = []
@@ -476,16 +485,16 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         Sadp = []
                     if MagFdict:
                         nim = -1
-                        for i,item in enumerate(MagFdict['_atom_site_moment_fourier_atom_site_label']):
+                        for i,item in enumerate(MagFdict[Mnames[0]]):
                             if item == atomlist[0]:
                                 waveType = 'Fourier'                                
-                                ix = ['x','y','z'].index(MagFdict['_atom_site_moment_fourier_axis'][i])
-                                im = int(MagFdict['_atom_site_moment_fourier_wave_vector_seq_id'][i])
+                                ix = ['x','y','z'].index(MagFdict[Mnames[1]][i])
+                                im = int(MagFdict[Mnames[2]][i])
                                 if im != nim:
                                     nim = im
-                                val = MagFdict['_atom_site_moment_fourier_param_sin'][i]
+                                val = MagFdict[Mnames[3]][i]
                                 Smag[im-1][ix] = cif.get_number_with_esd(val)[0]
-                                val = MagFdict['_atom_site_moment_fourier_param_cos'][i]
+                                val = MagFdict[Mnames[4]][i]
                                 Smag[im-1][ix+3] = cif.get_number_with_esd(val)[0]
                         if nim >= 0:
                             Smag = [[smag,False] for smag in Smag[:nim]]

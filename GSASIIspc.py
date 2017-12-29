@@ -403,7 +403,7 @@ def SGPrint(SGData,AddInv=False):
     if len(SGData['SGCen']) == 1:
         SGText.append(' The equivalent positions are:\n')
     else:    
-        SGText.append(' The equivalent positions are:')
+        SGText.append(' The equivalent positions are:\n')
         SGText.append(' ('+Latt2text(SGData['SGCen'])+')+\n')
     SGTable = []
     for i,Opr in enumerate(SGData['SGOps']):
@@ -1384,12 +1384,13 @@ def SSpcGroup(SGData,SSymbol):
         if SGData['SGGray'] and sym in ['s','0s','00s','000s','0000s']:
             return True
         if SGData.get('SGGray',False):
-            if sym[-1] == 's':
+            if sym and sym[-1] == 's':
                 sym = sym[:-1]
                 if sym == '':
                     return True
             else:
-                return False
+                sym += 's'
+                return True
 # monoclinic - all done
         if str(SSGKl) == '[-1]' and sym == 's':
             return False
@@ -1489,8 +1490,8 @@ def SSpcGroup(SGData,SSymbol):
         Ngen -= 1
     if len(gensym) and Ngen != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
-    if not checkGen(gensym):
-        return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
+#    if not checkGen(gensym):
+#        return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
     gensym = specialGen(gensym[:Ngen],modsym)
     genQ = [Fracs[mod] for mod in gensym[:Ngen]]
     if not genQ:

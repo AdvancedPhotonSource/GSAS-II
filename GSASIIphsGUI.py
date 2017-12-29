@@ -85,13 +85,13 @@ class SGMagSpinBox(wx.Dialog):
         mainSizer.Add((0,10))
         first = text[0].split(':')[-1].strip()
         cents = [0,]
-        if len(Cents):
+        if len(Cents) > 1:
             cents = text[-1].split(';')
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
         ncol = self.table[0].count(',')+2
         for ic,cent in enumerate(cents):
-            if cent:
+            if ic:
                 cent = cent.strip(' (').strip(')+\n') 
                 mainSizer.Add(wx.StaticText(self.panel,label=' for (%s)+'%(cent)),0,WACV)
             tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
@@ -1789,27 +1789,6 @@ entered the right symbol for your structure.
             magSizer.Add(dminSizer,0,WACV)
             return magSizer
             
-        def PawleySizer():
-            
-            def OnPawleyRef(event):
-                generalData['doPawley'] = pawlRef.GetValue()
-            
-            pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
-            pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
-            pawlRef.SetValue(generalData['doPawley'])
-            pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
-            pawleySizer.Add(pawlRef,0,WACV)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
-            pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
-                min=0.25,max=20.,nDig=(10,5))
-            pawleySizer.Add(pawlVal,0,WACV)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
-            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
-                min=0.,max=1.,nDig=(10,4))
-            pawleySizer.Add(pawlNegWt,0,WACV)
-            return pawleySizer
-            
         def ModulatedSizer(name):
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
@@ -1891,6 +1870,27 @@ entered the right symbol for your structure.
                 vecSizer.Add(Ref,0,WACV)
             ssSizer.Add(vecSizer)
             return ssSizer
+            
+        def PawleySizer():
+            
+            def OnPawleyRef(event):
+                generalData['doPawley'] = pawlRef.GetValue()
+            
+            pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
+            pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
+            pawlRef.SetValue(generalData['doPawley'])
+            pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
+            pawleySizer.Add(pawlRef,0,WACV)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
+            pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
+                min=0.25,max=20.,nDig=(10,5))
+            pawleySizer.Add(pawlVal,0,WACV)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
+            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
+                min=0.,max=1.,nDig=(10,4))
+            pawleySizer.Add(pawlNegWt,0,WACV)
+            return pawleySizer
             
         def MapSizer():
             

@@ -6138,7 +6138,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Atoms':
                 table = G2frame.atomTable.GetData()
                 for i,atom in enumerate(drawAtoms):
-                    table[i][2:5] = atom[2:5]
+                    if generalData['Type'] == 'magnetic':
+                        table[i][2:8] = atom[2:8]
+                    else:
+                        table[i][2:5] = atom[2:5]
                 G2frame.atomTable.SetData(table)
                 panel = G2frame.phaseDisplay.GetPage(page).GetChildren()
                 names = [child.GetName() for child in panel]

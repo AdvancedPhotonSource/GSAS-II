@@ -1828,7 +1828,7 @@ entered the right symbol for your structure.
             SSChoice = G2spc.ptssdict.get(SSGptgp,[])
             Choice = []
             for item in SSChoice:
-                if generalData['SGData']['SGGray']:
+                if generalData['SGData'].get('SGGray',False):
                     E,SSG = G2spc.SSpcGroup(generalData['SGData'],item+'s')                    
                 else:
                     E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)

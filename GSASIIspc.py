@@ -2932,9 +2932,11 @@ def StandardizeSpcName(spcgroup):
     gray = ''
     if "1'" in rspc:
         gray = " 1'"
-        rspc = rspc[:-2]
+        rspc = rspc.replace("1'",'')
     elif rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
         rspc = rspc[:-1]
+    else:
+        rspc = rspc.replace("'",'')
     # look for a match in the spacegroup lists
     for i in spglist.values():
         for spc in i:

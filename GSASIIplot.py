@@ -4112,10 +4112,10 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Title += ' map for atom '+atom[0]+    \
         ' at %.4f %.4f %.4f'%(atxyz[0],atxyz[1],atxyz[2])
     ix = -np.array(np.rint(rhoSize[:3]*atxyz)+1,dtype='i')
-    ix += (rhoSize[:3]/2)
+    ix += (rhoSize[:3]//2)
     ix = ix%rhoSize[:3]
     rho = np.roll(np.roll(np.roll(Map['rho'],ix[0],axis=0),ix[1],axis=1),ix[2],axis=2)
-    ix = rhoSize[:3]/2
+    ix = rhoSize[:3]//2
     ib = 4
     hdx = [2,2,2]       #this needs to be something for an offset correction on atom positions
     if Ax == 'x':

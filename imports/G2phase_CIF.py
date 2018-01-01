@@ -178,6 +178,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     sspgrp = MSSpGrp.split('(')
                     sspgrp[1] = "("+sspgrp[1]
                     SpGrp = G2spc.StandardizeSpcName(sspgrp[0])
+                    MSpGrp = sspgrp[0]
                     self.MPhase['General']['Type'] = 'magnetic'
                     self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
                 else:
@@ -188,7 +189,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.Phase['General']['Type'] = 'nuclear'
                 if not SpGrp:
                     print (sspgrp)
-                    self.warnings += 'No space group name was found in the CIF.'
+                    self.warnings += 'Space group name '+sspgrp[0]+sspgrp[1]+' not recognized by GSAS-II'
                     return False
                 SuperSg = sspgrp[1].replace('\\','')
                 SuperVec = [[0,0,.1],False,4]

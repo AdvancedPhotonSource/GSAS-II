@@ -7,6 +7,11 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+#
+# TODO: Export patterns
+# TODO: integrate 2d data based on a model
+# TODO: export entire project as a JSON file?
+#
 """
 *GSASIIscriptable: Scripting Interface*
 =======================================

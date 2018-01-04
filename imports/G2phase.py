@@ -290,16 +290,21 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                     if key[11:] == 'A':
                         S = EXPphase[key]
                     elif key[11:] == 'B':
-                        S += EXPphase[key]
+                        S1 = EXPphase[key]
                         Atom = [S[50:58].strip(),S[:10].strip().capitalize(),'',
                             float(S[10:20]),float(S[20:30]),float(S[30:40]),
-                            float(S[40:50]),'',int(S[60:62]),S[130:131]]
+                            float(S[40:50]),'',int(S[60:62]),S1[62:63]]
+                            #float(S[40:50]),'',int(S[60:62]),S1[130:131]]
                         if Atom[9] == 'I':
-                            Atom += [float(S[68:78]),0.,0.,0.,0.,0.,0.]
+                            Atom += [float(S1[0:10]),0.,0.,0.,0.,0.,0.]
                         elif Atom[9] == 'A':
-                            Atom += [0.0,float(S[68:78]),float(S[78:88]),
-                                float(S[88:98]),float(S[98:108]),
-                                float(S[108:118]),float(S[118:128])]
+                            Atom += [0.0,
+                                float(S1[ 0:10]),float(S1[10:20]),
+                                float(S1[20:30]),float(S1[30:40]),
+                                float(S1[40:50]),float(S1[50:60])]
+                        else:
+                            print('Error in line with key: '+key)
+                            Atom += [0.,0.,0.,0.,0.,0.,0.]
                         XYZ = Atom[3:6]
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)[:2]
 #                        if Ptype == 'magnetic':

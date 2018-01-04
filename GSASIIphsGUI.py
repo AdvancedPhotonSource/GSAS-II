@@ -83,7 +83,6 @@ class SGMagSpinBox(wx.Dialog):
         self.panel = wxscroll.ScrolledPanel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
-        first = text[0].split(':')[-1].strip()
         cents = [0,]
         if len(Cents) > 1:
             cents = text[-1].split(';')
@@ -93,7 +92,7 @@ class SGMagSpinBox(wx.Dialog):
         for ic,cent in enumerate(cents):
             if ic:
                 cent = cent.strip(' (').strip(')+\n') 
-                mainSizer.Add(wx.StaticText(self.panel,label=' for (%s)+'%(cent)),0,WACV)
+                mainSizer.Add(wx.StaticText(self.panel,label='      for (%s)+'%(cent)),0,WACV)
             tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
             for j,item in enumerate(self.table):
                 flds = item.split(')')[1]
@@ -1841,6 +1840,10 @@ entered the right symbol for your structure.
                 superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
             modSizer.Add(superGp,0,WACV)
+            modSizer.Add((5,5),0)
+            showOps = wx.CheckBox(General,label='Show ops.')
+            showOps.Bind(wx.EVT_CHECKBOX,OnSuperGp)
+            modSizer.Add(showOps,0,WACV)
             if PWDR:
                 modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
                 indChoice = ['1','2','3','4','5','6','7']

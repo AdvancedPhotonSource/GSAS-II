@@ -1571,16 +1571,22 @@ def SSGPrint(SGData,SSGData):
     '''
     Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
     SSGText = []
-    SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
+    SSgSpc = SSGData['SSpGrp']
+    if SGData.get('SGGray',False):
+        SSgSpc = SSgSpc.replace('('," 1'(")
+    SSGText.append(' Superspace Group: '+SSgSpc)
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
     if SGData['SGLatt'] in 'ABCIFR':
         SSGText.append(' The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
     else:
-        SSGText.append(' The superlattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
+        SSGText.append(' The superlattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())
     SSGText.append(' The Laue symmetry is '+SGData['SGLaue'])
-    SSGText.append(' The superlattice point group is '+SGData['SGPtGrp']+', '+''.join([str(i) for i in SSGData['SSGKl']]))
+    SGptGp = SGData['SGPtGrp']
+    if SGData.get('SGGray',False):
+        SGptGp += "1'"
+    SSGText.append(' The superlattice point group is '+SGptGp+', '+''.join([str(i) for i in SSGData['SSGKl']]))
     SSGText.append(' The number of superspace group generators is '+str(len(SGData['SSGKl'])))
     SSGText.append(' Multiplicity of a general site is '+str(Mult))
     if SGData['SGUniq'] in ['a','b','c']:
@@ -1598,6 +1604,11 @@ def SSGPrint(SGData,SSGData):
     SSGTable = []
     for i,Opr in enumerate(SSGData['SSGOps']):
         SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
+    if SGData.get('SGGray',False):
+        SSGTable.append("     for 1'")
+        for i,Opr in enumerate(SSGData['SSGOps']):
+            Opr2 = [Opr[0],Opr[1]+np.array([0,0,0,.5])]
+            SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr2)))
     return SSGText,SSGTable
     
 def SSGModCheck(Vec,modSymb,newMod=True):

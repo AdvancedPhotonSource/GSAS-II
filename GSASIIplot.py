@@ -5717,6 +5717,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
+    ABC = np.array(cell[1:4])
     Vol = generalData['Cell'][7:8][0]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
@@ -6482,7 +6483,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         GL.glPopMatrix()
         
     def RenderMoment(x,y,z,Moment,color,slice=20):
-        Dx = 0.5*Moment
+        Dx = np.inner(Amat,Moment/ABC)/2.
         Z = np.sqrt(np.sum(Dx**2))
         if Z:
             GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)

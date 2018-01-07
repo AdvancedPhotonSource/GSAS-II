@@ -94,24 +94,34 @@ class SGMagSpinBox(wx.Dialog):
                 cent = cent.strip(' (').strip(')+\n') 
                 mainSizer.Add(wx.StaticText(self.panel,label='      for (%s)+'%(cent)),0,WACV)
             tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-            for j,item in enumerate(self.table):
+            j = 0
+            Red = False
+            for item in self.table:
+                if 'for' in item:
+                    mainSizer.Add(tableSizer,0,WACV)
+                    mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
+                    tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+                    Red = True
+                    j = 0
+                    continue
                 flds = item.split(')')[1]
-                tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV|wx.ALIGN_LEFT)            
+                tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
                 flds = flds.replace(' ','').split(',')
                 for i,fld in enumerate(flds):
                     if i < ncol-1:
                         text = wx.StaticText(self.panel,label='%s, '%(fld))
-                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                        tableSizer.Add(text,0,WACV)
                     else:
                         text = wx.StaticText(self.panel,label='%s '%(fld))
-                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                        tableSizer.Add(text,0,WACV)
                 text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
-                if self.spins[j+ic*len(self.table)] < 0:
+                if self.spins[j+ic*len(self.table)] < 0 or Red:
                     text.SetForegroundColour('Red')
-                tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                tableSizer.Add(text,0,WACV)
                 if not j%2:
                     tableSizer.Add((20,0))
-            mainSizer.Add(tableSizer,0,wx.ALIGN_CENTER)
+                j += 1
+            mainSizer.Add(tableSizer,0,WACV)
             
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
@@ -119,7 +129,7 @@ class SGMagSpinBox(wx.Dialog):
         btnsizer.AddButton(OKbtn)
         btnsizer.Realize()
         mainSizer.Add((0,10))
-        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        mainSizer.Add(btnsizer,0)
         self.panel.SetSizer(mainSizer)
         size = np.array(self.GetSize())
         self.panel.SetupScrolling()
@@ -1742,15 +1752,20 @@ entered the right symbol for your structure.
                 
             def OnShowSpins(event):
                 showSpins.SetValue(False)
-                msg = 'Magnetic spin operators for '+SGData['MagSpGrp']
+                msg = 'Magnetic space group information'
                 text,table = G2spc.SGPrint(SGData,AddInv=not SGData['SGFixed'])
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
                 text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+                if SGData['SGGray']:
+                    text[0] += " 1'"
+                    text[3] += "1'"
                 SGMagSpinBox(General,msg,text,table,SGData['SGCen'],OprNames,SpnFlp).Show()
                                
             SGData = generalData['SGData']            
             Indx = {}
-            MagSym = generalData['SGData']['MagSpGrp']
+            MagSym = SGData['MagSpGrp']
+            if SGData['SGGray']:
+                MagSym += " 1'"
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
             spinSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1771,8 +1786,6 @@ entered the right symbol for your structure.
                         Indx[spinOp.GetId()] = isym
                         spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
                         spinSizer.Add(spinOp,0,WACV)
-                    MagSym = G2spc.MagSGSym(SGData)
-                    SGData['MagSpGrp'] = MagSym
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)
                     SGData['SpnFlp'] = SpnFlp
             SGData['OprNames'] = OprNames
@@ -2977,8 +2990,8 @@ entered the right symbol for your structure.
         elif  generalData['Type'] == 'magnetic':
             if oldatom:
                 opr = oldatom[8]
-                mom = np.inner(np.array(atom[7:10]),Bmat)
-                Mom = np.inner(G2spc.ApplyStringOpsMom(opr,SGData,mom),Amat)
+                mom = np.array(atom[7:10])
+                Mom = G2spc.ApplyStringOpsMom(opr,SGData,mom)
                 atomInfo = oldatom[:5]+list(Mom)+oldatom[8:]    
             else:
                 atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
@@ -3199,7 +3212,6 @@ entered the right symbol for your structure.
         indx = GetSelectedAtoms()
         if not indx: return
         generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         cx = colLabels.index('x')
@@ -3243,8 +3255,8 @@ entered the right symbol for your structure.
                         atom[cuij:cuij+6] = Uij
                     if cmx:
                         opNum = G2spc.GetOpNum(OprNum,SGData)
-                        mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                        atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                        mom = np.array(atom[cmx:cmx+3])
+                        atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
                     if New:
                         atomData.append(atom)
         finally:
@@ -4357,7 +4369,6 @@ entered the right symbol for your structure.
                 XY = np.vstack((profile[0],rat))
                 G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
                     labelY='difference',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
-#            GSASIIpath.IPyBreak()
             G2plt.PlotPatterns(G2frame,plotType='PWDR',newPlot=True)
         else:   #selected area
             data['Layers']['Sadp'] = {}
@@ -5209,7 +5220,6 @@ entered the right symbol for your structure.
                 cmx = colLabels.index('Mx')
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             dlg = SymOpDialog(G2frame,SGData,False,True)
@@ -5237,9 +5247,11 @@ entered the right symbol for your structure.
                             atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
                             if cmx:         #magnetic moment
                                 opNum = G2spc.GetOpNum(OprNum,SGData)
-                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-#                                print (OprNum,newOp,opNum,nl.det(M),SpnFlp)
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                mom = np.array(atom[cmx:cmx+3])
+                                if SGData['SGGray']:
+                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                                else:    
+                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
                             if atom[cui] == 'A':
                                 Uij = atom[cuij:cuij+6]
                                 Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
@@ -5288,8 +5300,11 @@ entered the right symbol for your structure.
                             M = SGData['SGOps'][Opr-1][0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
-                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                mom = np.array(atom[cmx:cmx+3])
+                                if SGData['SGGray']:
+                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                                else:    
+                                    atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
                             atom[cs-1] = str(item[2])+'+'
                             atom[cuij:cuij+6] = item[1]
                             for xyz in cellArray+np.array(atom[cx:cx+3]):
@@ -5320,7 +5335,6 @@ entered the right symbol for your structure.
                 cmx = colLabels.index('Mx')
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             dlg = SymOpDialog(G2frame,SGData,False,True)
@@ -5344,8 +5358,8 @@ entered the right symbol for your structure.
                         OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
                         if cmx:
                             opNum = G2spc.GetOpNum(OprNum,SGData)
-                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
-                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                            mom = np.array(atom[cmx:cmx+3])
+                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
                         atomOp = atom[cs-1]
                         newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
                             str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
@@ -5422,7 +5436,6 @@ entered the right symbol for your structure.
                 cmx = colLabels.index('Mx')
             cuij = cs+5
             generalData = data['General']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             wx.BeginBusyCursor()
@@ -5439,11 +5452,11 @@ entered the right symbol for your structure.
                             Opr = abs(item[2])%100
                             M = SGData['SGOps'][Opr-1][0]
                             opNum = G2spc.GetOpNum(item[2],SGData)
-                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                            mom = np.array(atom[cmx:cmx+3])
                             if SGData['SGGray']:
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)
+                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
                             else:    
-                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
+                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
                         atom[cs-1] = str(item[2])+'+' \
                             +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                         atom[cuij:cuij+6] = item[1]

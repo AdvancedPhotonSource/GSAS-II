@@ -412,6 +412,14 @@ def SGPrint(SGData,AddInv=False):
         for i,Opr in enumerate(SGData['SGOps']):
             IOpr = [-Opr[0],-Opr[1]]
             SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
+    if SGData.get('SGGray',False):
+        SGTable.append("     for 1'")
+        for i,Opr in enumerate(SGData['SGOps']):
+            SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
+        if AddInv and SGData['SGInv']:
+            for i,Opr in enumerate(SGData['SGOps']):
+                IOpr = [-Opr[0],-Opr[1]]
+                SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
     return SGText,SGTable
 
 def AllOps(SGData):
@@ -1134,8 +1142,13 @@ def SSpcGroup(SGData,SSymbol):
 #                print OpAtxt.replace(' ','')+' * '+OpBtxt.replace(' ','')+' = '+OpCtxt.replace(' ','')
                 for k,OpD in enumerate(SSGOps):
                     OpDtxt = SSMT2text(OpD)
+                    OpDtxt2 = ''
+                    if SGData['SGGray']:                        
+                        OpDtxt2 = SSMT2text([OpD[0],OpD[1]+np.array([0.,0.,0.,.5])])
 #                    print '    ('+OpCtxt.replace(' ','')+' = ? '+OpDtxt.replace(' ','')+')'
                     if OpCtxt == OpDtxt:
+                        continue
+                    elif OpCtxt == OpDtxt2:
                         continue
                     elif OpCtxt.split(',')[:3] == OpDtxt.split(',')[:3]:
                         if 't' not in OpDtxt:
@@ -2152,7 +2165,8 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
                     CSI[1][kcs] = csi[1][kcs]
     return CSI
     
-def getTauT(tau,sop,ssop,XYZ):
+def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
+    phase = 2.*np.pi*np.sum(XYZ*wave)
     ssopinv = nl.inv(ssop[0])
     mst = ssopinv[3][:3]
     epsinv = ssopinv[3][3]
@@ -2163,7 +2177,7 @@ def getTauT(tau,sop,ssop,XYZ):
     if np.any(dtau%.5):
         dT = np.tan(np.pi*np.sum(dtau%.5))
     tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
-    return sdet,ssdet,dtau,dT,tauT
+    return sdet,ssdet,dtau,dT,tauT+phase
     
 def OpsfromStringOps(A,SGData,SSGData):
     SGOps = SGData['SGOps']
@@ -2863,11 +2877,6 @@ def ApplyStringOpsMom(A,SGData,Mom):
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
     M,T = SGOps[nA]
-    if len(Ax)>1:
-        cellA = Ax[1].split(',')
-        cellA = np.array([int(a) for a in cellA])
-    else:
-        cellA = np.zeros(3)
     if SGData['SGGray']:
         newMom = -(np.inner(Mom,M).T)*nl.det(M)
     else:

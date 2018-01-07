@@ -197,7 +197,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 x0 += Xvec
                 lam /= 10.
                 break
-            if lam > 10.e3:
+            if lam > 10.:
                 print ('ouch #3 chisq1 %g.4 stuck > chisq0 %g.4'%(chisq1,chisq0))
                 break
             chitol *= 2
@@ -1616,6 +1616,7 @@ def ApplyModulation(data,tau):
     SSGData = generalData['SSGData']
     cx,ct,cs,cia = generalData['AtomPtrs']
     drawingData = data['Drawing']
+    modul = generalData['SuperVec'][0]
     dcx,dct,dcs,dci = drawingData['atomPtrs']
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
@@ -1633,9 +1634,10 @@ def ApplyModulation(data,tau):
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
         for ind in indx:
             drawatom = drawAtoms[ind]
+            dratxyz = np.array(drawatom[dcx:dcx+3])
             opr = drawatom[dcs-1]
             sop,ssop,icent = G2spc.OpsfromStringOps(opr,SGData,SSGData)
-            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,atxyz)
+            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,dratxyz,modul)
             tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)

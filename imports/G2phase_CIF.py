@@ -205,8 +205,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             msg = 'No recognizable space group name was found in the CIF.'
                             self.errors = msg
                             self.warnings += '\n'+msg
-                            return False                    
-                    SpGrp = MSpGrp.replace("'",'')
+                            return False
+                    SpGrp = blk.get('_parent_space_group.name_H-M_alt')
+                    if not SpGrp:
+                        SpGrp = blk.get('_parent_space_group.name_H-M')
+#                    SpGrp = MSpGrp.replace("'",'')
                     SpGrp = SpGrp[:2]+SpGrp[2:].replace('_','')   #get rid of screw '_'
                     if '_' in SpGrp[1]: SpGrp = SpGrp.split('_')[0]+SpGrp[3:]
                     SpGrp = G2spc.StandardizeSpcName(SpGrp)

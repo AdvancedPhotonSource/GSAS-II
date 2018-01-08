@@ -1263,6 +1263,9 @@ class ExportBaseclass(object):
     Routines may also define a .Writer method, which is used to write a single
     file without invoking any GUI objects.
     '''
+    # TODO: review exporters producing exceptions where .Writer can't be used where G2frame is None (see CIF)
+    # TODO: review conflicting uses of .Writer with mode (SeqRef) & elsewhere
+    # TODO: move this class to G2fil
     def __init__(self,G2frame,formatName,extension,longFormatName=None,):
         self.G2frame = G2frame
         self.formatName = formatName # short string naming file type
@@ -1794,7 +1797,17 @@ class ExportBaseclass(object):
             self.parmDict[i] = val
             self.sigDict[i] = sig
         #GSASIIpath.IPyBreak()
-                
+
+    def SetFromArray(self,hist,histname):
+        '''Load a histogram into the exporter in preparation for use of the .Writer
+        rather than the main tree. This is used in GSASIIscriptable when wx
+        is not present.
+        '''
+        self.Histograms[histname] =  {}
+        self.Histograms[histname]['Data'] = hist['data'][1]
+        self.Histograms[histname]['Instrument Parameters'] = hist['Instrument Parameters']
+        self.Histograms[histname]['Sample Parameters'] = hist['Sample Parameters']
+
     # Tools to pull information out of the data arrays
     def GetCell(self,phasenam):
         """Gets the unit cell parameters and their s.u.'s for a selected phase

@@ -1961,7 +1961,6 @@ class ExportCIF(G2IO.ExportBaseclass):
             #    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
             #        +'\n'+FormatPhaseProfile(phasenam))
             if hist.startswith("PWDR"):
-                histblk = self.Histograms[hist]["Sample Parameters"]
                 WritePowderData(hist)
             elif hist.startswith("HKLF"):
                 WriteSingleXtalData(hist)
@@ -2381,6 +2380,7 @@ class ExportPwdrCIF(ExportCIF):
             extension='.cif',
             longFormatName = 'Export data as CIF'
             )
+        if G2frame is None: raise AttributeError('CIF export requires data tree') # prevent use from Scriptable
         self.exporttype = ['powder']
         # CIF-specific items
         self.author = ''

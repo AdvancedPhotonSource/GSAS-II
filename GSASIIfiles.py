@@ -368,7 +368,57 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
 
     return readerlist
 
-def LoadExportRoutines():
-    '''Placeholder that will someday retrieve the exporters
+def LoadExportRoutines(parent, traceback=False):
+    '''Routine to locate GSASII exporters 
     '''
-    pass
+    exporterlist = []
+    pathlist = sys.path
+    filelist = []
+    for path in pathlist:
+        for filename in glob.iglob(os.path.join(path,"G2export*.py")):
+                    filelist.append(filename)    
+    filelist = sorted(list(set(filelist))) # remove duplicates
+    # go through the routines and import them, saving objects that
+    # have export routines (method Exporter)
+    for filename in filelist:
+        path,rootname = os.path.split(filename)
+        pkg = os.path.splitext(rootname)[0]
+        try:
+            fp = None
+            fp, fppath,desc = imp.find_module(pkg,[path,])
+            pkg = imp.load_module(pkg,fp,fppath,desc)
+            for clss in inspect.getmembers(pkg): # find classes defined in package
+                if clss[0].startswith('_'): continue
+                if not inspect.isclass(clss[1]): continue
+                # check if we have the required methods
+                if not hasattr(clss[1],'Exporter'): continue
+                if not callable(getattr(clss[1],'Exporter')): continue
+                if parent is None:
+                    if not hasattr(clss[1],'Writer'): continue
+                else:
+                    if not hasattr(clss[1],'loadParmDict'): continue
+                    if not callable(getattr(clss[1],'loadParmDict')): continue
+                try:
+                    exporter = clss[1](parent) # create an export instance
+                except AttributeError:
+                    pass
+                except Exception as exc:
+                    print ('\nExport init: Error substantiating class ' + clss[0])
+                    print (u'Error message: {}\n'.format(exc))
+                    if traceback:
+                        traceback.print_exc(file=sys.stdout)
+                    continue
+                exporterlist.append(exporter)
+        except AttributeError:
+            print ('Export Attribute Error ' + filename)
+            if traceback:
+                traceback.print_exc(file=sys.stdout)
+        except Exception as exc:
+            print ('\nExport init: Error importing file ' + filename)
+            print (u'Error message: {}\n'.format(exc))
+            if traceback:
+                traceback.print_exc(file=sys.stdout)
+        finally:
+            if fp:
+                fp.close()
+    return exporterlist

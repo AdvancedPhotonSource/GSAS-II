@@ -8,9 +8,7 @@
 # $Id$
 ########### SVN repository information ###################
 #
-# TODO: Export patterns
 # TODO: integrate 2d data based on a model
-# TODO: export entire project as a JSON file?
 #
 """
 *GSASIIscriptable: Scripting Interface*
@@ -462,18 +460,32 @@ import GSASIIElem as G2elem
 G2fil = None
 PwdrDataReaders = []
 PhaseReaders = []
+exportersByExtension = {}
+'''Specifies the list of extensions that are supported for Powder data export'''
 
 def LoadG2fil():
     """Delay importing this module, it is slow"""
     global G2fil
-    global PwdrDataReaders
-    global PhaseReaders
     if G2fil is None:
         import GSASIIfiles
         G2fil = GSASIIfiles
+        global PwdrDataReaders
+        global PhaseReaders
         PwdrDataReaders = G2fil.LoadImportRoutines("pwd", "Powder_Data")
         PhaseReaders = G2fil.LoadImportRoutines("phase", "Phase")
-
+        AllExporters = G2fil.LoadExportRoutines(None)
+        global exportersByExtension
+        exportersByExtension = {}
+        for obj in AllExporters:
+            try:
+                obj.Writer
+            except AttributeError:
+                continue
+            for typ in obj.exporttype:
+                if typ not in exportersByExtension:
+                    exportersByExtension[typ] = {obj.extension:obj}
+                else:
+                    exportersByExtension[typ][obj.extension] = obj
 
 def LoadDictFromProjFile(ProjFile):
     '''Read a GSAS-II project file and load items to dictionary
@@ -1904,10 +1916,29 @@ class G2PwdrData(G2ObjectWrapper):
 
     @property
     def residuals(self):
+        '''Provides a dictionary with with the R-factors for this histogram.
+        Includes the weighted and unweighted profile terms (R, Rb, wR, wRb, wRmin)
+        as well as the Bragg R-values for each phase (ph:H:Rf and ph:H:Rf^2).
+        '''
         data = self.data['data'][0]
-        return {key: data[key]
-                for key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']}
+        return {key: data[key] for key in data
+                if key in ['R', 'Rb', 'wR', 'wRb', 'wRmin']
+                   or ':' in key}
 
+    @property
+    def InstrumentParameters(self):
+        '''Provides a dictionary with with the Instrument Parameters
+        for this histogram.
+        '''
+        return self.data['Instrument Parameters'][0]
+
+    @property
+    def SampleParameters(self):
+        '''Provides a dictionary with with the Sample Parameters
+        for this histogram.
+        '''
+        return self.data['Sample Parameters']
+    
     @property
     def id(self):
         self.proj.update_ids()
@@ -1987,9 +2018,46 @@ class G2PwdrData(G2ObjectWrapper):
         # TODO update background
         self.proj.save()
 
+    def getdata(self,datatype):
+        '''Provides access to the histogram data of the selected data type
+
+        :param str datatype: must be one of the following values (case is ignored)
+        
+           * 'X': the 2theta or TOF values for the pattern
+           * 'Yobs': the observed intensity values 
+           * 'Yweight': the weights for each data point (1/sigma**2)
+           * 'Ycalc': the computed intensity values 
+           * 'Background': the computed background values
+           * 'Residual': the difference between Yobs and Ycalc (obs-calc)
+
+        :returns: an numpy MaskedArray with data values of the requested type
+        
+        '''
+        enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual']
+        if datatype.lower() not in enums:
+            raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+enums)
+        return self.data['data'][1][enums.index(datatype.lower())]
+        
     def y_calc(self):
         return self.data['data'][1][3]
 
+    def Export(self,fileroot,extension):
+        '''Write the histogram into a file. The path is specified by fileroot and
+        extension.
+        
+        :param str fileroot: name of the file, optionally with a path (extension is
+           ignored)
+        :param str extension: includes '.', must match an extension in global
+           exportersByExtension['powder'] or a Exception is raised.
+        :returns: name of file that was written
+        '''
+        if extension not in exportersByExtension.get('powder',[]):
+            raise G2ScriptException('No Writer for file type = "'+extension+'"')
+        fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
+        obj = exportersByExtension['powder'][extension]
+        obj.SetFromArray(hist=self.data,histname=self.name)
+        obj.Writer(self.name,fil)
+            
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt
@@ -2521,6 +2589,24 @@ class G2Phase(G2ObjectWrapper):
                 else:
                     print(u'Unknown HAP key: '+key)
 
+    def getHAPvalues(self, histname):
+        """Returns a dict with HAP values for the selected histogram
+
+        :param histogram: is a histogram object (:class:`G2PwdrData`) or
+            a histogram name or the index number of the histogram
+
+        :returns: HAP value dict
+        """
+        if isinstance(histname, G2PwdrData):
+            histname = histname.name
+        elif histname in self.data['Histograms']:
+            pass
+        elif type(histname) is int:
+            histname = self.proj.histograms()[histname].name
+        else:
+            raise G2ScriptException("Invalid histogram reference: "+str(histname))
+        return self.data['Histograms'][histname]
+                    
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and
         the given histograms

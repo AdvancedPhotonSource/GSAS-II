@@ -825,14 +825,69 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
     File.close()
     print (' XY data saved to: '+filename)
             
+def askSaveDirectory(G2frame):
+    '''Ask the user to supply a directory name. Path name is used as the
+    starting point for the next export path search. 
+
+    :returns: a directory name (str) or None if Cancel is pressed
+    '''
+    pth = G2G.GetExportPath(G2frame)
+    dlg = wx.DirDialog(
+            G2frame, 'Input directory where file(s) will be written', pth,
+            wx.DD_DEFAULT_STYLE)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            G2frame.LastExportDir = filename
+        else:
+            filename = None
+    finally:
+        dlg.Destroy()
+    return filename
+
+def askSaveFile(G2frame,defnam,extension,longFormatName):
+    '''Ask the user to supply a file name
+
+    :returns: a file name (str) or None if Cancel is pressed
+    '''
+
+    pth = G2G.GetExportPath(G2frame)
+    dlg = wx.FileDialog(
+        G2frame, 'Input name for file to write', pth, defnam,
+        longFormatName+' (*'+extension+')|*'+extension,
+        wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            G2frame.LastExportDir = os.path.split(filename)[0]
+            filename = os.path.splitext(filename)[0]+extension # make sure extension is correct
+        else:
+            filename = None
+    finally:
+        dlg.Destroy()
+    return filename
+
 def PDFSave(G2frame,exports,PDFsaves):
     'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
     import scipy.interpolate as scintp
+    if len(exports) > 1:
+        dirname = askSaveDirectory(G2frame)
+        if not dirname: return
+    else:
+        defnam = exports[0].replace(' ','_')[5:]
+        filename = askSaveFile(G2frame,defnam,'.gr','G(r) file, etc.')
+        if not filename: return
+        dirname,filename = os.path.split(filename)
+        filename = os.path.splitext(filename)[0]
     for export in exports:
+        if len(exports) > 1:
+            filename = export.replace(' ','_')[5:]
         PickId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, export)
         PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, PickId,'PDF Controls'))
         if PDFsaves[0]:     #I(Q)
-            iqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.iq')
+            iqfilename = ospath.join(dirname,filename+'.iq')
             iqdata = PDFControls['I(Q)'][0]
             iqfxn = scintp.interp1d(iqdata[0],iqdata[1],kind='linear')
             iqfile = open(iqfilename,'w')
@@ -846,7 +901,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             print (' I(Q) saved to: '+iqfilename)
             
         if PDFsaves[1]:     #S(Q)
-            sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
+            sqfilename = ospath.join(dirname,filename+'.sq')
             sqdata = PDFControls['S(Q)'][1]
             sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
             sqfile = open(sqfilename,'w')
@@ -860,13 +915,13 @@ def PDFSave(G2frame,exports,PDFsaves):
             print (' S(Q) saved to: '+sqfilename)
             
         if PDFsaves[2]:     #F(Q)
-            fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
+            fqfilename = ospath.join(dirname,filename+'.fq')
             fqdata = PDFControls['F(Q)'][1]
             fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
-            fqfile = open(sqfilename,'w')
+            fqfile = open(fqfilename,'w')
             fqfile.write('#T F(Q) %s\n'%(export))
             fqfile.write('#L Q     F(Q)\n')
-            qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
+            qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
             fqnew = zip(qnew,fqfxn(qnew))
             for q,fq in fqnew:
                 fqfile.write("%15.6g %15.6g\n" % (q,fq))
@@ -874,7 +929,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             print (' F(Q) saved to: '+fqfilename)
             
         if PDFsaves[3]:     #G(R)
-            grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
+            grfilename = ospath.join(dirname,filename+'.gr')
             grdata = PDFControls['G(R)'][1]
             grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
             grfile = open(grfilename,'w')
@@ -891,7 +946,7 @@ def PDFSave(G2frame,exports,PDFsaves):
             pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
             Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Instrument Parameters'))[0]
             Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Limits'))
-            grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
+            grfilename = ospath.join(dirname,filename+'.gr')
             grdata = PDFControls['G(R)'][1]
             qdata = PDFControls['I(Q)'][1][0]
             grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')

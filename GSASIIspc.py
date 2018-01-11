@@ -967,8 +967,6 @@ def MagText2MTS(mcifOpr):
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {'x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'-y':[0,-1,0],'z':[0,0,1],'-z':[0,0,-1],
            'x-y':[1,-1,0],'-x+y':[-1,1,0],}
-#    TRA = {'+1/2':0.5,'+1/4':.25,'+3/4':.75,'+1/3':1./3.,'+2/3':2./3.,'+1/6':1./6.,'+5/6':5./6.,
-#           '+1/9'}
     ops = mcifOpr.split(",")
     M = []
     T = []
@@ -983,6 +981,27 @@ def MagText2MTS(mcifOpr):
         M.append(XYZ[op[:ip]])
     spnflp = 1
     if '-1' in ops[3]:
+        spnflp = -1
+    return np.array(M),np.array(T),spnflp
+            
+def MagSSText2MTS(mcifOpr):
+    "From magnetic super space group cif text returns matrix/translation + spin flip"
+    XYZ = {'x1':[1,0,0,0],'-x1':[-1,0,0,0],'x2':[0,1,0,0],'-x2':[0,-1,0,0],'x3':[0,0,1,0],'-x3':[0,0,-1,0],
+           'x1-x2':[1,-1,0,0],'-x1+x2':[-1,1,0,0],'x4':[0,0,0,1],'-x4':[0,0,0,-1],
+           '-x1+x4':[-1,0,0,1],'-x2+x4':[0,-1,0,1]}
+    ops = mcifOpr.split(",")
+    M = []
+    T = []
+    for op in ops[:4]:
+        ip = len(op)
+        if '/' in op:
+            ip = op.index('/')-2
+            T.append(eval(op[ip:]))
+        else:
+            T.append(0.)
+        M.append(XYZ[op[:ip]])
+    spnflp = 1
+    if '-1' in ops[4]:
         spnflp = -1
     return np.array(M),np.array(T),spnflp
             
@@ -1032,7 +1051,7 @@ def GetOpNum(Opr,SGData):
     Nops = len(SGData['SGOps'])
     opNum = abs(Opr)%100
     cent = abs(Opr)//100
-    if Opr < 0:
+    if Opr < 0 and not SGData['SGFixed']:
         opNum += Nops
     if SGData['SGInv'] and not SGData['SGFixed']:
         Nops *= 2
@@ -1387,87 +1406,7 @@ def SSpcGroup(SGData,SSymbol):
                 elif sym == 's00':
                     gensym = 'ss0'
         return gensym
-                    
-    def checkGen(gensym):
-        '''
-    GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s',]
-        '''
-        sym = ''.join(gensym)
-        if SGData['SGGray'] and sym in ['s','0s','00s','000s','0000s']:
-            return True
-        if SGData.get('SGGray',False):
-            if sym and sym[-1] == 's':
-                sym = sym[:-1]
-                if sym == '':
-                    return True
-            else:
-                sym += 's'
-                return True
-# monoclinic - all done
-        if str(SSGKl) == '[-1]' and sym == 's':
-            return False
-        elif SGData['SGPtGrp'] in ['2/m',]:
-            if str(SSGKl) == '[-1, 1]' and sym == '0s':
-                return False
-            elif str(SSGKl) == '[1, -1]' and sym == 's0':
-                return False
-#orthorhombic - all 
-        elif SGData['SGPtGrp'] in ['222',] and sym not in ['','s00','0s0','00s']:
-            return False 
-        elif SGData['SGPtGrp'] in ['2mm','m2m','mm2','mmm'] and sym not in ['',]+GenSymList[4:16]:
-            return False 
-#tetragonal - all done
-        elif SGData['SGPtGrp'] in ['4',] and sym not in ['','s','q']:
-            return False 
-        elif SGData['SGPtGrp'] in ['-4',] and sym not in ['',]:
-            return False             
-        elif SGData['SGPtGrp'] in ['4/m',] and sym not in ['','s0','q0']:
-            return False
-        elif SGData['SGPtGrp'] in ['422',] and sym not in ['','q00','s00']:
-            return False         
-        elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','00s','qq0','qqs']:
-            return False
-        elif SGData['SGPtGrp'] in ['-4m2',] and sym not in ['','0s0','0q0']:
-            return False
-        elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','0ss','00q',]:
-            return False
-        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss','000s',]:
-            return False
-#trigonal/rhombohedral - all done
-        elif SGData['SGPtGrp'] in ['3',] and sym not in ['','t']:
-            return False 
-        elif SGData['SGPtGrp'] in ['-3',] and sym not in ['',]:
-            return False 
-        elif SGData['SGPtGrp'] in ['32',] and sym not in ['','t0']:
-            return False 
-        elif SGData['SGPtGrp'] in ['321','312'] and sym not in ['','t00']:
-            return False 
-        elif SGData['SGPtGrp'] in ['3m','-3m'] and sym not in ['','0s']:
-            return False 
-        elif SGData['SGPtGrp'] in ['3m1','-3m1'] and sym not in ['','0s0']:
-            return False 
-        elif SGData['SGPtGrp'] in ['31m','-31m'] and sym not in ['','00s']:
-            return False 
-#hexagonal - all done
-        elif SGData['SGPtGrp'] in ['6',] and sym not in ['','s','h','t']:
-            return False 
-        elif SGData['SGPtGrp'] in ['-6',] and sym not in ['',]:
-            return False
-        elif SGData['SGPtGrp'] in ['6/m',] and sym not in ['','s0']:
-            return False
-        elif SGData['SGPtGrp'] in ['622',] and sym not in ['','h00','t00','s00']:
-            return False         
-        elif SGData['SGPtGrp'] in ['6mm',] and sym not in ['','ss0','s0s','0ss']:
-            return False
-        elif SGData['SGPtGrp'] in ['-6m2',] and sym not in ['','0s0']:
-            return False
-        elif SGData['SGPtGrp'] in ['-62m',] and sym not in ['','00s']:
-            return False
-        elif SGData['SGPtGrp'] in ['6/mmm',] and sym not in ['','s00s','s0s0','00ss']:
-            return False
-        return True
-        
+                            
     LaueModList = [
         'abg','ab0','ab1/2','a0g','a1/2g',  '0bg','1/2bg','a00','a01/2','a1/20',
         'a1/21/2','a01','a10','0b0','0b1/2', '1/2b0','1/2b1/2','0b1','1b0','00g',
@@ -1503,24 +1442,30 @@ def SSpcGroup(SGData,SSymbol):
         Ngen -= 1
     if len(gensym) and Ngen != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
-#    if not checkGen(gensym):
-#        return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
     gensym = specialGen(gensym[:Ngen],modsym)
     genQ = [Fracs[mod] for mod in gensym[:Ngen]]
     if not genQ:
         genQ = [0,0,0,0]
     SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
     SSCen = np.zeros((len(SGData['SGCen']),4))
-    for icen,cen in enumerate(SGData['SGCen']):
-        SSCen[icen,0:3] = cen
-    SSCen[0] = np.zeros(4)
+    if SGData['SGFixed']:
+        for icen,cen in enumerate(SGData['SGCen']):
+            SSCen[icen] = cen
+    else:
+        for icen,cen in enumerate(SGData['SGCen']):
+            SSCen[icen,0:3] = cen
+        SSCen[0] = np.zeros(4)
     SSGData['SSGCen'] = SSCen
     SSGData['SSGOps'] = []
     for iop,op in enumerate(SGData['SGOps']):
         T = np.zeros(4)
         ssop = np.zeros((4,4))
-        ssop[:3,:3] = op[0]
-        T[:3] = op[1]
+        if SGData['SGFixed']:
+            ssop = op[0]
+            T = op[1]
+        else:
+            ssop[:3,:3] = op[0]
+            T[:3] = op[1]
         SSGData['SSGOps'].append([ssop,T])
     E,Result = genSSGOps()
     if E:
@@ -1631,7 +1576,9 @@ def SSGModCheck(Vec,modSymb,newMod=True):
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'a':0.,'b':0.,'g':0.}
     modQ = [Fracs[mod] for mod in modSymb]
     if newMod:
-        newVec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
+        newVec = Vec
+        if not np.any(Vec):
+            newVec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
         return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(newVec,modSymb,modQ)],  \
             [True if mod in ['a','b','g'] else False for mod in modSymb]
     else:
@@ -1779,7 +1726,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     U = Uij2U(Uij)
                     U = np.inner(M,np.inner(U,M).T)
                     newUij = U2Uij(U)
-                if invers:
+                if invers and not SGData['SGFixed']:
                     XT = -XT
                 XT += C
                 cell = np.zeros(3,dtype=np.int32)
@@ -2166,7 +2113,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     return CSI
     
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
-    phase = 2.*np.pi*np.sum(XYZ*wave)
+    phase = 4.*np.pi*np.sum(XYZ*wave)
     ssopinv = nl.inv(ssop[0])
     mst = ssopinv[3][:3]
     epsinv = ssopinv[3][3]
@@ -2189,7 +2136,11 @@ def OpsfromStringOps(A,SGData,SSGData):
         iC = -1
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
-    return SGOps[nA],SSGOps[nA],iC
+    nC = Ax[0]//100
+    unit = [0,0,0]
+    if len(Ax) > 1:
+        unit = eval('['+Ax[1]+']')
+    return SGOps[nA],SSGOps[nA],iC,SGData['SGCen'][nC],unit
     
 def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     
@@ -3138,7 +3089,7 @@ spglist = {
         'P 6 c c','P 63 c m','P 63 m c','P -6 m 2','P -6 c 2','P -6 2 m',
         'P -6 2 c','P 6/m m m','P 6/m c c','P 63/m c m','P 63/m m c',),
     'Pm3m': ('P 2 3','P 21 3','P m 3','P n 3','P a 3','P 4 3 2','P 42 3 2',
-        'P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n','P m 3 m','P n 3 n',
+        'P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n','P m 3 m','P m -3 m','P n 3 n',
         'P m 3 n','P n 3 m','P n -3 n','P n -3 m','P m -3 n',),
     'Im3m':('I 2 3','I 21 3','I m -3','I a -3', 'I 4 3 2','I 41 3 2',
         'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d','I n -3 n'),

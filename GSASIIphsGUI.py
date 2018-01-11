@@ -86,6 +86,7 @@ class SGMagSpinBox(wx.Dialog):
         cents = [0,]
         if len(Cents) > 1:
             cents = text[-1].split(';')
+        lentable = len(self.table)
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
         ncol = self.table[0].count(',')+2
@@ -102,6 +103,7 @@ class SGMagSpinBox(wx.Dialog):
                     mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
                     tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
                     Red = True
+                    lentable //= 2
                     j = 0
                     continue
                 flds = item.split(')')[1]
@@ -115,7 +117,7 @@ class SGMagSpinBox(wx.Dialog):
                         text = wx.StaticText(self.panel,label='%s '%(fld))
                         tableSizer.Add(text,0,WACV)
                 text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
-                if self.spins[j+ic*len(self.table)] < 0 or Red:
+                if self.spins[j+ic*lentable] < 0 or Red:
                     text.SetForegroundColour('Red')
                 tableSizer.Add(text,0,WACV)
                 if not j%2:
@@ -1154,10 +1156,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif generalData['Type'] == 'magnetic':
                 generalData['AtomPtrs'] = [3,1,10,12]
         if generalData['Modulated']:
+            if 'SGGray' not in generalData['SGData']:
+                generalData['SGData']['SGGray'] = False
             generalData['Modulated'] = True
             if 'Super' not in generalData:
                 generalData['Super'] = 1
-                generalData['SuperVec'] = [[0,0,.1],False,4]
+                generalData['SuperVec'] = [[0.,0.,0.],False,4]
                 generalData['SSGData'] = {}
             if '4DmapData' not in generalData:
                 generalData['4DmapData'] = mapDefault.copy()
@@ -1338,6 +1342,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             TabSelectionIdDict[Id] = 'Layers'
                         wx.CallAfter(UpdateGeneral)
                     elif generalData['Type'] == 'magnetic':
+                        generalData['AtomPtrs'] = [3,1,10,12]
                         SGData = generalData['SGData']
                         Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
                         if SGData['SGInv']:
@@ -1467,7 +1472,7 @@ entered the right symbol for your structure.
                             generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                             if 'Super' not in generalData:
                                 generalData['Super'] = 1
-                                generalData['SuperVec'] = [[0,0,.1],False,4]
+                                generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
                                 generalData['4DmapData'] = mapDefault.copy()
@@ -1756,7 +1761,7 @@ entered the right symbol for your structure.
                 text,table = G2spc.SGPrint(SGData,AddInv=not SGData['SGFixed'])
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
                 text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
-                if SGData['SGGray']:
+                if SGData['SGGray'] and "1'" not in text[0]:
                     text[0] += " 1'"
                     text[3] += "1'"
                 SGMagSpinBox(General,msg,text,table,SGData['SGCen'],OprNames,SpnFlp).Show()
@@ -1764,7 +1769,7 @@ entered the right symbol for your structure.
             SGData = generalData['SGData']            
             Indx = {}
             MagSym = SGData['MagSpGrp']
-            if SGData['SGGray']:
+            if SGData['SGGray'] and "1'" not in MagSym:
                 MagSym += " 1'"
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
@@ -1805,8 +1810,13 @@ entered the right symbol for your structure.
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 event.Skip()
-                SSymbol = superGp.GetValue()
-                E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
+                try:
+                    SSymbol = superGp.GetValue()
+                except AttributeError:
+                    SSymbol = superGp.GetLabel()
+                SSGData = generalData['SSGData']
+                if not generalData['SGData']['SGFixed']:
+                    E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
                 if SSGData:
                     Vec = generalData['SuperVec'][0]     #(3+1) only
                     modSymb = SSGData['modSymb']
@@ -1835,23 +1845,25 @@ entered the right symbol for your structure.
             ssSizer = wx.BoxSizer(wx.VERTICAL)
             modSizer = wx.BoxSizer(wx.HORIZONTAL)
             modSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
-            modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%generalData['SGData']['SpGrp']),0,WACV)
+            SpGrp = generalData['SGData']['SpGrp']
+            if generalData['SGData']['SGGray']:
+                SpGrp += " 1'"
+            modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
             SSGptgp = generalData['SGData']['SGLatt']+generalData['SGData']['SGPtGrp']
             SSChoice = G2spc.ptssdict.get(SSGptgp,[])
+            if generalData['SGData']['SGGray']:
+                SSChoice = [item+'s' for item in SSChoice]
             Choice = []
-            for item in SSChoice:
-                if generalData['SGData'].get('SGGray',False):
-                    E,SSG = G2spc.SSpcGroup(generalData['SGData'],item+'s')                    
-                else:
+            if not generalData['SGData']['SGFixed']:
+                for item in SSChoice:
                     E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)
-                if SSG: Choice.append(item)
-            if SSChoice:
+                    if SSG: Choice.append(item)
+            if len(Choice):
                 superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
                 superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
-            else:   #nonstandard space group symbol not in my dictionary
-                superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
-                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
+            else:
+                superGp = wx.StaticText(General,label=generalData['SuperSg'])
             modSizer.Add(superGp,0,WACV)
             modSizer.Add((5,5),0)
             showOps = wx.CheckBox(General,label='Show ops.')
@@ -2204,7 +2216,7 @@ entered the right symbol for your structure.
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,False)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,False)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,True)
-            mainSizer.Add(ModulatedSizer(generalData['Type']))
+            mainSizer.Add(ModulatedSizer(generalData['Type']+' modulated'))
             G2G.HorizontalLine(mainSizer,General)
         else:
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,True)
@@ -2299,6 +2311,7 @@ entered the right symbol for your structure.
                 return
             if r < 0:                          #double click on col label! Change all atoms!
                 noSkip = True
+                parms = ''
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
                     if Type in ['nuclear','macromolecular','faulted',]:
@@ -2380,6 +2393,8 @@ entered the right symbol for your structure.
                     dlg.Destroy()
                 elif Atoms.GetColLabelValue(c) == 'Uiso':       #this needs to ask for value
                     pass                                        #& then change all 'I' atoms
+                else:
+                    return
                 if noSkip:
                     ui = colLabels.index('U11')
                     us = colLabels.index('Uiso')
@@ -2992,7 +3007,12 @@ entered the right symbol for your structure.
                 opr = oldatom[8]
                 mom = np.array(atom[7:10])
                 Mom = G2spc.ApplyStringOpsMom(opr,SGData,mom)
-                atomInfo = oldatom[:5]+list(Mom)+oldatom[8:]    
+                if atom[12] == 'A':                    
+                    X,U = G2spc.ApplyStringOps(opr,SGData,atom[3:6],atom[14:20])
+                    atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:14]+list(U)+oldatom[20:]][0]
+                else:
+                    X = G2spc.ApplyStringOps(opr,SGData,atom[3:6])
+                    atomInfo = [atom[:2]+list(X)+list(Mom)+oldatom[8:12]+atom[12:]+oldatom[20:]][0]
             else:
                 atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
                     ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
@@ -5232,7 +5252,7 @@ entered the right symbol for your structure.
                     for ind in indx:
                         XYZ = np.array(atomData[ind][cx:cx+3])
                         XYZ = np.inner(M,XYZ)+T
-                        if Inv:
+                        if Inv and not SGData['SGFixed']:
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
                         if Force:
@@ -5347,7 +5367,7 @@ entered the right symbol for your structure.
                     for ind in indx:
                         XYZ = np.array(atomData[ind][cx:cx+3])
                         XYZ = np.inner(M,XYZ)+T
-                        if Inv:
+                        if Inv and not SGData['SGFixed']:
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
                         if Force:

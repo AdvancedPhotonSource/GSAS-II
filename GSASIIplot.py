@@ -5717,7 +5717,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
-    ABC = np.array(cell[1:4])
+    ABC = np.array(cell[0:3])
     Vol = generalData['Cell'][7:8][0]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
@@ -5814,7 +5814,16 @@ def PlotStructure(G2frame,data,firstCall=False):
                     print ("PIL/pillow Image module not present. Cannot save images without this")
                     raise Exception("PIL/pillow Image module not found")
             projFile = G2frame.GSASprojectfile
-            Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
+            if projFile:
+                Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
+            else:
+                dlg = wx.FileDialog(G2frame, 'Choose graphics save file', 
+                    wildcard='Graphics file (*.'+mode+')|*.'+mode,style=wx.FD_OPEN| wx.CHANGE_DIR)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        Fname = dlg.GetPath()
+                finally:
+                    dlg.Destroy()            
             size = Page.canvas.GetSize()
             GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
@@ -5916,7 +5925,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         elif key in ['M',]and generalData['Modulated']:  #make a movie file
             G2frame.tau = 0.
             for i in range(100):
-                G2frame.tau += 0.1
+                G2frame.tau += 0.02
                 G2frame.tau %= 1.
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
@@ -5945,9 +5954,9 @@ def PlotStructure(G2frame,data,firstCall=False):
                 if key == '0':
                     G2frame.tau = 0.
                 elif key in ['+','=']:
-                    G2frame.tau += 0.1
+                    G2frame.tau += 0.05
                 elif key == '-':
-                    G2frame.tau -= 0.1
+                    G2frame.tau -= 0.05
                 G2frame.tau %= 1.   #force 0-1 range; makes loop
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          

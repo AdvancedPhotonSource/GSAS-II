@@ -890,7 +890,7 @@ class GSASII(wx.Frame):
                 newPhaseList.append(PhaseName)
                 psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
                 self.GPXtree.SetItemPyData(psub,rd.MPhase)
-            except AttributeError:
+            except (AttributeError,TypeError):
                 pass
             self.GPXtree.Expand(self.root) # make sure phases are seen
             self.GPXtree.Expand(sub) 

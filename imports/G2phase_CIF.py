@@ -238,42 +238,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.warnings += G2spc.SGErrors(E)
                 SGData = G2obj.P1SGData # P 1
             self.Phase['General']['SGData'] = SGData
-
-            if magnetic and not Super:
-                SGData['SGFixed'] = True
-                try:
-                    sgoploop = blk.GetLoop('_space_group_symop_magn.id')
-                    sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
-                    opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
-                    centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
-                except KeyError:        #old mag cif names
-                    sgoploop = blk.GetLoop('_space_group_symop.magn_id')
-                    sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
-                    opid = sgoploop.GetItemPosition('_space_group_symop.magn_operation_xyz')[1]
-                    centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
-                SGData['SGOps'] = []
-                SGData['SGCen'] = []
-                spnflp = []
-                for op in sgoploop:
-                    M,T,S = G2spc.MagText2MTS(op[opid])
-                    SGData['SGOps'].append([np.array(M,dtype=float),T])
-                    spnflp.append(S)
-                censpn = []
-                for cent in sgcenloop:
-                    M,C,S = G2spc.MagText2MTS(cent[centid])
-                    SGData['SGCen'].append(C)
-                    censpn += list(np.array(spnflp)*S)
-                self.MPhase['General']['SGData'] = SGData
-                self.MPhase['General']['SGData']['SpnFlp'] = censpn
-                self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
-                MagPtGp = blk.get('_space_group.magn_point_group')
-                if not MagPtGp:
-                    MagPtGp = blk.get('_space_group_magn.point_group_name')
-                self.MPhase['General']['SGData']['MagPtGp'] = MagPtGp
-#                GenSym,GenFlg = G2spc.GetGenSym(SGData)
-#                self.MPhase['General']['SGData']['GenSym'] = GenSym
-#                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
-
             if Super:
                 E,SSGData = G2spc.SSpcGroup(SGData,SuperSg)
                 if E:
@@ -287,11 +251,76 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.MPhase['General']['SGData'] = SGData
 #                    self.MPhase['General']['SGData']['SpnFlp'] = censpn
                     self.MPhase['General']['SGData']['MagSpGrp'] = MSSpGrp.replace(',','').replace('\\','')
-                    self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
+#                    self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
+#                    if not self.MPhase['General']['SGData']['MagPtGp']:
+#                        self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group_name')
                     self.MPhase['General']['SSGData'] = SSGData
     #                GenSym,GenFlg = G2spc.GetGenSym(SGData)
     #                self.MPhase['General']['SGData']['GenSym'] = GenSym
     #                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
+
+            if magnetic:    #replace std operaors with those from cif file - probably not the same!
+                SGData['SGFixed'] = True
+                SGData['SGOps'] = []
+                SGData['SGCen'] = []
+                if Super:
+                    SSGData['SSGOps'] = []
+                    SSGData['SSGCen'] = []
+                    try:
+                        sgoploop = blk.GetLoop('_space_group_symop_magn_ssg_operation.id')
+                        sgcenloop = blk.GetLoop('_space_group_symop_magn_ssg_centering.id')
+                        opid = sgoploop.GetItemPosition('_space_group_symop_magn_ssg_operation.algebraic')[1]
+                        centid = sgcenloop.GetItemPosition('_space_group_symop_magn_ssg_centering.algebraic')[1]                    
+                    except KeyError:        #old mag cif names
+                        sgoploop = blk.GetLoop('_space_group_symop.magn_ssg_id')
+                        sgcenloop = blk.GetLoop('_space_group_symop.magn_ssg_centering_id')
+                        opid = sgoploop.GetItemPosition('_space_group_symop.magn_ssg_operation_algebraic')[1]
+                        centid = sgcenloop.GetItemPosition('_space_group_symop.magn_ssg_centering_algebraic')[1]
+                    spnflp = []
+                    for op in sgoploop:
+                        M,T,S = G2spc.MagSSText2MTS(op[opid])
+                        SSGData['SSGOps'].append([np.array(M,dtype=float),T])
+                        SGData['SGOps'].append([np.array(M,dtype=float)[:3,:3],T[:3]])
+                        spnflp.append(S)
+                    censpn = []
+                    for cent in sgcenloop:
+                        M,C,S = G2spc.MagSSText2MTS(cent[centid])
+                        SSGData['SSGCen'].append(C)
+                        if not C[3]:
+                            SGData['SGCen'].append(C[:3])
+                        censpn += list(np.array(spnflp)*S)
+                    self.MPhase['General']['SSGData'] = SSGData
+                else:    
+                    try:
+                        sgoploop = blk.GetLoop('_space_group_symop_magn.id')
+                        sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
+                        opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
+                        centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
+                    except KeyError:        #old mag cif names
+                        sgoploop = blk.GetLoop('_space_group_symop.magn_id')
+                        sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
+                        opid = sgoploop.GetItemPosition('_space_group_symop.magn_operation_xyz')[1]
+                        centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
+                    spnflp = []
+                    for op in sgoploop:
+                        M,T,S = G2spc.MagText2MTS(op[opid])
+                        SGData['SGOps'].append([np.array(M,dtype=float),T])
+                        spnflp.append(S)
+                    censpn = []
+                    for cent in sgcenloop:
+                        M,C,S = G2spc.MagText2MTS(cent[centid])
+                        SGData['SGCen'].append(C)
+                        censpn += list(np.array(spnflp)*S)
+                self.MPhase['General']['SGData'] = SGData
+                self.MPhase['General']['SGData']['SpnFlp'] = censpn
+                self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
+                MagPtGp = blk.get('_space_group.magn_point_group')
+                if not MagPtGp:
+                    MagPtGp = blk.get('_space_group.magn_point_group_name')
+                if not MagPtGp:
+                    MagPtGp = blk.get('_space_group_magn.point_group_name')
+                self.MPhase['General']['SGData']['MagPtGp'] = MagPtGp
+
                     
 
             # cell parameters
@@ -531,14 +560,14 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.MPhase['General']['Modulated'] = True
                     self.MPhase['General']['SuperVec'] = SuperVec
                     self.MPhase['General']['SuperSg'] = SuperSg
-                    self.MPhase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
             else:
                 self.MPhase = None
             if Super:
                 self.Phase['General']['Modulated'] = True
                 self.Phase['General']['SuperVec'] = SuperVec
                 self.Phase['General']['SuperSg'] = SuperSg
-                self.Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
+                if not self.Phase['General']['SGData']['SGFixed']:
+                    self.Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
             if not self.isodistort_warnings:
                 if blk.get('_iso_displacivemode_label') or blk.get('_iso_occupancymode_label'):
                     self.errors = "Error while processing ISODISTORT constraints"

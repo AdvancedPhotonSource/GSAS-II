@@ -1612,6 +1612,9 @@ def ApplyModulation(data,tau):
     '''Applies modulation to drawing atom positions & Uijs for given tau
     '''
     generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    ABC = np.array(cell[:3])
+    G,g = G2lat.cell2Gmat(cell)
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
     cx,ct,cs,cia = generalData['AtomPtrs']
@@ -1634,10 +1637,10 @@ def ApplyModulation(data,tau):
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
         for ind in indx:
             drawatom = drawAtoms[ind]
-            dratxyz = np.array(drawatom[dcx:dcx+3])
             opr = drawatom[dcs-1]
-            sop,ssop,icent = G2spc.OpsfromStringOps(opr,SGData,SSGData)
-            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,dratxyz,modul)
+            sop,ssop,icent,cent,unit = G2spc.OpsfromStringOps(opr,SGData,SSGData)
+            drxyz = (np.inner(sop[0],atxyz)+sop[1])*icent+cent+np.array(unit)
+            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,drxyz,modul)
             tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)

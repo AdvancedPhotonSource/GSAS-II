@@ -501,6 +501,7 @@ def Latt2text(Cen):
         '1/7','2/7','3/7','4/7','5/7','6/7','1/8','3/8','5/8','7/8','1/9','2/9','4/9','5/9','7/9','8/9']
     mulList = [2,3,3,4,4,5,5,5,5,6,6,7,7,7,7,7,7,8,8,8,8,9,9,9,9,9,9]
     prodList = [1.,1.,2.,1.,3.,1.,2.,3.,4.,1.,5.,1.,2.,3.,4.,5.,6.,1.,3.,5.,7.,1.,2.,4.,5.,7.,8.]
+    nCen = len(Cen)
     for i,cen in enumerate(Cen):
         txt = ''
         for icen in cen:
@@ -512,7 +513,7 @@ def Latt2text(Cen):
                     txt += frac+','
                     break
         lattTxt += txt[:-1]+'; '
-        if i and not i%8:
+        if i and not i%8 and i < nCen-1:    #not for the last cen!
             lattTxt += '\n     '
     return lattTxt[:-2]
 
@@ -3088,9 +3089,10 @@ spglist = {
         'P 61 2 2','P 65 2 2','P 62 2 2','P 64 2 2','P 63 2 2','P 6 m m',
         'P 6 c c','P 63 c m','P 63 m c','P -6 m 2','P -6 c 2','P -6 2 m',
         'P -6 2 c','P 6/m m m','P 6/m c c','P 63/m c m','P 63/m m c',),
-    'Pm3m': ('P 2 3','P 21 3','P m 3','P n 3','P a 3','P 4 3 2','P 42 3 2',
-        'P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n','P m 3 m','P m -3 m','P n 3 n',
-        'P m 3 n','P n 3 m','P n -3 n','P n -3 m','P m -3 n',),
+    'Pm3m': ('P 2 3','P 21 3','P m 3','P m -3','P n 3','P n -3','P a 3','P a -3',
+        'P 4 3 2','P 42 3 2','P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n',
+        'P m 3 m','P m -3 m','P n 3 n','P n -3 n',
+        'P m 3 n','P m -3 n','P n 3 m','P n -3 m',),
     'Im3m':('I 2 3','I 21 3','I m -3','I a -3', 'I 4 3 2','I 41 3 2',
         'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d','I n -3 n'),
     'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',

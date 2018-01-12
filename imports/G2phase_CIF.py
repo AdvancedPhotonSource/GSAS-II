@@ -249,15 +249,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.Phase['General']['SSGData'] = SSGData
                 if magnetic:
                     self.MPhase['General']['SGData'] = SGData
-#                    self.MPhase['General']['SGData']['SpnFlp'] = censpn
                     self.MPhase['General']['SGData']['MagSpGrp'] = MSSpGrp.replace(',','').replace('\\','')
-#                    self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group')
-#                    if not self.MPhase['General']['SGData']['MagPtGp']:
-#                        self.MPhase['General']['SGData']['MagPtGp'] = blk.get('_space_group.magn_point_group_name')
                     self.MPhase['General']['SSGData'] = SSGData
-    #                GenSym,GenFlg = G2spc.GetGenSym(SGData)
-    #                self.MPhase['General']['SGData']['GenSym'] = GenSym
-    #                self.MPhase['General']['SGData']['GenFlg'] = GenFlg
 
             if magnetic:    #replace std operaors with those from cif file - probably not the same!
                 SGData['SGFixed'] = True
@@ -303,9 +296,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
                     spnflp = []
                     for op in sgoploop:
-                        M,T,S = G2spc.MagText2MTS(op[opid])
-                        SGData['SGOps'].append([np.array(M,dtype=float),T])
-                        spnflp.append(S)
+                        try:
+                            M,T,S = G2spc.MagText2MTS(op[opid])
+                            SGData['SGOps'].append([np.array(M,dtype=float),T])
+                            spnflp.append(S)
+                        except KeyError:
+                            self.warnings += 'Space group operator '+op[opid]+' is not recognized by GSAS-II'
+                            return False
                     censpn = []
                     for cent in sgcenloop:
                         M,C,S = G2spc.MagText2MTS(cent[centid])
@@ -320,8 +317,6 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 if not MagPtGp:
                     MagPtGp = blk.get('_space_group_magn.point_group_name')
                 self.MPhase['General']['SGData']['MagPtGp'] = MagPtGp
-
-                    
 
             # cell parameters
             cell = []

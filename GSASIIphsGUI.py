@@ -85,9 +85,9 @@ class SGMagSpinBox(wx.Dialog):
         mainSizer.Add((0,10))
         cents = [0,]
         if len(Cents) > 1:
-            cents = text[-1].split(';')
+            cents = self.text[-1].split(';')
         lentable = len(self.table)
-        for line in text:
+        for line in self.text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
         ncol = self.table[0].count(',')+2
         for ic,cent in enumerate(cents):
@@ -5311,7 +5311,6 @@ entered the right symbol for your structure.
                             continue
                         xyzB = np.array(atomB[cx:cx+3])
                         Uij = atomB[cuij:cuij+6]
-#                        GSASIIpath.IPyBreak()
                         result = G2spc.GenAtom(xyzB,SGData,False,Uij,True)
                         for item in result:
                             atom = copy.copy(atomB)

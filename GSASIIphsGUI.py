@@ -2203,6 +2203,8 @@ entered the right symbol for your structure.
         
         if 'SGFixed' not in generalData['SGData']:
             generalData['SGData']['SGFixed'] = False
+        if 'SGGray' not in generalData['SGData']:
+            generalData['SGData']['SGGray'] = False
         
         if generalData['Type'] == 'magnetic':
             if not generalData['SGData']['SGFixed']:
@@ -3255,7 +3257,7 @@ entered the right symbol for your structure.
                 for ind in indx:
                     XYZ = np.array(atomData[ind][cx:cx+3])
                     XYZ = np.inner(M,XYZ)+T
-                    if Inv:
+                    if Inv and not SGData['SGFixed']:
                         XYZ = -XYZ
                     XYZ = XYZ+cent+Cell
                     if Force:

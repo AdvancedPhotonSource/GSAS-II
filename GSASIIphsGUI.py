@@ -1156,9 +1156,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif generalData['Type'] == 'magnetic':
                 generalData['AtomPtrs'] = [3,1,10,12]
         if generalData['Modulated']:
-            if 'SGGray' not in generalData['SGData']:
-                generalData['SGData']['SGGray'] = False
-            generalData['Modulated'] = True
             if 'Super' not in generalData:
                 generalData['Super'] = 1
                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
@@ -1170,6 +1167,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Modulated'] = False
         if 'HydIds' not in generalData:
             generalData['HydIds'] = {}
+        if generalData['Type'] == 'magnetic':
+            if 'SGGray' not in generalData['SGData']:
+                generalData['SGData']['SGGray'] = False
+                
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}

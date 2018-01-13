@@ -261,13 +261,13 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                     SGData = G2obj.P1SGData # P 1 -- unlikely to need this!
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
-#            elif 'SPNFLP' in key:
-#                SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
-#                SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
-#                if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
-#                    SpnFlp += [1,1,1,1]
-#            elif 'MXDSTR' in key:
-#                MagDmin = float(EXPphase[key][:10])               
+            elif 'SPNFLP' in key:
+                SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
+                SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
+                if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
+                    SpnFlp += [1,1,1,1]
+            elif 'MXDSTR' in key:
+                MagDmin = float(EXPphase[key][:10])               
             elif 'OD    ' in key:
                 SHdata = EXPphase[key].split() # may not have all 9 values
                 SHvals = 9*[0]
@@ -284,6 +284,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 textureData['Sample phi'] = [False,float(SHvals[8])]
                 shNcof = int(SHvals[1])
         Atoms = []
+        Amat,Bmat = G2lat.cell2AB(abc+angles)
         if Ptype in ['nuclear','magnetic',]:
             for key in keyList:
                 if 'AT' in key:
@@ -307,13 +308,16 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                             Atom += [0.,0.,0.,0.,0.,0.,0.]
                         XYZ = Atom[3:6]
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)[:2]
-#                        if Ptype == 'magnetic':
-#                            Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
                         Atom.append(ran.randint(0,sys.maxsize))
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':
+                        Ptype = 'magnetic'
                         S = EXPphase[key]
-                        Atoms[-1] = Atom[:7]+[float(S[:10]),float(S[10:20]),float(S[20:30])]+Atom[7:]
+                        mom = np.array([float(S[:10]),float(S[10:20]),float(S[20:30])])
+                        mag = np.sqrt(np.sum(mom**2))
+                        mom = np.inner(Bmat,mom)*mag
+                        print (mom,mag)
+                        Atoms[-1] = Atom[:7]+list(mom)+Atom[7:]
         elif Ptype == 'macromolecular':
             for key in keyList:
                 if 'AT' in key[6:8]:
@@ -354,8 +358,8 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             general['AtomPtrs'] = [6,4,10,12]
         elif general['Type'] =='magnetic':
             general['AtomPtrs'] = [3,1,10,12]
-#            general['SGData']['SGSpin'] = SpnFlp
-#            general['MagDmin'] = MagDmin    
+            general['SGData']['SGSpin'] = SpnFlp
+            general['MagDmin'] = MagDmin    
         else:   #nuclear
             general['AtomPtrs'] = [3,1,7,9]    
         general['SH Texture'] = textureData

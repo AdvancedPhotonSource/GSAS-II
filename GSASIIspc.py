@@ -3093,10 +3093,12 @@ spglist = {
         'P 4 3 2','P 42 3 2','P 43 3 2','P 41 3 2','P -4 3 m','P -4 3 n',
         'P m 3 m','P m -3 m','P n 3 n','P n -3 n',
         'P m 3 n','P m -3 n','P n 3 m','P n -3 m',),
-    'Im3m':('I 2 3','I 21 3','I m -3','I a -3', 'I 4 3 2','I 41 3 2',
-        'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a -3 d','I n -3 n'),
-    'Fm3m':('F 2 3','F m -3','F d -3','F 4 3 2','F 41 3 2','F -4 3 m',
-        'F -4 3 c','F m -3 m','F m 3 m','F m -3 c','F d -3 m','F d -3 c',),
+    'Im3m':('I 2 3','I 21 3','I m 3','I m -3','I a 3','I a -3', 'I 4 3 2','I 41 3 2',
+        'I -4 3 m', 'I -4 3 d','I m -3 m','I m 3 m','I a 3 d','I a -3 d','I n 3 n','I n -3 n'),
+    'Fm3m':('F 2 3','F m 3','F m -3','F d 3','F d -3',
+        'F 4 3 2','F 41 3 2','F -4 3 m','F -4 3 c',
+        'F m 3 m','F m -3 m','F m 3 c','F m -3 c',
+        'F d 3 m','F d -3 m','F d 3 c','F d -3 c',),
 }
 sgequiv_2002_orthorhombic = {}
 ''' A dictionary of orthorhombic space groups that were renamed in the 2002 Volume A,

@@ -205,9 +205,12 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
-            # multiple files: create a unique name from the histogram
-            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-            # create an instrument parameter file
+            if len(self.histnam) == 1:
+                name = self.filename
+            else:    # multiple files: create a unique name from the histogram
+                name = self.MakePWDRfilename(hist)
+            fileroot = os.path.splitext(G2obj.MakeUniqueLabel(name,filenamelist))[0]
+            # create the file
             self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
             print('Histogram '+hist+' written to file '+self.fullpath)
@@ -229,22 +232,20 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
         self.multiple = True
 
     def Exporter(self,event=None):
-        '''Export a set of powder data as a csv file
+        '''Export a set of powder data as a single csv file
         '''
         # the export process starts here
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile='single' # get a file name/directory to save in
+            AskFile='ask' # only one file is ever written
             ): return
-        filenamelist = []
         csvData = []
         headList = ["x",]
         digitList = []
-        fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(self.histnam[0]),filenamelist)
-        # create a file
-        self.filename = os.path.join(self.dirname,fileroot + self.extension)
+        self.filename = os.path.join(self.dirname,os.path.splitext(self.filename)[0]
+                                     + self.extension)
         for ihst,hist in enumerate(self.histnam):
             histblk = self.Histograms[hist]
             headList.append('y_obs_'+str(ihst))
@@ -253,7 +254,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
                 csvData.append(histblk['Data'][0])
             digitList += [(13,3),]
             csvData.append(histblk['Data'][1])
-            print('Histogram '+hist+' written to file '+self.fullpath)
+            print('Histogram '+hist+' added to file...')
         self.OpenFile()
         WriteList(self,headList)
         for vallist in np.array(csvData).T:
@@ -263,6 +264,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
                 line += G2py3.FormatValue(val,digits)
             self.Write(line)
         self.CloseFile()
+        print('...file '+self.fullpath+' written')
 
 class ExportPowderReflCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file of reflections from a powder data set

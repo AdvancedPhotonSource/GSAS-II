@@ -20,18 +20,15 @@ example of a map export.
 
 '''
 from __future__ import division, print_function
+import os
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIpy3 as G2py3
-#import GSASIIstrIO as G2stIO
+import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
-#import GSASIIlattice as G2lat
-#import GSASIIspc as G2spc
-#import GSASIIphsGUI as G2pg
-#import GSASIIstrMain as G2stMn
 
 class ExportPhaseText(G2IO.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -128,7 +125,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
             longFormatName = 'Export powder data as text file'
             )
         self.exporttype = ['powder']
-        self.multiple = False # only allow one histogram to be selected
+        self.multiple = True # allow one or more histogram(s) to be selected
 
     def Writer(self,TreeName,filename=None):
         self.OpenFile(filename)
@@ -158,11 +155,18 @@ class ExportPowderText(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile='default' # base name on the GPX file name
+            AskFile='single' # selected one or more histograms; get file name (1 hist) or a directory (>1)
             ): return 
-        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
-        self.Writer(hist)
-        print(hist+' written to file '+self.fullpath)
+        filenamelist = []
+        for hist in self.histnam:
+            if len(self.histnam) == 1:
+                name = self.filename
+            else:    # multiple files: create a unique name from the histogram
+                name = self.MakePWDRfilename(hist)
+            fileroot = os.path.splitext(G2obj.MakeUniqueLabel(name,filenamelist))[0]
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            self.Writer(hist)
+            print(hist+' written to file '+self.fullpath)
         
 class ExportPowderReflText(G2IO.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set

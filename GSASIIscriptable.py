@@ -2035,7 +2035,7 @@ class G2PwdrData(G2ObjectWrapper):
         '''
         enums = ['x', 'yobs', 'yweight', 'ycalc', 'background', 'residual']
         if datatype.lower() not in enums:
-            raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+enums)
+            raise G2ScriptException("Invalid datatype = "+datatype+" must be one of "+str(enums))
         return self.data['data'][1][enums.index(datatype.lower())]
         
     def y_calc(self):

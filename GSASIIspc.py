@@ -2114,7 +2114,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
     return CSI
     
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
-    phase = 4.*np.pi*np.sum(XYZ*wave)
+    phase = np.sum(XYZ*wave)
     ssopinv = nl.inv(ssop[0])
     mst = ssopinv[3][:3]
     epsinv = ssopinv[3][3]

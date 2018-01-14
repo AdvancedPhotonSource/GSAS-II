@@ -238,9 +238,8 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         if NPhas[result] == '1':
             Ptype = 'nuclear'
         elif NPhas[result] in ['2','3']:
-            Ptype = 'nuclear'
-#            Ptype = 'magnetic'
-#            MagDmin = 1.0
+            Ptype = 'magnetic'
+            MagDmin = 1.0
         elif NPhas[result] == '4':
             Ptype = 'macromolecular'
         elif NPhas[result] == '10':
@@ -265,7 +264,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
                 SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
                 if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
-                    SpnFlp += [1,1,1,1]
+                    SpnFlp = list(SpnFlp)+[1,1,1,1]
             elif 'MXDSTR' in key:
                 MagDmin = float(EXPphase[key][:10])               
             elif 'OD    ' in key:
@@ -316,7 +315,6 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                         mom = np.array([float(S[:10]),float(S[10:20]),float(S[20:30])])
                         mag = np.sqrt(np.sum(mom**2))
                         mom = np.inner(Bmat,mom)*mag
-                        print (mom,mag)
                         Atoms[-1] = Atom[:7]+list(mom)+Atom[7:]
         elif Ptype == 'macromolecular':
             for key in keyList:

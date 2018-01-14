@@ -683,7 +683,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
-    if parmDict[pfx+'isMag']:
+    if parmDict[pfx+'isMag']:       #TODO: fix the math - mag moments now along crystal axes
         Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
         Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
         Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
@@ -691,7 +691,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if SGData['SGInv']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
         Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
-#        GSASIIpath.IPyBreak()
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
         Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
         Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
@@ -760,7 +759,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
-        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
+        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: math here??
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
             if SGData['SGInv']:
@@ -989,6 +988,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     
     :returns: dict dFdvDict: dictionary of derivatives
     '''
+    #TODO: fix mag math - moments parallel to crystal axes
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])

@@ -2124,8 +2124,8 @@ def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
     dT = 1.0
     if np.any(dtau%.5):
         dT = np.tan(np.pi*np.sum(dtau%.5))
-    tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
-    return sdet,ssdet,dtau,dT,tauT+phase
+    tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3]+phase)
+    return sdet,ssdet,dtau,dT,tauT
     
 def OpsfromStringOps(A,SGData,SSGData):
     SGOps = SGData['SGOps']

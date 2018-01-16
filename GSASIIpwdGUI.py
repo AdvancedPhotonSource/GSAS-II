@@ -989,6 +989,11 @@ def UpdateBackground(G2frame,data):
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         # sort the points for convenience and then separate them; extend the range if needed
         if 'FixedPoints' not in background[1]:
+            msg = ("You have not defined any fixed background points. "+
+                    "Use the Fixed Points/Add menu item to define points that will be fit."+
+                    '\n\nSee the "Fitting the Starting Background using Fixed Points" tutorial for more details.')
+            print (msg)
+            G2frame.ErrorDialog('No points',msg)
             return
         background[1]['FixedPoints'] = sorted(background[1]['FixedPoints'],key=lambda pair:pair[0])        
         X = [x for x,y in background[1]['FixedPoints']]

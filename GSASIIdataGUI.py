@@ -3472,6 +3472,8 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() == wx.ID_OK:
                     name = dataType+dlg.GetValue()+names[1]
                     self.GPXtree.SetItemText(self.PickId,name)
+                    if 'PWDR' in name:
+                        self.GPXtree.GetItemPyData(self.PickId)[2] = name
             finally:
                 dlg.Destroy()
         

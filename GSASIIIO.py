@@ -212,6 +212,7 @@ def GetCheckImageFile(G2frame,treeId):
         #GSASIIpath.IPyBreak()
 
     if not os.path.exists(imagefile):
+        # note that this fails (at least on Mac) to get an image during the GUI initialization 
         prevnam = os.path.split(imagefile)[1]
         prevext = os.path.splitext(imagefile)[1]
         wildcard = 'Image format (*'+prevext+')|*'+prevext

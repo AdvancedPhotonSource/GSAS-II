@@ -1038,6 +1038,7 @@ def UpdateBackground(G2frame,data):
         bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
         parmDict.update(bakDict)
         parmDict.update(insDict)
+        # Note that this generates a MaskedArrayFutureWarning, but these items are not always masked
         pwddata[3][xBeg:xFin] *= 0.
         pwddata[5][xBeg:xFin] *= 0.
         pwddata[4][xBeg:xFin] = G2pwd.getBackground(

@@ -2776,9 +2776,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         print (' Selecting: '+controls[13]+ssopt['ssSymb']+'maxH:'+str(ssopt['maxH']))
         OnHklShow(event)
         
-    def OnFindMV(event):
+    def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
-        print (' Trying: '+controls[13]+ssopt['ssSymb']+ 'maxH: 1')
+        print (' Trying: ',controls[13],ssopt['ssSymb'], ' maxH: 1')
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
@@ -2789,6 +2789,27 @@ def UpdateUnitCellsGrid(G2frame, data):
         finally:
             dlg.Destroy()
         OnHklShow(event)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+    def OnFindMV(event):
+        best = 1.
+        bestSS = ''
+        for ssSym in ssChoice:
+            ssopt['ssSymb'] = ssSym            
+            Peaks = np.copy(peaks[0])
+            ssopt['ModVec'] = G2spc.SSGModCheck(ssopt['ModVec'],G2spc.splitSSsym(ssSym)[0],True)[0]
+            print (' Trying: '+controls[13]+ssSym+ ' maxH: 1')
+            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+            OnHklShow(event)
+            if result[1] < best:
+                bestSS = ssSym
+                best = result[1]
+        ssopt['ssSymb'] = bestSS
+        ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg=None)
+        if len(result[0]) == 2:
+            G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                newPlot=True,Title='Modulation vector search')
+        
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnBravSel(event):
@@ -3291,11 +3312,28 @@ def UpdateUnitCellsGrid(G2frame, data):
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
+        laueSS = {'2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+                'mmm':['(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+                       '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',
+                       '(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)']}
+                
+        laueTS = {'2/m':['','s','s0','0s','ss'],
+                  'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+                  }
         indChoice = ['1','2','3','4',]
         SpSg = controls[13]
         SGData = G2spc.SpcGroup(SpSg)[1]
-        SSGptgp = SGData['SGLatt']+SGData['SGPtGrp']
-        SSChoice = G2spc.ptssdict.get(SSGptgp,[])
+        laue = SGData['SGLaue']
+        if laue in ['2/m','mmm']:
+            SSChoice = []
+            for ax in laueSS[laue]:
+                for sx in laueTS[laue]:
+                    SSChoice.append(ax+sx)                
+        else:
+            latt = SGData['SGLatt']+SGData['SGPtGrp']
+            SSChoice = G2spc.ptssdict.get(latt,['',])
+#        SSGptgp = SGData['SGLatt']+SGData['SGPtGrp']
+#        SSChoice = G2spc.ptssdict.get(SSGptgp,[])
         ssChoice = []
         for item in SSChoice:
             E,SSG = G2spc.SSpcGroup(SGData,item)
@@ -3337,8 +3375,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
         findMV = wx.Button(G2frame.dataWindow,label="Find mod. vec.?")
-        findMV.Bind(wx.EVT_BUTTON,OnFindMV)
+        findMV.Bind(wx.EVT_BUTTON,OnFindOneMV)
         ssSizer.Add(findMV,0,WACV)
+        findallMV = wx.Button(G2frame.dataWindow,label="Try all?")
+        findallMV.Bind(wx.EVT_BUTTON,OnFindMV)
+        ssSizer.Add(findallMV,0,WACV)
         mainSizer.Add(ssSizer,0)
 
     G2frame.dataWindow.currentGrids = []

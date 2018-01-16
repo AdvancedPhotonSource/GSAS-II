@@ -287,7 +287,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
         HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
         Peaks = np.array(IndexSSPeaks(peaks,HKL)[1]).T
         Qo = 1./Peaks[-2]**2
-        Qc = G2lat.calc_rDsqTSS(Peaks[4:8],A,vec,Z,Peaks[0],difC)
+        Qc = G2lat.calc_rDsqTSS(Peaks[4:8],A,Vec,Z,Peaks[0],difC)
         chi = np.sum((Qo-Qc)**2)
         if dlg:
             dlg.Pulse()    
@@ -304,7 +304,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
     values = []
     ranges = []
-    dT = 0.02       #seems to be a good choice
+    dT = 0.005       #seems to be a good choice
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
             ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?

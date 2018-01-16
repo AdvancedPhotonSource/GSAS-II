@@ -10,6 +10,14 @@ import GSASIIctrlGUI as G2G
 [wxID_FILEEXIT, 
 ] = [wx.NewId() for _init_coll_File_Items in range(1)]
 WACV = wx.ALIGN_CENTER_VERTICAL
+laueSS = {'2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+        'mmm':['(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',
+               '(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)']}
+        
+laueTS = {'2/m':['','s','s0','0s','ss'],
+          'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+          }
 
 class testSSymbols(wx.Frame):
 
@@ -43,38 +51,32 @@ class testSSymbols(wx.Frame):
         
     def UpdateData(self,Data):
         
-        def OnTryAll(event):
-            SSList = G2spc.ssdict.get(Data['SGData']['SpGrp'],['',])
-            for SSymbol in SSList:
-                E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
-                if SSGData:
-                    text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
-                    Data['SSGData'] = SSGData
-                    Data['SuperSg'] = SSymbol
-                    msg = 'Superspace Group Information'
-                    G2G.SGMessageBox(self,msg,text,table).Show()
-                else:
-                    msg = 'Superspace Group Error for'+SSymbol
-                    Style = wx.ICON_EXCLAMATION
-                    Text = '\n'+E
-                    wx.MessageBox(Text,caption=msg,style=Style)
-                    
         def OnExhaustive(event):
-            latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
-            SSList = G2spc.ptssdict.get(latt,['',])
+            laue = Data['SGData']['SGLaue']
+            good = []
+            if laue in ['2/m','mmm']:
+                SSList = []
+                for ax in laueSS[laue]:
+                    for sx in laueTS[laue]:
+                        SSList.append(ax+sx)                
+            else:
+                latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
+                SSList = G2spc.ptssdict.get(latt,['',])
             for SSymbol in SSList:
                 E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
                 if SSGData:
+                    good.append(SSymbol)
                     text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
                     Data['SSGData'] = SSGData
                     Data['SuperSg'] = SSymbol
                     msg = 'Superspace Group Information'
-                    G2G.SGMessageBox(self,msg,text,table).Show()
-                else:
-                    msg = 'Superspace Group Error for'+SSymbol
-                    Style = wx.ICON_EXCLAMATION
-                    Text = '\n'+E
-                    wx.MessageBox(Text,caption=msg,style=Style)           
+#                    G2G.SGMessageBox(self,msg,text,table).Show()
+#                else:
+#                    msg = 'Superspace Group Error for'+SSymbol
+#                    Style = wx.ICON_EXCLAMATION
+#                    Text = '\n'+E
+#                    wx.MessageBox(Text,caption=msg,style=Style)
+            print(good)           
         
         def OnSpaceGroup(event):
             Flds = SGTxt.GetValue().split()
@@ -142,18 +144,18 @@ class testSSymbols(wx.Frame):
         mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Superspace group: '+Data['SGData']['SpGrp']),0,WACV)
         latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
         SSChoice = G2spc.ptssdict.get(latt,['',])
-        if SSChoice:
-            superGp = wx.ComboBox(self.testSSPanel,value=Data['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
+        ssChoice = []
+        for item in SSChoice:
+            E,SSG = G2spc.SSpcGroup(SGData,item)
+            if SSG: ssChoice.append(item)
+        if ssChoice:
+            superGp = wx.ComboBox(self.testSSPanel,value=Data['SuperSg'],choices=ssChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
             superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
             superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
         else:   #nonstandard space group symbol not in my dictionary
             superGp = wx.TextCtrl(self.testSSPanel,value=Data['SuperSg'],style=wx.TE_PROCESS_ENTER)
             superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
         mainSizer.Add(superGp,0,WACV)
-        mainSizer.Add(wx.StaticText(self.testSSPanel,-1,' Try all SS symbols: '),0,WACV)
-        SStry = wx.Button(self.testSSPanel,-1,'OK') 
-        SStry.Bind(wx.EVT_BUTTON,OnTryAll)
-        mainSizer.Add(SStry,0,WACV)
         mainSizer.Add(wx.StaticText(self.testSSPanel,-1,' Exhaustive try: '),0,WACV)
         ESStry = wx.Button(self.testSSPanel,-1,'OK') 
         ESStry.Bind(wx.EVT_BUTTON,OnExhaustive)

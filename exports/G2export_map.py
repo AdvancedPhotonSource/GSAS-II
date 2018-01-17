@@ -18,6 +18,7 @@ that is supported by FOX and DrawXTL
 is used by COOT (:class:`ExportMapCCP4`) are implemented.
 '''
 from __future__ import division, print_function
+import platform
 import os
 import GSASIIpath
 import numpy as np
@@ -131,7 +132,10 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
             self.Write(0,'i')
             for i in range(24,53):
                 self.Write(0,'i')
-            for s in ['M','A','P',' ']: self.Write(s,'s')
+            if '2' in platform.python_version_tuple()[0]:
+                for s in ['M','A','P',' ']: self.Write(s,'s')
+            else:
+                for s in [b'M',b'A',b'P',b' ']: self.Write(s,'c')
             self.Write(0x44410000,'i')
             self.Write(np.std(rho),'f')
             for i in range(56,257):

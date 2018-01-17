@@ -248,7 +248,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
                                      + self.extension)
         for ihst,hist in enumerate(self.histnam):
             histblk = self.Histograms[hist]
-            headList.append('y_obs_'+str(ihst))
+            headList.append('y_obs_'+G2obj.StripUnicode(hist[5:].replace(' ','_')))
             if not ihst:
                 digitList = [(13,3),]
                 csvData.append(histblk['Data'][0])

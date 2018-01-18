@@ -26,6 +26,7 @@ import cProfile,pstats,StringIO
 import wx
 import numpy as np
 import GSASIIpath
+GSASIIpath.SetBinaryPath()
 import GSASIIstrMath as G2stMth
 import GSASIItestplot as plot
 import GSASIImapvars as G2mv

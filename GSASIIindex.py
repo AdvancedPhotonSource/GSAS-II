@@ -304,7 +304,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
     values = []
     ranges = []
-    dT = 0.005       #seems to be a good choice
+    dT = 0.01       #seems to be a good choice
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
             ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?
@@ -389,7 +389,7 @@ def IndexSSPeaks(peaks,HKL):
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
-                opeak = Peaks[hkl[-1]]
+                opeak = Peaks[int(hkl[-1])]
                 dold = abs(opeak[-2]-hkl[4])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
@@ -580,6 +580,7 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
         values.append(Z)
     result = so.leastsq(errFitZSS,values,Dfun=dervFitZSS,full_output=True,ftol=1.e-6,
         args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Z,Zref))
+    print(result)
     A = Values2A(ibrav,result[0])
     Vec = Values2Vec(ibrav,V,Vref,result[0])
     if Zref:
@@ -674,8 +675,10 @@ def FitHKLTSS(difC,ibrav,peaks,A,V,Vref,Z,Zref):
             values.append(v)
     if Zref:
         values.append(Z)
+    print(values)
     result = so.leastsq(errFitTSS,values,Dfun=dervFitTSS,full_output=True,ftol=0.0001,
         args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],difC,V,Vref,Z,Zref))
+    print(result)
     A = Values2A(ibrav,result[0])
     Vec = Values2Vec(ibrav,V,Vref,result[0])
     if Zref:

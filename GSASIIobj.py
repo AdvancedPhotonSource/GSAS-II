@@ -1094,7 +1094,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
         }
     if Super and Super.get('Use',False):
         phaseData['General'].update({'Modulated':True,'Super':True,'SuperSg':Super['ssSymb']})
-        phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
+        phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])[1]
         phaseData['General']['SuperVec'] = [Super['ModVec'],False,Super['maxH']]
 
     return phaseData

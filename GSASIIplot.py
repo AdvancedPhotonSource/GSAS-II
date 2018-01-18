@@ -3101,7 +3101,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
 ##### PlotXYZ
 ################################################################################
             
-def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=None,color=None):
+def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=None,color=None,buttonHandler=None):
     '''simple contour plot of xyz data
     
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -3164,6 +3164,13 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
                 except TypeError:
                     G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
                     
+    def OnPress(event):
+        if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
+            return 
+        xpos,ypos = event.xdata,event.ydata
+        if xpos and buttonHandler:
+            buttonHandler(xpos,ypos)
+                    
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     if not new:
         if not newPlot:
@@ -3172,6 +3179,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.canvas.mpl_connect('button_press_event',OnPress)
     
     Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
         'i: interpolation method','s: color scheme')

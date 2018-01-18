@@ -2777,6 +2777,22 @@ def UpdateUnitCellsGrid(G2frame, data):
         print (' Selecting: '+controls[13]+ssopt['ssSymb']+'maxH:'+str(ssopt['maxH']))
         OnHklShow(event)
         
+    def OnButton(xpos,ypos):
+        modSym = ssopt['ssSymb'].split(')')[0]+')'
+        if modSym in ['(a0g)','(a1/2g)']:
+            ssopt['ModVec'][0] = xpos
+            ssopt['ModVec'][2] = ypos
+        elif modSym in ['(0bg)','(1/2bg)']:
+            ssopt['ModVec'][1] = xpos
+            ssopt['ModVec'][2] = ypos
+        elif modSym in ['(ab0)','(ab1/2)']:
+            ssopt['ModVec'][0] = xpos
+            ssopt['ModVec'][1] = ypos
+        vec = ssopt['ModVec']
+        print(' Trying: %s %s modulation vector = %.3f %.3f %.3f'%(controls[13],ssopt['ssSymb'],vec[0],vec[1],vec[2]))
+        OnHklShow(None)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     def OnFindOneMV(event):
         Peaks = np.copy(peaks[0])
         print (' Trying: ',controls[13],ssopt['ssSymb'], ' maxH: 1')
@@ -2786,7 +2802,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
             if len(result[0]) == 2:
                 G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
-                    newPlot=True,Title='Modulation vector search')
+                    newPlot=True,Title='Modulation vector search',buttonHandler=OnButton)
         finally:
             dlg.Destroy()
         OnHklShow(event)
@@ -3325,7 +3341,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SpSg = controls[13]
         SGData = G2spc.SpcGroup(SpSg)[1]
         laue = SGData['SGLaue']
-        if laue in ['2/m','mmm']:
+        if laue in ['mmm']:
             SSChoice = []
             for ax in laueSS[laue]:
                 for sx in laueTS[laue]:

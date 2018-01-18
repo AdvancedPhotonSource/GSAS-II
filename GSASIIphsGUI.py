@@ -1142,6 +1142,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['doPawley'] = False     #ToDo: change to ''
         if 'Pawley dmin' not in generalData:
             generalData['Pawley dmin'] = 1.0
+        if 'Pawley dmax' not in generalData:
+            generalData['Pawley dmax'] = 100.0
         if 'Pawley neg wt' not in generalData:
             generalData['Pawley neg wt'] = 0.0
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
@@ -1912,11 +1914,15 @@ entered the right symbol for your structure.
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
-            pawlVal = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',
+            pawlMin = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmin',size=(65,25),
                 min=0.25,max=20.,nDig=(10,5))
-            pawleySizer.Add(pawlVal,0,WACV)
+            pawleySizer.Add(pawlMin,0,WACV)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmax: '),0,WACV)
+            pawlMax = G2G.ValidatedTxtCtrl(General,generalData,'Pawley dmax',size=(65,25),
+                min=2.0,max=100.,nDig=(10,5))
+            pawleySizer.Add(pawlMax,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
-            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',
+            pawlNegWt = G2G.ValidatedTxtCtrl(General,generalData,'Pawley neg wt',size=(65,25),
                 min=0.,max=1.,nDig=(10,4))
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
@@ -1949,7 +1955,7 @@ entered the right symbol for your structure.
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','2Fo-Fc Omit','Patterson']
-            refsList = list(data['Histograms'].keys())
+            refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
                  Map['MapType'] = 'Patterson'
@@ -2018,7 +2024,7 @@ entered the right symbol for your structure.
                     HKL = Flip['testHKL'][id]
                 Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
-            refsList = list(data['Histograms'].keys())
+            refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
@@ -2111,10 +2117,8 @@ entered the right symbol for your structure.
 #            OnShowTsched()
             refList = []
             if len(data['Pawley ref']):
-                refList = ['Pawley reflections']
-            for item in data['Histograms'].keys():
-                if 'HKLF' in item or 'PWDR' in item:
-                    refList.append(item)
+                refList = ['Pawley reflections',]
+            refList += [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             mcsaSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(General,label=' Monte Carlo/Simulated Annealing controls: Reflection set from: '),0,WACV)
@@ -2200,12 +2204,14 @@ entered the right symbol for your structure.
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
         G2G.HorizontalLine(mainSizer,General)
-        
+#patches        
+        if 'Pawley dmax' not in generalData:
+            generalData['Pawley dmax'] = 100.0
         if 'SGFixed' not in generalData['SGData']:
             generalData['SGData']['SGFixed'] = False
         if 'SGGray' not in generalData['SGData']:
             generalData['SGData']['SGGray'] = False
-        
+#end patches        
         if generalData['Type'] == 'magnetic':
             if not generalData['SGData']['SGFixed']:
                 GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
@@ -8171,6 +8177,7 @@ entered the right symbol for your structure.
         A = G2lat.cell2A(cell)
         SGData = generalData['SGData']
         dmin = generalData['Pawley dmin']
+        dmax = generalData['Pawley dmax']
         for hist in histograms:
             if 'PWDR' in hist[:4]:
                 Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)
@@ -8191,6 +8198,8 @@ entered the right symbol for your structure.
             try:
                 HKLd = G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A)
                 for h,k,l,m,d in HKLd:
+                    if d > dmax:
+                        continue
                     ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
                     if m or not ext:
                         mul *= 2        #for powder multiplicity
@@ -8202,6 +8211,8 @@ entered the right symbol for your structure.
             wx.BeginBusyCursor()
             try:
                 for h,k,l,d in HKLd:
+                    if d > dmax:
+                        continue
                     ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
                     if not ext:
                         mul *= 2        #for powder multiplicity

@@ -31,7 +31,7 @@ import GSASIIpwd as G2pwd
 import numpy.fft as fft
 import scipy.optimize as so
 try:
-    import pypowder as pyd
+    import pypowder as pwd
 except ImportError:
     print ('pypowder is not available - profile calcs. not allowed')
 

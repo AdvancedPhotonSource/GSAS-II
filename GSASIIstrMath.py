@@ -3204,7 +3204,10 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         yc[iBeg:iFin] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))        #and here
         elif 'T' in calcControls[hfx+'histType']:
             for iref,refl in enumerate(refDict['RefList']):
-                h,k,l = refl[:3]
+                if im:
+                    h,k,l,m = refl[:4]
+                else:
+                    h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction

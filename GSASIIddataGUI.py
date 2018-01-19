@@ -97,6 +97,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnScaleRef(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Scale'][1] = Obj.GetValue()
+        def onChangeFraction(invalid,value,tc):
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'PWDR' in G2frame.hist:
@@ -107,7 +109,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
         scaleVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Scale'],0,
-            min=0.,nDig=(10,4),typeHint=float)
+            min=0.,nDig=(10,4),typeHint=float,OnLeave=onChangeFraction)
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)

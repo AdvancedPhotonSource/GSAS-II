@@ -657,7 +657,7 @@ class GSASII(wx.Frame):
                 for extn in rd.extensionlist:
                     if not extdict.get(extn): extdict[extn] = []
                     extdict[extn] += [fmt,]
-            for extn in sorted(extdict.keys(),cmp=lambda x,y: cmp(x.lower(), y.lower())):
+            for extn in sorted(extdict.keys(),key=lambda k: k.lower()):
                 fmt = ''
                 for f in extdict[extn]:
                     if fmt != "": fmt += ', '
@@ -2730,9 +2730,15 @@ class GSASII(wx.Frame):
             except:
                 self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.abspath(os.path.dirname(arg[1]))
-            if self.dirname: os.chdir(self.dirname)
+            if self.dirname:
+                os.chdir(self.dirname)
+                self.LastGPXdir = self.dirname
             try:
-                self.StartProject()         #open the file if possible
+                #open the file if possible
+                if sys.platform == "darwin": # on Mac delay a bit so GUI can open
+                    wx.CallLater(100,self.StartProject)
+                else:
+                    self.StartProject()
                 return
             except Exception:
                 print ('Error opening or reading file'+arg[1])

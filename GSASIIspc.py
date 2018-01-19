@@ -1080,49 +1080,49 @@ def SSpcGroup(SGData,SSymbol):
 
     """
     
-    def checkModSym():
-        ''' 
-        Checks to see if proposed modulation form is allowed for Laue group
-        '''
-        if LaueId in [0,] and LaueModId in [0,]:
-            return True
-        elif LaueId in [1,]:
-            try:
-                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
-                    return False
-                if 'I'.index(SGData['SGLatt']) and modsym.count('1/2') not in [0,2]:
-                    return False
-            except ValueError:
-                pass
-            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,10,]:
-                return True
-            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,16,]:
-                return True
-            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,22,]:
-                return True
-        elif LaueId in [2,] and LaueModId in [i+7 for i in range(18)]:
-            try:
-                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
-                    return False
-                if SGData['SGLatt'] in ['I','F',] and modsym.index('1/2'):
-                    return False
-            except ValueError:
-                pass
-            return True
-        elif LaueId in [3,4,] and LaueModId in [19,22,]:
-            try:
-                if SGData['SGLatt'] == 'I' and modsym.count('1/2'):
-                    return False
-            except ValueError:
-                pass
-            return True
-        elif LaueId in [7,8,9,] and LaueModId in [19,25,]:
-            if (SGData['SGLatt'] == 'R' or SGData['SGPtGrp'] in ['3m1','-3m1']) and modsym.count('1/3'):
-                return False
-            return True
-        elif LaueId in [10,11,] and LaueModId in [19,]:
-            return True
-        return False
+#    def checkModSym():
+#        ''' 
+#        Checks to see if proposed modulation form is allowed for Laue group
+#        '''
+#        if LaueId in [0,] and LaueModId in [0,]:
+#            return True
+#        elif LaueId in [1,]:
+#            try:
+#                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
+#                    return False
+#                if 'I'.index(SGData['SGLatt']) and modsym.count('1/2') not in [0,2]:
+#                    return False
+#            except ValueError:
+#                pass
+#            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,10,]:
+#                return True
+#            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,16,]:
+#                return True
+#            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,22,]:
+#                return True
+#        elif LaueId in [2,] and LaueModId in [i+7 for i in range(18)]:
+#            try:
+#                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
+#                    return False
+#                if SGData['SGLatt'] in ['I','F',] and modsym.index('1/2'):
+#                    return False
+#            except ValueError:
+#                pass
+#            return True
+#        elif LaueId in [3,4,] and LaueModId in [19,22,]:
+#            try:
+#                if SGData['SGLatt'] == 'I' and modsym.count('1/2'):
+#                    return False
+#            except ValueError:
+#                pass
+#            return True
+#        elif LaueId in [7,8,9,] and LaueModId in [19,25,]:
+#            if (SGData['SGLatt'] == 'R' or SGData['SGPtGrp'] in ['3m1','-3m1']) and modsym.count('1/3'):
+#                return False
+#            return True
+#        elif LaueId in [10,11,] and LaueModId in [19,]:
+#            return True
+#        return False
         
     def fixMonoOrtho():
         mod = ''.join(modsym).replace('1/2','0').replace('1','0')
@@ -1408,15 +1408,15 @@ def SSpcGroup(SGData,SSymbol):
                     gensym = 'ss0'
         return gensym
                             
-    LaueModList = [
-        'abg','ab0','ab1/2','a0g','a1/2g',  '0bg','1/2bg','a00','a01/2','a1/20',
-        'a1/21/2','a01','a10','0b0','0b1/2', '1/2b0','1/2b1/2','0b1','1b0','00g',
-        '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
-    LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
-    GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s','0000s']
+#    LaueModList = [
+#        'abg','ab0','ab1/2','a0g','a1/2g',  '0bg','1/2bg','a00','a01/2','a1/20',
+#        'a1/21/2','a01','a10','0b0','0b1/2', '1/2b0','1/2b1/2','0b1','1b0','00g',
+#        '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
+#    LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
+#    GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
+#        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s','0000s']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
-    LaueId = LaueList.index(SGData['SGLaue'])
+#    LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
@@ -1425,15 +1425,15 @@ def SSpcGroup(SGData,SSymbol):
         modsym,gensym = splitSSsym(SSymbol)
     except ValueError:
         return 'Error in superspace symbol '+SSymbol,None
-    if ''.join(gensym) not in GenSymList:
-        if SGData['SGGray'] and ''.join(gensym[:-1]) not in GenSymList:
-            return 'unknown generator symbol '+''.join(gensym),None
-    try:
-        LaueModId = LaueModList.index(''.join(modsym))
-    except ValueError:
-        return 'Unknown modulation symbol '+''.join(modsym),None
-    if not checkModSym():
-        return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
+#    if ''.join(gensym) not in GenSymList:
+#        if SGData['SGGray'] and ''.join(gensym[:-1]) not in GenSymList:
+#            return 'unknown generator symbol '+''.join(gensym),None
+#    try:
+#        LaueModId = LaueModList.index(''.join(modsym))
+#    except ValueError:
+#        return 'Unknown modulation symbol '+''.join(modsym),None
+#    if not checkModSym():
+#        return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
     modQ = [Fracs[mod] for mod in modsym]
     SSGKl = SGData['SSGKl'][:]
     if SGData['SGLaue'] in ['2/m','mmm']:
@@ -1482,6 +1482,50 @@ def SSpcGroup(SGData,SSymbol):
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
+    
+def SSChoice(SGData):
+    '''
+    Gets the unique set of possible super space groups for a given space group
+    '''
+    laueSS = {'-1':['(abg)',],
+            '2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+            'mmm':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+                   '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+                   '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+            '4/m':['(00g)','(1/21/2g)'],
+            '4/mmm':['(00g)','(1/21/2g)'],
+            '3':['(00g)','(1/31/3g)'],
+            '3m1':['(00g)'],
+            '31m':['(00g)','(1/31/3g)'],
+            '6/m':['(00g)',],
+            '6/mmm':['(00g)',]}
+            
+    laueTS = {'-1':['',],
+            '2/m':['','s','s0','0s','ss'],
+            'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+            '4/m':['','q','s','s0',],
+            '4/mmm':['','q00','s00','ss0','0ss','s0s','qq0','qqs','0q0','s0s0','00ss','s00s'],
+            '3':['','t'],
+            '3m1':['','t0','0s','t00','0s0'],
+            '31m':['','t00','0ss'],
+            '6/m':['','h','t','s','s0'],
+            '6/mmm':['h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s']}
+    laue = SGData['SGLaue']
+    SSChoice = []
+    for ax in laueSS[laue]:
+        for sx in laueTS[laue]:
+            SSChoice.append(ax+sx)                
+    ssChoice = []
+    ssHash = []
+    for item in SSChoice:
+        E,SSG = SSpcGroup(SGData,item)
+        if SSG:
+            sshash = hash(str(SSGPrint(SGData,SSG)[1]))
+            if sshash not in ssHash:
+                ssHash.append(sshash)
+                ssChoice.append(item)
+    return ssChoice
+    
 
 def splitSSsym(SSymbol):
     '''
@@ -3113,149 +3157,6 @@ sgequiv_2002_orthorhombic = {
         'BMEB':'B m a b','CCME':'C c m b','AEAM':'A c a m',
         'CMME':'C m m a','AEMM':'A b m m','BMEM':'B m c m',
         'CCCE':'C c c a','AEAA':'A b a a','BBEB':'B b c b'}
-ptssdict = {}
-'''A dictionary of superspace group symbols allowed for each point group
-(except cubics). Monoclinics are all b-unique setting.
-'''
-ptssdict = {
-#1,2
-    'P1':['(abg)',],'C1':['(abg)',],
-#3-15
-    'P2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)',],
-    'C2':['(a0g)','(0b0)','(0b0)s','(0b1/2)',],
-    'A2':['(a0g)','(0b0)','(0b0)s','(1/2b0)',],
-    'Pm':['(a0g)','(a0g)s','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)',],
-    'Cm':['(a0g)','(a0g)s','(0b0)','(0b1/2)',],
-    'Am':['(a0g)','(a0g)s','(0b0)','(1/2b0)',],
-    'P2/m':['(a0g)','(a0g)0s','(a1/2g)','(0b0)','(0b0)s0','(1/2b0)','(0b1/2)','(1/2b1/2)',],
-    'C2/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(0b1/2)',],
-    'A2/m':['(a0g)','(a0g)s0','(0b0)','(0b0)0s','(1/2b0)',],
-#16-24
-    'P222':['(00g)','(00g)00s','(01/2g)','(1/20g)','(1/21/2g)',
-            '(a00)','(a00)s00','(a01/2)','(a1/20)','(a1/21/2)',
-            '(0b0)','(0b0)0s0','(1/2b0)','(0b1/2)','(1/2b1/2)',],
-    'C222':['(00g)','(00g)00s','(10g)','(10g)00s','(01g)','(01g)00s',
-            '(a00)','(a00)s00','(a01/2)',
-            '(0b0)','(0b0)0s0','(0b1/2)',],
-    'A222':['(a00)','(a00)s00','(a10)','(a10)s00','(a01)','(a01)s00',
-            '(0b0)','(0b0)0s0','(1/2b0)',
-            '(00g)','(00g)00s','(1/20g)',],
-    'B222':['(0b0)','(0b0)0s0','(1b0)','(1b0)0s0','(0b1)','(0b1)0s0',
-            '(00g)','(00g)00s','(01/2g)',
-            '(a00)','(a00)s00','(a1/20)',],
-    'F222':['(00g)','(00g)00s','(10g)','(01g)',
-            '(a00)','(a00)s00','(a10)','(a01)',
-            '(0b0)','(0b0)0s0','(1b0)','(0b1)',],
-    'I222':['(00g)','(00g)00s',
-            '(a00)','(a00)s00',
-            '(0b0)','(0b0)0s0',],
-#25-46
-    'Pmm2':['(00g)','(00g)s0s','(00g)0ss','(00g)ss0','(01/2g)','(01/2g)s0s','(1/20g)','(1/20g)0ss','(1/21/2g)','(1/2b1/2)00q',
-            '(a00)','(a00)0s0','(a1/20)','(a01/2)','(a01/2)0s0','(a1/21/2)','(1/21/2g)qq0',
-            '(0b0)','(0b0)s00','(0b1/2)','(0b1/2)s00','(1/2b0)','(1/2b1/2)','(1/2b1/2)q00',],        
-    'P2mm':['(a00)','(a00)ss0','(a00)s0s','(a00)0ss','(a01/2)','(a01/2)ss0','(a1/20)','(a1/20)s0s','(a1/21/2)','(1/21/2g)q00',
-            '(0b0)','(0b0)00s','(1/2b0)','(0b1/2)','(0b1/2)00s','(1/2b1/2)','(a1/21/2)0qq',
-            '(00g)','(00g)0s0','(01/2g)','(01/2g)0s0','(1/20g)','(1/21/2g)','(1/21/2g)0q0',],
-    'Pm2m':['(0b0)','(0b0)ss0','(0b0)0ss','(0b0)s0s','(0b1/2)','(0b1/2)ss0','(1/2b0)','(1/2b0)0ss','(1/2b1/2)','(a1/21/2)0q0',
-            '(00g)','(00g)s00','(1/20g)','(01/2g)','(01/2g)s00','(1/21/2g)','(1/2b1/2)q0q',
-            '(a00)','(a00)0s0','(a01/2)','(a01/2)0s0','(a1/20)','(a1/21/2)','(a1/21/2)00q',],
-    'Cmm2':['(00g)','(00g)s0s','(00g)ss0',
-            '(10g)','(10g)s0s','(10g)ss0',
-            '(a00)','(a00)0s0','(a01/2)','(a01/2)0s0',
-            '(0b0)','(0b0)s00','(0b1/2)','(0b1/2)s00',],
-    'C2mm':['(0b0)','(0b0)00s','(0b1/2)',],
-    'Cm2m':['(0b0)','(0b0)0ss','(0b0)s0s','(0b0)ss0','(0b1/2)','(0b1/2)ss0',],
-    'A2mm':['(a00)','(a00)ss0','(a00)0ss','(a10)','(a10)ss0','(a10)0ss',
-            '(0b0)','(0b0)00s','(1/2b0)','(1/2b0)00s',
-            '(00g)','(00g)0s0','(1/20g)','(1/20g)0s0',],
-    'Am2m':['(00g)','(00g)s00','(1/20g)',],
-    'Amm2':['(00g)','(00g)s0s','(00g)ss0','(00g)0ss','(1/20g)','(1/20g)0ss',],
-    'Bm2m':['(0b0)','(0b0)0ss','(0b0)s0s','(0b1)','(0b1)0ss','(0b1)s0s',
-            '(a00)','(a00)00s','(a1/20)','(a1/20)00s',
-            '(00g)','(00g)s00','(01/2g)','(01/2g)s00',],
-    'B2mm':['(a00)','(a00)0ss','(a00)s0s','(a00)ss0','(a1/20)','(a1/20)s0s',],
-    'Bmm2':['(a00)','(a00)0s0','(a1/20)',],
-    'Fmm2':['(00g)','(00g)s0s','(00g)0ss','(00g)ss0','(10g)','(10g)ss0','(10g)s0s','(01g)','(01g)ss0','(01g)0ss',
-            '(a00)','(a00)0s0','(a01)','(a01)0s0',
-            '(0b0)','(0b0)s00','(0b1)','(0b1)s00',],        
-    'F2mm':['(a00)','(a00)ss0','(a00)s0s','(a00)0ss','(a10)','(a10)0ss','(a10)ss0','(a01)','(a01)0ss','(a01)s0s',
-            '(0b0)','(0b0)00s','(1b0)','(1b0)00s',
-            '(00g)','(00g)0s0','(10g)','(10g)0s0',],
-    'Fm2m':['(0b0)','(0b0)0ss','(0b0)ss0','(0b0)s0s','(0b1)','(0b1)s0s','(0b1)0ss','(1b0)','(1b0)s0s','(1b0)ss0',
-            '(00g)','(00g)s00','(01g)','(01g)s00',
-            '(a00)','(a00)00s','(a10)','(a10)00s',],        
-    'Imm2':['(00g)','(00g)ss0','(00g)s0s','(00g)0ss','(a00)','(a00)0s0','(0b0)','(0b0)s00',],
-    'I2mm':['(a00)','(00g)0ss','(00g)ss0','(00g)s0s','(0b0)','(0b0)00s','(00g)','(00g)0s0',],
-    'Im2m':['(0b0)','(0b0)s0s','(0b0)0ss','(0b0)ss0','(00g)','(00g)s00','(a00)','(a00)00s',],
-#47-74
-    'Pmmm':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(01/2g)','(01/2g)s00','(01/2g)0s0','(01/2g)ss0',
-            '(1/20g)','(1/20g)0s0','(1/20g)s00','(1/20g)ss0','(1/21/2g)',
-            '(a00)','(a00)0s0','(a00)00s','(a00)0ss','(a01/2)','(a01/2)0s0','(a01/2)00s','(a01/2)0ss',
-            '(a1/20)','(a1/20)00s','(a1/20)0ss','(a1/20)0s0','(a1/21/2)',
-            '(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s','(1/2b0)','(1/2b0)00s','(1/2b0)s00','(1/2b0)s0s',
-            '(0b1/2)','(0b1/2)s00','(0b1/2)00s','(0b1/2)s0s','(1/2b1/2)',],
-    'Cmmm':['(00g)','(00g)s00','(00g)ss0','(10g)','(10g)s00','(10g)ss0','(01g)','(01g)0s0','(01g)ss0',
-            '(a00)','(a00)00s','(a00)0ss','(a00)0s0','(a01/2)','(a01/2)0s0',
-            '(0b0)','(0b0)00s','(0b0)s0s','(0b0)s00','(0b1/2)','(0b1/2)s00',],
-    'Ammm':['(a00)','(a00)0s0','(a00)0ss','(a10)','(a10)0s0','(a10)0ss','(a01)','(a01)0s0','(a01)0ss',
-            '(0b0)','(0b0)00s','(0b0)s0s','(0b0)s00','(0b1/2)','(0b1/2)s00',
-            '(00g)','(00g)s00','(00g)ss0','(00g)0s0','(1/20g)','(1/20g)0s0',],
-    'Bmmm':['(0b0)','(0b0)00s','(0b0)s0s','(0b1)','(0b1)00s','(0b1)s0s','(1b0)','(1b0)00s','(1b0)s0s',
-            '(a00)','(a00)0s0','(a00)0ss','(a00)00s','(a1/20)','(a1/20)00s',
-            '(00g)','(00g)s00','(00g)ss0','(00g)0s0','(1/20g)','(1/20g)0s0',],
-    'Fmmm':['(00g)','(00g)s00','(00g)ss0','(10g)','(10g)s00','(10g)0s0','(10g)ss0','(01g)','(01g)s00','(01g)0s0','(01g)ss0',
-            '(a00)','(a00)0s0','(a00)0ss','(a10)','(a10)0s0','(a10)00s','(a10)0ss','(a01)','(a01)0s0','(a01)00s','(a01)0ss',
-            '(0b0)','(0b0)s00','(0b0)s0s','(0b1)','(0b1)s00','(0b1)00s','(0b1)s0s','(1b0)','(1b0)s00','(1b0)00s','(1b0)s0s'],
-#75-82
-    'P4':['(00g)','(00g)q','(00g)s','(1/21/2g)','(1/21/2g)q',],
-    'I4':['(00g)','(00g)q','(00g)s',],
-    'P-4':['(00g)','(1/21/2g)',],
-    'I-4':['(00g)',],
-#83-89
-    'P4/m':['(00g)','(00g)s0','(1/21/2g)',],
-    'I4/m':['(00g)','(00g)s0',],
-#90-98
-    'P422':['(00g)','(00g)q00','(00g)s00','(1/21/2g)','(1/21/2g)q00',],
-    'I422':['(00g)','(00g)q00','(00g)s00',],
-#99-122
-    'P4mm':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)0ss','(1/21/2g)qq0','(1/21/2g)qqs',],
-    'I4mm':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',],
-    'P-42m':['(00g)','(00g)0ss','(1/21/2g)','(1/21/2g)0ss',],
-    'P-4m2':['(00g)','(00g)0s0','(1/21/2g)','(1/21/2g)0q0',],
-    'I-4m2':['(00g)','(00g)0s0',],
-    'I-42m':['(00g)','(00g)0ss',],
-#123-142    
-    'P4/mmm':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
-    'I4/mmm':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
-#143-148
-    'P 3':['(00g)','(00g)t','(1/31/3g)',],
-    'R3':['(00g)','(00g)t',],
-    'P-3':['(00g)','(1/31/3g)',],
-    'R-3':['(00g)',],
-#149-161
-    'P312':['(00g)','(00g)t00','(1/31/3g)',],
-    'P321':['(00g)','(00g)t00',],
-    'R32':['(00g)','(00g)t0',],
-    'P3m1':['(00g)','(00g)0s0',],
-    'P31m':['(00g)','(00g)00s','(1/31/3g)','(1/31/3g)00s',],
-    'R3m':['(00g)','(00g)0s',],
-#162-167
-    'P-31m':['(00g)','(00g)00s','(1/31/3g)','(1/31/3g)00s',],
-    'P-3m1':['(00g)','(00g)0s0',],
-    'R-3m':['(00g)','(00g)0s',],
-#168-176
-    'P6':['(00g)','(00g)h','(00g)t','(00g)s',],
-    'P-6':['(00g)',],
-    'P6/m':['(00g)','(00g)s0',],
-#177-194
-    'P622':['(00g)','(00g)h00','(00g)t00','(00g)s00',],
-    'P6mm':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',],
-    'P-6m2':['(00g)','(00g)0s0',],
-    'P-62m':['(00g)','(00g)00s',],
-    'P6/mmm':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
-        }
-
 
 #'A few non-standard space groups for test use'
 nonstandard_sglist = ('P 21 1 1','P 1 21 1','P 1 1 21','R 3 r','R 3 2 h', 

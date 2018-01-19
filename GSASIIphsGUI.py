@@ -1852,8 +1852,7 @@ entered the right symbol for your structure.
             if generalData['SGData']['SGGray']:
                 SpGrp += " 1'"
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
-            SSGptgp = generalData['SGData']['SGLatt']+generalData['SGData']['SGPtGrp']
-            SSChoice = G2spc.ptssdict.get(SSGptgp,[])
+            SSChoice = G2spc.SSChoice(generalData['SGData'])
             if generalData['SGData']['SGGray']:
                 SSChoice = [item+'s' for item in SSChoice]
             Choice = []

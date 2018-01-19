@@ -52,31 +52,8 @@ class testSSymbols(wx.Frame):
     def UpdateData(self,Data):
         
         def OnExhaustive(event):
-            laue = Data['SGData']['SGLaue']
-            good = []
-            if laue in ['2/m','mmm']:
-                SSList = []
-                for ax in laueSS[laue]:
-                    for sx in laueTS[laue]:
-                        SSList.append(ax+sx)                
-            else:
-                latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
-                SSList = G2spc.ptssdict.get(latt,['',])
-            for SSymbol in SSList:
-                E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
-                if SSGData:
-                    good.append(SSymbol)
-                    text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
-                    Data['SSGData'] = SSGData
-                    Data['SuperSg'] = SSymbol
-                    msg = 'Superspace Group Information'
-#                    G2G.SGMessageBox(self,msg,text,table).Show()
-#                else:
-#                    msg = 'Superspace Group Error for'+SSymbol
-#                    Style = wx.ICON_EXCLAMATION
-#                    Text = '\n'+E
-#                    wx.MessageBox(Text,caption=msg,style=Style)
-            print(good)           
+            SSList = G2spc.SSChoice(Data['SGData'])
+            print(SSList)           
         
         def OnSpaceGroup(event):
             Flds = SGTxt.GetValue().split()
@@ -102,8 +79,7 @@ class testSSymbols(wx.Frame):
                 SGTxt.SetValue(Data['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 G2G.SGMessageBox(self,msg,text,table).Show()
-            latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
-            SSChoice = G2spc.ptssdict.get(latt,['',])
+            SSChoice = G2spc.SSChoice(Data['SGData'])
             Data['SuperSg'] = SSChoice[0]
             self.UpdateData(Data)
 
@@ -142,12 +118,7 @@ class testSSymbols(wx.Frame):
         SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
         mainSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Superspace group: '+Data['SGData']['SpGrp']),0,WACV)
-        latt = Data['SGData']['SGLatt']+Data['SGData']['SGPtGrp']
-        SSChoice = G2spc.ptssdict.get(latt,['',])
-        ssChoice = []
-        for item in SSChoice:
-            E,SSG = G2spc.SSpcGroup(SGData,item)
-            if SSG: ssChoice.append(item)
+        ssChoice = G2spc.SSChoice(Data['SGData'])
         if ssChoice:
             superGp = wx.ComboBox(self.testSSPanel,value=Data['SuperSg'],choices=ssChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
             superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)

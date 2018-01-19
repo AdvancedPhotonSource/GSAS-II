@@ -3329,32 +3329,10 @@ def UpdateUnitCellsGrid(G2frame, data):
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
-        laueSS = {'2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
-                'mmm':['(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
-                       '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',
-                       '(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)']}
-                
-        laueTS = {'2/m':['','s','s0','0s','ss'],
-                  'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
-                  }
         indChoice = ['1','2','3','4',]
         SpSg = controls[13]
         SGData = G2spc.SpcGroup(SpSg)[1]
-        laue = SGData['SGLaue']
-        if laue in ['mmm']:
-            SSChoice = []
-            for ax in laueSS[laue]:
-                for sx in laueTS[laue]:
-                    SSChoice.append(ax+sx)                
-        else:
-            latt = SGData['SGLatt']+SGData['SGPtGrp']
-            SSChoice = G2spc.ptssdict.get(latt,['',])
-#        SSGptgp = SGData['SGLatt']+SGData['SGPtGrp']
-#        SSChoice = G2spc.ptssdict.get(SSGptgp,[])
-        ssChoice = []
-        for item in SSChoice:
-            E,SSG = G2spc.SSpcGroup(SGData,item)
-            if SSG: ssChoice.append(item)
+        ssChoice = G2spc.SSChoice(SGData)
         if ssopt['ssSymb'] not in ssChoice:
             ssopt['ssSymb'] = ssChoice[0]
         ssSizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -4236,12 +4236,13 @@ def PlotCovariance(G2frame,Data):
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
     Page.Choice = ['s: to change colors','p: to save covariance as text file']
     Page.keyPress = OnPlotKeyPress
-    G2frame.G2plotNB.status.SetFields(['',''])
+    G2frame.G2plotNB.status.SetStatusText('',0)
+    G2frame.G2plotNB.status.SetStatusText('',1)
     G2frame.G2plotNB.status.SetStatusWidths([150,-1])   #need to reset field widths here    
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
     Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
         vmin=-1.,vmax=1.)
-    imgAx = Img.properties()['axes']
+    imgAx = Img.axes
     ytics = imgAx.get_yticks()
     ylabs = [varyList[int(i)] for i in ytics[:-1]]
     imgAx.set_yticklabels(ylabs)

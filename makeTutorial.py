@@ -32,7 +32,7 @@ dirList = [l[0] for l in tutorialIndex if len(l) == 3]
 # loop through directories in Tutorials repository
 dirs = [d[:-1] for d in GSASIIpath.svnList(tutURL,False).split('\n') if d and d[-1] == '/']    
 for d in dirs:
-    if d not in dirList: print(u"missing: "+d)
+    if d not in dirList: print(u"makeTutorial: Listed tutorial is missing: "+d)
 
 #import sys
 #out = sys.stdout

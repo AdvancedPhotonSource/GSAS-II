@@ -4648,12 +4648,12 @@ tutorialIndex = (
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II'],
 
     ['Rietveld fitting'],
-       
     ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite'],
     ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet'],
     ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4'],
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement'],
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points'],
+    ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II'],
     
     ['Parametric Rietveld fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],

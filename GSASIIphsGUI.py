@@ -7478,7 +7478,7 @@ entered the right symbol for your structure.
                            rbObj['ThermalMotion'][2][0] = True
                         else:
                            rbObj['ThermalMotion'][2][0] = False
-                    elif 'T' in rbObj['ThermalMotion'][0]:
+                    if 'T' in rbObj['ThermalMotion'][0]:
                         if 'Tii' in parms:
                             rbObj['ThermalMotion'][2][0:2] = [True,True,True]
                         else:
@@ -7487,7 +7487,7 @@ entered the right symbol for your structure.
                             rbObj['ThermalMotion'][2][3:6] = [True,True,True]
                         else:
                             rbObj['ThermalMotion'][2][3:6] = [False,False,False]
-                    elif 'L' in rbObj['ThermalMotion'][0]:
+                    if 'L' in rbObj['ThermalMotion'][0]:
                         if 'Lii' in parms:
                             rbObj['ThermalMotion'][2][6:9] = [True,True,True]
                         else:
@@ -7496,7 +7496,7 @@ entered the right symbol for your structure.
                             rbObj['ThermalMotion'][2][9:12] = [True,True,True]
                         else:
                             rbObj['ThermalMotion'][2][9:12] = [False,False,False]
-                    elif 'S' in rbObj['ThermalMotion'][0]:
+                    if 'S' in rbObj['ThermalMotion'][0]:
                         if 'Sij' in parms:
                             rbObj['ThermalMotion'][2][12:20] = [True,True,True,True,True,True,True,True]
                         else:

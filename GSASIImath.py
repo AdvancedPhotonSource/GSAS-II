@@ -162,6 +162,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
+        Nobs = len(M)
         nfev += 1
         chisq0 = np.sum(M**2)
         Yvec,Amat = Hess(x0,*args)
@@ -173,7 +174,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            print ('initial chi^2 %.5g'%(chisq0))
+            print ('initial chi^2 %.5g on %d obs.'%(chisq0,Nobs))
         chitol = ftol
         while True:
             Lam = np.eye(Amat.shape[0])*lam
@@ -189,10 +190,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             M2 = func(x0+Xvec,*args)
             nfev += 1
             chisq1 = np.sum(M2**2)
-            if chisq1 > chisq0*(1.+chitol):
+            if chisq1 > chisq0*(1.+chitol):     #TODO put Alan Coehlo's criteria for lambda here
                 lam *= 10.
                 if Print:
-                    print ('new chi^2 %.5g, %d SVD zeros ; matrix modification needed; lambda now %.1e'%(chisq1,Nzeros,lam))
+                    print ('new chi^2 %.5g on %d obs., %d SVD zeros ; matrix modification needed; lambda now %.1e'  \
+                           %(chisq1,Nobs,Nzeros,lam))
             else:
                 x0 += Xvec
                 lam /= 10.
@@ -204,8 +206,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         lamMax = max(lamMax,lam)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Lambda: %.3g,  Delta: %.3g'%(
-                icycle,time.time()-time0,chisq1,lamMax,deltaChi2))
+            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g'%(
+                icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2))
         if deltaChi2 < ftol:
             ifConverged = True
             if Print: print ("converged")

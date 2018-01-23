@@ -1035,9 +1035,11 @@ def FindBondsDrawCell(data,cell):
     Atoms = []
     Styles = []
     Radii = []
+    Names = []
     for atom in atomData:
         Atoms.append(np.array(atom[cx:cx+3]))
         Styles.append(atom[cs])
+        Names.append(ord(atom[ct-1].ljust(4)[3]))
         try:
             if not hydro and atom[ct] == 'H':
                 Radii.append(0.0)
@@ -1047,11 +1049,20 @@ def FindBondsDrawCell(data,cell):
             Radii.append(0.20)
     Atoms = np.array(Atoms)
     Radii = np.array(Radii)
-    IASR = zip(Indx,Atoms,Styles,Radii)
-    for atomA in IASR:
+    Names = np.array(Names)
+    IASRN = zip(Indx,Atoms,Styles,Radii,Names)
+    for atomA in IASRN:
         if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
             Dx = Atoms-atomA[1]
             dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
+            if generalData['Type'] == 'macromolecular':     #eliminate cross disorder residue bonds
+                m1 = ma.getmask(dist)
+                if atomA[4] in [ord('A'),]:
+                    m2 = ma.getmask(ma.masked_equal(Names,ord('B')))
+                    dist = ma.array(dist,mask=ma.mask_or(m1,m2))
+                if atomA[4] in [ord('B'),]:
+                    m2 = ma.getmask(ma.masked_equal(Names,ord('A')))
+                    dist = ma.array(dist,mask=ma.mask_or(m1,m2))
             sumR = atomA[3]+Radii
             IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
             i = atomA[0]
@@ -7319,6 +7330,7 @@ entered the right symbol for your structure.
         iatm = 0
         wx.BeginBusyCursor()
         try:
+            isave = 0
             while iatm < len(Atoms):
                 atom = Atoms[iatm]
                 res = atom[1].strip()
@@ -7330,13 +7342,23 @@ entered the right symbol for your structure.
                 rbRef = rbRes['rbRef']
                 VAR = rbRes['rbXYZ'][rbRef[1]]-rbRes['rbXYZ'][rbRef[0]]
                 VBR = rbRes['rbXYZ'][rbRef[2]]-rbRes['rbXYZ'][rbRef[0]]
+                incr = 1
+                isave = 0
+                if 'N  A' in atom[3]:   #disordered residue - read every other atom
+                    isave = iatm+1
+                    incr = 2
+                if 'N  B' in atom[3]:
+                    incr = 2
                 rbObj = {'RBname':rbRes['RBname']+':'+str(rbRes['useCount']),'numChain':numChain}
                 rbAtoms = []
                 rbIds = []
                 for iratm in range(len(rbRes['atNames'])):
                     rbAtoms.append(np.array(Atoms[iatm][cx:cx+3]))
                     rbIds.append(Atoms[iatm][20])
-                    iatm += 1    #puts this at beginning of next residue?
+                    iatm += incr    #puts this at beginning of next residue?
+                if 'N  B' in atom[3]:   #end of disorder - reset next atom position
+                    iatm -= 1
+                    incr = 1
                 Orig = rbAtoms[rbRef[0]]
                 rbObj['RBId'] = RBIds[res]
                 rbObj['Ids'] = rbIds
@@ -7370,6 +7392,8 @@ entered the right symbol for your structure.
                         SXYZ[ride] = G2mth.prodQVQ(QuatA,SXYZ[ride]-SXYZ[Patm])+SXYZ[Patm]
                 rbRes['useCount'] += 1
                 RBObjs.append(rbObj)
+                if isave:
+                    iatm = isave
             data['RBModels']['Residue'] = RBObjs
             for RBObj in RBObjs:
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]

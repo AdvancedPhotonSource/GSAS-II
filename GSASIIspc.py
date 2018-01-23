@@ -1525,7 +1525,6 @@ def SSChoice(SGData):
                 ssHash.append(sshash)
                 ssChoice.append(item)
     return ssChoice
-    
 
 def splitSSsym(SSymbol):
     '''

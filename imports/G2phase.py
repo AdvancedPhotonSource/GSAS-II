@@ -137,8 +137,8 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                 Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
                     S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
-                if S[16] in [' ','A']:      #remove disorered residues - can't handle them just now
-                    Atom[3] = Atom[3][:3]
+                if S[16] in [' ','A','B']:      #remove disorered residues - can't handle them just now
+#                    Atom[3] = Atom[3][:3]
                     Atom.append(ran.randint(0,sys.maxsize))
                     Atoms.append(Atom)
             elif 'ANISOU' in S[:6]:

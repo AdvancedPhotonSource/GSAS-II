@@ -181,9 +181,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for x in sel:
                     if 'all' in Names[x]:
                         allType = Types[x]
-                        for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids):
                             if Type == allType and 'all' not in name:
-                                Lists[listName].append([id,Type,coords])
+                                Lists[listName].append([Id,Type,coords])
                     else:
                         Lists[listName].append([Ids[x],Types[x],Coords[x],])
             else:
@@ -246,23 +246,29 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             elif 'S' in items[0]:
                 oIds = []
                 oCoords = []
+                oDis = []
                 tIds = []
                 tCoords = []
+                tDis = []
                 res = items[1]
                 dist = float(items[2])
                 esd = float(items[3])
                 oAtm,tAtm = items[4:6]
                 for Name,coords,Id in atoms:
-                    names = Name.split()
+                    names = Name.split(' ',2)
                     if res == '*' or res in names[0]:
-                        if oAtm == names[2]:
+                        if oAtm.ljust(3) == names[2][:3]:
                             oIds.append(Id)
                             oCoords.append(np.array(coords))
-                        if tAtm == names[2]:
+                            oDis.append(names[2][3])
+                        if tAtm.ljust(3) == names[2][:3]:
                             tIds.append(Id)
                             tCoords.append(np.array(coords))
-                for i,[oId,oCoord] in enumerate(zip(oIds,oCoords)):
-                    for tId,tCoord in zip(tIds,tCoords)[i:]:
+                            tDis.append(names[2][3])
+                for i,[oId,oCoord,odis] in enumerate(zip(oIds,oCoords,oDis)):
+                    for tId,tCoord,tdis in zip(tIds,tCoords,tDis)[i:]:
+                        if odis+tdis in ['AB','BA']:
+                            continue
                         obsd = np.sqrt(np.sum(np.inner(Amat,tCoord-oCoord)**2))
                         if dist/Factor < obsd < dist*Factor:
                             newBond = [[oId,tId],['1','1'],dist,esd]
@@ -283,12 +289,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for x in sel:
                     if 'all' in Names[x]:
                         allType = Types[x]
-                        for name,Type,coords,id in zip(Names,Types,Coords,Ids):
+                        for name,Type,coords,Id in zip(Names,Types,Coords,Ids):
                             if Type == allType and 'all' not in name:
                                 if 'A' in listName:
                                     Lists[listName].append(Type)
                                 else:
-                                    Lists[listName].append([id,Type,coords])
+                                    Lists[listName].append([Id,Type,coords])
                     else:
                         if 'A' in listName:
                             Lists[listName].append(Types[x])
@@ -345,54 +351,80 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             angleRestData['Angles'].append(angle)
         UpdateAngleRestr(angleRestData)                
 
+    def makeChains(Names,Ids):
+        Chains = {}
+        atoms = zip(Names,Ids)
+        for name,Id in atoms:
+            items = name.split(' ',2)
+            rnum,res = items[0].split(':')
+            rnum = int(rnum)
+            if items[1] not in Chains:
+                Residues = {}
+                Chains[items[1]] = Residues
+            if rnum not in Residues:
+                Residues[rnum] = [[],[]]
+            if items[2][3] in [' ','A']:
+                Residues[rnum][0].append([res,items[2],Id])
+            if items[2][3] in [' ','B']:
+                Residues[rnum][1].append([res,items[2],Id])
+        return Chains
+        
     def AddAAAngleRestraint(angleRestData):
         macro = getMacroFile('angle')
         if not macro:
             return
-        atoms = zip(Names,Ids)
+        Chains = makeChains(Names,Ids)            
         macStr = macro.readline()
         while macStr:
             items = macStr.split()
             if 'F' in items[0]:
                 restrData['Angle']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
-                res = items[1]
-                value = float(items[2])
-                esd = float(items[3])
+                Res = items[1]
+                Value = float(items[2])
+                Esd = float(items[3])
                 Atms = items[4:7]
                 pAtms = ['','','']
                 for i,atm in enumerate(Atms):
                     if '+' in atm:
                         pAtms[i] = atm.strip('+')
-                ids = np.array([0,0,0])
-                rNum = -1
-                for name,id in atoms:
-                    names = name.split()
-                    tNum = int(names[0].split(':')[0])
-                    if res in names[0]:
-                        try:
-                            ipos = Atms.index(names[2])
-                            ids[ipos] = id
-                        except ValueError:
-                            continue
-                    elif res == '*':
-                        try:
-                            ipos = Atms.index(names[2])
-                            if not np.all(ids):
-                                rNum = int(names[0].split(':')[0])
-                            ids[ipos] = id
-                        except ValueError:
-                            try:
-                                if tNum == rNum+1:
-                                    ipos = pAtms.index(names[2])
-                                    ids[ipos] = id
-                            except ValueError:
-                                continue
-                    if np.all(ids):
-                        angle = [list(ids),['1','1','1'],value,esd]
-                        if angle not in angleRestData['Angles']:
-                            angleRestData['Angles'].append(angle)
-                        ids = np.array([0,0,0])
+                ids = [0,0,0]
+                chains = list(Chains.keys())
+                chains.sort()
+                for chain in chains:
+                    residues = list(Chains[chain].keys())
+                    residues.sort()
+                    for residue in residues:
+                        for ires in [0,1]:
+                            if Res != '*':  #works with disordered res
+                                for res,name,Id in Chains[chain][residue][ires]:
+                                    if Res == res:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                            else:
+                                try:
+                                    for res,name,Id in Chains[chain][residue][ires]:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                    for res,name,Id in Chains[chain][residue+1][ires]:
+                                        try:
+                                            ipos = pAtms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                except KeyError:
+                                    continue
+                            if all(ids):
+                                angle = [list(ids),['1','1','1'],Value,Esd]
+                                if angle not in angleRestData['Angles']:
+                                    angleRestData['Angles'].append(angle)
+                                ids = [0,0,0]
             macStr = macro.readline()
         macro.close()
         UpdateAngleRestr(angleRestData)                
@@ -418,50 +450,60 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         macro = getMacroFile('plane')
         if not macro:
             return
-        atoms = zip(Names,Ids)
+        Chains = makeChains(Names,Ids)            
         macStr = macro.readline()
         while macStr:
             items = macStr.split()
             if 'F' in items[0]:
                 restrData['Plane']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
-                res = items[1]
-                esd = float(items[2])
+                Res = items[1]
+                Esd = float(items[2])
                 Atms = items[3:]
                 pAtms = ['' for i in Atms]
                 for i,atm in enumerate(Atms):
                     if '+' in atm:
                         pAtms[i] = atm.strip('+')
-                rNum = -1
-                ids = np.zeros(len(Atms))
+                ids = [0,]*len(Atms)
                 ops = ['1' for i in range(len(Atms))]
-                for name,id in atoms:
-                    names = name.split()
-                    tNum = int(names[0].split(':')[0])
-                    if res in names[0]:
-                        try:
-                            ipos = Atms.index(names[2])
-                            ids[ipos] = id
-                        except ValueError:
-                            continue
-                    elif res == '*':
-                        try:
-                            ipos = Atms.index(names[2])
-                            if not np.all(ids):
-                                rNum = int(names[0].split(':')[0])
-                            ids[ipos] = id
-                        except ValueError:
-                            try:
-                                if tNum == rNum+1:
-                                    ipos = pAtms.index(names[2])
-                                    ids[ipos] = id
-                            except ValueError:
+                chains = list(Chains.keys())
+                chains.sort()
+                for chain in chains:
+                    residues = list(Chains[chain].keys())
+                    residues.sort()
+                    for residue in residues:
+                        for ires in [0,1]:
+                            if residue == residues[-1] and Res == '*':
                                 continue
-                    if np.all(ids):
-                        plane = [list(ids),ops,0.0,esd]
-                        if plane not in planeRestData['Planes']:
-                            planeRestData['Planes'].append(plane)
-                        ids = np.zeros(len(Atms))
+                            if Res != '*':  #works with disordered res
+                                for res,name,Id in Chains[chain][residue][ires]:
+                                    if Res == res:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                            else:
+                                try:
+                                    for res,name,Id in Chains[chain][residue][ires]:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                    for res,name,Id in Chains[chain][residue+1][ires]:
+                                        try:
+                                            ipos = pAtms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                except KeyError:
+                                    continue
+                            if all(ids):
+                                plane = [list(ids),ops,0.0,Esd]
+                                if plane not in planeRestData['Planes']:
+                                    planeRestData['Planes'].append(plane)
+                                ids = [0,]*len(Atms)
             macStr = macro.readline()
         macro.close()
         UpdatePlaneRestr(planeRestData)                
@@ -470,48 +512,53 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         macro = getMacroFile('chiral')
         if not macro:
             return
-        atoms = zip(Names,Ids)
+        Chains = makeChains(Names,Ids)            
         macStr = macro.readline()
         while macStr:
             items = macStr.split()
             if 'F' in items[0]:
                 restrData['Chiral']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
-                res = items[1]
-                value = float(items[2])
-                esd = float(items[3])
+                Res = items[1]
+                Value = float(items[2])
+                Esd = float(items[3])
                 Atms = items[4:8]
-                ids = np.array([0,0,0,0])
-                for name,id in atoms:
-                    names = name.split()
-                    if res in names[0]:
-                        try:
-                            ipos = Atms.index(names[2])
-                            ids[ipos] = id
-                        except ValueError:
-                            pass
-                        if np.all(ids):
-                            chiral = [list(ids),['1','1','1','1'],value,esd]
-                            if chiral not in chiralRestData['Volumes']:
-                                chiralRestData['Volumes'].append(chiral)
-                            ids = np.array([0,0,0,0])
+                ids = [0,0,0,0]
+                chains = list(Chains.keys())
+                chains.sort()
+                for chain in chains:
+                    residues = list(Chains[chain].keys())
+                    residues.sort()
+                    for residue in residues:
+                        for ires in [0,1]:
+                            if residue == residues[-1] and Res == '*':
+                                continue
+                            if Res != '*':  #works with disordered res
+                                for res,name,Id in Chains[chain][residue][ires]:
+                                    if Res == res:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                            else:
+                                try:
+                                    for res,name,Id in Chains[chain][residue][ires]:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                except KeyError:
+                                    continue
+                            if all(ids):
+                                chiral = [list(ids),['1','1','1','1'],Value,Esd]
+                                if chiral not in chiralRestData['Volumes']:
+                                    chiralRestData['Volumes'].append(chiral)
+                                ids = [0,0,0,0]
             macStr = macro.readline()
         macro.close()
         UpdateChiralRestr(chiralRestData)                
-        
-    def makeChains(Names,Ids):
-        Chains = {}
-        atoms = zip(Names,Ids)
-        for name,id in atoms:
-            items = name.split()
-            rnum,res = items[0].split(':')
-            if items[1] not in Chains:
-                Residues = {}
-                Chains[items[1]] = Residues
-            if int(rnum) not in Residues:
-                Residues[int(rnum)] = []
-            Residues[int(rnum)].append([res,items[2],id])
-        return Chains
         
     def AddAATorsionRestraint(torsionRestData):
         macro = getMacroFile('torsion')
@@ -538,44 +585,45 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for i,atm in enumerate(Atms):
                     if '+' in atm:
                         pAtms[i] = atm.strip('+')
-                ids = np.array([0,0,0,0])
+                ids = [0,0,0,0]
                 chains = list(Chains.keys())
                 chains.sort()
                 for chain in chains:
                     residues = list(Chains[chain].keys())
                     residues.sort()
                     for residue in residues:
-                        if residue == residues[-1] and Res == '*':
-                            continue
-                        if Res != '*':
-                            for res,name,id in Chains[chain][residue]:
-                                if Res == res:
-                                    try:
-                                        ipos = Atms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                        else:
-                            try:
-                                for res,name,id in Chains[chain][residue]:
-                                    try:
-                                        ipos = Atms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                                for res,name,id in Chains[chain][residue+1]:
-                                    try:
-                                        ipos = pAtms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                            except KeyError:
+                        for ires in [0,1]:
+                            if residue == residues[-1] and Res == '*':
                                 continue
-                        if np.all(ids):
-                            torsion = [list(ids),['1','1','1','1'],Name,Esd]
-                            if torsion not in torsionRestData['Torsions']:
-                                torsionRestData['Torsions'].append(torsion)
-                            ids = np.array([0,0,0,0])                            
+                            if Res != '*':  #works with disordered res
+                                for res,name,Id in Chains[chain][residue][ires]:
+                                    if Res == res:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                            else:
+                                try:
+                                    for res,name,Id in Chains[chain][residue][ires]:
+                                        try:
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                    for res,name,Id in Chains[chain][residue+1][ires]:
+                                        try:
+                                            ipos = pAtms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                except KeyError:
+                                    continue
+                            if all(ids):
+                                torsion = [list(ids),['1','1','1','1'],Name,Esd]
+                                if torsion not in torsionRestData['Torsions']:
+                                    torsionRestData['Torsions'].append(torsion)
+                                ids = [0,0,0,0]                            
             macStr = macro.readline()
         macro.close()
         UpdateTorsionRestr(torsionRestData)                        
@@ -612,7 +660,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         pAtms[i] = atm.strip('+')
                     elif '-' in atm:
                         mAtms[i] = atm.strip('-')
-                ids = np.array([0,0,0,0,0])
+                ids = [0,0,0,0,0]
                 chains = list(Chains.keys())
                 chains.sort()
                 for chain in chains:
@@ -620,47 +668,49 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                     residues.sort()
                     if not (any(mAtms) or any(pAtms)):
                         for residue in residues:
-                            for res,name,id in Chains[chain][residue]:
-                                if Res == res:
-                                    try:
-                                        ipos = Atms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                            if np.all(ids):
-                                rama = [list(ids),['1','1','1','1','1'],Name,Esd]
-                                if rama not in ramaRestData['Ramas']:
-                                    ramaRestData['Ramas'].append(rama)
-                                ids = np.array([0,0,0,0,0])
-                    else:
-                        for residue in residues[1:-1]:
-                            try:
-                                for res,name,id in Chains[chain][residue-1]:
-                                    try:
-                                        ipos = mAtms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                                for res,name,id in Chains[chain][residue+1]:
-                                    try:
-                                        ipos = pAtms.index(name)
-                                        ids[ipos] = id
-                                    except ValueError:
-                                        continue
-                                for res,name,id in Chains[chain][residue]:
+                            for ires in [0,1]:
+                                for res,name,Id in Chains[chain][residue][ires]:
                                     if Res == res:
                                         try:
-                                            ipos = Atms.index(name)
-                                            ids[ipos] = id
+                                            ipos = Atms.index(name[:3].strip())
+                                            ids[ipos] = Id
                                         except ValueError:
                                             continue
-                                if np.all(ids):
+                                if all(ids):
                                     rama = [list(ids),['1','1','1','1','1'],Name,Esd]
                                     if rama not in ramaRestData['Ramas']:
                                         ramaRestData['Ramas'].append(rama)
-                                    ids = np.array([0,0,0,0,0])
-                            except KeyError:
-                                continue
+                                    ids = [0,0,0,0,0]
+                    else:
+                        for ires,residue in enumerate(residues[1:-1]):
+                            for jres in [0,1]:
+                                try:
+                                    for res,name,Id in Chains[chain][residue-1][jres]:
+                                        try:
+                                            ipos = mAtms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                    for res,name,Id in Chains[chain][residue+1][jres]:
+                                        try:
+                                            ipos = pAtms.index(name[:3].strip())
+                                            ids[ipos] = Id
+                                        except ValueError:
+                                            continue
+                                    for res,name,Id in Chains[chain][residue][jres]:
+                                        if Res == res:
+                                            try:
+                                                ipos = Atms.index(name[:3].strip())
+                                                ids[ipos] = Id
+                                            except ValueError:
+                                                continue
+                                    if all(ids):
+                                        rama = [list(ids),['1','1','1','1','1'],Name,Esd]
+                                        if rama not in ramaRestData['Ramas']:
+                                            ramaRestData['Ramas'].append(rama)
+                                        ids = [0,0,0,0,0]
+                                except KeyError:
+                                    continue
             macStr = macro.readline()
         macro.close()
         UpdateRamaRestr(ramaRestData)
@@ -675,9 +725,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for x in sel:
                 if 'all' in Names[x]:
                     allType = Types[x]
-                    for name,Type,id in zip(Names,Types,Ids):
+                    for name,Type,Id in zip(Names,Types,Ids):
                         if Type == allType and 'all' not in name:
-                            ids.append(id)
+                            ids.append(Id)
                             factors.append(1.0)
                 else:
                     ids.append(Ids[x])
@@ -1016,11 +1066,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
 
         AngleRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(AngleRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        AngleRestr.SetSize(Size)
-        AngleRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(AngleRestr,mainSizer,Scroll=0)
     
     def UpdatePlaneRestr(planeRestData):
         
@@ -1145,11 +1191,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
 
         PlaneRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(PlaneRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        PlaneRestr.SetSize(Size)
-        PlaneRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(PlaneRestr,mainSizer,Scroll=0)
     
     def UpdateChiralRestr(chiralRestData):
 
@@ -1276,11 +1318,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
 
         ChiralRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(ChiralRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        ChiralRestr.SetSize(Size)
-        ChiralRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(ChiralRestr,mainSizer,Scroll=0)
     
     def UpdateTorsionRestr(torsionRestData):
 
@@ -1363,7 +1401,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         TorsionRestr.Torsions.SetReadOnly(r,c,True)
                         TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
                 TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.vrsion():
+                if 'phoenix' in wx.version():
                     TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
                 else:
                     TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
@@ -1398,11 +1436,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,'No torsion restraints for this phase'),0,)
 
         TorsionRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(TorsionRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        TorsionRestr.SetSize(Size)
-        TorsionRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(TorsionRestr,mainSizer,Scroll=0)
 
     def UpdateRamaRestr(ramaRestData):
 
@@ -1522,11 +1556,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(Coeff,0,)
 
         RamaRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(RamaRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        RamaRestr.SetSize(Size)
-        RamaRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(RamaRestr,mainSizer,Scroll=0)
 
     def UpdateChemcompRestr(chemcompRestData):
         
@@ -1656,11 +1686,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
 
         ChemCompRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(ChemCompRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        ChemCompRestr.SetSize(Size)
-        ChemCompRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(ChemCompRestr,mainSizer,Scroll=0)
             
     def UpdateTextureRestr(textureRestData):
             
@@ -1732,11 +1758,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         else:
             mainSizer.Add(wx.StaticText(TextureRestr,-1,'No texture restraints for this phase'),0,)
         TextureRestr.SetSizer(mainSizer)
-        Size = mainSizer.Fit(TextureRestr)
-        Size[0] = 600
-        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
-        TextureRestr.SetSize(Size)
-        TextureRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        G2phsGUI.SetPhaseWindow(TextureRestr,mainSizer,Scroll=0)
             
     def OnPageChanged(event):
         page = event.GetSelection()
@@ -1861,7 +1883,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     Atoms = phasedata['Atoms']
     AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
     if 'macro' in General['Type']:
-        Names = [atom[0]+':'+atom[1]+atom[2]+' '+atom[3] for atom in Atoms]
+        Names = [atom[0]+':'+atom[1]+atom[2]+' '+atom[3].ljust(4) for atom in Atoms]
         Ids = []
         Coords = []
         Types = []

@@ -1582,6 +1582,8 @@ def UpdateRigidBodies(G2frame,data):
                 sel = dlg.GetSelection()
                 rbId = rbIds[rbNames[sel]]
                 rbData = data['Residue'][rbId]
+            else:
+                rbData = []
             dlg.Destroy()
         else:
             rbId = rbIds[rbNames[0]]

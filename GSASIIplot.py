@@ -4386,9 +4386,8 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         Img = Plot.imshow(rama,aspect='equal',cmap=acolor,interpolation='nearest',
             extent=[-180,180,-180,180],origin='lower')
         if len(PhiPsi):
+            PhiPsi = np.where(PhiPsi>180.,PhiPsi-360.,PhiPsi)
             Phi,Psi = PhiPsi.T
-            Phi = np.where(Phi>180.,Phi-360.,Phi)
-            Psi = np.where(Psi>180.,Psi-360.,Psi)
             Plot.plot(Phi,Psi,'ro',picker=5)
         Plot.set_xlim((-180.,180.))
         Plot.set_ylim((-180.,180.))

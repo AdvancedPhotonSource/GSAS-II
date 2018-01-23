@@ -4391,7 +4391,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                                 next += 1
             Scale = sumFo2/sumFc2
             if (Scale < 0.8 or Scale > 1.2) and phfx+'Scale' in varylist:
-                print ('New scale: %.4f'%Scale*parmDict[phfx+'Scale'])
+                print ('New scale: %.4f'%(Scale*parmDict[phfx+'Scale']))
                 indx = varylist.index(phfx+'Scale')
                 values[indx] = Scale*parmDict[phfx+'Scale']              
             Histogram['Residuals']['Nobs'] = nobs

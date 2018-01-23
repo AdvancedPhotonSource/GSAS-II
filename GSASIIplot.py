@@ -753,9 +753,15 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                     radius = C
                     if radius > 0:
                         if A > B:
-                            Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
+                            if refl[3+Super] < 0:
+                                Plot.add_artist(Circle(xy,radius=radius,ec=(0.,1,.0,.1),fc='g'))                                
+                            else:
+                                Plot.add_artist(Circle(xy,radius=radius,fc='g',ec='g'))
                         else:                    
-                            Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+                            if refl[3+Super] < 0:
+                                Plot.add_artist(Circle(xy,radius=radius,fc=(1.,0.,0.,.1),ec='r'))
+                            else:
+                                Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
 #    print 'plot time: %.3f'%(time.time()-time0)
     HKL = np.array(HKL)
     HKLF = np.array(HKLF)

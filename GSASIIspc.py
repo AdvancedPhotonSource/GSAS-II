@@ -2692,6 +2692,26 @@ def MustrainCoeff(HKL,SGData):
         Strm.append(4.0*h*l*k**2)
         Strm.append(4.0*k*h*l**2)
     return Strm
+
+def MuShklMean(SGData,Amat,Shkl):
+    
+    def genMustrain(xyz,Shkl):
+        uvw = np.inner(Amat.T,xyz)
+        Strm = np.array(MustrainCoeff(uvw,SGData))
+        Sum = np.sum(np.multiply(Shkl,Strm))
+        Sum = np.where(Sum > 0.01,Sum,0.01)
+        Sum = np.sqrt(Sum)
+        return Sum*xyz
+        
+    PHI = np.linspace(0.,360.,30,True)
+    PSI = np.linspace(0.,180.,30,True)
+    X = np.outer(npcosd(PHI),npsind(PSI))
+    Y = np.outer(npsind(PHI),npsind(PSI))
+    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+    XYZ = np.dstack((X,Y,Z))
+    XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,Shkl))
+    return np.sqrt(np.sum(XYZ**2)/900.)
+    
     
 def Muiso2Shkl(muiso,SGData,cell):
     "this is to convert isotropic mustrain to generalized Shkls"

@@ -208,6 +208,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             pass
         if UseList[G2frame.hist]['Mustrain'][0] == 'generalized':
             Obj.SetValue("%.1f"%(UseList[G2frame.hist]['Mustrain'][4][pid]))          #reset in case of error
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
         else:
             Obj.SetValue("%.1f"%(UseList[G2frame.hist]['Mustrain'][1][pid]))          #reset in case of error
         wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
@@ -411,6 +412,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return dataSizer
         
     def GenStrainDataSizer():
+        muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4])
         Snames = G2spc.MustrainNames(SGData)
         numb = len(Snames)
         if len(UseList[G2frame.hist]['Mustrain'][4]) < numb:
@@ -431,6 +433,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             strainVal.Bind(wx.EVT_TEXT_ENTER,OnStrainVal)
             strainVal.Bind(wx.EVT_KILL_FOCUS,OnStrainVal)
             dataSizer.Add(strainVal,0,WACV)
+        dataSizer.Add(wx.StaticText(DData,label=' Mean mustrain %.1f'%muMean),0,WACV)
         return dataSizer
 
     def HstrainSizer():
@@ -994,6 +997,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     # make a list of histograms (any type) used in this phase, ordered as in tree
     G2frame.dataWindow.HistsInPhase = [name for name in keyList if name in UseList]
     generalData = data['General']
+    cell = generalData['Cell'][1:]
+    Amat,Bmat = G2lat.cell2AB(cell[:6])
     PhaseName = generalData['Name']       
     SGData = generalData['SGData']
     if len(G2frame.dataWindow.HistsInPhase) == 0: # no associated histograms, nothing to display here

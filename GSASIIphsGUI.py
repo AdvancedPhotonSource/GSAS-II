@@ -7353,45 +7353,49 @@ entered the right symbol for your structure.
                 rbAtoms = []
                 rbIds = []
                 for iratm in range(len(rbRes['atNames'])):
+                    if res != Atoms[iatm][1]:
+                        print('Short %s residue at atom %d is skipped'%(Atoms[iatm][1],iatm))
+                        break
                     rbAtoms.append(np.array(Atoms[iatm][cx:cx+3]))
                     rbIds.append(Atoms[iatm][20])
                     iatm += incr    #puts this at beginning of next residue?
-                if 'N  B' in atom[3]:   #end of disorder - reset next atom position
-                    iatm -= 1
-                    incr = 1
-                Orig = rbAtoms[rbRef[0]]
-                rbObj['RBId'] = RBIds[res]
-                rbObj['Ids'] = rbIds
-                rbObj['Orig'] = [Orig,False]
-#                print ' residue '+rbRes['RBname']+str(atom[0]).strip()+ \
-#                    ' origin at: ','%.5f %.5f %.5f'%(Orig[0],Orig[1],Orig[2])
-                VAC = np.inner(Amat,rbAtoms[rbRef[1]]-Orig)
-                VBC = np.inner(Amat,rbAtoms[rbRef[2]]-Orig)
-                VCC = np.cross(VAR,VAC)
-                QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
-                VAR = G2mth.prodQVQ(QuatA,VAR)
-                VBR = G2mth.prodQVQ(QuatA,VBR)
-                QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
-                QuatC = G2mth.prodQQ(QuatB,QuatA)
-                rbObj['Orient'] = [QuatC,' ']
-                rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
-                SXYZ = []
-                TXYZ = []
-                rbObj['Torsions'] = []
-                for i,xyz in enumerate(rbRes['rbXYZ']):
-                    SXYZ.append(G2mth.prodQVQ(QuatC,xyz))                
-                    TXYZ.append(np.inner(Amat,rbAtoms[i]-Orig))
-                for Oatm,Patm,x,Riders in rbRes['rbSeq']:
-                    VBR = SXYZ[Oatm]-SXYZ[Patm]
-                    VAR = SXYZ[Riders[0]]-SXYZ[Patm]
-                    VAC = TXYZ[Riders[0]]-TXYZ[Patm]
-                    QuatA,D = G2mth.makeQuat(VAR,VAC,VBR)
-                    ang = 180.*D/np.pi
-                    rbObj['Torsions'].append([ang,False])
-                    for ride in Riders:
-                        SXYZ[ride] = G2mth.prodQVQ(QuatA,SXYZ[ride]-SXYZ[Patm])+SXYZ[Patm]
-                rbRes['useCount'] += 1
-                RBObjs.append(rbObj)
+                else:
+                    if 'N  B' in atom[3]:   #end of disorder - reset next atom position
+                        iatm -= 1
+                        incr = 1
+                    Orig = rbAtoms[rbRef[0]]
+                    rbObj['RBId'] = RBIds[res]
+                    rbObj['Ids'] = rbIds
+                    rbObj['Orig'] = [Orig,False]
+    #                print ' residue '+rbRes['RBname']+str(atom[0]).strip()+ \
+    #                    ' origin at: ','%.5f %.5f %.5f'%(Orig[0],Orig[1],Orig[2])
+                    VAC = np.inner(Amat,rbAtoms[rbRef[1]]-Orig)
+                    VBC = np.inner(Amat,rbAtoms[rbRef[2]]-Orig)
+                    VCC = np.cross(VAR,VAC)
+                    QuatA = G2mth.makeQuat(VAR,VAC,VCC)[0]
+                    VAR = G2mth.prodQVQ(QuatA,VAR)
+                    VBR = G2mth.prodQVQ(QuatA,VBR)
+                    QuatB = G2mth.makeQuat(VBR,VBC,VAR)[0]
+                    QuatC = G2mth.prodQQ(QuatB,QuatA)
+                    rbObj['Orient'] = [QuatC,' ']
+                    rbObj['ThermalMotion'] = ['None',[0. for i in range(21)],[False for i in range(21)]] #type,values,flags
+                    SXYZ = []
+                    TXYZ = []
+                    rbObj['Torsions'] = []
+                    for i,xyz in enumerate(rbRes['rbXYZ']):
+                        SXYZ.append(G2mth.prodQVQ(QuatC,xyz))                
+                        TXYZ.append(np.inner(Amat,rbAtoms[i]-Orig))
+                    for Oatm,Patm,x,Riders in rbRes['rbSeq']:
+                        VBR = SXYZ[Oatm]-SXYZ[Patm]
+                        VAR = SXYZ[Riders[0]]-SXYZ[Patm]
+                        VAC = TXYZ[Riders[0]]-TXYZ[Patm]
+                        QuatA,D = G2mth.makeQuat(VAR,VAC,VBR)
+                        ang = 180.*D/np.pi
+                        rbObj['Torsions'].append([ang,False])
+                        for ride in Riders:
+                            SXYZ[ride] = G2mth.prodQVQ(QuatA,SXYZ[ride]-SXYZ[Patm])+SXYZ[Patm]
+                    rbRes['useCount'] += 1
+                    RBObjs.append(rbObj)
                 if isave:
                     iatm = isave
             data['RBModels']['Residue'] = RBObjs

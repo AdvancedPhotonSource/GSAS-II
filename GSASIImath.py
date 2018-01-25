@@ -2695,8 +2695,12 @@ def validProtein(Phase,old):
     Boxes = np.zeros(nbox,dtype=int)
     iBox = np.array([np.trunc((XYZ.T[i]-xyzmin[i])/4.) for i in [0,1,2]],dtype=int).T
     for ib,box in enumerate(iBox):  #put in a try for too many atoms in box (IndexError)?
-        Boxes[box[0],box[1],box[2],0] += 1
-        Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
+        try:
+            Boxes[box[0],box[1],box[2],0] += 1
+            Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
+        except IndexError:
+            print('too many atoms in box' )
+            continue
     #Box content checks with errat.f $ erratv2.cpp ibox1 arrays
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices]) 
@@ -2725,6 +2729,13 @@ def validProtein(Phase,old):
                 intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
                 newChain = True
         if atom[0] not in res:  #new residue, get residue no.
+            if res and int(res[-1]) != int(atom[0])-1:  #a gap in chain - not new chain
+                intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
+                ires = int(res[-1])
+                for i in range(int(atom[0])-ires-1):
+                    res.append(str(ires+i+1))
+                    resname.append('')
+                    resIntAct.append(sumintact(intact))
             res.append(atom[0])
             resname.append('%s-%s%s'%(atom[2],atom[0],atom[1]))
             if not newChain:
@@ -2773,30 +2784,33 @@ def validProtein(Phase,old):
         nRes = len(IntAct)
         Probs = [0.,0.,0.,0.]   #skip 1st 4 residues in chain
         for i in range(4,nRes-4):
-            mtrx = np.zeros(5)
-            summ = 0.
-            for j in range(i-4,i+5):
-                summ += np.sum(np.array(IntAct[j].values()))
+            if resNames[i]:
+                mtrx = np.zeros(5)
+                summ = 0.
+                for j in range(i-4,i+5):
+                    summ += np.sum(np.array(IntAct[j].values()))
+                    if old:
+                        mtrx[0] += IntAct[j]['CC']
+                        mtrx[1] += IntAct[j]['CO']
+                        mtrx[2] += IntAct[j]['NN']
+                        mtrx[3] += IntAct[j]['NO']
+                        mtrx[4] += IntAct[j]['OO']
+                    else:
+                        mtrx[0] += IntAct[j]['CC']
+                        mtrx[1] += IntAct[j]['CN']
+                        mtrx[2] += IntAct[j]['CO']
+                        mtrx[3] += IntAct[j]['NN']
+                        mtrx[4] += IntAct[j]['NO']
+                mtrx /= summ
+    #            print i+1,mtrx*summ
                 if old:
-                    mtrx[0] += IntAct[j]['CC']
-                    mtrx[1] += IntAct[j]['CO']
-                    mtrx[2] += IntAct[j]['NN']
-                    mtrx[3] += IntAct[j]['NO']
-                    mtrx[4] += IntAct[j]['OO']
+                    mtrx -= avg_old
+                    prob = np.inner(np.inner(mtrx,b1_old),mtrx)
                 else:
-                    mtrx[0] += IntAct[j]['CC']
-                    mtrx[1] += IntAct[j]['CN']
-                    mtrx[2] += IntAct[j]['CO']
-                    mtrx[3] += IntAct[j]['NN']
-                    mtrx[4] += IntAct[j]['NO']
-            mtrx /= summ
-#            print i+1,mtrx*summ
-            if old:
-                mtrx -= avg_old
-                prob = np.inner(np.inner(mtrx,b1_old),mtrx)
-            else:
-                mtrx -= avg
-                prob = np.inner(np.inner(mtrx,b1),mtrx)
+                    mtrx -= avg
+                    prob = np.inner(np.inner(mtrx,b1),mtrx)
+            else:       #skip the gaps
+                prob = 0.0
             Probs.append(prob)
         Probs += 4*[0.,]        #skip last 4 residues in chain
         chainProb += Probs

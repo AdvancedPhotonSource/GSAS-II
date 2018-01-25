@@ -4774,7 +4774,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SeqExportLookup = {}
         self.SequentialEx = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
-        import inspect
         for lbl,txt in (('Phase','Export selected phase(s)'),
                         ('Project','Export entire sequential fit'),
                         ('Powder','Export selected powder histogram(s)')
@@ -5122,7 +5121,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
 
         # Phase / General tab
-        G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP', 
+        G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP','wxID_VALIDPROTEIN', 
             'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE',)
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral)
@@ -5138,6 +5137,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
+        self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         
         # Phase / Data tab
@@ -5162,7 +5162,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'wxID_ATOMSMODIFY', 'wxID_ATOMSTRANSFORM', 'wxID_ATOMSVIEWADD', 'wxID_ATOMVIEWINSERT',
             'wxID_RELOADDRAWATOMS', 'wxID_ATOMSDISAGL', 'wxID_ATOMMOVE', 'wxID_MAKEMOLECULE',
             'wxID_ATOMSPDISAGL', 'wxID_ISODISP', 'wxID_ADDHATOM', 'wxID_UPDATEHATOM',
-            'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY', 'wxID_VALIDPROTEIN',
+            'wxID_ATOMSROTATE', 'wxID_ATOMSDENSITY', 
             'wxID_ATOMSSETALL', 'wxID_ATOMSSETSEL',)
         self.AtomsMenu = wx.MenuBar()
         self.PrefillDataMenu(self.AtomsMenu)
@@ -5200,10 +5200,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.AtomCompute.Append(G2G.wxID_ATOMSDISAGL,'Show Distances && Angles','Compute distances & angles for selected atoms')
         self.AtomCompute.Append(G2G.wxID_ATOMSPDISAGL,'Save Distances && Angles','Compute distances & angles for selected atoms')
         self.AtomCompute.Append(G2G.wxID_ATOMSDENSITY,'Density','Compute density for current phase')
-        self.AtomCompute.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.AtomCompute.ISOcalc = self.AtomCompute.Append(G2G.wxID_ISODISP,'ISODISTORT mode values',
             'Compute values of ISODISTORT modes from atom parameters')
-        
         self.PostfillDataMenu()
         
         # Phase / Imcommensurate "waves" tab 

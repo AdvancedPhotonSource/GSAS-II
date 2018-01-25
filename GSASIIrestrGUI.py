@@ -31,6 +31,7 @@ import GSASIIdata as G2data
 import GSASIIctrlGUI as G2G
 import GSASIIphsGUI as G2phsGUI
 
+WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 TabSelectionIdDict = {}
 
@@ -171,6 +172,24 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         elif 'Rama' in G2frame.restrBook.GetPageText(page):
             AddAARamaRestraint(restrData['Rama'])
             
+    def makeChains(Names,Ids):
+        Chains = {}
+        atoms = zip(Names,Ids)
+        for name,Id in atoms:
+            items = name.split(' ',2)
+            rnum,res = items[0].split(':')
+            rnum = int(rnum)
+            if items[1] not in Chains:
+                Residues = {}
+                Chains[items[1]] = Residues
+            if rnum not in Residues:
+                Residues[rnum] = [[],[]]
+            if items[2][3] in [' ','A']:
+                Residues[rnum][0].append([res,items[2],Id])
+            if items[2][3] in [' ','B']:
+                Residues[rnum][1].append([res,items[2],Id])
+        return Chains
+        
     def AddBondRestraint(bondRestData):
         Lists = {'origin':[],'target':[]}
         for listName in ['origin','target']:
@@ -235,15 +254,64 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         macro = getMacroFile('bond')
         if not macro:
             return
+#        Chains = makeChains(Names,Ids)            
         macStr = macro.readline()
         atoms = zip(Names,Coords,Ids)
-        
         Factor = bondRestData['Range']
         while macStr:
             items = macStr.split()
             if 'F' in items[0]:
                 restrData['Bond']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
+                
+                
+#                Res = items[1]
+#                Value = float(items[2])
+#                Esd = float(items[3])
+#                Atms = items[4:6]
+#                pAtms = ['','']
+#                for i,atm in enumerate(Atms):
+#                    if '+' in atm:
+#                        pAtms[i] = atm.strip('+')
+#                ids = [0,0]
+#                chains = list(Chains.keys())
+#                chains.sort()
+#                for chain in chains:
+#                    residues = list(Chains[chain].keys())
+#                    residues.sort()
+#                    for residue in residues:
+#                        for ires in [0,1]:
+#                            if Res != '*':  #works with disordered res
+#                                for res,name,Id in Chains[chain][residue][ires]:
+#                                    if Res == res:
+#                                        try:
+#                                            ipos = Atms.index(name[:3].strip())
+#                                            ids[ipos] = Id
+#                                        except ValueError:
+#                                            continue
+#                            else:
+#                                try:
+#                                    for res,name,Id in Chains[chain][residue][ires]:
+#                                        try:
+#                                            ipos = Atms.index(name[:3].strip())
+#                                            ids[ipos] = Id
+#                                        except ValueError:
+#                                            continue
+#                                    for res,name,Id in Chains[chain][residue+1][ires]:
+#                                        try:
+#                                            ipos = pAtms.index(name[:3].strip())
+#                                            ids[ipos] = Id
+#                                        except ValueError:
+#                                            continue
+#                                except KeyError:
+#                                    continue
+#                            if all(ids):
+#                                bond = [list(ids),['1','1'],Value,Esd]
+#                                if bond not in bondRestData['Bonds']:
+#                                    bondRestData['Bonds'].append(bond)
+#                                ids = [0,0]
+                                
+                                
                 oIds = []
                 oCoords = []
                 oDis = []
@@ -273,9 +341,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         if dist/Factor < obsd < dist*Factor:
                             newBond = [[oId,tId],['1','1'],dist,esd]
                             if newBond not in bondRestData['Bonds']:
-                                bondRestData['Bonds'].append(newBond)                          
+                                bondRestData['Bonds'].append(newBond)              
+
+            
             macStr = macro.readline()
         macro.close()
+        print(' Found %d bond restraints'%len(bondRestData['Bonds']))
         UpdateBondRestr(bondRestData)                
             
     def AddAngleRestraint(angleRestData):
@@ -351,24 +422,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                             angleRestData['Angles'].append(angle)
         UpdateAngleRestr(angleRestData)                
 
-    def makeChains(Names,Ids):
-        Chains = {}
-        atoms = zip(Names,Ids)
-        for name,Id in atoms:
-            items = name.split(' ',2)
-            rnum,res = items[0].split(':')
-            rnum = int(rnum)
-            if items[1] not in Chains:
-                Residues = {}
-                Chains[items[1]] = Residues
-            if rnum not in Residues:
-                Residues[rnum] = [[],[]]
-            if items[2][3] in [' ','A']:
-                Residues[rnum][0].append([res,items[2],Id])
-            if items[2][3] in [' ','B']:
-                Residues[rnum][1].append([res,items[2],Id])
-        return Chains
-        
     def AddAAAngleRestraint(angleRestData):
         macro = getMacroFile('angle')
         if not macro:
@@ -427,6 +480,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = [0,0,0]
             macStr = macro.readline()
         macro.close()
+        print(' Found %d angle restraints'%len(angleRestData['Angles']))
         UpdateAngleRestr(angleRestData)                
         
     def AddPlaneRestraint(restrData):
@@ -506,6 +560,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = [0,]*len(Atms)
             macStr = macro.readline()
         macro.close()
+        print(' Found %d plane restraints'%len(planeRestData['Planes']))
         UpdatePlaneRestr(planeRestData)                
 
     def AddAAChiralRestraint(chiralRestData):
@@ -558,6 +613,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = [0,0,0,0]
             macStr = macro.readline()
         macro.close()
+        print(' Found %d chiral volumes restraints'%len(chiralRestData['Volumes']))
         UpdateChiralRestr(chiralRestData)                
         
     def AddAATorsionRestraint(torsionRestData):
@@ -626,6 +682,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                 ids = [0,0,0,0]                            
             macStr = macro.readline()
         macro.close()
+        print(' Found %d torsion restraints'%len(torsionRestData['Torsions']))
         UpdateTorsionRestr(torsionRestData)                        
        
     def AddAARamaRestraint(ramaRestData):
@@ -713,6 +770,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                                     continue
             macStr = macro.readline()
         macro.close()
+        print(' Found %d Ramachandran restraints'%len(ramaRestData['Ramas']))
         UpdateRamaRestr(ramaRestData)
         
     def AddChemCompRestraint(chemcompRestData):
@@ -768,18 +826,18 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
-        wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+        wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor: '),0,WACV)
         wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(10,2),typeHint=float)
-        wtBox.Add(wtfactor,0,wx.ALIGN_CENTER_VERTICAL)
+        wtBox.Add(wtfactor,0,WACV)
         useData = wx.CheckBox(wind,-1,label=' Use?')
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(restData['Use'])        
-        wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
+        wtBox.Add(useData,0,WACV)
         if 'Bonds' in restData or 'Angles' in restData:
-            wtBox.Add(wx.StaticText(wind,-1,'  Search range: '),0,wx.ALIGN_CENTER_VERTICAL)
+            wtBox.Add(wx.StaticText(wind,-1,'  Search range: '),0,WACV)
             sRange = G2G.ValidatedTxtCtrl(wind,restData,'Range',nDig=(10,2),typeHint=float)
-            wtBox.Add(sRange,0,wx.ALIGN_CENTER_VERTICAL)
-            wtBox.Add(wx.StaticText(wind,-1,' x sum(atom radii)'),0,wx.ALIGN_CENTER_VERTICAL)
+            wtBox.Add(sRange,0,WACV)
+            wtBox.Add(wx.StaticText(wind,-1,' x sum(atom radii)'),0,WACV)
         return wtBox
         
     def OnRowSelect(event):
@@ -865,7 +923,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if BondRestr.GetSizer(): BondRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(BondRestr,bondRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(BondRestr,bondRestData),0,WACV)
 
         bondList = bondRestData['Bonds']
         if len(bondList) and len(bondList[0]) == 6:   #patch
@@ -929,15 +987,16 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(BondRestr,-1,
                     'Bond restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(bondList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(Bonds,0,)
+                    %(chisq,chisq/len(bondList))),0,WACV)
+                Bonds.SetScrollRate(10,10)
+                Bonds.SetMinSize((-1,300))
+                mainSizer.Add(Bonds,1,wx.EXPAND,1)
             else:
                 mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(BondRestr,-1,'No bond distance restraints for this phase'),0,)
 
-        BondRestr.SetSizer(mainSizer)
-        G2phsGUI.SetPhaseWindow(BondRestr,mainSizer,Scroll=0)
+        wx.CallAfter(G2phsGUI.SetPhaseWindow,BondRestr,mainSizer,Scroll=0)
         
     def UpdateAngleRestr(angleRestData):
         
@@ -994,7 +1053,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             AngleRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(AngleRestr,angleRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(AngleRestr,angleRestData),0,WACV)
 
         angleList = angleRestData['Angles']
         if len(angleList):
@@ -1058,15 +1117,15 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(AngleRestr,-1,
                     'Angle restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(angleList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(Angles,0,)
+                    %(chisq,chisq/len(angleList))),0,WACV)
+                Angles.SetScrollRate(10,10)
+                Angles.SetMinSize((-1,300))
+                mainSizer.Add(Angles,1,wx.EXPAND,1)
             else:
                 mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(AngleRestr,-1,'No bond angle restraints for this phase'),0,)
-
-        AngleRestr.SetSizer(mainSizer)
-        G2phsGUI.SetPhaseWindow(AngleRestr,mainSizer,Scroll=0)
+        wx.CallAfter(G2phsGUI.SetPhaseWindow,AngleRestr,mainSizer,Scroll=0)
     
     def UpdatePlaneRestr(planeRestData):
         
@@ -1114,7 +1173,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             PlaneRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(PlaneRestr,planeRestData),0,WACV)
 
         planeList = planeRestData['Planes']
         if len(planeList):
@@ -1183,14 +1242,15 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,
                     'Plane restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(planeList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(Planes,0,)
+                    %(chisq,chisq/len(planeList))),0,WACV)
+                Planes.SetScrollRate(10,10)
+                Planes.SetMinSize((-1,300))
+                mainSizer.Add(Planes,1,wx.EXPAND,1)
             else:
                 mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(PlaneRestr,-1,'No plane restraints for this phase'),0,)
 
-        PlaneRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(PlaneRestr,mainSizer,Scroll=0)
     
     def UpdateChiralRestr(chiralRestData):
@@ -1247,7 +1307,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if ChiralRestr.GetSizer(): ChiralRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(ChiralRestr,chiralRestData),0,WACV)
 
         volumeList = chiralRestData['Volumes']
         if len(volumeList):
@@ -1310,14 +1370,15 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,
                     'Chiral volume restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(volumeList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(Volumes,0,)
+                    %(chisq,chisq/len(volumeList))),0,WACV)
+                Volumes.SetScrollRate(10,10)
+                Volumes.SetMinSize((-1,300))
+                mainSizer.Add(Volumes,1,wx.EXPAND,1)
             else:
                 mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(ChiralRestr,-1,'No chiral volume restraints for this phase'),0,)
 
-        ChiralRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(ChiralRestr,mainSizer,Scroll=0)
     
     def UpdateTorsionRestr(torsionRestData):
@@ -1355,16 +1416,42 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for r in rows:
                     torsionRestData['Torsions'][r][4] = parm
             dlg.Destroy()
-            wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
+            wx.CallAfter(UpdateTorsionRestr,torsionRestData) 
+
+        def coeffSizer():               
+            table = []
+            rowLabels = []
+            Types = 9*[wg.GRID_VALUE_FLOAT+':10,4',]
+            colLabels = ['Mag A','Pos A','Width A','Mag B','Pos B','Width B','Mag C','Pos C','Width C']
+            for item in coeffDict:
+                rowLabels.append(item)
+                table.append(coeffDict[item])
+            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Coeff = G2G.GSGrid(TorsionRestr)
+            Coeff.SetScrollRate(0,10)
+            Coeff.SetTable(coeffTable, True)
+            Coeff.AutoSizeColumns(False)
+            for r in range(len(coeffDict)):
+                for c in range(9):
+                    Coeff.SetReadOnly(r,c,True)
+                    Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Coeff.SetMaxSize((-1,200))
+            return Coeff
                                             
         if TorsionRestr.GetSizer(): TorsionRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(TorsionRestr,torsionRestData),0,WACV)
         
         coeffDict = torsionRestData['Coeff']
         torsionList = torsionRestData['Torsions']
+        if len(coeffDict):
+            mainSizer.Add((5,5))
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0,WACV)
+            mainSizer.Add(coeffSizer(),1,wx.EXPAND,1)        
+        
         if len(torsionList):
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion restraints:'),0,WACV)
             table = []
             rowLabels = []
             bad = []
@@ -1391,51 +1478,31 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del torsionList[ibad]
-            if len(torsionList):
-                torsionTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-                TorsionRestr.Torsions = G2G.GSGrid(TorsionRestr)
-                TorsionRestr.Torsions.SetTable(torsionTable, True)
-                TorsionRestr.Torsions.AutoSizeColumns(False)
-                for r in range(len(torsionList)):
-                    for c in range(5):
-                        TorsionRestr.Torsions.SetReadOnly(r,c,True)
-                        TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
-                if 'phoenix' in wx.version():
-                    TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
-                else:
-                    TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
-                G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
-                G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
-                mainSizer.Add(wx.StaticText(TorsionRestr,-1,
-                    'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(torsionList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(TorsionRestr.Torsions,0,)
-                
-                mainSizer.Add((5,5))
-                mainSizer.Add(wx.StaticText(TorsionRestr,-1,'Torsion function coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
-                table = []
-                rowLabels = []
-                Types = 9*[wg.GRID_VALUE_FLOAT+':10,4',]
-                colLabels = ['Mag A','Pos A','Width A','Mag B','Pos B','Width B','Mag C','Pos C','Width C']
-                for item in coeffDict:
-                    rowLabels.append(item)
-                    table.append(coeffDict[item])
-                coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-                Coeff = G2G.GSGrid(TorsionRestr)
-                Coeff.SetTable(coeffTable, True)
-                Coeff.AutoSizeColumns(False)
-                for r in range(len(coeffDict)):
-                    for c in range(9):
-                        Coeff.SetReadOnly(r,c,True)
-                        Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-                mainSizer.Add(Coeff,0,)
+            torsionTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            TorsionRestr.Torsions = G2G.GSGrid(TorsionRestr)
+            TorsionRestr.Torsions.SetTable(torsionTable, True)
+            TorsionRestr.Torsions.AutoSizeColumns(False)
+            for r in range(len(torsionList)):
+                for c in range(5):
+                    TorsionRestr.Torsions.SetReadOnly(r,c,True)
+                    TorsionRestr.Torsions.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            TorsionRestr.Torsions.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK,OnRowSelect)
+            if 'phoenix' in wx.version():
+                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
             else:
-                mainSizer.Add(wx.StaticText(TorsionRestr,-1,'No torsion restraints for this phase'),0,)
+                TorsionRestr.Torsions.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+            G2frame.Bind(wx.EVT_MENU, OnDeleteRestraint, id=G2G.wxID_RESTDELETE)
+            G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
+            mainSizer.Add(wx.StaticText(TorsionRestr,-1,
+                'Torsion restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
+                %(chisq,chisq/len(torsionList))),0,WACV)
+            TorsionRestr.Torsions.SetScrollRate(10,10)
+            TorsionRestr.Torsions.SetMinSize((-1,300))
+            mainSizer.Add(TorsionRestr.Torsions,1,wx.EXPAND,1)
+                
         else:
             mainSizer.Add(wx.StaticText(TorsionRestr,-1,'No torsion restraints for this phase'),0,)
 
-        TorsionRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(TorsionRestr,mainSizer,Scroll=0)
 
     def UpdateRamaRestr(ramaRestData):
@@ -1473,17 +1540,41 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for r in rows:
                     ramaRestData['Ramas'][r][4] = parm
             dlg.Destroy()
-            UpdateRamaRestr(ramaRestData)                
-                                            
+            UpdateRamaRestr(ramaRestData)
+
+        def coeffSizer():
+            table = []
+            rowLabels = []
+            Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
+            colLabels = ['Mag','Pos phi','Pos psi','sig(phi)','sig(psi)','sig(cov)']
+            for item in coeffDict:
+                for i,term in enumerate(coeffDict[item]):
+                    rowLabels.append(item+' term:'+str(i))
+                    table.append(term)
+            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Coeff = G2G.GSGrid(RamaRestr)
+            Coeff.SetScrollRate(0,10)
+            Coeff.SetTable(coeffTable, True)
+            Coeff.AutoSizeColumns(False)
+            for r in range(Coeff.GetNumberRows()):
+                for c in range(6):
+                    Coeff.SetReadOnly(r,c,True)
+                    Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
+            Coeff.SetMaxSize((-1,200))
+            return Coeff
+                                                    
         if RamaRestr.GetSizer(): RamaRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(RamaRestr,ramaRestData),0,wx.ALIGN_CENTER_VERTICAL)
-
+        mainSizer.Add(WtBox(RamaRestr,ramaRestData),0,WACV)
         ramaList = ramaRestData['Ramas']
         coeffDict = ramaRestData['Coeff']
+        if len(coeffDict):
+            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran function coefficients:'),0,WACV)
+            mainSizer.Add(coeffSizer(),1,wx.EXPAND,1)
+            
         if len(ramaList):
-            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran restraints:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran restraints:'),0,WACV)
             table = []
             rowLabels = []
             bad = []
@@ -1528,34 +1619,13 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeEsd, id=G2G.wxID_RESTCHANGEESD)
                 mainSizer.Add(wx.StaticText(RamaRestr,-1,
                     'Ramachandran restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(ramaList))),0,wx.ALIGN_CENTER_VERTICAL)
-                mainSizer.Add(RamaRestr.Ramas,0,)
-            else:
-                mainSizer.Add(wx.StaticText(RamaRestr,-1,'No Ramachandran restraints for this phase'),0,)
+                    %(chisq,chisq/len(ramaList))),0,WACV)
+                RamaRestr.Ramas.SetScrollRate(10,10)
+                RamaRestr.Ramas.SetMinSize((-1,300))
+                mainSizer.Add(RamaRestr.Ramas,1,wx.EXPAND,1)
         else:
             mainSizer.Add(wx.StaticText(RamaRestr,-1,'No Ramachandran restraints for this phase'),0,)
-        mainSizer.Add((5,5))
-        mainSizer.Add(wx.StaticText(RamaRestr,-1,'Ramachandran function coefficients:'),0,wx.ALIGN_CENTER_VERTICAL)
-        if len(coeffDict):
-            table = []
-            rowLabels = []
-            Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
-            colLabels = ['Mag','Pos phi','Pos psi','sig(phi)','sig(psi)','sig(cov)']
-            for item in coeffDict:
-                for i,term in enumerate(coeffDict[item]):
-                    rowLabels.append(item+' term:'+str(i))
-                    table.append(term)
-            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Coeff = G2G.GSGrid(RamaRestr)
-            Coeff.SetTable(coeffTable, True)
-            Coeff.AutoSizeColumns(False)
-            for r in range(Coeff.GetNumberRows()):
-                for c in range(6):
-                    Coeff.SetReadOnly(r,c,True)
-                    Coeff.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
-            mainSizer.Add(Coeff,0,)
 
-        RamaRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(RamaRestr,mainSizer,Scroll=0)
 
     def UpdateChemcompRestr(chemcompRestData):
@@ -1614,9 +1684,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if ChemCompRestr.GetSizer(): ChemCompRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(ChemCompRestr,chemcompRestData),0,WACV)
         mainSizer.Add(wx.StaticText(ChemCompRestr,-1, 
-            'NB: The chemical restraint sum is over the unit cell contents'),0,wx.ALIGN_CENTER_VERTICAL)
+            'NB: The chemical restraint sum is over the unit cell contents'),0,WACV)
         mainSizer.Add((5,5),0)
 
         chemcompList = chemcompRestData['Sites']
@@ -1678,14 +1748,13 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 G2frame.Bind(wx.EVT_MENU, OnChangeValue, id=G2G.wxID_RESRCHANGEVAL)
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,
                     'Chemical composition restraints: sum(wt*(delt/sig)^2) =    %.2f, mean(wt*(delt/sig)^2) =    %.2f'    \
-                    %(chisq,chisq/len(chemcompList))),0,wx.ALIGN_CENTER_VERTICAL)
+                    %(chisq,chisq/len(chemcompList))),0,WACV)
                 mainSizer.Add(ChemComps,0,)
             else:
                 mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
         else:
             mainSizer.Add(wx.StaticText(ChemCompRestr,-1,'No chemical composition restraints for this phase'),0,)
 
-        ChemCompRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(ChemCompRestr,mainSizer,Scroll=0)
             
     def UpdateTextureRestr(textureRestData):
@@ -1721,10 +1790,10 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if TextureRestr.GetSizer(): TextureRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(WtBox(TextureRestr,textureRestData),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(WtBox(TextureRestr,textureRestData),0,WACV)
         mainSizer.Add(wx.StaticText(TextureRestr,-1, 
             'NB: The texture restraints suppress negative pole figure values for the selected HKLs\n'
-            '    "unit esd" gives a bias toward a flatter polefigure'),0,wx.ALIGN_CENTER_VERTICAL)
+            '    "unit esd" gives a bias toward a flatter polefigure'),0,WACV)
         mainSizer.Add((5,5),0)
 
         textureList = textureRestData['HKLs']
@@ -1757,7 +1826,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             mainSizer.Add(Textures,0,)
         else:
             mainSizer.Add(wx.StaticText(TextureRestr,-1,'No texture restraints for this phase'),0,)
-        TextureRestr.SetSizer(mainSizer)
         G2phsGUI.SetPhaseWindow(TextureRestr,mainSizer,Scroll=0)
             
     def OnPageChanged(event):

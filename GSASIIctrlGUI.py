@@ -3426,7 +3426,7 @@ class GSGrid(wg.Grid):
         if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
                                                     
 ################################################################################           
-class Table(wg.PyGridTableBase):
+class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix but pygridtablebase doesn't exist
     '''Basic data table for use with GSgrid
     '''
     def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):

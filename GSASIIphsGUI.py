@@ -995,7 +995,7 @@ class AddHatomDialog(wx.Dialog):
     
     
 def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
-    if mainSizer is not None: 
+    if mainSizer is not None:
         phasePage.SetSizer(mainSizer)
     phasePage.SetAutoLayout(True)
     phasePage.SetScrollRate(10,10)
@@ -2616,7 +2616,7 @@ entered the right symbol for your structure.
                     Atoms.SelectCol(c,True)
                     
         def Paint():
-        
+            
             table = []
             rowLabels = []
             for i,atom in enumerate(atomData):
@@ -3397,20 +3397,6 @@ entered the right symbol for your structure.
         print(msg)
         G2G.G2MessageBox(G2frame,msg,'Density')
         
-    def OnValidProtein(event):
-        resNames,Probs1 = G2mth.validProtein(data,True)         #old version
-        resNames,Probs2 = G2mth.validProtein(data,False)        #new version
-        print ('Plot 1 is Protein validation based on errat.f')
-        print ('Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).')
-        print ('Residue error scores >6 for 5% & >8 for 1% likelihood of being correct')
-        print ('NB: this calc. matches errat.f result')
-        print ('Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates (2002)')
-        print ('Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).')
-        print ('Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct')
-        print ('NB: this calc. gives a close approximate to original erratv2 result')
-        G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
-            thresh=[[8.0,6.0],[17.191,11.527]])
-
     def OnSetAll(event):
         'set refinement flags for all atoms in table'
         for row in range(Atoms.GetNumberRows()):
@@ -3469,6 +3455,20 @@ entered the right symbol for your structure.
             print ("select one or more rows of atoms")
             G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
                         
+    def OnValidProtein(event):
+        resNames,Probs1 = G2mth.validProtein(data,True)         #old version
+        resNames,Probs2 = G2mth.validProtein(data,False)        #new version
+        print ('Plot 1 is Protein validation based on errat.f')
+        print ('Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).')
+        print ('Residue error scores >6 for 5% & >8 for 1% likelihood of being correct')
+        print ('NB: this calc. matches errat.f result')
+        print ('Plot 2 is Protein validation based on erratv2.cpp; by D. Obukhov & T. Yeates (2002)')
+        print ('Ref: Colovos, C. & Yates, T.O. Protein Science 2, 1511-1519 (1991).')
+        print ('Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct')
+        print ('NB: this calc. gives a close approximate to original erratv2 result')
+        G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
+            thresh=[[8.0,6.0],[17.191,11.527]])
+
     def OnIsoDistortCalc(event):
         '''Compute the ISODISTORT mode values from the current coordinates.
         Called in response to the (Phase/Atoms tab) AtomCompute
@@ -8868,6 +8868,7 @@ entered the right symbol for your structure.
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
         # Data
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
         G2frame.Bind(wx.EVT_MENU, OnDataUse, id=G2G.wxID_DATAUSE)
@@ -8898,7 +8899,6 @@ entered the right symbol for your structure.
         G2frame.Bind(wx.EVT_MENU, OnDistAngle, id=G2G.wxID_ATOMSDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2G.wxID_ATOMSPDISAGL)
         G2frame.Bind(wx.EVT_MENU, OnDensity, id=G2G.wxID_ATOMSDENSITY)
-        G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
         G2frame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2G.wxID_ISODISP)
         if 'HydIds' in data['General']:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
@@ -9062,7 +9062,7 @@ entered the right symbol for your structure.
     G2frame.phaseDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
-    G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
+    G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if oldPage is None or oldPage == 0:

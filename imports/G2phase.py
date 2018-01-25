@@ -104,7 +104,6 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     if SpGrpNorm:
                         E,SGData = G2spc.SpcGroup(SpGrpNorm)
                 while E:
-                    print (G2spc.SGErrors(E))
                     dlg = wx.TextEntryDialog(parent,
                         SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
                         'ERROR in space group symbol','',style=wx.OK)
@@ -116,8 +115,8 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                         self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
-                SGlines = G2spc.SGPrint(SGData)
-                for l in SGlines: print (l)
+#                SGlines = G2spc.SGPrint(SGData)
+#                for l in SGlines: print (l)
             elif 'SCALE' in S[:5]:
                 V = S[10:41].split()
                 A[int(S[5])-1] = [float(V[0]),float(V[1]),float(V[2])]
@@ -320,7 +319,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             for key in keyList:
                 if 'AT' in key[6:8]:
                     S = EXPphase[key]
-                    Atom = [S[56:60],S[50:54].strip().upper(),S[54:56],
+                    Atom = [S[56:60].strip(),S[50:54].strip().upper(),S[54:56],
                         S[46:51].strip(),S[:8].strip().capitalize(),'',
                         float(S[16:24]),float(S[24:32]),float(S[32:40]),
                         float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]

@@ -75,7 +75,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
                       )
         
         F2signames = ('_refln_f_squared_meas_sigma','_refln.f_squared_meas_sigma',
-                      '_refln_f_squared_sigma',
+                      '_refln_f_squared_sigma','_refln.f_squared_sigma',
                       '_refln_intensity_meas_sigma','_refln.intensity_meas_sigma',
                       '_refln.intensity_sigma',)
 
@@ -197,7 +197,7 @@ class CIFhklReader(G2obj.ImportStructFactor):
         for i,key in enumerate(refloop.keys()):
             itemkeys[key.lower()] = i
             
-        # scan for data names:
+        # scan for obs & sig data names:
         F2dn = None
         Fdn = None
         F2cdn = None
@@ -205,15 +205,9 @@ class CIFhklReader(G2obj.ImportStructFactor):
         F2sdn = None
         Fsdn = None
         Phdn = None
-        FcalcPresent = False
         for dn in F2datanames:
             if dn in itemkeys:
                 F2dn = dn
-                for dm in F2calcnames:
-                    if dm in itemkeys:
-                        F2cdn = dm
-                        FcalcPresent = True
-                        break
                 for dm in F2signames:
                     if dm in itemkeys:
                         F2sdn = dm
@@ -223,10 +217,6 @@ class CIFhklReader(G2obj.ImportStructFactor):
             for dn in Fdatanames:
                 if dn in itemkeys:
                     Fdn = dn
-                    for dm in Fcalcnames:
-                        if dm in itemkeys:
-                            Fcdn = dm
-                            break
                     for dm in Fsignames:
                         if dm in itemkeys:
                             Fsdn = dm
@@ -239,6 +229,17 @@ class CIFhklReader(G2obj.ImportStructFactor):
                     msg += dn + ', '
                 self.errors += msg                        
                 return False
+        
+        # scan for calc data names - might be different!
+        for dm in F2calcnames:
+            if dm in itemkeys:
+                F2cdn = dm
+                break
+        for dm in Fcalcnames:
+            if dm in itemkeys:
+                Fcdn = dm
+                break
+
         for dn in phasenames:
             if dn in itemkeys:
                 Phdn = dn
@@ -272,11 +273,6 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         sigF2 = float(item[itemkeys[F2sdn]])
                     else:
                         F2 = float(F2)
-                    try:
-                        if F2cdn:
-                            F2c = float(item[itemkeys[F2cdn]])
-                    except:
-                        pass
                 else:
                     F = item[itemkeys[Fdn]]
                     if '(' in F:
@@ -289,12 +285,18 @@ class CIFhklReader(G2obj.ImportStructFactor):
                         sig = 0.0
                     F2 = F**2
                     sigF2 = 2.0*F*sig
-                    try:
-                        if Fcdn:
-                            Fc = float(item[itemkeys[Fcdn]])
-                            F2c = Fc*Fc
-                    except:
-                        pass
+                    
+                try:
+                    if F2cdn:
+                        F2c = float(item[itemkeys[F2cdn]])
+                except:
+                    pass
+                try:
+                    if Fcdn:
+                        Fc = float(item[itemkeys[Fcdn]])
+                        F2c = Fc*Fc
+                except:
+                    pass
                             
                 ref[8+im] = F2
                 ref[5+im] = F2

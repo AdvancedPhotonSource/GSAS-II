@@ -184,6 +184,9 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
                     self.Write(fmt.format('HETATM',iatom,atom[ct-1],atom[ct-3].strip(),    \
                         atom[ct-2].strip(),atom[ct-4].rjust(4),xyz[0],xyz[1],xyz[2],atom[cx+3], \
                         Biso,atom[ct].rjust(12)))
+                #if atim[cia] == 'a':
+                #   put in 'ANISOU' record
+                #'ANISOU    1  N   ALA A 340     4392   4159   4615    249   -189     73       N'  
                 iatom += 1
             
             vals = [3,0,nHet,0,0,0,6,len(Atoms),nTer,0,nSeq]

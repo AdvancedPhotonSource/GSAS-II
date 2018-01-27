@@ -130,9 +130,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                 XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
                 SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                 Uiso = float(S[61:67])/EightPiSq
-                Type = S[12:14].lower()
-                if Type[0] in '123456789':
-                    Type = Type[1:]
+                Type = S[76:78].lower()
                 Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
                     S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]

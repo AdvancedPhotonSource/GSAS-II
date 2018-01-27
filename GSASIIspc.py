@@ -1449,10 +1449,11 @@ def SSpcGroup(SGData,SSymbol):
         genQ = [0,0,0,0]
     SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
     SSCen = np.zeros((len(SGData['SGCen']),4))
-    if SGData['SGFixed']:
-        for icen,cen in enumerate(SGData['SGCen']):
-            SSCen[icen] = cen
-    else:
+#    if SGData['SGFixed']:
+#        for icen,cen in enumerate(SGData['SGCen']):
+#            SSCen[icen] = cen
+#    else:
+    if True:
         for icen,cen in enumerate(SGData['SGCen']):
             SSCen[icen,0:3] = cen
         SSCen[0] = np.zeros(4)
@@ -1461,10 +1462,11 @@ def SSpcGroup(SGData,SSymbol):
     for iop,op in enumerate(SGData['SGOps']):
         T = np.zeros(4)
         ssop = np.zeros((4,4))
-        if SGData['SGFixed']:
-            ssop = op[0]
-            T = op[1]
-        else:
+#        if SGData['SGFixed']:
+#            ssop = op[0]
+#            T = op[1]
+#        else:
+        if True:
             ssop[:3,:3] = op[0]
             T[:3] = op[1]
         SSGData['SSGOps'].append([ssop,T])

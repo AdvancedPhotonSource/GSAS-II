@@ -3231,56 +3231,59 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ################################################################################
 ##### PlotHist
 ################################################################################
-def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,newPlot=True):
+def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
 
-
-    global xylim
     def OnMotion(event):
-        xpos = event.xdata
-        if xpos:                                        #avoid out of frame mouse position
-            ypos = int(event.ydata)
+        xpos,ypos = event.xdata,event.ydata
+        if xpos:
+            xylim = Page.xylim                                        #avoid out of frame mouse position
+            xpos = xpos*(xylim[0][1]-xylim[0][0])+xylim[0][0]
+            xpos = int(xpos+.5)
+            if 0 <= xpos < len(resNames):
+                resName = resNames[xpos]
+            else:
+                resName = ''
+            if 0.55 <= ypos <= 1.00:
+                ypos = (ypos-.55)/0.45*xylim[1][1]
+            elif 0. <= ypos <= 0.45:
+                ypos = ypos/0.45*xylim[2][1]
+            else:
+                ypos = 0.0
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                if 0 <= ypos < len(resNames):
-                    G2frame.G2plotNB.status.SetStatusText('Residue: %s score: %.2f'%(resNames[ypos],xpos),1)
+                if 0 <= xpos < len(resNames):
+                    G2frame.G2plotNB.status.SetStatusText('Residue: %s score: %.2f'%(resName,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select AA error plot first',1)
     
     def Draw():
-        global xylim
+        global Plot1,Plot2
         Plot.clear()
         Plot.set_title(Title)
         Plot.set_axis_off()
         Plot1 = Page.figure.add_subplot(211)
-        Plot1.set_xlabel(r'Error score 1',fontsize=14)
-        Plot1.set_ylabel(r'Residue',fontsize=14)
+        Plot1.set_ylabel(r'Error score 1',fontsize=14)
+        Plot1.set_xlabel(r'Residue',fontsize=14)
         colors = list(np.where(np.array(Probs1)>thresh[0][1],'r','b'))
-        Plot1.barh(np.arange(len(resNames)),Probs1,color=colors,linewidth=0)
+        resNums = np.arange(len(resNames))
+        Plot1.bar(resNums,Probs1,color=colors,linewidth=0)
         if thresh is not None:
             for item in thresh[0]:
-                Plot1.axvline(item,dashes=(5,5),picker=False)
-        Plot2 = Page.figure.add_subplot(212)
-        Plot2.set_xlabel(r'Error score 2',fontsize=14)
-        Plot2.set_ylabel(r'Residue',fontsize=14)        
+                Plot1.axhline(item,dashes=(5,5),picker=False)
+        Plot2 = Page.figure.add_subplot(212,sharex=Plot1)
+        Plot2.set_ylabel(r'Error score 2',fontsize=14)
+        Plot2.set_xlabel(r'Residue',fontsize=14)        
         colors = list(np.where(np.array(Probs2)>thresh[1][1],'r','b'))
-        Plot2.barh(np.arange(len(resNames)),Probs2,color=colors,linewidth=0)
+        Plot2.bar(resNums,Probs2,color=colors,linewidth=0)
         if thresh is not None:
             for item in thresh[1]:
-                Plot2.axvline(item,dashes=(5,5),picker=False)
+                Plot2.axhline(item,dashes=(5,5),picker=False)
+        Page.xylim = [Plot1.get_xlim(),Plot1.get_ylim(),Plot2.get_ylim()]
         Page.canvas.draw()
     
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
-    Page.Offset = [0,0]
-    if not new:
-        if not newPlot:
-            xylim = lim
-    else:
-        newPlot = True
 #        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-        Page.Offset = [0,0]
-        Page.Choice = None
-    
+    Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Draw()
 
 ################################################################################

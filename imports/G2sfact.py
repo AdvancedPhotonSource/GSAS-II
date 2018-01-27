@@ -430,11 +430,11 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'Neutron TOF HKL F2'
-            longFormatName = 'Neutron TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+            formatName = 'Neutron SNS TOF HKL F2'
+            longFormatName = 'Neutron SNS TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron TOF HKL F\u00b2'
-            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = u'Neutron SNS TOF HKL F\u00b2'
+            longFormatName = u'Neutron SNS TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -464,6 +464,8 @@ class NT_HKLF2_ReaderClass(G2obj.ImportStructFactor):
         'Read the file'
         fp = open(filename,'r')
         for line,S in enumerate(fp):
+            if not S:
+                break
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
             data = S.split()
@@ -566,11 +568,11 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a ISIS int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = u'Neutron SXD TOF HKL F2'
-            longFormatName = u'Neutron SXD TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+            formatName = u'Neutron ISIS SXD TOF HKL F2'
+            longFormatName = u'Neutron ISIS SXD TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
         else:
-            formatName = u'Neutron SXD TOF HKL F\u00b2'
-            longFormatName = u'Neutron SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = u'Neutron ISIS SXD TOF HKL F\u00b2'
+            longFormatName = u'Neutron ISIS SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,

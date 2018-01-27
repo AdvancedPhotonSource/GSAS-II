@@ -3526,9 +3526,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
             [wg.GRID_VALUE_FLOAT+':10,3',]
         if HKLF:
-            colLabels = ['H','K','L','twin','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
+            colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
             if 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','twin','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
+                colLabels = ['H','K','L','flag','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
                 Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
@@ -3575,7 +3575,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.RefList = phaseName
         G2frame.SetTitle('Reflection List for '+phaseName)
         if HKLF:
-            G2frame.GetStatusBar().SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; twin < 0 (user rejected) red; twin=0 (sp. gp. absent) red',1)
+            G2frame.GetStatusBar().SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; flag:>0 twin no., 0 sp.gp absent, -1 user rejected, -2 Rfree',1)
         else:
             G2frame.GetStatusBar().SetStatusText('Prfo < 0. in red; if excluded Fosq in red & mul < 0',1)
         itof = 0

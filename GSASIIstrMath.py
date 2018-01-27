@@ -724,7 +724,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
 #reflection processing begins here - big arrays!
     iBeg = 0
-    time0 = time.time()
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)

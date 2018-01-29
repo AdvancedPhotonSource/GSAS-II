@@ -3231,7 +3231,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ################################################################################
 ##### PlotHist
 ################################################################################
-def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
+def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):
 
     def OnMotion(event):
         xpos,ypos = event.xdata,event.ydata
@@ -3255,6 +3255,16 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
                     G2frame.G2plotNB.status.SetStatusText('Residue: %s score: %.2f'%(resName,ypos),1)
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select AA error plot first',1)
+                
+    def OnPick(event):
+        xpos = event.mouseevent.xdata
+        if xpos and pickHandler:
+            xpos = int(xpos+.5)
+            if 0 <= xpos < len(resNames):
+                resName = resNames[xpos]
+            else:
+                resName = ''
+            pickHandler(resName)
     
     def Draw():
         global Plot1,Plot2
@@ -3266,7 +3276,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
         Plot1.set_xlabel(r'Residue',fontsize=14)
         colors = list(np.where(np.array(Probs1)>thresh[0][1],'r','b'))
         resNums = np.arange(len(resNames))
-        Plot1.bar(resNums,Probs1,color=colors,linewidth=0)
+        Plot1.bar(resNums,Probs1,color=colors,linewidth=0,picker=1)
         if thresh is not None:
             for item in thresh[0]:
                 Plot1.axhline(item,dashes=(5,5),picker=False)
@@ -3274,7 +3284,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
         Plot2.set_ylabel(r'Error score 2',fontsize=14)
         Plot2.set_xlabel(r'Residue',fontsize=14)        
         colors = list(np.where(np.array(Probs2)>thresh[1][1],'r','b'))
-        Plot2.bar(resNums,Probs2,color=colors,linewidth=0)
+        Plot2.bar(resNums,Probs2,color=colors,linewidth=0,picker=1)
         if thresh is not None:
             for item in thresh[1]:
                 Plot2.axhline(item,dashes=(5,5),picker=False)
@@ -3282,7 +3292,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None):
         Page.canvas.draw()
     
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
-#        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+    Page.canvas.mpl_connect('pick_event', OnPick)
     Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Draw()
 
@@ -6811,11 +6821,11 @@ def PlotStructure(G2frame,data,firstCall=False):
                 RenderLabel(x,y,z,'  '+atom[ct-1],radius,wxGreen,matRot)
             elif atom[cs+1] == 'number':
                 RenderLabel(x,y,z,'  '+str(iat),radius,wxGreen,matRot)
-            elif atom[cs+1] == 'residue' and atom[ct-1] == 'CA':
+            elif atom[cs+1] == 'residue' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-4],radius,wxGreen,matRot)
-            elif atom[cs+1] == '1-letter' and atom[ct-1] == 'CA':
+            elif atom[cs+1] == '1-letter' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-3],radius,wxGreen,matRot)
-            elif atom[cs+1] == 'chain' and atom[ct-1] == 'CA':
+            elif atom[cs+1] == 'chain' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
 #        glDisable(GL_BLEND)
         if len(rhoXYZ):

@@ -2688,6 +2688,7 @@ def validProtein(Phase,old):
                 cartAtoms[-1][3] = 'Os'
                 cartAtoms[-1][4] = 'O'
             cartAtoms[-1][cx:cx+3] = np.inner(Amat,cartAtoms[-1][cx:cx+3])
+            cartAtoms[-1].append(atom[cia+8])
     XYZ = np.array([atom[cx:cx+3] for atom in cartAtoms])
     xyzmin = np.array([np.min(XYZ.T[i]) for i in [0,1,2]])
     xyzmax = np.array([np.max(XYZ.T[i]) for i in [0,1,2]])
@@ -2712,7 +2713,9 @@ def validProtein(Phase,old):
     chainIntAct = []
     res = []
     resNames = []
+    resIDs = {}
     resname = []
+    resID = {}
     newChain = True
     intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
     for ia,atom in enumerate(cartAtoms):
@@ -2723,8 +2726,10 @@ def validProtein(Phase,old):
                 resIntAct.append(sumintact(intact))
                 chainIntAct.append(resIntAct)
                 resNames += resname
+                resIDs.update(resID)
                 res = []
                 resname = []
+                resID = {}
                 resIntAct = []
                 intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
                 newChain = True
@@ -2737,7 +2742,9 @@ def validProtein(Phase,old):
                     resname.append('')
                     resIntAct.append(sumintact(intact))
             res.append(atom[0])
-            resname.append('%s-%s%s'%(atom[2],atom[0],atom[1]))
+            name = '%s-%s%s'%(atom[2],atom[0],atom[1])
+            resname.append(name)
+            resID[name] = atom[-1]
             if not newChain:
                 resIntAct.append(sumintact(intact))
             intact = {'CC':0,'CN':0,'CO':0,'NN':0,'NO':0,'OO':0,'NC':0,'OC':0,'ON':0}
@@ -2776,6 +2783,7 @@ def validProtein(Phase,old):
                 jntact[intype] += mult
 #        print ia,atom[0]+atom[1]+atom[3],tgts,jntact['CC'],jntact['CN']+jntact['NC'],jntact['CO']+jntact['OC'],jntact['NN'],jntact['NO']+jntact['ON']
     resNames += resname
+    resIDs.update(resID)
     resIntAct.append(sumintact(intact))
     chainIntAct.append(resIntAct)
     chainProb = []
@@ -2788,7 +2796,7 @@ def validProtein(Phase,old):
                 mtrx = np.zeros(5)
                 summ = 0.
                 for j in range(i-4,i+5):
-                    summ += np.sum(np.array(IntAct[j].values()))
+                    summ += np.sum(np.array(list(IntAct[j].values())))
                     if old:
                         mtrx[0] += IntAct[j]['CC']
                         mtrx[1] += IntAct[j]['CO']
@@ -2814,7 +2822,7 @@ def validProtein(Phase,old):
             Probs.append(prob)
         Probs += 4*[0.,]        #skip last 4 residues in chain
         chainProb += Probs
-    return resNames,chainProb
+    return resNames,chainProb,resIDs
     
 ################################################################################
 ##### Texture fitting stuff

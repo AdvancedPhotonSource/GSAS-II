@@ -3456,8 +3456,19 @@ entered the right symbol for your structure.
             G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
                         
     def OnValidProtein(event):
-        resNames,Probs1 = G2mth.validProtein(data,True)         #old version
-        resNames,Probs2 = G2mth.validProtein(data,False)        #new version
+        
+        def pickHandler(resName):
+            drawData = data['Drawing']
+            resid = resIDs[resName]
+            drawData['viewPoint'][0] = atomData[AtLookUp[resid]][cx:cx+3]
+            UpdateDrawAtoms()
+            G2plt.PlotStructure(G2frame,data)
+        
+        atomData = data['Atoms']
+        cx,ct,cs,cia = data['General']['AtomPtrs']
+        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+        resNames,Probs1,resIDs = G2mth.validProtein(data,True)         #old version
+        resNames,Probs2,resIDs = G2mth.validProtein(data,False)        #new version
         print ('Plot 1 is Protein validation based on errat.f')
         print ('Ref: Colovos, C. & Yeates, T.O. Protein Science 2, 1511-1519 (1991).')
         print ('Residue error scores >6 for 5% & >8 for 1% likelihood of being correct')
@@ -3467,7 +3478,7 @@ entered the right symbol for your structure.
         print ('Residue error scores >11.5 for 5% & >17.2 for 1% likelihood of being correct')
         print ('NB: this calc. gives a close approximate to original erratv2 result')
         G2plt.PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='Error score for %s'%(data['General']['Name']),
-            thresh=[[8.0,6.0],[17.191,11.527]])
+            thresh=[[8.0,6.0],[17.191,11.527]],pickHandler=pickHandler)
 
     def OnIsoDistortCalc(event):
         '''Compute the ISODISTORT mode values from the current coordinates.

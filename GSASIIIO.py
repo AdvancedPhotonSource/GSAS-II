@@ -1419,7 +1419,7 @@ class ExportBaseclass(object):
                     'Project does not contain any phases.')
                 return True
             elif len(self.Phases) == 1:
-                self.phasenam = self.Phases.keys()
+                self.phasenam = list(self.Phases.keys())
             elif self.multiple: 
                 choices = sorted(self.Phases.keys())
                 phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
@@ -1480,7 +1480,7 @@ class ExportBaseclass(object):
                     'Project does not contain any images.')
                 return True
             elif len(self.Histograms) == 1:
-                self.histnam = self.Histograms.keys()
+                self.histnam = list(self.Histograms.keys())
             else:
                 choices = sorted(self.Histograms.keys())
                 hnum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
@@ -1603,9 +1603,17 @@ class ExportBaseclass(object):
             raise Exception(' *** Export aborted ***')
         else:
             varyList = list(varyList)
+        # add symmetry-generated constraints
+        rigidbodyDict = self.G2frame.GPXtree.GetItemPyData(   
+            G2gd.GetGPXtreeItemId(self.G2frame,self.G2frame.root,'Rigid bodies'))
+        rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+        rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
+            Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
         try:
             groups,parmlist = G2mv.GroupConstraints(constDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,self.parmDict)
+            #print(G2mv.VarRemapShow(varyList))
         except:
             # this really should not happen
             print (' *** ERROR - constraints are internally inconsistent ***')
@@ -2659,7 +2667,7 @@ def testColumnMetadata(G2frame):
             if i: l[-1] += ', '
             l[-1] += j
     t += n + l + ['','Unused columns:']
-    usedCols = lbldict.keys()
+    usedCols = list(lbldict.keys())
     for i in keyCols.values(): usedCols += i
     for i in range(len(items)):
         if i in usedCols: continue

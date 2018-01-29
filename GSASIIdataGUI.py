@@ -23,8 +23,8 @@ import random as ran
 import copy
 import sys
 import os
-import glob
-import imp
+#import glob
+#import imp
 import inspect
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
@@ -6674,7 +6674,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2frame.colSigs += zip(*cellESDs)
     # sort out the variables in their selected order
     varcols = 0
-    for d in posdict.itervalues():
+    for d in posdict.values():
         varcols = max(varcols,max(d.keys())+1)
     # get labels for each column
     for i in range(varcols):
@@ -6755,7 +6755,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.colList += [depValDict[var]]
 
     # add atom parameters to table
-    colLabels += list(atomLookup.keys())
+    colLabels += sorted(atomLookup.keys())
     for parm in sorted(atomLookup):
         G2frame.colList += [[data[name]['newAtomDict'][atomLookup[parm]][1] for name in histNames]]
         Types += [wg.GRID_VALUE_FLOAT+':10,5',]
@@ -6829,7 +6829,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     UpdateParmDict(PSvarDict)
     # Also dicts of variables 
     # for Parametric fitting from the data table
-    parmDict = dict(zip(colLabels,zip(*G2frame.colList)[0])) # scratch dict w/all values in table
+    parmDict = dict(zip(colLabels,list(zip(*G2frame.colList))[0])) # scratch dict w/all values in table
     parmDict.update({var:val for var,val in newCellDict.values()}) #  add varied reciprocal cell terms
     del parmDict['Use']
     name = histNames[0]

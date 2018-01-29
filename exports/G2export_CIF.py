@@ -55,6 +55,7 @@ except ImportError:
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
+import GSASIImapvars as G2mv
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -165,6 +166,8 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                     #print var,(var in parmDict),(var in sigDict)
                     val = parmDict.get(var,at[j])
                     sig = sigDict.get(dvar,sigdig)
+                    if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                        sig = -abs(sig)
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)

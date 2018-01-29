@@ -1316,7 +1316,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     global exclLines
     global DifLine # BHT: probably does not need to be global
     global Ymax
-    global Pattern,mcolors
+    global Pattern,mcolors,Plot
     plottype = plotType
     
     if not G2frame.PatternId:
@@ -1534,8 +1534,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         if pickIdText in ['Index Peak List','Unit Cells List',]:
                             indx = -2
                         if len(G2frame.HKL):
-                            view = Page.toolbar._views.forward()[0][:2]
-                            wid = view[1]-view[0]
+                            limx = Plot.get_xlim()
+                            wid = limx[1]-limx[0]
                             found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < 0.002*wid)]
                         if len(found):
                             if len(found[0]) > 6:   #SS reflections
@@ -2897,6 +2897,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
 def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     '''plot of CW or TOF peak calibration
     '''
+    
+    global Plot
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2907,11 +2909,8 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
             found = []
-            wid = 1
-            view = Page.toolbar._views.forward()
-            if view:
-                view = view[0][:2]
-                wid = view[1]-view[0]
+            xlim = Plot.get_xlim()
+            wid = xlim[1]-xlim[0]
             found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
             if len(found):
                 pos = found[0][1]
@@ -3396,7 +3395,7 @@ def PlotSASDSizeDist(G2frame):
 def PlotPowderLines(G2frame):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
-
+    global Plot
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -3405,8 +3404,8 @@ def PlotPowderLines(G2frame):
             if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
                 if len(G2frame.HKL):
-                    view = Page.toolbar._views.forward()[0][:2]
-                    wid = view[1]-view[0]
+                    xlim = Plot.get_xlim()
+                    wid = xlim[1]-xlim[0]
                     found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[-1]-xpos) < 0.002*wid)]
                 if len(found):
                     h,k,l = found[0][:3] 

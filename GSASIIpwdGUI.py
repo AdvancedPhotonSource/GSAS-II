@@ -2932,8 +2932,10 @@ def UpdateUnitCellsGrid(G2frame, data):
 #        ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
+        Symb = SGData['SpGrp']
         if ssopt.get('Use',False):
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+            Symb = SSGData['SSpGrp']
             Vec = ssopt['ModVec']
             maxH = ssopt['maxH']
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
@@ -2950,7 +2952,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
         G2frame.HKL = np.array(G2frame.HKL)
         if len(G2frame.HKL):
-            print (' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL)))
+            print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'  \
+                %(M20,X20,float(len(peaks[0]))/len(G2frame.HKL),Symb))
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         if 'PKS' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)

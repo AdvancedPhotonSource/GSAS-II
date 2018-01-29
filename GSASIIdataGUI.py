@@ -7432,6 +7432,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2imG.UpdateImageData(G2frame,data)
             G2plt.PlotImage(G2frame,newPlot=True)
         elif G2frame.GPXtree.GetItemText(item).startswith('PKS '):
+            G2frame.PatternId = item
             G2plt.PlotPowderLines(G2frame)
         elif G2frame.GPXtree.GetItemText(item).startswith('PWDR '):
             G2frame.PatternId = item

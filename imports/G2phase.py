@@ -185,10 +185,17 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         fp.close()
         return False
 
-    def Reader(self,filename, ParentFrame=None, **unused):
+    def Reader(self,filename,ParentFrame=None,usedRanIdList=[],**unused):
         'Read a phase from a GSAS .EXP file using :meth:`ReadEXPPhase`'
+        self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
+        while self.Phase['ranId'] in usedRanIdList:
+            self.Phase['ranId'] = ran.randint(0,sys.maxsize)
+        # make sure the ranId is really unique!
+        self.MPhase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
+        while self.MPhase['ranId'] in usedRanIdList:
+            self.MPhase['ranId'] = ran.randint(0,sys.maxsize)
         fp = open(filename,'r')
-        self.Phase = self.ReadEXPPhase(ParentFrame, fp)
+        self.ReadEXPPhase(ParentFrame, fp)
         fp.close()
         return True
 
@@ -232,9 +239,14 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         keyList = list(EXPphase.keys())
         keyList.sort()
         SGData = {}
+        MPtype = ''
         if NPhas[result] == '1':
             Ptype = 'nuclear'
-        elif NPhas[result] in ['2','3']:
+        elif NPhas[result] =='2':
+            Ptype = 'nuclear'
+            MPtype = 'magnetic'
+            MagDmin = 1.0
+        elif NPhas[result] =='3':
             Ptype = 'magnetic'
             MagDmin = 1.0
         elif NPhas[result] == '4':
@@ -242,7 +254,8 @@ class EXP_ReaderClass(G2obj.ImportPhase):
         elif NPhas[result] == '10':
             Ptype = 'Pawley'
         else:
-            raise self.ImportException("Phase type not recognized")            
+            raise self.ImportException("Phase type not recognized")  
+            
         for key in keyList:
             if 'PNAM' in key:
                PhaseName = EXPphase[key].strip()
@@ -279,9 +292,24 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                 textureData['Sample chi'] = [False,float(SHvals[7])]
                 textureData['Sample phi'] = [False,float(SHvals[8])]
                 shNcof = int(SHvals[1])
+        Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
+
         Atoms = []
-        Amat,Bmat = G2lat.cell2AB(abc+angles)
-        if Ptype in ['nuclear','magnetic',]:
+        MAtoms = []
+        Bmat = G2lat.cell2AB(abc+angles)[1]
+        if Ptype == 'macromolecular':
+            for key in keyList:
+                if 'AT' in key[6:8]:
+                    S = EXPphase[key]
+                    Atom = [S[56:60].strip(),S[50:54].strip().upper(),S[54:56],
+                        S[46:51].strip(),S[:8].strip().capitalize(),'',
+                        float(S[16:24]),float(S[24:32]),float(S[32:40]),
+                        float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
+                    XYZ = Atom[6:9]
+                    Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)[:2]
+                    Atom.append(ran.randint(0,sys.maxsize))
+                    Atoms.append(Atom)
+        else:
             for key in keyList:
                 if 'AT' in key:
                     if key[11:] == 'A':
@@ -307,25 +335,13 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                         Atom.append(ran.randint(0,sys.maxsize))
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':
-                        Ptype = 'magnetic'
                         S = EXPphase[key]
                         mom = np.array([float(S[:10]),float(S[10:20]),float(S[20:30])])
                         mag = np.sqrt(np.sum(mom**2))
                         mom = np.inner(Bmat,mom)*mag
-                        Atoms[-1] = Atom[:7]+list(mom)+Atom[7:]
-        elif Ptype == 'macromolecular':
-            for key in keyList:
-                if 'AT' in key[6:8]:
-                    S = EXPphase[key]
-                    Atom = [S[56:60].strip(),S[50:54].strip().upper(),S[54:56],
-                        S[46:51].strip(),S[:8].strip().capitalize(),'',
-                        float(S[16:24]),float(S[24:32]),float(S[32:40]),
-                        float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
-                    XYZ = Atom[6:9]
-                    Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)[:2]
-                    Atom.append(ran.randint(0,sys.maxsize))
-                    Atoms.append(Atom)
-        Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
+                        MAtoms.append(Atom)
+                        MAtoms[-1] = Atom[:7]+list(mom)+Atom[7:]
+                        
         if shNcof:
             shCoef = {}
             nRec = [i+1 for i in range((shNcof-1)/6+1)]
@@ -338,6 +354,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                     key = 'C(%s,%s,%s)'%(indx[3*i],indx[3*i+1],indx[3*i+2])
                     shCoef[key] = float(val)
             textureData['SH Coeff'] = [False,shCoef]
+            
         if not SGData:
             raise self.ImportException("No space group found in phase")
         if not abc:
@@ -346,20 +363,30 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             raise self.ImportException("No cell angles found in phase")
         if not Atoms:
             raise self.ImportException("No atoms found in phase")
-        Phase = G2obj.SetNewPhase(Name=PhaseName,SGData=SGData,cell=abc+angles+[Volume,])
-        general = Phase['General']
-        general['Type'] = Ptype
-        if general['Type'] =='macromolecular':
-            general['AtomPtrs'] = [6,4,10,12]
-        elif general['Type'] =='magnetic':
-            general['AtomPtrs'] = [3,1,10,12]
-            general['SGData']['SGSpin'] = SpnFlp
-            general['MagDmin'] = MagDmin    
+            
+        self.Phase['General'].update({'Type':Ptype,'Name':PhaseName,'Cell':[False,]+abc+angles+[Volume,],'SGData':SGData})
+        if MPtype == 'magnetic':
+            self.MPhase['General'].update({'Type':'magnetic','Name':PhaseName+' mag','Cell':[False,]+abc+angles+[Volume,],'SGData':SGData})
+        else:
+            self.MPhase = None
+            
+        if Ptype =='macromolecular':
+            self.Phase['General']['AtomPtrs'] = [6,4,10,12]
+            self.Phase['Atoms'] = Atoms
+        elif Ptype == 'magnetic':
+            self.Phase['General']['AtomPtrs'] = [3,1,10,12]
+            self.Phase['General']['SGData']['SGSpin'] = SpnFlp
+            self.Phase['General']['MagDmin'] = MagDmin
+            self.Phase['Atoms'] = MAtoms            
         else:   #nuclear
-            general['AtomPtrs'] = [3,1,7,9]    
-        general['SH Texture'] = textureData
-        Phase['Atoms'] = Atoms
-        return Phase
+            self.Phase['General']['AtomPtrs'] = [3,1,7,9]    
+            self.Phase['General']['SH Texture'] = textureData
+            self.Phase['Atoms'] = Atoms
+        if MPtype =='magnetic':
+            self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
+            self.MPhase['General']['SGData']['SGSpin'] = SpnFlp
+            self.MPhase['General']['MagDmin'] = MagDmin
+            self.MPhase['Atoms'] = MAtoms
 
 class JANA_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a JANA2006 file'

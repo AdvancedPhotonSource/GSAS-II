@@ -3506,7 +3506,7 @@ class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix bu
                 return wg.GRID_VALUE_STRING
             return self.dataTypes[col]
         except (TypeError,IndexError):
-            return None
+            return wg.GRID_VALUE_STRING
 
     def GetValue(self, row, col):
         try:

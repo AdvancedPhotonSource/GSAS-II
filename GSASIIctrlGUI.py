@@ -3502,7 +3502,8 @@ class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix bu
         
     def GetTypeName(self, row, col):
         try:
-            if self.data[row][col] is None: return None
+            if self.data[row][col] is None:
+                return wg.GRID_VALUE_STRING
             return self.dataTypes[col]
         except (TypeError,IndexError):
             return None

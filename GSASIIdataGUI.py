@@ -5817,9 +5817,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 return line
             head = ['name']
             for col in cols:
-                item = G2frame.SeqTable.GetColLabelValue(col)
+                item = G2obj.StripUnicode(G2frame.SeqTable.GetColLabelValue(col))
                 # get rid of labels that have Unicode characters
-                if not all([ord(c) < 128 and ord(c) != 0 for c in item]): item = '?'
+                #if not all([ord(c) < 128 and ord(c) != 0 for c in item]): item = '?'
                 if col in havesig:
                     head += [item,'esd-'+item]
                 else:
@@ -6873,8 +6873,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataWindow)
     G2frame.dataDisplay.SetScrollRate(10,10)
     G2frame.dataWindow.GetSizer().Add(G2frame.dataDisplay,1,wx.ALL|wx.EXPAND)
+    if histNames[0].startswith('PWDR'):
+        #rowLabels = [str(i)+': '+l[5:30] for i,l in enumerate(histNames)]
+        rowLabels = [l[5:] for i,l in enumerate(histNames)]
+    else:
+        rowLabels = histNames
     G2frame.SeqTable = G2G.Table([list(cl) for cl in zip(*G2frame.colList)],     # convert from columns to rows
-        colLabels=displayLabels,rowLabels=histNames,types=Types)
+        colLabels=displayLabels,rowLabels=rowLabels,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     # make all Use editable all others ReadOnly
     for c in range(len(colLabels)):

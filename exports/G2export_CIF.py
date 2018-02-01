@@ -323,7 +323,6 @@ def WriteComposition(fp, phasedict, phasenam, parmDict):
     #if oneblock: # add scattering factors for current phase here
     WriteCIFitem(fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
     formula = ''
-    reload(G2mth)
     for elem in HillSortElements(compDict.keys()):
         WriteCIFitem(fp, '  ' + PutInCol(elem,4) +
                      G2mth.ValEsd(compDict[elem],-0.009,True))
@@ -936,7 +935,6 @@ class ExportCIF(G2IO.ExportBaseclass):
         #     #if oneblock: # add scattering factors for current phase here
         #     WriteCIFitem(self.fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
         #     formula = ''
-        #     reload(G2mth)
         #     for elem in HillSortElements(compDict.keys()):
         #         WriteCIFitem(self.fp, '  ' + PutInCol(elem,4) +
         #                      G2mth.ValEsd(compDict[elem],-0.009,True))

@@ -2678,7 +2678,7 @@ class G2Phase(G2ObjectWrapper):
 commandhelp={}
 commandhelp["create"] = "creates a GSAS-II project, optionally adding histograms and/or phases"
 def create(args):
-    """The create subcommand. This creates a GSAS-II project, optionally adding histograms and/or phases::
+    """Implements the create command-line subcommand. This creates a GSAS-II project, optionally adding histograms and/or phases::
 
   usage: GSASIIscriptable.py create [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
                                   [-i IPARAMS [IPARAMS ...]]
@@ -2722,7 +2722,7 @@ optional arguments::
 
 commandhelp["add"] = "adds histograms and/or phases to GSAS-II project"
 def add(args):
-    """The add subcommand. This adds histograms and/or phases to GSAS-II project::
+    """Implements the add command-line subcommand. This adds histograms and/or phases to GSAS-II project::
 
   usage: GSASIIscriptable.py add [-h] [-d HISTOGRAMS [HISTOGRAMS ...]]
                                [-i IPARAMS [IPARAMS ...]]
@@ -2787,7 +2787,7 @@ optional arguments::
 
 commandhelp["dump"] = "Shows the contents of a GSAS-II project"
 def dump(args):
-    """The dump subcommand shows the contents of a GSAS-II project::
+    """Implements the dump command-line subcommand, which shows the contents of a GSAS-II project::
 
        usage: GSASIIscriptable.py dump [-h] [-d] [-p] [-r] files [files ...]
 
@@ -2855,7 +2855,8 @@ Conducts refinements on GSAS-II projects according to a list of refinement
 steps in a JSON dict
 '''
 def refine(args):
-    """Conducts refinements on GSAS-II projects according to a JSON refinement dict::
+    """Implements the refine command-line subcommand:
+    conducts refinements on GSAS-II projects according to a JSON refinement dict::
     
   usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
 
@@ -2887,13 +2888,13 @@ optional arguments::
 
 commandhelp["seqrefine"] = "Not implemented. Placeholder for eventual sequential refinement implementation"
 def seqrefine(args):
-    """The seqrefine subcommand"""
+    """Future implementation for the seqrefine command-line subcommand """
     raise NotImplementedError("seqrefine is not yet implemented")
 
 
 commandhelp["export"] = "Export phase as CIF"
 def export(args):
-    """The export subcommand: Exports phase as CIF::
+    """Implements the export command-line subcommand: Exports phase as CIF::
 
       usage: GSASIIscriptable.py export [-h] gpxfile phase exportfile
 

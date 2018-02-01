@@ -209,6 +209,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
         TwMax = [-1,[]]
         first = True
         fp = open(filename,'r')
+        m1 = 0
         for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if self.Super == 0:
@@ -228,7 +229,7 @@ class SHELX5_ReaderClass(G2obj.ImportStructFactor):
             Tw = Tw.strip()
             if Tw in ['','0']:
                 Tw = '1'
-            if not any([h,k,l]):
+            if not any([h,k,l,m1]):
                 break
             if '-' in Tw:
                 if Tw == '-1':  #fix reversed twin ids

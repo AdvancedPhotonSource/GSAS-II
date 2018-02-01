@@ -1079,51 +1079,7 @@ def SSpcGroup(SGData,SSymbol):
              * 'SSGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
 
     """
-    
-#    def checkModSym():
-#        ''' 
-#        Checks to see if proposed modulation form is allowed for Laue group
-#        '''
-#        if LaueId in [0,] and LaueModId in [0,]:
-#            return True
-#        elif LaueId in [1,]:
-#            try:
-#                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
-#                    return False
-#                if 'I'.index(SGData['SGLatt']) and modsym.count('1/2') not in [0,2]:
-#                    return False
-#            except ValueError:
-#                pass
-#            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,10,]:
-#                return True
-#            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,16,]:
-#                return True
-#            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,22,]:
-#                return True
-#        elif LaueId in [2,] and LaueModId in [i+7 for i in range(18)]:
-#            try:
-#                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
-#                    return False
-#                if SGData['SGLatt'] in ['I','F',] and modsym.index('1/2'):
-#                    return False
-#            except ValueError:
-#                pass
-#            return True
-#        elif LaueId in [3,4,] and LaueModId in [19,22,]:
-#            try:
-#                if SGData['SGLatt'] == 'I' and modsym.count('1/2'):
-#                    return False
-#            except ValueError:
-#                pass
-#            return True
-#        elif LaueId in [7,8,9,] and LaueModId in [19,25,]:
-#            if (SGData['SGLatt'] == 'R' or SGData['SGPtGrp'] in ['3m1','-3m1']) and modsym.count('1/3'):
-#                return False
-#            return True
-#        elif LaueId in [10,11,] and LaueModId in [19,]:
-#            return True
-#        return False
-        
+            
     def fixMonoOrtho():
         mod = ''.join(modsym).replace('1/2','0').replace('1','0')
         if SGData['SGPtGrp'] in ['2','m']:  #OK
@@ -1146,7 +1102,7 @@ def SSpcGroup(SGData,SSymbol):
                 return result
         else:   #orthorhombic
             return [-SSGKl[i] if mod[i] in ['a','b','g'] else SSGKl[i] for i in range(3)]
-                
+        
     def extendSSGOps(SSGOps):
         for OpA in SSGOps:
             OpAtxt = SSMT2text(OpA)
@@ -1408,15 +1364,7 @@ def SSpcGroup(SGData,SSymbol):
                     gensym = 'ss0'
         return gensym
                             
-#    LaueModList = [
-#        'abg','ab0','ab1/2','a0g','a1/2g',  '0bg','1/2bg','a00','a01/2','a1/20',
-#        'a1/21/2','a01','a10','0b0','0b1/2', '1/2b0','1/2b1/2','0b1','1b0','00g',
-#        '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
-#    LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
-#    GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-#        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s','0000s']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
-#    LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
@@ -1425,15 +1373,6 @@ def SSpcGroup(SGData,SSymbol):
         modsym,gensym = splitSSsym(SSymbol)
     except ValueError:
         return 'Error in superspace symbol '+SSymbol,None
-#    if ''.join(gensym) not in GenSymList:
-#        if SGData['SGGray'] and ''.join(gensym[:-1]) not in GenSymList:
-#            return 'unknown generator symbol '+''.join(gensym),None
-#    try:
-#        LaueModId = LaueModList.index(''.join(modsym))
-#    except ValueError:
-#        return 'Unknown modulation symbol '+''.join(modsym),None
-#    if not checkModSym():
-#        return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
     modQ = [Fracs[mod] for mod in modsym]
     SSGKl = SGData['SSGKl'][:]
     if SGData['SGLaue'] in ['2/m','mmm']:
@@ -1518,6 +1457,22 @@ def SSChoice(SGData):
                 ssChoice.append(item)
     return ssChoice
 
+def fixGray(SGData,SSymbol):
+    modsym,gensym = SSymbol.replace(' ','').split(')')
+    modsym += ')'
+    if gensym:
+        gensym += 's'
+    else:
+        if SGData['SGPtGrp'] in ['1','2','m','3','4','6']:
+            gensym += '0s'
+        elif SGData['SGPtGrp'] in ['2/m','4/m','6/m']:
+            gensym += '00s'
+        elif SGData['SGPtGrp'] in ['4/mmm','6/mmm']:
+            gensym += '0000s'
+        else:
+            gensym += '000s'
+    return modsym+gensym
+            
 def splitSSsym(SSymbol):
     '''
     Splits supersymmetry symbol into two lists of strings

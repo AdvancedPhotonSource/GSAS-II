@@ -1484,7 +1484,7 @@ entered the right symbol for your structure.
                             if 'SuperSg' not in generalData:
                                 generalData['SuperSg'] = SetDefaultSSsymbol()
                             generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
-                            if 'Super' not in generalData:
+                            if 'SuperVec' not in generalData:
                                 generalData['Super'] = 1
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
@@ -1507,8 +1507,32 @@ entered the right symbol for your structure.
                                 G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
                         wx.CallAfter(UpdateGeneral)
                 else:
-                    G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
-                    modulated.SetValue(generalData['Modulated'])                
+                    if generalData['Type'] == 'magnetic':
+                        pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
+                        generalData['Modulated'] = modulated.GetValue()
+                        if generalData['Modulated']:
+                            if 'SuperSg' not in generalData:
+                                generalData['SuperSg'] = SetDefaultSSsymbol()
+                            generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                            if 'SuperVec' not in generalData:
+                                generalData['Super'] = 1
+                                generalData['SuperVec'] = [[0.,0.,0.],False,4]
+                                generalData['SSGData'] = {}
+                            if '4DmapData' not in generalData:
+                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'].update({'MapType':'Fobs'})
+                            if 'Wave Data' not in pages:
+                                G2frame.waveData = wx.ScrolledWindow(G2frame.phaseDisplay)
+                                G2frame.phaseDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
+                                Id = wx.NewId()
+                                TabSelectionIdDict[Id] = 'Wave Data'
+                        Atoms = data['Atoms']
+                        for atom in Atoms:
+                            atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
+                        wx.CallAfter(UpdateGeneral)
+                    else:
+                        G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
+                        modulated.SetValue(generalData['Modulated'])                
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
@@ -1859,18 +1883,19 @@ entered the right symbol for your structure.
             ssSizer = wx.BoxSizer(wx.VERTICAL)
             modSizer = wx.BoxSizer(wx.HORIZONTAL)
             modSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
-            SpGrp = generalData['SGData']['SpGrp']
-            if generalData['SGData']['SGGray']:
+            SGData = generalData['SGData']
+            SpGrp = SGData['SpGrp']
+            if SGData['SGGray']:
                 SpGrp += " 1'"
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
             Choice = []
-            if not generalData['SGData']['SGFixed']:
-                SSChoice = G2spc.SSChoice(generalData['SGData'])
-                if generalData['SGData']['SGGray']:
-                    SSChoice = [item+'s' for item in SSChoice]
+            if not SGData['SGFixed']:
+                SSChoice = G2spc.SSChoice(SGData)
                 for item in SSChoice:
-                    E,SSG = G2spc.SSpcGroup(generalData['SGData'],item)
+                    E,SSG = G2spc.SSpcGroup(SGData,item)
                     if SSG: Choice.append(item)
+                if SGData['SGGray']:
+                    Choice = [G2spc.fixGray(SGData,item) for item in Choice]
             if len(Choice):
                 superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
@@ -4826,6 +4851,8 @@ entered the right symbol for your structure.
             drawingData['showRigidBodies'] = True
         if 'Plane' not in drawingData:
             drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
+        if 'magMult' not in drawingData:
+            drawingData['magMult'] = 1.0
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] in ['nuclear','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index

@@ -798,7 +798,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
     
-def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
+def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):
     'Save XY table data'
     pth = G2G.GetExportPath(G2frame)
     dlg = wx.FileDialog(
@@ -816,7 +816,7 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
     if not filename:
         return
     for i in range(len(XY)):
-        if names != None:
+        if len(names):
             header = '%s,%s(%s)\n'%(labelX,labelY,names[i])
         else:
             header = '%s,%s(%d)\n'%(labelX,labelY,i)

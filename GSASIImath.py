@@ -3454,6 +3454,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
         Fh0 = Fhklm[hklm[0],hklm[1],hklm[2],hklm[3]]
         ang0 = np.angle(Fh0,deg=True)/360.
         for H,phi in list(zip(Uniq,Phi))[1:]:
+            H = np.array(H,dtype=int)
             ang = (np.angle(Fhklm[H[0],H[1],H[2],H[3]],deg=True)/360.-phi)
             dH = H-hklm
             dang = ang-ang0

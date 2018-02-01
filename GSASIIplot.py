@@ -2982,7 +2982,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
+def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     Title='',lines=False,names=[],names2=[],vertLines=[]):
     '''simple plot of xy data
     
@@ -3017,7 +3017,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
         elif event.key == 's':
             if len(XY):
                 G2IO.XYsave(G2frame,XY,labelX,labelY,names)
-            if XY2 != []:
+            if len(XY2):
                 G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
 #        else:
 #            return
@@ -6253,8 +6253,9 @@ def PlotStructure(G2frame,data,firstCall=False):
         
     def Set4DMapRoll(newxy):
         rho = generalData['4DmapData']['rho']
-        roll = GetRoll(newxy,rho.shape[:3])
-        generalData['4DmapData']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+        if len(rho):
+            roll = GetRoll(newxy,rho.shape[:3])
+            generalData['4DmapData']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
         
     def SetPeakRoll(newxy):
         rho = generalData['Map']['rho']

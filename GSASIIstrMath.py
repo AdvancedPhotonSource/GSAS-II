@@ -4167,6 +4167,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             dMdvh *= Wt
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                dlg.Raise()
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
                 dMdvh *= Wt*Dy
@@ -4189,6 +4190,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                dlg.Raise()
             if len(Hess):
                 Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
                 Hess += wtFactor*np.inner(dMdvh,dMdvh)
@@ -4269,6 +4271,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals']['wRmin'] = min(100.,100.*ma.sqrt(Histogram['Residuals']['Nobs']/Histogram['Residuals']['sumwYo']))
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                dlg.Raise()
             M = np.concatenate((M,wdy))
 #end of PWDR processing
         elif 'HKLF' in histogram[:4]:
@@ -4412,6 +4415,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Next += next
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                dlg.Raise()
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
 #    GetFobsSq(Histograms,Phases,parmDict,calcControls)

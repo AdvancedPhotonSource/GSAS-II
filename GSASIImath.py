@@ -1647,7 +1647,6 @@ def ApplyModulation(data,tau):
             wave = np.zeros(3)
             uwave = np.zeros(6)
             mom = np.zeros(3)
-            #how do I handle Sfrac? - fade the atoms?
             if len(Sfrac):
                 scof = []
                 ccof = []
@@ -1682,7 +1681,7 @@ def ApplyModulation(data,tau):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
                 if len(scof):
-                    mom += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)               
+                    mom += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1) 
             if len(Sadp):
                 scof = []
                 ccof = []

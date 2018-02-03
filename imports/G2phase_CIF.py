@@ -178,6 +178,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     sspgrp = MSSpGrp.split('(')
                     sspgrp[1] = "("+sspgrp[1]
                     SpGrp = G2spc.StandardizeSpcName(sspgrp[0])
+                    if "1'" in SpGrp: sspgrp[1] = sspgrp[1][:-1]  #take off extra 's'; gets put back later
                     MSpGrp = sspgrp[0]
                     self.MPhase['General']['Type'] = 'magnetic'
                     self.MPhase['General']['AtomPtrs'] = [3,1,10,12]
@@ -552,6 +553,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.MPhase['General']['Name'] = name.strip()[:20]+' mag'
                 self.MPhase['General']['Super'] = Super
                 if Super:
+                    if self.MPhase['General']['SGData']['SGGray']:
+                        SuperSg += 's'
                     self.MPhase['General']['Modulated'] = True
                     self.MPhase['General']['SuperVec'] = SuperVec
                     self.MPhase['General']['SuperSg'] = SuperSg

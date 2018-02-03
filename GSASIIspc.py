@@ -382,6 +382,7 @@ def SGPrint(SGData,AddInv=False):
         Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
     SGText = []
     SGText.append(' Space Group: '+SGData['SpGrp'])
+    if SGData['SGGray']: SGText[-1] += " 1'"
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -987,9 +988,14 @@ def MagText2MTS(mcifOpr):
             
 def MagSSText2MTS(mcifOpr):
     "From magnetic super space group cif text returns matrix/translation + spin flip"
-    XYZ = {'x1':[1,0,0,0],'-x1':[-1,0,0,0],'x2':[0,1,0,0],'-x2':[0,-1,0,0],'x3':[0,0,1,0],'-x3':[0,0,-1,0],
-           'x1-x2':[1,-1,0,0],'-x1+x2':[-1,1,0,0],'x4':[0,0,0,1],'-x4':[0,0,0,-1],
-           '-x1+x4':[-1,0,0,1],'-x2+x4':[0,-1,0,1]}
+    XYZ = {'x1':[1,0,0,0],'-x1':[-1,0,0,0],
+           'x2':[0,1,0,0],'-x2':[0,-1,0,0],
+           'x3':[0,0,1,0],'-x3':[0,0,-1,0],
+           'x4':[0,0,0,1],'-x4':[0,0,0,-1],
+           'x1-x2':[1,-1,0,0],'-x1+x2':[-1,1,0,0],
+           'x1-x4':[1,0,0,-1],'-x1+x4':[-1,0,0,1],
+           'x2-x4':[0,1,0,-1],'-x2+x4':[0,-1,0,1],
+           '-x1-x2+x4':[-1,-1,0,1],'x1+x2-x4':[1,1,0,-1]}
     ops = mcifOpr.split(",")
     M = []
     T = []
@@ -1074,7 +1080,7 @@ def SSpcGroup(SGData,SSymbol):
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
        * SSGData - is a dict (see :ref:`Superspace Group object<SSGData_table>`) with entries:
        
-             * 'SSpGrp': superspace group symbol extension to space group symbol, accidental spaces removed
+             * 'SSpGrp': full superspace group symbol, accidental spaces removed; for display only
              * 'SSGCen': 4D cell centering vectors [0,0,0,0] at least
              * 'SSGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
 
@@ -1378,15 +1384,17 @@ def SSpcGroup(SGData,SSymbol):
     if SGData['SGLaue'] in ['2/m','mmm']:
         SSGKl = fixMonoOrtho()
     Ngen = len(gensym)
-    if SGData.get('SGGray',False):
-        Ngen -= 1
     if len(gensym) and Ngen != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
     gensym = specialGen(gensym[:Ngen],modsym)
     genQ = [Fracs[mod] for mod in gensym[:Ngen]]
     if not genQ:
         genQ = [0,0,0,0]
-    SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
+    SSgSpc = SGData['SpGrp']+SSymbol
+    if SGData['SGGray']:
+        SSgSpc = SSgSpc.replace('('," 1'(")
+        SSgSpc += 's'
+    SSGData = {'SSpGrp':SSgSpc,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
     SSCen = np.zeros((len(SGData['SGCen']),4))
     for icen,cen in enumerate(SGData['SGCen']):
         SSCen[icen,0:3] = cen
@@ -1432,8 +1440,8 @@ def SSChoice(SGData):
             '6/mmm':['(00g)',]}
             
     laueTS = {'-1':['',],
-            '2/m':['','s','s0','0s','ss'],
-            'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+            '2/m':['','s','0s','ss','s0'],
+            'mmm':['','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
             '4/m':['','q','s','s0',],
             '4/mmm':['','q00','s00','ss0','0ss','s0s','qq0','qqs','0q0','s0s0','00ss','s00s'],
             '3':['','t'],
@@ -1460,14 +1468,22 @@ def SSChoice(SGData):
 def fixGray(SGData,SSymbol):
     modsym,gensym = SSymbol.replace(' ','').split(')')
     modsym += ')'
+    sgPtGp = SGData['SGPtGrp']
     if gensym:
-        gensym += 's'
+        if sgPtGp in ['1','2','m','3','4','6'] and len(gensym) == 1:
+            gensym += 's'
+        elif sgPtGp in ['2/m','4/m','6/m'] and len(gensym) == 2:
+            gensym += 's'
+        elif sgPtGp in ['4/mmm','6/mmm'] and len(gensym) == 4:
+            gensym += 's'
+        elif len(gensym) == 3:
+            gensym += 's'
     else:
-        if SGData['SGPtGrp'] in ['1','2','m','3','4','6']:
+        if sgPtGp in ['1','2','m','3','4','6']:
             gensym += '0s'
-        elif SGData['SGPtGrp'] in ['2/m','4/m','6/m']:
+        elif sgPtGp in ['2/m','4/m','6/m']:
             gensym += '00s'
-        elif SGData['SGPtGrp'] in ['4/mmm','6/mmm']:
+        elif sgPtGp in ['4/mmm','6/mmm']:
             gensym += '0000s'
         else:
             gensym += '000s'
@@ -1520,10 +1536,7 @@ def SSGPrint(SGData,SSGData):
     '''
     Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
     SSGText = []
-    SSgSpc = SSGData['SSpGrp']
-    if SGData.get('SGGray',False):
-        SSgSpc = SSgSpc.replace('('," 1'(")
-    SSGText.append(' Superspace Group: '+SSgSpc)
+    SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -1533,7 +1546,7 @@ def SSGPrint(SGData,SSGData):
         SSGText.append(' The superlattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())
     SSGText.append(' The Laue symmetry is '+SGData['SGLaue'])
     SGptGp = SGData['SGPtGrp']
-    if SGData.get('SGGray',False):
+    if SGData['SGGray']:
         SGptGp += "1'"
     SSGText.append(' The superlattice point group is '+SGptGp+', '+''.join([str(i) for i in SSGData['SSGKl']]))
     SSGText.append(' The number of superspace group generators is '+str(len(SGData['SSGKl'])))
@@ -1553,7 +1566,7 @@ def SSGPrint(SGData,SSGData):
     SSGTable = []
     for i,Opr in enumerate(SSGData['SSGOps']):
         SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
-    if SGData.get('SGGray',False):
+    if SGData['SGGray']:
         SSGTable.append("     for 1'")
         for i,Opr in enumerate(SSGData['SSGOps']):
             Opr2 = [Opr[0],Opr[1]+np.array([0,0,0,.5])]

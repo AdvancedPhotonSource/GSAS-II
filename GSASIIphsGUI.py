@@ -1413,7 +1413,7 @@ entered the right symbol for your structure.
 '''
                 dlg = G2G.SingleStringDialog(General,'Get Space Group',
                     '  Input the space group with spaces between axial fields  \n  (e.g. p 21/c, P 63/m m c, P 4/m m m) or enter a space\n  group number between 1 and 230.',
-                    value=generalData['SGData']['SpGrp'],help=helptext)
+                    value=SpGrp,help=helptext)
                 if not dlg.Show():
                     dlg.Destroy()
                     return
@@ -1546,7 +1546,9 @@ entered the right symbol for your structure.
             TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
             nameSizer.Add(TypeTxt,0,WACV)
             nameSizer.Add(wx.StaticText(General,-1,'  Space group: '),0,WACV)
-            SGTxt = wx.Button(General,wx.ID_ANY,generalData['SGData']['SpGrp'],size=(100,-1))
+            SpGrp = generalData['SGData']['SpGrp']
+            if generalData['SGData']['SGGray']: SpGrp += " 1'"
+            SGTxt = wx.Button(General,wx.ID_ANY,SpGrp,size=(100,-1))
             SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
             nameSizer.Add(SGTxt,0,WACV)
             if generalData['Type'] in ['nuclear','magnetic']:
@@ -1890,10 +1892,7 @@ entered the right symbol for your structure.
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
             Choice = []
             if not SGData['SGFixed']:
-                SSChoice = G2spc.SSChoice(SGData)
-                for item in SSChoice:
-                    E,SSG = G2spc.SSpcGroup(SGData,item)
-                    if SSG: Choice.append(item)
+                Choice = G2spc.SSChoice(SGData)
                 if SGData['SGGray']:
                     Choice = [G2spc.fixGray(SGData,item) for item in Choice]
             if len(Choice):

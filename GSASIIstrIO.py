@@ -1595,7 +1595,9 @@ def getCellEsd(pfx,SGData,A,covData):
     return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
     
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
-    'needs a doc string'
+    '''Called after a refinement to transfer parameters from the parameter dict to
+    the phase(s) information read from a GPX file. Also prints values to the .lst file
+    '''
     
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         pFile.write('\n Atoms:\n')
@@ -1884,6 +1886,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             iBeg += 10
             iFin = min(iBeg+10,nCoeff)
             
+    ##########################################################################
+    # SetPhaseData starts here
     pFile.write('\n Phases:\n')
     for phase in Phases:
         pFile.write(' Result for phase: %s\n'%phase)

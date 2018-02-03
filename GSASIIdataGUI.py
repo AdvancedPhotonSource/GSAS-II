@@ -4738,22 +4738,30 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SequentialMenu)
         self.SequentialFile = wx.Menu(title='')
-        self.SequentialMenu.Append(menu=self.SequentialFile, title='Columns')
-        self.SequentialFile.Append(G2G.wxID_SELECTUSE,'Select used''Select rows to be used in plots/equation fitting')
-        self.SequentialFile.Append(G2G.wxID_RENAMESEQSEL,'Rename selected',
+        self.SequentialMenu.Append(menu=self.SequentialFile, title='Columns/Rows')
+        self.SequentialFile.Append(G2G.wxID_SELECTUSE,'Set used...',
+            'Dialog to select rows for plots/equation fitting')
+        G2G.Define_wxId('wxID_UPDATESEQSEL')
+        self.SequentialFile.Append(G2G.wxID_UPDATESEQSEL,'Update phase from selected',
+            'Update phase information from selected row')
+        self.SequentialFile.AppendSeparator()
+        self.SequentialFile.Append(G2G.wxID_PLOTSEQSEL,'Plot selected cols',
+            'Plot selected sequential refinement columns')
+        self.SequentialFile.Append(G2G.wxID_RENAMESEQSEL,'Rename selected cols',
             'Rename selected sequential refinement columns')
         self.SequentialFile.Append(G2G.wxID_SAVESEQSEL,'Save selected as text',
             'Save selected sequential refinement results as a text file')
+        self.SequentialFile.Append(G2G.wxID_SAVESEQSELCSV,'Save selected as CSV',
+            'Save selected sequential refinement columns as a CSV spreadsheet file')
+        self.SequentialFile.Append(G2G.wxID_AVESEQSEL,'Compute average',
+            'Compute average for selected parameter')            
+        self.SequentialFile.Append(G2G.wxID_ORGSEQINC,'Hide columns...',
+            'Select columns to remove from displayed table')
+        self.SequentialFile.AppendSeparator()       
         self.SequentialFile.Append(G2G.wxID_SAVESEQCSV,'Save all as CSV',
             'Save all sequential refinement results as a CSV spreadsheet file')
-        self.SequentialFile.Append(G2G.wxID_SAVESEQSELCSV,'Save selected as CSV',
-            'Save selected sequential refinement results as a CSV spreadsheet file')
-        self.SequentialFile.Append(G2G.wxID_PLOTSEQSEL,'Plot selected',
-            'Plot selected sequential refinement results')
-        self.SequentialFile.Append(G2G.wxID_AVESEQSEL,'Compute average','Compute average for selected parameter')            
 #        self.SequentialFile.Append(id=G2G.wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
 #            help='Reorganize variables where variables change')
-        self.SequentialFile.Append(G2G.wxID_ORGSEQINC,'Hide columns...','Select columns to remove from displayed table')
         self.SequentialPvars = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
         self.SequentialPvars.Append(G2G.wxID_ADDSEQVAR,'Add Formula','Add a new custom pseudo-variable')
@@ -4794,6 +4802,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
                 for obj in objlist:
                     item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                     self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
+                    # Bind is in UpdateSeqResults
         
         self.PostfillDataMenu()
             
@@ -6433,6 +6442,110 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         val = G2frame.SeqTable.GetValue(r,0)
 #        print (r,val)
         G2frame.SeqTable.SetValue(r,0, val)
+
+    def OnSelectUpdate(event):
+        '''Update all phase parameters from a selected column in the Sequential Table. 
+        If no histogram is selected (or more than one), ask the user to make a selection.
+
+        Loosely based on :func:`GSASIIstrIO.SetPhaseData`
+        '''
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if len(rows) == 1:
+            sel = rows[0]
+        else:
+            dlg = G2G.G2SingleChoiceDialog(G2frame, 'Select histogram to use for update',
+                                           'Select row',histNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        parmDict = data[histNames[sel]]['parmDict']
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+        for Phase in Phases:
+            General = Phase['General']
+            SGData = General['SGData']
+            Atoms = Phase['Atoms']
+            cell = General['Cell']
+            pId = Phase['pId']
+            pfx = str(pId)+'::'
+            if cell[0]:
+                A,sigA = G2stIO.cellFill(pfx,SGData,parmDict,{})
+                cell[1:7] = G2lat.A2cell(A)
+                cell[7] = G2lat.calc_V(A)
+            textureData = General['SH Texture']    
+            if textureData['Order']:
+                SHtextureSig = {}
+                for name in ['omega','chi','phi']:
+                    aname = pfx+'SH '+name
+                    textureData['Sample '+name][1] = parmDict[aname]
+                for name in textureData['SH Coeff'][1]:
+                    aname = pfx+name
+                    textureData['SH Coeff'][1][name] = parmDict[aname]
+            ik = 6  #for Pawley stuff below
+            if General.get('Modulated',False):
+                ik = 7
+            # how are these updated?
+            #General['SuperVec']
+            #RBModels = Phase['RBModels']
+            if Phase['General'].get('doPawley'):
+                pawleyRef = Phase['Pawley ref']
+                for i,refl in enumerate(pawleyRef):
+                    key = pfx+'PWLref:'+str(i)
+                    refl[ik] = parmDict[key]
+                    if key in sigDict:
+                        refl[ik+1] = sigDict[key]
+                    else:
+                        refl[ik+1] = 0
+                continue
+            General['Mass'] = 0.
+            cx,ct,cs,cia = General['AtomPtrs']
+            for i,at in enumerate(Atoms):
+                names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
+                    cia+1:pfx+'AUiso:'+str(i),cia+2:pfx+'AU11:'+str(i),cia+3:pfx+'AU22:'+str(i),cia+4:pfx+'AU33:'+str(i),
+                    cia+5:pfx+'AU12:'+str(i),cia+6:pfx+'AU13:'+str(i),cia+7:pfx+'AU23:'+str(i),
+                    cx+4:pfx+'AMx:'+str(i),cx+5:pfx+'AMy:'+str(i),cx+6:pfx+'AMz:'+str(i)}
+                for ind in range(cx,cx+4):
+                    at[ind] = parmDict[names[ind]]
+                if at[cia] == 'I':
+                    at[cia+1] = parmDict[names[cia+1]]
+                else:
+                    for ind in range(cia+2,cia+8):
+                        at[ind] = parmDict[names[ind]]
+                if General['Type'] == 'magnetic':
+                    for ind in range(cx+4,cx+7):
+                        at[ind] = parmDict[names[ind]]
+                ind = General['AtomTypes'].index(at[ct])
+                General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
+                if General.get('Modulated',False):
+                    AtomSS = at[-1]['SS1']
+                    waveType = AtomSS['waveType']
+                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                        Waves = AtomSS[Stype]
+                        for iw,wave in enumerate(Waves):
+                            stiw = str(i)+':'+str(iw)
+                            if Stype == 'Spos':
+                                if waveType in ['ZigZag','Block',] and not iw:
+                                    names = ['Tmin:'+stiw,'Tmax:'+stiw,'Xmax:'+stiw,'Ymax:'+stiw,'Zmax:'+stiw]
+                                else:
+                                    names = ['Xsin:'+stiw,'Ysin:'+stiw,'Zsin:'+stiw,
+                                        'Xcos:'+stiw,'Ycos:'+stiw,'Zcos:'+stiw]
+                            elif Stype == 'Sadp':
+                                names = ['U11sin:'+stiw,'U22sin:'+stiw,'U33sin:'+stiw,
+                                    'U12sin:'+stiw,'U13sin:'+stiw,'U23sin:'+stiw,
+                                    'U11cos:'+stiw,'U22cos:'+stiw,'U33cos:'+stiw,
+                                    'U12cos:'+stiw,'U13cos:'+stiw,'U23cos:'+stiw]
+                            elif Stype == 'Sfrac':
+                                if 'Crenel' in waveType and not iw:
+                                    names = ['Fzero:'+stiw,'Fwid:'+stiw]
+                                else:
+                                    names = ['Fsin:'+stiw,'Fcos:'+stiw]
+                            elif Stype == 'Smag':
+                                names = ['MXsin:'+stiw,'MYsin:'+stiw,'MZsin:'+stiw,
+                                    'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
+                            for iname,name in enumerate(names):
+                                AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
     
     # lookup table for unique cell parameters by symmetry
     cellGUIlist = [
@@ -6532,6 +6645,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=G2G.wxID_PLOTSEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnAveSelSeq, id=G2G.wxID_AVESEQSEL)
     #G2frame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=G2G.wxID_ORGSEQSEL)
+    G2frame.Bind(wx.EVT_MENU, OnSelectUpdate, id=G2G.wxID_UPDATESEQSEL)
     G2frame.Bind(wx.EVT_MENU, onSelectSeqVars, id=G2G.wxID_ORGSEQINC)
     G2frame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=G2G.wxID_ADDSEQVAR)
     G2frame.Bind(wx.EVT_MENU, AddNewDistPseudoVar, id=G2G.wxID_ADDSEQDIST)

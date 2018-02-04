@@ -5165,6 +5165,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.DataEdit.Append(G2G.wxID_PWDRADD,'Add powder histograms','Select new powder histograms to be used for this phase')
         self.DataEdit.Append(G2G.wxID_HKLFADD,'Add single crystal histograms','Select new single crystal histograms to be used for this phase')
         self.DataEdit.Append(G2G.wxID_DATADELETE,'Remove histograms','Remove histograms from use for this phase')
+        G2G.Define_wxId('wxID_DATADIJ')
+        self.DataEdit.Append(G2G.wxID_DATADIJ,'Apply Strain to Lattice Constants',
+                             'Shift cell by Dij of selected histogram')
         self.PostfillDataMenu()
             
         # Phase / Atoms tab
@@ -6464,7 +6467,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         parmDict = data[histNames[sel]]['parmDict']
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
-            print('Updating {} from histogram {}'.format(phase,histNames[sel]))
+            print('Updating {} from Seq. Ref. row {}'.format(phase,histNames[sel]))
             Phase = Phases[phase]
             General = Phase['General']
             SGData = General['SGData']
@@ -6472,10 +6475,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             cell = General['Cell']
             pId = Phase['pId']
             pfx = str(pId)+'::'
-            if cell[0]:
-                A,sigA = G2stIO.cellFill(pfx,SGData,parmDict,{})
-                cell[1:7] = G2lat.A2cell(A)
-                cell[7] = G2lat.calc_V(A)
+            # there should not be any changes to the cell because those terms are not refined
+            A,sigA = G2stIO.cellFill(pfx,SGData,parmDict,{})
+            cell[1:7] = G2lat.A2cell(A)
+            cell[7] = G2lat.calc_V(A)
             textureData = General['SH Texture']    
             if textureData['Order']:
                 SHtextureSig = {}
@@ -7027,7 +7030,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
     #G2frame.dataDisplay.Refresh() # shows colored text on mac
     G2frame.dataWindow.SetDataSize()
-    
+
 ################################################################################
 #####  Main PWDR panel
 ################################################################################           

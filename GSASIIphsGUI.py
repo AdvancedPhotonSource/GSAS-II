@@ -6691,7 +6691,33 @@ entered the right symbol for your structure.
             finally:
                 dlg.Destroy()
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
-                
+        
+    def OnDataApplyStrain(event):
+        SGData = data['General']['SGData']        
+        DijVals = data['Histograms'][G2frame.hist]['HStrain'][0][:]
+        # apply the Dij values to the reciprocal cell
+        newA = []
+        Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+        for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
+                            ['D11','D22','D33','D12','D13','D23']):
+            newA.append(Aij + Dijdict.get(lbl,0.0))
+        # convert back to direct cell
+        data['General']['Cell'][1:7] = G2lat.A2cell(newA)
+        data['General']['Cell'][7] = G2lat.calc_V(newA)
+        # subtract the selected histograms Dij values from all for this phase
+        for hist in data['Histograms']:
+            for i,val in enumerate(DijVals):
+                data['Histograms'][hist]['HStrain'][0][i] -= val
+        # for hist in sorted(data['Histograms']): # list effective lattice constants applying Dij values
+        #     DijVals = data['Histograms'][hist]['HStrain'][0]
+        #     newA = []
+        #     Dijdict = dict(zip(G2spc.HStrainNames(SGData),DijVals))
+        #     for Aij,lbl in zip(G2lat.cell2A(data['General']['Cell'][1:7]),
+        #                     ['D11','D22','D33','D12','D13','D23']):
+        #         newA.append(Aij + Dijdict.get(lbl,0.0))
+        #     print(hist, G2lat.A2cell(newA)[:3], G2lat.calc_V(newA))
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
+
 ################################################################################
 ##### Rigid bodies
 ################################################################################
@@ -8919,6 +8945,7 @@ entered the right symbol for your structure.
         G2frame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2G.wxID_PWDRADD)
         G2frame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2G.wxID_HKLFADD)
         G2frame.Bind(wx.EVT_MENU, OnDataDelete, id=G2G.wxID_DATADELETE)
+        G2frame.Bind(wx.EVT_MENU, OnDataApplyStrain, id=G2G.wxID_DATADIJ)
         # Atoms
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.AtomsMenu)
         G2frame.Bind(wx.EVT_MENU, OnSetAll, id=G2G.wxID_ATOMSSETALL)

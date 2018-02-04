@@ -760,7 +760,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         for r in rows:
-            for lbl,c in refOpts.iteritems():
+            for lbl,c in refOpts.items():
                 data['peaks'][r][c] = lbl in sels
         UpdatePeakGrid(G2frame,data)
         

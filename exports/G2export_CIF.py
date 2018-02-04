@@ -52,6 +52,7 @@ try:
     import GSASIIctrlGUI as G2G
 except ImportError:
     pass
+import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
@@ -323,7 +324,7 @@ def WriteComposition(fp, phasedict, phasenam, parmDict):
     #if oneblock: # add scattering factors for current phase here
     WriteCIFitem(fp, '\nloop_  _atom_type_symbol _atom_type_number_in_cell')
     formula = ''
-    for elem in HillSortElements(compDict.keys()):
+    for elem in HillSortElements(list(compDict.keys())):
         WriteCIFitem(fp, '  ' + PutInCol(elem,4) +
                      G2mth.ValEsd(compDict[elem],-0.009,True))
         if formula: formula += " "
@@ -440,7 +441,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             '''
             CIFobj = G2dict.get("CIF_template")
             if defaultname:
-                defaultname = defaultname.encode('ascii','replace').strip().replace(' ','_')
+                defaultname = G2obj.StripUnicode(defaultname)
                 defaultname = re.sub(r'[^a-zA-Z0-9_-]','',defaultname)
                 defaultname = tmplate + "_" + defaultname + ".cif"
             else:
@@ -2944,7 +2945,7 @@ class CIFtemplateSelect(wx.BoxSizer):
         templateDefName = 'template_'+tmplate+'.cif'
         self.CIF = G2dict.get("CIF_template")
         if defaultname:
-            self.defaultname = defaultname.encode('ascii','replace').strip().replace(' ','_')
+            self.defaultname = G2obj.StripUnicode(defaultname)
             self.defaultname = re.sub(r'[^a-zA-Z0-9_-]','',self.defaultname)
             self.defaultname = tmplate + "_" + self.defaultname + ".cif"
         else:

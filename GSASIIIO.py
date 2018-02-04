@@ -1857,7 +1857,7 @@ class ExportBaseclass(object):
             if len(key) < 3: continue
             if key[2].startswith('dA'):
                 self.parmDict[i] = 0.0
-        for i,(val,sig) in data_name.get('depParmDict',{}).iteritems():
+        for i,(val,sig) in data_name.get('depParmDict',{}).items():
             self.parmDict[i] = val
             self.sigDict[i] = sig
         #GSASIIpath.IPyBreak()
@@ -1912,7 +1912,7 @@ class ExportBaseclass(object):
         ESDlookup = {}
         Dlookup = {}
         varied = [striphist(i) for i in data_name['varyList']]
-        for item,val in data_name['newCellDict'].iteritems():
+        for item,val in data_name['newCellDict'].items():
             if item in varied:
                 ESDlookup[val[0]] = item
                 Dlookup[item] = val[0]

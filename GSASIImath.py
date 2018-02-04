@@ -1681,7 +1681,10 @@ def ApplyModulation(data,tau):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
                 if len(scof):
-                    mom += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1) 
+                    if icent < 0:                        
+                        mom += np.sum(posFourier(.25-tauT,np.array(scof),np.array(ccof)),axis=1)
+                    else:
+                        mom += np.sum(posFourier(tauT*icent,np.array(scof),np.array(ccof)),axis=1)
             if len(Sadp):
                 scof = []
                 ccof = []

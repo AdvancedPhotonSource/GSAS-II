@@ -382,21 +382,25 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 MagFdict = {}
                 UijFloop = None
                 UijFdict = {}
+                #occupancy modulation
                 if blk.get('_atom_site_occ_Fourier_atom_site_label'):
                     occFloop = blk.GetLoop('_atom_site_occ_Fourier_atom_site_label')
                     occFdict = dict(occFloop.items())
                 if blk.get('_atom_site_occ_special_func_atom_site_label'):  #Crenel (i.e. Block Wave) occ
                     occCloop = blk.GetLoop('_atom_site_occ_special_func_atom_site_label')
                     occCdict = dict(occCloop.items())
+                #position modulation
                 if blk.get('_atom_site_displace_Fourier_atom_site_label'):
                     displFloop = blk.GetLoop('_atom_site_displace_Fourier_atom_site_label')
                     displFdict = dict(displFloop.items())                            
                 if blk.get('_atom_site_displace_special_func_atom_site_label'): #sawtooth
                     displSloop = blk.GetLoop('_atom_site_displace_special_func_atom_site_label')
                     displSdict = dict(displSloop.items())
+                #U modulation
                 if blk.get('_atom_site_U_Fourier_atom_site_label'):
                     UijFloop = blk.GetLoop('_atom_site_U_Fourier_atom_site_label')
                     UijFdict = dict(UijFloop.items())
+                #Mag moment modulation
                 if blk.get('_atom_site_moment_Fourier_atom_site_label'):
                     MagFloop = blk.GetLoop('_atom_site_moment_Fourier_atom_site_label')
                     MagFdict = dict(MagFloop.items())
@@ -474,12 +478,26 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             matomlist[mcol] = cif.get_number_with_esd(mval)[0]
                     self.MPhase['Atoms'].append(matomlist)
                 if Super:
-                    Sfrac = []
+                    Sfrac = np.zeros((4,2))
                     Sadp = np.zeros((4,12))
                     Spos = np.zeros((4,6))
                     Smag = np.zeros((4,6))
                     nim = -1
-                    waveType = 'Fourier'                                
+                    waveType = 'Fourier'
+                    if  occCdict:
+                        for i,item in enumerate(occCdict['_atom_site_occ_special_func_atom_site_label']):
+                            if item == atomlist[0]:
+                                waveType = 'Crenel'
+                                val = occCdict['_atom_site_occ_special_func_crenel_c'][i]
+                                Sfrac[0][0] = cif.get_number_with_esd(val)[0]
+                                val = occCdict['_atom_site_occ_special_func_crenel_w'][i]
+                                Sfrac[0][1] = cif.get_number_with_esd(val)[0]
+                                nim = 1
+                    
+                    if nim >= 0:
+                        Sfrac = [[sfrac,False] for sfrac in Sfrac[:nim]]
+                    else:
+                        Sfrac = []
                     if displFdict:
                         for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
                             if item == atomlist[0]:
@@ -500,6 +518,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         nim = -1
                         for i,item in enumerate(UijFdict['_atom_site_u_fourier_atom_site_label']):
                             if item == atomlist[0]:
+                                waveType = 'Fourier'                                
                                 ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_u_fourier_tens_elem'][i])
                                 im = int(UijFdict['_atom_site_u_fourier_wave_vector_seq_id'][i])
                                 if im != nim:

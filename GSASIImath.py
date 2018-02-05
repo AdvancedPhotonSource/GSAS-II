@@ -1680,7 +1680,7 @@ def ApplyModulation(data,tau):
                 for i,spos in enumerate(Smag):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
-                if len(scof):
+                if len(scof):               #ToDo: something odd here, but it works
                     if icent < 0:                        
                         mom += np.sum(posFourier(.25-tauT,np.array(scof),np.array(ccof)),axis=1)
                     else:

@@ -1474,81 +1474,106 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         
     def OnMotion(event):
         xpos = event.xdata
-        if xpos:                                        #avoid out of frame mouse position
-            ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            try:
-                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters')
-                if not Id: return
-                Parms,Parms2 = G2frame.GPXtree.GetItemPyData(Id)
-                if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
-                    q = xpos
-                    dsp = 2.*np.pi/q
-                    try:
-                        xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
-                    except ValueError:      #avoid bad value in asin beyond upper limit
-                        pass
-                elif plottype in ['SASD','REFD']:
-                    q = xpos
-                    dsp = 2.*np.pi/q
-                elif G2frame.plotStyle['dPlot']:
-                    dsp = xpos
-                    q = 2.*np.pi/dsp
-                    xpos = G2lat.Dsp2pos(Parms,xpos)
-                elif G2frame.Contour and 'T' in Parms['Type'][0]:
-                    xpos = X[int(xpos)]                   
-                    dsp = G2lat.Pos2dsp(Parms,xpos)
-                    q = 2.*np.pi/dsp
+        if xpos is None: return  #avoid out of frame mouse position
+        ypos = event.ydata
+        Page.canvas.SetCursor(wx.CROSS_CURSOR)
+        try:
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters')
+            if not Id: return
+            Parms,Parms2 = G2frame.GPXtree.GetItemPyData(Id)
+            if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
+                q = xpos
+                dsp = 2.*np.pi/q
+                try:
+                    xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
+                except ValueError:      #avoid bad value in asin beyond upper limit
+                    return
+                limx = Plot.get_xlim()
+                try:
+                    xmin = G2lat.Dsp2pos(Parms,2.0*np.pi/limx[0])
+                except ValueError:      #fix bad value in asin beyond upper limit
+                    #if 'C' in Parms['Type'][0]: # how to handle TOF?
+                    xmin = 0.
+                try:
+                    xmax = G2lat.Dsp2pos(Parms,2.0*np.pi/limx[1])
+                except ValueError:      #fix bad value in asin beyond upper limit
+                    #if 'C' in Parms['Type'][0]: # how to handle TOF?
+                    xmin = 180.
+                wid = np.fabs(xmax - xmin)
+            elif plottype in ['SASD','REFD']:
+                q = xpos
+                dsp = 2.*np.pi/q
+                limx = Plot.get_xlim()
+                wid = np.fabs(2.*np.pi/limx[1] - 2.*np.pi/limx[0])                
+            elif G2frame.plotStyle['dPlot']:
+                dsp = xpos
+                q = 2.*np.pi/dsp
+                xpos = G2lat.Dsp2pos(Parms,xpos)
+                limx = Plot.get_xlim()
+                wid = np.fabs(2.*np.pi/limx[1] - 2.*np.pi/limx[0])                
+            elif G2frame.Contour and 'T' in Parms['Type'][0]:
+                xpos = X[int(xpos)]                   
+                dsp = G2lat.Pos2dsp(Parms,xpos)
+                q = 2.*np.pi/dsp
+                limx = Plot.get_xlim()
+                wid = np.fabs(limx[1]-limx[0])
+            else:
+                dsp = G2lat.Pos2dsp(Parms,xpos)
+                q = 2.*np.pi/dsp
+                limx = Plot.get_xlim()
+                wid = np.fabs(limx[1]-limx[0])
+            if G2frame.Contour: #PWDR only
+                if 'C' in Parms['Type'][0]:
+                    G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                 else:
-                    dsp = G2lat.Pos2dsp(Parms,xpos)
-                    q = 2.*np.pi/dsp
-                if G2frame.Contour: #PWDR only
-                    if 'C' in Parms['Type'][0]:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
-                    else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
-                else:
-                    if 'C' in Parms['Type'][0]:
-                        if 'PWDR' in plottype:
-                            if G2frame.plotStyle['sqrtPlot']:
-                                G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
-                            else:
-                                G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
-                        elif plottype == 'SASD':
-                            G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
-                        elif plottype == 'REFD':
-                            G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
-                    else:
+                    G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+            else:
+                if 'C' in Parms['Type'][0]:
+                    if 'PWDR' in plottype:
                         if G2frame.plotStyle['sqrtPlot']:
-                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                         else:
-                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
-                if G2frame.itemPicked:
-                    Page.SetToolTipString('%9.5f'%(xpos))
-                if G2frame.PickId:
-                    found = []
-                    pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
-                    if pickIdText in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
-                        'PWDR' in pickIdText:
-                        indx = -1
-                        if pickIdText in ['Index Peak List','Unit Cells List',]:
-                            indx = -2
-                        if len(G2frame.HKL):
-                            limx = Plot.get_xlim()
-                            wid = limx[1]-limx[0]
-                            found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < 0.002*wid)]
-                        if len(found):
-                            if len(found[0]) > 6:   #SS reflections
-                                h,k,l,m = found[0][:4]
-                                Page.SetToolTipString('%d,%d,%d,%d'%(int(h),int(k),int(l),int(m)))
-                            else:
-                                h,k,l = found[0][:3] 
-                                Page.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
-                        else:
-                            Page.SetToolTipString('')
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                    elif plottype == 'SASD':
+                        G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
+                    elif plottype == 'REFD':
+                        G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
+                else:
+                    if G2frame.plotStyle['sqrtPlot']:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                    else:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+            s = ''
+            if G2frame.PickId:
+                pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
+            else:
+                pickIdText = '?' # unexpected
+            if pickIdText in ['Index Peak List',
+                              'Unit Cells List','Reflection Lists'] and len(G2frame.HKL):
+                found = []
+                indx = -1
+                if pickIdText in ['Index Peak List','Unit Cells List',]:
+                    indx = -2
+                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < 0.005*wid)] # finds reflections within 1% of plot range
+                if len(found):
+                    if len(found[0]) > 6:   #SS reflections
+                        fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
+                        n = 4
+                    else:
+                        fmt = "{:.0f},{:.0f},{:.0f}"
+                        n = 3
+                    for i,hkl in enumerate(found):
+                        if i >= 3:
+                            s += '\n...'
+                            break
+                        if s: s += '\n'
+                        s += fmt.format(*hkl[:n])
+            elif G2frame.itemPicked: # not sure when this will happen
+                s = '%9.5f'%(xpos)
+            Page.SetToolTipString(s)
 
-            except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+        except TypeError:
+            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
                 
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots
         np.seterr(invalid='ignore')

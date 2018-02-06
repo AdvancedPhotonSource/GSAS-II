@@ -7094,7 +7094,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Tmax = newdata[-1]
         G2frame.GPXtree.SetItemPyData(GetGPXtreeItemId(G2frame,item,'Limits'),
             [(Tmin,Tmax),[Tmin,Tmax]])
-        UpdatePWHKPlot(G2frame,kind,item) # redisplay data screen
+        wx.CallAfter(UpdatePWHKPlot,G2frame,kind,item) # redisplay data screen
 
     def OnPlot3DHKL(event):
         refList = data[1]['RefList']

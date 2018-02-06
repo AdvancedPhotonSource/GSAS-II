@@ -1481,47 +1481,49 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters')
             if not Id: return
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(Id)
+            limx = Plot.get_xlim()
+            dT = tolerance = np.fabs(limx[1]-limx[0])/100.
             if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
                 q = xpos
-                dsp = 2.*np.pi/q
-                try:
-                    xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
-                except ValueError:      #avoid bad value in asin beyond upper limit
+                if q <= 0:
+                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
                     return
-                limx = Plot.get_xlim()
                 try:
-                    xmin = G2lat.Dsp2pos(Parms,2.0*np.pi/limx[0])
-                except ValueError:      #fix bad value in asin beyond upper limit
-                    #if 'C' in Parms['Type'][0]: # how to handle TOF?
-                    xmin = 0.
-                try:
-                    xmax = G2lat.Dsp2pos(Parms,2.0*np.pi/limx[1])
-                except ValueError:      #fix bad value in asin beyond upper limit
-                    #if 'C' in Parms['Type'][0]: # how to handle TOF?
-                    xmin = 180.
-                wid = np.fabs(xmax - xmin)
+                    dsp = 2.*np.pi/q
+                    xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/q)
+                except ValueError:      #avoid bad value in asin beyond upper limit
+                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
+                    return
+                if 'C' in Parms['Type'][0] or 'PKS' in Parms['Type'][0]:
+                    wave = G2mth.getWave(Parms)
+                    dT = tolerance*wave*90./(np.pi**2*cosd(xpos/2))
+                else: # TOF
+                    dT = Parms['difC'][1] * 2 * np.pi * tolerance / q**2
             elif plottype in ['SASD','REFD']:
                 q = xpos
+                if q <= 0:
+                    G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
+                    return
                 dsp = 2.*np.pi/q
-                limx = Plot.get_xlim()
-                wid = np.fabs(2.*np.pi/limx[1] - 2.*np.pi/limx[0])                
             elif G2frame.plotStyle['dPlot']:
                 dsp = xpos
-                q = 2.*np.pi/dsp
-                xpos = G2lat.Dsp2pos(Parms,xpos)
-                limx = Plot.get_xlim()
-                wid = np.fabs(2.*np.pi/limx[1] - 2.*np.pi/limx[0])                
+                if dsp <= 0:
+                    G2frame.G2plotNB.status.SetStatusText('d = %9.5f'%dsp)
+                    return
+                try:
+                    q = 2.*np.pi/dsp
+                    xpos = G2lat.Dsp2pos(Parms,dsp)
+                except ValueError:      #avoid bad value
+                    G2frame.G2plotNB.status.SetStatusText('d = %9.5f'%dsp)
+                    return                
+                dT = tolerance*xpos/dsp
             elif G2frame.Contour and 'T' in Parms['Type'][0]:
                 xpos = X[int(xpos)]                   
                 dsp = G2lat.Pos2dsp(Parms,xpos)
                 q = 2.*np.pi/dsp
-                limx = Plot.get_xlim()
-                wid = np.fabs(limx[1]-limx[0])
             else:
                 dsp = G2lat.Pos2dsp(Parms,xpos)
                 q = 2.*np.pi/dsp
-                limx = Plot.get_xlim()
-                wid = np.fabs(limx[1]-limx[0])
             if G2frame.Contour: #PWDR only
                 if 'C' in Parms['Type'][0]:
                     G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
@@ -1554,7 +1556,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 indx = -1
                 if pickIdText in ['Index Peak List','Unit Cells List',]:
                     indx = -2
-                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < 0.005*wid)] # finds reflections within 1% of plot range
+                # finds reflections within 1% of plot range in units of plot
+                found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < dT/2.)] 
                 if len(found):
                     if len(found[0]) > 6:   #SS reflections
                         fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"

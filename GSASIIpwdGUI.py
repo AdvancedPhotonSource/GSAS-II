@@ -153,10 +153,11 @@ class RDFDialog(wx.Dialog):
 ################################################################################
 
 def GetFileBackground(G2frame,xye,Pattern):
-    backfile,mult = Pattern[0]['BackFile']
     bxye = np.zeros(len(xye[1]))
-    if backfile:
-        bxye = mult*G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile))[1][1]
+    if 'BackFile' in Pattern[0]:
+        backfile,mult = Pattern[0]['BackFile']
+        if backfile:
+            bxye = mult*G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile))[1][1]
     return bxye
     
 def IsHistogramInAnyPhase(G2frame,histoName):

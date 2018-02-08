@@ -633,7 +633,10 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
         'U11cos:':USSdata[6],'U22cos:':USSdata[7],'U33cos:':USSdata[8],'U12cos:':USSdata[9],'U13cos:':USSdata[10],'U23cos:':USSdata[11],
         'MXsin:':MSSdata[0],'MYsin:':MSSdata[1],'MZsin:':MSSdata[2],'MXcos:':MSSdata[3],'MYcos:':MSSdata[4],'MZcos:':MSSdata[5]}
     for iatm in range(Natoms):
-        waveTypes.append(parmDict[pfx+'waveType:'+str(iatm)])
+        for kind in ['F','P','A','M']:
+            wavetype = []
+            wavetype += [parmDict.get(pfx+kind+'waveType:'+str(iatm),''),]
+            waveTypes.append(wavetype)
         for key in keys:
             for m in range(Nwave[key[0]]):
                 parm = pfx+key+str(iatm)+':%d'%(m)

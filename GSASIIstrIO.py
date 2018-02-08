@@ -986,10 +986,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 Waves = AtomSS[Stype]
                 if len(Waves):
                     pFile.write(' atom: %s, site sym: %s, type: %s wave type: %s:\n'%
-                        (at[ct-1],at[cs],Stype,AtomSS['waveType']))
-                for iw,wave in enumerate(Waves):                    
+                        (at[ct-1],at[cs],Stype,Waves[0]))
+                else:
+                    continue
+                for iw,wave in enumerate(Waves[1:]):                    
                     line = ''
-                    if AtomSS['waveType'] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
+                    if Waves[0] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
                         for item in names[Stype][6:]:
                             line += '%8s '%(item)                        
                     else:
@@ -1243,18 +1245,21 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 G2mv.StoreEquivalence(name,(eqv,))
                 if General.get('Modulated',False):
                     AtomSS = at[-1]['SS1']
-                    waveType = AtomSS['waveType']
-                    phaseDict[pfx+'waveType:'+str(i)] = waveType
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
+                        if len(Waves):
+                            waveType = Waves[0]
+                        else:
+                            continue
+                        phaseDict[pfx+Stype[1].upper()+'waveType:'+str(i)] = waveType
                         nx = 0
-                        for iw,wave in enumerate(Waves):
+                        for iw,wave in enumerate(Waves[1:]):
                             if not iw:
                                 if waveType in ['ZigZag','Block']:
                                     nx = 1
-                                CSI = G2spc.GetSSfxuinel(waveType,1,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel(waveType,Stype,1,at[cx:cx+3],SGData,SSGData)
                             else:
-                                CSI = G2spc.GetSSfxuinel('Fourier',iw+1-nx,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel('Fourier',Stype,iw+1-nx,at[cx:cx+3],SGData,SSGData)
                             uId,uCoef = CSI[Stype]
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
@@ -1684,13 +1689,16 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         pFile.write(135*'-'+'\n')
         for i,at in enumerate(Atoms):
             AtomSS = at[-1]['SS1']
-            waveType = AtomSS['waveType']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
                 if len(Waves):
+                    waveType = Waves[0]
+                else:
+                    continue
+                if len(Waves):
                     pFile.write(' atom: %s, site sym: %s, type: %s wave type: %s:\n'%
                         (at[ct-1],at[cs],Stype,waveType))
-                    for iw,wave in enumerate(Waves):
+                    for iw,wave in enumerate(Waves[1:]):
                         stiw = ':'+str(i)+':'+str(iw)
                         namstr = '  names :'
                         valstr = '  values:'
@@ -2021,10 +2029,13 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
                 if General.get('Modulated',False):
                     AtomSS = at[-1]['SS1']
-                    waveType = AtomSS['waveType']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
-                        for iw,wave in enumerate(Waves):
+                        if len(Waves):
+                            waveType = Waves[0]
+                        else:
+                            continue
+                        for iw,wave in enumerate(Waves[1:]):
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Block',] and not iw:
@@ -2046,7 +2057,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                 names = ['MXsin:'+stiw,'MYsin:'+stiw,'MZsin:'+stiw,
                                     'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
                             for iname,name in enumerate(names):
-                                AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
+                                AtomSS[Stype][iw+1][0][iname] = parmDict[pfx+name]
                                 if pfx+name in sigDict:
                                     wavesSig[name] = sigDict[pfx+name]
                     

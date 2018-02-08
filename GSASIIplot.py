@@ -3973,7 +3973,13 @@ def PlotTexture(G2frame,data,Start=False):
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     G2frame.G2plotNB.status.SetStatusText('phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf),1)
+                    
+    def OnPick(event):
+        pick = event.artist
+        Dettext = pick.get_gid()
+        Page.SetToolTipString(Dettext)
 
+#TODO: add histogram positions to polefigures
     if '3D' in SHData['PlotType']:
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Texture','3d')
     else:
@@ -3983,6 +3989,7 @@ def PlotTexture(G2frame,data,Start=False):
             Page.Show()
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
     Page.Choice = None
     G2frame.G2plotNB.status.SetStatusText('')    
     G2frame.G2plotNB.status.SetStatusWidths([150,-1])
@@ -4069,13 +4076,24 @@ def PlotTexture(G2frame,data,Start=False):
             Z = G2lat.polfcal(ODFln,SamSym[textureData['Model']],R,P)
             Z = np.reshape(Z,(npts,npts))
             try:
-                CS = Plot.contour(Y,X,Z,aspect='equal')
+                CS = Plot.contour(Y,X,Z)
                 Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
             acolor = mpl.cm.get_cmap(G2frame.ContourColor)
             Img = Plot.imshow(Z.T,aspect='equal',cmap=acolor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
+            if 'det Angles' in textureData and textureData['ShoDet']:
+                Rdet = np.array([item[1] for item in textureData['det Angles']])
+                Pdet = np.array([item[2] for item in textureData['det Angles']])
+                if 'equal' in G2frame.Projection:
+                    Rdet = npsind(Rdet/2.)/sq2
+                else:
+                    Rdet = nptand(Rdet/2.)
+                Xdet = list(npcosd(Pdet)*Rdet)
+                Ydet = list(npsind(Pdet)*Rdet)
+                for i,[x,y] in enumerate(zip(Xdet,Ydet)):
+                    Plot.plot(x,-y,'k+',picker=5,gid=textureData['det Angles'][i][0])
             h,k,l = SHData['PFhkl']
             Plot.axis('off')
             Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
@@ -4140,14 +4158,14 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     MapType = mapData['MapType']
     rhoSize = np.array(Map['rho'].shape)
     atxyz = np.array(atom[cx:cx+3])
-    waveType = atom[-1]['SS1']['waveType']
     Spos = atom[-1]['SS1']['Spos']
     tau = np.linspace(0.,2.,101)
     wave = np.zeros((3,101))
     if len(Spos):
         scof = []
         ccof = []
-        for i,spos in enumerate(Spos):
+        waveType = Spos[0]
+        for i,spos in enumerate(Spos[1:]):
             if waveType in ['ZigZag','Block'] and not i:
                 Tminmax = spos[0][:2]
                 XYZmax = np.array(spos[0][2:])

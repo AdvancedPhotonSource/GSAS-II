@@ -2146,7 +2146,7 @@ def OpsfromStringOps(A,SGData,SSGData):
         unit = eval('['+Ax[1]+']')
     return SGOps[nA],SSGOps[nA],iC,SGData['SGCen'][nC],unit
     
-def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
+def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
     
     def orderParms(CSI):
         parms = [0,]
@@ -2483,14 +2483,14 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     #setup displacement arrays
     tau = np.linspace(-1,1,49,True)
     #make modulation arrays - one parameter at a time
-    #site fractions
-    CSI['Sfrac'],dF,dFTP = DoFrac()
-    #positions
-    CSI['Spos'],dX,dXTP = DoXYZ()        
-    #anisotropic thermal motion
-    CSI['Sadp'],dU,dUTP = DoUij()
-    CSI['Spos'][0] = orderParms(CSI['Spos'][0])
-    CSI['Sadp'][0] = orderParms(CSI['Sadp'][0])            
+    if Stype == 'Sfrac':
+        CSI['Sfrac'],dF,dFTP = DoFrac()
+    elif Stype == 'Spos':
+        CSI['Spos'],dX,dXTP = DoXYZ()        
+        CSI['Spos'][0] = orderParms(CSI['Spos'][0])
+    elif Stype == 'Sadp':
+        CSI['Sadp'],dU,dUTP = DoUij()
+        CSI['Sadp'][0] = orderParms(CSI['Sadp'][0])            
     if debug:
         return CSI,tau,[dF,dFTP],[dX,dXTP],[dU,dUTP]
     else:

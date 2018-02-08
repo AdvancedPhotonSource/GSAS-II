@@ -1629,7 +1629,6 @@ def ApplyModulation(data,tau):
     for atom in atoms:    
         atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
         atuij = np.array(atom[cia+2:cia+8])
-        waveType = atom[-1]['SS1']['waveType']
         Sfrac = atom[-1]['SS1']['Sfrac']
         Spos = atom[-1]['SS1']['Spos']
         Sadp = atom[-1]['SS1']['Sadp']
@@ -1650,7 +1649,8 @@ def ApplyModulation(data,tau):
             if len(Sfrac):
                 scof = []
                 ccof = []
-                for i,sfrac in enumerate(Sfrac):
+                waveType = Sfrac[0]
+                for i,sfrac in enumerate(Sfrac[1:]):
                     if not i and 'Crenel' in waveType:
                         Fade[ind] += fracCrenel(tauT,sfrac[0][0],sfrac[0][1])
                     else:
@@ -1661,7 +1661,8 @@ def ApplyModulation(data,tau):
             if len(Spos):
                 scof = []
                 ccof = []
-                for i,spos in enumerate(Spos):
+                waveType = Spos[0]
+                for i,spos in enumerate(Spos[1:]):
                     if waveType in ['ZigZag','Block'] and not i:
                         Tminmax = spos[0][:2]
                         XYZmax = np.array(spos[0][2:])
@@ -1677,7 +1678,8 @@ def ApplyModulation(data,tau):
             if generalData['Type'] == 'magnetic' and len(Smag):
                 scof = []
                 ccof = []
-                for i,spos in enumerate(Smag):
+                waveType = Smag[0]
+                for i,spos in enumerate(Smag[1:]):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
                 if len(scof):               #ToDo: something odd here, but it works
@@ -1688,7 +1690,8 @@ def ApplyModulation(data,tau):
             if len(Sadp):
                 scof = []
                 ccof = []
-                for i,sadp in enumerate(Sadp):
+                waveType = Sadp[0]
+                for i,sadp in enumerate(Sadp[1:]):
                     scof.append(sadp[0][:6])
                     ccof.append(sadp[0][6:])
                 uwave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)

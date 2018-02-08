@@ -495,7 +495,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 nim = 1
                     
                     if nim >= 0:
-                        Sfrac = [[sfrac,False] for sfrac in Sfrac[:nim]]
+                        Sfrac = [waveType,]+[[sfrac,False] for sfrac in Sfrac[:nim]]
                     else:
                         Sfrac = []
                     if displFdict:
@@ -511,14 +511,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 val = displFdict['_atom_site_displace_fourier_param_cos'][i]
                                 Spos[im-1][ix+3] = cif.get_number_with_esd(val)[0]
                     if nim >= 0:
-                        Spos = [[spos,False] for spos in Spos[:nim]]
+                        Spos = [waveType,]+[[spos,False] for spos in Spos[:nim]]
                     else:
                         Spos = []
                     if UijFdict:
                         nim = -1
                         for i,item in enumerate(UijFdict['_atom_site_u_fourier_atom_site_label']):
                             if item == atomlist[0]:
-                                waveType = 'Fourier'                                
                                 ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_u_fourier_tens_elem'][i])
                                 im = int(UijFdict['_atom_site_u_fourier_wave_vector_seq_id'][i])
                                 if im != nim:
@@ -528,14 +527,13 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 val = UijFdict['_atom_site_u_fourier_param_cos'][i]
                                 Sadp[im-1][ix+6] = cif.get_number_with_esd(val)[0]
                     if nim >= 0:
-                        Sadp = [[sadp,False] for sadp in Sadp[:nim]]
+                        Sadp = ['Fourier',]+[[sadp,False] for sadp in Sadp[:nim]]
                     else:
                         Sadp = []
                     if MagFdict:
                         nim = -1
                         for i,item in enumerate(MagFdict[Mnames[0]]):
                             if item == atomlist[0]:
-                                waveType = 'Fourier'                                
                                 ix = ['x','y','z'].index(MagFdict[Mnames[1]][i])
                                 im = int(MagFdict[Mnames[2]][i])
                                 if im != nim:
@@ -544,11 +542,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                                 Smag[im-1][ix] = cif.get_number_with_esd(val)[0]
                                 val = MagFdict[Mnames[4]][i]
                                 Smag[im-1][ix+3] = cif.get_number_with_esd(val)[0]
-                        if nim >= 0:
-                            Smag = [[smag,False] for smag in Smag[:nim]]
-                        else:
-                            Smag = []
-                    SSdict = {'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}}
+                    if nim >= 0:
+                        Smag = ['Fourier',]+[[smag,False] for smag in Smag[:nim]]
+                    else:
+                        Smag = []
+                    SSdict = {'SS1':{'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}}
                     if magnetic and atomlist[0] in magatomlabels:
                         matomlist.append(SSdict)
                     atomlist.append(SSdict)

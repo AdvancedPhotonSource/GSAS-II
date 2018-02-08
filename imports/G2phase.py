@@ -344,7 +344,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
                         
         if shNcof:
             shCoef = {}
-            nRec = [i+1 for i in range((shNcof-1)/6+1)]
+            nRec = [i+1 for i in range((shNcof-1)//6+1)]
             for irec in nRec:
                 ODkey = keyList[0][:6]+'OD'+'%3dA'%(irec)
                 indx = EXPphase[ODkey].split()
@@ -583,7 +583,7 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             Atom.append(ran.randint(0,sys.maxsize))
             Atom.append([])
             Atom.append([])
-            Atom.append({'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
+            Atom.append({'SS1':{'Sfrac':[waveType,]+Sfrac,'Spos':[waveType,]+Spos,'Sadp':['Fourier',]+Sadp,'Smag':['Fourier',]+Smag}})    #SS2 is for (3+2), etc.
             Atoms.append(Atom)
         file2.close()
         self.errors = 'Error after read complete'

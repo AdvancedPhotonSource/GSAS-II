@@ -1176,6 +1176,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if '4DmapData' not in generalData:
                 generalData['4DmapData'] = mapDefault.copy()
                 generalData['4DmapData'].update({'MapType':'Fobs'})
+            atomData = data['Atoms']
+            for atom in atomData:
+                if 'waveType' in atom[-1]['SS1']:
+                    waveType = atom[-1]['SS1']['waveType']
+                    for parm in ['Sfrac','Spos','Sadp','Smag']:
+                        if len(atom[-1]['SS1'][parm]):
+                            wType = 'Fourier'
+                            if parm == 'Sfrac':
+                                if 'Crenel' in waveType:
+                                    wType = 'Crenel'
+                            elif parm == 'Spos':
+                                if not 'Crenel' in waveType:
+                                    wType = waveType
+                            atom[-1]['SS1'][parm] = [wType,]+atom[-1]['SS1'][parm]
+                    del atom[-1]['SS1']['waveType']
         if 'Modulated' not in generalData:
             generalData['Modulated'] = False
         if 'HydIds' not in generalData:
@@ -2221,6 +2236,14 @@ entered the right symbol for your structure.
             return mcsaSizer
 
         # UpdateGeneral execution starts here
+#patches        
+        if 'Pawley dmax' not in data['General']:
+            data['General']['Pawley dmax'] = 100.0
+        if 'SGFixed' not in data['General']['SGData']:
+            data['General']['SGData']['SGFixed'] = False
+        if 'SGGray' not in data['General']['SGData']:
+            data['General']['SGData']['SGGray'] = False
+#end patches        
         if General.GetSizer():
             General.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2238,14 +2261,6 @@ entered the right symbol for your structure.
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
         G2G.HorizontalLine(mainSizer,General)
-#patches        
-        if 'Pawley dmax' not in generalData:
-            generalData['Pawley dmax'] = 100.0
-        if 'SGFixed' not in generalData['SGData']:
-            generalData['SGData']['SGFixed'] = False
-        if 'SGGray' not in generalData['SGData']:
-            generalData['SGData']['SGGray'] = False
-#end patches        
         if generalData['Type'] == 'magnetic':
             if not generalData['SGData']['SGFixed']:
                 GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
@@ -4581,13 +4596,13 @@ entered the right symbol for your structure.
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
-        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5}
+        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5,'Crenel':2,'SawTooth':3}
         posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
         adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
         fracNames = ['Fsin','Fcos','Fzero','Fwid']
-        waveTypes = ['Fourier','ZigZag','Block','Crenel/Fourier']
+        waveTypes = {'Sfrac':['Fourier','Crenel'],'Spos':['Fourier','ZigZag','Block','SawTooth'],'Sadp':['Fourier',],'Smag':['Fourier',]}
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         Indx = {}
         waveData = G2frame.waveData
@@ -4631,11 +4646,6 @@ entered the right symbol for your structure.
             
             def AtomSizer(atom):
                 
-                def OnWaveType(event):
-                    atom[-1]['SS1']['waveType'] = waveType.GetValue()
-                    atom[-1]['SS1']['Spos'] = []
-                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
-                    
                 def OnShowWave(event):
                     Obj = event.GetEventObject()
                     atom = Indx[Obj.GetId()]               
@@ -4644,11 +4654,7 @@ entered the right symbol for your structure.
                     
                 atomSizer = wx.BoxSizer(wx.HORIZONTAL)
                 atomSizer.Add(wx.StaticText(waveData,label=
-                ' Modulation data for atom: %s  Site sym: %s  WaveType: '%(atom[0],atom[cs].strip())),0,WACV)            
-                waveType = wx.ComboBox(waveData,value=atom[-1]['SS1']['waveType'],choices=waveTypes,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
-                atomSizer.Add(waveType,0,WACV)
+                ' Modulation data for atom: %s  Site sym: %s'%(atom[0],atom[cs].strip())),0,WACV)            
                 axchoice = ['x','y','z']
                 if len(D4Map['rho']):
                     atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis: '),0,WACV)
@@ -4659,74 +4665,95 @@ entered the right symbol for your structure.
                     atomSizer.Add(mapSel,0,WACV)
                 return atomSizer
                 
-            def WaveSizer(iatm,waveType,waveBlk,Stype,typeName,Names):
+            def WaveSizer(iatm,wavedata,Stype,typeName,Names):
                 
+                def OnWaveType(event):
+                    Obj = event.GetEventObject()
+                    item = Indx[Obj.GetId()]
+                    if not len(atm[-1]['SS1'][item]):
+                        atm[-1]['SS1']['Spos'] = [0,[]]
+                        atm[-1]['SS1'][Stype][0] = waveType.GetValue()
+                        wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
+                    else:
+                        if len(waveTypes[Stype]) > 1:
+                            waveType.SetValue(atm[-1]['SS1'][Stype][0])
+                            G2G.G2MessageBox(G2frame,'Warning: can only change wave type if no waves','Not changed')
+                    
                 def OnAddWave(event):
                     Obj = event.GetEventObject()
-                    iatm,item = Indx[Obj.GetId()]
+                    item = Indx[Obj.GetId()]
                     nt = numVals[Stype]
-                    if not len(atomData[iatm][-1]['SS1'][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
-                        nt = numVals[waveType]
-                    atomData[iatm][-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
+                    if not len(atm[-1]['SS1'][item][1]) and waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
+                        nt = numVals[waveTyp]
+                    atm[-1]['SS1'][item][1].append([[0.0 for i in range(nt)],False])
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     
                 def OnWaveVal(event):
                     event.Skip()
                     Obj = event.GetEventObject()
-                    iatm,item,iwave,ival = Indx[Obj.GetId()]
+                    item,iwave,ival = Indx[Obj.GetId()]
                     try:
                         val = float(Obj.GetValue())
-                        if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2 and not iwave:
+                        if waveTyp in ['ZigZag','Block'] and ival < 2 and not iwave:
                             if ival == 1: #Tmax
                                 val = min(1.0,max(0.0,val))
                             elif ival == 0: #Tmin
-                                val = max(-1.,min(val,atomData[iatm][-1]['SS1'][item][iwave][0][1]))
+                                val = max(-1.,min(val,atm[-1]['SS1'][item][1][iwave][1][1]))
                     except ValueError:
-                        val = atomData[iatm][-1]['SS1'][item][iwave][0][ival]
+                        val = atm[-1]['SS1'][item][iwave][1][ival]
                     Obj.SetValue('%.5f'%val)
-                    atomData[iatm][-1]['SS1'][item][iwave][0][ival] = val
+                    atm[-1]['SS1'][item][iwave][1][ival] = val
                     
                 def OnRefWave(event):
                     Obj = event.GetEventObject()
-                    iatm,item,iwave = Indx[Obj.GetId()]
-                    atomData[iatm][-1]['SS1'][item][iwave][1] = not atomData[iatm][-1]['SS1'][item][iwave][1]
+                    item,iwave = Indx[Obj.GetId()]
+                    atm[-1]['SS1'][item][1][iwave][2] = not atm[-1]['SS1'][item][1][iwave][2]
                     
                 def OnDelWave(event):
                     Obj = event.GetEventObject()
-                    iatm,item,iwave = Indx[Obj.GetId()]
-                    del atomData[iatm][-1]['SS1'][item][iwave]
+                    item,iwave = Indx[Obj.GetId()]
+                    del atm[-1]['SS1'][item][1][iwave]
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
                 
+                waveTyp,waveBlk = 'Fourier',[]
+                if len(wavedata):
+                    waveTyp = wavedata[0]
+                    waveBlk = wavedata[1:]
                 waveSizer = wx.BoxSizer(wx.VERTICAL)
                 waveHead = wx.BoxSizer(wx.HORIZONTAL)
                 waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
-                waveAdd = wx.CheckBox(waveData,label='Add wave?')
+                waveAdd = wx.CheckBox(waveData,label='Add wave?   WaveType: ')
                 waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
-                Indx[waveAdd.GetId()] = [iatm,Stype]
+                Indx[waveAdd.GetId()] = Stype
                 waveHead.Add(waveAdd,0,WACV)
+                waveType = wx.ComboBox(waveData,value=waveTyp,choices=waveTypes[Stype],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Indx[waveType.GetId()] = Stype
+                waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
+                waveHead.Add(waveType,0,WACV)
                 waveSizer.Add(waveHead)
                 if len(waveBlk):
                     nx = 0
                     for iwave,wave in enumerate(waveBlk):
                         if not iwave:
-                            if waveType in ['ZigZag','Block']:
+                            if waveTyp in ['ZigZag','Block','SawTooth','Crenel']:
                                 nx = 1
-                            CSI = G2spc.GetSSfxuinel(waveType,1,xyz,SGData,SSGData)
+                            CSI = G2spc.GetSSfxuinel(waveTyp,Stype,1,xyz,SGData,SSGData)
                         else:
-                            CSI = G2spc.GetSSfxuinel('Fourier',iwave+1-nx,xyz,SGData,SSGData)
+                            CSI = G2spc.GetSSfxuinel('Fourier',Stype,iwave+1-nx,xyz,SGData,SSGData)
                         waveName = 'Fourier'
                         if Stype == 'Sfrac':
-                            if 'Crenel' in waveType and not iwave:
+                            if 'Crenel' in waveTyp and not iwave:
                                 waveName = 'Crenel'
                                 names = Names[2:]
                             else:
                                 names = Names[:2]
                             Waves = wx.FlexGridSizer(0,4,5,5)
                         elif Stype == 'Spos':
-                            if waveType in ['ZigZag','Block'] and not iwave:
+                            if waveTyp in ['ZigZag','Block'] and not iwave:
                                 names = Names[6:]
                                 Waves = wx.FlexGridSizer(0,7,5,5)
-                                waveName = waveType
+                                waveName = waveTyp
                             else:
                                 names = Names[:6]
                                 Waves = wx.FlexGridSizer(0,8,5,5)
@@ -4739,7 +4766,7 @@ entered the right symbol for your structure.
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                                 waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
-                                Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
+                                Indx[waveVal.GetId()] = [Stype,iwave,ival]
                             else:
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
                                 waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
@@ -4749,14 +4776,14 @@ entered the right symbol for your structure.
                                 Waves.Add((5,5),0)
                         waveRef = wx.CheckBox(waveData,label='Refine?')
                         waveRef.SetValue(wave[1])
-                        Indx[waveRef.GetId()] = [iatm,Stype,iwave]
+                        Indx[waveRef.GetId()] = [Stype,iwave]
                         waveRef.Bind(wx.EVT_CHECKBOX, OnRefWave)
                         Waves.Add(waveRef,0,WACV)
                         if iwave < len(waveBlk)-1:
                             Waves.Add((5,5),0)                
                         else:
                             waveDel = wx.CheckBox(waveData,label='Delete?')
-                            Indx[waveDel.GetId()] = [iatm,Stype,iwave]
+                            Indx[waveDel.GetId()] = [Stype,iwave]
                             waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
                             Waves.Add(waveDel,0,WACV)
                         waveSizer.Add(Waves)                    
@@ -4773,7 +4800,8 @@ entered the right symbol for your structure.
                     continue
                 if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                     break
-                atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1']['waveType'],atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
+                
+                atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
             return atomSizer
 
         atms = wx.ComboBox(waveData,value=G2frame.atmSel,choices=atNames,
@@ -6085,6 +6113,11 @@ entered the right symbol for your structure.
             G2frame.Projection = Obj.GetValue()
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
+        def OnShoDet(event):
+            Obj = event.GetEventObject()
+            textureData['ShoDet'] = Obj.GetValue()
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)            
+            
         def OnColorSel(event):
             Obj = event.GetEventObject()
             G2frame.ContourColor = Obj.GetValue()
@@ -6262,8 +6295,6 @@ entered the right symbol for your structure.
             return shPenalty    
         
         # UpdateTexture executable starts here
-        if Texture.GetSizer(): Texture.GetSizer().Clear(True)
-        G2frame.GetStatusBar().SetStatusText('',1)
         generalData = data['General']        
         SGData = generalData['SGData']
         try:
@@ -6271,7 +6302,7 @@ entered the right symbol for your structure.
         except KeyError:            #fix old files!
             textureData = generalData['SH Texture'] = {'Order':0,'Model':'cylindrical',
                 'Sample omega':[False,0.0],'Sample chi':[False,0.0],'Sample phi':[False,0.0],
-                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],
+                'SH Coeff':[False,{}],'SHShow':False,'PFhkl':[0,0,1],'ShoDet':False,
                 'PFxyz':[0,0,1.],'PlotType':'Pole figure'}
         if 'SHShow' not in textureData:
             textureData.update({'SHShow':False,'PFhkl':[0,0,1],'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
@@ -6279,8 +6310,32 @@ entered the right symbol for your structure.
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         if 'Penalty' not in textureData:
             textureData['Penalty'] = [['',],0.1,False,1.0]
+        if 'ShoDet' not in textureData:
+            textureData['ShoDet'] = False
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
+        keyList = G2frame.GetHistogramNames(['PWDR',])
+        UseList = data['Histograms']
+        HistsInPhase = [name for name in keyList if name in UseList]
+        
+        textureData['det Angles'] = []
+        for hist in HistsInPhase:
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)       #only use 1st histogram
+            Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Sample Parameters'))
+            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Instrument Parameters'))[0]
+            textureData['det Angles'] = []
+            if 'NT' in Inst['Type'][0]:
+                Tth = Inst['2-theta'][1]/2.
+                Gangls = [Sample['Phi'],Sample['Chi'],Sample['Omega'],Sample['Azimuth']]
+                Sangls = [textureData['Sample omega'][1],textureData['Sample chi'][1],textureData['Sample phi'][1]]
+                phi,gam,x,x = G2lat.SamAng(Tth,Gangls,Sangls,False)
+                if phi > 90.:
+                    phi = 180.-phi
+                    gam += 180.
+                gam %= 360.
+                textureData['det Angles'].append([hist,phi,gam])            
+        
+        G2frame.GetStatusBar().SetStatusText('',1)
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -6325,7 +6380,13 @@ entered the right symbol for your structure.
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
             PTSizer.Add(projSel,0,WACV)
-            PTSizer.Add((0,5),0)
+            if textureData['PlotType'] == 'Pole figure' and len(textureData['det Angles']):
+                shoDet = wx.CheckBox(Texture,-1,label=' Show detectors?')
+                shoDet.SetValue(textureData['ShoDet'])
+                shoDet.Bind(wx.EVT_CHECKBOX, OnShoDet)
+                PTSizer.Add(shoDet,0,WACV)
+            else:
+                PTSizer.Add((0,5),0)
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']

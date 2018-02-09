@@ -1189,7 +1189,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             elif parm == 'Spos':
                                 if not 'Crenel' in waveType:
                                     wType = waveType
-                            atom[-1]['SS1'][parm] = [wType,]+atom[-1]['SS1'][parm]
+                            atom[-1]['SS1'][parm] = [wType,]+list(atom[-1]['SS1'][parm])
                     del atom[-1]['SS1']['waveType']
         if 'Modulated' not in generalData:
             generalData['Modulated'] = False

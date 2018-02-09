@@ -6003,8 +6003,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
                 SetDrawAtomsText(data['Drawing']['Atoms'])
                 G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
-                if not np.any(Fade):
-                    Fade += 1
+#                if not np.any(Fade):
+#                    Fade += 1
                 Draw('key down',Fade)
             return
         elif key in ['+','-','=','0']:

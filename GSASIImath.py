@@ -1273,12 +1273,14 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
 
-def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
+def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     '''
     waveTypes: array nAtoms: 'Fourier','ZigZag' or 'Block'
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
+    MSSdata: array 2x3 x atoms X waves (sin,cos terms)
+    
     Mast: array orthogonalization matrix for Uij
     '''
     ngl = 32
@@ -1328,8 +1330,8 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
         Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x ngl; sum waves
     else:
         Umod = 1.0
-#    GSASIIpath.IPyBreak()
-    return ngl,nWaves,Fmod,Xmod,Umod,glTau,glWt
+    Mmod = 1.0
+    return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
@@ -1387,7 +1389,7 @@ def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
+def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     '''
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
@@ -1606,8 +1608,12 @@ def fracCrenel(tau,Toff,Twid):
     return A
     
 def fracFourier(tau,fsin,fcos):
-    A = np.array([fs[:,nxs]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
-    B = np.array([fc[:,nxs]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
+    if len(fsin) == 1:
+        A = np.array([fsin[0]*np.sin(2.*np.pi*tau)])
+        B = np.array([fcos[0]*np.cos(2.*np.pi*tau)])
+    else:
+        A = np.array([fs[:,nxs]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
+        B = np.array([fc[:,nxs]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
 
 def ApplyModulation(data,tau):
@@ -1625,7 +1631,7 @@ def ApplyModulation(data,tau):
     dcx,dct,dcs,dci = drawingData['atomPtrs']
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
-    Fade = np.zeros(len(drawAtoms))
+    Fade = np.ones(len(drawAtoms))
     for atom in atoms:    
         atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
         atuij = np.array(atom[cia+2:cia+8])

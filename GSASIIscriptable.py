@@ -2857,8 +2857,8 @@ steps in a JSON dict
 def refine(args):
     """Implements the refine command-line subcommand:
     conducts refinements on GSAS-II projects according to a JSON refinement dict::
-    
-  usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
+
+        usage: GSASIIscriptable.py refine [-h] gpxfile [refinements]
 
 positional arguments::
 

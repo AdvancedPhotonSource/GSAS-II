@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-*GSASIIplot: plotting routines*
-===============================
-
-'''
 ########### SVN repository information ###################
 # $Date$
 # $Author$
@@ -11,6 +6,88 @@
 # $URL$
 # $Id$
 ########### SVN repository information ###################
+'''
+*GSASIIplot: plotting routines*
+===============================
+
+This module performs all visualization using matplotlib and OpenGL graphics. The following plotting
+routines are defined: 
+
+============================  ===========================================================================
+============================  ===========================================================================
+:func:`PlotPatterns`          Powder pattern plotting
+:func:`PlotImage`             Plots of 2D detector images
+:func:`PlotPeakWidths`        Plot instrument broadening terms as function of 2-theta/TOF
+:func:`PlotCovariance`        Show covariance terms in 2D 
+:func:`PlotStructure`         Crystal structure plotting with balls, sticks, lines,
+                              ellipsoids, polyhedra and magnetic moments
+:func:`PlotSngl`              Structure factor plotting
+:func:`Plot3DSngl`            3D Structure factor plotting
+:func:`PlotDeltSig`           Normal probability plot (powder or single crystal)
+:func:`PlotISFG`              PDF analysis: displays I(Q), S(Q), F(Q) and G(r)
+:func:`PlotCalib`             CW or TOF peak calibration
+:func:`PlotXY`                simple plot of xy data
+:func:`PlotXYZ`               simple contour plot of xyz data
+:func:`PlotAAProb`            Protein "quality" plot 
+:func:`PlotStrain`            Plot of strain data, used for diagnostic purposes
+:func:`PlotSASDSizeDist`      Small angle scattering size distribution plot
+:func:`PlotPowderLines`       Plot powder pattern as a stick plot (vertical lines)
+:func:`PlotSizeStrainPO`      Plot 3D mustrain/size/preferred orientation figure
+:func:`PlotTexture`           Pole figure, inverse pole figure plotting
+:func:`ModulationPlot`        Plots modulation information
+:func:`PlotTorsion`           Plots MC torsion angles
+:func:`PlotRama`              Ramachandran of energetically allowed regions for dihedral
+                              angles in protein
+:func:`PlotSelectedSequence`  Plot one or more sets of values selected from the sequential
+                              refinement table
+:func:`PlotIntegration`       Rectified plot of 2D image after image integration with 2-theta and
+                              azimuth as coordinates
+:func:`PlotTRImage`           test plot routine
+:func:`PlotRigidBody`         show rigid body structures as balls & sticks
+:func:`PlotLayers`            show layer structures as balls & sticks
+============================  ===========================================================================
+
+These plotting routines place their graphics in the GSAS-II Plot Window, which contains a
+:class:`G2PlotNoteBook` tabbed panel allowing multiple plots to be viewed. Methods 
+:meth:`G2PlotNoteBook.addMpl` (2-D matplotlib), 
+:meth:`G2PlotNoteBook.add3D` (3-D matplotlib), and 
+:meth:`G2PlotNoteBook.addOgl` (OpenGL) are used to
+create tabbed plot objects to hold plots of the following classes:
+:class:`G2PlotMpl` (2-D matplotlib), 
+:class:`G2Plot3D` (3-D matplotlib), and 
+:class:`G2PlotOgl` (OpenGL). 
+These tabbed plot objects share a common parent class, which defines a number
+of special attributes (variables), which have these uses:
+
+======================    ===============     ============================================================
+variable                   default             use
+======================    ===============     ============================================================
+replotFunction              None               Defines a routine to be called to update the plot 
+                                               after a refinement (unless None). Do not define
+                                               this to use functions that take significant time
+                                               to complete (also see 
+replotArgs                  []                 Defines the positional arguments to be supplied to
+                                               the replotFunction function or method.
+replotKwArgs                {}                 Defines the keyword arguments to be supplied to
+                                               the replotFunction function or method. (Implemented,
+                                               but not currently used.)
+plotInvalid                 False              Used to track if a plot has been updated. Set to False
+                                               in :meth:`G2PlotNoteBook.FindPlotTab` when a plot is
+                                               drawn. After a refinement is completed, method
+                                               :func:`GSASIIdataGUI.GSASII.ResetPlots` sets
+                                               plotInvalid to False for all plots before any routines
+                                               are called. 
+plotRequiresRedraw         True                If set to True, after a refinement, the plot will be
+                                               closed (in :func:`GSASIIdataGUI.GSASII.CleanupOldPlots`)
+                                               if it was not updated after the refinement. Set this to
+                                               False using :meth:`G2PlotNoteBook.SetNoDelete`
+                                               for plots that should not be deleted or do
+                                               not change based on refinement results.
+======================    ===============     ============================================================
+
+Note that the plot toolbar is customized with :class:`GSASIItoolbar` 
+                                        
+'''
 from __future__ import division, print_function
 import platform
 import math
@@ -132,9 +209,11 @@ mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data)
 class _tabPlotWin(wx.Panel):    
     'Creates a basic tabbed plot window for GSAS-II graphics'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
-        self.ReplotRoutine = None
-        self.ReplotArgs = []
-        self.ReplotKwArgs = {}
+        self.replotFunction = None
+        self.replotArgs = []
+        self.replotKwArgs = {}
+        self.plotInvalid = False # valid
+        self.plotRequiresRedraw = True # delete plot if not updated
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         
             
@@ -222,8 +301,9 @@ class G2PlotNoteBook(wx.Panel):
         
         self.plotList = []   # contains the tab label for each plot
         self.panelList = []   # contains the panel object for each plot
-        self.skipPageChange = False # set to True when no plot update is needed
+        #self.skipPageChange = False # set to True when no plot update is needed
         self.allowZoomReset = True # this indicates plot should be updated not initialized
+                                   # (BHT: should this be in tabbed panel rather than here?)
         self.lastRaisedPlotTab = None
         
     def OnNotebookKey(self,event):
@@ -341,7 +421,7 @@ class G2PlotNoteBook(wx.Panel):
         :param name: the label placed on the tab, which should be unique
         :param page: the wx.Frame for the matplotlib, openGL, etc. window
         '''
-        self.skipPageChange = True
+        #self.skipPageChange = True
         if name in self.plotList:
             print('Warning: duplicate plot name! Name='+name)
         self.nb.AddPage(page,name)
@@ -350,12 +430,12 @@ class G2PlotNoteBook(wx.Panel):
         #    where (self=G2plotNB) for latter 
         self.panelList.append(page) # panel object for plot
         self.lastRaisedPlotTab = name
-        page.plotInvalid = False # plot has just been drawn
-        page.plotRequiresRedraw = True # set to False if plot should be retained even if not refreshed
-        page.replotFunction = None # used to specify a routine to redraw the routine
-        page.replotArgs = []
-        page.replotKWargs = {}
-        self.skipPageChange = False
+        #page.plotInvalid = False # plot has just been drawn
+        #page.plotRequiresRedraw = True # set to False if plot should be retained even if not refreshed
+        #page.replotFunction = None # used to specify a routine to redraw the routine
+        #page.replotArgs = []
+        #page.replotKWargs = {}
+        #self.skipPageChange = False
                 
     def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
@@ -406,30 +486,32 @@ class G2PlotNoteBook(wx.Panel):
     def RaisePageNoRefresh(self,Page):
         'Raises a plot tab without triggering a refresh via OnPageChanged'
         if plotDebug: print ('Raise'+str(self).split('0x')[1])
-        self.skipPageChange = True
+        #self.skipPageChange = True
         Page.SetFocus()
-        self.skipPageChange = False
+        #self.skipPageChange = False
         
     def SetSelectionNoRefresh(self,plotNum): 
         'Raises a plot tab without triggering a refresh via OnPageChanged' 
         if plotDebug: print ('Select'+str(self).split('0x')[1])
-        self.skipPageChange = True
+        #self.skipPageChange = True
         self.nb.SetSelection(plotNum) # raises plot tab 
         Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.SetFocus()
-        self.skipPageChange = False
+        #self.skipPageChange = False
 
     def OnPageChanged(self,event):
         '''respond to someone pressing a tab on the plot window.
         Called when a plot tab is clicked. on some platforms (Mac for sure) this
         is also called when a plot is created or selected with .SetSelection() or
-        .SetFocus(). The self.skipPageChange is used variable is set to suppress
-        repeated replotting.
+        .SetFocus().
+
+        (removed) The self.skipPageChange is used variable is set to suppress repeated replotting.
         '''
         tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
         self.lastRaisedPlotTab = tabLabel
         if plotDebug: 
-            print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel+str(self.skipPageChange))
+        #    print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel+str(self.skipPageChange))
+            print ('PageChanged, self='+str(self).split('0x')[1]+tabLabel)
             print ('event type='+event.GetEventType())
         self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetStatusText('')  # clear old status message
@@ -1297,6 +1379,8 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
         G2frame.PickId = G2frame.PatternId
     elif PickName:
         G2frame.PickId = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, PickName)
+    elif GSASIIpath.GetConfigValue('debug'):
+        print('Possible PickId problem PickId=',G2frame.PickId)
     # for now I am not sure how to regenerate G2frame.HKL
     G2frame.HKL = [] # TODO
     PlotPatterns(G2frame,newPlot,plotType)
@@ -3259,6 +3343,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ##### PlotHist
 ################################################################################
 def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):
+    'Needs a description'
 
     def OnMotion(event):
         xpos,ypos = event.xdata,event.ydata
@@ -3375,6 +3460,7 @@ def PlotStrain(G2frame,data,newPlot=False):
 ################################################################################
             
 def PlotSASDSizeDist(G2frame):
+    'Needs a description'
     
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
@@ -4104,6 +4190,7 @@ def PlotTexture(G2frame,data,Start=False):
 ################################################################################
 
 def ModulationPlot(G2frame,data,atom,ax,off=0):
+    'Needs a description'
     global Off,Atom,Ax,Slab,Off
     Off = off
     Atom = atom
@@ -6969,7 +7056,8 @@ def PlotStructure(G2frame,data,firstCall=False):
     except:
         pass
     wx.CallAfter(Draw,'main')
-#    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
+    # on Mac (& Linux?) the structure must be drawn twice the first time that graphics are displayed
+    if firstCall: Draw('main') # redraw
 
 ################################################################################
 #### Plot Rigid Body
@@ -7246,7 +7334,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             cb.SetValue(' save as/key:')
             G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
 
-    # PlotStructure execution starts here (N.B. initialization above)
+    # PlotRigidBody execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Rigid body','ogl')
     if new:
         Page.views = False

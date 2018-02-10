@@ -2657,7 +2657,7 @@ class GSASII(wx.Frame):
         else:
             self.SetIcon(wx.IconFromBitmap(img))
         self.Bind(wx.EVT_CLOSE, self.ExitMain)
-        # various defaults
+        # initialize default values for GSAS-II "global" variables (saved in main Frame)
         self.oldFocus = None
         self.GSASprojectfile = ''
         self.undofile = ''
@@ -2719,9 +2719,10 @@ class GSASII(wx.Frame):
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplay = None
         self.dataDisplayPhaseText = ''
-        self.lastTreeSetting = []
+        self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
         self.ExpandingAll = False
         self.SeqTblHideList = []
+        self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
                 
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
@@ -2779,7 +2780,8 @@ class GSASII(wx.Frame):
         self.dataWindow.SetDataSize()
                                 
     def OnDataTreeSelChanged(self, event):
-        '''Called when a data tree item is selected'''
+        '''Called when a data tree item is selected. May be called on item deletion as well.
+        '''
         if self.TreeItemDelete:
             self.TreeItemDelete = False
         else:
@@ -2800,11 +2802,10 @@ class GSASII(wx.Frame):
 
     def OnGPXtreeItemExpanded(self, event):
         'Called when a tree item is expanded'
-        #self.OnDataTreeSelChanged(event)  # removed -- why select & show a tree item when expanding it? BHT
         event.Skip()
         
     def OnGPXtreeItemDelete(self, event):
-        'Called when a tree item is deleted -- not sure what this does'
+        'Called when a tree item is deleted, inhibit the next tree item selection action'
         self.TreeItemDelete = True
 
     def OnGPXtreeItemActivated(self, event):
@@ -4296,8 +4297,8 @@ class GSASII(wx.Frame):
         dlg.CenterOnParent()
         dlg.Raise()
         Rw = 100.00
-        self.SaveTreeSetting()
-        self.GPXtree.SaveExposedItems()        
+        self.SaveTreeSetting() # save the current tree selection
+        self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)    #Msg is Rvals dict if Ok=True
         finally:
@@ -4319,7 +4320,8 @@ class GSASII(wx.Frame):
                     self.GPXtree.DeleteChildren(self.root)
                     self.HKL = []
                     G2IO.ProjFileOpen(self,False)
-                    self.GPXtree.RestoreExposedItems()        
+                    self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
+                    self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items       
                     self.ResetPlots()
             finally:
                 dlg2.Destroy()
@@ -4327,28 +4329,10 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Refinement error',Msg)
         
     def SaveTreeSetting(self):
-        'Save the last tree setting'
+        'Save the current selected tree item by name (since the id will change)'
         oldId =  self.GPXtree.GetSelection()        #retain current selection
         oldPath = self.GetTreeItemsList(oldId)
         self.lastTreeSetting = oldPath
-        # note that for reasons unclear, it does not seem necessary to reload the Atoms tab
-        #parentName = ''
-        #tabId = None
-        # parentId = self.GPXtree.GetItemParent(oldId)
-        # if parentId:
-        #     parentName = self.GPXtree.GetItemText(parentId)     #find the current data tree name
-        #     if 'Phases' in parentName:
-        #         tabId = self.dataDisplay.GetSelection()
-        #self.lastTreeSetting = oldPath,tabId
-        #GSASIIpath.IPyBreak()
-        
-    def TestResetPlot(self,event):
-        '''Debug code to test cleaning up plots after a refinement'''
-        #for i in range(self.G2plotNB.nb.GetPageCount()):
-        #    [self.G2plotNB.nb.GetPageText(i)
-        # save current tree item and (if needed) atoms tab
-        self.SaveTreeSetting()
-        self.ResetPlots()
         
     def ResetPlots(self):
         '''This reloads the current tree item, often drawing a plot. It refreshes any plots
@@ -4356,31 +4340,42 @@ class GSASII(wx.Frame):
         and deletes all plots that have not been refreshed and
         require one (see G2plotNB.SetNoDelete).
         '''
-        lastRaisedPlotTab = self.G2plotNB.lastRaisedPlotTab # save the last page saved
+        lastRaisedPlotTab = self.G2plotNB.lastRaisedPlotTab # save the current plot tab
         self.G2plotNB.lastRaisedPlotTab = None
-#        print ('lastRaisedPlotTab='+lastRaisedPlotTab)
-        # mark displayed plots as invalid
-        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
-            frame.plotInvalid = True
-        # reload current tree item, triggering the routine to redraw the data window and possibly a plot
-        #oldPath,tabId = self.lastTreeSetting
-        oldPath = self.lastTreeSetting
+        #print ('lastRaisedPlotTab='+lastRaisedPlotTab)
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            win.plotInvalid = True  # mark all current plots as invalid so we can tell what has been updated
+            
+        oldPath = self.lastTreeSetting  # reload last selected tree item, triggers window and possibly plot redraw
         Id = self.root
         for txt in oldPath:
             Id = GetGPXtreeItemId(self, Id, txt)
-        self.PickIdText = None  #force reload of page
+        self.PickIdText = None  #forces reload of page
         if Id:
             self.PickId = Id
             self.GPXtree.SelectItem(Id)
+        wx.CallLater(100,self.CleanupOldPlots,lastRaisedPlotTab) # wait for plotting to catch up before cleanup
+    
+    def CleanupOldPlots(self,lastRaisedPlotTab):
+        '''Called after a refinement to update plots and delete plots that show obsoleted information
+        '''
         # update other self-updating plots
-#        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
-#            if frame.plotInvalid and frame.replotFunction:
-#                frame.replotFunction(*frame.replotArgs,**frame.replotKWargs)
-        # delete any remaining plots that are still invalid and need a refresh
-        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
-            if frame.plotInvalid and frame.plotRequiresRedraw:
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            if win.plotInvalid and win.replotFunction:
+                if GSASIIpath.GetConfigValue('debug'):
+                    print('updating',lbl,'by calling',str(win.replotFunction))
+                try:
+                    win.replotFunction(*win.replotArgs,**win.replotKWargs)
+                except:
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print('Error with args',win.replotArgs,win.replotKWargs)
+        # delete any remaining plots that have not been updated and need a refresh (win.plotRequiresRedraw)
+        for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            if win.plotInvalid and win.plotRequiresRedraw:
+                if GSASIIpath.GetConfigValue('debug'):
+                    print('Closing out-of-date plot',lbl)
                 self.G2plotNB.Delete(lbl)
-        # put the previously last-raised tab on top, if present. If not, use the one corresponding to
+        # put the previously last-raised plot tab on top, if present. If not, use the one corresponding to
         # the last tree item to be selected
         wx.CallAfter(self.G2plotNB.RaiseLastPage,lastRaisedPlotTab,self.G2plotNB.lastRaisedPlotTab)
         
@@ -4468,12 +4463,9 @@ class GSASII(wx.Frame):
 # Data window side of main GUI
 ################################################################################
 class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
-    '''Create the data item window entries in menus used in
-    that window. The menu entries are created for all
-    data item windows, but in the Mac the menu is accessed from all
-    windows. This means that a different menu is posted depending on which
-    data item is posted. On the Mac, all the menus contain the data tree menu
-    items, but additional menus are added specific to the data item. 
+    '''Create the data item window as well as the menu. Note that 
+    the same core menu items are used in all menus, but different items may be
+    added depending on what data tree item (and for phases, the phase tab).
 
     Note that while the menus are created here, 
     the binding for the menus is done later in various GSASII*GUI modules,
@@ -7424,7 +7416,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     '''
     if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
         return
-    oldPage = None # will be set later if already on a Phase item
 
     # save or finish processing of outstanding events
     for grid in G2frame.dataWindow.currentGrids:  # complete any open wx.Grid edits
@@ -7452,9 +7443,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             if Id: G2frame.GPXtree.SetItemPyData(Id,data)
         except:     #clumsy but avoids dead window problem when opening another project
             pass
-    elif 'Phase Data for' in G2frame.dataWindow.GetLabel():
-        if G2frame.dataDisplay: 
-            oldPage = G2frame.dataDisplay.GetSelection()
+#    elif 'Phase Data for' in G2frame.dataWindow.GetLabel():
+#        if G2frame.dataDisplay: 
+#            oldPage = G2frame.dataDisplay.GetSelection()
     G2frame.SetLabel('')
         
     SetDataMenuBar(G2frame)
@@ -7611,7 +7602,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2plt.PlotISFG(G2frame,data,plotType='G(R)')
     elif G2frame.GPXtree.GetItemText(parentID) == 'Phases':
         data = G2frame.GPXtree.GetItemPyData(item)
-        G2phG.UpdatePhaseData(G2frame,item,data,oldPage)
+        G2phG.UpdatePhaseData(G2frame,item,data)
     elif G2frame.GPXtree.GetItemText(item) == 'Comments':
         SetDataMenuBar(G2frame,G2frame.dataWindow.DataCommentsMenu)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)

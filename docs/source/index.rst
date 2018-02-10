@@ -37,14 +37,11 @@ the immediate future.
 
 Note that GSAS-II requires the Python extension packages 
 
-* wxPython (http://wxpython.org/docs/api/), 
-  * note that GSAS-II has been tested with wxPython >=2.8, 3.0.x and 4.0.x
+* wxPython (http://wxpython.org/docs/api/). Note that GSAS-II has been tested with wxPython >=2.8, 3.0.x and 4.0.x
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
 * matplotlib (http://matplotlib.org/contents.html)  and
-* PyOpenGL (http://pyopengl.sourceforge.net/documentation)
-  * Note: a copy of this is distributed with GSAS-II at present and will be
-    installed if the Python setuptools package is present. 
+* PyOpenGL (http://pyopengl.sourceforge.net/documentation). Note: a copy of this is distributed with GSAS-II (at present) and will be installed if the Python setuptools package is present. 
 
 Two packages are used by some parts of the code, but are not
 required. If these packages are not present warning messages may be

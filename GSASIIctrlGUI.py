@@ -220,31 +220,31 @@ class G2TreeCtrl(wx.TreeCtrl):
         else:
             return wx.TreeCtrl.SetItemPyData(self,id,data)
 
-    def onSelectionChanged(self,event):
-        '''Log each press on a tree item here. 
-        '''
-        if not self.G2frame.treePanel:
-            return
-        if self.SelectionChanged:
-            textlist = self._getTreeItemsList(event.GetItem())
-            if log.LogInfo['Logging'] and event.GetItem() != self.root:
-                textlist[0] = self.GetRelativeHistNum(textlist[0])
-                if textlist[0] == "Phases" and len(textlist) > 1:
-                    textlist[1] = self.GetRelativePhaseNum(textlist[1])
-                log.MakeTreeLog(textlist)
-            if textlist == self.textlist:
-                return      #same as last time - don't get it again
-            self.textlist = textlist
-            self.SelectionChanged(event)
+    # def onSelectionChanged(self,event):
+    #     '''Log each press on a tree item here. 
+    #     '''
+    #     if not self.G2frame.treePanel:
+    #         return
+    #     if self.SelectionChanged:
+    #         textlist = self._getTreeItemsList(event.GetItem())
+    #         if log.LogInfo['Logging'] and event.GetItem() != self.root:
+    #             textlist[0] = self.GetRelativeHistNum(textlist[0])
+    #             if textlist[0] == "Phases" and len(textlist) > 1:
+    #                 textlist[1] = self.GetRelativePhaseNum(textlist[1])
+    #             log.MakeTreeLog(textlist)
+    #         if textlist == self.textlist:
+    #             return      #same as last time - don't get it again
+    #         self.textlist = textlist
+    #         self.SelectionChanged(event)
 
-    def Bind(self,eventtype,handler,*args,**kwargs):
-        '''Override the Bind() function so that page change events can be trapped
-        '''
-        if eventtype == wx.EVT_TREE_SEL_CHANGED:
-            self.SelectionChanged = handler
-            wx.TreeCtrl.Bind(self,eventtype,self.onSelectionChanged)
-            return
-        wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
+    # def Bind(self,eventtype,handler,*args,**kwargs):
+    #     '''Override the Bind() function so that page change events can be trapped
+    #     '''
+    #     if eventtype == wx.EVT_TREE_SEL_CHANGED:
+    #         self.SelectionChanged = handler
+    #         wx.TreeCtrl.Bind(self,eventtype,self.onSelectionChanged)
+    #         return
+    #     wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
 
     # commented out, disables Logging
     # def GetItemPyData(self,*args,**kwargs):

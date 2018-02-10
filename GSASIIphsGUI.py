@@ -1089,7 +1089,7 @@ def FindBondsDrawCell(data,cell):
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
                         
-def UpdatePhaseData(G2frame,Item,data,oldPage):
+def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
     Called only from :meth:`GSASIIdataGUI.SelectDataTreeItem`,
@@ -1101,11 +1101,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     :param wx.frame G2frame: the main GSAS-II frame object
     :param wx.TreeItemId Item: the tree item that was selected
     :param dict data: all the information on the phase in a dictionary
-    :param int oldPage: This sets a tab to select when moving
-      from one phase to another, in which case the same tab is selected
-      to display first. This is set only when the previous data tree
-      selection is a phase, if not the value is None. The default action
-      is to bring up the General tab.
 
     '''
     def GetReflData(G2frame,phaseName,reflNames):
@@ -8935,7 +8930,7 @@ entered the right symbol for your structure.
         
     def ChangePage(page):
         text = G2frame.phaseDisplay.GetPageText(page)
-        G2frame.phaseDisplayPhaseText = text
+        G2frame.lastSelectedPhaseTab = text
         G2frame.dataWindow.helpKey = text # use name of Phase tab for help lookup
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataGeneral)
@@ -9194,9 +9189,8 @@ entered the right symbol for your structure.
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
-    if oldPage is None or oldPage == 0:
+    if G2frame.lastSelectedPhaseTab in Pages:
+        #     SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
+        G2frame.phaseDisplay.SetSelection(Pages.index(G2frame.lastSelectedPhaseTab))
+    else:
         ChangePage(0)
-        #wx.CallAfter(G2frame.phaseDisplay.SendSizeEvent)
-    elif oldPage:
-        SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
-        G2frame.phaseDisplay.SetSelection(oldPage)

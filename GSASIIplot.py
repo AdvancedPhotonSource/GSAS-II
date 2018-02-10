@@ -61,12 +61,12 @@ potentially used to determine how plot updates after a refinement are handled:
 ============================================     ========================================================
 class method                                      description
 ============================================     ========================================================
-:meth:`~G2PlotNoteBook.RegisterRedrawRoutine`     This specifies a function 
+:meth:`G2PlotNoteBook.RegisterRedrawRoutine`      This specifies a function 
                                                   to redraw the plot after the data tree has been
                                                   reloaded. Be sure this updates data
                                                   objects with new values from the tree, when needed.
                                                   
-:meth:`~G2PlotNoteBook.SetNoDelete`               Use this to indicate that a plot does not need to be
+:meth:`G2PlotNoteBook.SetNoDelete`                Use this to indicate that a plot does not need to be
                                                   updated after a refinement and should not be closed.
 ============================================     ========================================================
 

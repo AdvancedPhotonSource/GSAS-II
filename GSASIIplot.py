@@ -55,34 +55,48 @@ These plotting routines place their graphics in the GSAS-II Plot Window, which c
 create tabbed plot objects to hold plots of the following classes:
 :class:`G2PlotMpl` (2-D matplotlib), 
 :class:`G2Plot3D` (3-D matplotlib), and 
-:class:`G2PlotOgl` (OpenGL). 
-These tabbed plot objects share a common parent class, which defines a number
-of special attributes (variables), which have these uses:
+:class:`G2PlotOgl` (OpenGL). Note that two :class:`G2PlotNoteBook` methods are
+potentially used to determine how plot updates after a refinement are handled: 
+
+============================================     ========================================================
+class method                                      description
+============================================     ========================================================
+:meth:`~G2PlotNoteBook.RegisterRedrawRoutine`     This specifies a function 
+                                                  to redraw the plot after the data tree has been
+                                                  reloaded. Be sure this updates data
+                                                  objects with new values from the tree, when needed.
+                                                  
+:meth:`~G2PlotNoteBook.SetNoDelete`               Use this to indicate that a plot does not need to be
+                                                  updated after a refinement and should not be closed.
+============================================     ========================================================
+
+These two methods define the following attributes (variables) in the plot tab classes: 
 
 ======================    ===============     ============================================================
 variable                   default             use
 ======================    ===============     ============================================================
 replotFunction              None               Defines a routine to be called to update the plot 
-                                               after a refinement (unless None). Do not define
-                                               this to use functions that take significant time
-                                               to complete (also see 
+                                               after a refinement (unless None). Use
+                                               :meth:`G2PlotNoteBook.RegisterRedrawRoutine`
+                                               to define this (and replotArgs & replotKwArgs). 
+                                               Plotting functions that take significant time
+                                               to complete should probably not use this.)
 replotArgs                  []                 Defines the positional arguments to be supplied to
                                                the replotFunction function or method.
 replotKwArgs                {}                 Defines the keyword arguments to be supplied to
-                                               the replotFunction function or method. (Implemented,
-                                               but not currently used.)
-plotInvalid                 False              Used to track if a plot has been updated. Set to False
-                                               in :meth:`G2PlotNoteBook.FindPlotTab` when a plot is
-                                               drawn. After a refinement is completed, method
-                                               :func:`GSASIIdataGUI.GSASII.ResetPlots` sets
-                                               plotInvalid to False for all plots before any routines
-                                               are called. 
+                                               the replotFunction function or method. 
 plotRequiresRedraw         True                If set to True, after a refinement, the plot will be
                                                closed (in :func:`GSASIIdataGUI.GSASII.CleanupOldPlots`)
                                                if it was not updated after the refinement. Set this to
                                                False using :meth:`G2PlotNoteBook.SetNoDelete`
                                                for plots that should not be deleted or do
                                                not change based on refinement results.
+plotInvalid                 False              Used to track if a plot has been updated. Set to False
+                                               in :meth:`G2PlotNoteBook.FindPlotTab` when a plot is
+                                               drawn. After a refinement is completed, method
+                                               :func:`GSASIIdataGUI.GSASII.ResetPlots` sets
+                                               plotInvalid to False for all plots before any routines
+                                               are called. 
 ======================    ===============     ============================================================
 
 Note that the plot toolbar is customized with :class:`GSASIItoolbar` 

@@ -4670,9 +4670,9 @@ entered the right symbol for your structure.
                 def OnWaveType(event):
                     Obj = event.GetEventObject()
                     item = Indx[Obj.GetId()]
-                    if not len(atm[-1]['SS1'][item]):
-                        atm[-1]['SS1']['Spos'] = [0,[]]
-                        atm[-1]['SS1'][Stype][0] = waveType.GetValue()
+                    if len(atm[-1]['SS1'][item]) <= 1:
+                        atm[-1]['SS1'][item] = [0,]
+                        atm[-1]['SS1'][item][0] = waveType.GetValue()
                         wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     else:
                         if len(waveTypes[Stype]) > 1:
@@ -4683,9 +4683,9 @@ entered the right symbol for your structure.
                     Obj = event.GetEventObject()
                     item = Indx[Obj.GetId()]
                     nt = numVals[Stype]
-                    if not len(atm[-1]['SS1'][item][1]) and waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
+                    if not len(atm[-1]['SS1'][item]) and waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
                         nt = numVals[waveTyp]
-                    atm[-1]['SS1'][item][1].append([[0.0 for i in range(nt)],False])
+                    atm[-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     
                 def OnWaveVal(event):
@@ -4698,21 +4698,21 @@ entered the right symbol for your structure.
                             if ival == 1: #Tmax
                                 val = min(1.0,max(0.0,val))
                             elif ival == 0: #Tmin
-                                val = max(-1.,min(val,atm[-1]['SS1'][item][1][iwave][1][1]))
+                                val = max(-1.,min(val,atm[-1]['SS1'][item][1][0][ival]))
                     except ValueError:
-                        val = atm[-1]['SS1'][item][iwave][1][ival]
+                        val = atm[-1]['SS1'][item][iwave+1][0][ival]
                     Obj.SetValue('%.5f'%val)
-                    atm[-1]['SS1'][item][iwave][1][ival] = val
+                    atm[-1]['SS1'][item][iwave+1][0][ival] = val
                     
                 def OnRefWave(event):
                     Obj = event.GetEventObject()
                     item,iwave = Indx[Obj.GetId()]
-                    atm[-1]['SS1'][item][1][iwave][2] = not atm[-1]['SS1'][item][1][iwave][2]
+                    atm[-1]['SS1'][item][iwave+1][1] = not atm[-1]['SS1'][item][iwave+1][1]
                     
                 def OnDelWave(event):
                     Obj = event.GetEventObject()
                     item,iwave = Indx[Obj.GetId()]
-                    del atm[-1]['SS1'][item][1][iwave]
+                    del atm[-1]['SS1'][item][iwave+1]
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
                 
                 waveTyp,waveBlk = 'Fourier',[]
@@ -4834,7 +4834,7 @@ entered the right symbol for your structure.
                 flags = dlg.GetSelection()
                 for ia,atom in enumerate(atomData):
                     for name in names:
-                        for wave in atom[-1]['SS1'][name]:
+                        for wave in atom[-1]['SS1'][name][1:]:
                             wave[1] = flags[name][ia]
         finally:
             dlg.Destroy()

@@ -1519,7 +1519,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             newPlot = True
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
-                        Pattern[0]['Offset'] = [0.,0.]
+                Pattern[0]['Offset'] = [0.,0.]
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour

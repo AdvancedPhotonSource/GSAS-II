@@ -498,6 +498,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         Sfrac = [waveType,]+[[sfrac,False] for sfrac in Sfrac[:nim]]
                     else:
                         Sfrac = []
+                    nim = -1
                     if displFdict:
                         for i,item in enumerate(displFdict['_atom_site_displace_fourier_atom_site_label']):
                             if item == atomlist[0]:
@@ -514,6 +515,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         Spos = [waveType,]+[[spos,False] for spos in Spos[:nim]]
                     else:
                         Spos = []
+                    nim = -1
                     if UijFdict:
                         nim = -1
                         for i,item in enumerate(UijFdict['_atom_site_u_fourier_atom_site_label']):
@@ -530,6 +532,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         Sadp = ['Fourier',]+[[sadp,False] for sadp in Sadp[:nim]]
                     else:
                         Sadp = []
+                    nim = -1
                     if MagFdict:
                         nim = -1
                         for i,item in enumerate(MagFdict[Mnames[0]]):

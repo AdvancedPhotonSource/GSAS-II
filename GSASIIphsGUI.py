@@ -2235,7 +2235,6 @@ entered the right symbol for your structure.
         if 'SGGray' not in data['General']['SGData']:
             data['General']['SGData']['SGGray'] = False
 #end patches
-        if SkipDraw: return
         if General.GetSizer():
             General.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2283,6 +2282,7 @@ entered the right symbol for your structure.
         if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
+#        if SkipDraw: return
         G2frame.GetStatusBar().SetStatusText('',1)
         SetPhaseWindow(General,mainSizer,Scroll=Scroll)
         
@@ -9188,8 +9188,7 @@ entered the right symbol for your structure.
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
-        if ind != 0:
-            UpdateGeneral(SkipDraw=True)
+        UpdateGeneral(SkipDraw=True)
         G2frame.phaseDisplay.SetSelection(ind)
     else:
         ChangePage(0)

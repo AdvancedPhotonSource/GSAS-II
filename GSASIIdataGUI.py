@@ -895,7 +895,9 @@ class GSASII(wx.Frame):
             self.GPXtree.Expand(self.root) # make sure phases are seen
             self.GPXtree.Expand(sub) 
             self.GPXtree.Expand(psub)
-            wx.CallAfter(SelectDataTreeItem,self,psub) #bring up new phase General tab
+            self.PickIdText = None
+            wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
+            #wx.CallAfter(SelectDataTreeItem,self,psub) #bring up new phase General tab
 
             if rd.Constraints:
                 sub = GetGPXtreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed

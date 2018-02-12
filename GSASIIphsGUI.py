@@ -1267,7 +1267,7 @@ def UpdatePhaseData(G2frame,Item,data):
 ##### General phase routines
 ################################################################################
 
-    def UpdateGeneral(Scroll=0):
+    def UpdateGeneral(Scroll=0,SkipDraw=False):
         '''Draw the controls for the General phase data subpage
         '''
         
@@ -1283,18 +1283,7 @@ def UpdatePhaseData(G2frame,Item,data):
             'Pawley neg wt':0.0}
         'Atoms':[]
         'Drawing':{}
-        """        
-        # UpdateGeneral execution starts here
-        if General.GetSizer(): General.GetSizer().Clear(True)
-        phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
-        SetupGeneral()
-        generalData = data['General']
-        Map = generalData['Map']
-        Flip = generalData['Flip']
-        MCSAdata = generalData['MCSA controls']  
-        PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
-        # UpdateGeneral execution continues below
-        
+        """
         def NameSizer():   
             
             def SetDefaultSSsymbol():
@@ -2231,6 +2220,13 @@ entered the right symbol for your structure.
             return mcsaSizer
 
         # UpdateGeneral execution starts here
+        phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
+        SetupGeneral()
+        generalData = data['General']
+        Map = generalData['Map']
+        Flip = generalData['Flip']
+        MCSAdata = generalData['MCSA controls']  
+        PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
 #patches        
         if 'Pawley dmax' not in data['General']:
             data['General']['Pawley dmax'] = 100.0
@@ -2238,7 +2234,8 @@ entered the right symbol for your structure.
             data['General']['SGData']['SGFixed'] = False
         if 'SGGray' not in data['General']['SGData']:
             data['General']['SGData']['SGGray'] = False
-#end patches        
+#end patches
+        if SkipDraw: return
         if General.GetSizer():
             General.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -8922,13 +8919,13 @@ entered the right symbol for your structure.
         '''This is called every time that a Notebook tab button is pressed
         on a Phase data item window
         '''
-        for page in G2frame.phaseDisplay.gridList: # clear out all grids, forcing edits in progress to complete
-            page.ClearGrid()
         page = event.GetSelection()
         G2frame.phaseDisplay.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         ChangePage(page)
         
     def ChangePage(page):
+        for p in G2frame.phaseDisplay.gridList: # clear out all grids, forcing edits in progress to complete
+            p.ClearGrid()
         text = G2frame.phaseDisplay.GetPageText(page)
         G2frame.lastSelectedPhaseTab = text
         G2frame.dataWindow.helpKey = text # use name of Phase tab for help lookup
@@ -9191,7 +9188,8 @@ entered the right symbol for your structure.
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
-        ChangePage(0)
+        if ind != 0:
+            UpdateGeneral(SkipDraw=True)
         G2frame.phaseDisplay.SetSelection(ind)
     else:
         ChangePage(0)

@@ -9193,6 +9193,7 @@ entered the right symbol for your structure.
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
         if ind != 0: 
             SetupGeneral()
+        ChangePage(0)
         G2frame.phaseDisplay.SetSelection(ind)
     else:
         ChangePage(0)

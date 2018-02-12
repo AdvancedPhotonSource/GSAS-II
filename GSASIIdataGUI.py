@@ -7577,9 +7577,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 G2plt.PlotISFG(G2frame,data,plotType='G(R)')
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
             G2frame.dataWindow.GetSizer().Add(
-                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
-                                'Select one phase to see its parameters')
-                )
+                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
     ############################################################################
     # process second-level entries in tree            
     elif G2frame.GPXtree.GetItemText(item) == 'PDF Peaks':

@@ -1519,19 +1519,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             newPlot = True
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
-                Pattern[0]['Offset'] = [0.,0.]
+                        Pattern[0]['Offset'] = [0.,0.]
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
             if G2frame.Contour:
                 G2frame.plotStyle['qPlot'] = False
                 G2frame.plotStyle['dPlot'] = False
-        elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
-                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-            xpos = event.xdata
-            if xpos is None: return  #avoid out of frame mouse position
-            ypos = event.ydata
-            print('event',xpos)
+        # elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
+        #         G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+        #     xpos = event.xdata
+        #     if xpos is None: return  #avoid out of frame mouse position
+        #     ypos = event.ydata
+        #     print('event',xpos)
         elif event.key == 'q': 
             newPlot = True
             if 'PWDR' in plottype:
@@ -2154,9 +2154,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
-    if 'PWDR' in plottype and G2frame.SinglePlot and not (
-                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-        Page.Choice = Page.Choice + (' a: set multiplier -- only from keyboard',)
+#    if 'PWDR' in plottype and G2frame.SinglePlot and not (
+#                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+#        Page.Choice = Page.Choice + (' a: set multiplier -- only from keyboard',)
     G2frame.cid = None
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId

@@ -9190,7 +9190,9 @@ entered the right symbol for your structure.
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
-        #     SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
-        G2frame.phaseDisplay.SetSelection(Pages.index(G2frame.lastSelectedPhaseTab))
+        ind = Pages.index(G2frame.lastSelectedPhaseTab)
+        if ind != 0: 
+            SetupGeneral()
+        G2frame.phaseDisplay.SetSelection(ind)
     else:
         ChangePage(0)

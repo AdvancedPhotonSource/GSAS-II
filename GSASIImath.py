@@ -1632,8 +1632,9 @@ def ApplyModulation(data,tau):
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
     Fade = np.ones(len(drawAtoms))
-    for atom in atoms:    
-        atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
+    for atom in atoms:
+        atxyz = np.array(atom[cx:cx+3])
+#        atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
         atuij = np.array(atom[cia+2:cia+8])
         Sfrac = atom[-1]['SS1']['Sfrac']
         Spos = atom[-1]['SS1']['Spos']

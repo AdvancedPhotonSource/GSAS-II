@@ -9191,8 +9191,6 @@ entered the right symbol for your structure.
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
-        if ind != 0: 
-            SetupGeneral()
         ChangePage(0)
         G2frame.phaseDisplay.SetSelection(ind)
     else:

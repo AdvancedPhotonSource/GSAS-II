@@ -2282,7 +2282,9 @@ entered the right symbol for your structure.
         if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
-#        if SkipDraw: return
+        if SkipDraw: 
+            mainSizer.Clear(True)
+            return
         G2frame.GetStatusBar().SetStatusText('',1)
         SetPhaseWindow(General,mainSizer,Scroll=Scroll)
         
@@ -9188,7 +9190,7 @@ entered the right symbol for your structure.
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:
         ind = Pages.index(G2frame.lastSelectedPhaseTab)
-        UpdateGeneral(SkipDraw=True)
+        UpdateGeneral(SkipDraw=ind)
         G2frame.phaseDisplay.SetSelection(ind)
     else:
         ChangePage(0)

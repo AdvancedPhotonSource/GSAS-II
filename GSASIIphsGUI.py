@@ -6320,7 +6320,6 @@ entered the right symbol for your structure.
             pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)       #only use 1st histogram
             Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Sample Parameters'))
             Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Instrument Parameters'))[0]
-            textureData['det Angles'] = []
             if 'NT' in Inst['Type'][0]:
                 Tth = Inst['2-theta'][1]/2.
                 Gangls = [Sample['Phi'],Sample['Chi'],Sample['Omega'],Sample['Azimuth']]

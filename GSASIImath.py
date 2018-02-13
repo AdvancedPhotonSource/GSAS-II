@@ -1648,7 +1648,7 @@ def ApplyModulation(data,tau):
             opr = drawatom[dcs-1]
             sop,ssop,icent,cent,unit = G2spc.OpsfromStringOps(opr,SGData,SSGData)
             drxyz = (np.inner(sop[0],atxyz)+sop[1])*icent+cent+np.array(unit)
-            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,drxyz,modul)
+            tauT = G2spc.getTauT(tau,sop,ssop,drxyz,modul)[-1]
             tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)

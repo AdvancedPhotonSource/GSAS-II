@@ -1375,6 +1375,8 @@ def SSpcGroup(SGData,SSymbol):
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
         return '(3+1) superlattices not defined for rhombohedral settings - use hexagonal setting',None
+    if SGData['SGGray'] and SSymbol[-1] == 's':
+        SSymbol = SSymbol[:-1]
     try:
         modsym,gensym = splitSSsym(SSymbol)
     except ValueError:
@@ -1448,7 +1450,7 @@ def SSChoice(SGData):
             '3m1':['','t0','0s','t00','0s0'],
             '31m':['','t00','0ss'],
             '6/m':['','h','t','s','s0'],
-            '6/mmm':['h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s']}
+            '6/mmm':['','h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s']}
     laue = SGData['SGLaue']
     SSChoice = []
     for ax in laueSS[laue]:
@@ -2126,7 +2128,10 @@ def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):
     dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
     dT = 1.0
     if np.any(dtau%.5):
-        dT = np.tan(np.pi*np.sum(dtau%.5))
+        sumdtau = np.sum(dtau%.5)
+        dT = 0.
+        if np.abs(sumdtau-.5) > 1.e-4:
+            dT = np.tan(np.pi*sumdtau)
     tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3]+phase)
     return sdet,ssdet,dtau,dT,tauT
     
@@ -2229,7 +2234,10 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 
                     if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                         fsc = [1,1]
-                        CSI = [[[1,0],[1,0]],[[1.,0.],[1/dT,0.]]]
+                        if dT:
+                            CSI = [[[1,0],[1,0]],[[1.,0.],[1/dT,0.]]]
+                        else:
+                            CSI = [[[1,0],[0,0]],[[1.,0.],[0.,0.]]]
                         FSC = np.zeros(2,dtype='i')
                         return CSI,dF,dFTP
                     else:
@@ -2302,24 +2310,30 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                         xsc[3:6] = 0
                         CSI = [[[1,0,0],[2,0,0],[3,0,0], [1,0,0],[2,0,0],[3,0,0]],
-                            [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]                    
-                        if '(x)' in siteSym:
-                            CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
-                            if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
-                        elif '(y)' in siteSym:
-                            CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
-                            if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
-                        elif '(z)' in siteSym:
-                            CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
-                            if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                            [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+                        if dT:
+                            if '(x)' in siteSym:
+                                CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
+                                if 'm' in siteSym and len(SdIndx) == 1:
+                                    CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
+                            elif '(y)' in siteSym:
+                                CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                                if 'm' in siteSym and len(SdIndx) == 1:
+                                    CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                            elif '(z)' in siteSym:
+                                CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                                if 'm' in siteSym and len(SdIndx) == 1:
+                                    CSI[1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                        else:
+                            CSI[1][3:] = [0.,0.,0.],[0.,0.,0.],[0.,0.,0.]
                     if '4/mmm' in laue:
                         if np.any(dtau%.5) and '1/2' in SSGData['modSymb']:
                             if '(xy)' in siteSym:
                                 CSI[0] = [[1,0,0],[1,0,0],[2,0,0], [1,0,0],[1,0,0],[2,0,0]]
-                                CSI[1][3:] = [[1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]]
+                                if dT:
+                                    CSI[1][3:] = [[1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]]
+                                else:
+                                    CSI[1][3:] = [0.,0.,0.],[0.,0.,0.],[0.,0.,0.]
                         if '(xy)' in siteSym or '(+-0)' in siteSym:
                             mul = 1
                             if '(+-0)' in siteSym:
@@ -2359,6 +2373,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI = [np.zeros((12,3),dtype='i'),np.zeros((12,3))]
             USC = np.ones(12,dtype='i')
             dUTP = []
+            dtau = 0.
             for i in SdIndx:
                 sop = Sop[i]
                 ssop = SSop[i]
@@ -2372,23 +2387,29 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 dUT[:,:6,:] *=(ssdet*sdet)
                 dUTP.append(dUT)
                 if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
-                    CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
-                    [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
-                    [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
-                    [1./dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
-                    if 'mm2(x)' in siteSym:
+                    if dT:
+                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+                        [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
+                        [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
+                        [1./dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+                    else:
+                        CSI = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+                        [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
+                        [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
+                        [0.,0.,0.],[0.,0.,0.],[0.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+                    if 'mm2(x)' in siteSym and dT:
                         CSI[1][9:] = [0.,0.,0.],[-dT,0.,0.],[0.,0.,0.]
                         USC = [1,1,1,0,1,0,1,1,1,0,1,0]
-                    elif '(xy)' in siteSym:
+                    elif '(xy)' in siteSym and dT:
                         CSI[0] = [[1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0],
                             [1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0]]
                         CSI[1][9:] = [[1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]]
                         USC = [1,1,1,1,1,1,1,1,1,1,1,1]                              
-                    elif '(x)' in siteSym:
+                    elif '(x)' in siteSym and dT:
                         CSI[1][9:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
-                    elif '(y)' in siteSym:
+                    elif '(y)' in siteSym and dT:
                         CSI[1][9:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
-                    elif '(z)' in siteSym:
+                    elif '(z)' in siteSym and dT:
                         CSI[1][9:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
                     for i in range(6):
                         if not USC[i]:
@@ -2451,7 +2472,11 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return list(CSI),dU,dUTP
     
     def DoMag():
-        CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]]
+        CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],[6*[1.,0.,0.]]
+        if siteSym == '1':
+            CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],[6*[1.,0.,0.]]
+        elif siteSym == '-1':
+            CSI = [[1,0,0],[2,0,0],[3,0,0], [0,0,0],[0,0,0],[0,0,0]],[3*[1.,0.,0.],3*[0.,0.,0.]]
         return CSI,None,None
         
     if debug: print ('super space group: '+SSGData['SSpGrp'])

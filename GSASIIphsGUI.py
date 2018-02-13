@@ -4677,8 +4677,11 @@ entered the right symbol for your structure.
                     Obj = event.GetEventObject()
                     item = Indx[Obj.GetId()]
                     nt = numVals[Stype]
-                    if not len(atm[-1]['SS1'][item]) and waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
-                        nt = numVals[waveTyp]
+                    if not len(atm[-1]['SS1'][item]):
+                        if waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
+                            nt = numVals[waveTyp]                        
+                        atm[-1]['SS1'][item] = [0,]
+                        atm[-1]['SS1'][item][0] = waveType.GetValue()
                     atm[-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     

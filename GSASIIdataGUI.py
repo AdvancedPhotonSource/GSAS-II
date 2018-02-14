@@ -3966,7 +3966,6 @@ class GSASII(wx.Frame):
                             formula = item.split('=')[1].strip('"\n').split()
                             try:
                                 if len(formula) < 2:
-                                    formula = ['C',]
                                     raise ValueError
                                 elems = formula[::2]
                                 nums = formula[1::2]
@@ -3979,10 +3978,10 @@ class GSASII(wx.Frame):
                                     ElList[elem] = ElData
                                 
                             except ValueError:
-                                ElData = G2elem.GetElInfo(formula[0],Parms)
+                                ElData = G2elem.GetElInfo('C',Parms)
                                 sumnum = 1.0
                                 ElData['FormulaNo'] = 1.0
-                                ElList[elem] = ElData
+                                ElList['C'] = ElData
                     ElLists.append(ElList)
                     print(sumnum)
                 id, cookie = self.GPXtree.GetNextChild(self.root, cookie)

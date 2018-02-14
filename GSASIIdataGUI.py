@@ -3978,12 +3978,12 @@ class GSASII(wx.Frame):
                                     ElList[elem] = ElData
                                 
                             except ValueError:
+                                G2G.G2MessageBox(self,'Carbon-based (and wrong) PDF will be generated','Missing chemical formula')
                                 ElData = G2elem.GetElInfo('C',Parms)
                                 sumnum = 1.0
                                 ElData['FormulaNo'] = 1.0
                                 ElList['C'] = ElData
                     ElLists.append(ElList)
-                    print(sumnum)
                 id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if len(TextList) < 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')

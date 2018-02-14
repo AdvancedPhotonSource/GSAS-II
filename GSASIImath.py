@@ -1621,7 +1621,6 @@ def ApplyModulation(data,tau):
     '''
     generalData = data['General']
     cell = generalData['Cell'][1:7]
-    ABC = np.array(cell[:3])
     G,g = G2lat.cell2Gmat(cell)
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
@@ -1634,7 +1633,6 @@ def ApplyModulation(data,tau):
     Fade = np.ones(len(drawAtoms))
     for atom in atoms:
         atxyz = np.array(atom[cx:cx+3])
-#        atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
         atuij = np.array(atom[cia+2:cia+8])
         Sfrac = atom[-1]['SS1']['Sfrac']
         Spos = atom[-1]['SS1']['Spos']

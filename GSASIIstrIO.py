@@ -1260,7 +1260,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 CSI = G2spc.GetSSfxuinel(waveType,Stype,1,at[cx:cx+3],SGData,SSGData)
                             else:
                                 CSI = G2spc.GetSSfxuinel('Fourier',Stype,iw+1-nx,at[cx:cx+3],SGData,SSGData)
-                            uId,uCoef = CSI[Stype]
+                            uId,uCoef = CSI
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Block',] and not iw:

@@ -160,6 +160,14 @@ Contour_color = 'Paired'
 will be applied for new images and if Saved for a new start of GSAS-II
 '''
 
+Movie_fps = 10
+''' Specifies movie frames-per-second; larger number will make smoother modulation movies but larger files.
+'''
+
+Movie_time = 5
+''' Specifices time in sec for one modulation loop; larger number will give more frames for same fps'
+'''
+
 Multiprocessing_cores = 0
 ''' Specifies the number of cores to use when performing multicore computing. A number less
 than zero causes the recommended number of cores [using multiprocessing.cpu_count()/2]

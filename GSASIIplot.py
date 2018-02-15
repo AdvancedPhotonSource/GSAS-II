@@ -6113,18 +6113,38 @@ def PlotStructure(G2frame,data,firstCall=False):
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
         elif key in ['M',]and generalData['Modulated']:  #make a movie file
-            G2frame.tau = 0.
-            for i in range(100):
-                G2frame.tau += 0.02
-                G2frame.tau %= 1.
-                G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
-                data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
-                SetDrawAtomsText(data['Drawing']['Atoms'])
-                G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
-#                if not np.any(Fade):
-#                    Fade += 1
-                Draw('key down',Fade)
-            return
+            import imageio
+            from PIL import Image as Im
+            Fname = generalData['Name']+'.gif'
+            size = Page.canvas.GetSize()
+            G2frame.tau = 0.0
+            data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+            SetDrawAtomsText(data['Drawing']['Atoms'])
+            G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+            Draw('key down',Fade)
+            fps = GSASIIpath.GetConfigValue('Movie_fps',10)
+            duration = GSASIIpath.GetConfigValue('Movie_time',5)    #sec
+            steps = duration*fps
+            delt = 1./steps
+            with imageio.get_writer(Fname, mode='I',fps=fps) as writer:
+                G2frame.tau = 0.
+                for i in range(steps):
+                    G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
+                    data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+                    SetDrawAtomsText(data['Drawing']['Atoms'])
+                    G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+                    Draw('key down',Fade)
+                    GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+                    Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+                    im = Im.new("RGB", (size[0],size[1]))
+                    try:
+                        im.frombytes(Pix)
+                    except AttributeError:
+                        im.fromstring(Pix)
+                    im = im.transpose(Im.FLIP_TOP_BOTTOM)
+                    writer.append_data(np.array(im))            
+                    G2frame.tau += delt
+                return
         elif key in ['+','-','=','0']:
             if keyBox:
                 OnKeyPressed(event)
@@ -7061,7 +7081,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     else:
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
     if generalData['Modulated'] and len(drawAtoms):
-        choice += ['+: increase tau','-: decrease tau','0: set tau = 0']    #add 'm: make modulation movie'
+        choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
 
     Tx,Ty,Tz = drawingData['viewPoint'][0]
     rho = G2mth.getRho([Tx,Ty,Tz],mapData)

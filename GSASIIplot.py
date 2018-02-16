@@ -549,13 +549,22 @@ class GSASIItoolbar(Toolbar):
     for direc in ('left','right','up','down','Expand X',
                   'Shrink X','Expand Y','Shrink Y'):
         arrows[direc] = wx.NewId()
+        
     def __init__(self,plotCanvas):
         '''Adds additional icons to toolbar'''
+        # try to remove a button from the bar
+        POS_CONFIG_SPLTS_BTN = 6 # position of button to remove
+        try:
+            self.toolitems = self.toolitems[:POS_CONFIG_SPLTS_BTN]+self.toolitems[POS_CONFIG_SPLTS_BTN+1:]
+            deleted = True
+        except:
+            deleted = False
         Toolbar.__init__(self,plotCanvas)
         G2path = os.path.split(os.path.abspath(__file__))[0]
+        self.updateActions = None # defines a call to be made as part of plot updates
         self.plotCanvas = plotCanvas
-        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button, nos. start at 1!
-        self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)    #doesn't work in miniconda
+        # 2nd try to remove a button from the bar
+        if not deleted: self.DeleteToolByPos(POS_CONFIG_SPLTS_BTN) #doesn't work in some wxpython versions
         self.parent = self.GetParent()
         key = os.path.join(G2path,'key.ico')
         if 'phoenix' in wx.version():
@@ -585,7 +594,14 @@ class GSASIItoolbar(Toolbar):
             else:
                 button = self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),direc,'Zoom: '+direc)
             wx.EVT_TOOL.Bind(self,self.arrows[direc],button.GetId(),self.OnArrow)
-            
+
+    def _update_view(self):
+        '''Overrides the post-buttonbar update action to invoke a redraw; needed for plot magnification
+        '''
+        if self.updateActions:
+            wx.CallAfter(*self.updateActions)
+        Toolbar._update_view(self)
+
     def OnArrow(self,event):
         'reposition limits to scan or zoom by button press'
         ax = self.plotCanvas.figure.get_axes()[0]
@@ -632,6 +648,8 @@ class GSASIItoolbar(Toolbar):
         self.plotCanvas.figure.canvas.draw()
         self.parent.toolbar.draw()
 #        self.parent.toolbar.push_current()
+        if self.updateActions:
+            wx.CallAfter(*self.updateActions)
         
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'
@@ -645,16 +663,22 @@ class GSASIItoolbar(Toolbar):
         '''
         parent = self.GetParent()
         if parent.Choice:
-            dlg = wx.SingleChoiceDialog(parent,'Select','Key press',list(parent.Choice))
+            # remove the 1st entry in list if key press
+            if 'key press' in parent.Choice[0].lower():
+                choices = list(parent.Choice[1:])
+            else:
+                choices = list(parent.Choice)
+            dlg = wx.SingleChoiceDialog(parent,'Select a keyboard command',
+                                        'Key press list',choices)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                event.key = parent.Choice[sel][0]
+                event.key = choices[sel][0]
                 if event.key != ' ':
                     parent.keyPress(event)
                 else:
                     dlg.Destroy()
                     G2G.G2MessageBox(self.TopLevelParent,
-                                     'Use this command from the keyboard',
+                                     'Use this command only from the keyboard',
                                      'Key not in menu')
                     return
             dlg.Destroy()
@@ -1526,12 +1550,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if G2frame.Contour:
                 G2frame.plotStyle['qPlot'] = False
                 G2frame.plotStyle['dPlot'] = False
-        # elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
-        #         G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-        #     xpos = event.xdata
-        #     if xpos is None: return  #avoid out of frame mouse position
-        #     ypos = event.ydata
-        #     print('event',xpos)
+        elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
+                 G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+            # add a magnification region
+            try:
+                xpos = event.xdata
+                if xpos is None: return  #avoid out of frame mouse position
+                if 'Magnification' not in Pattern[0]:
+                    Pattern[0]['Magnification'] = []
+                try:
+                    if G2frame.plotStyle['qPlot']:
+                        xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
+                    elif G2frame.plotStyle['dPlot']:
+                        xpos = G2lat.Dsp2pos(Parms,xpos)
+                except ValueError:
+                    return
+            except AttributeError: # invoked when this is called from dialog rather than key press
+                xpos = (Pattern[1][0][-1]+Pattern[1][0][0])/2 # set to middle of pattern
+            if not Pattern[0]['Magnification']:
+                Pattern[0]['Magnification'] = [[None,1.]]
+            Pattern[0]['Magnification'] += [[xpos,2.]]
+            wx.CallAfter(G2gd.UpdatePWHKPlot,G2frame,plottype,G2frame.PatternId)
+            return
         elif event.key == 'q': 
             newPlot = True
             if 'PWDR' in plottype:
@@ -1805,7 +1845,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             xpos = pick.get_xdata()
             ypos = pick.get_ydata()
             ind = event.ind
-            xy = list(zip(np.take(xpos,ind),np.take(ypos,ind)))[0]
+            xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
             # convert from plot units
             if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
@@ -1889,6 +1929,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 Page.diffOffset = Pattern[0]['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
+            elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
+                pick.set_dashes((1,4)) # set line as dotted sparse
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+                pick.set_dashes((1,1)) # back to dotted
             else:                         # pick of plot tick mark (is anything else possible?)
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if pick not in Page.phaseList: # picked something other than a tickmark
@@ -1956,6 +2002,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         PickId = G2frame.PickId                             # points to item in tree
         if G2frame.GPXtree.GetItemText(PickId) == 'Background' and event.xdata:
             if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
+                # after any mouse release event (could be a zoom), redraw magnification lines
+                if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
                 return 
             # Background page, deal with fixed background points
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
@@ -1968,10 +2016,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 return
             # unit conversions
             xy = [event.xdata,event.ydata]
-            if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
-                xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-            elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
-                xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+            try:
+                if G2frame.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+                elif G2frame.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+            except:
+                return
             if G2frame.plotStyle['sqrtPlot']:
                 xy[1] = xy[1]**2
             backPts = G2frame.dataWindow.wxID_BackPts
@@ -1990,13 +2041,30 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
                 return
         
-        if G2frame.itemPicked is None: return
+        if G2frame.itemPicked is None:
+            # after any mouse release event (could be a zoom), redraw magnification lines
+            if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            return
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.GPXtree.GetItemPyData(PickId)
             ypos = event.ydata
             Pattern[0]['delOffset'] = -ypos
             G2frame.itemPicked = None
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            return
+        elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
+            xpos = event.xdata
+            try:
+                if G2frame.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
+                    xpos = G2lat.Dsp2pos(Parms,2*np.pi/xpos)
+                elif G2frame.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
+                    xpos = G2lat.Dsp2pos(Parms,xpos)
+            except:
+                return
+            magIndex = G2frame.MagLines.index(G2frame.itemPicked)
+            data = G2frame.GPXtree.GetItemPyData(PickId)
+            data[0]['Magnification'][magIndex][0] = xpos
+            wx.CallAfter(G2gd.UpdatePWHKPlot,G2frame,plottype,G2frame.PatternId)
             return
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
@@ -2154,9 +2222,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
-#    if 'PWDR' in plottype and G2frame.SinglePlot and not (
-#                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-#        Page.Choice = Page.Choice + (' a: set multiplier -- only from keyboard',)
+    if 'PWDR' in plottype and G2frame.SinglePlot and not (
+                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+        Page.Choice = Page.Choice + ('a: add magnification region',)
+    magLineList = [] # null value indicates no magnification
+    Page.toolbar.updateActions = None # no update actions
     G2frame.cid = None
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId
@@ -2217,7 +2287,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     offsetY = Pattern[0]['Offset'][0]
     if G2frame.logPlot:
         Title = 'log('+Title+')'
-    Plot.set_title(Title)
+    #Plot.set_title(Title) # show title only w/o magnification
     if G2frame.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
     elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
@@ -2269,7 +2339,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         ifpicked = False
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
-#        xye = ma.array(ma.getdata(Pattern[1]))
         xye = np.array(ma.getdata(Pattern[1]))
         bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if PickId:
@@ -2287,11 +2356,61 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             X = xye[0]
         if not lenX:
             lenX = len(X)
+        # show plot magnification factors
+        magMarkers = []
+        multArray = np.ones_like(Pattern[1][0])
+        if 'PWDR' in plottype and G2frame.SinglePlot and not (
+                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+            magLineList = data[0].get('Magnification',[])
+            if ('C' in ParmList[0]['Type'][0] and G2frame.plotStyle['dPlot']
+                ) or ('T' in ParmList[0]['Type'][0] and G2frame.plotStyle['qPlot']
+                ): # reversed regions relative to data order
+                tcorner = 1
+                tpos = 1.0
+                halign = 'right'
+            else:
+                tcorner = 0
+                tpos = 1.0
+                halign = 'left'
+            ml0 = None
+            for x,m in magLineList:
+                ml = m
+                if int(m) == m:
+                    ml = int(m)
+                if x is None:
+                    magMarkers.append(None)
+                    multArray *= m
+                    ml0 = ml
+                    continue
+                multArray[Pattern[1][0]>x] = m
+                if G2frame.plotStyle['qPlot']:
+                    x = 2.*np.pi/G2lat.Pos2dsp(Parms,x)
+                elif G2frame.plotStyle['dPlot']:
+                    x = G2lat.Pos2dsp(Parms,x)
+                # is range in displayed range (defined after newplot)?
+                if not newPlot:
+                    (xmin,xmax),ylim = G2frame.xylim
+                    if x < xmin:
+                        ml0 = ml
+                        continue
+                    if x > xmax:
+                        continue
+                magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),picker=2.))
+                Plot.annotate("x{}".format(ml), xy=(x, tpos), xycoords=("data", "axes fraction"),
+                                verticalalignment='bottom',horizontalalignment=halign)
+            if ml0:
+                Plot.annotate("x{}".format(ml0), xy=(tcorner, tpos), xycoords="axes fraction",
+                                verticalalignment='bottom',horizontalalignment=halign)
+                Page.toolbar.updateActions = (PlotPatterns,G2frame)
+            multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
             if G2frame.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))
                 np.seterr(invalid=olderr['invalid'])
+            elif 'PWDR' in plottype and G2frame.SinglePlot and not (
+                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                Y = xye[1]*multArray+bxye+offsetY*N*Ymax/100.0
             else:
                 Y = xye[1]+bxye+offsetY*N*Ymax/100.0
         elif plottype in ['SASD','REFD']:
@@ -2344,13 +2463,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
                     np.seterr(invalid=olderr['invalid'])
                 else:
-                    Z = xye[3]+offsetY*N*Ymax/100.0
+                    if 'PWDR' in plottype and G2frame.SinglePlot and not (
+                        G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                        Z = xye[3]*multArray+offsetY*N*Ymax/100.0
+                    else:
+                        Z = xye[3]+offsetY*N*Ymax/100.0
                 if 'PWDR' in plottype:
                     if G2frame.plotStyle['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Pattern[0]['delOffset']
+                    elif 'PWDR' in plottype and G2frame.SinglePlot and not (
+                        G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                        W = xye[4]*multArray+offsetY*N*Ymax/100.0
+                        D = multArray*xye[5]-Pattern[0]['delOffset']  #powder background
                     else:
                         W = xye[4]+offsetY*N*Ymax/100.0
                         D = xye[5]-Pattern[0]['delOffset']  #powder background
@@ -2476,6 +2603,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
 #    if not G2frame.SinglePlot and not G2frame.Contour:
 #        axcb = mpl.colorbar.ColorbarBase(N)
 #        axcb.set_label('PDF number')
+    if not magLineList:
+        Plot.set_title(Title)
 
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
@@ -2536,6 +2665,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Page.figure.colorbar(Img)
     else:
         G2frame.Lines = Lines
+        G2frame.MagLines = magMarkers
     if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Background':
         # plot fixed background points
         backDict = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
@@ -3020,7 +3150,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 G2frame.Lines.append(Plot.axvline(peak[0],color='r',picker=2.))
             Xb = [0.,peaks['Limits'][1]]
             Yb = [0.,Xb[1]*peaks['Background'][1][1]]
-            Plot.plot(Xb,Yb,color='k',dashes=(5,5))
+            Plot.plot(Xb,Yb,color='k',dashes=(5,5))             
 #    elif G2frame.Legend:
 #        Plot.legend(loc='best')
     if not newPlot:
@@ -6113,7 +6243,13 @@ def PlotStructure(G2frame,data,firstCall=False):
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
         elif key in ['M',]and generalData['Modulated']:  #make a movie file
-            import imageio
+            try:
+                import imageio
+            except ImportError:
+                G2G.G2MessageBox(G2frame,
+                    'This command requires the Python imageio package to be installed',
+                    'missing package')
+                return
             from PIL import Image as Im
             Fname = generalData['Name']+'.gif'
             size = Page.canvas.GetSize()

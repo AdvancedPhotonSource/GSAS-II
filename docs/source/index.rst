@@ -43,21 +43,22 @@ Note that GSAS-II requires the Python extension packages
 * matplotlib (http://matplotlib.org/contents.html)  and
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation). Note: a copy of this is distributed with GSAS-II (at present) and will be installed if the Python setuptools package is present. 
 
-Two packages are used by some parts of the code, but are not
+Several packages are used by some parts of the code, but are not
 required. If these packages are not present warning messages may be
-generated but the vast bulk of GSAS-II will function normally. 
+generated when needed, but the vast bulk of GSAS-II will function normally. 
 
 * PIL (http://www.pythonware.com/products/pil/) or Pillow (https://pillow.readthedocs.org). This is used to save
   and read certain types of images.
-* h5py is the HDF5 support package. This is (not surprisingly) required
-  to import images from HDF5 files. If this library is not present,
+* h5py is the HDF5 interface and hdf5 is the support package. These
+  packages are (not surprisingly) required
+  to import images from HDF5 files. If these libraries are not present,
   the HDF5 importer(s) will not appear in the import menu and a
   warning message appears on GSAS-II startup. 
-
-* When using Anaconda we also encourage installation of the subversion
-  (svn) package. This is a separate package from Python and is used by
-  GSAS-II to download updates to our code. It can also be installed
-  separately. 
+* imageio is used to make movies. 
+* svn: When using Anaconda we also encourage installation of the
+  svn (subversion) conda package. This is not actually part of Python
+  and can be installed directly into your system's configuration. It is used by
+  GSAS-II to download updates to our code.
 
 Note that the packages listed above are not distributed as part of the Python standard
 library. We use the free Anaconda Python (https://www.anaconda.com/)
@@ -66,4 +67,4 @@ many other fine distributions, such as Enthought Inc.'s Canopy and
 Python(x,y), see here: https://www.python.org/download/alternatives/. 
 We do some testing using the older Enthought Python Distribution
 (EPD); this is known to have some problems with reading CIFs and
-encourage updating. 
+encourage updating from that. 

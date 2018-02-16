@@ -2676,7 +2676,8 @@ class GSASII(wx.Frame):
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = []
-        self.Lines = []
+        self.Lines = []     # lines used for data limits & excluded regions
+        self.MagLines = []  # lines used for plot magnification
         self.itemPicked = None
         self.Interpolate = 'nearest'
         self.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
@@ -6474,7 +6475,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             cell[7] = G2lat.calc_V(A)
             textureData = General['SH Texture']    
             if textureData['Order']:
-                SHtextureSig = {}
+#                SHtextureSig = {}
                 for name in ['omega','chi','phi']:
                     aname = pfx+'SH '+name
                     textureData['Sample '+name][1] = parmDict[aname]
@@ -6492,10 +6493,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 for i,refl in enumerate(pawleyRef):
                     key = pfx+'PWLref:'+str(i)
                     refl[ik] = parmDict[key]
-                    if key in sigDict:
-                        refl[ik+1] = sigDict[key]
-                    else:
-                        refl[ik+1] = 0
+#                    if key in sigDict:  #TODO: error here sigDict not defined. What was intended
+#                        refl[ik+1] = sigDict[key]
+#                    else:
+#                        refl[ik+1] = 0
                 continue
             General['Mass'] = 0.
             cx,ct,cs,cia = General['AtomPtrs']
@@ -7241,7 +7242,22 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Need this here to pass on the G2frame object. 
         '''
         G2pdG.CopySelectedHistItems(G2frame)
-           
+
+    def OnAddMag(event):
+        'Respond to the request to create a magnification region'
+        if not data[0]['Magnification']: data[0]['Magnification'] = [[None,1.0]]
+        data[0]['Magnification'] += [[(data[1][0][0]+data[1][0][-1])/2,2.]]
+        wx.CallAfter(UpdatePWHKPlot,G2frame,kind,G2frame.PatternId)
+    def OnDelMag(event):
+        'Respond to the request to delete a magnification region'
+        del data[0]['Magnification'][event.EventObject.row]
+        if len(data[0]['Magnification']) == 1: data[0]['Magnification'] = []
+        wx.CallAfter(UpdatePWHKPlot,G2frame,kind,G2frame.PatternId)
+    def OnEditMag(**args):
+        'Update to show edits to mag factors in window and plot'
+        wx.CallAfter(UpdatePWHKPlot,G2frame,kind,G2frame.PatternId)
+
+    # Start of UpdatePWHKPlot
     data = G2frame.GPXtree.GetItemPyData(item)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+G2frame.GPXtree.GetItemText(item))
     G2frame.SetTitle(G2frame.GPXtree.GetItemText(item))
@@ -7333,8 +7349,64 @@ def UpdatePWHKPlot(G2frame,kind,item):
                     mainSizer.Add(wx.StaticText(G2frame.dataWindow,-1,
                         u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
                         (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
-                
-                    
+
+    # Draw edit box for Magnification factors/positions
+    if kind == 'PWDR':
+        if 'Magnification' not in data[0]:
+            data[0]['Magnification'] = []
+        mainSizer.Add((-1,10))
+        lenmag = len(data[0]['Magnification'])
+        data[0]['Magnification'].sort(key=lambda x: x[0])
+        if lenmag > 1:
+            panel = wx.StaticBox(G2frame.dataWindow, wx.ID_ANY, 'Magnification regions',
+                                 style=wx.ALIGN_CENTER)
+            mSizer = wx.StaticBoxSizer(panel,wx.VERTICAL)
+            magSizer = wx.FlexGridSizer(lenmag+1,3,0,0)
+            Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+            Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
+                G2frame.PatternId,'Instrument Parameters'))
+            if 'C' in Inst[0]['Type'][0]:
+                magSizer.Add(wx.StaticText(panel,-1,'2Theta'
+                                       ),1,wx.ALIGN_CENTER,1)
+            else:
+                magSizer.Add(wx.StaticText(panel,-1,'TOF'
+                                       ),1,wx.ALIGN_CENTER,1)
+            magSizer.Add(wx.StaticText(panel,-1,'Magnification\nfactor',
+                                       style=wx.ALIGN_CENTRE_HORIZONTAL),1,wx.ALIGN_CENTER,1)
+            magSizer.Add(wx.StaticText(panel,-1,'Delete\nbutton',
+                                       style=wx.ALIGN_CENTRE_HORIZONTAL
+                                       ),1,wx.ALIGN_CENTER,1)
+            magSizer.Add(wx.StaticText(panel,-1,'(start)'),1,wx.ALIGN_CENTER,1)
+            edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][0],1,
+                                            nDig=(7,2),
+                                            min=0.01,max=1000.,
+                                            OnLeave=OnEditMag,size=(65,-1))
+            magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
+            magSizer.Add((1,1))
+            for i in range(1,lenmag):
+                edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],0,
+                                            nDig=(10,3),
+                                            min=data[1][0][0],max=data[1][0][-1],
+                                            OnLeave=OnEditMag)
+                magSizer.Add(edit)
+                edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],1,
+                                            nDig=(7,2),
+                                            min=0.01,max=1000.,
+                                            OnLeave=OnEditMag,size=(65,-1))
+                magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
+                delmag = wx.Button(panel,wx.ID_ANY,label='Del',size=(40,-1))
+                delmag.Bind(wx.EVT_BUTTON,OnDelMag)
+                delmag.row = i
+                magSizer.Add(delmag,1,wx.ALIGN_CENTER,5)
+            mSizer.Add(magSizer)
+        else:
+            panel = G2frame.dataWindow
+            mSizer = wx.BoxSizer(wx.VERTICAL)
+        addmag = wx.Button(panel,wx.ID_ANY,label='Add a magnification region')
+        addmag.Bind(wx.EVT_BUTTON,OnAddMag)
+        mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
+        mainSizer.Add(mSizer)
+
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
     if kind in ['PWDR','SASD','REFD',]:

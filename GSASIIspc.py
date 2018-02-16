@@ -1672,7 +1672,7 @@ def MoveToUnitCell(xyz):
     :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
     '''
     XYZ = (np.array(xyz)+10.)%1.
-    cell = np.asarray(np.rint(xyz-XYZ),dtype=np.int32)
+    cell = np.asarray(np.rint(XYZ-xyz),dtype=np.int32)
     return XYZ,cell
         
 def Opposite(XYZ,toler=0.0002):
@@ -1720,8 +1720,6 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     Idup = []
     Cell = []
     X = np.array(XYZ)
-    if Move:
-        X = MoveToUnitCell(X)[0]
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):

@@ -5563,12 +5563,11 @@ entered the right symbol for your structure.
                         Opp = G2spc.Opposite(item[0])
                         for key in Opp:
                             if noDuplicate(Opp[key],atomData):
-                                unit = np.array(eval(key))*1.-item[3]
+                                unit = item[3]+np.array(eval(key))*1.
                                 cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
                                 atom[cx:cx+3] = Opp[key]
                                 atom[cs-1] = cell
                                 atomData.append(atom[:cuij+9])  #not SS stuff
- #                       GSASIIpath.IPyBreak()
                     data['Drawing']['Atoms'] = atomData
             finally:
                 wx.EndBusyCursor()

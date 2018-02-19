@@ -18,10 +18,181 @@ Routines for reading, writing, modifying and creating GSAS-II project (.gpx) fil
 This file specifies several wrapper classes around GSAS-II data representations.
 They all inherit from :class:`G2ObjectWrapper`. The chief class is :class:`G2Project`,
 which represents an entire GSAS-II project and provides several methods to access
-phases, powder histograms, and execute Rietveld refinements. These routines are
-typically called by using the :ref:`CommandlineInterface` to access a number of features or
-the :ref:`API`, which allows much more versatile access. 
+phases, powder histograms, and execute Rietveld refinements. These routines can be
+accessed in two ways: 
+the :ref:`CommandlineInterface` provides access a number of features without writing
+Python scripts of from the :ref:`API`, which allows much more versatile access from
+within Python. 
 
+
+=====================
+Overview
+=====================
+The most commonly used routines are:
+
+:class:`G2Project`
+   Always needed: used to create a new project (.gpx) file or read in an existing one.
+
+:meth:`G2Project.add_powder_histogram`
+   Used to read in powder diffraction data to a project file.
+
+:meth:`G2Project.add_simulated_powder_histogram`
+   Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
+
+:meth:`G2Project.save`
+   Writes the current project to disk.
+
+:meth:`G2Project.do_refinements`
+   This is passed a list of dictionaries, where each dict defines a refinement step.
+   Passing a list with a single empty dict initiates a refinement with the current
+   parameters and flags.
+   
+:meth:`G2Project.set_refinement`
+   This is passed a single dictionaries which is used to set parameters and flags.
+   These actions can be performed also in :meth:`G2Project.do_refinements`. 
+
+Refinement step dicts
+   A refinement step dict, as used in :meth:`G2Project.do_refinements` and described in
+   :ref:`Project_dicts`,
+   specifies parameter & refinement flag changes, which are usually followed by a refinement and
+   optionally by calls to locally-defined Python functions. The keys used in these dicts are
+   defined in the :ref:`Refinement_recipe` table, below.
+
+There are several ways to set parameters project using different level objects, as is 
+are described in sections below, but the simplest way to access parameters and flags
+in a project is to use the above routines. 
+
+.. _Project_dicts:
+
+-----------------------------
+Project-level Parameter Dict
+-----------------------------
+
+As noted below (:ref:`Refinement_parameters_kinds`), there are three types of refinement parameters,
+which can be accessed individually by the objects that encapsulate individual phases and histograms
+but it will be usually simplest to create a composite dictionary
+that is used at the project-level. A dict is created with keys
+"set" and "clear" that can be supplied to :meth:`G2Project.set_refinement`
+(or :meth:`G2Project.do_refinements`, see :ref:`Refinement_recipe` below) that will
+determine parameter values and will determine which parameters will be refined. 
+
+The specific keys and subkeys that can be used are defined in tables 
+:ref:`Histogram_parameters_table`, :ref:`Phase_parameters_table` and :ref:`HAP_parameters_table`.
+
+Note that optionally a list of histograms and/or phases can be supplied in the call to 
+:meth:`G2Project.set_refinement`, but if not specified, the default is to use all defined
+phases and histograms. 
+
+As an example: 
+
+.. code-block::  python
+
+    pardict = {'set': { 'Limits': [0.8, 12.0],
+                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev', 'refine': True}},
+              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
+    my_project.set_refinement(pardict)
+    
+.. _Refinement_recipe:
+    
+------------------------
+Refinement recipe
+------------------------
+Building on the :ref:`Project_dicts`,
+it is possible to specify a sequence of refinement actions as a list of
+these dicts and supplying this list 
+as an argument to :meth:`G2Project.do_refinements`.
+
+As an example, this code performs the same actions as in the example in the section above: 
+
+.. code-block::  python
+    
+    pardict = {'set': { 'Limits': [0.8, 12.0],
+                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev', 'refine': True}},
+              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
+    my_project.do_refinements([pardict])
+
+However, in addition to setting a number of parameters, this example will perform a refinement as well.
+If more than one dict is specified in the list, as is done in this example,
+two refinement steps will be performed:
+
+.. code-block::  python
+
+    my_project.do_refinements([pardict,pardict1])
+
+
+The keys defined in the following table
+may be used in a dict supplied to :meth:`G2Project.do_refinements`. Note that now keys ``histograms``
+and ``phases`` are used to limit actions to specific sets of parameters within the project. 
+
+========== ============================================================================
+key         explanation
+========== ============================================================================
+set                    Specifies a dict with keys and subkeys as described in the
+                       :ref:`Refinement_parameters_fmt` section. Items listed here
+                       will be set to be refined.
+clear                  Specifies a dict, as above for set, except that parameters are
+                       cleared and thus will not be refined.
+once                   Specifies a dict as above for set, except that parameters are
+                       set for the next cycle of refinement and are cleared once the
+                       refinement step is completed.
+skip                   Normally, once parameters are processed with a set/clear/once
+                       action(s), a refinement is started. If skip is defined as True
+                       (or any other value) the refinement step is not performed.
+output                 If a file name is specified for output is will be used to save
+                       the current refinement. 
+histograms             Should contain a list of histogram(s) to be used for the
+                       set/clear/once action(s) on :ref:`Histogram_parameters_table` or
+                       :ref:`HAP_parameters_table`. Note that this will be
+                       ignored for :ref:`Phase_parameters_table`. Histograms may be
+                       specified as a list of strings [('PWDR ...'),...], indices
+                       [0,1,2] or as list of objects [hist1, hist2]. 
+phases                 Should contain a list of phase(s) to be used for the
+                       set/clear/once action(s) on :ref:`Phase_parameters_table` or 
+                       :ref:`HAP_parameters_table`. Note that this will be
+                       ignored for :ref:`Histogram_parameters_table`.
+                       Phases may be specified as a list of strings
+                       [('Phase name'),...], indices [0,1,2] or as list of objects
+                       [phase0, phase2]. 
+call                   Specifies a function to call after a refinement is completed.
+                       The value supplied can be the object (typically a function)
+                       that will be called or a string that will evaluate (in the
+                       namespace inside :meth:`G2Project.iter_refinements` where
+                       ``self`` references the project.)
+                       Nothing is called if this is not specified.
+callargs               Provides a list of arguments that will be passed to the function
+                       in call (if any). If call is defined and callargs is not, the
+                       current <tt>G2Project</tt> is passed as a single argument. 
+========== ============================================================================
+
+An example the performs a series of refinement steps follows:
+
+.. code-block::  python
+
+    reflist = [
+            {"set": { "Limits": { "low": 0.7 },
+                      "Background": { "no. coeffs": 3,
+                                      "refine": True }}},
+            {"set": { "LeBail": True,
+                      "Cell": True }},
+            {"set": { "Sample Parameters": ["DisplaceX"]}},
+            {"set": { "Instrument Parameters": ["U", "V", "W", "X", "Y"]}},
+            {"set": { "Mustrain": { "type": "uniaxial",
+                                    "refine": "equatorial",
+                                    "direction": [0, 0, 1]}}},
+            {"set": { "Mustrain": { "type": "uniaxial",
+                                    "refine": "axial"}}},
+            {"clear": { "LeBail": True},
+             "set": { "Atoms": { "Mn": "X" }}},
+            {"set": { "Atoms": { "O1": "X", "O2": "X" }}},]
+    my_project.do_refinements(reflist)
+    
+
+In this example, a separate refinement step will be performed for each dict in the list, since
+"skip" is not included. 
+Note that in the second from last refinement step, parameters are both set and cleared. 
+   
 .. _Refinement_parameters_kinds:
 
 =====================
@@ -54,7 +225,178 @@ Note that parameters and refinement flags used in GSAS-II fall into three classe
       See the :ref:`HAP_parameters_table` table for the HAP parameters where access has
       been provided. 
 
-There are several ways to set parameters using different objects, as described below.
+.. _Refinement_parameters_fmt:
+
+============================
+Refinement specifiers format
+============================
+
+Refinement parameters are specified within dictionaries. The details of these dicts depends on the
+type of parameter (see :ref:`Refinement_parameters_kinds`), with a different set
+of keys described below for each of the three parameter classes.
+
+.. _Histogram_parameters_table:
+
+--------------------
+Histogram parameters
+--------------------
+
+This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
+and :func:`G2PwdrData.clear_refinements`. As an example, 
+
+.. code-block::  python
+
+   hist.set_refinements({"Background": {"no.coeffs": 3, "refine": True},
+                         "Sample Parameters": ["Scale"],
+                         "Limits": [10000, 40000]})
+
+With :meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
+``set``, ``clear``, or ``once``. Values will be set for all histograms, unless the ``histograms``
+key is used to define specific histograms. As an example: 
+
+.. code-block::  python
+
+  gsas_proj.do_refinements([{
+      'set': {
+          'Background': {'no.coeffs': 3, 'refine': True},
+          'Sample Parameters': ['Scale'],
+          'Limits': [10000, 40000]},
+      'histograms': [1,2]
+                            }])
+
+Note that below in Instrument Parameters, 
+related profile parameters (such as U and V) are listed
+separated by commas to save space in the table.
+
+.. tabularcolumns:: |l|l|p{3.5in}|
+
+===================== ====================  =================================================
+key                   subkey                explanation
+===================== ====================  =================================================
+Limits                                      The range of 2-theta (degrees) or TOF (in 
+                                            microsec) range of values to use. Can
+                                            be either a dictionary of 'low' and/or 'high',
+                                            or a list of 2 items [low, high]
+\                     low                   Sets the low limit
+\                     high                  Sets the high limit
+
+Sample Parameters                           Should be provided as a **list** of subkeys
+                                            to set or clear, e.g. ['DisplaceX', 'Scale']
+\                     Absorption
+\                     Contrast
+\                     DisplaceX             Sample displacement along the X direction
+\                     DisplaceY             Sample displacement along the Y direction
+\                     Scale                 Histogram Scale factor
+
+Background                                  Sample background. If value is a boolean,
+                                            the background's 'refine' parameter is set
+                                            to the given boolean. Usually should be a
+                                            dictionary with any of the following keys:
+\                     type                  The background model, e.g. 'chebyschev'
+\                     refine                The value of the refine flag, boolean
+\                     no. coeffs            Number of coefficients to use, integer
+\                     coeffs                List of floats, literal values for background
+\                     FixedPoints           List of (2-theta, intensity) values for fixed points
+\                     fit fixed points      If True, triggers a fit to the fixed points to
+                                            be calculated. It is calculated when this key is
+                                            detected, regardless of calls to refine.
+
+Instrument Parameters                       As in Sample Paramters, provide as a **list** of
+                                            subkeys to
+                                            set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
+\                     U, V, W               Gaussian peak profile terms
+\                     X, Y, Z               Lorentzian peak profile terms
+\                     alpha, beta-0,        TOF profile terms 
+                      beta-1, beta-q,
+\                     sig-0, sig-1,         TOF profile terms
+                      sig-2, sig-q
+\                     difA, difB, difC      TOF Calibration constants
+\                     Zero                  Zero shift
+\                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
+\                     Polariz.              Polarization parameter
+\                     Lam                   Lambda, the incident wavelength
+===================== ====================  =================================================
+
+.. _Phase_parameters_table:
+
+----------------
+Phase parameters
+----------------
+
+This table describes the dictionaries supplied to :func:`G2Phase.set_refinements`
+and :func:`G2Phase.clear_refinements`. With :meth:`G2Project.do_refinements`,
+these parameters should be placed inside a dict with a key
+``set``, ``clear``, or ``once``. Values will be set for all phases, unless the ``phases``
+key is used to define specific phase(s). 
+
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+======= ==========================================================
+key                   explanation
+======= ==========================================================
+Cell                  Whether or not to refine the unit cell.
+Atoms                 Dictionary of atoms and refinement flags.
+                      Each key should be an atom label, e.g.
+                      'O3', 'Mn5', and each value should be
+                      a string defining what values to refine.
+                      Values can be any combination of 'F'
+                      for fractional occupancy, 'X' for position,
+                      and 'U' for Debye-Waller factor
+LeBail                Enables LeBail intensity extraction.
+======= ==========================================================
+
+
+.. _HAP_parameters_table:
+
+------------------------------
+Histogram-and-phase parameters
+------------------------------
+
+This table describes the dictionaries supplied to :func:`G2Phase.set_HAP_refinements`
+and :func:`G2Phase.clear_HAP_refinements`. When supplied to
+:meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
+``set``, ``clear``, or ``once``. Values will be set for all histograms used in each phase,
+unless the ``histograms`` and ``phases`` keys are used to define specific phases and histograms.
+
+.. tabularcolumns:: |l|l|p{3.5in}|
+
+=============  ==========  ============================================================
+key             subkey                 explanation
+=============  ==========  ============================================================
+Babinet                                Should be a **list** of the following
+                                       subkeys. If not, assumes both
+                                       BabA and BabU
+\               BabA
+\               BabU
+Extinction                             Boolean, True to refine.
+HStrain                                Boolean, True to refine all appropriate
+                                       $D_ij$ terms.
+Mustrain
+\               type                   Mustrain model. One of 'isotropic',
+                                       'uniaxial', or 'generalized'. Should always
+                                       be specified.
+\              direction               For uniaxial only. A list of three
+                                       integers,
+                                       the [hkl] direction of the axis.
+\               refine                 Usually boolean, set to True to refine.
+                                       When in doubt, set it to true.
+                                       For uniaxial model, can specify list
+                                       of 'axial' or 'equatorial' or a single
+                                       boolean sets both axial and equatorial.
+Size                                   Not yet implemented
+\               type                   Size broadening model. One of 'isotropic',
+                                       'uniaxial', or 'ellipsoid'. Should always
+                                       be specified.
+\              direction               For uniaxial only. A list of three
+                                       integers,
+                                       the [hkl] direction of the axis.
+\               refine                 Boolean, True to refine.
+Pref.Ori.                              Boolean, True to refine
+Show                                   Boolean, True to refine
+Use                                    Boolean, True to refine
+Scale                                  Phase fraction; Boolean, True to refine
+=============  ==========  ============================================================
 
 ------------------------
 Histogram/Phase objects
@@ -114,267 +456,19 @@ and here is an example for HAP parameters:
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
 
-.. _Project_objects:
-
------------------------------
-Project-level Parameter Dict
------------------------------
-It is also possible to create a composite dictionary
-that references all three of the above types of refinement parameters.
-In this case dictionaries are nested with keys at the outer level, such as
-"set" and "clear" which determine function is used with function
-:meth:`G2Project.set_refinement`.
-
-Note that optionally a list of histograms and/or phases can be supplied to
-:meth:`G2Project.set_refinement` or :meth:`G2Project.do_refinements`,
-where the default is to use all phases and histograms, but more commonly for
-:meth:`G2Project.do_refinements` will be to define the "histograms" and "phases"
-items within individual dictionaries and these will override the call arguments. 
-
-
-As an example: 
-
-.. code-block::  python
-
-    pardict = {'set': { 'Limits': [0.8, 12.0],
-                       'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True}},
-              'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
-    my_project.set_refinement(pardict)
-
-.. _Refinement_recipe:
-    
-------------------------
-Refinement recipe
-------------------------
-Finally, it is possible to specify a sequence of refinement actions as a list of
-dicts that contain :ref:`Project_objects` objects. This list is 
-supplied as an argument to :meth:`G2Project.do_refinements`.
-These dicts in this list are each like those described in the
-:ref:`Project_objects` section,
-except that additional keys, as are described in the table below may be used. 
-
-========== ============================================================================
-key         explanation
-========== ============================================================================
-set                    Specifies a dict with keys and subkeys as described in the
-                       :ref:`Refinement_parameters_fmt` section. Items listed here
-                       will be set to be refined.
-clear                  Specifies a dict as above for set, except that parameters are
-                       cleared and thus will not be refined.
-once                   Specifies a dict as above for set, except that parameters are
-                       set for the next cycle of refinement and are cleared once the
-                       refinement step is completed.
-skip                   Normally, once parameters are processed with a set/clear/once
-                       action(s), a refinement is started. If skip is defined as True
-                       (or any other value) the refinement step is not performed.
-output                 If a file name is specified for output is will be used for
-                       the current refinement. 
-histograms             Should contain a list of histogram(s) to be used for the
-                       set/clear/once action(s) on :ref:`Histogram_parameters_table` or
-                       :ref:`HAP_parameters_table`. Note that this will be
-                       ignored for :ref:`Phase_parameters_table`. Histograms may be
-                       specified as a list of strings [('PWDR ...'),...], indices
-                       [0,1,2] or as list of objects [hist1, hist2]. 
-phases                 Should contain a list of phase(s) to be used for the
-                       set/clear/once action(s) on :ref:`Phase_parameters_table` or 
-                       :ref:`HAP_parameters_table`. Note that this will be
-                       ignored for :ref:`Histogram_parameters_table`.
-                       Phases may be specified as a list of strings
-                       [('Phase name'),...], indices [0,1,2] or as list of objects
-                       [phase0, phase2]. 
-call                   Specifies a function to call after a refinement is completed.
-                       The value supplied can be the object (typically a function)
-                       that will be called or a string that will evaluate (in the
-                       namespace inside :meth:`G2Project.iter_refinements` where
-                       ``self`` references the project.)
-                       Nothing is called if this is not specified.
-callargs               Provides a list of arguments that will be passed to the function
-                       in call (if any). If call is defined and callargs is not, the
-                       current <tt>G2Project</tt> is passed as a single argument. 
-========== ============================================================================
-
-An example follows:
-
-.. code-block::  python
-
-    reflist = [
-            {"set": { "Limits": { "low": 0.7 },
-                      "Background": { "no. coeffs": 3,
-                                      "refine": True }}},
-            {"set": { "LeBail": True,
-                      "Cell": True }},
-            {"set": { "Sample Parameters": ["DisplaceX"]}},
-            {"set": { "Instrument Parameters": ["U", "V", "W", "X", "Y"]}},
-            {"set": { "Mustrain": { "type": "uniaxial",
-                                    "refine": "equatorial",
-                                    "direction": [0, 0, 1]}}},
-            {"set": { "Mustrain": { "type": "uniaxial",
-                                    "refine": "axial"}}},
-            {"clear": { "LeBail": True},
-             "set": { "Atoms": { "Mn": "X" }}},
-            {"set": { "Atoms": { "O1": "X", "O2": "X" }}},]
-    my_project.do_refinements(reflist)
-    
-
-In this example, the list contains a set of dicts, each defined as before.
-A separate refinement step will be performed for each element in the list unless
-"skip" is included. 
-Note that in the second from last refinement step, parameters are both set and cleared. 
-
-.. _Refinement_parameters_fmt:
-
-============================
-Refinement specifiers format
-============================
-
-Refinement parameters are specified as dictionaries, supplied to any of the functions
-named in :ref:`Refinement_parameters_kinds`. Each method accepts a different set
-of keys, described below for each of the three parameter classes.
-
-.. _Histogram_parameters_table:
-
---------------------
-Histogram parameters
---------------------
-
-This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
-and :func:`G2PwdrData.clear_refinements`. Note that in Instrument Parameters, 
-to save space in the table, related profile parameters (such as U and V) are listed
-together, separated by commas. 
-
-.. tabularcolumns:: |l|l|p{3.5in}|
-
-===================== ====================  =================================================
-key                   subkey                explanation
-===================== ====================  =================================================
-Limits                                      The 2-theta range of values to consider. Can
-                                            be either a dictionary of 'low' and/or 'high',
-                                            or a list of 2 items [low, high]
-\                     low                   Sets the low limit
-\                     high                  Sets the high limit
-
-Sample Parameters                           Should be provided as a **list** of subkeys
-                                            to set or clear, e.g. ['DisplaceX', 'Scale']
-\                     Absorption
-\                     Contrast
-\                     DisplaceX             Sample displacement along the X direction
-\                     DisplaceY             Sample displacement along the Y direction
-\                     Scale                 Histogram Scale factor
-
-Background                                  Sample background. If value is a boolean,
-                                            the background's 'refine' parameter is set
-                                            to the given boolean. Usually should be a
-                                            dictionary with any of the following keys:
-\                     type                  The background model, e.g. 'chebyschev'
-\                     refine                The value of the refine flag, boolean
-\                     no. coeffs            Number of coefficients to use, integer
-\                     coeffs                List of floats, literal values for background
-\                     FixedPoints           List of (2-theta, intensity) values for fixed points
-\                     fit fixed points      If True, triggers a fit to the fixed points to
-                                            be calculated. It is calculated when this key is
-                                            detected, regardless of calls to refine.
-
-Instrument Parameters                       As in Sample Paramters, provide as a **list** of
-                                            subkeys to
-                                            set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
-\                     U, V, W               Gaussian peak profile terms
-\                     X, Y, Z               Lorentzian peak profile terms
-\                     alpha, beta-0,        TOF profile terms 
-                      beta-1, beta-q,
-\                     sig-0, sig-1,         TOF profile terms
-                      sig-2, sig-q
-\                     difA, difB, difC      TOF Calibration constants
-\                     Zero                  Zero shift
-\                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
-\                     Polariz.              Polarization parameter
-\                     Lam                   Lambda, the incident wavelength
-===================== ====================  =================================================
-
-.. _Phase_parameters_table:
-
-----------------
-Phase parameters
-----------------
-
-This table describes the dictionaries supplied to :func:`G2Phase.set_refinements`
-and :func:`G2Phase.clear_refinements`.
-
-.. tabularcolumns:: |l|p{4.5in}|
-
-======= ==========================================================
-key                   explanation
-======= ==========================================================
-Cell                  Whether or not to refine the unit cell.
-Atoms                 Dictionary of atoms and refinement flags.
-                      Each key should be an atom label, e.g.
-                      'O3', 'Mn5', and each value should be
-                      a string defining what values to refine.
-                      Values can be any combination of 'F'
-                      for fractional occupancy, 'X' for position,
-                      and 'U' for Debye-Waller factor
-LeBail                Enables LeBail intensity extraction.
-======= ==========================================================
-
-
-.. _HAP_parameters_table:
-
-------------------------------
-Histogram-and-phase parameters
-------------------------------
-
-This table describes the dictionaries supplied to :func:`G2Phase.set_HAP_refinements`
-and :func:`G2Phase.clear_HAP_refinements`.
-
-.. tabularcolumns:: |l|l|p{3.5in}|
-
-=============  ==========  ============================================================
-key             subkey                 explanation
-=============  ==========  ============================================================
-Babinet                                Should be a **list** of the following
-                                       subkeys. If not, assumes both
-                                       BabA and BabU
-\               BabA
-\               BabU
-Extinction                             Boolean, True to refine.
-HStrain                                Boolean, True to refine all appropriate
-                                       $D_ij$ terms.
-Mustrain
-\               type                   Mustrain model. One of 'isotropic',
-                                       'uniaxial', or 'generalized'. Should always
-                                       be specified.
-\              direction               For uniaxial only. A list of three
-                                       integers,
-                                       the [hkl] direction of the axis.
-\               refine                 Usually boolean, set to True to refine.
-                                       When in doubt, set it to true.
-                                       For uniaxial model, can specify list
-                                       of 'axial' or 'equatorial' or a single
-                                       boolean sets both axial and equatorial.
-Size                                   Not yet implemented
-\               type                   Size broadening model. One of 'isotropic',
-                                       'uniaxial', or 'ellipsoid'. Should always
-                                       be specified.
-\              direction               For uniaxial only. A list of three
-                                       integers,
-                                       the [hkl] direction of the axis.
-\               refine                 A boolean, True to refine.
-Pref.Ori.                              Boolean, True to refine
-Show                                   Boolean, True to refine
-Use                                    Boolean, True to refine
-Scale                                  Phase fraction; Boolean, True to refine
-=============  ==========  ============================================================
-
 .. _CommandlineInterface:
 
 =======================================
 GSASIIscriptable Command-line Interface
 =======================================
 
-One way to access these routines is by calling this script 
-via a command line interface as a shell command, where it is expected to be called as::
+The routines described above are intended to be called from a Python script, but an
+alternate way to access some of the same functionality is to 
+invoke the ``GSASIIscriptable.py`` script from 
+the command line usually from within a shell script or batch file. This
+will usually be done with a command such as::
 
-       python GSASIIscriptable.py <subcommand> <file.gpx> <options>
+       python <path/>GSASIIscriptable.py <subcommand> <file.gpx> <options>
 
     The following subcommands are defined:
 
@@ -419,9 +513,9 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 
 .. _API:
 
-===================================
-GSASIIscriptable Application Layer
-===================================
+============================================================
+GSASIIscriptable Application Layer 
+============================================================
 
 This module provides a large number of classes and modules, as described below.
 Most commonly a script will create a G2Project object using :class:`G2Project` and then
@@ -434,9 +528,9 @@ or setting parameters and performing a refinement
 In some cases, it may be easier or more options may be available by direct access to 
 methods inside :class:`G2PwdrData` or :class:`G2Phase`
 
----------------------------------------
-GSASIIscriptable Classes and functions
----------------------------------------
+---------------------------------------------------------------
+Complete Documentation: GSASIIscriptable Classes and functions
+---------------------------------------------------------------
 """
 from __future__ import division, print_function
 import argparse

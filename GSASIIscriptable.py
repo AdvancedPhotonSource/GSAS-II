@@ -239,7 +239,9 @@ Histogram parameters
 --------------------
 
 This table describes the dictionaries supplied to :func:`G2PwdrData.set_refinements`
-and :func:`G2PwdrData.clear_refinements`.
+and :func:`G2PwdrData.clear_refinements`. Note that in Instrument Parameters, 
+to save space in the table, related profile parameters (such as U and V) are listed
+together, separated by commas. 
 
 .. tabularcolumns:: |l|l|p{3.5in}|
 
@@ -251,6 +253,7 @@ Limits                                      The 2-theta range of values to consi
                                             or a list of 2 items [low, high]
 \                     low                   Sets the low limit
 \                     high                  Sets the high limit
+
 Sample Parameters                           Should be provided as a **list** of subkeys
                                             to set or clear, e.g. ['DisplaceX', 'Scale']
 \                     Absorption
@@ -258,6 +261,7 @@ Sample Parameters                           Should be provided as a **list** of 
 \                     DisplaceX             Sample displacement along the X direction
 \                     DisplaceY             Sample displacement along the Y direction
 \                     Scale                 Histogram Scale factor
+
 Background                                  Sample background. If value is a boolean,
                                             the background's 'refine' parameter is set
                                             to the given boolean. Usually should be a
@@ -267,13 +271,22 @@ Background                                  Sample background. If value is a boo
 \                     no. coeffs            Number of coefficients to use, integer
 \                     coeffs                List of floats, literal values for background
 \                     FixedPoints           List of (2-theta, intensity) values for fixed points
-\                     fit fixed points      If True, triggers a fit to the fixed points to be calculated. It is calculated when this key is detected, regardless of calls to refine.
-Instrument Parameters                       As in Sample Paramters, Should be provided as a **list** of subkeys to
+\                     fit fixed points      If True, triggers a fit to the fixed points to
+                                            be calculated. It is calculated when this key is
+                                            detected, regardless of calls to refine.
+
+Instrument Parameters                       As in Sample Paramters, provide as a **list** of
+                                            subkeys to
                                             set or clear, e.g. ['X', 'Y', 'Zero', 'SH/L']
-\                     U, V, W               All separate keys. Gaussian peak profile terms
-\                     X, Y                  Separate keys. Lorentzian peak profile terms
+\                     U, V, W               Gaussian peak profile terms
+\                     X, Y, Z               Lorentzian peak profile terms
+\                     alpha, beta-0,        TOF profile terms 
+                      beta-1, beta-q,
+\                     sig-0, sig-1,         TOF profile terms
+                      sig-2, sig-q
+\                     difA, difB, difC      TOF Calibration constants
 \                     Zero                  Zero shift
-\                     SH/L
+\                     SH/L                  Finger-Cox-Jephcoat low-angle peak asymmetry
 \                     Polariz.              Polarization parameter
 \                     Lam                   Lambda, the incident wavelength
 ===================== ====================  =================================================
@@ -1087,18 +1100,19 @@ class G2Project(G2ObjectWrapper):
 
     >>> # Load an existing project file
     >>> proj = G2Project('filename.gpx')
+    
     >>> # Create a new project
-    >>> proj = G2Project(filename='new_file.gpx')
-    >>> # Specify an author
-    >>> proj = G2Project(author='Dr. So-And-So', filename='my_data.gpx')
-
+    >>> proj = G2Project(newgpx='new_file.gpx')
+    
     Histograms can be accessed easily.
 
     >>> # By name
     >>> hist = proj.histogram('PWDR my-histogram-name')
+    
     >>> # Or by index
     >>> hist = proj.histogram(0)
     >>> assert hist.id == 0
+    
     >>> # Or by random id
     >>> assert hist == proj.histogram(hist.ranId)
 
@@ -1117,22 +1131,34 @@ class G2Project(G2ObjectWrapper):
     See :meth:`~G2Project.set_refinement`, :meth:`~G2Project.clear_refinements`,
     :meth:`~G2Project.iter_refinements`, :meth:`~G2Project.do_refinements`.
     """
-    def __init__(self, gpxfile=None, author=None, filename=None):
+    def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
         """Loads a GSAS-II project from a specified filename.
 
         :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
             creates an empty project.
-        :param str author: Author's name. Optional.
-        :param str filename: The filename the project should be saved to in
-            the future. If both filename and gpxfile are present, the project is
-            loaded from the gpxfile, then set to  save to filename in the future"""
+        :param str author: Author's name (not yet implemented)
+        :param str newgpx: The filename the project should be saved to in
+            the future. If both newgpx and gpxfile are present, the project is
+            loaded from the gpxfile, then when saved will be written to newgpx.
+        :param str filename: Name to be used to save the project. Has same function as
+            parameter newgpx (do not use both gpxfile and filename). Use of newgpx
+            is preferred over filename.
+        """
+        if filename is not None and newgpx is not None:
+            raise G2ScriptException('Do not use filename and newgpx together')
+        elif newgpx is not None:
+            filename = newgpx
         if gpxfile is None:
             filename = os.path.abspath(os.path.expanduser(filename))
             self.filename = filename
             self.data, self.names = make_empty_project(author=author, filename=filename)
-        elif isinstance(gpxfile, str):
-            # TODO set author, filename
-            self.filename = os.path.abspath(os.path.expanduser(gpxfile))
+        elif isinstance(gpxfile, str): # TODO: create replacement for isinstance that checks if path exists
+                                       # filename is valid, etc. 
+            if isinstance(filename, str): 
+                self.filename = os.path.abspath(os.path.expanduser(filename)) # both are defined
+            else: 
+                self.filename = os.path.abspath(os.path.expanduser(gpxfile))
+            # TODO set author
             self.data, self.names = LoadDictFromProjFile(gpxfile)
             self.update_ids()
         else:
@@ -2702,7 +2728,7 @@ optional arguments::
                         associated with all histograms given.
 
     """
-    proj = G2Project(filename=args.filename)
+    proj = G2Project(gpxname=args.filename)
 
     hist_objs = []
     if args.histograms:

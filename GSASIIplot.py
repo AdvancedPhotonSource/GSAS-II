@@ -1845,7 +1845,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             xpos = pick.get_xdata()
             ypos = pick.get_ydata()
             ind = event.ind
-            xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
+            xy = list(list(zip(np.take(xpos,ind),np.take(ypos,ind)))[0])
             # convert from plot units
             if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])

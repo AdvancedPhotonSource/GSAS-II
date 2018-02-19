@@ -7356,7 +7356,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             data[0]['Magnification'] = []
         mainSizer.Add((-1,10))
         lenmag = len(data[0]['Magnification'])
-        data[0]['Magnification'].sort(key=lambda x: x[0])
+        data[0]['Magnification'][1:] = sorted(data[0]['Magnification'][1:],key=lambda x: x[0])
         if lenmag > 1:
             panel = wx.StaticBox(G2frame.dataWindow, wx.ID_ANY, 'Magnification regions',
                                  style=wx.ALIGN_CENTER)

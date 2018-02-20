@@ -1720,6 +1720,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     Idup = []
     Cell = []
     X = np.array(XYZ)
+    if Move:
+        X = MoveToUnitCell(X)[0]
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
@@ -1730,7 +1732,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     U = Uij2U(Uij)
                     U = np.inner(M,np.inner(U,M).T)
                     newUij = U2Uij(U)
-                if invers and not SGData['SGFixed']:
+                if invers:
                     XT = -XT
                 XT += C
                 cell = np.zeros(3,dtype=np.int32)
@@ -1753,9 +1755,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     if len(Uij):
                         UijEquiv.append(newUij)                    
     if len(Uij):
-        return list(zip(XYZEquiv,UijEquiv,Idup,Cell))
+        return zip(XYZEquiv,UijEquiv,Idup,Cell)
     else:
-        return list(zip(XYZEquiv,Idup,Cell))
+        return zip(XYZEquiv,Idup,Cell)
         
 def GenHKL(HKL,SGData):
     ''' Generates all equivlent reflections including Friedel pairs
@@ -2844,7 +2846,7 @@ def SytSym(XYZ,SGData):
     Jdup = 0
     Ndup = 0
     dupDir = {}
-    Xeqv = list(GenAtom(XYZ,SGData,True))
+    Xeqv = GenAtom(XYZ,SGData,True)
     IRT = PackRot(SGData['SGOps'])
     L = -1
     for ic,cen in enumerate(SGData['SGCen']):
@@ -2865,7 +2867,7 @@ def SytSym(XYZ,SGData):
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)//Jdup
           
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
-    
+   
 def ElemPosition(SGData):
     ''' Under development. 
     Object here is to return a list of symmetry element types and locations suitable

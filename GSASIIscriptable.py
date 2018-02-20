@@ -48,19 +48,26 @@ The most commonly used routines are:
    parameters and flags.
    
 :meth:`G2Project.set_refinement`
-   This is passed a single dictionaries which is used to set parameters and flags.
+   This is passed a single dict which is used to set parameters and flags.
    These actions can be performed also in :meth:`G2Project.do_refinements`. 
 
-Refinement step dicts
-   A refinement step dict, as used in :meth:`G2Project.do_refinements` and described in
-   :ref:`Project_dicts`,
-   specifies parameter & refinement flag changes, which are usually followed by a refinement and
+Refinement dicts
+   A refinement dict sets up a single refinement step
+   (as used in :meth:`G2Project.do_refinements` and described in
+   :ref:`Project_dicts`). 
+   It specifies parameter & refinement flag changes, which are usually followed by a refinement and
    optionally by calls to locally-defined Python functions. The keys used in these dicts are
    defined in the :ref:`Refinement_recipe` table, below.
 
 There are several ways to set parameters project using different level objects, as is 
 are described in sections below, but the simplest way to access parameters and flags
 in a project is to use the above routines. 
+
+=====================
+Refinement parameters
+=====================
+The most complex part of scripting GSAS-II comes in setting up the input to control refinements, which is
+described here. 
 
 .. _Project_dicts:
 
@@ -166,7 +173,7 @@ callargs               Provides a list of arguments that will be passed to the f
                        current <tt>G2Project</tt> is passed as a single argument. 
 ========== ============================================================================
 
-An example the performs a series of refinement steps follows:
+An example that performs a series of refinement steps follows:
 
 .. code-block::  python
 
@@ -189,15 +196,15 @@ An example the performs a series of refinement steps follows:
     my_project.do_refinements(reflist)
     
 
-In this example, a separate refinement step will be performed for each dict in the list, since
-"skip" is not included. 
+In this example, a separate refinement step will be performed for each dict in the list (since
+"skip" is not included). 
 Note that in the second from last refinement step, parameters are both set and cleared. 
    
 .. _Refinement_parameters_kinds:
 
-=====================
-Refinement parameters
-=====================
+----------------------------
+Refinement parameter types
+----------------------------
 
 Note that parameters and refinement flags used in GSAS-II fall into three classes:
 
@@ -220,20 +227,21 @@ Note that parameters and refinement flags used in GSAS-II fall into three classe
       histograms, there can be ``N*M`` total sets of "HAP" parameters sets (fewer if all
       histograms are not linked to all phases.) Typical HAP parameters include the
       phase fractions, sample microstrain and crystallite size broadening terms,
-      hydrostatic strain pertibations of the unit cell and preferred orientation
+      hydrostatic strain perturbations of the unit cell and preferred orientation
       values.
       See the :ref:`HAP_parameters_table` table for the HAP parameters where access has
       been provided. 
 
 .. _Refinement_parameters_fmt:
 
-============================
-Refinement specifiers format
-============================
+=================================
+Specifying Refinement Parameters
+=================================
 
-Refinement parameters are specified within dictionaries. The details of these dicts depends on the
+Refinement parameter values and flags to turn refinement on and off are specified within dictionaries,
+where the details of these dicts are organized depends on the
 type of parameter (see :ref:`Refinement_parameters_kinds`), with a different set
-of keys described below for each of the three parameter classes.
+of keys (as described below) for each of the three types of parameters.
 
 .. _Histogram_parameters_table:
 
@@ -256,16 +264,16 @@ key is used to define specific histograms. As an example:
 
 .. code-block::  python
 
-  gsas_proj.do_refinements([{
-      'set': {
+  gsas_proj.do_refinements([
+      {'set': {
           'Background': {'no.coeffs': 3, 'refine': True},
           'Sample Parameters': ['Scale'],
           'Limits': [10000, 40000]},
-      'histograms': [1,2]
-                            }])
+      'histograms': [1,2]}
+                            ])
 
-Note that below in Instrument Parameters, 
-related profile parameters (such as U and V) are listed
+Note that below in the Instrument Parameters section, 
+related profile parameters (such as U and V) are grouped together but
 separated by commas to save space in the table.
 
 .. tabularcolumns:: |l|l|p{3.5in}|
@@ -349,7 +357,7 @@ LeBail                Enables LeBail intensity extraction.
 
 .. _HAP_parameters_table:
 
-------------------------------
+
 Histogram-and-phase parameters
 ------------------------------
 
@@ -514,10 +522,10 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 .. _API:
 
 ============================================================
-GSASIIscriptable Application Layer 
+GSASIIscriptable Application Layer (API)
 ============================================================
 
-This module provides a large number of classes and modules, as described below.
+The large number of classes and modules in this module are described below.
 Most commonly a script will create a G2Project object using :class:`G2Project` and then
 perform actions such as
 adding a histogram (method :meth:`G2Project.add_powder_histogram`),
@@ -525,11 +533,12 @@ adding a phase (method :meth:`G2Project.add_phase`),
 or setting parameters and performing a refinement
 (method :meth:`G2Project.do_refinements`).
 
-In some cases, it may be easier or more options may be available by direct access to 
-methods inside :class:`G2PwdrData` or :class:`G2Phase`
+In some cases, it may be easier to use
+methods inside :class:`G2PwdrData` or :class:`G2Phase` or these objects 
+may offer more options.
 
 ---------------------------------------------------------------
-Complete Documentation: GSASIIscriptable Classes and functions
+Complete Documentation: All classes and functions
 ---------------------------------------------------------------
 """
 from __future__ import division, print_function

@@ -4038,9 +4038,9 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
             xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-            Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-            Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-            Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+            if 'x' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+            if 'y' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+            if 'z' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
             Plot.set_xlim3d(XYZlim)
             Plot.set_ylim3d(XYZlim)
             Plot.set_zlim3d(XYZlim)
@@ -4307,9 +4307,9 @@ def PlotTexture(G2frame,data,Start=False):
                 np.seterr(all='ignore')
                 xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
                 XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-                Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-                Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-                Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+                if 'x' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+                if 'y' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+                if 'z' in generalData['3Dproj']: Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
                 Plot.set_xlim3d(XYZlim)
                 Plot.set_ylim3d(XYZlim)
                 Plot.set_zlim3d(XYZlim)

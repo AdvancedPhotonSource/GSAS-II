@@ -1152,6 +1152,8 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Pawley dmax'] = 100.0
         if 'Pawley neg wt' not in generalData:
             generalData['Pawley neg wt'] = 0.0
+        if '3Dproj' not in generalData:
+            generalData['3Dproj'] = ''
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[0.7,0.1,250],
@@ -6299,7 +6301,12 @@ entered the right symbol for your structure.
             shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
             shToler = G2G.ValidatedTxtCtrl(Texture,Penalty,1,nDig=(10,2),min=0.001)
             shPenalty.Add(shToler,0,WACV)
-            return shPenalty    
+            return shPenalty
+        
+        def OnProj(event):
+            Obj = event.GetEventObject()
+            generalData['3Dproj'] = Obj.GetValue()
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)            
         
         # UpdateTexture executable starts here
         generalData = data['General']        
@@ -6393,6 +6400,15 @@ entered the right symbol for your structure.
                 PTSizer.Add(shoDet,0,WACV)
             else:
                 PTSizer.Add((0,5),0)
+        elif '3D' in textureData['PlotType']:
+            PTSizer.Add(wx.StaticText(Texture,-1,' Show projections for: '),0,WACV)
+            proj = ['','x','y','z','xy','xz','yz','xyz']
+            projType = wx.ComboBox(Texture,wx.ID_ANY,value=generalData['3Dproj'],choices=proj,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            projType.Bind(wx.EVT_COMBOBOX, OnProj)
+            PTSizer.Add(projType,0,WACV)
+            PTSizer.Add((0,5),0)
+            
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']

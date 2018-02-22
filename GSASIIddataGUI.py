@@ -71,6 +71,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
             G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
+            
+        def OnProj(event):
+            Obj = event.GetEventObject()
+            generalData['3Dproj'] = Obj.GetValue()
+            G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
         
         plotSizer = wx.BoxSizer(wx.VERTICAL)
         choice = ['None','Mustrain','Size','Preferred orientation','St. proj. Inv. pole figure','Eq. area Inv. pole figure']
@@ -88,8 +93,15 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
             POhklSizer.Add(poAxis,0,WACV)
             plotSizer.Add(POhklSizer)
-        elif generalData['Data plot type'] == 'Inv. pole figure':
-            pass    #might need something here?      
+        elif generalData['Data plot type'] in ['Mustrain','Size']:
+            projSizer = wx.BoxSizer(wx.HORIZONTAL)
+            projSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Show projections for: '),0,WACV)
+            proj = ['','x','y','z','xy','xz','yz','xyz']
+            projType = wx.ComboBox(DData,wx.ID_ANY,value=generalData['3Dproj'],choices=proj,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            projType.Bind(wx.EVT_COMBOBOX, OnProj)
+            projSizer.Add(projType,0,WACV)
+            plotSizer.Add(projSizer)            
         return plotSizer
        
     def ScaleSizer():

@@ -2498,6 +2498,7 @@ entered the right symbol for your structure.
             if r >= 0 and c >= 0:
                 ci = colLabels.index('I/A')
                 ID = atomData[r][ci+8]
+                SGData = generalData['SGData']
                 if Atoms.GetColLabelValue(c) in ['x','y','z']:
                     ci = colLabels.index('x')
                     XYZ = atomData[r][ci:ci+3]
@@ -2505,7 +2506,6 @@ entered the right symbol for your structure.
                         XYZ = [0,0,0]
                     SScol = colLabels.index('site sym')
                     Mulcol = colLabels.index('mult')
-                    E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
                     Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                     atomData[r][SScol] = Sytsym
                     atomData[r][Mulcol] = Mult
@@ -2555,6 +2555,16 @@ entered the right symbol for your structure.
                 elif Atoms.GetColLabelValue(c) == 'refine':
                     ci = colLabels.index('I/A')
                     atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][ci+8],''),'')
+                elif Atoms.GetColLabelValue(c) in ['Mx','My','Mz']:
+                    value = atomData[r][c]
+                    cx = colLabels.index('x')
+                    SpnFlp = generalData['SGData']['SpnFlp']
+                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[r][cx:cx+3],SGData)
+                    CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+                    iM = CSI[0][c-colLabels.index('Mx')]
+                    for i in range(3):
+                        if iM == CSI[0][i]:
+                            atomData[r][i+colLabels.index('Mx')] = value*CSI[1][i]
                 if 'Atoms' in data['Drawing']:
                     ci = colLabels.index('I/A')
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
@@ -2719,7 +2729,7 @@ entered the right symbol for your structure.
                     CSI = []
                     if not SGData['SGGray']:
                         CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
-#                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
+                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
@@ -2727,7 +2737,6 @@ entered the right symbol for your structure.
                         if CSI and CSI[1][i] and AtInfo and AtInfo[atomData[row][colType]]:
                             Atoms.SetCellStyle(row,ci,WHITE,False)
                             Atoms.SetCellTextColour(row,ci,BLACK)
-                            
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -2836,7 +2845,7 @@ entered the right symbol for your structure.
         atomData = data['Atoms']
         generalData = data['General']
         atId = ran.randint(0,sys.maxsize)
-        E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
+        SGData = generalData['SGData']
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         if generalData['Type'] == 'macromolecular':
             atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
@@ -3085,7 +3094,7 @@ entered the right symbol for your structure.
     def AtomInsert(indx,x,y,z,El='H',Name='UNK'):
         atomData = data['Atoms']
         generalData = data['General']
-        E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
+        SGData = generalData['SGData']
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         atId = ran.randint(0,sys.maxsize)
         if generalData['Type'] == 'macromolecular':
@@ -3177,11 +3186,13 @@ entered the right symbol for your structure.
         if not indx: return
         atomData = data['Atoms']
         generalData = data['General']
+        ifMag = False
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         ci = colLabels.index('I/A')
         choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
         if generalData['Type'] == 'magnetic':
             choices += ['Mx','My','Mz',]
+            ifMag = True
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
         parm = ''
         if dlg.ShowModal() == wx.ID_OK:
@@ -3190,7 +3201,7 @@ entered the right symbol for your structure.
             cid = colLabels.index(parm)
         dlg.Destroy()
         if parm in ['Type']:
-            dlg = G2elemGUI.PickElement(G2frame)
+            dlg = G2elemGUI.PickElement(G2frame,ifMag=ifMag)
             if dlg.ShowModal() == wx.ID_OK:
                 if dlg.Elem not in ['None']:
                     El = dlg.Elem.strip()

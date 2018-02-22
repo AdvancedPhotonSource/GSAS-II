@@ -23,7 +23,7 @@ Sources:
            H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  X-ray
            <j0> & <j2> coeff. from Intl. Tables for Cryst, Vol. C
            5-d <j0> & <j2> from Kobayashi K, Nagao T, Ito M.
-           Acta Crystallogr A68, 589-94 (2012)
+           Acta Crystallogr A67, 473-480 (2011)
 
            Neutron anomalous coeff (LS) from fitting Lynn & Seeger, At. Data & Nuc. Data Tables, 44, 191-207(1990)
 

@@ -379,8 +379,11 @@ def MagScatFac(El, SQ):
     mt = -mfb[:,np.newaxis]*SQ
     nt = -nfb[:,np.newaxis]*SQ
     MMF = np.sum(mfa[:,np.newaxis]*np.exp(mt)[:],axis=0)+El['mfc']
+    MMF0 = np.sum(mfa)+El['mfc']
     NMF = np.sum(nfa[:,np.newaxis]*np.exp(nt)[:],axis=0)+El['nfc']
-    return MMF+(2.0/El['gfac']-1.0)*NMF
+    NMF0 = np.sum(nfa)+El['nfc']
+    MF0 = MMF0+(2.0/El['gfac']-1.0)*NMF0
+    return (MMF+(2.0/El['gfac']-1.0)*NMF)/MF0
         
 def BlenResCW(Els,BLtables,wave):
     FP = np.zeros(len(Els))

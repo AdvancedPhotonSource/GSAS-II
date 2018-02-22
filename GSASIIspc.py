@@ -177,7 +177,6 @@ def SpcGroup(SGSymbol):
             else:
                 moregen.append(1)
     SGData['SGGen'] += moregen
-#    GSASIIpath.IPyBreak()
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]
     elif SGData['SGLaue'] in '2/m':
@@ -541,7 +540,6 @@ def GetGenSym(SGData):
     :param SGData: from :func:`SpcGroup`
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
     LattSym = ('P','A','B','C','I','F','R')
-    UniqSym = ('','','a','b','c','',)
     
     '''
     OprNames = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
@@ -1719,12 +1717,16 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     UijEquiv = []
     Idup = []
     Cell = []
+    inv = int(SGData['SGInv']+1)
+    icen = SGData['SGCen']
+    if SGData['SGFixed']:
+        inv = 1
     X = np.array(XYZ)
     if Move:
         X = MoveToUnitCell(X)[0]
-    for ic,cen in enumerate(SGData['SGCen']):
+    for ic,cen in enumerate(icen):
         C = np.array(cen)
-        for invers in range(int(SGData['SGInv']+1)):
+        for invers in range(inv):
             for io,[M,T] in enumerate(SGData['SGOps']):
                 idup = ((io+1)+100*ic)*(1-2*invers)
                 XT = np.inner(M,X)+T
@@ -2091,14 +2093,15 @@ def GetCSuinel(siteSym):
 def GetCSpqinel(siteSym,SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
+    if '-1' in siteSym and SpnFlp[len(SpnFlp)//2] < 0:
+        return [[0,0,0],[0.,0.,0.]]
     for opr in dupDir:
-        if '-1' in siteSym and SpnFlp[len(SpnFlp)//2] < 0:
-            return [[0,0,0],[0.,0.,0.]]
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
+        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
@@ -2846,11 +2849,15 @@ def SytSym(XYZ,SGData):
     Jdup = 0
     Ndup = 0
     dupDir = {}
+    inv = SGData['SGInv']+1
+    icen = SGData['SGCen']
+    if SGData['SGFixed']:       #already in list of operators
+        inv = 1
     Xeqv = GenAtom(XYZ,SGData,True)
     IRT = PackRot(SGData['SGOps'])
     L = -1
-    for ic,cen in enumerate(SGData['SGCen']):
-        for invers in range(int(SGData['SGInv']+1)):
+    for ic,cen in enumerate(icen):
+        for invers in range(int(inv)):
             for io,ops in enumerate(SGData['SGOps']):
                 irtx = (1-2*invers)*IRT[io]
                 L += 1

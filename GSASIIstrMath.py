@@ -688,16 +688,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         return
     if parmDict[pfx+'isMag']:       #TODO: fix the math - mag moments now along crystal axes
         Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
-#        Mag = np.sqrt(np.inner(np.inner(Gdata.T,G),Gdata.T))
         Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
-#        Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
         Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
         if SGData['SGInv'] and not SGData['SGFixed']:
             Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
         Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
         Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
-#        Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
-#        Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
         Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
         if SGData['SGInv'] and not SGData['SGFixed']:
             Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
@@ -1307,11 +1303,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    Ncen = len(SGData['SGCen'])
+    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
+    Amat,Bmat = G2lat.Gmat2AB(G)
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
@@ -1319,6 +1318,20 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
+
+    if parmDict[pfx+'isMag']:       #TODO: fix the math - mag moments now along crystal axes
+        Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
+        Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
+        Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
+        if SGData['SGInv'] and not SGData['SGFixed']:
+            Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
+        Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
+        Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
+        Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
+        if SGData['SGInv'] and not SGData['SGFixed']:
+            Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
+
+
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
@@ -1382,26 +1395,50 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         HbH = -np.sum(UniqP[:,:,nxs,:]*np.inner(UniqP[:,:,:],bij),axis=-1)  #use hklt proj to hkl
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
-        if 'T' in calcControls[hfx+'histType']:
-            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
-            fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+
+        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: math here??
+            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
+            if SGData['SGInv'] and not SGData['SGFixed']:
+                mphase = np.hstack((phase,-phase))
+            else:
+                mphase = phase 
+            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
+            mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
+            sinm = np.sin(mphase)                               #ditto - match magstrfc.for
+            cosm = np.cos(mphase)                               #ditto
+            HM = np.inner(Bmat.T,H)                             #put into cartesian space
+            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
+            eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
+            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+            fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
+            fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
+            refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
+            refl.T[7] = np.copy(refl.T[9])                
+            refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
+
+
         else:
-            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
-            fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms
-        fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
-        fbg = fb*GfpuA[0]+fa*GfpuA[1]
-        fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
-        fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
-#        GSASIIpath.IPyBreak()
-        if 'P' in calcControls[hfx+'histType']:
-            refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
-#            refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
-            refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-        else:
-            refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
-            refl.T[8] = np.copy(refl.T[10])                
-            refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+            if 'T' in calcControls[hfx+'histType']:
+                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
+                fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+            else:
+                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
+                fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+            GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms
+            fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
+            fbg = fb*GfpuA[0]+fa*GfpuA[1]
+            fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
+            fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
+            if 'P' in calcControls[hfx+'histType']:
+                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
+                refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+            else:
+                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
+                refl.T[8] = np.copy(refl.T[10])                
+                refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         iBeg += blkSize
     print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
 

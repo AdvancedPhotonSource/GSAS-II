@@ -117,8 +117,11 @@ class SGMagSpinBox(wx.Dialog):
                         text = wx.StaticText(self.panel,label='%s '%(fld))
                         tableSizer.Add(text,0,WACV)
                 text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
-                if self.spins[j+ic*lentable] < 0 or Red:
-                    text.SetForegroundColour('Red')
+                try:
+                    if self.spins[j+ic*lentable] < 0 or Red:
+                        text.SetForegroundColour('Red')
+                except IndexError:
+                    print(self.spins,j,ic,lentable,self.names[j])
                 tableSizer.Add(text,0,WACV)
                 if not j%2:
                     tableSizer.Add((20,0))
@@ -439,10 +442,19 @@ class TransformDialog(wx.Dialog):
             
         def OnMag(event):
             self.ifMag = mag.GetValue()
+            wx.CallAfter(self.Draw)
             
         def OnConstr(event):
             self.ifConstr = constr.GetValue()
+            
+        def OnBNSlatt(event):
+            Obj = event.GetEventObject()
+            BNSlatt = Obj.GetValue()
+            SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+            self.Trans = G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+            wx.CallAfter(self.Draw)
 
+        SGData = self.Phase['General']['SGData']
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -508,7 +520,14 @@ class TransformDialog(wx.Dialog):
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0,WACV)
-
+        if self.ifMag:
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+            BNSizer = wx.BoxSizer(wx.HORIZONTAL)
+            BNSizer.Add(wx.StaticText(self.panel,label=' BNS lattice:'),0,WACV)
+            BNS = wx.ComboBox(self.panel,value=SGData['BNSlattsym'][0],choices=list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+            BNSizer.Add(BNS,0,WACV)
+            mainSizer.Add(BNSizer,0,WACV)
         TestBtn = wx.Button(self.panel,-1,"Test")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -1819,7 +1838,7 @@ entered the right symbol for your structure.
                 SpnFlp = SGData['SpnFlp']
                 OprNames = G2spc.GenMagOps(SGData)[0]
             else:
-                if not len(GenSym) or SGData['SGGray']:
+                if not len(GenSym) or SGData['SGGray'] or '(' in MagSym:    #not if BNS centered either
                     magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:
@@ -2256,7 +2275,7 @@ entered the right symbol for your structure.
         G2G.HorizontalLine(mainSizer,General)
         if generalData['Type'] == 'magnetic':
             if not generalData['SGData']['SGFixed']:
-                GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
+                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(generalData['SGData'])
                 generalData['SGData']['GenSym'] = GenSym
                 generalData['SGData']['GenFlg'] = GenFlg
                 generalData['SGData']['MagSpGrp'] = G2spc.MagSGSym(generalData['SGData'])
@@ -2325,7 +2344,7 @@ entered the right symbol for your structure.
                         newPhase['Atoms'],atCodes = dlg.GetSelection()
                 finally:
                     dlg.Destroy()
-                SGData['GenSym'],SGData['GenFlg'] = G2spc.GetGenSym(SGData)
+                SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
                 SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                 SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
                 generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
@@ -2731,7 +2750,7 @@ entered the right symbol for your structure.
                     CSI = []
                     if not SGData['SGGray']:
                         CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
-                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
+#                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)

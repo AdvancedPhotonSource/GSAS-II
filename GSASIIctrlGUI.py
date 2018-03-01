@@ -79,6 +79,8 @@ Class or function name             Description
                                    This function allows menu Ids to be
                                    defined where they are first used rather than be placed
                                    yet a third location somewhere in this module.
+:func:`askSaveFile`                Get a file name from user
+:func:`askSaveDirectory`           Get a directory name from user
 ================================  =================================================================
 
 Other miscellaneous routines that may be of use:
@@ -3656,7 +3658,54 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
         else:
             evt.StopPropagation()
-            
+
+################################################################################
+#####  Get an output file or directory
+################################################################################           
+def askSaveFile(G2frame,defnam,extension,longFormatName):
+    '''Ask the user to supply a file name
+
+    :returns: a file name (str) or None if Cancel is pressed
+    '''
+
+    pth = GetExportPath(G2frame)
+    dlg = wx.FileDialog(
+        G2frame, 'Input name for file to write', pth, defnam,
+        longFormatName+' (*'+extension+')|*'+extension,
+        wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            G2frame.LastExportDir = os.path.split(filename)[0]
+            filename = os.path.splitext(filename)[0]+extension # make sure extension is correct
+        else:
+            filename = None
+    finally:
+        dlg.Destroy()
+    return filename
+
+def askSaveDirectory(G2frame):
+    '''Ask the user to supply a directory name. Path name is used as the
+    starting point for the next export path search. 
+
+    :returns: a directory name (str) or None if Cancel is pressed
+    '''
+    pth = GetExportPath(G2frame)
+    dlg = wx.DirDialog(
+            G2frame, 'Input directory where file(s) will be written', pth,
+            wx.DD_DEFAULT_STYLE)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            G2frame.LastExportDir = filename
+        else:
+            filename = None
+    finally:
+        dlg.Destroy()
+    return filename
+
 ################################################################################
 #####  Customized Notebook
 ################################################################################           

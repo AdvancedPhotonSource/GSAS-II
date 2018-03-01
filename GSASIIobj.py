@@ -1477,7 +1477,7 @@ def CompileVarDesc():
         'Polariz\.' : 'Polarization correction',
         'SH/L' : 'FCJ peak asymmetry correction',
         '([UVW])$' : 'Gaussian instrument broadening \\1',
-        '([XY])$' : 'Cauchy instrument broadening \\1',
+        '([XYZ])$' : 'Cauchy instrument broadening \\1',
         'Zero' : 'Debye-Scherrer zero correction',
         'nDebye' : 'Debye model background corr. terms',
         'nPeaks' : 'Fixed peak background corr. terms',
@@ -1538,6 +1538,10 @@ def CompileVarDesc():
         'pos$': 'peak position',
         'int$': 'peak intensity',
         'WgtFrac':'phase weight fraction',
+        'alpha':'TOF profile term',
+        'beta-[01q]':'TOF profile term',
+        'sig-[012q]':'TOF profile term',
+        'dif[ABC]':'TOF to d-space calibration',
         'C\([0-9]*,[0-9]*\)' : 'spherical harmonics preferred orientation coef.',
         }.items():
         VarDesc[key] = value

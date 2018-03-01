@@ -826,59 +826,15 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):
     File.close()
     print (' XY data saved to: '+filename)
             
-def askSaveDirectory(G2frame):
-    '''Ask the user to supply a directory name. Path name is used as the
-    starting point for the next export path search. 
-
-    :returns: a directory name (str) or None if Cancel is pressed
-    '''
-    pth = G2G.GetExportPath(G2frame)
-    dlg = wx.DirDialog(
-            G2frame, 'Input directory where file(s) will be written', pth,
-            wx.DD_DEFAULT_STYLE)
-    dlg.CenterOnParent()
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetPath()
-            G2frame.LastExportDir = filename
-        else:
-            filename = None
-    finally:
-        dlg.Destroy()
-    return filename
-
-def askSaveFile(G2frame,defnam,extension,longFormatName):
-    '''Ask the user to supply a file name
-
-    :returns: a file name (str) or None if Cancel is pressed
-    '''
-
-    pth = G2G.GetExportPath(G2frame)
-    dlg = wx.FileDialog(
-        G2frame, 'Input name for file to write', pth, defnam,
-        longFormatName+' (*'+extension+')|*'+extension,
-        wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-    dlg.CenterOnParent()
-    try:
-        if dlg.ShowModal() == wx.ID_OK:
-            filename = dlg.GetPath()
-            G2frame.LastExportDir = os.path.split(filename)[0]
-            filename = os.path.splitext(filename)[0]+extension # make sure extension is correct
-        else:
-            filename = None
-    finally:
-        dlg.Destroy()
-    return filename
-
 def PDFSave(G2frame,exports,PDFsaves):
     'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
     import scipy.interpolate as scintp
     if len(exports) > 1:
-        dirname = askSaveDirectory(G2frame)
+        dirname = G2G.askSaveDirectory(G2frame)
         if not dirname: return
     else:
         defnam = exports[0].replace(' ','_')[5:]
-        filename = askSaveFile(G2frame,defnam,'.gr','G(r) file, etc.')
+        filename = G2G.askSaveFile(G2frame,defnam,'.gr','G(r) file, etc.')
         if not filename: return
         dirname,filename = os.path.split(filename)
         filename = os.path.splitext(filename)[0]
@@ -1754,6 +1710,8 @@ class ExportBaseclass(object):
         '''Ask the user to supply a file name
 
         :returns: a file name (str) or None if Cancel is pressed
+
+        TODO: Can this be replaced with G2G.askSaveFile?
         '''
         
         pth = G2G.GetExportPath(self.G2frame)
@@ -1781,6 +1739,8 @@ class ExportBaseclass(object):
         starting point for the next export path search. 
 
         :returns: a directory name (str) or None if Cancel is pressed
+
+        TODO: Can this be replaced with G2G.askSaveDirectory?
         '''
         pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(

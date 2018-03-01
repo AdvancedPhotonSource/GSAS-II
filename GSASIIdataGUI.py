@@ -2615,8 +2615,6 @@ class GSASII(wx.Frame):
             self.OnGPXtreeEndDrag, id=G2G.wxID_GPXTREE)        
         self.root = self.GPXtree.root        
 
-#        self.dataWindow.SetupScrolling()
-
         try:
             size = GSASIIpath.GetConfigValue('Plot_Size')
             if type(size) is str:

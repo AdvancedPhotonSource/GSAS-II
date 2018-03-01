@@ -273,6 +273,7 @@ class EXP_ReaderClass(G2obj.ImportPhase):
             elif 'SPNFLP' in key:
                 SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
                 SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
+                SpnFlp = [1,]+list(SpnFlp)
                 if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
                     SpnFlp = list(SpnFlp)+[1,1,1,1]
             elif 'MXDSTR' in key:

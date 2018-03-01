@@ -135,18 +135,19 @@ class SGMagSpinBox(wx.Dialog):
         btnsizer.Realize()
         mainSizer.Add((0,10))
         mainSizer.Add(btnsizer,0)
+        
         self.panel.SetSizer(mainSizer)
-        size = np.array(self.GetSize())
-        self.panel.SetupScrolling()
-        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
-        self.panel.SetSize(size)
-        self.panel.SetAutoLayout(1)
+        self.panel.SetAutoLayout(True)
+        self.panel.SetScrollRate(10,10)
+        self.panel.SendSizeEvent()
+
 
     def Show(self):
         '''Use this method after creating the dialog to post it
         '''
         self.ShowModal()
         return
+    
 
 ################################################################################
 class SymOpDialog(wx.Dialog):
@@ -509,9 +510,18 @@ class TransformDialog(wx.Dialog):
         sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
-            mag = wx.CheckBox(self.panel,label=' Make new phase magnetic?')
-            mag.Bind(wx.EVT_CHECKBOX,OnMag)
-            mainSizer.Add(mag,0,WACV)
+            if self.ifMag:
+                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+                BNSizer = wx.BoxSizer(wx.HORIZONTAL)
+                BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
+                BNS = wx.ComboBox(self.panel,value=SGData['BNSlattsym'][0],choices=list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+                BNSizer.Add(BNS,0,WACV)
+                mainSizer.Add(BNSizer,0,WACV)
+            else:
+                mag = wx.CheckBox(self.panel,label=' Make new phase magnetic?')
+                mag.Bind(wx.EVT_CHECKBOX,OnMag)
+                mainSizer.Add(mag,0,WACV)
             mainSizer.Add(wx.StaticText(self.panel, \
                 label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
             constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
@@ -520,14 +530,6 @@ class TransformDialog(wx.Dialog):
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0,WACV)
-        if self.ifMag:
-            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-            BNSizer = wx.BoxSizer(wx.HORIZONTAL)
-            BNSizer.Add(wx.StaticText(self.panel,label=' BNS lattice:'),0,WACV)
-            BNS = wx.ComboBox(self.panel,value=SGData['BNSlattsym'][0],choices=list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
-            BNSizer.Add(BNS,0,WACV)
-            mainSizer.Add(BNSizer,0,WACV)
         TestBtn = wx.Button(self.panel,-1,"Test")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -1844,9 +1846,9 @@ entered the right symbol for your structure.
                 else:
                     spinColor = ['black','red']
                     spCode = {-1:'red',1:'black'}
-                    for isym,sym in enumerate(GenSym):
+                    for isym,sym in enumerate(GenSym[1:]):
                         spinSizer.Add(wx.StaticText(General,label=' %s: '%(sym.strip())),0,WACV)                
-                        spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym]],choices=spinColor,
+                        spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
                             style=wx.CB_READONLY|wx.CB_DROPDOWN)                
                         Indx[spinOp.GetId()] = isym
                         spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)

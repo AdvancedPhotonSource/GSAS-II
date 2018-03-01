@@ -25,6 +25,7 @@ import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIlattice as G2lat
 
 def WriteList(obj,headerItems):
     '''Write a CSV header
@@ -177,14 +178,16 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         #print filename
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
-        WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
-        digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
+        Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
+        WriteList(self,("x","y_obs","weight","y_calc","y_bkg","Q"))
+        digitList = 2*((13,3),) + ((13,5),) + 3*((13,3),)
         for vallist in zip(histblk['Data'][0],
                        histblk['Data'][1],
                        histblk['Data'][2],
                        histblk['Data'][3],
                        histblk['Data'][4],
                        #histblk['Data'][5],
+                       2*np.pi/G2lat.Pos2dsp(Parms,histblk['Data'][0])
                        ):
             line = ""
             for val,digits in zip(vallist,digitList):

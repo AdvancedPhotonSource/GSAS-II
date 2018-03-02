@@ -119,6 +119,30 @@ proxycmds = []
 'Used to hold proxy information for subversion, set if needed in whichsvn'
 svnLocCache = None
 'Cached location of svn to avoid multiple searches for it'
+
+def MakeByte2str(arg):
+    '''Convert output from subprocess pipes (bytes) to str (unicode) in Python 3.
+    In Python 2: Leaves output alone (already str). 
+    Leaves stuff of other types alone (including unicode in Py2)
+    Works recursively for string-like stuff in nested loops and tuples.
+
+    typical use::
+
+        out = MakeByte2str(out)
+
+    or::
+
+        out,err = MakeByte2str(s.communicate())
+    
+    '''
+    if isinstance(arg,str): return arg
+    if isinstance(arg,bytes): return arg.decode()
+    if isinstance(arg,list):
+        return [MakeByte2str(i) for i in arg]
+    if isinstance(arg,tuple):
+        return tuple([MakeByte2str(i) for i in arg])
+    return arg
+                
 def getsvnProxy():
     '''Loads a proxy for subversion from the file created by bootstrap.py
     '''
@@ -201,12 +225,12 @@ def svnVersion(svn=None):
     cmd = [svn,'--version','--quiet']
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print ('subversion error!\nout=%s'%out)
         print ('err=%s'%err)
         return None
-    return out.strip().decode()
+    return out.strip()
 
 def svnVersionNumber(svn=None):
     '''Get the version number of the current subversion executable
@@ -243,7 +267,7 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print ('out=%s'%out)
         print ('err=%s'%err)
@@ -285,7 +309,7 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
         cmd += ['--non-interactive', '--trust-server-cert']
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print ('svn failed\n%s'%out)
         print ('err=%s'%err)
@@ -315,7 +339,7 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err: return None
     x = ET.fromstring(out)
     changed = []
@@ -352,7 +376,7 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
         for i in cmd: s += i + ' '
         print(s)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print(60*"=")
         print("****** An error was noted, see below *********")
@@ -374,11 +398,11 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
     cmd = [svn,'upgrade',fpath,'--non-interactive']
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print("svn upgrade did not happen (this is probably OK). Messages:")
         print (err)
-            
+
 def svnUpdateProcess(version=None,projectfile=None,branch=None):
     '''perform an update of GSAS-II in a separate python process'''
     if not projectfile:
@@ -425,7 +449,7 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
     if proxycmds: cmd += proxycmds
     if verbose: print(u"Loading files to "+fpath+u"\n  from "+URL)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = MakeByte2str(s.communicate())
     if err:
         print(60*"=")
         print ("****** An error was noted, see below *********")
@@ -453,7 +477,7 @@ def svnInstallDir(URL,loadpath):
     print("Loading files from "+URL)
     if proxycmds: cmd += proxycmds
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()   #this fails too easily
+    out,err = MakeByte2str(s.communicate())   #this fails too easily
     if err:
         print(60*"=")
         print ("****** An error was noted, see below *********")
@@ -499,7 +523,7 @@ def svnList(URL,verbose=True):
         for i in cmd: s += i + ' '
         print(s)
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = p.communicate()
+    res,err = MakeByte2str(p.communicate())
     return res
 
 def DownloadG2Binaries(g2home,verbose=True):
@@ -522,9 +546,9 @@ def DownloadG2Binaries(g2home,verbose=True):
         for i in cmd: s += i + ' '
         print(s)
     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    res,err = p.communicate()
+    res,err = MakeByte2str(p.communicate())
     versions = {}
-    for d in res.decode().split():
+    for d in res.split():
         if d.startswith(bindir):
             v = intver(d.rstrip('/').split('_')[3].lstrip('n'))
             versions[v] = d
@@ -569,7 +593,7 @@ def DownloadG2Binaries(g2home,verbose=True):
 #     cmd = [svn, 'info', loc]
 #     if proxycmds: cmd += proxycmds
 #     p = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-#     res,err = p.communicate()
+#     res,err = MakeByte2str(p.communicate())
 #     for l in res.split('\n'):
 #         if "Relative URL:" in l: break
 #     if "/branch/" in l:

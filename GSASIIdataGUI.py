@@ -3035,7 +3035,7 @@ class GSASII(wx.Frame):
             self.dataList = dataList
             self.filterlist = range(len(self.dataList)) # list of the choice numbers that have been filtered (list of int indices)
             self.dataType = dataType
-            self.filter = ''
+            self.filterVal = ''
             self.panel = None
             self.Draw()
             
@@ -3043,42 +3043,42 @@ class GSASII(wx.Frame):
             if self.panel:
                 self.panel.DestroyChildren()  #safe: wx.Panel
                 self.panel.Destroy()
-            size = (450,350)
+            size = (480,350)
             self.panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
                 style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(self.panel,label=self.text+'  Filter:  '),0,WACV)
-            self.filterBox = wx.TextCtrl(self.panel,value=self.filter,style=wx.TE_PROCESS_ENTER)
-            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
-            topSizer.Add(self.filterBox,0,WACV)
-            mainSizer.Add((10,10),1)
-            mainSizer.Add(topSizer,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
-            mainSizer.Add((10,10),1)
+            mainSizer.Add(wx.StaticText(self.panel,label=self.text),0,WACV)
+            mainSizer.Add((10,10))
             self.dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
+            self.dataGridSizer.Add((-1,-1))
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add((-1,-1),1,wx.EXPAND,1)
+            topSizer.Add(wx.StaticText(self.panel,label='Filter:  '),0,WACV)
+            self.timer = wx.Timer()
+            self.timer.Bind(wx.EVT_TIMER,self.OnFilter)
+            self.filterBox = wx.TextCtrl(self.panel, wx.ID_ANY, self.filterVal,
+                                         size=(80,-1),style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.OnFilter)
+            topSizer.Add(self.filterBox,0,WACV)
+            self.dataGridSizer.Add(topSizer,1,wx.RIGHT|wx.BOTTOM|wx.EXPAND,1)
+            self.dataGridSizer.Add((-1,10))
+            self.dataGridSizer.Add((-1,10))
             for id,item in enumerate(self.selectData):
                 name = wx.TextCtrl(self.panel,-1,item,size=wx.Size(300,20))
                 name.SetEditable(False)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                scale = wx.TextCtrl(self.panel,id,'%.3f'%(self.selectVals[id]),style=wx.TE_PROCESS_ENTER)
-                scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
-                scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
+                scale = G2G.ValidatedTxtCtrl(self.panel,self.selectVals,id,nDig=(10,3),typeHint=float)
                 self.dataGridSizer.Add(scale,0,wx.LEFT,10)
                 self.dataGridSizer.Add(name,0,wx.RIGHT,10)
             if self.dataType:
-                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,'Sum result name: '+self.dataType),0, \
-                    wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
-                self.name = wx.TextCtrl(self.panel,-1,self.data[-1],size=wx.Size(300,20),style=wx.TE_PROCESS_ENTER)
-                self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
-                self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
+                ScaleAll = wx.Button(self.panel,wx.ID_ANY,'Set all above')
+                ScaleAll.Bind(wx.EVT_BUTTON, self.OnAllScale)
+                self.dataGridSizer.Add(ScaleAll,0,wx.LEFT,10)
+                self.dataGridSizer.Add((-1,-1),0,wx.RIGHT,10)
+                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,'Sum result name: '+self.dataType),1,
+                    wx.LEFT|wx.ALIGN_CENTER_VERTICAL,1)
+                self.name = G2G.ValidatedTxtCtrl(self.panel,self.data,-1,size=wx.Size(300,20))
                 self.dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
-                self.dataGridSizer.Add(wx.StaticText(self.panel,label='All scales value: '),0,  \
-                    wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-                allScale = wx.TextCtrl(self.panel,value='',style=wx.TE_PROCESS_ENTER)
-                allScale.Bind(wx.EVT_TEXT_ENTER,self.OnAllScale)
-                allScale.Bind(wx.EVT_KILL_FOCUS,self.OnAllScale)
-                self.dataGridSizer.Add(allScale,0,WACV)
             mainSizer.Add(self.dataGridSizer,0,wx.EXPAND)
             self.OkBtn = wx.Button(self.panel,-1,"Ok")
             self.OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -3091,6 +3091,7 @@ class GSASII(wx.Frame):
                 btnSizer.Add(TestBtn)
             btnSizer.Add(self.OkBtn)
             btnSizer.Add(cancelBtn)
+            btnSizer.Add((5,5))
             
             self.panel.SetSizer(mainSizer)
             self.panel.SetAutoLayout(1)
@@ -3101,10 +3102,12 @@ class GSASII(wx.Frame):
             self.panel.Fit()
             self.Fit()
 
-        def Filter(self,event):
+        def OnFilter(self,event):
             '''Read text from filter control and select entries that match.
             '''
-            txt = self.filterBox.GetValue()
+            if self.timer.IsRunning():
+                self.timer.Stop()
+            self.filterVal = txt = self.filterBox.GetValue()
             if txt:
                 txt = txt.lower()
                 ChoiceList = []
@@ -3118,37 +3121,29 @@ class GSASII(wx.Frame):
             else:
                 self.selectData = copy.copy(self.data[:-1])
                 self.selectVals = len(self.data)*[0.0,]
-            self.Draw()
-
-        def OnScaleChange(self,event):
-            event.Skip()
-            id = event.GetId()
-            value = self.FindWindowById(id).GetValue()
-            try:
-                self.selectVals[id] = float(value)
-                self.FindWindowById(id).SetValue('%.3f'%(self.selectVals[id]))
-            except ValueError:
-                if value and '-' not in value[0]:
-                    print ('bad input - numbers only')
-                    self.FindWindowById(id).SetValue('0.000')
-                    
-        def OnAllScale(self,event):
-            event.Skip()
-            id = event.GetId()
-            try:
-                scale = float(self.FindWindowById(id).GetValue())
-                self.FindWindowById(id).SetValue('%.3f'%(scale))
-                entries = self.dataGridSizer.GetChildren()
-                for i,item in enumerate(self.selectVals):
-                    self.selectVals[i] = scale
-                    entries[2*i].GetWindow().SetValue('%.3f'%(self.selectVals[i]))                 
-            except ValueError:
-                print ('bad input - numbers only')
-                self.FindWindowById(id).SetValue('')
+            wx.CallAfter(self.Draw)
             
-        def OnNameChange(self,event):
-            event.Skip()
-            self.data[-1] = self.name.GetValue()
+        def onChar(self,event):
+            'Respond to keyboard events in the Filter box'
+            self.filterVal = self.filterBox.GetValue()
+            if self.timer.IsRunning():
+                self.timer.Stop()
+            self.timer.Start(1000,oneShot=True)
+            if event: event.Skip()
+
+        def OnAllScale(self,event):
+            dlg = G2G.SingleFloatDialog(self,'New scale',
+                                        'Enter new value for all scale factors',1.)
+            dlg.CenterOnParent()
+            if dlg.ShowModal() == wx.ID_OK:
+                val = dlg.GetValue()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            for id,item in enumerate(self.selectData):
+                self.selectVals[id] = val
+            wx.CallAfter(self.Draw)
             
         def OnTest(self,event):
             lenX = 0
@@ -3198,12 +3193,15 @@ class GSASII(wx.Frame):
             # N.B. PlotXY expects the first arg to point to G2frame. In this case, we
             # create a duplicate (temporary) Plot notebook window that is a child of the
             # modal SumDialog dialog (self). This nicely gets deleted when the dialog is destroyed,
-            # but the plot window is not fully functional, at least on the Mac. 
-            G2plt.PlotXY(self,XY,lines=True,Title='Sum:'+self.data[-1],labelY='Intensity',)
-            self.plotFrame.Show()
+            # but the plot window is not fully functional, at least on the Mac.
+            if len(XY[0][0]):
+                G2plt.PlotXY(self,XY,lines=True,Title='Sum:'+self.data[-1],labelY='Intensity',)
+                self.plotFrame.Show()
+                return True
                         
         def OnOk(self,event):
-            if self.dataType == 'PWDR': self.OnTest(event)
+            if self.dataType == 'PWDR':
+                if not self.OnTest(event): return
             parent = self.GetParent()
             parent.Raise()
             self.EndModal(wx.ID_OK)              
@@ -3241,7 +3239,7 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "PWDR" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern in summation','PWDR',TextList,DataList)
+            dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern to be summed','PWDR',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result,sumData = dlg.GetData()
@@ -3308,7 +3306,7 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "IMG" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each image in summation','IMG',TextList,DataList)
+            dlg = self.SumDialog(self,'Sum data','Enter scale for each image to be summed','IMG',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0

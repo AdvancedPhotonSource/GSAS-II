@@ -1811,7 +1811,7 @@ entered the right symbol for your structure.
                     wx.CallAfter(UpdateGeneral)
                     return
                 Obj = event.GetEventObject()
-                isym = Indx[Obj.GetId()]
+                isym = Indx[Obj.GetId()]+1
                 spCode = {'red':-1,'black':1}                    
                 SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
                 G2spc.CheckSpin(isym,SGData)
@@ -2704,9 +2704,9 @@ entered the right symbol for your structure.
             colM = 0
             if 'Mx' in colLabels:
                 colM = colLabels.index('Mx')
-                atTypes = generalData['AtomTypes']
-                Lande = generalData['Lande g']
-                AtInfo = dict(zip(atTypes,Lande))
+#                atTypes = generalData['AtomTypes']
+#                Lande = generalData['Lande g']
+#                AtInfo = dict(zip(atTypes,Lande))
             attr = wx.grid.GridCellAttr()
             attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(G2G.GridFractionEditor(Atoms))
@@ -2753,12 +2753,16 @@ entered the right symbol for your structure.
                     if not SGData['SGGray']:
                         CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
 #                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
+#                    print('CSI:',CSI)
+                    saveCSI = 0
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
-                        if CSI and CSI[1][i] and AtInfo and AtInfo[atomData[row][colType]]:
-                            Atoms.SetCellStyle(row,ci,WHITE,False)
+                        if CSI and CSI[1][i]:       # and AtInfo and AtInfo[atomData[row][colType]]:
+                            if saveCSI != CSI[0][i]:
+                                Atoms.SetCellStyle(row,ci,WHITE,False)
+                                saveCSI = CSI[0][i]
                             Atoms.SetCellTextColour(row,ci,BLACK)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):

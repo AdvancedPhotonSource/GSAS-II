@@ -2178,11 +2178,6 @@ def GetCSuinel(siteSym):
 def GetCSpqinel(siteSym,SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
-    if siteSym.strip() in ['-1','m3m']:
-        if SpnFlp[len(SpnFlp)//2] < 0:
-            return [[0,0,0],[0.,0.,0.]]
-        else:
-            return [[1,1,1],[1.,1.,1.]]
     for opr in dupDir:
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:

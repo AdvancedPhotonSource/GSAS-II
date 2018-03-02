@@ -1213,7 +1213,9 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     nSGData = newPhase['General']['SGData']
     oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
-    item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
+    item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
+    if not item:
+        return
     constraints = G2frame.GPXtree.GetItemPyData(item)
 #    GSASIIpath.IPyBreak()
     parmDict = {}

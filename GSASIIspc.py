@@ -2184,7 +2184,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
-#        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
+        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
@@ -2195,13 +2195,14 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
                         CSI[0][ics] = 0
                         CSI[1][ics] = 0.
                     elif CSI[0][ics] > jcs:
-                        CSI[0][ics] = CSI[0][jcs]-1
-            elif CSI[0][kcs] == csi[0][kcs] and CSI[1][kcs] != csi[1][kcs]:
+                        CSI[0][ics] = CSI[0][ics]-1
+            elif (CSI[0][kcs] == csi[0][kcs]) and (CSI[1][kcs] != csi[1][kcs]):
                 CSI[1][kcs] = csi[1][kcs]
-            elif CSI[0][kcs] > csi[0][kcs]:
+            elif CSI[0][kcs] >= csi[0][kcs]:
                 CSI[0][kcs] = min(CSI[0][kcs],csi[0][kcs])
-                if CSI[1][kcs] == 1.:
-                    CSI[1][kcs] = csi[1][kcs]
+                if CSI[0][kcs] != csi[0][kcs]:
+                    if CSI[1][kcs] == 1.:
+                        CSI[1][kcs] = csi[1][kcs]
     return CSI
     
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):

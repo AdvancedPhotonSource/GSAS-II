@@ -80,6 +80,7 @@ class SGMagSpinBox(wx.Dialog):
         self.table = table
         self.names = names
         self.spins = spins
+        self.PrintTable = [' Magnetic symmetry operations for %s:'%self.text[0].split(':')[1],]
         self.panel = wxscroll.ScrolledPanel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
@@ -91,6 +92,7 @@ class SGMagSpinBox(wx.Dialog):
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
         ncol = self.table[0].count(',')+2
         for ic,cent in enumerate(cents):
+            Cent = np.array(Cents[ic])
             if ic:
                 cent = cent.strip(' (').strip(')+\n') 
                 mainSizer.Add(wx.StaticText(self.panel,label='      for (%s)+'%(cent)),0,WACV)
@@ -98,14 +100,6 @@ class SGMagSpinBox(wx.Dialog):
             j = 0
             Red = False
             for item in self.table:
-                if 'for' in item:
-                    mainSizer.Add(tableSizer,0,WACV)
-                    mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
-                    tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-                    Red = True
-                    lentable //= 2
-                    j = 0
-                    continue
                 flds = item.split(')')[1]
                 tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
                 flds = flds.replace(' ','').split(',')
@@ -120,15 +114,33 @@ class SGMagSpinBox(wx.Dialog):
                 try:
                     if self.spins[j+ic*lentable] < 0 or Red:
                         text.SetForegroundColour('Red')
+                        item += ',-1'
+                    else:
+                        item += ',+1'
                 except IndexError:
                     print(self.spins,j,ic,lentable,self.names[j])
+                M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
+                T = (T+Cent)%1.
+                item = G2spc.MT2text([M,T],reverse=True)
+                if S > 0:
+                    item += ',+1'
+                else:
+                    item += ',-1'
+                self.PrintTable.append(item.replace(' ','').lower())
                 tableSizer.Add(text,0,WACV)
                 if not j%2:
                     tableSizer.Add((20,0))
-                j += 1
+                j += 1                
             mainSizer.Add(tableSizer,0,WACV)
             
+        def OnPrintOps(event):
+            for item in self.PrintTable:
+                print(item)
+            
         btnsizer = wx.StdDialogButtonSizer()
+        printBtn = wx.Button(self.panel,label='Print Ops')
+        printBtn.Bind(wx.EVT_BUTTON, OnPrintOps)
+        btnsizer.Add(printBtn)
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()
         btnsizer.AddButton(OKbtn)
@@ -451,6 +463,8 @@ class TransformDialog(wx.Dialog):
         def OnBNSlatt(event):
             Obj = event.GetEventObject()
             BNSlatt = Obj.GetValue()
+            if BNSlatt == SGData['SGLatt']:
+                return
             SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
             self.Trans = G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
             wx.CallAfter(self.Draw)
@@ -514,7 +528,8 @@ class TransformDialog(wx.Dialog):
                 GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
                 BNSizer = wx.BoxSizer(wx.HORIZONTAL)
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
-                BNS = wx.ComboBox(self.panel,value=SGData['BNSlattsym'][0],choices=list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
+                BNS = wx.ComboBox(self.panel,value=SGData['SGLatt'],choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                 BNSizer.Add(BNS,0,WACV)
                 mainSizer.Add(BNSizer,0,WACV)
@@ -1840,7 +1855,7 @@ entered the right symbol for your structure.
                 SpnFlp = SGData['SpnFlp']
                 OprNames = G2spc.GenMagOps(SGData)[0]
             else:
-                if not len(GenSym) or SGData['SGGray'] or '(' in MagSym:    #not if BNS centered either
+                if not len(GenSym) or SGData['SGGray']:
                     magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:

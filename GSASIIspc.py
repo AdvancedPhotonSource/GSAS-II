@@ -495,7 +495,7 @@ def AllOps(SGData):
                 G2opcodes.append(mult*(100*icen+j+1))
     return SGTextList,offsetList,symOpList,G2oprList,G2opcodes
     
-def MT2text(Opr):
+def MT2text(Opr,reverse=False):
     "From space group matrix/translation operator returns text version"
     XYZ = ('-Z','-Y','-X','X-Y','ERR','Y-X','X','Y','Z')
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
@@ -506,9 +506,15 @@ def MT2text(Opr):
         IK = int(round(T[j]*12))%12
         if IK:
             if IJ < 3:
-                Fld += (TRA[IK]+XYZ[IJ]).rjust(5)
+                if reverse:
+                    Fld += (XYZ[IJ]+'+'+TRA[IK]).rjust(5)
+                else:
+                    Fld += (TRA[IK]+XYZ[IJ]).rjust(5)
             else:
-                Fld += (TRA[IK]+'+'+XYZ[IJ]).rjust(5)
+                if reverse:
+                    Fld += (XYZ[IJ]+'+'+TRA[IK]).rjust(5)
+                else:
+                    Fld += (TRA[IK]+'+'+XYZ[IJ]).rjust(5)
         else:
             Fld += XYZ[IJ].rjust(5)
         if j != 2: Fld += ', '
@@ -1043,22 +1049,27 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
     magSym[0] = SGData.get('BNSlattsym',[SGData['SGLatt'],[0,0,0]])[0]
     return ' '.join(magSym)
     
-def MagText2MTS(mcifOpr):
+def MagText2MTS(mcifOpr,CIF=True):
     "From magnetic space group cif text returns matrix/translation + spin flip"
-    XYZ = {'x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'-y':[0,-1,0],'z':[0,0,1],'-z':[0,0,-1],
-           'x-y':[1,-1,0],'-x+y':[-1,1,0],}
+    XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
+           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],}
     ops = mcifOpr.split(",")
     M = []
     T = []
     for op in ops[:3]:
         ip = len(op)
         if '/' in op:
-            ip = op.index('/')-2
-            T.append(eval(op[ip:]))
-#            T.append(TRA[op[ip:]])
+            if CIF:
+                opMT = op.split('+')
+                T.append(eval(opMT[1]))
+            else:
+                ip = op.index('/')
+                T.append(eval(op[:ip+2]))
+                opMT = [op[ip+2:],'']
         else:
+            opMT = [op,'']
             T.append(0.)
-        M.append(XYZ[op[:ip]])
+        M.append(XYZ[opMT[0].lower()])
     spnflp = 1
     if '-1' in ops[3]:
         spnflp = -1
@@ -2184,7 +2195,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
-        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
+#        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:

@@ -119,6 +119,7 @@ class SGMagSpinBox(wx.Dialog):
                         item += ',+1'
                 except IndexError:
                     print(self.spins,j,ic,lentable,self.names[j])
+                    item += ',+1'
                 M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
                 T = (T+Cent)%1.
                 item = G2spc.MT2text([M,T],reverse=True)

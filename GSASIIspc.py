@@ -206,10 +206,10 @@ def SpcGroup(SGSymbol):
     else:
         if SGData['SGPtGrp'] in ['1','3','23',]:
             SGData['SGSpin'] = lattSpin+[1,]
-        elif SGData['SGPtGrp'] in ['-1','2','m','4','-4','-3','312','321','3m1','31m','6','-6','432','-43m','m3']:
+        elif SGData['SGPtGrp'] in ['-1','2','m','4','-4','-3','312','321','3m1','31m','6','-6','432','-43m']:
             SGData['SGSpin'] = lattSpin+[1,1,]
         elif SGData['SGPtGrp'] in ['2/m','4/m','422','4mm','-42m','-4m2','-3m1','-31m',
-            '6/m','622','6mm','-6m2','-62m','m-3m']:
+            '6/m','622','6mm','-6m2','-62m','m3','m-3m']:
             SGData['SGSpin'] = lattSpin+[1,1,1,]
         else: #'222'-'mmm','4/mmm','6/mmm'
             SGData['SGSpin'] = lattSpin+[1,1,1,1,]
@@ -789,6 +789,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
         Tmat[2,2] = 2.0
     elif '(I)' in BNS:
         Tmat *= 2.0
+        SGData['SGSpin'][-1] = -1
         if 'R' in BNS:
             SGData['SGSpin'][-1] = -1
     elif '(S)' in BNS:
@@ -1052,7 +1053,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
 def MagText2MTS(mcifOpr,CIF=True):
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
-           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],}
+           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],'y-x':[-1,1,0]}
     ops = mcifOpr.split(",")
     M = []
     T = []
@@ -1120,28 +1121,27 @@ def GenMagOps(SGData):
         OprNames += OprName    
     SpnFlp = np.ones(Nsym,dtype=np.int)
     GenFlg = SGData.get('GenFlg',[0])
+#    print ('GenFlg:',SGData['GenFlg'])
+#    print ('GenSym:',SGData['GenSym'])
     Nfl = len(GenFlg)
-    if Nfl>1:
-        for ieqv in range(Nsym):
-            for iunq in range(Nfl):
-                if SGData['SGGen'][ieqv] & GenFlg[iunq]:
-                    SpnFlp[ieqv] *= FlpSpn[iunq]
+    for ieqv in range(Nsym):
+        for iunq in range(Nfl):
+            if SGData['SGGen'][ieqv] & GenFlg[iunq]:
+                SpnFlp[ieqv] *= FlpSpn[iunq]
 #        print ('\nMagSpGrp:',SGData['MagSpGrp'],Ncv)
-#        print ('GenFlg:',SGData['GenFlg'])
-#        print ('GenSym:',SGData['GenSym'])
 #        print ('FlpSpn:',Nfl,FlpSpn)
-        detM = [nl.det(M) for M in sgOp]
-        for incv in range(Ncv):
-            if incv:
-                try:
-                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
-                except IndexError:
-                    FlpSpn = [1,]+FlpSpn
-                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
-        if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
-            detM[1] = 1.
-        MagMom = SpnFlp*np.array(Ncv*detM)
-        SGData['MagMom'] = MagMom
+    detM = [nl.det(M) for M in sgOp]
+    for incv in range(Ncv):
+        if incv:
+            try:
+                SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
+            except IndexError:
+                FlpSpn = [1,]+FlpSpn
+                SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
+    if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
+        detM[1] = 1.
+    MagMom = SpnFlp*np.array(Ncv*detM)
+    SGData['MagMom'] = MagMom
 #        print ('SgOps:',OprNames)
 #        print ('SGGen:',SGData['SGGen'])
 #        print ('SpnFlp:',SpnFlp)
@@ -2189,13 +2189,14 @@ def GetCSuinel(siteSym):
 def GetCSpqinel(siteSym,SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
+    print('for ',siteSym)
     for opr in dupDir:
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
-#        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
+        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
@@ -2211,9 +2212,10 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
                 CSI[1][kcs] = csi[1][kcs]
             elif CSI[0][kcs] >= csi[0][kcs]:
                 CSI[0][kcs] = min(CSI[0][kcs],csi[0][kcs])
-                if CSI[0][kcs] != csi[0][kcs]:
+                if CSI[1][kcs] != csi[1][kcs]:
                     if CSI[1][kcs] == 1.:
                         CSI[1][kcs] = csi[1][kcs]
+        print(CSI)
     return CSI
     
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):

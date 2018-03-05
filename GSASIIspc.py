@@ -2189,14 +2189,14 @@ def GetCSuinel(siteSym):
 def GetCSpqinel(siteSym,SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
-    print('for ',siteSym)
+#    print('for ',siteSym)
     for opr in dupDir:
         indx = GetNXUPQsym(opr)
         if SpnFlp[dupDir[opr]] > 0.:
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
-        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
+#        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
@@ -2215,7 +2215,7 @@ def GetCSpqinel(siteSym,SpnFlp,dupDir):
                 if CSI[1][kcs] != csi[1][kcs]:
                     if CSI[1][kcs] == 1.:
                         CSI[1][kcs] = csi[1][kcs]
-        print(CSI)
+#        print(CSI)
     return CSI
     
 def getTauT(tau,sop,ssop,XYZ,wave=np.zeros(3)):

@@ -1138,8 +1138,8 @@ def GenMagOps(SGData):
             except IndexError:
                 FlpSpn = [1,]+FlpSpn
                 SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
-    if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
-        detM[1] = 1.
+#    if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
+#        detM[1] = 1.
     MagMom = SpnFlp*np.array(Ncv*detM)
     SGData['MagMom'] = MagMom
 #        print ('SgOps:',OprNames)

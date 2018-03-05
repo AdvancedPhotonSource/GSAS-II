@@ -77,9 +77,11 @@ class PhaseReaderClass(G2obj.ImportPhase):
         self.Phase['Histograms'] = {}       #remove any histograms
         self.Phase['Pawley ref'] = []       # & any Pawley refl.
         self.Phase['RBModels'] = {}
-        del self.Phase['MCSA']
+        if 'MCSA' in self.Phase:
+            del self.Phase['MCSA']
         if 'Map Peaks' in self.Phase:
             del self.Phase['Map Peaks']
-        del self.Phase['General']['Map']
+        if 'Map' in self.Phase['General']:
+            del self.Phase['General']['Map']
         self.Phase['ranId'] = ran.randint(0,sys.maxsize)
         return True

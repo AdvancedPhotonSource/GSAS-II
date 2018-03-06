@@ -2599,7 +2599,7 @@ entered the right symbol for your structure.
                     cx = colLabels.index('x')
                     SpnFlp = generalData['SGData']['SpnFlp']
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[r][cx:cx+3],SGData)
-                    CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+                    CSI = G2spc.GetCSpqinel(SpnFlp,dupDir)
                     iM = CSI[0][c-colLabels.index('Mx')]
                     for i in range(3):
                         if iM == CSI[0][i]:
@@ -2767,7 +2767,7 @@ entered the right symbol for your structure.
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
                     CSI = []
                     if not SGData['SGGray']:
-                        CSI = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+                        CSI = G2spc.GetCSpqinel(SpnFlp,dupDir)
 #                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
 #                    print('CSI:',CSI)
                     saveCSI = 0

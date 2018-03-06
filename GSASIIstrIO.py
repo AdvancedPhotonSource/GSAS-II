@@ -1229,7 +1229,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                     G2mv.StoreEquivalence(name,(eqv,))
                 if 'M' in at[ct+1]:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(at[cx:cx+3],SGData)
-                    mId,mCoef = G2spc.GetCSpqinel(SytSym,SpnFlp,dupDir)
+                    mId,mCoef = G2spc.GetCSpqinel(SpnFlp,dupDir)
                     names = [pfx+'AMx:'+str(i),pfx+'AMy:'+str(i),pfx+'AMz:'+str(i)]
                     equivs = [[],[],[]]
                     for j in range(3):

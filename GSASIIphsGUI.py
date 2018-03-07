@@ -3789,6 +3789,8 @@ entered the right symbol for your structure.
 ################################################################################
         
     def UpdateLayerData(Scroll=0):
+        '''Present the contents of the Phase/Layers tab for stacking fault simulation
+        '''
         
         laueChoice = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
             '6/m','6/mmm','unknown']
@@ -3802,32 +3804,6 @@ entered the right symbol for your structure.
             'viewPoint':[[0.,0.,0.],[]],}
         Indx = {}
         
-#        def SetCell(laue,cell):
-#            if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
-#                cell[4] = cell[5] = 90.
-#                cell[6] = 120.
-#                if laue in ['4/m','4/mmm']:
-#                    cell[6] = 90.
-#                if ObjId == 0:
-#                    cell[1] = cell[2] = value
-#                    Obj.SetValue("%.5f"%(cell[1]))
-#                else:
-#                    cell[3] = value
-#                    Obj.SetValue("%.5f"%(cell[3]))
-#            elif laue in ['mmm']:
-#                cell[ObjId+1] = value
-#                cell[4] = cell[5] = cell[6] = 90.
-#                Obj.SetValue("%.5f"%(cell[ObjId+1]))
-#            elif laue in ['2/m','-1']:
-#                cell[4] = cell[5] = 90.
-#                if ObjId != 3:
-#                    cell[ObjId+1] = value
-#                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
-#                else:
-#                    cell[6] = value
-#                    Obj.SetValue("%.3f"%(cell[6]))
-#            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
-
         def OnLaue(event):
             Obj = event.GetEventObject()
             data['Layers']['Laue'] = Obj.GetValue()
@@ -3953,14 +3929,14 @@ entered the right symbol for your structure.
             else:
                 Trans = [[[1.,0.,0.,0.,'',False],],]
             data['Layers']['Transitions'] = Trans
-            UpdateLayerData()
+            wx.CallAfter(UpdateLayerData)
             
         def OnDeleteLast(event):
             del(data['Layers']['Layers'][-1])
             del(data['Layers']['Transitions'][-1])
             for trans in data['Layers']['Transitions']:
                 del trans[-1]
-            UpdateLayerData()
+            wx.CallAfter(UpdateLayerData)
                 
         def OnImportLayer(event):
             dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
@@ -4002,7 +3978,7 @@ entered the right symbol for your structure.
             else:
                 Trans = [[[1.,0.,0.,0.,'',False],],]
             data['Layers']['Transitions'] = Trans
-            UpdateLayerData()
+            wx.CallAfter(UpdateLayerData)
             
         def LayerSizer(il,Layer):
             
@@ -4391,14 +4367,14 @@ entered the right symbol for your structure.
         G2G.HorizontalLine(topSizer,layerData)
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
         titleSizer.Add(wx.StaticText(layerData,label=' Layer descriptions: '),0,WACV)
-        newLayer = wx.CheckBox(layerData,label=' Add new layer?')
-        newLayer.Bind(wx.EVT_CHECKBOX, OnNewLayer)
+        newLayer = wx.Button(layerData,label='Add new layer')
+        newLayer.Bind(wx.EVT_BUTTON, OnNewLayer)
         titleSizer.Add(newLayer,0,WACV)
-        importLayer = wx.CheckBox(layerData,label=' Import new layer?')
-        importLayer.Bind(wx.EVT_CHECKBOX, OnImportLayer)
+        importLayer = wx.Button(layerData,label=' Import new layer')
+        importLayer.Bind(wx.EVT_BUTTON, OnImportLayer)
         titleSizer.Add(importLayer,0,WACV)
-        deleteLast = wx.CheckBox(layerData,label=' Delete last layer?')
-        deleteLast.Bind(wx.EVT_CHECKBOX, OnDeleteLast)
+        deleteLast = wx.Button(layerData,label='Delete last layer')
+        deleteLast.Bind(wx.EVT_BUTTON, OnDeleteLast)
         titleSizer.Add(deleteLast,0,WACV)
         topSizer.Add(titleSizer,0,WACV)
         for il,layer in enumerate(Layers['Layers']):

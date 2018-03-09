@@ -2394,21 +2394,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         ifpicked = False
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
-        xye = np.array(ma.getdata(Pattern[1]))
+        xye = np.array(ma.getdata(Pattern[1])) # strips mask
+        xye0 = Pattern[1][0]  # keeps mask
         bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
             LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits')
             limits = G2frame.GPXtree.GetItemPyData(LimitId)
+            # recompute mask from excluded regions, in case they have changed
             excls = limits[2:]
+            xye0.mask = False # resets mask for xye0 & Pattern[1][0](!)
             for excl in excls:
-                xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
+                xye0 = ma.masked_inside(xye0,excl[0],excl[1]) # sets mask on xye0 but not Pattern[1][0] !
+            Pattern[1][0].mask = xye0.mask # transfer the mask 
         if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
-            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
+            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
         elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
-            X = G2lat.Pos2dsp(Parms,xye[0])
+            X = G2lat.Pos2dsp(Parms,xye0)
         else:
-            X = xye[0]
+            X = xye0
         if not lenX:
             lenX = len(X)
         # show plot magnification factors
@@ -2514,7 +2518,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 xlim = Plot.get_xlim()
                 DX = xlim[1]-xlim[0]
                 X += 0.002*offsetX*DX*N
-            Xum = ma.getdata(X)
+            Xum = ma.getdata(X) # unmasked version of X, use to plot data (only)
             if ifpicked:
                 if G2frame.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -2794,6 +2798,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         fmtDict = canvas.get_supported_filetypes()
         figure.clear()
         plotOpt['fmtChoices'] = [fmtDict[j]+', '+j for j in sorted(fmtDict)]
+        plotOpt['fmtChoices'].append('Data file with plot elements, csv')
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
@@ -2833,23 +2838,112 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         figure.clear()
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)
         figure.canvas.draw()
+        
+    def Write2csv(fil,dataItems,header=False):
+        '''Write a line to a CSV file
+
+        :param object fil: file object
+        :param list dataItems: items to write as row in file
+        :param bool header: True if all items should be written with quotes (default is False)
+        '''
+        line = ''
+        for item in dataItems:
+            if line: line += ','
+            item = str(item)
+            if header or ' ' in item:
+                line += '"'+item+'"'
+            else:
+                line += item
+        fil.write(line+'\n')
+
+    def CopyRietveld2csv(Pattern,Plot,Page,filename):
+        '''Copy the contents of the Rietveld graph from the plot window to
+        .csv file
+        '''
+        import itertools # delay this since not commonly called or needed
+
+        lblList = []
+        valueList = []
+
+        lblList.append('Axis-limits')
+        valueList.append(list(Plot.get_xlim())+list(Plot.get_ylim()))
+
+        tickpos = {}
+        for i,l in enumerate(Plot.lines):
+            lbl = l.get_label()
+            if 'mag' in lbl:
+                pass
+            elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
+                if lbl[1:] == 'obs':
+                    lblList.append('x')
+                    valueList.append(l.get_xdata())
+                c = plotOpt['colors'].get(lbl[1:],l.get_color())
+                if sum(c) == 4.0: continue
+                lblList.append(lbl)
+                valueList.append(l.get_ydata())
+            elif l in Page.tickDict.values():
+                c = plotOpt['colors'].get(lbl,l.get_color())
+                if sum(c) == 4.0: continue
+                tickpos[lbl] = l.get_ydata()[0]
+                lblList.append(lbl)
+                valueList.append(l.get_xdata())
+        if tickpos:
+            lblList.append('tick-pos')
+            valueList.append([])
+            for i in tickpos:
+                valueList[-1].append(i)
+                valueList[-1].append(tickpos[i])
+        # add (obs-calc)/sigma [=(obs-calc)*sqrt(weight)]
+        lblList.append('diff/sigma')
+        valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
+        if sum(Pattern[1][0].mask): # are there are excluded points? If so, add them too
+            lblList.append('excluded')
+            valueList.append(1*Pattern[1][0].mask)
+        # magnifcation values
+        for l in Plot.texts:
+            lbl = l.get_label()
+            if 'mag' not in lbl: continue
+            if l.xycoords == 'axes fraction':
+                lbl = 'initial-mag'
+                lblList.append(lbl)
+                valueList.append([l.get_text()])
+            else:
+                lbl = 'mag'
+                lblList.append(lbl)
+                valueList.append([l.get_text(),l.get_position()[0]])
+        # invert lists into columns, use iterator for all values
+        if hasattr(itertools,'zip_longest'): #Python 3+
+            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
+        else:
+            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
+        fp = open(filename,'w')
+        Write2csv(fp,lblList,header=True)
+        for row in invertIter:
+            Write2csv(fp,row)
+        fp.close()
+        
     def onSave(event):
         '''Write the current plot to a file
         '''
         hcfigure = mpl.figure.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
         hccanvas = hcCanvas(hcfigure)
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
-        longFormatName,type = plotOpt['format'].split(',')
-        fil = G2G.askSaveFile(G2frame,'','.'+type.strip(),longFormatName)
-        if fil:
-            hcfigure.savefig(fil,format=type.strip())
+        longFormatName,typ = plotOpt['format'].split(',')
+        fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
+        if 'csv' in typ:
+            CopyRietveld2csv(Pattern,Plot,Page,fil)
             dlg.EndModal(wx.ID_OK)
+        elif fil:
+            hcfigure.savefig(fil,format=typ.strip())
+            dlg.EndModal(wx.ID_OK)
+            
     def onTextSize(event):
         '''Respond to a change in text size from the slider
         '''
         if plotOpt['labelsize'] != event.GetInt():
             plotOpt['labelsize'] = event.GetInt()
             RefreshPlot()
+            
     def OnSelectColour(event):
         '''Respond to a change in color
         '''

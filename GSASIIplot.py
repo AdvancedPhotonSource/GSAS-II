@@ -144,9 +144,18 @@ import OpenGL.GLU as GLU
 import gltext
 import matplotlib.colors as mpcls
 from matplotlib.backends.backend_wx import _load_bitmap
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
-from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+except ImportError:
+    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
+try:
+    from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
+except ImportError:
+    from matplotlib.backends.backend_wxagg import Toolbar as Toolbar # name changes in wx4.0.1
+try:
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
+except ImportError:
+    from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)

@@ -2412,10 +2412,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             limits = G2frame.GPXtree.GetItemPyData(LimitId)
             # recompute mask from excluded regions, in case they have changed
             excls = limits[2:]
-            xye0.mask = False # resets mask for xye0 & Pattern[1][0](!)
+            xye0 = ma.array(xye0,mask=False)
+#            xye0.mask = False # resets mask for xye0 & Pattern[1][0](!)
             for excl in excls:
                 xye0 = ma.masked_inside(xye0,excl[0],excl[1]) # sets mask on xye0 but not Pattern[1][0] !
-            Pattern[1][0].mask = xye0.mask # transfer the mask 
+            Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))
+#            Pattern[1][0].mask = xye0.mask # transfer the mask 
         if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
         elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:

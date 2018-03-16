@@ -143,7 +143,6 @@ import OpenGL.GL as GL
 import OpenGL.GLU as GLU
 import gltext
 import matplotlib.colors as mpcls
-from matplotlib.backends.backend_wx import _load_bitmap
 try:
     from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 except ImportError:
@@ -569,12 +568,7 @@ class G2PlotNoteBook(wx.Panel):
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
-    ON_MPL_HELP = wx.NewId()
-    ON_MPL_KEY = wx.NewId()
     arrows = {}
-    for direc in ('left','right','up','down','Expand X',
-                  'Shrink X','Expand Y','Shrink Y'):
-        arrows[direc] = wx.NewId()
         
     def __init__(self,plotCanvas,publish=None):
         '''Adds additional icons to toolbar'''
@@ -592,50 +586,38 @@ class GSASIItoolbar(Toolbar):
         # 2nd try to remove a button from the bar
         if not deleted: self.DeleteToolByPos(POS_CONFIG_SPLTS_BTN) #doesn't work in some wxpython versions
         self.parent = self.GetParent()
-        key = os.path.join(G2path,'key.ico')
-        if 'phoenix' in wx.version():
-            button = self.AddTool(self.ON_MPL_KEY,'Key press',_load_bitmap(key),'Select key press')
-        else:
-            button = self.AddSimpleTool(self.ON_MPL_KEY,_load_bitmap(key),'Key press','Select key press')
-        wx.EVT_TOOL.Bind(self,self.ON_MPL_KEY,button.GetId(),self.OnKey)
-        help = os.path.join(G2path,'help.ico')
-        if 'phoenix' in wx.version():
-            button = self.AddTool(self.ON_MPL_HELP,'Help on',_load_bitmap(help),'Show help on')
-        else:
-            button = self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
-        wx.EVT_TOOL.Bind(self,self.ON_MPL_HELP,button.GetId(),self.OnHelp)
+        self.AddToolBarTool('Key press','Select key press','key.ico',self.OnKey)
+        self.AddToolBarTool('Help on','Show help on this plot','help.ico',self.OnHelp)
         # add arrow keys to control zooming
-        for direc in ('left','right','up','down'):
-            icon =  os.path.join(G2path,direc[0]+'arrow.ico')
-            if 'phoenix' in wx.version():
-                button = self.AddTool(self.arrows[direc],'Shift '+direc,_load_bitmap(icon),'Shift plot '+direc)
+        for direc in ('left','right','up','down', 'Expand X','Shrink X','Expand Y','Shrink Y'):
+            if ' ' in direc:
+                sprfx = ''
+                prfx = 'Zoom: '
             else:
-                button = self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),'Shift '+direc,'Shift plot '+direc)
-            wx.EVT_TOOL.Bind(self,self.arrows[direc],button.GetId(),self.OnArrow)
-        for direc in ('Expand X','Shrink X','Expand Y','Shrink Y'):
+                sprfx = 'Shift '
+                prfx = 'Shift plot '
             fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
-            icon =  os.path.join(G2path,fil)
-            if 'phoenix' in wx.version():
-                button = self.AddTool(self.arrows[direc],direc,_load_bitmap(icon),'Zoom: '+direc)
-            else:
-                button = self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),direc,'Zoom: '+direc)
-            wx.EVT_TOOL.Bind(self,self.arrows[direc],button.GetId(),self.OnArrow)
-        id = wx.NewId()
+            self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
         G2path = os.path.split(os.path.abspath(__file__))[0]
         if publish:
-            self.addPublish(publish)
-
-    def addPublish(self,callBack):
-        id = wx.NewId()
-        G2path = os.path.split(os.path.abspath(__file__))[0]
-        if 'phoenix' in wx.version():
-            button = self.AddTool(id,'Publish plot',_load_bitmap(os.path.join(G2path,'publish.ico')),
-                                  'Create publishable version of plot')
-        else:
-            button = self.AddSimpleTool(id,_load_bitmap(os.path.join(G2path,'publish.ico')),
-                                        'Publish plot','Create publishable version of plot')
-        wx.EVT_TOOL.Bind(self,id,button.GetId(),callBack)
+            self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
             
+    def AddToolBarTool(self,label,title,filename,callback):
+        G2path = os.path.split(os.path.abspath(__file__))[0]
+    
+        bmpFilename = os.path.normpath(os.path.join(G2path, filename))
+        if not os.path.exists(bmpFilename):
+            print('Could not find bitmap file "%s"; skipping' % bmpFilename)
+            bmp = wx.EmptyBitmap(32,32)
+        else:
+            bmp = wx.Bitmap(bmpFilename)
+        if 'phoenix' in wx.version():
+            button = self.AddTool(wx.ID_ANY, label, bmp, title)
+        else:
+            button = self.AddSimpleTool(wx.ID_ANY, bmp, label, title)
+        wx.EVT_TOOL.Bind(self, button.GetId(), button.GetId(), callback)
+        return button.GetId()
+
     def _update_view(self):
         '''Overrides the post-buttonbar update action to invoke a redraw; needed for plot magnification
         '''

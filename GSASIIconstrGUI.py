@@ -1217,7 +1217,6 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     if not item:
         return
     constraints = G2frame.GPXtree.GetItemPyData(item)
-#    GSASIIpath.IPyBreak()
     parmDict = {}
     varyList = []
     for ia,code in enumerate(atCodes):

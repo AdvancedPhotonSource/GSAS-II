@@ -3606,7 +3606,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
 
         self.nextval = self.startValue
         val = self._tc.GetValue().lower().strip()
-        if val != self.startValue:
+        if val != str(self.startValue):
             changed = True
             neg = False
             if val.startswith('-'):

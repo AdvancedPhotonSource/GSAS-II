@@ -76,6 +76,10 @@ def SpcGroup(SGSymbol):
         SGData['SGGray'] = True
         SGSymbol = SGSymbol.replace("1'",'')
     SGSymbol = SGSymbol.split(':')[0]   #remove :1/2 setting symbol from some cif files
+    if '-2' in SGSymbol:    #replace bad but legal symbols with correct equivalents
+        SGSymbol = SGSymbol.replace('-2','m')
+    if SGSymbol.split()[1] =='3/m':
+        SGSymbol = SGSymbol.replace('3/m','-6')
     import pyspg
     SGInfo = pyspg.sgforpy(SGSymbol)
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
@@ -209,12 +213,10 @@ def SpcGroup(SGSymbol):
         elif SGData['SGPtGrp'] in ['-1','2','m','4','-4','-3','312','321','3m1','31m','6','-6','432','-43m']:
             SGData['SGSpin'] = lattSpin+[1,1,]
         elif SGData['SGPtGrp'] in ['2/m','4/m','422','4mm','-42m','-4m2','-3m1','-31m',
-            '6/m','622','6mm','-6m2','-62m','m3','m-3m']:
+            '6/m','622','6mm','-6m2','-62m','m3','m3m']:
             SGData['SGSpin'] = lattSpin+[1,1,1,]
         else: #'222'-'mmm','4/mmm','6/mmm'
             SGData['SGSpin'] = lattSpin+[1,1,1,1,]
-            
-    
     return SGInfo[-1],SGData
 
 def SGErrors(IErr):
@@ -384,7 +386,7 @@ def SGPtGroup(SGData):
             else:
                 return '432',[]
         else:
-            return 'm-3m',[]
+            return 'm3m',[]
     
 def SGPrint(SGData,AddInv=False):
     '''
@@ -568,11 +570,11 @@ def GetGenSym(SGData):
     LattSym = ('P','A','B','C','I','F','R')
     
     '''
-    OprNames = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+    OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
-        OprNames += [GetOprPtrName(str(-irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+        OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
     Nsyms = len(SGData['SGOps'])
-    if SGData['SGInv']: Nsyms *= 2
+    if SGData['SGInv'] and not SGData['SGFixed']: Nsyms *= 2
     UsymOp = ['1',]
     OprFlg = [0,]  
     if Nsyms == 2:                    #Centric triclinic or acentric monoclinic
@@ -696,78 +698,78 @@ def GetGenSym(SGData):
             
     if 'P' in SGData['SGLatt']:
         if SGData['SGSys'] == 'triclinic':
-            BNSsym = {'P(a)':[.5,0,0],'P(b)':[0,.5,0],'P(c)':[0,0,.5]}            
+            BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5]}            
         elif SGData['SGSys'] == 'monoclinic':
-            BNSsym = {'P(a)':[.5,0,0],'P(b)':[0,.5,0],'P(c)':[0,0,.5]}
+            BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5]}
             if SGData['SGUniq'] == 'a':
-                BNSsym.update({'P(B)':[.5,0,.5],'P(C)':[.5,.5,0]})
+                BNSsym.update({'P_B':[.5,0,.5],'P_C':[.5,.5,0]})
             elif SGData['SGUniq'] == 'b':
-                BNSsym.update({'P(A)':[.5,.5,0],'P(C)':[0,.5,.5]})
+                BNSsym.update({'P_A':[.5,.5,0],'P_C':[0,.5,.5]})
             elif SGData['SGUniq'] == 'c':
-                BNSsym.update({'P(A)':[0,.5,.5],'P(B)':[.5,0,.5]})
+                BNSsym.update({'P_A':[0,.5,.5],'P_B':[.5,0,.5]})
         elif SGData['SGSys'] == 'orthorhombic':
-            BNSsym = {'P(a)':[.5,0,0],'P(b)':[0,.5,0],'P(c)':[0,0,.5],
-                'P(A)':[0,.5,.5],'P(B)':[.5,0,.5],'P(C)':[.5,.5,0],'P(I)':[.5,.5,.5]}
+            BNSsym = {'P_a':[.5,0,0],'P_b':[0,.5,0],'P_c':[0,0,.5],
+                'P_A':[0,.5,.5],'P_B':[.5,0,.5],'P_C':[.5,.5,0],'P_I':[.5,.5,.5]}
         elif SGData['SGSys'] == 'tetragonal':
-            BNSsym = {'P(c)':[0,0,.5],'P(C)':[.5,.5,0],'P(I)':[.5,.5,.5]}            
+            BNSsym = {'P_c':[0,0,.5],'P_C':[.5,.5,0],'P_I':[.5,.5,.5]}            
         elif SGData['SGSys'] in ['trigonal','hexagonal']:
-            BNSsym = {'P(c)':[0,0,.5]}            
+            BNSsym = {'P_c':[0,0,.5]}            
         elif SGData['SGSys'] == 'cubic':
-            BNSsym = {'P(I)':[.5,.5,.5]}            
+            BNSsym = {'P_I':[.5,.5,.5]}            
             
     elif 'A' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
             if SGData['SGUniq'] == 'b':
-                BNSsym.update({'A(a)':[.5,0,0],'A(c)':[0,0,.5]})
+                BNSsym.update({'A_a':[.5,0,0],'A_c':[0,0,.5]})
             elif SGData['SGUniq'] == 'c':
-                BNSsym.update({'A(a)':[.5,0,0],'A(b)':[0,.5,0]})
+                BNSsym.update({'A_a':[.5,0,0],'A_b':[0,.5,0]})
         elif SGData['SGSys'] == 'orthorhombic':
-            BNSsym = {'A(a)':[.5,0,0],'A(b)':[0,.5,0],'A(c)':[0,0,.5],
-               'A(B)':[.5,0,.5],'A(C)':[.5,.5,0]}   
+            BNSsym = {'A_a':[.5,0,0],'A_b':[0,.5,0],'A_c':[0,0,.5],
+               'A_B':[.5,0,.5],'A_C':[.5,.5,0]}   
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'A(a)':[.5,0,0],'A(b)':[0,.5,0],'A(c)':[0,0,.5]}   
+            BNSsym = {'A_a':[.5,0,0],'A_b':[0,.5,0],'A_c':[0,0,.5]}   
             
     elif 'B' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
             if SGData['SGUniq'] == 'a':
-                BNSsym.update({'B(b)':[0,.5,0],'B(c)':[0,0,.5]})
+                BNSsym.update({'B_b':[0,.5,0],'B_c':[0,0,.5]})
             elif SGData['SGUniq'] == 'c':
-                BNSsym.update({'B(a)':[.5,0,0],'B(b)':[0,.5,0]})
+                BNSsym.update({'B_a':[.5,0,0],'B_b':[0,.5,0]})
         elif SGData['SGSys'] == 'orthorhombic':
-            BNSsym = {'B(a)':[.5,0,0],'B(b)':[0,.5,0],'B(c)':[0,0,.5],
-                'B(A)':[0,.5,.5],'B(C)':[.5,.5,0]}     
+            BNSsym = {'B_a':[.5,0,0],'B_b':[0,.5,0],'B_c':[0,0,.5],
+                'B_A':[0,.5,.5],'B_C':[.5,.5,0]}     
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'B(a)':[.5,0,0],'B(b)':[0,.5,0],'B(c)':[0,0,.5]}     
+            BNSsym = {'B_a':[.5,0,0],'B_b':[0,.5,0],'B_c':[0,0,.5]}     
             
     elif 'C' in SGData['SGLatt']:
         if SGData['SGSys'] == 'monoclinic':
             BNSsym = {}
             if SGData['SGUniq'] == 'a':
-                BNSsym.update({'C(b)':[0,.5,.0],'C(c)':[0,0,.5]})
+                BNSsym.update({'C_b':[0,.5,.0],'C_c':[0,0,.5]})
             elif SGData['SGUniq'] == 'b':
-                BNSsym.update({'C(a)':[.5,0,0],'C(c)':[0,0,.5]})
+                BNSsym.update({'C_a':[.5,0,0],'C_c':[0,0,.5]})
         elif SGData['SGSys'] == 'orthorhombic':
-            BNSsym = {'C(a)':[.5,0,0],'C(b)':[0,.5,0],'C(c)':[0,0,.5],
-                'C(A)':[0,.5,.5],'C(B)':[.5,0,.5]}      
+            BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5],
+                'C_A':[0,.5,.5],'C_B':[.5,0,.5]}      
         elif SGData['SGSys'] == 'triclinic':
-            BNSsym = {'C(a)':[.5,0,0],'C(b)':[0,.5,0],'C(c)':[0,0,.5]}      
+            BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5]}      
             
     elif 'I' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','triclinic']:
-            BNSsym = {'I(a)':[.5,0,0],'I(b)':[0,.5,0],'I(c)':[0,0,.5]}
+            BNSsym = {'I_a':[.5,0,0],'I_b':[0,.5,0],'I_c':[0,0,.5]}
         elif SGData['SGSys'] == 'tetragonal':
-            BNSsym = {'I(c)':[0,0,.5]}
+            BNSsym = {'I_c':[0,0,.5]}
         elif SGData['SGSys'] == 'cubic':
             BNSsym = {} 
             
     elif 'F' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','cubic','triclinic']:
-            BNSsym = {'F(S)':[.5,.5,.5]}
+            BNSsym = {'F_S':[.5,.5,.5]}
             
     elif 'R' in SGData['SGLatt']:
-        BNSsym = {'R(I)':[0,0,.5]}
+        BNSsym = {'R_I':[0,0,.5]}
     return UsymOp,OprFlg,BNSsym
 
 def ApplyBNSlatt(SGData,BNSlatt):
@@ -775,24 +777,24 @@ def ApplyBNSlatt(SGData,BNSlatt):
     BNS = BNSlatt[0]
     A = np.array(BNSlatt[1])
     SGCen = SGData['SGCen']
-    if '(a)' in BNS:
+    if '_a' in BNS:
         Tmat[0,0] = 2.0
-    elif '(b)' in BNS:
+    elif '_b' in BNS:
         Tmat[1,1] = 2.0
-    elif '(c)' in BNS:
+    elif '_c' in BNS:
         Tmat[2,2] = 2.0
-    elif '(A)' in BNS:
+    elif '_A' in BNS:
         Tmat[0,0] = 2.0
-    elif '(B)' in BNS:
+    elif '_B' in BNS:
         Tmat[1,1] = 2.0
-    elif '(C)' in BNS:
+    elif '_C' in BNS:
         Tmat[2,2] = 2.0
-    elif '(I)' in BNS:
+    elif '_I' in BNS:
         Tmat *= 2.0
         SGData['SGSpin'][-1] = -1
         if 'R' in BNS:
             SGData['SGSpin'][-1] = -1
-    elif '(S)' in BNS:
+    elif '_S' in BNS:
         SGData['SGSpin'][-1] = -1
         SGData['SGSpin'] += [-1,-1,-1,]
         Tmat *= 2.0
@@ -802,47 +804,19 @@ def ApplyBNSlatt(SGData,BNSlatt):
     C = SGCen+A
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat
-    
+        
 def CheckSpin(isym,SGData):
     ''' Check for exceptions in spin rules
     '''
-    if SGData['SpGrp'] in ['C c','C 1 c 1','A a','A 1 a 1','B b 1 1','C c 1 1',
-        'A 1 1 a','B 1 1 b','I -4']:
-        if SGData['SGSpin'][:2] == [-1,-1]:
-            SGData['SGSpin'][(isym+1)%2] = 1
-    elif SGData['SpGrp'] in ['C 2/c','C 1 2/c 1','A 2/a','A 1 2/a 1','B 2/b 1 1','C 2/c 1 1',
-        'A 1 1 2/a','B 1 1 2/b']:
-        if SGData['SGSpin'][1:3] == [-1,-1]:
-            SGData['SGSpin'][isym%2+1] = 1
-    elif SGData['SGPtGrp'] in ['222','mm2','2mm','m2m']:
-        if SGData['SGSpin'][0]*SGData['SGSpin'][1]*SGData['SGSpin'][2] < 0:
-            SGData['SGSpin'][(isym+1)%3] *= -1
+    if SGData['SGPtGrp'] in ['222','mm2','2mm','m2m']:      #only 2/3 can be red; not 1/3 or 3/3
+        if SGData['SGSpin'][1]*SGData['SGSpin'][2]*SGData['SGSpin'][3] < 0:
+            SGData['SGSpin'][(isym+1)%3+1] *= -1
         if SGData['SpGrp'][0] == 'F' and isym > 2:
-            SGData['SGSpin'][(isym+1)%3+3] *= -1
+            SGData['SGSpin'][(isym+1)%3+3] == 1
     elif SGData['SGPtGrp'] == 'mmm':
         if SGData['SpGrp'][0] == 'F' and isym > 2:
-            SGData['SGSpin'][(isym+1)%3+3] *= -1
-        elif SGData['SGSpin'][3] < 0:
-            if SGData['SpGrp'] in ['C m m a','A b m m','B m c m','B m a m','C m m b','A c m m',
-                'C c c a','A b a a','B b c b','B b a b','C c c b','A c a a','I b c a','I c a b']:
-                for i in [0,1,2]:
-                    if i != isym and SGData['SGSpin'][i] < 0:
-                        SGData['SGSpin'][i] = 1
-            elif SGData['SpGrp'] in ['I m m a','I b m m','I m c m','I m a m','I m m b','I c m m']:
-                if SGData['SGSpin'][0]*SGData['SGSpin'][1]*SGData['SGSpin'][2] < 0:
-                    SGData['SGSpin'][(isym+1)%3] *= -1
-    elif SGData['SpGrp'] in ['I -4 m 2','I -4 c 2']:
-        if SGData['SGSpin'][2] < 0:
-            if 'm' in SGData['SpGrp']:
-                SGData['SGSpin'][1] = 1
-            elif isym < 2:
-                if SGData['SGSpin'][isym] < 0:
-                    SGData['SGSpin'][:2] = [-1,-1]
-                else:
-                    SGData['SGSpin'][:2] = [1,1]
-            else:
-                SGData['SGSpin'][:2] = [1,1]
-    
+            SGData['SGSpin'][(isym+1)%3+3] == 1
+
 def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
     SGLaue = SGData['SGLaue']
     if '1' not in SGData['GenSym']:        #patch for old gpx files
@@ -1028,7 +1002,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             magSym[3] += "'"
             Ptsym[1] += "'"
         SGData['MagPtGp'] = '3'.join(Ptsym)
-    elif SGData['SGPtGrp'] == 'm-3m':
+    elif SGData['SGPtGrp'] == 'm3m':
         Ptsym = ['m','3','m']
         if SpnFlp[1:3] == [-1,1]:
             magSym[1] += "'"
@@ -1049,11 +1023,12 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
 #    print SpnFlp
     magSym[0] = SGData.get('BNSlattsym',[SGData['SGLatt'],[0,0,0]])[0]
     return ' '.join(magSym)
-    
+
 def MagText2MTS(mcifOpr,CIF=True):
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
-           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],'y-x':[-1,1,0]}
+           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],'y-x':[-1,1,0],
+           '+x-y':[1,-1,0],'+y-x':[-1,1,0]}
     ops = mcifOpr.split(",")
     M = []
     T = []
@@ -1107,26 +1082,27 @@ def GenMagOps(SGData):
     Nsym = len(SGData['SGOps'])
     Ncv = len(SGData['SGCen'])
     sgOp = [M for M,T in SGData['SGOps']]
-    OprName = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
-    if SGData['SGInv'] and not SGData.get('SGFixed',False):
+    oprName = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
+    if SGData['SGInv'] and not SGData['SGFixed'] and not SGData['SGGray']:
         Nsym *= 2
         sgOp += [-M for M,T in SGData['SGOps']]
-        OprName += [GetOprPtrName(str(-irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+        oprName += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
     Nsyms = 0
     sgOps = []
     OprNames = []
     for incv in range(Ncv):
         Nsyms += Nsym
         sgOps += sgOp
-        OprNames += OprName    
+        OprNames += oprName    
     SpnFlp = np.ones(Nsym,dtype=np.int)
     GenFlg = SGData.get('GenFlg',[0])
+    Ngen = len(SGData['SGGen'])
 #    print ('GenFlg:',SGData['GenFlg'])
 #    print ('GenSym:',SGData['GenSym'])
     Nfl = len(GenFlg)
     for ieqv in range(Nsym):
         for iunq in range(Nfl):
-            if SGData['SGGen'][ieqv] & GenFlg[iunq]:
+            if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
                 SpnFlp[ieqv] *= FlpSpn[iunq]
 #        print ('\nMagSpGrp:',SGData['MagSpGrp'],Ncv)
 #        print ('FlpSpn:',Nfl,FlpSpn)
@@ -1800,13 +1776,14 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     :param Uij: [U11,U22,U33,U12,U13,U23] or [] if no Uij
     :param Move: True move generated atom positions to be inside cell
       False do not move atoms       
-    :return: [[XYZEquiv],Idup,[UijEquiv]]
+    :return: [[XYZEquiv],Idup,[UijEquiv],spnflp]
 
       *  [XYZEquiv] is list of equivalent positions (XYZ is first entry)
       *  Idup = [-][C]SS where SS is the symmetry operator number (1-24), C (if not 0,0,0)
       * is centering operator number (1-4) and - is for inversion
         Cell = unit cell translations needed to put new positions inside cell
         [UijEquiv] - equivalent Uij; absent if no Uij given
+      * +1/-1 for spin inversion of operator - empty if not magnetic
         
     '''
     XYZEquiv = []
@@ -1817,7 +1794,10 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     icen = SGData['SGCen']
     if SGData['SGFixed']:
         inv = 1
+    SpnFlp = SGData.get('SpnFlp',[])
+    spnflp = []
     X = np.array(XYZ)
+    mj = 0
     if Move:
         X = MoveToUnitCell(X)[0]
     for ic,cen in enumerate(icen):
@@ -1851,11 +1831,16 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                     Idup.append(idup)
                     Cell.append(cell)
                     if len(Uij):
-                        UijEquiv.append(newUij)                    
+                        UijEquiv.append(newUij)
+                    if len(SpnFlp):
+                        spnflp.append(SpnFlp[mj])
+                    else:
+                        spnflp.append(1)
+                mj += 1
     if len(Uij):
-        return zip(XYZEquiv,UijEquiv,Idup,Cell)
+        return zip(XYZEquiv,UijEquiv,Idup,Cell,spnflp)
     else:
-        return zip(XYZEquiv,Idup,Cell)
+        return zip(XYZEquiv,Idup,Cell,spnflp)
         
 def GenHKL(HKL,SGData):
     ''' Generates all equivlent reflections including Friedel pairs
@@ -1963,49 +1948,32 @@ def checkSSextc(HKL,SSGData):
 ################################################################################
 #### Site symmetry tables
 ################################################################################
-    
-OprPtrName = {
-    '-6643':[   2,' 1bar ', 1],'6479' :[  10,'  2z  ', 2],'-6479':[   9,'  mz  ', 3],
-    '6481' :[   7,'  my  ', 4],'-6481':[   6,'  2y  ', 5],'6641' :[   4,'  mx  ', 6],
-    '-6641':[   3,'  2x  ', 7],'6591' :[  28,' m+-0 ', 8],'-6591':[  27,' 2+-0 ', 9],
-    '6531' :[  25,' m110 ',10],'-6531':[  24,' 2110 ',11],'6537' :[  61,'  4z  ',12],
-    '-6537':[  62,' -4z  ',13],'975'  :[  68,' 3+++1',14],'6456' :[ 114,'  3z1 ',15],
-    '-489' :[  73,' 3+-- ',16],'483'  :[  78,' 3-+- ',17],'-969' :[  83,' 3--+ ',18],
-    '819'  :[  22,' m+0- ',19],'-819' :[  21,' 2+0- ',20],'2431' :[  16,' m0+- ',21],
-    '-2431':[  15,' 20+- ',22],'-657' :[  19,' m101 ',23],'657'  :[  18,' 2101 ',24],
-    '1943' :[  48,' -4x  ',25],'-1943':[  47,'  4x  ',26],'-2429':[  13,' m011 ',27],
-    '2429' :[  12,' 2011 ',28],'639'  :[  55,' -4y  ',29],'-639' :[  54,'  4y  ',30],
-    '-6484':[ 146,' 2010 ', 4],'6484' :[ 139,' m010 ', 5],'-6668':[ 145,' 2100 ', 6],
-    '6668' :[ 138,' m100 ', 7],'-6454':[ 148,' 2120 ',18],'6454' :[ 141,' m120 ',19],
-    '-6638':[ 149,' 2210 ',20],'6638' :[ 142,' m210 ',21],              #search ends here
-    '2223' :[  68,' 3+++2',39],
-    '6538' :[ 106,'  6z1 ',40],'-2169':[  83,' 3--+2',41],'2151' :[  73,' 3+--2',42],
-    '2205' :[  79,'-3-+-2',43],'-2205':[  78,' 3-+-2',44],'489'  :[  74,'-3+--1',45],
-    '801'  :[  53,'  4y1 ',46],'1945' :[  47,'  4x3 ',47],'-6585':[  62,' -4z3 ',48],
-    '6585' :[  61,'  4z3 ',49],'6584' :[ 114,'  3z2 ',50],'6666' :[ 106,'  6z5 ',51],
-    '6643' :[   1,' Iden ',52],'-801' :[  55,' -4y1 ',53],'-1945':[  48,' -4x3 ',54],
-    '-6666':[ 105,' -6z5 ',55],'-6538':[ 105,' -6z1 ',56],'-2223':[  69,'-3+++2',57],
-    '-975' :[  69,'-3+++1',58],'-6456':[ 113,' -3z1 ',59],'-483' :[  79,'-3-+-1',60],
-    '969'  :[  84,'-3--+1',61],'-6584':[ 113,' -3z2 ',62],'2169' :[  84,'-3--+2',63],
-    '-2151':[  74,'-3+--2',64],'0':[0,' ????',0]
-    }
-    
+      
 OprName = {
-    '-6643':'   -1   ','6479' :'    2(z)','-6479':'    m(z)',
-    '6481' :'    m(y)','-6481':'    2(y)','6641' :'    m(x)',
-    '-6641':'    2(x)','6591' :'  m(+-0)','-6591':'  2(+-0)',
-    '6531' :' m(110) ','-6531':' 2(110) ','6537' :'  4(001)',
-    '-6537':' -4(001)','975'  :'  3(111)','6456' :'    3   ',
-    '-489' :'  3(+--)','483'  :'  3(-+-)','-969' :'  3(--+)',
-    '819'  :'  m(+0-)','-819' :'  2(+0-)','2431' :'  m(0+-)',
-    '-2431':'  2(0+-)','-657' :'   m(xz)','657'  :'   2(xz)',
-    '1943' :' -4(100)','-1943':'  4(100)','-2429':'   m(yz)',
-    '2429' :'   2(yz)','639'  :' -4(010)','-639' :'  4(010)',
-    '-6484':' 2(010) ','6484' :' m(010) ','-6668':' 2(100) ',
-    '6668' :' m(100) ','-6454':' 2(120) ','6454' :' m(120) ',
-    '-6638':' 2(210) ','6638' :' m(210) '}              #search ends here
-    
-                                  
+    '-6643':       ['-1',1],'6479' :    ['2(z)',2],'-6479':     ['m(z)',3],
+    '6481' :     ['m(y)',4],'-6481':    ['2(y)',5],'6641' :     ['m(x)',6],
+    '-6641':     ['2(x)',7],'6591' :  ['m(+-0)',8],'-6591':   ['2(+-0)',9],
+    '6531' :  ['m(110)',10],'-6531': ['2(110)',11],'6537' :    ['4(z)',12],
+    '-6537':   ['-4(z)',13],'975'  : ['3(111)',14],'6456' :       ['3',15],
+    '-489' :  ['3(+--)',16],'483'  : ['3(-+-)',17],'-969' :  ['3(--+)',18],
+    '819'  :  ['m(+0-)',19],'-819' : ['2(+0-)',20],'2431' :  ['m(0+-)',21],
+    '-2431':  ['2(0+-)',22],'-657' :  ['m(xz)',23],'657'  :   ['2(xz)',24],
+    '1943' :   ['-4(x)',25],'-1943':   ['4(x)',26],'-2429':   ['m(yz)',27],
+    '2429' :   ['2(yz)',28],'639'  :  ['-4(y)',29],'-639' :    ['4(y)',30],
+    '-6484':   ['2(010)',4],'6484' :  ['m(010)',5],'-6668':   ['2(100)',6],
+    '6668' :   ['m(100)',7],'-6454': ['2(120)',18],'6454' :  ['m(120)',19],
+    '-6638':  ['2(210)',20],'6638' : ['m(210)',21],   #search in SytSym ends at m(210)
+    '2223' : ['3(+++)2',39],
+    '6538' :   ['6(z)1',40],'-2169':['3(--+)2',41],'2151' : ['3(+--)2',42],
+    '2205' :['-3(-+-)2',43],'-2205':[' (-+-)2',44],'489'  :['-3(+--)1',45],
+    '801'  :   ['4(y)1',46],'1945' :  ['4(x)3',47],'-6585': ['-4(z)3 ',48],
+    '6585' :   ['4(z)3',49],'6584' :  ['3(z)2',50],'6666' :  ['6(z)5 ',51],
+    '6643' :       ['1',52],'-801' : ['-4(y)1',53],'-1945': ['-4(x)3 ',54],
+    '-6666':  ['-6(z)5',55],'-6538': ['-6(z)1',56],'-2223':['-3(+++)2',57],
+    '-975' :['-3(+++)1',58],'-6456': ['-3(z)1',59],'-483' :['-3(-+-)1',60],
+    '969'  :['-3(--+)1',61],'-6584': ['-3(z)2',62],'2169' :['-3(--+)2',63],
+    '-2151':['-3(+--)2',64],   }                               
+
 KNsym = {
     '0'         :'    1   ','1'         :'   -1   ','64'        :'    2(x)','32'        :'    m(x)',
     '97'        :'  2/m(x)','16'        :'    2(y)','8'         :'    m(y)','25'        :'  2/m(y)',
@@ -2018,25 +1986,25 @@ KNsym = {
     '135266336' :' mm2(yz)','69206048'  :'mm2(0+-)','8650760'   :' mm2(xz)','4718600'   :'mm2(+0-)',
     '1156'      :' mm2(xy)','772'       :'mm2(+-0)','82'        :'  222   ','136314944' :'  222(x)',
     '8912912'   :'  222(y)','1282'      :'  222(z)','127'       :'  mmm   ','204472417' :'  mmm(x)',
-    '13369369'  :'  mmm(y)','1927'      :'  mmm(z)','33554496'  :'  4(100)','16777280'  :' -4(100)',
-    '50331745'  :'4/m(100)','169869394' :'422(100)','84934738'  :'-42m 100','101711948' :'4mm(100)',
-    '254804095' :'4/mmm100','536870928 ':'  4(010)','268435472' :' -4(010)','805306393' :'4/m (10)',
-    '545783890' :'422(010)','272891986' :'-42m 010','541327412' :'4mm(010)','818675839' :'4/mmm010',
-    '2050'      :'  4(001)','4098'      :' -4(001)','6151'      :'4/m(001)','3410'      :'422(001)',
-    '4818'      :'-42m 001','2730'      :'4mm(001)','8191'      :'4/mmm001','8192'      :'  3(111)',
+    '13369369'  :'  mmm(y)','1927'      :'  mmm(z)','33554496'  :'  4(x)','16777280'  :' -4(x)',
+    '50331745'  :'4/m(x)'  ,'169869394' :'422(x)','84934738'  :'-42m(x)','101711948' :'4mm(x)',
+    '254804095' :'4/mmm(x)','536870928 ':'  4(y)','268435472' :' -4(y)','805306393' :'4/m(y)',
+    '545783890' :'422(y)','272891986' :'-42m(y)','541327412' :'4mm(y)','818675839' :'4/mmm(y)',
+    '2050'      :'  4(z)','4098'      :' -4(z)','6151'      :'4/m(z)','3410'      :'422(z)',
+    '4818'      :'-42m(z)','2730'      :'4mm(z)','8191'      :'4/mmm(z)','8192'      :'  3(111)',
     '8193'      :' -3(111)','2629888'   :' 32(111)','1319040'   :' 3m(111)','3940737'   :'-3m(111)',
     '32768'     :'  3(+--)','32769'     :' -3(+--)','10519552'  :' 32(+--)','5276160'   :' 3m(+--)',
     '15762945'  :'-3m(+--)','65536'     :'  3(-+-)','65537'     :' -3(-+-)','134808576' :' 32(-+-)',
     '67437056'  :' 3m(-+-)','202180097' :'-3m(-+-)','131072'    :'  3(--+)','131073'    :' -3(--+)',
     '142737664' :' 32(--+)','71434368'  :' 3m(--+)','214040961' :'-3m(--+)','237650'    :'   23   ',
     '237695'    :'   m3   ','715894098' :'   432  ','358068946' :'  -43m  ','1073725439':'   m3m  ',
-    '68157504'  :' mm2d100','4456464'   :' mm2d010','642'       :' mm2d001','153092172' :'-4m2 100',
-    '277348404' :'-4m2 010','5418'      :'-4m2 001','1075726335':'  6/mmm ','1074414420':'-6m2 100',
-    '1075070124':'-6m2 120','1075069650':'   6mm  ','1074414890':'   622  ','1073758215':'   6/m  ',
+    '68157504'  :' mm2(d100)','4456464'   :' mm2(d010)','642'       :' mm2(d001)','153092172' :'-4m2(x)',
+    '277348404' :'-4m2(y)','5418'      :'-4m2(z)','1075726335':'  6/mmm ','1074414420':'-6m2(100)',
+    '1075070124':'-6m2(120)','1075069650':'   6mm  ','1074414890':'   622  ','1073758215':'   6/m  ',
     '1073758212':'   -6   ','1073758210':'    6   ','1073759865':'-3m(100)','1075724673':'-3m(120)',
     '1073758800':' 3m(100)','1075069056':' 3m(120)','1073759272':' 32(100)','1074413824':' 32(120)',
     '1073758209':'   -3   ','1073758208':'    3   ','1074135143':'mmm(100)','1075314719':'mmm(010)',
-    '1073743751':'mmm(110)','1074004034':' mm2z100','1074790418':' mm2z010','1073742466':' mm2z110',
+    '1073743751':'mmm(110)','1074004034':' mm2(z100)','1074790418':' mm2(z010)','1073742466':' mm2(z110)',
     '1074004004':'mm2(100)','1074790412':'mm2(010)','1073742980':'mm2(110)','1073872964':'mm2(120)',
     '1074266132':'mm2(210)','1073742596':'mm2(+-0)','1073872930':'222(100)','1074266122':'222(010)',
     '1073743106':'222(110)','1073741831':'2/m(001)','1073741921':'2/m(100)','1073741849':'2/m(010)',
@@ -2048,44 +2016,44 @@ KNsym = {
     }
 
 NXUPQsym = {
-    '    1   ':(28,29,28,28),'   -1   ':( 1,29,28, 0),'    2(x)':(12,18,12,25),'    m(x)':(25,18,12,25),
-    '  2/m(x)':( 1,18, 0,-1),'    2(y)':(13,17,13,24),'    m(y)':(24,17,13,24),'  2/m(y)':( 1,17, 0,-1),
-    '    2(z)':(14,16,14,23),'    m(z)':(23,16,14,23),'  2/m(z)':( 1,16, 0,-1),'   2(yz)':(10,23,10,22),
-    '   m(yz)':(22,23,10,22),' 2/m(yz)':( 1,23, 0,-1),'  2(0+-)':(11,24,11,21),'  m(0+-)':(21,24,11,21),
-    '2/m(0+-)':( 1,24, 0,-1),'   2(xz)':( 8,21, 8,20),'   m(xz)':(20,21, 8,20),' 2/m(xz)':( 1,21, 0,-1),
-    '  2(+0-)':( 9,22, 9,19),'  m(+0-)':(19,22, 9,19),'2/m(+0-)':( 1,22, 0,-1),'   2(xy)':( 6,19, 6,18),
-    '   m(xy)':(18,19, 6,18),' 2/m(xy)':( 1,19, 0,-1),'  2(+-0)':( 7,20, 7,17),'  m(+-0)':(17,20, 7,17),
-    '2/m(+-0)':( 1,20, 17,-1),'  mm2(x)':(12,10, 0,-1),'  mm2(y)':(13,10, 0,-1),'  mm2(z)':(14,10, 0,-1),
-    ' mm2(yz)':(10,13, 0,-1),'mm2(0+-)':(11,13, 0,-1),' mm2(xz)':( 8,12, 0,-1),'mm2(+0-)':( 9,12, 0,-1),
-    ' mm2(xy)':( 6,11, 0,-1),'mm2(+-0)':( 7,11, 0,-1),'  222   ':( 1,10, 0,-1),'  222(x)':( 1,13, 0,-1),
-    '  222(y)':( 1,12, 0,-1),'  222(z)':( 1,11, 0,-1),'  mmm   ':( 1,10, 0,-1),'  mmm(x)':( 1,13, 0,-1),
-    '  mmm(y)':( 1,12, 0,-1),'  mmm(z)':( 1,11, 0,-1),'  4(100)':(12, 4,12, 0),' -4(100)':( 1, 4,12, 0),
-    '4/m(100)':( 1, 4,12,-1),'422(100)':( 1, 4, 0,-1),'-42m 100':( 1, 4, 0,-1),'4mm(100)':(12, 4, 0,-1),
-    '4/mmm100':( 1, 4, 0,-1),'  4(010)':(13, 3,13, 0),' -4(010)':( 1, 3,13, 0),'4/m (10)':( 1, 3,13,-1),
-    '422(010)':( 1, 3, 0,-1),'-42m 010':( 1, 3, 0,-1),'4mm(010)':(13, 3, 0,-1),'4/mmm010':(1, 3, 0,-1,),
-    '  4(001)':(14, 2,14, 0),' -4(001)':( 1, 2,14, 0),'4/m(001)':( 1, 2,14,-1),'422(001)':( 1, 2, 0,-1),
-    '-42m 001':( 1, 2, 0,-1),'4mm(001)':(14, 2, 0,-1),'4/mmm001':( 1, 2, 0,-1),'  3(111)':( 2, 5, 2, 0),
-    ' -3(111)':( 1, 5, 2, 0),' 32(111)':( 1, 5, 0, 2),' 3m(111)':( 2, 5, 0, 2),'-3m(111)':( 1, 5, 0,-1),
-    '  3(+--)':( 5, 8, 5, 0),' -3(+--)':( 1, 8, 5, 0),' 32(+--)':( 1, 8, 0, 5),' 3m(+--)':( 5, 8, 0, 5),
-    '-3m(+--)':( 1, 8, 0,-1),'  3(-+-)':( 4, 7, 4, 0),' -3(-+-)':( 1, 7, 4, 0),' 32(-+-)':( 1, 7, 0, 4),
-    ' 3m(-+-)':( 4, 7, 0, 4),'-3m(-+-)':( 1, 7, 0,-1),'  3(--+)':( 3, 6, 3, 0),' -3(--+)':( 1, 6, 3, 0),
-    ' 32(--+)':( 1, 6, 0, 3),' 3m(--+)':( 3, 6, 0, 3),'-3m(--+)':( 1, 6, 0,-1),'   23   ':( 1, 1, 0, 0),
-    '   m3   ':( 1, 1, 0, 0),'   432  ':( 1, 1, 0, 0),'  -43m  ':( 1, 1, 0, 0),'   m3m  ':( 1, 1, 0, 0),
-    ' mm2d100':(12,13, 0,-1),' mm2d010':(13,12, 0,-1),' mm2d001':(14,11, 0,-1),'-4m2 100':( 1, 4, 0,-1),
-    '-4m2 010':( 1, 3, 0,-1),'-4m2 001':( 1, 2, 0,-1),'  6/mmm ':( 1, 9, 0,-1),'-6m2 100':( 1, 9, 0,-1),
-    '-6m2 120':( 1, 9, 0,-1),'   6mm  ':(14, 9, 0,-1),'   622  ':( 1, 9, 0,-1),'   6/m  ':( 1, 9,14,-1),
-    '   -6   ':( 1, 9,14, 0),'    6   ':(14, 9,14, 0),'-3m(100)':( 1, 9, 0,-1),'-3m(120)':( 1, 9, 0,-1),
-    ' 3m(100)':(14, 9, 0,14),' 3m(120)':(14, 9, 0,14),' 32(100)':( 1, 9, 0,14),' 32(120)':( 1, 9, 0,14),
-    '   -3   ':( 1, 9,14, 0),'    3   ':(14, 9,14, 0),'mmm(100)':( 1,14, 0,-1),'mmm(010)':( 1,15, 0,-1),
-    'mmm(110)':( 1,11, 0,-1),' mm2z100':(14,14, 0,-1),' mm2z010':(14,15, 0,-1),' mm2z110':(14,11, 0,-1),
-    'mm2(100)':(12,14, 0,-1),'mm2(010)':(13,15, 0,-1),'mm2(110)':( 6,11, 0,-1),'mm2(120)':(15,14, 0,-1),
-    'mm2(210)':(16,15, 0,-1),'mm2(+-0)':( 7,11, 0,-1),'222(100)':( 1,14, 0,-1),'222(010)':( 1,15, 0,-1),
-    '222(110)':( 1,11, 0,-1),'2/m(001)':( 1,16,14,-1),'2/m(100)':( 1,25,12,-1),'2/m(010)':( 1,28,13,-1),
-    '2/m(110)':( 1,19, 6,-1),'2/m(120)':( 1,27,15,-1),'2/m(210)':( 1,26,16,-1),'2/m(+-0)':( 1,20,17,-1),
-    ' m(001) ':(23,16,14,23),' m(100) ':(26,25,12,26),' m(010) ':(27,28,13,27),' m(110) ':(18,19, 6,18),
-    ' m(120) ':(24,27,15,24),' m(210) ':(25,26,16,25),' m(+-0) ':(17,20, 7,17),' 2(001) ':(14,16,14,23),
-    ' 2(100) ':(12,25,12,26),' 2(010) ':(13,28,13,27),' 2(110) ':( 6,19, 6,18),' 2(120) ':(15,27,15,24),
-    ' 2(210) ':(16,26,16,25),' 2(+-0) ':( 7,20, 7,17),'   -1   ':( 1,29,28, 0)
+    '1'        :(28,29,28,28),'-1'       :( 1,29,28, 0),'2(x)'     :(12,18,12,25),'m(x)'     :(25,18,12,25),
+    '2/m(x)'   :( 1,18, 0,-1),'2(y)'     :(13,17,13,24),'m(y)'     :(24,17,13,24),'2/m(y)'   :( 1,17, 0,-1),
+    '2(z)'     :(14,16,14,23),'m(z)'     :(23,16,14,23),'2/m(z)'   :( 1,16, 0,-1),'2(yz)'    :(10,23,10,22),
+    'm(yz)'    :(22,23,10,22),' 2/m(yz)' :( 1,23, 0,-1),'2(0+-)'   :(11,24,11,21),'m(0+-)'   :(21,24,11,21),
+    '2/m(0+-)' :( 1,24, 0,-1),'2(xz)'    :( 8,21, 8,20),'m(xz)'    :(20,21, 8,20),'2/m(xz)'  :( 1,21, 0,-1),
+    '2(+0-)'   :( 9,22, 9,19),'m(+0-)'   :(19,22, 9,19),'2/m(+0-)' :( 1,22, 0,-1),'2(xy)'    :( 6,19, 6,18),
+    'm(xy)'    :(18,19, 6,18),' 2/m(xy)' :( 1,19, 0,-1),'2(+-0)'   :( 7,20, 7,17),'m(+-0)'   :(17,20, 7,17),
+    '2/m(+-0)' :( 1,20, 17,-1),'mm2(x)'  :(12,10, 0,-1),'mm2(y)'   :(13,10, 0,-1),'mm2(z)'   :(14,10, 0,-1),
+    'mm2(yz)'  :(10,13, 0,-1),'mm2(0+-)' :(11,13, 0,-1),'mm2(xz)'  :( 8,12, 0,-1),'mm2(+0-)' :( 9,12, 0,-1),
+    'mm2(xy)'  :( 6,11, 0,-1),'mm2(+-0)' :( 7,11, 0,-1),'222'      :( 1,10, 0,-1),'222(x)'   :( 1,13, 0,-1),
+    '222(y)'   :( 1,12, 0,-1),'222(z)'   :( 1,11, 0,-1),'mmm'      :( 1,10, 0,-1),'mmm(x)'   :( 1,13, 0,-1),
+    'mmm(y)'   :( 1,12, 0,-1),'mmm(z)'   :( 1,11, 0,-1),'4(x)'     :(12, 4,12, 0),'-4(x)'    :( 1, 4,12, 0),
+    '4/m(x)'   :( 1, 4,12,-1),'422(x)'   :( 1, 4, 0,-1),'-42m(x)'  :( 1, 4, 0,-1),'4mm(x)'   :(12, 4, 0,-1),
+    '4/mmm(x)' :( 1, 4, 0,-1),'4(y)'     :(13, 3,13, 0),'-4(y)'    :( 1, 3,13, 0),'4/m(y)'   :( 1, 3,13,-1),
+    '422(y)'   :( 1, 3, 0,-1),'-42m(y)'  :( 1, 3, 0,-1),'4mm(y)'   :(13, 3, 0,-1),'4/mmm(y)' :(1, 3, 0,-1,),
+    '4(z)'     :(14, 2,14, 0),'-4(z)'    :( 1, 2,14, 0),'4/m(z)'   :( 1, 2,14,-1),'422(z)'   :( 1, 2, 0,-1),
+    '-42m(z)'  :( 1, 2, 0,-1),'4mm(z)'   :(14, 2, 0,-1),'4/mmm(z)' :( 1, 2, 0,-1),'3(111)'   :( 2, 5, 2, 0),
+    '-3(111)'  :( 1, 5, 2, 0),'32(111)'  :( 1, 5, 0, 2),'3m(111)'  :( 2, 5, 0, 2),'-3m(111)' :( 1, 5, 0,-1),
+    '3(+--)'   :( 5, 8, 5, 0),'-3(+--)'  :( 1, 8, 5, 0),'32(+--)'  :( 1, 8, 0, 5),'3m(+--)'  :( 5, 8, 0, 5),
+    '-3m(+--)' :( 1, 8, 0,-1),'3(-+-)'   :( 4, 7, 4, 0),'-3(-+-)'  :( 1, 7, 4, 0),'32(-+-)'  :( 1, 7, 0, 4),
+    '3m(-+-)'  :( 4, 7, 0, 4),'-3m(-+-)' :( 1, 7, 0,-1),'3(--+)'   :( 3, 6, 3, 0),'-3(--+)'  :( 1, 6, 3, 0),
+    '32(--+)'  :( 1, 6, 0, 3),'3m(--+)'  :( 3, 6, 0, 3),'-3m(--+)' :( 1, 6, 0,-1),'23'       :( 1, 1, 0, 0),
+    'm3'       :( 1, 1, 0, 0),'432'      :( 1, 1, 0, 0),'-43m'     :( 1, 1, 0, 0),'m3m'      :( 1, 1, 0, 0),
+    'mm2(d100)':(12,13, 0,-1),'mm2(d010)':(13,12, 0,-1),'mm2(d001)':(14,11, 0,-1),'-4m2(x)'  :( 1, 4, 0,-1),
+    '-4m2(y)'  :( 1, 3, 0,-1),'-4m2(z)'  :( 1, 2, 0,-1),'6/mmm'    :( 1, 9, 0,-1),'-6m2(100)':( 1, 9, 0,-1),
+    '-6m2(120)':( 1, 9, 0,-1),'6mm'      :(14, 9, 0,-1),'622'      :( 1, 9, 0,-1),'6/m'      :( 1, 9,14,-1),
+    '-6'       :( 1, 9,14, 0),'6'        :(14, 9,14, 0),'-3m(100)' :( 1, 9, 0,-1),'-3m(120)' :( 1, 9, 0,-1),
+    '3m(100)'  :(14, 9, 0,14),'3m(120)'  :(14, 9, 0,14),'32(100)'  :( 1, 9, 0,14),'32(120)'  :( 1, 9, 0,14),
+    '-3'       :( 1, 9,14, 0),'3'        :(14, 9,14, 0),'mmm(100)' :( 1,14, 0,-1),'mmm(010)' :( 1,15, 0,-1),
+    'mmm(110)' :( 1,11, 0,-1),'mm2(z100)':(14,14, 0,-1),'mm2(z010)':(14,15, 0,-1),'mm2(z110)':(14,11, 0,-1),
+    'mm2(100)' :(12,14, 0,-1),'mm2(010)' :(13,15, 0,-1),'mm2(110)' :( 6,11, 0,-1),'mm2(120)' :(15,14, 0,-1),
+    'mm2(210)' :(16,15, 0,-1),'mm2(+-0)' :( 7,11, 0,-1),'222(100)' :( 1,14, 0,-1),'222(010)' :( 1,15, 0,-1),
+    '222(110)' :( 1,11, 0,-1),'2/m(001)' :( 1,16,14,-1),'2/m(100)' :( 1,25,12,-1),'2/m(010)' :( 1,28,13,-1),
+    '2/m(110)' :( 1,19, 6,-1),'2/m(120)' :( 1,27,15,-1),'2/m(210)' :( 1,26,16,-1),'2/m(+-0)' :( 1,20,17,-1),
+    'm(001)'   :(23,16,14,23),'m(100)'   :(26,25,12,26),'m(010)'   :(27,28,13,27),'m(110)'   :(18,19, 6,18),
+    'm(120)'   :(24,27,15,24),'m(210)'   :(25,26,16,25),'m(+-0)'   :(17,20, 7,17),'2(001)'   :(14,16,14,23),
+    '2(100)'   :(12,25,12,26),'2(010)'   :(13,28,13,27),'2(110)'   :( 6,19, 6,18),'2(120)'   :(15,27,15,24),
+    '2(210)'   :(16,26,16,25),'2(+-0)'   :( 7,20, 7,17),'-1'       :( 1,29,28, 0)
     }
         
 CSxinel = [[],      # 0th empty - indices are Fortran style
@@ -2157,16 +2125,21 @@ CSuinel = [[],      # 0th empty - indices are Fortran style
     
 def GetOprPtrName(key):
     'Needs a doc string'
-    return OprPtrName[key]
+    oprName = OprName[key][0]
+    return oprName.replace('(','').replace(')','')
+
+def GetOprPtrNumber(key):
+    'Needs a doc string'
+    return OprName[key][1]
 
 def GetOprName(key):
     'Needs a doc string'
-    return OprName[key]
+    return OprName[key][0]
 
 def GetKNsym(key):
     'Needs a doc string'
     try:
-        return KNsym[key]
+        return KNsym[key].strip()
     except KeyError:
         return 'sp'
 
@@ -2178,24 +2151,26 @@ def GetNXUPQsym(siteSym):
 
 def GetCSxinel(siteSym):  
     "returns Xyz terms, multipliers, GUI flags"
-    indx = GetNXUPQsym(siteSym)
+    indx = GetNXUPQsym(siteSym.strip())
     return CSxinel[indx[0]]
     
 def GetCSuinel(siteSym):
     "returns Uij terms, multipliers, GUI flags & Uiso2Uij multipliers"
-    indx = GetNXUPQsym(siteSym)
+    indx = GetNXUPQsym(siteSym.strip())
     return CSuinel[indx[1]]
     
 def GetCSpqinel(SpnFlp,dupDir):  
     "returns Mxyz terms, multipliers, GUI flags"
     CSI = [[1,2,3],[1.0,1.0,1.0]]
-    for opr in dupDir:
+    for sopr in dupDir:
+#        print (sopr,dupDir[sopr])
+        opr = sopr.replace("'",'')
         indx = GetNXUPQsym(opr)
-        if SpnFlp[dupDir[opr]] > 0.:
+        if SpnFlp[dupDir[sopr]] > 0:
             csi = CSxinel[indx[2]]  #P
         else:
             csi = CSxinel[indx[3]]  #Q
-#        print(opr,SpnFlp[dupDir[opr]],indx,csi,CSI)
+#        print(opr,indx,csi,CSI)
         if not len(csi):
             return [[0,0,0],[0.,0.,0.]]
         for kcs in [0,1,2]:
@@ -2872,7 +2847,6 @@ def MuShklMean(SGData,Amat,Shkl):
     XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,Shkl))
     return np.sqrt(np.sum(XYZ**2)/900.)
     
-    
 def Muiso2Shkl(muiso,SGData,cell):
     "this is to convert isotropic mustrain to generalized Shkls"
     import GSASIIlattice as G2lat
@@ -2932,10 +2906,12 @@ def SytSym(XYZ,SGData):
 
     :param XYZ: an array, tuple or list containing 3 elements: x, y & z
     :param SGData: from SpcGroup
-    :Returns: a two element tuple:
+    :Returns: a four element tuple:
 
      * The 1st element is a code for the site symmetry (see GetKNsym)
      * The 2nd element is the site multiplicity
+     * Ndup number of overlapping operators
+     * dupDir Dict - dictionary of overlapping operators
 
     '''
     Mult = 1
@@ -2950,6 +2926,7 @@ def SytSym(XYZ,SGData):
     if SGData['SGFixed']:       #already in list of operators
         inv = 1
     Xeqv = GenAtom(XYZ,SGData,True)
+#    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData['SGOps'])
     L = -1
     for ic,cen in enumerate(icen):
@@ -2960,17 +2937,158 @@ def SytSym(XYZ,SGData):
                 if not Xeqv[L][1]:
                     Ndup = io
                     Jdup += 1
-                    jx = GetOprPtrName(str(irtx))   #[KN table no,op name,KNsym ptr]
-                    if jx[2] < 39:
+                    jx = GetOprPtrNumber(str(irtx))   #[KN table no,op name,KNsym ptr]
+                    if jx < 39:
                         px = GetOprName(str(irtx))
-                        if px != '6643':    #skip Iden
-                            dupDir[px] = io
-                        Isym += 2**(jx[2]-1)
+                        if Xeqv[L][-1] < 0:
+                            if '(' in px:
+                                px = px.split('(')
+                                px[0] += "'"
+                                px = '('.join(px)
+                            else:    
+                                px += "'"
+                        dupDir[px] = L
+                        Isym += 2**(jx-1)
     if Isym == 1073741824: Isym = 0
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)//Jdup
           
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
    
+def MagSytSym(SytSym,dupDir,SGData):
+    '''
+    site sym operations: 1,-1,2,3,-3,4,-4,6,-6,m need to be marked if spin inversion
+    '''
+    SGData['GenSym'],SGData['GenFlg'] = GetGenSym(SGData)[:2]
+#    print('SGPtGrp',SGData['SGPtGrp'],'SytSym',SytSym,'MagSpGrp',SGData['MagSpGrp'])
+#    print('dupDir',dupDir)
+    SplitSytSym = SytSym.split('(')
+    if SytSym == '1':       #genersl position
+        return SytSym
+    if SplitSytSym[0] == SGData['SGPtGrp']:     #simple cases
+        try:
+            MagSytSym = SGData['MagSpGrp'].split()[1]
+        except IndexError:
+            MagSytSym = SGData['MagSpGrp'][1:].strip("1'")
+        if len(SplitSytSym) > 1:
+            MagSytSym += '('+SplitSytSym[1]
+        return MagSytSym
+    if len(dupDir) == 1:
+        return dupDir.keys()[0]
+    
+    
+    if '2/m' in SytSym:         #done I think; last 2wo might be not needed
+        ops = {'(x)':['2(x)','m(x)'],'(y)':['2(y)','m(y)'],'(z)':['2(z)','m(z)'],
+               '(100)':['2(100)','m(100)'],'(010)':['2(010)','m(010)'],'(001)':['2(001)','m(001)'],
+               '(120)':['2(120)','m(120)'],'(210)':['2(210)','m(210)'],'(+-0)':['2(+-0)','m(+-0)'],
+               '(110)':['2(110)','m(110)']}
+    
+    elif '4/mmm' in SytSym:
+        ops = {'(x)':['4(x)','m(x)','m(y)','m(0+-)'],   #m(0+-) for cubic m3m?
+               '(y)':['4(y)','m(y)','m(z)','m(+0-)'],   #m(+0-)
+               '(z)':['4(z)','m(z)','m(x)','m(+-0)']}   #m(+-0)
+    elif '4mm' in SytSym:
+        ops = {'(x)':['4(x)','m(y)','m(yz)'],'(y)':['4(y)','m(z)','m(xz)'],'(z)':['4(z)','m(x)','m(110)']}
+    elif '422' in SytSym:
+        ops = {'(x)':['4(x)','2(y)','2(yz)'],'(y)':['4(y)','2(z)','2(xz)'],'(z)':['4(z)','2(x)','2(110)']}
+    elif '-4m2' in SytSym:
+        ops = {'(x)':['-4(x)','m(x)','2(yz)'],'(y)':['-4(y)','m(y)','2(xz)'],'(z)':['-4(z)','m(z)','2(110)']}
+    elif '-42m' in SytSym:
+        ops = {'(x)':['-4(x)','2(y)','m(yz)'],'(y)':['-4(y)','2(z)','m(xz)'],'(z)':['-4(z)','2(x)','m(110)']}
+    elif '-4' in SytSym:
+        ops = {'(x)':['-4(x)',],'(y)':['-4(y)',],'(z)':['-4(z)',],}
+    elif '4' in SytSym:
+        ops = {'(x)':['4(x)',],'(y)':['4(y)',],'(z)':['4(z)',],}
+
+    elif '222' in SytSym:
+        ops = {'':['2(x)','2(y)','2(z)'],
+                   '(x)':['2(y)','2(z)','2(x)'],'(y)':['2(x)','2(z)','2(y)'],'(z)':['2(x)','2(y)','2(z)'],
+                   '(100)':['2(z)','2(100)','2(120)',],'(010)':['2(z)','2(010)','2(210)',],
+                   '(110)':['2(z)','2(110)','2(+-0)',],}
+    elif 'mm2' in SytSym:
+        ops = {'(x)':['m(y)','m(z)','2(x)'],'(y)':['m(x)','m(z)','2(y)'],'(z)':['m(x)','m(y)','2(z)'],
+               '(xy)':['m(+-0)','m(z)','2(110)'],'(yz)':['m(0+-)','m(xz)','2(yz)'],     #not 2(xy)!
+               '(xz)':['m(+0-)','m(y)','2(xz)'],'(z100)':['m(100)','m(120)','2(z)'],
+               '(z010)':['m(010)','m(210)','2(z)'],'(z110)':['m(110)','m(+-0)','2(z)'],
+               '(+-0)':[ 'm(110)','m(z)','2(+-0)'],'(d100)':['m(yz)','m(0+-)','2(xz)'],
+               '(d010)':['m(xz)','m(+0-)','2(y)'],'(d001)':['m(110)','m(+-0)','2(z)'],
+               '(210)':['m(z)','m(010)','2(210)'],
+               '(100)':['m(z)','m(120)','2(100)',],'(010)':['m(z)','m(210)','2(010)',],
+               '(110)':['m(z)','m(+-0)','2(110)',],}
+    elif 'mmm' in SytSym:
+        ops = {'':['m(x)','m(y)','m(z)'],
+                   '(100)':['m(z)','m(100)','m(120)',],'(010)':['m(z)','m(010)','m(210)',],
+                   '(110)':['m(z)','m(110)','m(+-0)',],
+                   '(x)':['m(x)','m(y)','m(z)'],'(y)':['m(x)','m(y)','m(z)'],'(z)':['m(x)','m(y)','m(z)'],}
+        
+    elif '32' in SytSym:
+        ops = {'(120)':['3','2(120)',],'(100)':['3','2(100)']}
+    elif '23' in SytSym:
+        ops = {'':['2(x)','3(111)']}
+    elif 'm3' in SytSym:
+        ops = {'(100)':['(+-0)',],'(+--)':[],'(-+-)':[],'(--+)':[]}
+    elif '3m' in SytSym:
+        ops = {'(111)':['3(111)','m(+-0)',],'(+--)':['3(+--)','m(0+-)',],
+               '(-+-)':['3(-+-)','m(+0-)',],'(--+)':['3(--+)','m(+-0)',],
+               '(100)':['3','m(100)'],'(120)':['3','m(210)',]}
+    
+    if SytSym.split('(')[0] in ['6/m','6mm','-6m2','622','-6','-3','-3m',]:     #not simple cases
+        MagSytSym = SytSym
+        if "-1'" in dupDir:
+            if '-6' in SytSym:
+                MagSytSym = MagSytSym.replace('-6',"-6'")
+            elif '-3m' in SytSym:
+                MagSytSym = MagSytSym.replace('-3m',"-3'm'")
+            elif '-3' in SytSym:
+                MagSytSym = MagSytSym.replace('-3',"-3'")
+        elif '-6m2' in SytSym:
+            if "m'(110)" in dupDir:
+                MagSytSym = "-6m'2'("+SytSym.split('(')[1]
+        elif '6/m' in SytSym:
+            if "m'(z)" in dupDir:
+                MagSytSym = "6'/m'"
+        elif '6mm' in SytSym:
+            if "m'(110)" in dupDir:
+                MagSytSym = "6'm'm"
+        return MagSytSym
+    try:
+        axis = '('+SytSym.split('(')[1]
+    except IndexError:
+        axis = ''
+    MagSytSym = ''
+    for m in ops[axis]:
+        if m in dupDir:
+            MagSytSym += m.split('(')[0]
+        else:
+            MagSytSym += m.split('(')[0]+"'"
+        if '2/m' in SytSym and '2' in m:
+            MagSytSym += '/'
+        if '-3/m' in SytSym:
+            MagSytSym = '-'+MagSytSym
+        
+    MagSytSym += axis
+# some exceptions & special rules          
+    if MagSytSym == "4'/m'm'm'": MagSytSym = "4/m'm'm'"
+    return MagSytSym
+    
+#    if len(GenSym) == 3:
+#        if SGSpin[1] < 0:
+#            if 'mm2' in SytSym:
+#                MagSytSym = "m'm'2"+'('+SplitSytSym[1]
+#            else:   #bad rule for I41/a
+#                MagSytSym = SplitSytSym[0]+"'"
+#                if len(SplitSytSym) > 1:
+#                    MagSytSym += '('+SplitSytSym[1]
+#        else:
+#            MagSytSym = SytSym
+#        if len(SplitSytSym) >1:
+#            if "-4'"+'('+SplitSytSym[1] in dupDir:
+#                MagSytSym = MagSytSym.replace('-4',"-4'")
+#            if "-6'"+'('+SplitSytSym[1] in dupDir:
+#                MagSytSym = MagSytSym.replace('-6',"-6'")
+#        return MagSytSym
+#            
+    return SytSym
+    
 def ElemPosition(SGData):
     ''' Under development. 
     Object here is to return a list of symmetry element types and locations suitable

@@ -79,6 +79,7 @@ class SGMagSpinBox(wx.Dialog):
         self.text = text
         self.table = table
         self.names = names
+        Nnames = len(self.names)
         self.spins = spins
         self.PrintTable = [' Magnetic symmetry operations for %s:'%self.text[0].split(':')[1],]
         self.panel = wxscroll.ScrolledPanel(self)
@@ -98,8 +99,12 @@ class SGMagSpinBox(wx.Dialog):
                 mainSizer.Add(wx.StaticText(self.panel,label='      for (%s)+'%(cent)),0,WACV)
             tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
             j = 0
-            Red = False
             for item in self.table:
+                if 'for' in item:
+                    mainSizer.Add(tableSizer,0,WACV)
+                    mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
+                    tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+                    continue
                 flds = item.split(')')[1]
                 tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
                 flds = flds.replace(' ','').split(',')
@@ -110,15 +115,15 @@ class SGMagSpinBox(wx.Dialog):
                     else:
                         text = wx.StaticText(self.panel,label='%s '%(fld))
                         tableSizer.Add(text,0,WACV)
-                text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
+                text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
                 try:
-                    if self.spins[j+ic*lentable] < 0 or Red:
+                    if self.spins[j+ic*lentable] < 0:
                         text.SetForegroundColour('Red')
                         item += ',-1'
                     else:
                         item += ',+1'
                 except IndexError:
-                    print(self.spins,j,ic,lentable,self.names[j])
+                    print(self.spins,j,ic,lentable,self.names[j%Nnames])
                     item += ',+1'
                 M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
                 T = (T+Cent)%1.
@@ -146,6 +151,7 @@ class SGMagSpinBox(wx.Dialog):
         OKbtn.SetDefault()
         btnsizer.AddButton(OKbtn)
         btnsizer.Realize()
+        OKbtn.SetFocus()
         mainSizer.Add((0,10))
         mainSizer.Add(btnsizer,0)
         
@@ -467,6 +473,7 @@ class TransformDialog(wx.Dialog):
             if BNSlatt == SGData['SGLatt']:
                 return
             SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
             self.Trans = G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
             wx.CallAfter(self.Draw)
 
@@ -1834,7 +1841,6 @@ entered the right symbol for your structure.
                 wx.CallAfter(UpdateGeneral)
                 
             def OnShowSpins(event):
-                showSpins.SetValue(False)
                 msg = 'Magnetic space group information'
                 text,table = G2spc.SGPrint(SGData,AddInv=not SGData['SGFixed'])
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
@@ -1873,8 +1879,8 @@ entered the right symbol for your structure.
                     SGData['SpnFlp'] = SpnFlp
             SGData['OprNames'] = OprNames
             spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: %s  '%(MagSym)),0,WACV)
-            showSpins = wx.CheckBox(General,label=' Show spins?')
-            showSpins.Bind(wx.EVT_CHECKBOX,OnShowSpins)
+            showSpins = wx.Button(General,label=' Show spins?')
+            showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
             spinSizer.Add(showSpins,0,WACV)
             magSizer.Add(spinSizer)
             dminSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1941,8 +1947,8 @@ entered the right symbol for your structure.
                 superGp = wx.StaticText(General,label=generalData['SuperSg'])
             modSizer.Add(superGp,0,WACV)
             modSizer.Add((5,5),0)
-            showOps = wx.CheckBox(General,label='Show ops.')
-            showOps.Bind(wx.EVT_CHECKBOX,OnSuperGp)
+            showOps = wx.Button(General,label='Show ops.')
+            showOps.Bind(wx.EVT_BUTTON,OnSuperGp)
             modSizer.Add(showOps,0,WACV)
             if PWDR:
                 modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
@@ -2736,9 +2742,6 @@ entered the right symbol for your structure.
             for row in range(Atoms.GetNumberRows()):
                 atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
-                Atoms.SetReadOnly(row,colType,True)
-                Atoms.SetReadOnly(row,colSS,True)                         #site sym
-                Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
                 if Atoms.GetCellValue(row,colIA) == 'A':
                     try:    #patch for sytsym name changes
                         CSI = G2spc.GetCSuinel(atomData[row][colSS])
@@ -2765,6 +2768,8 @@ entered the right symbol for your structure.
                         Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if colM:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
+                    MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
+                    Atoms.SetCellValue(row,colSS,MagSytSym)
                     CSI = []
                     if not SGData['SGGray']:
                         CSI = G2spc.GetCSpqinel(SpnFlp,dupDir)
@@ -2784,6 +2789,9 @@ entered the right symbol for your structure.
                     for c in range(0,colX+3):
                         if c != colR:
                             Atoms.SetCellStyle(row,c,VERY_LIGHT_GREY,True)
+                Atoms.SetReadOnly(row,colType,True)
+                Atoms.SetReadOnly(row,colSS,True)                         #site sym
+                Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
             Atoms.AutoSizeColumns(False)
             SetPhaseWindow(Atoms)
 

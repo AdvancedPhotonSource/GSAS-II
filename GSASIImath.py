@@ -646,7 +646,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
         results.append(G2spc.GenAtom(xyz,SGData,False,Move=False))
     for iA,result in enumerate(results):
         if iA != Orig:                
-            for [Txyz,Top,Tunit] in result:
+            for [Txyz,Top,Tunit,Spn] in result:
                 Dx = np.array([Txyz-Oxyz+unit for unit in Units])
                 dx = np.inner(Dx,Amat)
                 dist = np.sqrt(np.sum(dx**2,axis=1))

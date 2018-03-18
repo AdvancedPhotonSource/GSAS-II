@@ -575,7 +575,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
             result = G2spc.GenAtom(Tatom[3:6],SGData,False,Move=False)
             BsumR = (Radii[Oatom[2]][0]+Radii[Tatom[2]][0])*Factor[0]
             AsumR = (Radii[Oatom[2]][1]+Radii[Tatom[2]][1])*Factor[1]
-            for Txyz,Top,Tunit in result:
+            for [Txyz,Top,Tunit,Spn] in result:
                 Dx = (Txyz-np.array(Oatom[3:6]))+Units
                 dx = np.inner(Amat,Dx)
                 dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)

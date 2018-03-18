@@ -230,7 +230,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         result = [[Tcoord,1,[0,0,0]],]
                     else:
                         result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
-                    for Txyz,Top,Tunit in result:
+                    for Txyz,Top,Tunit,Spn in result:
                         Dx = (Txyz-np.array(Ocoord))+Units
                         dx = np.inner(Amat,Dx)
                         dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),bond/Factor)
@@ -392,7 +392,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 result = G2spc.GenAtom(Tcoord,SGData,False,Move=False)
                 BsumR = (Radii[Otype][0]+Radii[Ttype][0])*Factor
                 AsumR = (Radii[Otype][1]+Radii[Ttype][1])*Factor
-                for Txyz,Top,Tunit in result:
+                for Txyz,Top,Tunit,Spn in result:
                     Dx = (Txyz-Ocoord)+Units
                     dx = np.inner(Amat,Dx)
                     dist = ma.masked_less(np.sqrt(np.sum(dx**2,axis=0)),0.5)

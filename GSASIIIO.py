@@ -1711,28 +1711,15 @@ class ExportBaseclass(object):
 
         :returns: a file name (str) or None if Cancel is pressed
 
-        TODO: Can this be replaced with G2G.askSaveFile?
         '''
-        
         pth = G2G.GetExportPath(self.G2frame)
-        defnam = os.path.splitext(
-            os.path.split(self.G2frame.GSASprojectfile)[1]
-            )[0]+self.extension
-        dlg = wx.FileDialog(
-            self.G2frame, 'Input name for file to write', pth, defnam,
-            self.longFormatName+' (*'+self.extension+')|*'+self.extension,
-            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        dlg.CenterOnParent()
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetPath()
-                self.G2frame.LastExportDir = os.path.split(filename)[0]
-                filename = os.path.splitext(filename)[0]+self.extension # make sure extension is correct
-            else:
-                filename = None
-        finally:
-            dlg.Destroy()
-        return filename
+        if self.G2frame.GSASprojectfile:
+            defnam = os.path.splitext(
+                os.path.split(self.G2frame.GSASprojectfile)[1]
+                )[0]+self.extension
+        else:
+            defnam = 'default' + self.extension
+        return G2G.askSaveFile(self.G2frame,defnam,self.extension,self.longFormatName)
 
     def askSaveDirectory(self):
         '''Ask the user to supply a directory name. Path name is used as the

@@ -424,10 +424,14 @@ class G2PlotNoteBook(wx.Panel):
         try:
             new = False
             plotNum,Page = self.GetTabIndex(label)
-            if Type == 'mpl' or Type == '3d':          
+            if Type == 'mpl' or Type == '3d': 
+                Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
-                limits = Plot.get_xlim(),Plot.get_ylim() # save previous limits
-#                print 'Plot limits:',limits
+                limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
+                if len(Axes)>1:
+                    limits[1] = Axes[1].get_ylim()
+#                    print('Axes[1]',Axes[1].get_ylim())
+#                print ('Plot limits:',limits,Axes)
                 if newImage:
                     Page.figure.clf()
                     Plot = Page.figure.gca()          #get a fresh plot after clf()
@@ -580,7 +584,7 @@ class GSASIItoolbar(Toolbar):
         except:
             deleted = False
         Toolbar.__init__(self,plotCanvas)
-        G2path = os.path.split(os.path.abspath(__file__))[0]
+#        G2path = os.path.split(os.path.abspath(__file__))[0]
         self.updateActions = None # defines a call to be made as part of plot updates
         self.plotCanvas = plotCanvas
         # 2nd try to remove a button from the bar
@@ -598,7 +602,7 @@ class GSASIItoolbar(Toolbar):
                 prfx = 'Shift plot '
             fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
             self.arrows[direc] = self.AddToolBarTool(sprfx+direc,prfx+direc,fil,self.OnArrow)
-        G2path = os.path.split(os.path.abspath(__file__))[0]
+#        G2path = os.path.split(os.path.abspath(__file__))[0]
         if publish:
             self.AddToolBarTool('Publish plot','Create publishable version of plot','publish.ico',publish)
             
@@ -1493,7 +1497,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
             return
         newPlot = False
-        if event.key == 'w':
+        if event.key == 'w' and not G2frame.plotStyle['qPlot'] and not G2frame.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
@@ -1600,6 +1604,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if 'PWDR' in plottype:
                 G2frame.plotStyle['qPlot'] = not G2frame.plotStyle['qPlot']
                 if G2frame.plotStyle['qPlot']:
+                    G2frame.Weight = False
                     G2frame.Contour = False
                 G2frame.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
@@ -1608,6 +1613,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2frame.plotStyle['dPlot'] = not G2frame.plotStyle['dPlot']
             if G2frame.plotStyle['dPlot']:
                 G2frame.Contour = False                
+                G2frame.Weight = False
             G2frame.plotStyle['qPlot'] = False
             newPlot = True      
         elif event.key == 'm':
@@ -2173,6 +2179,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if G2frame.logPlot or G2frame.plotStyle['sqrtPlot']:
             if msg: msg += '\n'
             msg += " * only when the intensity scale is linear (not log or sqrt)"
+        if G2frame.Weight:
+            if msg: msg += '\n'
+            msg += " * only when weight plot is set to no weight plot"
         if msg:
             msg = 'Publication export is only available under limited plot settings\n'+msg
             G2G.G2MessageBox(G2frame,msg,'Wrong plot settings')
@@ -2186,8 +2195,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         publish = PublishPlot
     else:
         publish = None
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',
-                                                                publish=publish)
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
     if not new:
         G2frame.xylim = limits
     else:
@@ -2235,12 +2243,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','n: log(I) off',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
-                            'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
+                            'm: toggle multidata plot','+: toggle selection')
                 else:
                     Page.Choice = (' key press','n: log(I) off',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot','f: select data',
-                        'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
+                        'm: toggle multidata plot','+: toggle selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
@@ -2255,11 +2263,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Page.Choice = (' key press',
                         'b: toggle subtract background','n: log(I) on','s: toggle sqrt plot','c: contour on',
                         'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot',
-                        'w: toggle divide by sig','+: no selection')
+                        'w: toggle (Io-Ic)/sig plot','+: no selection')
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x','o: reset offset',
                         'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot',
-                        'm: toggle multidata plot','f: select data','s: color scheme','w: toggle divide by sig','+: no selection')
+                        'm: toggle multidata plot','w: toggle (Io-Ic)/sig plot','f: select data','s: color scheme','+: no selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
@@ -2335,44 +2343,49 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Title = 'log('+Title+')'
     #Plot.set_title(Title) # show title only w/o magnification
     if G2frame.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
+        xLabel = r'$Q, \AA^{-1}$'
     elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
-        Plot.set_xlabel(r'$d, \AA$',fontsize=16)
-    else:
-        if 'C' in ParmList[0]['Type'][0]:        
-            Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=16)
-        else:
-            if G2frame.Contour:
-                Plot.set_xlabel(r'Channel no.',fontsize=16)            
-            else:
-                Plot.set_xlabel(r'$TOF, \mathsf{\mu}$s',fontsize=16)            
-    if G2frame.Weight:
-        if 'PWDR' in plottype:
-            Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
-        elif plottype in ['SASD','REFD']:
-            Plot.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
+        xLabel = r'$d, \AA$'
     else:
         if 'C' in ParmList[0]['Type'][0]:
-            if 'PWDR' in plottype:
-                if G2frame.plotStyle['sqrtPlot']:
-                    Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
-                else:
-                    Plot.set_ylabel(r'$Intensity$',fontsize=16)
-            elif plottype == 'SASD':
-                if G2frame.plotStyle['sqPlot']:
-                    Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
-                else:
-                    Plot.set_ylabel(r'$Intensity,\ cm^{-1}$',fontsize=16)
-            elif plottype == 'REFD':
-                if G2frame.plotStyle['sqPlot']:
-                    Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
-                else:
-                    Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
-        else:       #neutron TOF
-            if G2frame.plotStyle['sqrtPlot']:
-                Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
+            xLabel = r'$\mathsf{2\theta}$'
+        else:
+            if G2frame.Contour:
+                xLabel = r'Channel no.'
             else:
-                Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
+                xLabel = r'$TOF, \mathsf{\mu}$s'
+    if G2frame.Weight:
+        Plot.tick_params('x',length=0,labelbottom=False)
+        Plot.tick_params('y',length=0,labelleft=False)
+        GS_kw = {'height_ratios':[4, 1],}
+        Plot,Plot1 = Page.figure.subplots(2,1,sharex=True,gridspec_kw=GS_kw)
+        Plot1.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
+        Plot1.set_xlabel(xLabel,fontsize=16)
+        Page.figure.subplots_adjust(left=16/100.,bottom=16/150.,
+            right=.98,top=1.-16/200.,hspace=0)
+    else:
+        Plot.set_xlabel(xLabel,fontsize=16)
+    if 'C' in ParmList[0]['Type'][0]:
+        if 'PWDR' in plottype:
+            if G2frame.plotStyle['sqrtPlot']:
+                Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
+            else:
+                Plot.set_ylabel(r'$Intensity$',fontsize=16)
+        elif plottype == 'SASD':
+            if G2frame.plotStyle['sqPlot']:
+                Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
+            else:
+                Plot.set_ylabel(r'$Intensity,\ cm^{-1}$',fontsize=16)
+        elif plottype == 'REFD':
+            if G2frame.plotStyle['sqPlot']:
+                Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
+            else:
+                Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
+    else:       #neutron TOF
+        if G2frame.plotStyle['sqrtPlot']:
+            Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
+        else:
+            Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
     mpl.rcParams['image.cmap'] = G2frame.ContourColor
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
     if G2frame.Contour:
@@ -2554,6 +2567,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(W))/2.,top=np.max(Y)*2.)
                     else:
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
+                if G2frame.Weight:
+                    Ibeg = np.searchsorted(X,limits[1][0])
+                    Ifin = np.searchsorted(X,limits[1][1])
+                    Plot1.set_yscale("linear")                                                  
+                    DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+                    DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
+                    Plot1.axhline(0.,color='k')
+                    Plot1.set_ylim(bottom=np.min(DZ[Ibeg:Ifin])*1.2,top=np.max(DZ[Ibeg:Ifin])*1.2)  
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
@@ -2564,34 +2585,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         Plot.set_xscale("log",nonposx='mask')
                         Ibeg = np.searchsorted(X,limits[1][0])
                         Ifin = np.searchsorted(X,limits[1][1])
-                        if G2frame.Weight:
-                            Plot.set_yscale("linear")
-                            DS = (YB-ZB)*np.sqrt(xye[2])
-                            Plot.plot(X[Ibeg:Ifin],DS[Ibeg:Ifin],colors[3],picker=False,label='_diff')
-                            Plot.axhline(0.,color='k')
-                            Plot.set_ylim(bottom=np.min(DS[Ibeg:Ifin])*1.2,top=np.max(DS[Ibeg:Ifin])*1.2)                                                    
-                        else:
-                            Plot.set_yscale("log",nonposy='mask')
-                            if G2frame.ErrorBars:
-                                if G2frame.plotStyle['sqPlot']:
-                                    Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[0],picker=3.,clip_on=Clip_on)
-                                else:
-                                    Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[0],picker=3.,clip_on=Clip_on,label='_obs')
+                        Plot.set_yscale("log",nonposy='mask')
+                        if G2frame.ErrorBars:
+                            if G2frame.plotStyle['sqPlot']:
+                                Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                                    ecolor=colors[0],picker=3.,clip_on=Clip_on)
                             else:
-                                Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #const. background
-                            Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
-                elif G2frame.Weight and 'PWDR' in plottype:
-                    DY = xye[1]*np.sqrt(xye[2])
-                    Ymax = max(DY)
-                    DZ = xye[3]*np.sqrt(xye[2])
-                    DS = xye[5]*np.sqrt(xye[2])-Ymax*Pattern[0]['delOffset']
-                    ObsLine = Plot.plot(X,DY,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')         #Io/sig(Io)
-                    Plot.plot(X,DZ,colors[1],picker=False,label='_calc')                    #Ic/sig(Io)
-                    DifLine = Plot.plot(X,DS,colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
-                    Plot.axhline(0.,color='k')
+                                Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                                    ecolor=colors[0],picker=3.,clip_on=Clip_on,label='_obs')
+                        else:
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
+                        Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #const. background
+                        Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
                 else:
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
@@ -2607,9 +2612,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
-                    if 'PWDR' in plottype:
+                    if 'PWDR' in plottype: 
                         Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
-                        DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
+                        if not G2frame.Weight: DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
                 if PickId:
@@ -2919,7 +2924,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         '''Write the current plot to a file
         '''
         hcfigure = mpl.figure.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
-        hccanvas = hcCanvas(hcfigure)
+#        hccanvas = hcCanvas(hcfigure)
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
         longFormatName,typ = plotOpt['format'].split(',')
         fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)

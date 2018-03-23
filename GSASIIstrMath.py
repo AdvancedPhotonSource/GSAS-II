@@ -665,11 +665,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    Ncen = len(SGData['SGCen'])
-    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
-    MFtables = calcControls['MFtables']
     Amat,Bmat = G2lat.Gmat2AB(G)
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
@@ -686,17 +683,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
-    if parmDict[pfx+'isMag']:       #TODO: fix the math - mag moments now along crystal axes
-        Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
-        Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
-        Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
-        if SGData['SGInv'] and not SGData['SGFixed']:
-            Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-        Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
-        Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
-        Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
-        if SGData['SGInv'] and not SGData['SGFixed']:
-            Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     elif 'X' in calcControls[hfx+'histType']:
@@ -711,10 +697,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dat = G2el.getBLvalues(BLtables)
         refDict['FF']['El'] = list(dat.keys())
         refDict['FF']['FF'] = np.ones((nRef,len(dat)))*list(dat.values())
-        refDict['FF']['MF'] = np.zeros((nRef,len(dat)))
-        for iel,El in enumerate(refDict['FF']['El']):
-            if El in MFtables:
-                refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
     else:       #'X'
         dat = G2el.getFFvalues(FFtables,0.)
         refDict['FF']['El'] = list(dat.keys())
@@ -758,60 +740,159 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
-        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: math here??
-            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
-            if SGData['SGInv'] and not SGData['SGFixed']:
-                mphase = np.hstack((phase,-phase))
-            else:
-                mphase = phase 
-            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
-            mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
-            sinm = np.sin(mphase)                               #ditto - match magstrfc.for
-            cosm = np.cos(mphase)                               #ditto
-            HM = np.inner(Bmat.T,H)                             #put into cartesian space
-            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-            eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
-            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
-            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-            fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
-            fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
-            refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
-            refl.T[7] = np.copy(refl.T[9])                
-            refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
+        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
+        if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
+            fb = np.array([np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])
         else:
-            Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
-            if 'T' in calcControls[hfx+'histType']: #fa,fb are 2 X blkSize X nTwin X nOps x nAtoms
-                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
-                fb = np.array([np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])
-            else:
-                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
-                fb = np.array([np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
-            fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
-            fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag 
-            if SGData['SGInv']: #centrosymmetric; B=0
-                fbs[0] *= 0.
-                fas[1] *= 0.
-            if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
-                refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
+            fb = np.array([np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
+        fas = np.sum(np.sum(fa,axis=-1),axis=-1)  #real 2 x blkSize x nTwin; sum over atoms & uniq hkl
+        fbs = np.sum(np.sum(fb,axis=-1),axis=-1)  #imag 
+        if SGData['SGInv']: #centrosymmetric; B=0
+            fbs[0] *= 0.
+            fas[1] *= 0.
+        if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
+            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
+            refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+        else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
+            if len(TwinLaw) > 1:
+                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
+                refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
+                    np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
+                refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
+            else:   # checked correct!!
+                refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                refl.T[7] = np.copy(refl.T[9])                
                 refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-                if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:
-                    refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
-            else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
-                if len(TwinLaw) > 1:
-                    refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
-                    refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
-                        np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
-                    refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
-                else:   # checked correct!!
-                    refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
-                    refl.T[7] = np.copy(refl.T[9])                
-                    refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
 #                refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
         iBeg += blkSize
 #    print 'sf time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
     
+def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
+    ''' Compute neutron magnetic structure factors for all h,k,l for phase
+    puts the result, F^2, in each ref[8] in refList
+    operates on blocks of 100 reflections for speed
+    input:
+    
+    :param dict refDict: where
+        'RefList' list where each ref = h,k,l,it,d,...
+        'FF' dict of form factors - filed in below
+    :param np.array G:      reciprocal metric tensor
+    :param str pfx:    phase id string
+    :param dict SGData: space group info. dictionary output from SpcGroup
+    :param dict calcControls:
+    :param dict ParmDict:
+
+    '''        
+#    phfx = pfx.split(':')[0]+hfx
+    ast = np.sqrt(np.diag(G))
+    Mast = twopisq*np.multiply.outer(ast,ast)
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
+    Ncen = len(SGData['SGCen'])
+    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
+    MFtables = calcControls['MFtables']
+    Amat,Bmat = G2lat.Gmat2AB(G)
+    TwinLaw = np.ones(1)
+#    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
+#    TwDict = refDict.get('TwDict',{})           
+#    if 'S' in calcControls[hfx+'histType']:
+#        NTL = calcControls[phfx+'NTL']
+#        NM = calcControls[phfx+'TwinNMN']+1
+#        TwinLaw = calcControls[phfx+'TwinLaw']
+#        TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
+#        TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
+    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
+        GetAtomFXU(pfx,calcControls,parmDict)
+    if not Xdata.size:          #no atoms in phase!
+        return
+    Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
+    Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
+    Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
+    Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
+    if SGData['SGInv'] and not SGData['SGFixed']:
+        Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
+    Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
+    Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
+    Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
+    Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
+    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
+    if SGData['SGInv'] and not SGData['SGFixed']:
+        Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
+    Uij = np.array(G2lat.U6toUij(Uijdata))
+    bij = Mast*Uij.T
+    blkSize = 100       #no. of reflections in a block - size seems optimal
+    nRef = refDict['RefList'].shape[0]
+    SQ = 1./(2.*refDict['RefList'].T[4])**2
+    refDict['FF']['El'] = list(MFtables.keys())
+    refDict['FF']['MF'] = np.zeros((nRef,len(MFtables)))
+    for iel,El in enumerate(refDict['FF']['El']):
+        refDict['FF']['MF'].T[iel] = G2el.MagScatFac(MFtables[El],SQ)
+#reflection processing begins here - big arrays!
+    iBeg = 0
+    while iBeg < nRef:
+        iFin = min(iBeg+blkSize,nRef)
+        refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
+        H = refl.T[:3]                          #array(blkSize,3)
+#        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
+#        TwMask = np.any(H,axis=-1)
+#        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
+#            for ir in range(blkSize):
+#                iref = ir+iBeg
+#                if iref in TwDict:
+#                    for i in TwDict[iref]:
+#                        for n in range(NTL):
+#                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
+#            TwMask = np.any(H,axis=-1)
+        SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
+        SQfactor = 4.0*SQ*twopisq               #ditto prev.
+        Uniq = np.inner(H.T,SGMT)
+        Phi = np.inner(H.T,SGT)
+        phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
+        biso = -SQfactor*Uisodata[:,nxs]
+        Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT)*len(TwinLaw),axis=1).T
+        HbH = -np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
+        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
+        MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
+        TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
+        if SGData['SGInv'] and not SGData['SGFixed']:
+            mphase = np.hstack((phase,-phase))
+        else:
+            mphase = phase 
+        mphase = np.array([mphase+twopi*np.inner(cen,H.T)[:,nxs,nxs] for cen in SGData['SGCen']])
+        mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
+        sinm = np.sin(mphase)                               #ditto - match magstrfc.for
+        cosm = np.cos(mphase)                               #ditto
+        HM = np.inner(Bmat.T,H.T)                             #put into cartesian space
+        HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
+        eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
+        Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
+        fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+        fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
+        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
+        fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
+        refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
+        refl.T[7] = np.copy(refl.T[9])                
+        refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
+#        if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
+#            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
+#            refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+#        else:                                       #HKLF: F^2 = (A[0]+A[1])^2 + (B[0]+B[1])^2
+#            if len(TwinLaw) > 1:
+#                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
+#                refl.T[7] = np.sum(TwinFr*TwMask*np.sum(fas,axis=0)**2,axis=-1)+   \
+#                    np.sum(TwinFr*TwMask*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
+#                refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f" & use primary twin
+#            else:   # checked correct!!
+#                refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+#                refl.T[7] = np.copy(refl.T[9])                
+#                refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+##                refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
+        iBeg += blkSize
+#    print 'sf time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
+
 def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     '''Compute structure factor derivatives on blocks of reflections - for powders/nontwins only
     faster than StructureFactorDerv - correct for powders/nontwins!!
@@ -3182,6 +3263,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         if not Phase['General'].get('doPawley') and not parmDict[phfx+'LeBail']:
             if im:
                 SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+            elif parmDict[pfx+'isMag'] and 'N' in calcControls[hfx+'histType']:
+                MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
             else:
                 StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
         badPeak = False

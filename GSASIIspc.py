@@ -1881,6 +1881,11 @@ def GenHKLf(HKL,SGData):
     Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
+
+def MagHKLchk(HKL,SGData):
+    SpnFlp = SGData['SpnFlp']
+    print(HKL)
+    Uniq = GenHKL(HKL,SGData)
     
 def checkSSLaue(HKL,SGData,SSGData):
     #Laue check here - Toss HKL if outside unique Laue part
@@ -2962,6 +2967,8 @@ def MagSytSym(SytSym,dupDir,SGData):
 #    print('SGPtGrp',SGData['SGPtGrp'],'SytSym',SytSym,'MagSpGrp',SGData['MagSpGrp'])
 #    print('dupDir',dupDir)
     SplitSytSym = SytSym.split('(')
+    if SGData['SGGray']:
+        return SytSym+"1'"
     if SytSym == '1':       #genersl position
         return SytSym
     if SplitSytSym[0] == SGData['SGPtGrp']:     #simple cases

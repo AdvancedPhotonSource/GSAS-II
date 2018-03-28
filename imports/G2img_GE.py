@@ -152,7 +152,9 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             print('Warning GE image size unexpected: '+str(size))
             print('Assumed 2048x2048')
             size = 2048
-            nframes = 3
+            statinfo = os.stat(str(File).split("'")[1])
+            fsize = statinfo.st_size
+            nframes = (fsize-8192)/(2*2048**2)
 #            return 0,0,0,0,False # probably should quit now
         if imagenum > nframes:
             print('Error: attempt to read image #'+str(imagenum)+

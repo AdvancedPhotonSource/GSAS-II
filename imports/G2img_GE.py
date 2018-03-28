@@ -150,7 +150,10 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         # number of frames seems to be 3 for single-image files
         if size != 2048:
             print('Warning GE image size unexpected: '+str(size))
-            return 0,0,0,0,False # probably should quit now
+            print('Assumed 2048x2048')
+            size = 2048
+            nframes = 3
+#            return 0,0,0,0,False # probably should quit now
         if imagenum > nframes:
             print('Error: attempt to read image #'+str(imagenum)+
                   ' from file with '+str(nframes)+' images.')

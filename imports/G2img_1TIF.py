@@ -69,6 +69,9 @@ class TIF_ReaderClass(G2obj.ImportImage):
             print("GetTifData failed to read "+str(filename)+" Trying SciPy")
             import scipy.misc
             self.Image = scipy.misc.imread(filename,flatten=True)
+            # for scipy 1.2 & later  scipy.misc.imread will be removed
+            # with note to use imageio.imread instead 
+            # (N.B. scipy.misc.imread uses PIL/pillow perhaps better to just use pillow)
             self.Npix = self.Image.size
             if ParentFrame:
                 self.SciPy = True

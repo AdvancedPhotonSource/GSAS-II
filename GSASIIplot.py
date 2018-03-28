@@ -428,8 +428,12 @@ class G2PlotNoteBook(wx.Panel):
                 Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
-                if len(Axes)>1:
-                    limits[1] = Axes[1].get_ylim()
+                #======================================================================
+                # this is needed for PWDR (etc) "w" plots, but breaks image plotting
+                # removed for now (BHT)
+                #if len(Axes)>1:
+                #    limits[1] = Axes[1].get_ylim()
+                #======================================================================
 #                    print('Axes[1]',Axes[1].get_ylim())
 #                print ('Plot limits:',limits,Axes)
                 if newImage:

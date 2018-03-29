@@ -170,6 +170,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
     if data['DetDepth'] > 0.5:
         data['DetDepth'] /= data['distance']
+    if 'setdist' not in data:
+        data['setdist'] = data['distance']
 #end patch
 
 # Menu items

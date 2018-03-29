@@ -60,8 +60,8 @@ def GetSFRMData(self,filename):
     if 'bytes' in str(type(stream)):
         stream = stream.decode('latin-1')
     starter = 'IMG: '
-    meanwaves = {'Cu':1.54178,'Ti':2.74963,'Cr':2.29092,'Fe':1.93728,
-        'Co':1.79021,'Mo':0.71069,'Ag':0.56083}
+    meanwaves = {'Cu':1.54051,'Ti':2.74841,'Cr':2.28962,'Fe':1.93597,
+        'Co':1.78892,'Mo':0.70926,'Ag':0.559363}
     imageBeg = stream.find(starter)+4
     head = np.array(list(stream[:imageBeg].split('CFR:')[0]))
     head = head.reshape(-1,80)

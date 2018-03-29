@@ -476,7 +476,7 @@ class GSASII(wx.Frame):
         # self.Bind(wx.EVT_MENU, self.OnImageRead, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Read Powder Pattern Peaks...','')
         self.Bind(wx.EVT_MENU, self.OnReadPowderPeaks, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Sum powder data','')
+        item = parent.Append(wx.ID_ANY,'Sum or Average powder data','')
         self.Bind(wx.EVT_MENU, self.OnPwdrSum, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Sum image data','')
         self.Bind(wx.EVT_MENU, self.OnImageSum, id=item.GetId())
@@ -3030,6 +3030,7 @@ class GSASII(wx.Frame):
             self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
             self.text = text
             self.data = data
+            self.average = False
             self.selectData = copy.copy(data[:-1])
             self.selectVals = len(data)*[0.0,]
             self.dataList = dataList
@@ -3073,9 +3074,12 @@ class GSASII(wx.Frame):
             if self.dataType:
                 ScaleAll = wx.Button(self.panel,wx.ID_ANY,'Set all above')
                 ScaleAll.Bind(wx.EVT_BUTTON, self.OnAllScale)
+                if self.dataType == 'PWDR':
+                    self.Avg = wx.CheckBox(self.panel,label=' Make average?')
+                    self.Avg.Bind(wx.EVT_CHECKBOX,self.OnAve)
                 self.dataGridSizer.Add(ScaleAll,0,wx.LEFT,10)
-                self.dataGridSizer.Add((-1,-1),0,wx.RIGHT,10)
-                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,'Sum result name: '+self.dataType),1,
+                self.dataGridSizer.Add(self.Avg,0,wx.RIGHT,10)
+                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,' Result name: '+self.dataType),1,
                     wx.LEFT|wx.ALIGN_CENTER_VERTICAL,1)
                 self.name = G2G.ValidatedTxtCtrl(self.panel,self.data,-1,size=wx.Size(300,20))
                 self.dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
@@ -3101,6 +3105,9 @@ class GSASII(wx.Frame):
             self.panel.SetSizer(mainSizer)
             self.panel.Fit()
             self.Fit()
+            
+        def OnAve(self,event):
+            self.average = self.Avg.GetValue()
 
         def OnFilter(self,event):
             '''Read text from filter control and select entries that match.
@@ -3175,16 +3182,25 @@ class GSASII(wx.Frame):
                                 '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+
                                 '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
                             self.OnCancel(event)
-                        else:
-                            for j,yi in enumerate(y):
-                                 Ysum[j] += scale*yi
-                                 Vsum[j] += abs(scale)*v[j]
                     else:
                         Xminmax = [x[0],x[-1]]
                         Xsum = x
-                        Ysum = scale*y
-                        Vsum = abs(scale*v)
-            Wsum = 1./np.array(Vsum)
+                    if self.dataType == 'PWDR' and self.average:
+                        Ysum.append(scale*y)
+                        Vsum.append(abs(scale)*v)
+                    else:
+                        try:
+                            Ysum += scale*y
+                            Vsum += abs(scale)*v
+                        except ValueError:
+                            Ysum = scale*y
+                            Vsum = abs(scale)*v
+            if self.dataType =='PWDR' and self.average:
+                maYsum = ma.masked_equal(Ysum,0)
+                Ysum = ma.mean(maYsum,axis=0)
+                Wsum = 1./np.array(Ysum)
+            else:
+                Wsum = 1./Vsum
             YCsum = np.zeros(lenX)
             YBsum = np.zeros(lenX)
             YDsum = np.zeros(lenX)
@@ -3218,12 +3234,12 @@ class GSASII(wx.Frame):
                 return self.selectData+[self.data[-1],],self.selectVals
                         
     def OnPwdrSum(self,event):
-        'Sum together powder data(?)'
+        'Sum or Average together powder data(?)'
         TextList = []
         DataList = []
         Names = []
         Inst = None
-        Comments = ['Sum equals: \n']
+        Comments = ['Sum/Average equals: \n']
         if self.GPXtree.GetCount():
             item, cookie = self.GPXtree.GetFirstChild(self.root)
             while item:
@@ -3236,10 +3252,10 @@ class GSASII(wx.Frame):
                         Inst = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,item, 'Instrument Parameters'))
                 item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if len(TextList) < 2:
-                self.ErrorDialog('Not enough data to sum','There must be more than one "PWDR" pattern')
+                self.ErrorDialog('Not enough data to sum/average','There must be more than one "PWDR" pattern')
                 return
-            TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each pattern to be summed','PWDR',TextList,DataList)
+            TextList.append('default_ave_name')                
+            dlg = self.SumDialog(self,'Sum/Average data',' Enter scale for each pattern to be summed/averaged','PWDR',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result,sumData = dlg.GetData()
@@ -3306,7 +3322,7 @@ class GSASII(wx.Frame):
                 self.ErrorDialog('Not enough data to sum','There must be more than one "IMG" pattern')
                 return
             TextList.append('default_sum_name')                
-            dlg = self.SumDialog(self,'Sum data','Enter scale for each image to be summed','IMG',TextList,DataList)
+            dlg = self.SumDialog(self,'Sum data',' Enter scale for each image to be summed','IMG',TextList,DataList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     imSize = 0
@@ -5748,7 +5764,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnAveSelSeq(event):
         'average the selected columns from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
-        useCol = -np.array(G2frame.SeqTable.GetColValues(0),dtype=bool)
+        useCol =  not np.array(G2frame.SeqTable.GetColValues(0),dtype=bool)
         if cols:
             for col in cols:
                 items = GetColumnInfo(col)[1]

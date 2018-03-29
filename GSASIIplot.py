@@ -246,6 +246,129 @@ plotOpt['phaseList']  = []
 plotOpt['phaseLabels']  = {}
 plotOpt['fmtChoices']  = {}
 
+def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
+                 squeeze=True, subplot_kw=None, gridspec_kw=None):
+        """
+        Copy of Figure.figure.subplots from matplotlib.figure.py
+        Included here because this appears only in later versions of
+        matplotlib. When v2.2 is standard, this can be removed from GSAS-II
+        
+        Add a set of subplots to this figure.
+        
+        Parameters
+        ----------
+        nrows, ncols : int, default: 1
+            Number of rows/cols of the subplot grid.
+        sharex, sharey : bool or {'none', 'all', 'row', 'col'}, default: False
+            Controls sharing of properties among x (`sharex`) or y (`sharey`)
+            axes:
+                - True or 'all': x- or y-axis will be shared among all
+                  subplots.
+                - False or 'none': each subplot x- or y-axis will be
+                  independent.
+                - 'row': each subplot row will share an x- or y-axis.
+                - 'col': each subplot column will share an x- or y-axis.
+            When subplots have a shared x-axis along a column, only the x tick
+            labels of the bottom subplot are visible.  Similarly, when
+            subplots have a shared y-axis along a row, only the y tick labels
+            of the first column subplot are visible.
+        squeeze : bool, default: True
+            - If True, extra dimensions are squeezed out from the returned
+              axis object:
+                - if only one subplot is constructed (nrows=ncols=1), the
+                  resulting single Axes object is returned as a scalar.
+                - for Nx1 or 1xN subplots, the returned object is a 1D numpy
+                  object array of Axes objects are returned as numpy 1D
+                  arrays.
+                - for NxM, subplots with N>1 and M>1 are returned as a 2D
+                  arrays.
+            - If False, no squeezing at all is done: the returned Axes object
+              is always a 2D array containing Axes instances, even if it ends
+              up being 1x1.
+        subplot_kw : dict, default: {}
+            Dict with keywords passed to the
+            :meth:`~matplotlib.figure.Figure.add_subplot` call used to create
+            each subplots.
+        gridspec_kw : dict, default: {}
+            Dict with keywords passed to the
+            :class:`~matplotlib.gridspec.GridSpec` constructor used to create
+            the grid the subplots are placed on.
+        Returns
+        -------
+        ax : single Axes object or array of Axes objects
+            The added axes.  The dimensions of the resulting array can be
+            controlled with the squeeze keyword, see above.
+        See Also
+        --------
+        pyplot.subplots : pyplot API; docstring includes examples.
+        """
+
+        # for backwards compatibility
+        if isinstance(sharex, bool):
+            sharex = "all" if sharex else "none"
+        if isinstance(sharey, bool):
+            sharey = "all" if sharey else "none"
+        share_values = ["all", "row", "col", "none"]
+        if sharex not in share_values:
+            # This check was added because it is very easy to type
+            # `subplots(1, 2, 1)` when `subplot(1, 2, 1)` was intended.
+            # In most cases, no error will ever occur, but mysterious behavior
+            # will result because what was intended to be the subplot index is
+            # instead treated as a bool for sharex.
+            if isinstance(sharex, int):
+                warnings.warn(
+                    "sharex argument to subplots() was an integer. "
+                    "Did you intend to use subplot() (without 's')?")
+
+            raise ValueError("sharex [%s] must be one of %s" %
+                             (sharex, share_values))
+        if sharey not in share_values:
+            raise ValueError("sharey [%s] must be one of %s" %
+                             (sharey, share_values))
+        if subplot_kw is None:
+            subplot_kw = {}
+        if gridspec_kw is None:
+            gridspec_kw = {}
+
+        # if figure.get_constrained_layout():
+        #     gs = GridSpec(nrows, ncols, figure=figure, **gridspec_kw)
+        # else:
+        #     # this should turn constrained_layout off if we don't want it
+        #     gs = GridSpec(nrows, ncols, figure=None, **gridspec_kw)
+        gs = mpl.gridspec.GridSpec(nrows, ncols, **gridspec_kw)
+
+        # Create array to hold all axes.
+        axarr = np.empty((nrows, ncols), dtype=object)
+        for row in range(nrows):
+            for col in range(ncols):
+                shared_with = {"none": None, "all": axarr[0, 0],
+                               "row": axarr[row, 0], "col": axarr[0, col]}
+                subplot_kw["sharex"] = shared_with[sharex]
+                subplot_kw["sharey"] = shared_with[sharey]
+                axarr[row, col] = figure.add_subplot(gs[row, col], **subplot_kw)
+
+        # turn off redundant tick labeling
+        if sharex in ["col", "all"]:
+            # turn off all but the bottom row
+            for ax in axarr[:-1, :].flat:
+                ax.xaxis.set_tick_params(which='both',
+                                         labelbottom=False, labeltop=False)
+                ax.xaxis.offsetText.set_visible(False)
+        if sharey in ["row", "all"]:
+            # turn off all but the first column
+            for ax in axarr[:, 1:].flat:
+                ax.yaxis.set_tick_params(which='both',
+                                         labelleft=False, labelright=False)
+                ax.yaxis.offsetText.set_visible(False)
+
+        if squeeze:
+            # Discarding unneeded dimensions that equal 1.  If we only have one
+            # subplot, just return it instead of a 1-element array.
+            return axarr.item() if axarr.size == 1 else axarr.squeeze()
+        else:
+            # Returned axis array will be always 2-d, even if nrows=ncols=1.
+            return axarr
+
 class _tabPlotWin(wx.Panel):    
     'Creates a basic tabbed plot window for GSAS-II graphics'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -428,14 +551,8 @@ class G2PlotNoteBook(wx.Panel):
                 Axes = Page.figure.get_axes()
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
-                #======================================================================
-                # this is needed for PWDR (etc) "w" plots, but breaks image plotting
-                # removed for now (BHT)
-                #if len(Axes)>1:
-                #    limits[1] = Axes[1].get_ylim()
-                #======================================================================
-#                    print('Axes[1]',Axes[1].get_ylim())
-#                print ('Plot limits:',limits,Axes)
+                if len(Axes)>1 and Plot.get_aspect() == 'auto':  # aspect will be equal for image plotting
+                    limits[1] = Axes[1].get_ylim()
                 if newImage:
                     Page.figure.clf()
                     Plot = Page.figure.gca()          #get a fresh plot after clf()
@@ -2362,7 +2479,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Plot.tick_params('x',length=0,labelbottom=False)
         Plot.tick_params('y',length=0,labelleft=False)
         GS_kw = {'height_ratios':[4, 1],}
-        Plot,Plot1 = Page.figure.subplots(2,1,sharex=True,gridspec_kw=GS_kw)
+        try:
+            Plot,Plot1 = Page.figure.subplots(2,1,sharex=True,gridspec_kw=GS_kw)
+        except AttributeError: # figure.Figure.subplots added in MPL 2.2
+            Plot,Plot1 = MPLsubplots(Page.figure, 2, 1, sharex=True, gridspec_kw=GS_kw)
         Plot1.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
         Plot1.set_xlabel(xLabel,fontsize=16)
         Page.figure.subplots_adjust(left=16/100.,bottom=16/150.,

@@ -1312,7 +1312,7 @@ def UpdateRigidBodies(G2frame,data):
         data.update({'Vector':{'AtInfo':{}},'Residue':{'AtInfo':{}},
             'RBIds':{'Vector':[],'Residue':[]}})       #empty/bad dict - fill it
             
-    global resList
+    global resList,rbId
     Indx = {}
     resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
@@ -1526,7 +1526,7 @@ def UpdateRigidBodies(G2frame,data):
             data['RBIds']['Residue'].append(rbId)
             print ('Rigid body UNKRB added')
         text.close()
-        UpdateResidueRB()
+        UpdateResidueRB(rbId)
         
     def FindNeighbors(Orig,XYZ,atTypes,atNames,AtInfo):
         Radii = []
@@ -1566,29 +1566,8 @@ def UpdateRigidBodies(G2frame,data):
         return riding[2:]
                         
     def OnDefineTorsSeq(event):
-        rbKeys = list(data['Residue'].keys())
-        rbKeys.remove('AtInfo')
-        rbNames = [data['Residue'][k]['RBname'] for k in rbKeys]
-        rbIds = dict(zip(rbNames,rbKeys))
-        rbNames.sort()
-        rbId = 0
-        if len(rbNames) == 0:
-            print ('There are no rigid bodies defined')
-            G2frame.ErrorDialog('No rigid bodies','There are no rigid bodies defined',
-                                parent=G2frame)
-            return
-        elif len(rbNames) > 1:
-            dlg = wx.SingleChoiceDialog(G2frame,'Select rigid body for torsion sequence','Torsion sequence',rbNames)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelection()
-                rbId = rbIds[rbNames[sel]]
-                rbData = data['Residue'][rbId]
-            else:
-                rbData = []
-            dlg.Destroy()
-        else:
-            rbId = rbIds[rbNames[0]]
-            rbData = data['Residue'][rbId]
+        global rbId
+        rbData = data['Residue'][rbId]
         if not len(rbData):
             return
         atNames = rbData['atNames']
@@ -1613,7 +1592,7 @@ def UpdateRigidBodies(G2frame,data):
                 Riding.append(atNames.index(atm))
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
-        UpdateResidueRB()
+        UpdateResidueRB(rbId)
 
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
@@ -1828,7 +1807,7 @@ def UpdateRigidBodies(G2frame,data):
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         VectorRB.Scroll(0,Scroll)
         
-    def UpdateResidueRB():
+    def UpdateResidueRB(rbId=0):
         AtInfo = data['Residue']['AtInfo']
         refChoice = {}
         RefObjs = []
@@ -1838,6 +1817,7 @@ def UpdateRigidBodies(G2frame,data):
             def OnRBName(event):
                 Obj = event.GetEventObject()
                 rbData['RBname'] = Obj.GetValue()
+                wx.CallAfter(UpdateResidueRB,rbId)
                 
             def OnDelRB(event):
                 Obj = event.GetEventObject()
@@ -1863,7 +1843,7 @@ def UpdateRigidBodies(G2frame,data):
                     rbData['rbTypes'] = newTypes
                     rbData['rbXYZ'] = newXYZ
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
-                wx.CallAfter(UpdateResidueRB)
+                wx.CallAfter(UpdateResidueRB,rbId)
                     
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
@@ -1987,7 +1967,6 @@ def UpdateRigidBodies(G2frame,data):
             for row in range(vecTable.GetNumberRows()):
                 for col in range(5):
                     vecGrid.SetCellStyle(row,col,VERY_LIGHT_GREY,True)
-#            vecGrid.SetScrollRate(0,0)
             vecGrid.AutoSizeColumns(False)
             vecSizer = wx.BoxSizer()
             vecSizer.Add(vecGrid)
@@ -2044,7 +2023,7 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 rbId,Seq = Indx[Obj.GetId()]
                 data['Residue'][rbId]['rbSeq'].remove(Seq)        
-                wx.CallAfter(UpdateResidueRB)
+                wx.CallAfter(UpdateResidueRB,rbId)
             
             seqSizer = wx.FlexGridSizer(0,5,2,2)
             seqSizer.AddGrowableCol(3,0)
@@ -2114,14 +2093,28 @@ def UpdateRigidBodies(G2frame,data):
             refChoice[rbId] = [choiceIds[:],choiceIds[:],choiceIds[:]]
             for i in range(3):
                 refChoice[rbId][i].append(rbRef[i])
-                refChoice[rbId][i].sort()     
+                refChoice[rbId][i].sort()
+                
+        def OnSelect(event):
+            global rbId
+            rbname = rbchoice[select.GetSelection()]
+            rbId = RBnames[rbname]
+            wx.CallAfter(UpdateResidueRB,rbId)
             
-        ResidueRBDisplay.DestroyChildren()
+            
+        if ResidueRBDisplay.GetSizer(): ResidueRBDisplay.GetSizer().Clear(True)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
-        for rbId in data['RBIds']['Residue']:
+        ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,label=' Select residue to view:'),0)
+        RBnames = {}
+        for rbid in data['RBIds']['Residue']:
+            RBnames.update({data['Residue'][rbid]['RBname']:rbid,})
+        rbchoice = RBnames.keys()
+        rbchoice.sort()
+        select = wx.ListBox(ResidueRBDisplay,choices=rbchoice,style=wx.LB_SINGLE,size=(-1,120))
+        select.Bind(wx.EVT_LISTBOX,OnSelect)
+        ResidueRBSizer.Add(select,0)
+        if rbId:
             rbData = data['Residue'][rbId]
-            if len(rbData['rbXYZ']) < 3:    #patch - skip around bad RBs with too few atoms
-                continue
             FillRefChoice(rbId,rbData)
             ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
             ResidueRBSizer.Add(rbResidues(rbId,rbData),0)
@@ -2136,7 +2129,6 @@ def UpdateRigidBodies(G2frame,data):
                 ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
             if rbData['rbSeq']:
                 ResidueRBSizer.Add(slideSizer,)
-            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,70*'-'))
 
         ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    

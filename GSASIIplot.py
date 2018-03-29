@@ -4055,20 +4055,11 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
 
     def OnMotion(event):
         xpos,ypos = event.xdata,event.ydata
-        if xpos:
-            xylim = Page.xylim                                        #avoid out of frame mouse position
-            xpos = xpos*(xylim[0][1]-xylim[0][0])+xylim[0][0]
-            xpos = int(xpos+.5)
+        if xpos > 1.:
             if 0 <= xpos < len(resNames):
-                resName = resNames[xpos]
+                resName = resNames[int(xpos+.5)-1]
             else:
                 resName = ''
-            if 0.55 <= ypos <= 1.00:
-                ypos = (ypos-.55)/0.45*xylim[1][1]
-            elif 0. <= ypos <= 0.45:
-                ypos = ypos/0.45*xylim[2][1]
-            else:
-                ypos = 0.0
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
                 if 0 <= xpos < len(resNames):

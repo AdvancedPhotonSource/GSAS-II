@@ -8724,12 +8724,14 @@ entered the right symbol for your structure.
         if not generalData['Map']['MapType']:
             G2frame.ErrorDialog('Fourier map error','Fourier map type not defined')
             return
-        if not len(reflNames):
+        if not reflNames[0]:
             G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
             return
         phaseName = generalData['Name']
         ReflData = GetReflData(G2frame,phaseName,reflNames)
-        if ReflData == None: return
+        if ReflData == None: 
+            G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
+            return
         if 'Omit' in mapData['MapType']:
             dim = '3D '
             pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
@@ -8822,12 +8824,14 @@ entered the right symbol for your structure.
         map4DData = generalData['4DmapData']
         flipData = generalData['Flip']
         reflNames = flipData['RefList']
-        if not len(reflNames):
+        if not reflNames[0]:
             G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
         phaseName = generalData['Name']
         ReflData = GetReflData(G2frame,phaseName,reflNames)
-        if ReflData == None: return
+        if ReflData == None: 
+            G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
+            return
         pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -8858,12 +8862,14 @@ entered the right symbol for your structure.
         mapData = generalData['Map']
         flipData = generalData['Flip']
         reflNames = flipData['RefList']
-        if not len(reflNames):
+        if not reflNames[0]:
             G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
         phaseName = generalData['Name']
         ReflData = GetReflData(G2frame,phaseName,reflNames)
-        if ReflData == None: return
+        if ReflData == None: 
+            G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
+            return
         pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()

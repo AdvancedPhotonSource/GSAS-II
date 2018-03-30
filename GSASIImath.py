@@ -3070,8 +3070,8 @@ def OmitMap(data,reflDict,pgbar=None):
     rho0 = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     M = np.mgrid[0:4,0:4,0:4]
     blkIds = np.array(list(zip(M[0].flatten(),M[1].flatten(),M[2].flatten())))
-    iBeg = blkIds*rho0.shape/4
-    iFin = (blkIds+1)*rho0.shape/4
+    iBeg = blkIds*rho0.shape//4
+    iFin = (blkIds+1)*rho0.shape//4
     rho_omit = np.zeros_like(rho0)
     nBlk = 0
     for iB,iF in zip(iBeg,iFin):

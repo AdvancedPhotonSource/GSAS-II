@@ -89,7 +89,11 @@ def GetSFRMData(self,filename):
         elif 'NOVERFL' in line:
             Nunder = int(fields[0])
             N2byte = 2*int(fields[1])
+            if N2byte%16:
+                N2byte = (N2byte//16+1)*16
             N4byte = 4*int(fields[2])
+            if N4byte%16:
+                N4byte = (N4byte//16+1)*16
     if frmt == 86:
         lines = ['FORMAT 86 Bruker files currently not readible by GSAS-II',]
         return lines,0,0,0

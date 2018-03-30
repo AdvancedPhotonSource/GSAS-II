@@ -2096,48 +2096,49 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].sort()
                 
         def OnSelect(event):
-            global rbId
             rbname = rbchoice[select.GetSelection()]
             rbId = RBnames[rbname]
-            wx.CallAfter(UpdateResidueRB,rbId)
-            
+            wx.CallLater(100,UpdateResidueRB,rbId)
             
         if ResidueRBDisplay.GetSizer(): ResidueRBDisplay.GetSizer().Clear(True)
-        ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
-        ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,label=' Select residue to view:'),0)
         RBnames = {}
         for rbid in data['RBIds']['Residue']:
             RBnames.update({data['Residue'][rbid]['RBname']:rbid,})
         rbchoice = RBnames.keys()
-        rbchoice.sort()
-        select = wx.ListBox(ResidueRBDisplay,choices=rbchoice,style=wx.LB_SINGLE,size=(-1,120))
-        select.Bind(wx.EVT_LISTBOX,OnSelect)
-        ResidueRBSizer.Add(select,0)
-        if rbId:
-            rbData = data['Residue'][rbId]
-            FillRefChoice(rbId,rbData)
-            ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
-            ResidueRBSizer.Add(rbResidues(rbId,rbData),0)
-            ResidueRBSizer.Add((5,5),0)
-            if rbData['rbSeq']:
-                slideSizer,angSlide = SlideSizer()
-            if len(rbData['rbSeq']):
-                ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
-                    'Sel  Del  Bond             Angle      Riding atoms'),
-                    0,wx.ALIGN_CENTER_VERTICAL)                       
-            for iSeq,Seq in enumerate(rbData['rbSeq']):
-                ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
-            if rbData['rbSeq']:
-                ResidueRBSizer.Add(slideSizer,)
+        ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
+        if len(RBnames) > 1:
+            selSizer = wx.BoxSizer(wx.HORIZONTAL)
+            selSizer.Add(wx.StaticText(ResidueRBDisplay,label=' Select residue to view:'),0)
+            rbchoice.sort()
+            select = wx.ComboBox(ResidueRBDisplay,choices=rbchoice)
+            select.Bind(wx.EVT_COMBOBOX,OnSelect)
+            selSizer.Add(select,0)
+            ResidueRBSizer.Add(selSizer,0)
+        if not rbId:
+            rbId = RBnames[rbchoice[0]]
+        rbData = data['Residue'][rbId]
+        FillRefChoice(rbId,rbData)
+        ResidueRBSizer.Add(rbNameSizer(rbId,rbData),0)
+        ResidueRBSizer.Add(rbResidues(rbId,rbData),0)
+        ResidueRBSizer.Add((5,5),0)
+        if rbData['rbSeq']:
+            slideSizer,angSlide = SlideSizer()
+        if len(rbData['rbSeq']):
+            ResidueRBSizer.Add(wx.StaticText(ResidueRBDisplay,-1,
+                'Sel  Del  Bond             Angle      Riding atoms'),
+                0,wx.ALIGN_CENTER_VERTICAL)                       
+        for iSeq,Seq in enumerate(rbData['rbSeq']):
+            ResidueRBSizer.Add(SeqSizer(angSlide,rbId,iSeq,Seq,rbData['atNames']))
+        if rbData['rbSeq']:
+            ResidueRBSizer.Add(slideSizer,)
 
         ResidueRBSizer.Add((5,25),)
         ResidueRBSizer.Layout()    
         ResidueRBDisplay.SetSizer(ResidueRBSizer,True)
+        ResidueRBDisplay.SetAutoLayout(True)
         Size = ResidueRBSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],450) + 20
         ResidueRBDisplay.SetSize(Size)
-        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        ResidueRBDisplay.Show()
         
     def SetStatusLine(text):
         G2frame.GetStatusBar().SetStatusText(text,1)                                      

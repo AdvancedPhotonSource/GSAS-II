@@ -687,6 +687,9 @@ def ProjFileSave(G2frame):
 
 def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     'Save image integration results as powder pattern(s)'
+    waves = {'Cu':[1.54051,1.54433],'Ti':[2.74841,2.75207],'Cr':[2.28962,2.29351],
+        'Fe':[1.93597,1.93991],'Co':[1.78892,1.79278],'Mo':[0.70926,0.713543],
+        'Ag':[0.559363,0.563775]}
     azms = G2frame.Integrate[1]
     X = G2frame.Integrate[2][:-1]
     N = len(X)
@@ -696,8 +699,12 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Comments'))
     Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
     if 'PWDR' in name:
-        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
-        codes = [0 for i in range(12)]
+        if 'target' in data:
+            names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+            codes = [0 for i in range(14)]
+        else:
+            names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+            codes = [0 for i in range(12)]
     elif 'SASD' in name:
         names = ['Type','Lam','Zero','Azimuth'] 
         codes = [0 for i in range(4)]
@@ -757,7 +764,11 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                     if 'label_prm'+num in item.lower():
                         Controls['FreePrm'+num] = item.split('=')[1].strip()
         if 'PWDR' in Aname:
-            parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
+            if 'target' in data:    #from lab x-ray 2D imaging data
+                wave1,wave2 = waves[data['target']]
+                parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
+            else:
+                parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
         elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]

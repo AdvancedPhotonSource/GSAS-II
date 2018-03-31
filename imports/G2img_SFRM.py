@@ -16,9 +16,7 @@ from __future__ import division, print_function
 import time
 import GSASIIobj as G2obj
 import GSASIIpath
-import struct as st
 import numpy as np
-import unpack_cbf as cbf
 GSASIIpath.SetVersionNumber("$Revision: 3207 $")
 class SFRM_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read Bruker Advance image data .sfrm file.
@@ -28,7 +26,7 @@ class SFRM_ReaderClass(G2obj.ImportImage):
             extensionlist=('.sfrm',),
             strictExtension=True,
             formatName = 'SFRM image',
-            longFormatName = 'SFRM Binary Data Format image file'
+            longFormatName = 'Bruker SFRM Binary Data Format image file'
             )
 
     def ContentsValidator(self, filename):        
@@ -37,7 +35,7 @@ class SFRM_ReaderClass(G2obj.ImportImage):
         return True
         
     def Reader(self,filename, ParentFrame=None, **unused):
-        '''Read using Bob's routine :func:`GetCbfData`
+        '''Read using Bob's routine :func:`GetSFRMData`
         '''
         self.Comments,self.Data,self.Npix,self.Image = GetSFRMData(self,filename)
         if self.Npix == 0 or not len(self.Comments):
@@ -72,10 +70,9 @@ def GetSFRMData(self,filename):
         fields = line.split(':')[1].split()
         if 'TARGET' in line:
             wave = meanwaves[fields[0]]
+            target = fields[0].capitalize()
         elif 'DISTANC' in line:
             dist = float(fields[0])*10.
-#        elif 'Pixel_size' in line:
-#            pixSize = [float(fields[2])*1.e6,float(fields[5])*1.e6]
         elif 'CENTER' in line:
             cent = [float(fields[0]),float(fields[1])]
         elif 'NROWS' in line:
@@ -115,7 +112,7 @@ def GetSFRMData(self,filename):
         img[i] = img4byte[j]
     image = np.reshape(img,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
-    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
+    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy,'target':target}
     Npix = sizexy[0]*sizexy[1]
     
     return lines,data,Npix,image

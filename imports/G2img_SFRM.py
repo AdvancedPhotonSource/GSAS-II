@@ -72,7 +72,9 @@ def GetSFRMData(self,filename):
             wave = meanwaves[fields[0]]
             target = fields[0].capitalize()
         elif 'DISTANC' in line:
-            dist = float(fields[0])*10.
+            dist = float(fields[1])*10.
+        elif 'ANGLES' in line:
+            twoth = float(fields[0])
         elif 'CENTER' in line:
             cent = [float(fields[0]),float(fields[1])]
         elif 'NROWS' in line:
@@ -96,6 +98,7 @@ def GetSFRMData(self,filename):
         return lines,0,0,0
     nxy = sizexy[0]*sizexy[1]
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
+    cent[0] += dist*np.tan(np.pi*twoth/180.)
     File.seek(imageBeg)
     img = File.read(nxy)
     img2byte = File.read(N2byte)
@@ -112,7 +115,11 @@ def GetSFRMData(self,filename):
         img[i] = img4byte[j]
     image = np.reshape(img,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
-    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy,'target':target}
+    data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,
+            'size':sizexy,'target':target,'tilt':-twoth,'rotation':90.}
+    data['pixLimit'] = 5
+    data['calibdmin'] = 1.0
+    data['cutoff'] = .5
     Npix = sizexy[0]*sizexy[1]
     
     return lines,data,Npix,image

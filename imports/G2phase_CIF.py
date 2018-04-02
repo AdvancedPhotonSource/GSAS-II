@@ -280,8 +280,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     for cent in sgcenloop:
                         M,C,S = G2spc.MagSSText2MTS(cent[centid])
                         SSGData['SSGCen'].append(C)
-                        if not C[3]:
-                            SGData['SGCen'].append(C[:3])
+                        SGData['SGCen'].append(C[:3])
+#                        if not C[3]:
+#                            SGData['SGCen'].append(C[:3])
                         censpn += list(np.array(spnflp)*S)
                     self.MPhase['General']['SSGData'] = SSGData
                 else:    

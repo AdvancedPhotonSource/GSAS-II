@@ -116,7 +116,7 @@ def GetSFRMData(self,filename):
     image = np.reshape(img,(sizexy[1],sizexy[0]))
     print ('import time: %.3f'%(time.time()-time0))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,
-            'size':sizexy,'target':target,'tilt':-twoth,'rotation':90.}
+            'size':sizexy,'target':target,'tilt':-twoth,'rotation':90.,'twoth':str(round(twoth,1))}
     data['pixLimit'] = 5
     data['calibdmin'] = 1.0
     data['cutoff'] = .5

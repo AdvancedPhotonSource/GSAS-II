@@ -325,7 +325,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     else:
         Data['type'] = 'PWDR'
         Data['color'] = GSASIIpath.GetConfigValue('Contour_color','Paired')
-        if 'tilt' not in Data:          #preset in e.g. Bruker importer?
+        if 'tilt' not in Data:          #defaults if not preset in e.g. Bruker importer
             Data['tilt'] = 0.0
             Data['rotation'] = 0.0
             Data['pixLimit'] = 20

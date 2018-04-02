@@ -2383,6 +2383,8 @@ class GSASII(wx.Frame):
             help='Replay saved commands', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='Replay log')
         self.Bind(wx.EVT_MENU, log.ReplayLog, item)
+        
+# End of logging ##############################################################
 
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
@@ -5040,7 +5042,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # IMG / Image Controls
         G2G.Define_wxId('wxID_IMCALIBRATE', 'wxID_IMRECALIBRATE', 'wxID_IMINTEGRATE', 'wxID_IMCLEARCALIB', 'wxID_IMRECALIBALL', 
             'wxID_IMCOPYCONTROLS', 'wxID_INTEGRATEALL', 'wxID_IMSAVECONTROLS', 'wxID_IMLOADCONTROLS', 'wxID_IMAUTOINTEG',
-            'wxID_IMCOPYSELECTED', 'wxID_SAVESELECTEDCONTROLS', 'wxID_IMXFERCONTROLS', 'wxID_IMRESETDIST',)
+            'wxID_IMCOPYSELECTED', 'wxID_SAVESELECTEDCONTROLS', 'wxID_IMXFERCONTROLS', 'wxID_IMRESETDIST',
+            'wxID_LOADELECTEDCONTROLS')
         self.ImageMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ImageMenu)
         self.ImageEdit = wx.Menu(title='')
@@ -5063,6 +5066,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         ImageParams.Append(G2G.wxID_IMSAVECONTROLS,'Save Controls','Save image controls to file')
         ImageParams.Append(G2G.wxID_SAVESELECTEDCONTROLS,'Save Multiple Controls','Save controls from selected images to file')
         ImageParams.Append(G2G.wxID_IMLOADCONTROLS,'Load Controls','Load image controls from file')
+        ImageParams.Append(G2G.wxID_LOADELECTEDCONTROLS,'Load Multiple Controls','Load multiple image controls from multiple files')
         ImageParams.Append(G2G.wxID_IMXFERCONTROLS,'Xfer angles','Transfer integration range for other detector distances')
         ImageParams.Append(G2G.wxID_IMRESETDIST,'Reset dist','Reset all detector dist to set dist')
         self.PostfillDataMenu()

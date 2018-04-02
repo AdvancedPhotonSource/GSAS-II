@@ -410,7 +410,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
             'binType','SampleShape','PolaVal','SampleAbs','dark image','background image',
-            ]
+            'twoth']
         for key in keys:
             if key not in data:     #uncalibrated!
                 continue
@@ -464,11 +464,38 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             print('writing '+filename)
             WriteControls(filename,data)
             
-    def OnLoadControls(event):
+    def LoadControls(Slines,data):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','setdist',
-            'PolaVal','SampleAbs','dark image','background image']
+            'PolaVal','SampleAbs','dark image','background image','twoth']
+        save = {}
+        for S in Slines:
+            if S[0] == '#':
+                continue
+            [key,val] = S.strip().split(':',1)
+            if key in ['type','calibrant','binType','SampleShape',]:    #strings
+                save[key] = val
+            elif key in ['varyList',]:
+                save[key] = eval(val)   #dictionary
+            elif key in ['rotation']:
+                save[key] = float(val)
+            elif key in ['center',]:
+                if ',' in val:
+                    save[key] = eval(val)
+                else:
+                    vals = val.strip('[] ').split()
+                    save[key] = [float(vals[0]),float(vals[1])] 
+            elif key in cntlList:
+                save[key] = eval(val)
+        data.update(save)
+        # next line removed. Previous updates tree contents. The next
+        # makes a copy of data, puts it into tree and "disconnects" data
+        # from tree contents (later changes to data are lost!)
+        #G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
+        
+            
+    def OnLoadControls(event):
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', pth, '', 
@@ -477,40 +504,53 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
                 File = open(filename,'r')
-                save = {}
-                S = File.readline()
-                while S:
-                    if S[0] == '#':
-                        S = File.readline()
-                        continue
-                    [key,val] = S.strip().split(':',1)
-                    if key in ['type','calibrant','binType','SampleShape',]:    #strings
-                        save[key] = val
-                    elif key in ['varyList',]:
-                        save[key] = eval(val)   #dictionary
-                    elif key in ['rotation']:
-                        save[key] = float(val)
-                    elif key in ['center',]:
-                        if ',' in val:
-                            save[key] = eval(val)
-                        else:
-                            vals = val.strip('[] ').split()
-                            save[key] = [float(vals[0]),float(vals[1])] 
-                    elif key in cntlList:
-                        save[key] = eval(val)
-                    S = File.readline()
-                data.update(save)
-                # next line removed. Previous updates tree contents. The next
-                # makes a copy of data, puts it into tree and "disconnects" data
-                # from tree contents (later changes to data are lost!)
-                #G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
+                Slines = File.readlines()
                 File.close()
+                LoadControls(Slines,data)
         finally:
             dlg.Destroy()
         G2frame.ImageZ = GetImageZ(G2frame,data)
         ResetThresholds()
         G2plt.PlotExposedImage(G2frame,event=event)
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
+        
+    def OnLoadMultiControls(event):         #TODO: how read in multiple image controls & match them by 'twoth' tag?
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        controlsDict = {}
+        dlg = wx.FileDialog(G2frame, 'Choose image control files', pth, '', 
+            'image control files (*.imctrl)|*.imctrl',wx.FD_OPEN|wx.FD_MULTIPLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filelist = dlg.GetPaths()
+                if len(filelist) == 0: return
+                for filename in filelist:
+                    File = open(filename,'r')
+                    Slines = File.readlines()
+                    for S in Slines:
+                        if S.find('twoth') == 0:
+                            indx = S.split(':')[1][:-1]     #remove '\n'!
+                    controlsDict[indx] = Slines
+                    File.close()
+        finally:
+            dlg.Destroy()
+        if not len(controlsDict):
+            return
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select images','Select images for updating controls:',
+            Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                images = dlg.GetSelections()
+                if not len(images):
+                    return
+                for image in images:
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Names[image])
+                    imctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
+                    Slines = controlsDict[imctrls['twoth']]
+                    LoadControls(Slines,imctrls)
+        finally:
+            dlg.Destroy()
         
     def OnTransferAngles(event):
         '''Sets the integration range for the selected Images based on the difference in detector distance
@@ -1236,6 +1276,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     G2frame.Bind(wx.EVT_MENU, OnSaveControls, id=G2G.wxID_IMSAVECONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnSaveMultiControls, id=G2G.wxID_SAVESELECTEDCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnLoadControls, id=G2G.wxID_IMLOADCONTROLS)
+    G2frame.Bind(wx.EVT_MENU, OnLoadMultiControls, id=G2G.wxID_LOADELECTEDCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnTransferAngles, id=G2G.wxID_IMXFERCONTROLS)
     G2frame.Bind(wx.EVT_MENU, OnResetDist, id=G2G.wxID_IMRESETDIST)
     def OnDestroy(event):

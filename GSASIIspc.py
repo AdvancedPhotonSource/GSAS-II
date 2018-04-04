@@ -434,14 +434,14 @@ def SGPrint(SGData,AddInv=False):
         for i,Opr in enumerate(SGData['SGOps']):
             IOpr = [-Opr[0],-Opr[1]]
             SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
-    if SGData.get('SGGray',False) and not SGData.get('SGFixed',False):
-        SGTable.append("     for 1'")
-        for i,Opr in enumerate(SGData['SGOps']):
-            SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
-        if AddInv and SGData['SGInv']:
-            for i,Opr in enumerate(SGData['SGOps']):
-                IOpr = [-Opr[0],-Opr[1]]
-                SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
+#    if SGData.get('SGGray',False) and not SGData.get('SGFixed',False):
+#        SGTable.append("     for 1'")
+#        for i,Opr in enumerate(SGData['SGOps']):
+#            SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
+#        if AddInv and SGData['SGInv']:
+#            for i,Opr in enumerate(SGData['SGOps']):
+#                IOpr = [-Opr[0],-Opr[1]]
+#                SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
     return SGText,SGTable
 
 def AllOps(SGData):

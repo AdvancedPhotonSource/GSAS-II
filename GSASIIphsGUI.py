@@ -73,7 +73,7 @@ atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 class SGMagSpinBox(wx.Dialog):
     ''' Special version of MessageBox that displays magnetic spin text
     '''
-    def __init__(self,parent,title,text,table,Cents,names,spins,):
+    def __init__(self,parent,title,text,table,Cents,names,spins,ifGray):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(420,350))
         self.text = text
@@ -81,6 +81,7 @@ class SGMagSpinBox(wx.Dialog):
         self.names = names
         Nnames = len(self.names)
         self.spins = spins
+        self.ifGray = ifGray
         self.PrintTable = [' Magnetic symmetry operations for %s:'%self.text[0].split(':')[1],]
         self.panel = wxscroll.ScrolledPanel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -91,53 +92,60 @@ class SGMagSpinBox(wx.Dialog):
         lentable = len(self.table)
         for line in self.text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+            if 'equivalent' in line:
+                break
         ncol = self.table[0].count(',')+2
-        for ic,cent in enumerate(cents):
-            Cent = np.array(Cents[ic])
-            if ic:
-                cent = cent.strip(' (').strip(')+\n') 
-                mainSizer.Add(wx.StaticText(self.panel,label='      for (%s)+'%(cent)),0,WACV)
-            tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-            j = 0
-            for item in self.table:
-                if 'for' in item:
-                    mainSizer.Add(tableSizer,0,WACV)
-                    mainSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
-                    tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-                    continue
-                flds = item.split(')')[1]
-                tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
-                flds = flds.replace(' ','').split(',')
-                for i,fld in enumerate(flds):
-                    if i < ncol-1:
-                        text = wx.StaticText(self.panel,label='%s, '%(fld))
-                        tableSizer.Add(text,0,WACV)
-                    else:
-                        text = wx.StaticText(self.panel,label='%s '%(fld))
-                        tableSizer.Add(text,0,WACV)
-                text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
-                try:
-                    if self.spins[j+ic*lentable] < 0:
-                        text.SetForegroundColour('Red')
-                        item += ',-1'
-                    else:
+        nBlk = 0
+        nG = 1
+        if self.ifGray:
+            nG = 2
+        for ng in range(nG):
+            for ic,cent in enumerate(cents):
+                Cent = np.array(Cents[ic])
+                if ic:
+                    if cent: cent = cent.strip(' (').strip(')+\n')
+                    label = '      for (%s)+'%(cent)
+                    if ng or self.spins[nBlk*lentable] < 0:     #test for gray operators
+                        label += "1'"
+                    mainSizer.Add(wx.StaticText(self.panel,label=label),0,WACV)
+                tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+                j = 0
+                for item in self.table:
+                    flds = item.split(')')[1]
+                    tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
+                    flds = flds.replace(' ','').split(',')
+                    for i,fld in enumerate(flds):
+                        if i < ncol-1:
+                            text = wx.StaticText(self.panel,label='%s, '%(fld))
+                            tableSizer.Add(text,0,WACV)
+                        else:
+                            text = wx.StaticText(self.panel,label='%s '%(fld))
+                            tableSizer.Add(text,0,WACV)
+                    text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
+                    try:
+                        if self.spins[j+nBlk*lentable] < 0:
+                            text.SetForegroundColour('Red')
+                            item += ',-1'
+                        else:
+                            item += ',+1'
+                    except IndexError:
+                        print(self.spins,j,ic,lentable,self.names[j%Nnames])
                         item += ',+1'
-                except IndexError:
-                    print(self.spins,j,ic,lentable,self.names[j%Nnames])
-                    item += ',+1'
-                M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
-                T = (T+Cent)%1.
-                item = G2spc.MT2text([M,T],reverse=True)
-                if S > 0:
-                    item += ',+1'
-                else:
-                    item += ',-1'
-                self.PrintTable.append(item.replace(' ','').lower())
-                tableSizer.Add(text,0,WACV)
-                if not j%2:
-                    tableSizer.Add((20,0))
-                j += 1                
-            mainSizer.Add(tableSizer,0,WACV)
+                    M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
+                    T = (T+Cent)%1.
+                    item = G2spc.MT2text([M,T],reverse=True)
+                    if S > 0:
+                        item += ',+1'
+                    else:
+                        item += ',-1'
+                    self.PrintTable.append(item.replace(' ','').lower())
+                    tableSizer.Add(text,0,WACV)
+                    if not j%2:
+                        tableSizer.Add((20,0))
+                    j += 1
+                nBlk += 1
+                mainSizer.Add(tableSizer,0,WACV)
+            
             
         def OnPrintOps(event):
             for item in self.PrintTable:
@@ -1492,19 +1500,21 @@ entered the right symbol for your structure.
                     Text = '\n'.join(text)
                     wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
                 else:
+                    if generalData['Type'] == 'magnetic':
+                        Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
+                        if SGData['SGInv']:
+                            Nops *= 2
+                        SGData['SpnFlp'] = Nops*[1,]
+                    if generalData['Modulated']:
+                        generalData['SuperSg'] = SetDefaultSSsymbol()
+                        generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                        if SGData['SGGray']:
+                            SGData['SpnFlp'] += Nops*[-1,]
                     text,table = G2spc.SGPrint(SGData)
                     generalData['SGData'] = SGData
                     SGTxt.SetLabel(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Information'
                     G2G.SGMessageBox(General,msg,text,table).Show()
-                if generalData['Type'] == 'magnetic':
-                    Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
-                    if SGData['SGInv']:
-                        Nops *= 2
-                    SGData['SpnFlp'] = Nops*[1,]
-                if generalData['Modulated']:
-                    generalData['SuperSg'] = SetDefaultSSsymbol()
-                    generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                 Atoms = data['Atoms']
                 cx,ct,cs,cia = generalData['AtomPtrs']
                 for atom in Atoms:
@@ -1848,7 +1858,8 @@ entered the right symbol for your structure.
                 if SGData['SGGray'] and "1'" not in text[0]:
                     text[0] += " 1'"
                     text[3] += "1'"
-                SGMagSpinBox(General,msg,text,table,SGData['SGCen'],OprNames,SpnFlp).Show()
+                SGMagSpinBox(General,msg,text,table,SGData['SGCen'],OprNames,
+                    SGData['SpnFlp'],SGData['SGGray']& (not SGData['SGFixed'])).Show()
                                
             SGData = generalData['SGData']            
             Indx = {}

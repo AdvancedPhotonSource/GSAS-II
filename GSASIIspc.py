@@ -2930,7 +2930,7 @@ def SytSym(XYZ,SGData):
     icen = SGData['SGCen']
     if SGData['SGFixed']:       #already in list of operators
         inv = 1
-    Xeqv = GenAtom(XYZ,SGData,True)
+    Xeqv = list(GenAtom(XYZ,SGData,True))
 #    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData['SGOps'])
     L = -1
@@ -2955,7 +2955,7 @@ def SytSym(XYZ,SGData):
                         dupDir[px] = L
                         Isym += 2**(jx-1)
     if Isym == 1073741824: Isym = 0
-    Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)//Jdup
+    Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*inv//Jdup
           
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
    

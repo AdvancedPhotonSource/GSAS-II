@@ -2757,8 +2757,9 @@ entered the right symbol for your structure.
                     try:    #patch for sytsym name changes
                         CSI = G2spc.GetCSuinel(atomData[row][colSS])
                     except KeyError:
-                        Sytsym = G2spc.SytSym(atomData[row][colX:colX+3],SGData)[0]
+                        Sytsym,Mult = G2spc.SytSym(atomData[row][colX:colX+3],SGData)[:2]
                         atomData[row][colSS] = Sytsym
+                        atomData[row][colSS+1] = Mult
                         CSI = G2spc.GetCSuinel(Sytsym)
                     Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                     Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)

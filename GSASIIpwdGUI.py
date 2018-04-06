@@ -2846,35 +2846,35 @@ def UpdateUnitCellsGrid(G2frame, data):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[6] = controls[7] = controls[8] = value
             controls[9] = controls[10] = controls[11] = 90.0
-            Obj.SetValue("%.5f"%(controls[6]))
+            Obj.SetValue(controls[6])
         elif controls[5] in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
             if ObjId == 0:
                 controls[6] = controls[7] = value
-                Obj.SetValue("%.5f"%(controls[6]))
+                Obj.SetValue(controls[6])
             else:
                 controls[8] = value
-                Obj.SetValue("%.5f"%(controls[8]))
+                Obj.SetValue(controls[8])
             controls[9] = controls[10] = controls[11] = 90.0
             if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
         elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
             controls[6+ObjId] = value
-            Obj.SetValue("%.5f"%(controls[6+ObjId]))
+            Obj.SetValue(controls[6+ObjId])
             controls[9] = controls[10] = controls[11] = 90.0
         elif controls[5] in ['C2/m','P2/m']:
             controls[9] = controls[11] = 90.0
             if ObjId != 3:
                 controls[6+ObjId] = value
-                Obj.SetValue("%.5f"%(controls[6+ObjId]))
+                Obj.SetValue(controls[6+ObjId])
             else:
                 controls[10] = value
-                Obj.SetValue("%.3f"%(controls[10]))
+                Obj.SetValue(controls[10])
         else:
             controls[6+ObjId] = value
             if ObjId < 3:
-                Obj.SetValue("%.5f"%(controls[6+ObjId]))
+                Obj.SetValue(controls[6+ObjId])
             else:
-                Obj.SetValue("%.3f"%(controls[6+ObjId]))
+                Obj.SetValue(controls[6+ObjId])
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         volVal.SetValue("%.3f"%(controls[12]))
         
@@ -2909,19 +2909,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         finally:
             dlg.Destroy()
         
-    def OnCellChange(event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        ObjId = cellList.index(Obj.GetId())
-        try:
-            value = max(1.0,float(Obj.GetValue()))
-        except ValueError:
-            if ObjId//2 < 3:               #bad cell edge - reset
-                value = controls[6+ObjId//2]
-            else:                       #bad angle
-                value = 90.
-        SetCellValue(Obj,ObjId//2,value)
-        OnHklShow(event)
+    def OnCellChange(invalid,value,tc):
+        if invalid:
+            return
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnHklShow(event):
@@ -2930,7 +2921,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
-#        ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
         Symb = SGData['SpGrp']
@@ -2944,7 +2934,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
             if len(peaks[0]):
-#                dmin = peaks[0][-1][7]
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
                 M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
@@ -3210,14 +3199,14 @@ def UpdateUnitCellsGrid(G2frame, data):
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
-    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
-    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
-    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
+    cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
+    [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
+    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
     [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
-        ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
+        [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
     [[13,],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
-        ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
+        [(10,5),(10,5),(10,5),"%.3f",(10,3),(10,3),(10,3)],
         [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     
     G2frame.dataWindow.IndexPeaks.Enable(False)
@@ -3312,10 +3301,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt),0,WACV)
         if ifEdit:          #a,b,c,etc.
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
-            cellVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
-            cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
-            cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
+            cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange)
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
             cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))

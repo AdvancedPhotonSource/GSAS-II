@@ -791,7 +791,9 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
-    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
+    Nops = len(SGMT)*Ncen
+    if not SGData['SGFixed']:
+        Nops *= (1+SGData['SGInv'])
     MFtables = calcControls['MFtables']
     Amat,Bmat = G2lat.Gmat2AB(G)
     TwinLaw = np.ones(1)
@@ -857,10 +859,13 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
         TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
-        if SGData['SGInv'] and not SGData['SGFixed']:
-            mphase = np.hstack((phase,-phase))
+        if SGData['SGInv']:
+            if not SGData['SGFixed']:
+                mphase = np.hstack((phase,-phase))  #OK
+            else:
+                mphase = phase
         else:
-            mphase = phase 
+            mphase = phase                    #
         mphase = np.array([mphase+twopi*np.inner(cen,H.T)[:,nxs,nxs] for cen in SGData['SGCen']])
         mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for

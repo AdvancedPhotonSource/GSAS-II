@@ -1078,7 +1078,6 @@ def UpdateBackground(G2frame,data):
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
-#        GSASIIpath.IPyBreak()
         superMinusOne = unichr(0xaf)+unichr(0xb9)
         for plot in auxPlot:
             XY = np.array(plot[:2])
@@ -1196,7 +1195,6 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             debyeTable = G2G.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             debyeGrid = G2G.GSGrid(parent=G2frame.dataWindow)
-#            debyeGrid.SetScrollRate(0,0)
             debyeGrid.SetTable(debyeTable, True)
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             debyeGrid.AutoSizeColumns(False)
@@ -1258,7 +1256,6 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
             peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
-#            peaksGrid.SetScrollRate(0,0)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.AutoSizeColumns(False)
@@ -1645,7 +1642,6 @@ def UpdateInstrumentGrid(G2frame,data):
             instData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Instrument Parameters'))[0]
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
-#            GSASIIpath.IPyBreak()
             if len(data) == len(instData) and instType == instData['Type'][0]:   #don't mix data types or lam & lam1/lam2 parms!
                 for item in instData:
                     if item not in ['Source',]:
@@ -2677,7 +2673,6 @@ def UpdateIndexPeaksGrid(G2frame, data):
             Sigs.append(sig)
     G2frame.indxPeaks.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     G2frame.indxPeaks.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
-#    G2frame.indxPeaks.SetScrollRate(0,0)
     G2frame.indxPeaks.AutoSizeColumns(False)
     if len(XY):
         XY = np.array(XY)
@@ -3392,7 +3387,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
         gridDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnSortCells)
-#        gridDisplay.SetScrollRate(0,0)
         gridDisplay.SetRowLabelSize(0)
         gridDisplay.AutoSizeColumns(False)
         for r in range(gridDisplay.GetNumberRows()):

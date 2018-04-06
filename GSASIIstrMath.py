@@ -787,6 +787,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     '''        
 #    phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -809,17 +810,14 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
-    Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
+    Mag = np.sqrt(np.inner(Gdata.T,np.inner(Gdata.T,GS)))
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
-    Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
-    Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps*Inv*Ncen
-    Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last
-    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T
+    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T.reshape((len(SGMT),-1))
     if SGData['SGInv'] and not SGData['SGFixed']:
         Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
     Uij = np.array(G2lat.U6toUij(Uijdata))
@@ -1075,6 +1073,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     '''
     #TODO: fix mag math - moments parallel to crystal axes
     ast = np.sqrt(np.diag(G))
+    GS = G/np.outer(ast,ast)
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -1090,17 +1089,13 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return {}
     mSize = len(Mdata)
-    Mag = np.sqrt(np.sum(Gdata**2,axis=0))      #magnitude of moments for uniq atoms
-#    Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
+    Mag = np.sqrt(np.inner(Gdata.T,np.inner(Gdata.T,GS))).flatten()
     dGdM = np.repeat(Gdata[:,nxs,:],Nops,axis=1)
-#    Gdata = np.inner(Bmat,Gdata.T)              #convert to crystal space
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
-#    Gdata = np.inner(Amat,Gdata.T)              #convert back to cart. space MXYZ, Natoms, NOps
-#    Gdata = np.swapaxes(Gdata,1,2)              # put Natoms last - Mxyz,Nops,Natms
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
     dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))

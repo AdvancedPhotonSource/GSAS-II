@@ -310,6 +310,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         censpn += list(np.array(spnflp)*S)
                 self.MPhase['General']['SGData'] = SGData
                 self.MPhase['General']['SGData']['SpnFlp'] = censpn
+                G2spc.GenMagOps(SGData)         #set magMom
                 self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
                 MagPtGp = blk.get('_space_group.magn_point_group')
                 if not MagPtGp:

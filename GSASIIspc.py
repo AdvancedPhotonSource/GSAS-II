@@ -1093,30 +1093,31 @@ def GenMagOps(SGData):
     for incv in range(Ncv):
         Nsyms += Nsym
         sgOps += sgOp
-        OprNames += oprName    
-    SpnFlp = np.ones(Nsym,dtype=np.int)
-    GenFlg = SGData.get('GenFlg',[0])
-    Ngen = len(SGData['SGGen'])
-#    print ('GenFlg:',SGData['GenFlg'])
-#    print ('GenSym:',SGData['GenSym'])
-    Nfl = len(GenFlg)
-    for ieqv in range(Nsym):
-        for iunq in range(Nfl):
-            if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
-                SpnFlp[ieqv] *= FlpSpn[iunq]
-#        print ('\nMagSpGrp:',SGData['MagSpGrp'],Ncv)
-#        print ('FlpSpn:',Nfl,FlpSpn)
+        OprNames += oprName
+    if SGData['SGFixed']:
+        SpnFlp = SGData['SpnFlp']
+    else:
+        SpnFlp = np.ones(Nsym,dtype=np.int)
+        GenFlg = SGData.get('GenFlg',[0])
+        Ngen = len(SGData['SGGen'])
+    #    print ('GenFlg:',SGData['GenFlg'])
+    #    print ('GenSym:',SGData['GenSym'])
+        Nfl = len(GenFlg)
+        for ieqv in range(Nsym):
+            for iunq in range(Nfl):
+                if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
+                    SpnFlp[ieqv] *= FlpSpn[iunq]
+    #        print ('\nMagSpGrp:',SGData['MagSpGrp'],Ncv)
+    #        print ('FlpSpn:',Nfl,FlpSpn)
+        for incv in range(Ncv):
+            if incv:
+                try:
+                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
+                except IndexError:
+                    FlpSpn = [1,]+FlpSpn
+                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
     detM = [nl.det(M) for M in sgOp]
-    for incv in range(Ncv):
-        if incv:
-            try:
-                SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
-            except IndexError:
-                FlpSpn = [1,]+FlpSpn
-                SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
-#    if ' 1bar ' in SGData['GenSym'][0] and FlpSpn[0] < 0:
-#        detM[1] = 1.
-    MagMom = SpnFlp*np.array(Ncv*detM)
+    MagMom = SpnFlp*np.array(Ncv*detM)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
 #        print ('SgOps:',OprNames)
 #        print ('SGGen:',SGData['SGGen'])

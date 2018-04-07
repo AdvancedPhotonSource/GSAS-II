@@ -810,7 +810,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         GetAtomFXU(pfx,calcControls,parmDict)
     if not Xdata.size:          #no atoms in phase!
         return
-    Mag = np.sqrt(np.inner(Gdata.T,np.inner(Gdata.T,GS)))
+    Mag = np.sqrt(np.array([np.inner(mag,np.inner(mag,GS)) for mag in Gdata.T]))
     Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
@@ -1089,7 +1089,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return {}
     mSize = len(Mdata)
-    Mag = np.sqrt(np.inner(Gdata.T,np.inner(Gdata.T,GS))).flatten()
+    Mag = np.sqrt(np.array([np.inner(mag,np.inner(mag,GS)) for mag in Gdata.T]))
     dGdM = np.repeat(Gdata[:,nxs,:],Nops,axis=1)
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:

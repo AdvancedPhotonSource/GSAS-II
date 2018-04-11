@@ -1098,7 +1098,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
     Gdata = Gdata/Mag       #normalze mag. moments
     Gdata = np.inner(Gdata.T,uAmat).T*np.sqrt(nl.det(GS))       #make unit vectors in Cartesian space
-    dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
+#    dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
@@ -1152,11 +1152,12 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         NQ = np.where(np.abs(Q)>0.,1./np.abs(Q),0.)     #this sort of works esp for 1 axis moments
 #        NQ2 = np.where(np.abs(Q)>0.,1./np.sqrt(np.sum(Q**2,axis=0)),0.)
-        dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
-        dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
-        dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
+#        dqdm = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T   #Mxyz,Mxyz,Nref (3x3 matrix)
+#        dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
+#        dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
 #        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
-        dmx = (NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2)/Mag                                #*Mag canceled out of dqmx term
+        dmx = (NQ*Q*dGdM[:,nxs,:,:])/Mag        #just use dpdM term & ignore dqdM term(small)
+#        dmx = (NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2)/Mag
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]

@@ -1655,14 +1655,18 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             pFile.write(sigstr+'\n')
             
     def PrintMomentsAndSig(General,Atoms,atomsSig):
+        cell = General['Cell'][1:7]
+        G = G2lat.fillgmat(cell)
+        ast = np.sqrt(np.diag(G))
+        GS = G/np.outer(ast,ast)
         pFile.write('\n Magnetic Moments:\n')    #add magnitude & angle, etc.? TBD
-        line = '   name      Mx        My        Mz'
+        line = '   name       Mx        My        Mz       |Mag|'
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
         AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
         pFile.write(line+'\n')
         pFile.write(135*'-'+'\n')
-        fmt = {0:'%7s',ct:'%7s',cmx:'%10.5f',cmx+1:'%10.5f',cmx+2:'%10.5f'}
+        fmt = {0:'%7s',ct:'%7s',cmx:'%10.3f',cmx+1:'%10.3f',cmx+2:'%10.3f'}
         noFXsig = {cmx:[10*' ','%10s'],cmx+1:[10*' ','%10s'],cmx+2:[10*' ','%10s']}
         for i,at in enumerate(Atoms):
             if AtInfo[at[ct]]:
@@ -1676,6 +1680,10 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
                         sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
+                mag = np.array(at[cmx:cmx+3])
+                Mag = np.sqrt(np.inner(mag,np.inner(mag,GS)))
+                valstr += '%10.3f'%Mag
+                sigstr += 10*' '
                 pFile.write(name+'\n')
                 pFile.write(valstr+'\n')
                 pFile.write(sigstr+'\n')

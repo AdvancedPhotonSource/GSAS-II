@@ -21,8 +21,14 @@ calculation & for the 1st selected derivative (rest should be the same).
 '''
 
 import sys
-import cPickle
-import cProfile,pstats,StringIO
+import platform
+if '2' in platform.python_version_tuple()[0]:
+    import cPickle
+    import StringIO
+else:
+    import _pickle as cPickle
+    import io as StringIO
+import cProfile,pstats
 import wx
 import numpy as np
 import GSASIIpath
@@ -52,12 +58,9 @@ class testDeriv(wx.Frame):
             size=wx.Size(800, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(help='Open testDeriv.dat', id=wxID_FILEOPEN,
-             kind=wx.ITEM_NORMAL,text='Open testDeriv.dat file')
-        self.File.Append(help='Make derivative plots',id=wxID_MAKEPLOTS,
-            kind=wx.ITEM_NORMAL,text='Make plots')
-        self.File.Append(help='Exit from testDeriv', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
-            text='Exit')
+        self.File.Append(wxID_FILEOPEN,'Open testDeriv.dat file','Open testDeriv.dat')
+        self.File.Append(wxID_MAKEPLOTS,'Make plots','Make derivative plots')
+        self.File.Append(wxID_FILEEXIT,'Exit','Exit from testDeriv')
         self.Bind(wx.EVT_MENU, self.OnTestRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnMakePlots,id=wxID_MAKEPLOTS)
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
@@ -92,13 +95,22 @@ class testDeriv(wx.Frame):
                 self.dirname = dlg.GetDirectory()
                 testFile = dlg.GetPath()
                 file = open(testFile,'rb')
-                self.values = cPickle.load(file)
-                self.HistoPhases = cPickle.load(file)
-                (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
-                self.parmDict = cPickle.load(file)
-                self.varylist = cPickle.load(file)
-                self.calcControls = cPickle.load(file)
-                self.pawleyLookup = cPickle.load(file)
+                if '2' in platform.python_version_tuple()[0]:
+                    self.values = cPickle.load(file)
+                    self.HistoPhases = cPickle.load(file)
+                    (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
+                    self.parmDict = cPickle.load(file)
+                    self.varylist = cPickle.load(file)
+                    self.calcControls = cPickle.load(file)
+                    self.pawleyLookup = cPickle.load(file)
+                else:
+                    self.values = cPickle.load(file,encoding='Latin-1')
+                    self.HistoPhases = cPickle.load(file,encoding='Latin-1')
+                    (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
+                    self.parmDict = cPickle.load(file,encoding='Latin-1')
+                    self.varylist = cPickle.load(file,encoding='Latin-1')
+                    self.calcControls = cPickle.load(file,encoding='Latin-1')
+                    self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
                 self.use = [False for i in range(len(self.varylist+self.depVarList))]
                 self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.varylist+self.depVarList]
                 file.close()

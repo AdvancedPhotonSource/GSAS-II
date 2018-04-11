@@ -785,9 +785,9 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     :param dict ParmDict:
 
     '''        
-#    phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
+    uAmat = G2lat.Gmat2AB(GS)[0]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -796,7 +796,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not SGData['SGFixed']:
         Nops *= (1+SGData['SGInv'])
     MFtables = calcControls['MFtables']
-    Amat,Bmat = G2lat.Gmat2AB(G)
+    Bmat = G2lat.Gmat2AB(G)[1]
     TwinLaw = np.ones(1)
 #    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
 #    TwDict = refDict.get('TwDict',{})           
@@ -811,15 +811,14 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return
     Mag = np.sqrt(np.array([np.inner(mag,np.inner(mag,GS)) for mag in Gdata.T]))
-    Gdata = np.where(Mag>0.,Gdata/Mag,0.)       #normalze mag. moments
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
-    Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
+    Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering--> [Mxyz,nops,natms]
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
-    Mag = np.tile(Mag[:,nxs],len(SGMT)*Ncen).T.reshape((len(SGMT),-1))
-    if SGData['SGInv'] and not SGData['SGFixed']:
-        Mag = np.repeat(Mag,2,axis=0)                  #Mag same shape as Gdata
+    Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
+    Gdata = Gdata/Mag       #normalze mag. moments
+    Gdata = np.inner(Gdata.T,uAmat).T*np.sqrt(nl.det(GS))
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -1056,7 +1055,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     return dFdvDict
     
 def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
-    '''Compute structure factor derivatives on blocks of reflections - for powders/nontwins only
+    '''Compute magnetic structure factor derivatives on blocks of reflections - for powders/nontwins only
     input:
     
     :param dict refDict: where
@@ -1074,15 +1073,15 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     #TODO: fix mag math - moments parallel to crystal axes
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
+    uAmat = G2lat.Gmat2AB(GS)[0]
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
-    if SGData['SGFixed']:
-        Nops = len(SGMT)*Ncen
-    else:
-        Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
-    Amat,Bmat = G2lat.Gmat2AB(G)
+    Nops = len(SGMT)*Ncen
+    if not SGData['SGFixed']:
+        Nops *= (1+SGData['SGInv'])
+    Bmat = G2lat.Gmat2AB(G)[1]
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata = \
         GetAtomFXU(pfx,calcControls,parmDict)
@@ -1097,6 +1096,8 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
+    Gdata = Gdata/Mag       #normalze mag. moments
+    Gdata = np.inner(Gdata.T,uAmat).T*np.sqrt(nl.det(GS))       #make unit vectors in Cartesian space
     dGdm = (1.-Gdata**2)                        #1/Mag removed - canceled out in dqmx=sum(dqdm*dGdm)
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
@@ -1110,7 +1111,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
-    blkSize = 32       #no. of reflections in a block - optimized for speed
+    blkSize = 40       #no. of reflections in a block - optimized for speed
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
@@ -1130,12 +1131,15 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
         TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
-        if SGData['SGInv'] and not SGData['SGFixed']:
-            mphase = np.hstack((phase,-phase))
-            Uniq = np.hstack((Uniq,-Uniq))      #Nref,Nops,hkl
-            Hij = np.hstack((Hij,Hij))
+        if SGData['SGInv']:
+            if not SGData['SGFixed']:
+                mphase = np.hstack((phase,-phase))  #OK
+                Uniq = np.hstack((Uniq,-Uniq))      #Nref,Nops,hkl
+                Hij = np.hstack((Hij,Hij))
+            else:
+                mphase = phase
         else:
-            mphase = phase
+            mphase = phase                    #
         Hij = np.concatenate(np.array([Hij for cen in SGData['SGCen']]),axis=1)
         Uniq = np.hstack([Uniq for cen in SGData['SGCen']])
         mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
@@ -1152,7 +1156,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
         dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
 #        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
-        dmx = NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2                                #*Mag canceled out of dqmx term
+        dmx = (NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2)/Mag                                #*Mag canceled out of dqmx term
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]

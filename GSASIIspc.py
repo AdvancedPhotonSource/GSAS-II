@@ -3185,7 +3185,7 @@ def ApplyStringOpsMom(A,SGData,Mom):
     if SGData['SGGray']:
         newMom = -(np.inner(Mom,M).T)*nl.det(M)
     else:
-        newMom = -(np.inner(Mom,M).T)*SGData['SpnFlp'][nA-1]*nl.det(M)
+        newMom = -(np.inner(Mom,M).T)*SGData['MagMom'][nA-1]*nl.det(M)
     return newMom
         
 def StringOpsProd(A,B,SGData):

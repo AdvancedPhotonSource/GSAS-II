@@ -4305,8 +4305,7 @@ class GSASII(wx.Frame):
                 warnmsg+'\nRefinement not possible')
             return
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,
-            parent=self)
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT|wx.STAY_ON_TOP,parent=self)
         Size = dlg.GetSize()
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x

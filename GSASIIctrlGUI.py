@@ -4704,6 +4704,9 @@ tutorialIndex = (
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement'],
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points'],
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II'],
+    ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
+     '''This shows how to determine approximate profile parameters by fitting individual peaks
+        from a standard with data collected on a standard lab instrument.'''],
     
     ['Parametric Rietveld fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],
@@ -4756,7 +4759,7 @@ Also see :mod:`makeTutorial` which is used to read this and create a web page.
 '''
 
 #A catalog of GSAS-II tutorials generated from the table in :data:`tutorialIndex`
-tutorialCatalog = [l for l in tutorialIndex if len(l) == 3]
+tutorialCatalog = [l for l in tutorialIndex if len(l) >= 3]
 
 class OpenTutorial(wx.Dialog):
     '''Open a tutorial web page, optionally copying the web page, screen images and

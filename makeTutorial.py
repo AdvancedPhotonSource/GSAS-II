@@ -28,12 +28,12 @@ if __name__ == '__main__':
     tutURL = G2BaseURL +'/Tutorials'
     outname = os.path.join(GSASIIpath.path2GSAS2,'help','Tutorials.html')
 
-    dirList = [l[0] for l in tutorialIndex if len(l) == 3]
+    dirList = [l[0] for l in tutorialIndex if len(l) >= 3]
 
     # loop through directories in Tutorials repository
     dirs = [d[:-1] for d in GSASIIpath.svnList(tutURL,False).split('\n') if d and d[-1] == '/']    
     for d in dirs:
-        if d not in dirList: print(u"makeTutorial: Listed tutorial is missing: "+d)
+        if d not in dirList: print(u"makeTutorial: tutorial directory not in GSASIIctrlGUI.tutorialIndex: "+d)
 
     #import sys
     #out = sys.stdout

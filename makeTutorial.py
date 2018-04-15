@@ -19,6 +19,7 @@ index.
 from __future__ import print_function
 import os
 import GSASIIpath
+#import GSASIIctrl as G2G
 
 if __name__ == '__main__':
     GSASIIpath.SetBinaryPath()
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     # loop through directories in Tutorials repository
     dirs = [d[:-1] for d in GSASIIpath.svnList(tutURL,False).split('\n') if d and d[-1] == '/']    
     for d in dirs:
-        if d not in dirList: print(u"makeTutorial: tutorial directory not in GSASIIctrlGUI.tutorialIndex: "+d)
+        if d not in dirList: print(u"Tutorial directory not in GSASIIctrlGUI.tutorialIndex: "+d)
 
     #import sys
     #out = sys.stdout
@@ -69,6 +70,8 @@ if __name__ == '__main__':
                 print(' [link: <A href="{}">Exercise files</A>].'.format(dataURL),file=out)
             else:
                 print(' [No exercise files].',file=out)
+            if len(l) > 3:
+                print("<UL><LI><I>"+l[3]+"</I></UL>",file=out)
             if suffix: print('</UL>',file=out)
     #        if l[2][0] == ' ':
     #            print(' (Note that this tutorial requires previous as prerequisite)',file=out)

@@ -233,7 +233,7 @@ mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data)
 
 # options for publication-quality Rietveld plots
 plotOpt = {}
-plotOpt['labelsize'] = 11
+plotOpt['labelSize'] = '11'
 plotOpt['dpi'] = 600
 plotOpt['width'] = 8.
 plotOpt['height'] = 6.
@@ -2926,6 +2926,12 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
             else:
                 plotOpt['format'] = plotOpt['fmtChoices'][0]
+        plotOpt['lineWid'] = '1'
+        plotOpt['tickSiz'] = '6'
+        plotOpt['tickWid'] = '1'
+        plotOpt['markerWid'] = '1'
+        plotOpt['markerSiz'] = '8'
+        plotOpt['markerSym'] = '+'
         #if mpl.__version__.split('.')[0] == '1':
         #    G2G.G2MessageBox(G2frame.plotFrame,
         #        ('You are using an older version of Matplotlib ({}). '.format(mpl.__version__) +
@@ -3059,13 +3065,6 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             hcfigure.savefig(fil,format=typ.strip())
             dlg.EndModal(wx.ID_OK)
             
-    def onTextSize(event):
-        '''Respond to a change in text size from the slider
-        '''
-        if plotOpt['labelsize'] != event.GetInt():
-            plotOpt['labelsize'] = event.GetInt()
-            RefreshPlot()
-            
     def OnSelectColour(event):
         '''Respond to a change in color
         '''
@@ -3083,17 +3082,60 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     dlg = wx.Dialog(G2frame.plotFrame,
                 style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
     vbox = wx.BoxSizer(wx.VERTICAL)
-    # text size slider
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add((1,1),1,wx.EXPAND,1)
-    txt = wx.StaticText(dlg,wx.ID_ANY,'Text size')
-    hbox.Add(txt,0,wx.ALL|wx.ALIGN_CENTER_VERTICAL)
-    slider = wx.Slider(dlg, wx.ID_ANY, plotOpt['labelsize'],
-                       10, 25, size=(250, -1), 
-                style=wx.SL_HORIZONTAL | wx.SL_AUTOTICKS | wx.SL_LABELS 
-            )
-    slider.Bind(wx.EVT_SLIDER,onTextSize)
-    hbox.Add(slider,0,wx.ALL)
+    
+    # size choices
+    symChoices = ('+','x','.','o','^','v','*','|')
+    txtChoices = [str(i) for i in range (8,26)]
+    sizChoices = [str(i) for i in range (2,21)]
+    lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
+    sizebox = wx.BoxSizer(wx.HORIZONTAL)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,'Text size'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,txtChoices,None,None,plotOpt,'labelSize',RefreshPlot,
+                                   size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add((1,1),1,wx.EXPAND,1)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' Obs type'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,symChoices,None,None,plotOpt,'markerSym',RefreshPlot,
+                                   size=(40,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' size'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,sizChoices,None,None,plotOpt,'markerSiz',RefreshPlot,
+                                   size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' width'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'markerWid',RefreshPlot,
+            size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add((1,1),1,wx.EXPAND,1)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' Line widths'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'lineWid',RefreshPlot,
+            size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add((1,1),1,wx.EXPAND,1)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' Tick size'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,sizChoices,None,None,plotOpt,'tickSiz',RefreshPlot,
+            size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add(wx.StaticText(dlg,wx.ID_ANY,' width'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'tickWid',RefreshPlot,
+            size=(50,-1))
+    sizebox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    sizebox.Add((1,1),1,wx.EXPAND,1)
+    helpinfo = '''----   Help on creating hard copy   ----
+    Select options such as the size of text and colors for plot contents here.
+    
+    Tricks:
+    * Use a color of pure white to remove an element from the plot (light
+    gray is plotted)
+    * LaTeX-like coding can be used for phase labels such as
+    $\\rm FeO_2$ (for a subscript 2) or $\\gamma$-Ti for a Greek "gamma"
+    
+    Note that the dpi value is ignored for svg and pdf files, which are
+    drawn with vector graphics (infinite resolution).
+    '''
+    hlp = G2G.HelpButton(dlg,helpinfo)
+    sizebox.Add(hlp,0,wx.ALL)
+    vbox.Add(sizebox,0,wx.ALL|wx.EXPAND)
     
     # table of colors and legend options
     cols = 1+len(plotOpt['lineList']) + len(plotOpt['phaseList'] )
@@ -3119,30 +3161,11 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
         plotOpt['colorButtons'][b] = lbl
         gsizer.Add(b,0,wx.ALL|wx.ALIGN_CENTER)
-    helpinfo = '''----   Help on creating hard copy   ----
-    Select options such as the size of text and colors for plot contents here.
-    
-    Tricks:
-    * Use a color of pure white to remove an element from the plot (light
-    gray is plotted)
-    * LaTeX-like coding can be used for phase labels such as
-    $\\rm FeO_2$ (for a subscript 2) or $\\gamma$-Ti for a Greek "gamma"
-    
-    Note that the dpi value is ignored for svg and pdf files, which are
-    drawn with vector graphics (infinite resolution).
-    '''
-    if len(plotOpt['phaseList']) > 3: # lots of phases: move table to separate line 
-        hlp = G2G.HelpButton(dlg,helpinfo)
-        hbox.Add((1,1),1,wx.EXPAND,1)
-        hbox.Add(hlp,0,wx.ALL|wx.ALIGN_RIGHT)
-        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
-        vbox.Add(gsizer,0,wx.ALL|wx.ALIGN_CENTER)
-    else:
-        hbox.Add(gsizer,0,wx.ALL)
-        hbox.Add((1,1),1,wx.EXPAND,1)
-        hlp = G2G.HelpButton(dlg,helpinfo)
-        hbox.Add(hlp,0,wx.ALL)
-        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add((1,1),1,wx.EXPAND,1)
+    hbox.Add(gsizer,0,wx.ALL)
+    hbox.Add((1,1),1,wx.EXPAND,1)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
 
     # hard copy options
     hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -3202,17 +3225,17 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
     ax0 = figure.add_subplot(gs[0])
     ax1 = figure.add_subplot(gs[1])
-    figure.subplots_adjust(left=plotOpt['labelsize']/100.,bottom=plotOpt['labelsize']/150.,
-                           right=.98,top=1.-plotOpt['labelsize']/200.,hspace=0.0)
+    figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,bottom=int(plotOpt['labelSize'])/150.,
+                           right=.98,top=1.-int(plotOpt['labelSize'])/200.,hspace=0.0)
     ax0.tick_params('x',direction='in',labelbottom=False)
-    ax0.tick_params(labelsize=plotOpt['labelsize'])
-    ax1.tick_params(labelsize=plotOpt['labelsize'])
+    ax0.tick_params(labelsize=plotOpt['labelSize'])
+    ax1.tick_params(labelsize=plotOpt['labelSize'])
     if mpl.__version__.split('.')[0] == '1': # deal with older matplotlib, which puts too many ticks
         ax1.yaxis.set_major_locator(mpl.ticker.MaxNLocator(nbins=2))
         ax1.yaxis.set_minor_locator(mpl.ticker.MaxNLocator(nbins=4))
-    ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelsize'])
-    ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelsize'])
-    ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelsize'])
+    ax1.set_xlabel(Plot.get_xlabel(),fontsize=plotOpt['labelSize'])
+    ax0.set_ylabel(Plot.get_ylabel(),fontsize=plotOpt['labelSize'])
+    ax1.set_ylabel(r'$\Delta/\sigma$',fontsize=plotOpt['labelSize'])
     ax0.set_xlim(Plot.get_xlim())
     ax1.set_xlim(Plot.get_xlim())
     ax0.set_ylim(Plot.get_ylim())
@@ -3224,6 +3247,16 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
         if 'mag' in lbl:
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
         elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
+            marker = l.get_marker()
+            lineWid = l.get_lw()
+            siz = l.get_markersize()
+            mew = l.get_mew()
+            if lbl[1:] == 'obs':
+                siz = plotOpt['markerSiz']
+                marker = plotOpt['markerSym']
+                mew = plotOpt['markerWid']
+            else:
+                lineWid = plotOpt['lineWid']
             c = plotOpt['colors'].get(lbl[1:],l.get_color())
             if sum(c) == 4.0: continue
             if plotOpt['legend'].get(lbl[1:]):
@@ -3231,14 +3264,18 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             else:
                 uselbl = lbl
             art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
-                     lw=l.get_lw(),label=uselbl,ls=l.get_ls(),
-                     marker=l.get_marker(),ms=l.get_ms()
+                     lw=lineWid,label=uselbl,ls=l.get_ls(),
+                     marker=marker,ms=siz,mew=mew,
                      )
             if plotOpt['legend'].get(lbl[1:]):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
         elif l in Page.tickDict.values():
             c = plotOpt['colors'].get(lbl,l.get_color())
+            #siz = l.get_markersize()
+            siz = plotOpt['tickSiz']
+            #mew = l.get_mew()
+            mew = plotOpt['tickWid']
             if sum(c) == 4.0: continue
             if not plotOpt['legend'].get(lbl):
                 uselbl = '_'+lbl
@@ -3246,7 +3283,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                 uselbl = plotOpt['phaseLabels'][lbl]
             art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
                      lw=l.get_lw(),ls=l.get_ls(),label=uselbl,
-                     marker=l.get_marker(),ms=l.get_ms(),
+                     marker=l.get_marker(),ms=siz,mew=mew,
                      )
             if plotOpt['legend'].get(lbl):
                 legLbl.append(uselbl)
@@ -3257,12 +3294,12 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                     xy=(l.get_position()), xycoords=l.xycoords,
                     verticalalignment='bottom',
                     horizontalalignment=l.get_horizontalalignment(),
-                    fontsize=plotOpt['labelsize'])
+                    fontsize=plotOpt['labelSize'])
     rsig = np.sqrt(Pattern[1][2])
     rsig[rsig>1] = 1
     ax1.plot(Pattern[1][0],Pattern[1][5]*rsig,color='k')
     if legLine:
-        ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelsize']})
+        ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelSize']})
     
 ################################################################################
 ##### PlotDeltSig

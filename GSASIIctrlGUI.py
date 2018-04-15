@@ -4706,7 +4706,7 @@ tutorialIndex = (
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II'],
     ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
      '''This shows how to determine approximate profile parameters by fitting individual peaks
-        from a standard with data collected on a standard lab instrument.'''],
+        with data collected on a standard using a lab diffractometer.'''],
     
     ['Parametric Rietveld fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],
@@ -5044,13 +5044,13 @@ if __name__ == '__main__':
     #======================================================================
     # test Tutorial access
     #======================================================================
-    # dlg = OpenTutorial(frm)
-    # if dlg.ShowModal() == wx.ID_OK:
-    #     print "OK"
-    # else:
-    #     print "Cancel"
-    # dlg.Destroy()
-    # sys.exit()
+    dlg = OpenTutorial(frm)
+    if dlg.ShowModal() == wx.ID_OK:
+        print("OK")
+    else:
+        print("Cancel")
+    dlg.Destroy()
+    sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================

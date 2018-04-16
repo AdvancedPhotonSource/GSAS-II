@@ -1026,7 +1026,7 @@ regular expressions. Initialized in :func:`CompileVarDesc`.
 # create a default space group object for P1; N.B. fails when building documentation
 try:
     P1SGData = G2spc.SpcGroup('P 1')[1] # data structure for default space group
-except TypeError:
+except:
     pass
 
 def GetPhaseNames(fl):

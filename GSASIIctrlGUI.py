@@ -427,6 +427,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
        ([nDig,nPlc,fmt]) after decimal to use for display of float. The format 
        is either 'f' (default) or 'g'. Alternately, None can be specified which 
        causes numbers to be displayed with approximately 5 significant figures
+       for floats. If this is specified, then :obj:`typeHint`=float becomes the
+       default. 
        (Default=None).
 
     :param bool notBlank: if True (default) blank values are invalid
@@ -467,10 +469,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       The default for OnLeave is None, which indicates no function should
       be called.
 
-    :param type typeHint: the value of typeHint is overrides the initial value
-      for the dict/list element ``loc[key]``, if set to 
-      int or float, which specifies the type for input to the TextCtrl.
-      Defaults as None, which is ignored.
+    :param type typeHint: the value of typeHint should be int, float or str (or None).
+      The value for this will override the initial type taken from value
+      for the dict/list element ``loc[key]`` if not None and thus specifies the
+      type for input to the TextCtrl.
+      Defaults as None, which is ignored, unless  :obj:`nDig` is specified in which
+      case the default is float.
 
     :param bool CIFinput: for str input, indicates that only printable
       ASCII characters may be entered into the TextCtrl. Forces output
@@ -508,8 +512,23 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             kw['style'] += kw['style'] | wx.TE_PROCESS_ENTER
         else:
             kw['style'] = wx.TE_PROCESS_ENTER
-        if 'int' in str(type(val)) or typeHint is int:
+        if typeHint is not None:
+            self.type = typeHint
+        elif nDig is not None:
+            self.type = float
+        elif 'int' in str(type(val)):
             self.type = int
+        elif 'float' in str(type(val)):
+            self.type = float
+        elif isinstance(val,str) or isinstance(val,unicode):
+            self.type = str
+        elif val is None:
+            raise Exception("ValidatedTxtCtrl error: value of "+str(key)+
+                             " element is None and typeHint not defined as int or float")
+        else:
+            raise Exception("ValidatedTxtCtrl error: Unknown element ("+str(key)+
+                             ") type: "+str(type(val)))
+        if self.type is int:        
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
                 validator=NumberValidator(int,result=loc,key=key,min=min,max=max,
                     exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
@@ -518,9 +537,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else: # no default is invalid for a number
                 self.invalid = True
                 self._IndicateValidity()
-
-        elif 'float' in str(type(val)) or typeHint is float:
-            self.type = float
+        elif self.type is float:
             wx.TextCtrl.__init__(self,parent,wx.ID_ANY,
                 validator=NumberValidator(float,result=loc,key=key,min=min,max=max,
                     exclLim=exclLim,OKcontrol=OKcontrol,CIFinput=CIFinput),**kw)
@@ -529,8 +546,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = True
                 self._IndicateValidity()
-
-        elif isinstance(val,str) or isinstance(val,unicode) or typeHint is str:
+        else:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
                     self,parent,wx.ID_ANY,
@@ -546,12 +562,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             else:
                 self.invalid = False
                 self.Bind(wx.EVT_CHAR,self._GetStringValue)
-        elif val is None:
-            raise Exception("ValidatedTxtCtrl error: value of "+str(key)+
-                             " element is None and typeHint not defined as int or float")
-        else:
-            raise Exception("ValidatedTxtCtrl error: Unknown element ("+str(key)+
-                             ") type: "+str(type(val)))
+        
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
@@ -585,7 +596,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            if show: wx.TextCtrl.SetValue(self,str(val))
+            if show and not self.invalid: wx.TextCtrl.SetValue(self,str(val))
         elif self.type is float:
             try:
                 val = float(val) # convert strings, if needed
@@ -594,9 +605,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            if self.nDig and show:
+            if self.nDig and show and not self.invalid:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
-            elif show:
+            elif show and not self.invalid:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)).rstrip('0'))
         else:
             if self.ASCIIonly:
@@ -5044,13 +5055,13 @@ if __name__ == '__main__':
     #======================================================================
     # test Tutorial access
     #======================================================================
-    dlg = OpenTutorial(frm)
-    if dlg.ShowModal() == wx.ID_OK:
-        print("OK")
-    else:
-        print("Cancel")
-    dlg.Destroy()
-    sys.exit()
+    # dlg = OpenTutorial(frm)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print("OK")
+    # else:
+    #     print("Cancel")
+    # dlg.Destroy()
+    # sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================
@@ -5078,28 +5089,28 @@ if __name__ == '__main__':
     #     print "Cancel"
     # print 'after',Data1,'\n',Data2
     # dlg.Destroy()
-    Data3 = {
-         'Order':1.0,
-         'omega':1.1,
-         'chi':2.0,
-         'phi':2.3,
-         'Order1':1.0,
-         'omega1':1.1,
-         'chi1':2.0,
-         'phi1':2.3,
-         'Order2':1.0,
-         'omega2':1.1,
-         'chi2':2.0,
-         'phi2':2.3,
-         }
-    elemlst = sorted(Data3.keys())
-    dictlst = len(elemlst)*[Data3,]
-    prelbl = elemlst[:]
-    prelbl[0]="this is a much longer label to stretch things out"
-    Data2 = len(elemlst)*[False,]
-    Data2[1] = Data2[3] = True
-    Checkdictlst = len(elemlst)*[Data2,]
-    Checkelemlst = range(len(Checkdictlst))
+    # Data3 = {
+    #      'Order':1.0,
+    #      'omega':1.1,
+    #      'chi':2.0,
+    #      'phi':2.3,
+    #      'Order1':1.0,
+    #      'omega1':1.1,
+    #      'chi1':2.0,
+    #      'phi1':2.3,
+    #      'Order2':1.0,
+    #      'omega2':1.1,
+    #      'chi2':2.0,
+    #      'phi2':2.3,
+    #      }
+    # elemlst = sorted(Data3.keys())
+    # dictlst = len(elemlst)*[Data3,]
+    # prelbl = elemlst[:]
+    # prelbl[0]="this is a much longer label to stretch things out"
+    # Data2 = len(elemlst)*[False,]
+    # Data2[1] = Data2[3] = True
+    # Checkdictlst = len(elemlst)*[Data2,]
+    # Checkelemlst = range(len(Checkdictlst))
     #print 'before',Data3,'\n',Data2
     #print dictlst,"\n",elemlst
     #print Checkdictlst,"\n",Checkelemlst
@@ -5137,32 +5148,32 @@ if __name__ == '__main__':
     #======================================================================
     # test G2MultiChoiceDialog
     #======================================================================
-    choices = []
-    for i in range(21):
-        choices.append("option_"+str(i))
-    od = {
-        'label_1':'This is a bool','value_1':True,
-        'label_2':'This is a int','value_2':-1,
-        'label_3':'This is a float','value_3':1.0,
-        'label_4':'This is a string','value_4':'test',}
-    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
-                              'Select dataset to include',
-                              choices,extraOpts=od)
-    sel = range(2,11,2)
-    dlg.SetSelections(sel)
-    dlg.SetSelections((1,5))
-    if dlg.ShowModal() == wx.ID_OK:
-        for sel in dlg.GetSelections():
-            print (sel,choices[sel])
-    print (od)
-    od = {}
-    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
-                              'Select dataset to include',
-                              choices,extraOpts=od)
-    sel = range(2,11,2)
-    dlg.SetSelections(sel)
-    dlg.SetSelections((1,5))
-    if dlg.ShowModal() == wx.ID_OK: pass
+    # choices = []
+    # for i in range(21):
+    #     choices.append("option_"+str(i))
+    # od = {
+    #     'label_1':'This is a bool','value_1':True,
+    #     'label_2':'This is a int','value_2':-1,
+    #     'label_3':'This is a float','value_3':1.0,
+    #     'label_4':'This is a string','value_4':'test',}
+    # dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+    #                           'Select dataset to include',
+    #                           choices,extraOpts=od)
+    # sel = range(2,11,2)
+    # dlg.SetSelections(sel)
+    # dlg.SetSelections((1,5))
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     for sel in dlg.GetSelections():
+    #         print (sel,choices[sel])
+    # print (od)
+    # od = {}
+    # dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+    #                           'Select dataset to include',
+    #                           choices,extraOpts=od)
+    # sel = range(2,11,2)
+    # dlg.SetSelections(sel)
+    # dlg.SetSelections((1,5))
+    # if dlg.ShowModal() == wx.ID_OK: pass
     #======================================================================
     # test wx.MultiChoiceDialog
     #======================================================================
@@ -5176,14 +5187,13 @@ if __name__ == '__main__':
     #     for sel in dlg.GetSelections():
     #         print sel,choices[sel]
 
-    # pnl = wx.Panel(frm)
-    # siz = wx.BoxSizer(wx.VERTICAL)
-
-    # td = {'Goni':200.,'a':1.,'calc':1./3.,'string':'s'}
-    # for key in sorted(td):
-    #     txt = ValidatedTxtCtrl(pnl,td,key)
-    #     siz.Add(txt)
-    # pnl.SetSizer(siz)
-    # siz.Fit(frm)
-    # app.MainLoop()
-    # print td
+    pnl = wx.Panel(frm)
+    siz = wx.BoxSizer(wx.VERTICAL)
+    td = {'Goni':200.,'a':1.,'int':1,'calc':1./3.,'string':'s'}
+    for key in sorted(td):
+        txt = ValidatedTxtCtrl(pnl,td,key,typeHint=float)
+        siz.Add(txt)
+    pnl.SetSizer(siz)
+    siz.Fit(frm)
+    app.MainLoop()
+    print(td)

@@ -20,7 +20,6 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
-import polymask as pm
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
 import copy
@@ -486,6 +485,7 @@ def EdgeFinder(image,data):
     return zip(tax,tay)
     
 def MakeFrameMask(data,frame):
+    import polymask as pm
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
@@ -829,6 +829,7 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     return TA           #2-theta, azimuth & geom. corr. arrays
 
 def MakeMaskMap(data,masks,iLim,jLim,tamp):
+    import polymask as pm
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.

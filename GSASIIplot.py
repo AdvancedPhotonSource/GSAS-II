@@ -106,6 +106,7 @@ Note that the plot toolbar is customized with :class:`GSASIItoolbar`
 '''
 from __future__ import division, print_function
 import platform
+import copy
 import math
 import sys
 import os.path
@@ -2542,7 +2543,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
             X = G2lat.Pos2dsp(Parms,xye0)
         else:
-            X = xye0
+            X = copy.deepcopy(xye0)
         if not lenX:
             lenX = len(X)
         # show plot magnification factors

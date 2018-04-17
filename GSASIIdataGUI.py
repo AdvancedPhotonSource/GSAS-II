@@ -1496,12 +1496,13 @@ class GSASII(wx.Frame):
             instfile = ''
             pth = G2G.GetImportPath(self)
             if not pth: pth = '.'
+            extOrd = [0,1]
+            if GSASIIpath.GetConfigValue('Instprm_default',False):
+                extOrd = [1,0]
+            extList = ['GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|','GSAS-II iparm file (*.instprm)|*.instprm|']
             dlg = wx.FileDialog(self,
                 u'Choose inst. param file for "'+rd.idstring+u'" (or Cancel for default)',
-                pth, '',
-                'GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|'
-                'GSAS-II iparm file (*.instprm)|*.instprm|'
-                'All files (*.*)|*.*', wx.FD_OPEN)
+                pth, '',extList[extOrd[0]]+extList[extOrd[1]]+'All files (*.*)|*.*', wx.FD_OPEN)
             if os.path.exists(lastIparmfile):
                 dlg.SetFilename(lastIparmfile)
             if dlg.ShowModal() == wx.ID_OK:
@@ -4919,7 +4920,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         # PDR / Peak List
         G2G.Define_wxId('wxID_UNDO', 'wxID_LSQPEAKFIT', 'wxID_LSQONECYCLE', 'wxID_RESETSIGGAM', 
-            'wxID_CLEARPEAKS', 'wxID_AUTOSEARCH','wxID_PEAKSCOPY', 'wxID_SEQPEAKFIT',)
+            'wxID_CLEARPEAKS', 'wxID_AUTOSEARCH','wxID_PEAKSCOPY', 'wxID_SEQPEAKFIT','wxID_PEAKLOAD','wxID_PEAKSAVE')
         self.PeakMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PeakMenu)
         self.PeakEdit = wx.Menu(title='')
@@ -4932,6 +4933,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PFOneCycle = self.PeakEdit.Append(G2G.wxID_LSQONECYCLE,'Peakfit one cycle','One cycle of Peak fitting' )
         self.PeakEdit.Append(G2G.wxID_RESETSIGGAM,'Reset sig and gam','Reset sigma and gamma to global fit' )
         self.PeakCopy = self.PeakEdit.Append(G2G.wxID_PEAKSCOPY,'Peak copy','Copy peaks to other histograms')
+        self.PeakEdit.Append(G2G.wxID_PEAKLOAD,'Load peaks...','Load peak list from file')
+        self.PeakEdit.Append(G2G.wxID_PEAKSAVE,'Save peaks...','Save peak list to file')
         self.SeqPeakFit = self.PeakEdit.Append(G2G.wxID_SEQPEAKFIT,'Seq PeakFit', 
             'Sequential Peak fitting for all histograms' )
         self.PeakEdit.Append(G2G.wxID_CLEARPEAKS,'Clear peaks','Clear the peak list' )

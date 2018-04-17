@@ -500,6 +500,53 @@ def UpdatePeakGrid(G2frame, data):
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             G2frame.GPXtree.SetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
+            
+    def OnLoadPeaks(event):
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PWDR peaks list file', pth, '', 
+            'PWDR peak list files (*.pkslst)|*.pkslst',wx.FD_OPEN)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                peaks = []
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.readline()
+                while S:
+                    if '#' in S:
+                        S = File.readline()
+                        continue
+                    try:
+                        peaks.append(eval(S))
+                    except:
+                        break
+                    S = File.readline()
+                File.close()
+        finally:
+            dlg.Destroy()
+        data = {'peaks':peaks,'sigDict':{}}
+        UpdatePeakGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        
+    def OnSavePeaks(event):
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II PWDR peaks list file', pth, '', 
+            'PWDR peak list files (*.pkslst)|*.pkslst',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is .pkslst
+                filename = os.path.splitext(filename)[0]+'.pkslst'
+                File = open(filename,'w')
+                File.write("#GSAS-II PWDR peaks list file; do not add/delete items!\n")
+                for item in data:
+                    if item == 'peaks':
+                        for pk in data[item]:
+                            File.write(str(pk)+'\n')
+                File.close()
+                print ('PWDR peaks list saved to: '+filename)
+        finally:
+            dlg.Destroy()
+        
     
     def OnUnDo(event):
         DoUnDo()
@@ -825,6 +872,8 @@ def UpdatePeakGrid(G2frame, data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PeakMenu)
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2G.wxID_AUTOSEARCH)
     G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2G.wxID_PEAKSCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSavePeaks, id=G2G.wxID_PEAKSAVE)
+    G2frame.Bind(wx.EVT_MENU, OnLoadPeaks, id=G2G.wxID_PEAKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2G.wxID_UNDO)
     G2frame.Bind(wx.EVT_MENU, OnRefineSelected, id=G2frame.dataWindow.peaksSel.GetId())
     G2frame.Bind(wx.EVT_MENU, OnRefineAll, id=G2frame.dataWindow.peaksAll.GetId())

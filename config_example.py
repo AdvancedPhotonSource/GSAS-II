@@ -183,3 +183,7 @@ Column_Metadata_directory = None
 style .par and a .EXT_lbls (EXT = image extension) or .lbls file. See :func:`GSASIIIO.readColMetadata` for
 information on how this is done.
 '''
+
+Instprm_default = False
+'''when True, GSAS-II instprm file are shown as default; when False, old GSAS stype prm, etc files are default
+'''

@@ -809,7 +809,7 @@ def MaxIndex(dmin,A):
     try:
         cell = A2cell(A)
     except:
-        cell = [1,1,1,90,90,90]
+        cell = [1.,1.,1.,90.,90.,90.]
     for i in range(3):
         Hmax[i] = int(round(cell[i]/dmin))
     return Hmax

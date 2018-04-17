@@ -1073,7 +1073,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     #TODO: fix mag math - moments parallel to crystal axes
     ast = np.sqrt(np.diag(G))
     GS = G/np.outer(ast,ast)
-    uAmat = G2lat.Gmat2AB(GS)[0]
+    uAmat,uBmat = G2lat.Gmat2AB(GS)
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -1090,6 +1090,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.sqrt(np.array([np.inner(mag,np.inner(mag,GS)) for mag in Gdata.T]))
     dGdM = np.repeat(Gdata[:,nxs,:],Nops,axis=1)
+    
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any

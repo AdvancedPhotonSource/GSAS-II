@@ -7537,7 +7537,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #    elif 'Phase Data for' in G2frame.dataWindow.GetLabel():
 #        if G2frame.dataDisplay: 
 #            oldPage = G2frame.dataDisplay.GetSelection()
-    G2frame.SetLabel('')
+    G2frame.SetTitle("GSAS-II project: "+os.path.split(G2frame.GSASprojectfile)[1],0)
         
     SetDataMenuBar(G2frame)
     G2frame.PickId = item

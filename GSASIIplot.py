@@ -3245,6 +3245,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     
     legLbl = []
     legLine = []
+    obsartist = None
     for i,l in enumerate(Plot.lines):
         lbl = l.get_label()
         if 'mag' in lbl:
@@ -3255,6 +3256,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             siz = l.get_markersize()
             mew = l.get_mew()
             if lbl[1:] == 'obs':
+                obsartist = l
                 siz = float(plotOpt['markerSiz'])
                 marker = plotOpt['markerSym']
                 mew = float(plotOpt['markerWid'])
@@ -3300,7 +3302,8 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                     fontsize=float(plotOpt['labelSize']))
     rsig = np.sqrt(Pattern[1][2])
     rsig[rsig>1] = 1
-    ax1.plot(Pattern[1][0],Pattern[1][5]*rsig,color='k')
+    if obsartist:
+        ax1.plot(obsartist.get_xdata(),Pattern[1][5]*rsig,color='k')
     if legLine:
         ax0.legend(legLine,legLbl,loc='best',prop={'size':plotOpt['labelSize']})
     

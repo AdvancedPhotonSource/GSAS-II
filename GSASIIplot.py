@@ -3055,7 +3055,6 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         '''Write the current plot to a file
         '''
         hcfigure = mpl.figure.Figure(dpi=plotOpt['dpi'],figsize=(plotOpt['width'],plotOpt['height']))
-#        hccanvas = hcCanvas(hcfigure)
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
         longFormatName,typ = plotOpt['format'].split(',')
         fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
@@ -3063,6 +3062,9 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             CopyRietveld2csv(Pattern,Plot,Page,fil)
             dlg.EndModal(wx.ID_OK)
         elif fil:
+            if hcfigure.canvas is None:
+                if GSASIIpath.GetConfigValue('debug'): print('creating canvas')
+                hccanvas = hcCanvas(hcfigure)
             hcfigure.savefig(fil,format=typ.strip())
             dlg.EndModal(wx.ID_OK)
             
@@ -3253,11 +3255,11 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             siz = l.get_markersize()
             mew = l.get_mew()
             if lbl[1:] == 'obs':
-                siz = plotOpt['markerSiz']
+                siz = float(plotOpt['markerSiz'])
                 marker = plotOpt['markerSym']
-                mew = plotOpt['markerWid']
+                mew = float(plotOpt['markerWid'])
             else:
-                lineWid = plotOpt['lineWid']
+                lineWid = float(plotOpt['lineWid'])
             c = plotOpt['colors'].get(lbl[1:],l.get_color())
             if sum(c) == 4.0: continue
             if plotOpt['legend'].get(lbl[1:]):
@@ -3274,9 +3276,9 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
         elif l in Page.tickDict.values():
             c = plotOpt['colors'].get(lbl,l.get_color())
             #siz = l.get_markersize()
-            siz = plotOpt['tickSiz']
+            siz = float(plotOpt['tickSiz'])
             #mew = l.get_mew()
-            mew = plotOpt['tickWid']
+            mew = float(plotOpt['tickWid'])
             if sum(c) == 4.0: continue
             if not plotOpt['legend'].get(lbl):
                 uselbl = '_'+lbl
@@ -3295,7 +3297,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                     xy=(l.get_position()), xycoords=l.xycoords,
                     verticalalignment='bottom',
                     horizontalalignment=l.get_horizontalalignment(),
-                    fontsize=plotOpt['labelSize'])
+                    fontsize=float(plotOpt['labelSize']))
     rsig = np.sqrt(Pattern[1][2])
     rsig[rsig>1] = 1
     ax1.plot(Pattern[1][0],Pattern[1][5]*rsig,color='k')

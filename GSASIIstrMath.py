@@ -1089,7 +1089,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         return {}
     mSize = len(Mdata)
     Mag = np.sqrt(np.array([np.inner(mag,np.inner(mag,GS)) for mag in Gdata.T]))
-    dGdM = np.repeat(Gdata[:,nxs,:],Nops,axis=1)
+    dGdM = np.array([np.inner(mag,GS) for mag in Gdata.T]).T/Mag
     
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
@@ -1157,7 +1157,7 @@ def StructureFactorDervMag(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
 #        dqmx = dqdm[:,:,:,nxs,nxs]*dGdm[:,nxs,nxs,:,:]
 #        dqmx2 = np.sum(dqmx,axis=1)   #matrix * vector = vector
 #        dqmx1 = np.swapaxes(np.swapaxes(np.inner(dqdm.T,dGdm.T),0,1),2,3)
-        dmx = (NQ*Q*dGdM[:,nxs,:,:])/Mag        #just use dpdM term & ignore dqdM term(small)
+        dmx = (NQ*Q*dGdM[:,nxs,nxs,:])        #just use dpdM term & ignore dqdM term(small)
 #        dmx = (NQ*Q*dGdM[:,nxs,:,:]-Q*dqmx2)/Mag
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm

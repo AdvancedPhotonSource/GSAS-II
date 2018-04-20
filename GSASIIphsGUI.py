@@ -2415,7 +2415,6 @@ entered the right symbol for your structure.
             if r < 0 and c < 0:
                 for row in range(Atoms.GetNumberRows()):
                     Atoms.SelectRow(row,True)                   
-                wx.CallAfter(Paint)
                 return
             if r < 0:                          #double click on col label! Change all atoms!
                 noSkip = True

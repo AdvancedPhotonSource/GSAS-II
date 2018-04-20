@@ -2452,6 +2452,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 id,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id, 'Sample Parameters')))
+        if not G2frame.Contour:
+            PlotList.reverse()
+            ParmList.reverse()
+            SampleList.reverse()
     lenX = 0
     Ymax = None
     for Pattern in PlotList:
@@ -2519,11 +2523,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         ContourZ = []
         ContourY = []
         Nseq = 0
+    Nmax = len(PlotList)-1
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         Sample = SampleList[N]
         ifpicked = False
         LimitId = 0
+        NoffY = offsetY*(Nmax-N)
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = np.array(ma.getdata(Pattern[1])) # strips mask
         xye0 = Pattern[1][0]  # keeps mask
@@ -2605,18 +2611,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 np.seterr(invalid=olderr['invalid'])
             elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                 G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-                Y = xye[1]*multArray+bxye+offsetY*N*Ymax/100.0
+                Y = xye[1]*multArray+bxye+NoffY*Ymax/100.0
             else:
-                Y = xye[1]+bxye+offsetY*N*Ymax/100.0
+                Y = xye[1]+bxye+NoffY*Ymax/100.0
         elif plottype in ['SASD','REFD']:
             if plottype == 'SASD':
                 B = xye[5]
             else:
                 B = np.zeros_like(xye[5])
             if G2frame.plotStyle['sqPlot']:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)*X**4
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY*X**4
             else:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY
         if LimitId and ifpicked:
             limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
             lims = limits[1]
@@ -2660,9 +2666,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 else:
                     if 'PWDR' in plottype and G2frame.SinglePlot and not (
                         G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-                        Z = xye[3]*multArray+offsetY*N*Ymax/100.0
+                        Z = xye[3]*multArray+NoffY*Ymax/100.0
                     else:
-                        Z = xye[3]+offsetY*N*Ymax/100.0
+                        Z = xye[3]+NoffY*Ymax/100.0
                 if 'PWDR' in plottype:
                     if G2frame.plotStyle['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -2671,10 +2677,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         D = np.where(xye[5],(Y-Z),0.)-Pattern[0]['delOffset']
                     elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                         G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
-                        W = xye[4]*multArray+offsetY*N*Ymax/100.0
+                        W = xye[4]*multArray+NoffY*Ymax/100.0
                         D = multArray*xye[5]-Pattern[0]['delOffset']  #powder background
                     else:
-                        W = xye[4]+offsetY*N*Ymax/100.0
+                        W = xye[4]+NoffY*Ymax/100.0
                         D = xye[5]-Pattern[0]['delOffset']  #powder background
                 elif plottype in ['SASD','REFD']:
                     if G2frame.plotStyle['sqPlot']:

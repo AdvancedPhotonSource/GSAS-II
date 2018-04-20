@@ -7324,6 +7324,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
 #        wtSizer.Add(comp,0,WACV)
     mainSizer.Add(wtSizer)
+    wtSizer = wx.BoxSizer(wx.HORIZONTAL)
+    wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
+    if 'histTitle' not in data[0]: data[0]['histTitle'] = ''
+    wtval = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'histTitle',typeHint=str,notBlank=False,
+                                 size=(300,-1))
+    wtSizer.Add(wtval,1,WACV)
+    mainSizer.Add(wtSizer,0,WACV|wx.EXPAND,1)
     if data[0].get('Dummy',False):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)
         Tmin = min(data[1][0])
@@ -7424,7 +7431,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         addmag.Bind(wx.EVT_BUTTON,OnAddMag)
         mSizer.Add(addmag,1,wx.ALIGN_CENTER,1)
         mainSizer.Add(mSizer)
-
+        
     G2frame.GPXtree.SetItemPyData(item,data)
     G2frame.PatternId = item
     if kind in ['PWDR','SASD','REFD',]:

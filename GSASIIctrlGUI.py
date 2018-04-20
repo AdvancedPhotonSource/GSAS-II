@@ -53,7 +53,9 @@ Class or function name             Description
                                    with optional range validation.
 :class:`MultiIntegerDialog`        Dialog to obtain multiple integer values from user, 
                                    with a description for each value and optional
-                                   defaults. 
+                                   defaults.
+:class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
+                                   is used for the 2nd, 3rd,... columns. 
 :class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
                                    columns may be ignored.
 :class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
@@ -2807,6 +2809,88 @@ class MultiIntegerDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
+class MultiColumnSelection(wx.Dialog):
+    '''Defines a Dialog widget that can be used to select an item from a multicolumn list.
+    The first column should be short, but remaining columns are word-wrapped if the
+    length of the information extends beyond the column. 
+    
+    When created, the dialog will be shown and <dlg>.Selection will be set to the index
+    of the selected row, or -1. Be sure to use <dlg>.Destroy() to remove the window
+    after reading the selection. If the dialog cannot be shown because a very old
+    version of wxPython is in use, <dlg>.Selection will be None.
+    
+    :param wx.Frame parent: the parent frame (or None)
+    :param str title: A title for the dialog window
+    :param list colLabels: labels for each column
+    :param list choices: a nested list with a value for each row in the table. Within each value
+      should be a list of values for each column. There must be at least one value, but it is
+      OK to have more or fewer values than there are column labels (colLabels). Extra are ignored
+      and unspecified columns are left blank.
+    :param list colWidths: a list of int values specifying the column width for each
+      column in the table (pixels). There must be a value for every column label (colLabels).
+    :param int height: an optional height (pixels) for the table (defaults to 400)
+    
+    Example use:: 
+        lbls = ('col 1','col 2','col 3')
+        choices=(['test1','explanation of test 1'],
+                 ['b', 'a really really long line that will be word-wrapped'],
+                 ['test3','more explanation text','optional 3rd column text'])
+        colWidths=[200,400,100]
+        dlg = MultiColumnSelection(frm,'select tutorial',lbls,choices,colWidths)
+        value = choices[dlg.Selection][0]
+        dlg.Destroy()
+    
+    '''
+    def __init__(self, parent, title, colLabels, choices, colWidths, height=400, *args, **kw):
+        if len(colLabels) != len(colWidths):
+            raise ValueError('Length of colLabels) != colWidths')
+        sizex = 20 # extra room for borders, etc.
+        for i in colWidths: sizex += i
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, title, *args,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,
+                           size=(sizex,height), **kw)
+        try:
+            from wx.lib.wordwrap import wordwrap
+            import wx.lib.agw.ultimatelistctrl as ULC
+        except ImportError:
+            self.Selection = None
+            return
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.list = ULC.UltimateListCtrl(self, agwStyle=ULC.ULC_REPORT|ULC.ULC_HAS_VARIABLE_ROW_HEIGHT
+                                         |ULC.ULC_HRULES|ULC.ULC_SINGLE_SEL)
+        for i,(lbl,wid) in enumerate(zip(colLabels, colWidths)):
+            self.list.InsertColumn(i, lbl, width=wid)
+        for i,item in enumerate(choices):
+            self.list.InsertStringItem(i, item[0])
+            for j,item in enumerate(item[1:len(colLabels)]):
+                item = wordwrap(StripIndents(item,True), colWidths[j+1], wx.ClientDC(self))
+                self.list.SetStringItem(i,1+j, item)
+        # make buttons
+        mainSizer.Add(self.list, 1, wx.EXPAND|wx.ALL, 1)
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        OKbtn = wx.Button(self, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.Add(OKbtn)
+        btn = wx.Button(self, wx.ID_CLOSE,"Cancel") 
+        btnsizer.Add(btn)
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        # bindings for close of window, double-click,...
+        OKbtn.Bind(wx.EVT_BUTTON,self._onSelect)
+        btn.Bind(wx.EVT_BUTTON,self._onClose)
+        self.Bind(wx.EVT_CLOSE, self._onClose)
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._onSelect)
+        self.SetSizer(mainSizer)
+        self.Selection = -1
+        self.ShowModal()
+    def _onClose(self,event):
+        event.Skip()
+        self.EndModal(wx.ID_CANCEL)
+    def _onSelect(self,event):
+        if self.list.GetNextSelected(-1) == -1: return
+        self.Selection = self.list.GetNextSelected(-1)
+        self.EndModal(wx.ID_OK)
+        
+################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
     '''Creates a panel with scrollbars where items can be ordered into columns
     
@@ -4184,13 +4268,16 @@ class G2HtmlWindow(wx.html.HtmlWindow):
             self.GetOpenedPageTitle())
 
 ################################################################################
-def StripIndents(msg):
+def StripIndents(msg,singleLine=False):
     'Strip indentation from multiline strings'
     msg1 = msg.replace('\n ','\n')
     while msg != msg1:
         msg = msg1
         msg1 = msg.replace('\n ','\n')
-    return msg.replace('\n\t','\n')
+    msg = msg.replace('\n\t','\n')
+    if singleLine:
+        return msg.replace('\n',' ')
+    return msg
 
 def StripUnicode(string,subs='.'):
     '''Strip non-ASCII characters from strings
@@ -4704,7 +4791,7 @@ def ShowWebPage(URL,frame):
 ################################################################################
 G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 tutorialIndex = (
-    # tutorial dir,      web page file name,      title for page
+    # tutorial dir,      web page file name,      title for page,  description
     ['Getting started'],
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II'],
 
@@ -4879,6 +4966,8 @@ class OpenTutorial(wx.Dialog):
             return
         choices = [tutorialCatalog[i][2] for i in indices]
         selected = self.ChooseTutorial(choices)
+        #choices2 = [tutorialCatalog[i][2:4] for i in indices]
+        #selected = self.ChooseTutorial2(choices2)
         if selected is None: return
         j = indices[selected]
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
@@ -4903,6 +4992,8 @@ class OpenTutorial(wx.Dialog):
             return
         choices = [tutorialCatalog[i][2] for i in indices]
         selected = self.ChooseTutorial(choices)
+        #choices2 = [tutorialCatalog[i][2:4] for i in indices]
+        #selected = self.ChooseTutorial2(choices2)
         if selected is None: return
         j = indices[selected]
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
@@ -4915,6 +5006,8 @@ class OpenTutorial(wx.Dialog):
         '''
         choices = [i[2] for i in tutorialCatalog]
         selected = self.ChooseTutorial(choices)
+        #choices2 = [i[2:4] for i in tutorialCatalog]
+        #selected = self.ChooseTutorial2(choices2)
         if selected is None: return        
         tutdir = tutorialCatalog[selected][0]
         tutfil = tutorialCatalog[selected][1]
@@ -4923,8 +5016,24 @@ class OpenTutorial(wx.Dialog):
         self.EndModal(wx.ID_OK)
         ShowWebPage(URL,self.frame)
         
+    def ChooseTutorial2(self,choices):
+        '''Select tutorials from a two-column table, when possible
+        '''
+        lbls = ('tutorial name','description')
+        colWidths=[400,400]
+        dlg = MultiColumnSelection(self,'select tutorial',lbls,choices,colWidths)
+        selection = dlg.Selection
+        dlg.Destroy()
+        if selection is not None: # wx from EPD Python
+            if selection == -1: return
+            return selection
+        else:
+            return self.ChooseTutorial([i[0] for i in choices])
+        
     def ChooseTutorial(self,choices):
-        'choose a tutorial from a list'
+        '''choose a tutorial from a list
+        (will eventually only be used with very old wxPython
+        '''
         def onDoubleClick(event):
             'double-click closes the dialog'
             dlg.EndModal(wx.ID_OK)
@@ -5055,13 +5164,13 @@ if __name__ == '__main__':
     #======================================================================
     # test Tutorial access
     #======================================================================
-    # dlg = OpenTutorial(frm)
-    # if dlg.ShowModal() == wx.ID_OK:
-    #     print("OK")
-    # else:
-    #     print("Cancel")
-    # dlg.Destroy()
-    # sys.exit()
+    dlg = OpenTutorial(frm)
+    if dlg.ShowModal() == wx.ID_OK:
+        print("OK")
+    else:
+        print("Cancel")
+    dlg.Destroy()
+    sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================

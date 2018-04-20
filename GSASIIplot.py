@@ -2423,7 +2423,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
         ParmList = [Parms,]
         SampleList = [Sample,]
-        Title = Pattern[-1]
+        Title = data[0].get('histTitle')
+        if not Title: 
+            Title = Pattern[-1]
     else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         PlotList = []

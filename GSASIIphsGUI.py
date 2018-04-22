@@ -1364,7 +1364,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     generalData['Name'] = newName
                     G2frame.G2plotNB.Rename(oldName,generalData['Name'])
                     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Phase Data for '+generalData['Name'])
-                    G2frame.SetTitle('Phase Data for '+generalData['Name'])                    
+                    #G2frame.SetTitle('Phase Data for '+generalData['Name'])                    
                     G2frame.GPXtree.SetItemText(Item,generalData['Name'])
                     # change phase name key in Reflection Lists for each histogram
                     for hist in data['Histograms']:
@@ -9194,7 +9194,7 @@ entered the right symbol for your structure.
     PhaseName = G2frame.GPXtree.GetItemText(Item)
     G2gd.SetDataMenuBar(G2frame)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Phase Data for '+PhaseName)
-    G2frame.SetTitle('Phase Data for '+PhaseName)
+    #G2frame.SetTitle('Phase Data for '+PhaseName)
     # Bob: why do this differently in debug mode? Is this code to test if tabs can be moved around? #TODO - yup, flaky tho.
 #    if GSASIIpath.GetConfigValue('debug'):
 #        G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize(),

@@ -2893,26 +2893,26 @@ class GSASII(wx.Frame):
                 item = self.GPXtree.GetNextSibling(item)
                 if item.IsOk(): self.GPXtree.SelectItem(item)
                     
-    def SetTitle(self,text,location=0):
-        '''Override the standard method with a call that puts text into
-        either the top box on the tree or the label on the frame.
+#     def SetTitle(self,text,location=0):
+#         '''Override the standard method with a call that puts text into
+#         either the top box on the tree or the label on the frame.
 
-        :param str text: text to be displayed
-        :param int location: if 0 (default) labels go into the the Frame;
-          if 1, labels go into the G2frame.treeTitle control, which is above the
-          data Tree.
-        '''
-        if location == 1:
-#            self.treeTitle.SetLabel(text)
-            pass
-        elif not location:
-            wx.Frame.SetTitle(self,text)
-        else:
-            print(u'unexpected SetTitle option: '+str(location)+", "+
-                  text)     
-    def SetLabel(self,text,location=0):
-        'implement unfortunate synonym. with luck no longer used'
-        self.SetTitle(text,location=0)
+#         :param str text: text to be displayed
+#         :param int location: if 0 (default) labels go into the the Frame;
+#           if 1, labels go into the G2frame.treeTitle control, which is above the
+#           data Tree.
+#         '''
+#         if location == 1:
+# #            self.treeTitle.SetLabel(text)
+#             pass
+#         elif not location:
+#             wx.Frame.SetTitle(self,text)
+#         else:
+#             print(u'unexpected SetTitle option: '+str(location)+", "+
+#                   text)     
+#     def SetLabel(self,text,location=0):
+#         'implement unfortunate synonym. with luck no longer used'
+#         self.SetTitle(text,location=0)
 
     def OnColMetaTest(self,event):
         'Test the .par/.*lbls pair for contents'
@@ -3736,8 +3736,8 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
-                #self.SetTitle("GSAS-II data tree: "+os.path.split(self.GSASprojectfile)[1])
-                self.SetTitle("GSAS-II project: "+os.path.split(self.GSASprojectfile)[1],1)
+                self.SetTitle("GSAS-II project: "+os.path.split(self.GSASprojectfile)[1])
+                self.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(self.GSASprojectfile)[1])
                 self.CheckNotebook()
                 G2IO.ProjFileSave(self)
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
@@ -5401,7 +5401,7 @@ def UpdateNotebook(G2frame,data):
             text.AppendText('\n')
                     
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Notebook')
-    G2frame.SetTitle('Notebook')
+    #G2frame.SetTitle('Notebook')
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
     text.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
@@ -5419,7 +5419,7 @@ def UpdateNotebook(G2frame,data):
 def UpdateComments(G2frame,data):                   
 
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Comments')
-    G2frame.SetTitle('Comments')
+    #G2frame.SetTitle('Comments')
     lines = ""
     for line in data:
         lines += line.rstrip()+'\n'
@@ -5625,7 +5625,7 @@ def UpdateControls(G2frame,data):
     G2frame.dataWindow.ClearData()
     #G2frame.dataWindow.SetupScrolling()
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Controls')
-    G2frame.SetTitle('Controls')
+    #G2frame.SetTitle('Controls')
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
@@ -6653,7 +6653,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     SetDataMenuBar(G2frame,G2frame.dataWindow.SequentialMenu)
     #G2frame.dataWindow.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sequential refinement results')
-    G2frame.SetTitle('Sequential refinement results')
+    #G2frame.SetTitle('Sequential refinement results')
     G2frame.Bind(wx.EVT_MENU, OnSelectUse, id=G2G.wxID_SELECTUSE)
     G2frame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=G2G.wxID_RENAMESEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=G2G.wxID_SAVESEQSEL)
@@ -7278,7 +7278,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     # Start of UpdatePWHKPlot
     data = G2frame.GPXtree.GetItemPyData(item)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+G2frame.GPXtree.GetItemText(item))
-    G2frame.SetTitle(G2frame.GPXtree.GetItemText(item))
+    #G2frame.SetTitle(G2frame.GPXtree.GetItemText(item))
 #patches
     if not data:
         return
@@ -7544,7 +7544,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #    elif 'Phase Data for' in G2frame.dataWindow.GetLabel():
 #        if G2frame.dataDisplay: 
 #            oldPage = G2frame.dataDisplay.GetSelection()
-    G2frame.SetTitle("GSAS-II project: "+os.path.split(G2frame.GSASprojectfile)[1],0)
+    G2frame.SetTitle("GSAS-II project: "+os.path.split(G2frame.GSASprojectfile)[1])
+    G2frame.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(G2frame.GSASprojectfile)[1])
         
     SetDataMenuBar(G2frame)
     G2frame.PickId = item
@@ -7640,7 +7641,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             G2restG.UpdateRestraints(G2frame,data,Phases,phaseName)
         elif G2frame.GPXtree.GetItemText(item).startswith('IMG '):
             G2frame.Image = item
-            G2frame.SetTitle('Image Data')
+            #G2frame.SetTitle('Image Data')
             data = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(
                 G2frame,item,'Image Controls'))
             G2imG.UpdateImageData(G2frame,data)
@@ -7705,7 +7706,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(item)
         UpdateComments(G2frame,data)
     elif G2frame.GPXtree.GetItemText(item) == 'Image Controls':
-        G2frame.SetTitle('Image Controls')
+        #G2frame.SetTitle('Image Controls')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         masks = G2frame.GPXtree.GetItemPyData(
             GetGPXtreeItemId(G2frame,G2frame.Image, 'Masks'))
@@ -7714,7 +7715,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2imG.UpdateImageControls(G2frame,data,masks)
         G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.GPXtree.GetItemText(item) == 'Masks':
-        G2frame.SetTitle('Masks')
+        #G2frame.SetTitle('Masks')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         masks = G2frame.GPXtree.GetItemPyData(item)
         data = G2frame.GPXtree.GetItemPyData(
@@ -7723,7 +7724,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2imG.UpdateMasks(G2frame,masks)
         G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.GPXtree.GetItemText(item) == 'Stress/Strain':
-        G2frame.SetTitle('Stress/Strain')
+        #G2frame.SetTitle('Stress/Strain')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(
             GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))

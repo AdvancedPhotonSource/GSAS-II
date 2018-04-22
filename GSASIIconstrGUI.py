@@ -1122,7 +1122,7 @@ def UpdateConstraints(G2frame,data):
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Constraints')
-    G2frame.SetTitle('Constraints')
+    #G2frame.SetTitle('Constraints')
     SetStatusLine('')
     
     G2frame.Bind(wx.EVT_MENU, OnAddConstraint, id=G2G.wxID_CONSTRAINTADD)
@@ -2144,7 +2144,7 @@ def UpdateRigidBodies(G2frame,data):
         G2frame.GetStatusBar().SetStatusText(text,1)                                      
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodyMenu)
-    G2frame.SetTitle('Rigid bodies')
+    #G2frame.SetTitle('Rigid bodies')
     SetStatusLine('')
     UpdateVectorRB()
     G2frame.rbBook.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)

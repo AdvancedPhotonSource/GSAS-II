@@ -790,7 +790,7 @@ class GSASIItoolbar(Toolbar):
             ymax += delta
         else:
             # should not happen!
-            GSASIIpath.IPyBreak()
+            if GSASIIpath.GetConfigValue('debug'): GSASIIpath.IPyBreak()
         self.parent.toolbar.push_current()
         ax.axis((xmin,xmax,ymin,ymax))
         #print xmin,xmax,ymin,ymax

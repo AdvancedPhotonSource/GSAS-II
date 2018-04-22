@@ -1979,7 +1979,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.Bind(wx.EVT_MENU, OnPlotAARestraint, id=G2G.wxID_AARESTRAINTPLOT)
     
     # GUI defined here
-    G2frame.SetTitle('restraints for '+phaseName)
+    #G2frame.SetTitle('restraints for '+phaseName)
     #G2frame.restrBook = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
     G2frame.restrBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(G2frame.restrBook,1,wx.ALL|wx.EXPAND,1)

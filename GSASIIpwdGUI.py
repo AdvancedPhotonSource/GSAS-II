@@ -929,7 +929,7 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
     G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Peak List')
-    G2frame.SetTitle('Peak List')
+    #G2frame.SetTitle('Peak List')
     G2frame.dataWindow.currentGrids = []
     reflGrid = G2G.GSGrid(parent=G2frame.dataWindow)
     reflGrid.SetTable(G2frame.PeakTable, True)
@@ -1446,7 +1446,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.ifGetExclude = False
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.LimitMenu)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Limits')
-    G2frame.SetTitle('Limits')
+    #G2frame.SetTitle('Limits')
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2G.wxID_LIMITCOPY)
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2G.wxID_ADDEXCLREGION)
     Draw() 
@@ -1782,7 +1782,7 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def MakeParameterWindow():
         'Displays the Instrument parameters in the dataWindow frame'
-        G2frame.SetTitle('Instrument Parameters')
+        #G2frame.SetTitle('Instrument Parameters')
         G2frame.dataWindow.ClearData()
         mainSizer = G2frame.dataWindow.GetSizer()
         instSizer = wx.FlexGridSizer(0,3,5,5)
@@ -2429,7 +2429,7 @@ def UpdateSampleGrid(G2frame,data):
     histName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SampleMenu)
     #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sample Parameters')
-    G2frame.SetTitle('Sample Parameters')
+    #G2frame.SetTitle('Sample Parameters')
     G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2G.wxID_SETSCALE)
     G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2G.wxID_SAMPLECOPY)
     G2frame.Bind(wx.EVT_MENU, OnSampleCopySelected, id=G2G.wxID_SAMPLECOPYSOME)
@@ -2700,7 +2700,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             4*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
     G2frame.GPXtree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.SetTitle('Index Peak List')
+    #G2frame.SetTitle('Index Peak List')
     G2frame.dataWindow.currentGrids = []
     G2frame.indxPeaks = G2G.GSGrid(parent=G2frame.dataWindow)                
     G2frame.indxPeaks.SetTable(G2frame.IndexPeaksTable, True)
@@ -3226,7 +3226,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         finally:
             dlg.Destroy()
             
-    G2frame.SetTitle('Unit cells')
+    #G2frame.SetTitle('Unit cells')
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
@@ -3606,7 +3606,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if not HKLF and not len(data[phaseName]):
             return          #deleted phase?
         G2frame.RefList = phaseName
-        G2frame.SetTitle('Reflection List for '+phaseName)
+        #G2frame.SetTitle('Reflection List for '+phaseName)
         if HKLF:
             G2frame.GetStatusBar().SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; flag:>0 twin no., 0 sp.gp absent, -1 user rejected, -2 Rfree',1)
         else:
@@ -4043,7 +4043,7 @@ def UpdateSubstanceGrid(G2frame,data):
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     wave = G2mth.getWave(Inst)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.SubstanceMenu)
-    G2frame.SetTitle('Substances')
+    #G2frame.SetTitle('Substances')
     G2frame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2G.wxID_LOADSUBSTANCE)    
     G2frame.Bind(wx.EVT_MENU, OnReloadSubstances, id=G2G.wxID_RELOADSUBSTANCES)    
     G2frame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2G.wxID_ADDSUBSTANCE)
@@ -4693,7 +4693,7 @@ def UpdateModelsGrid(G2frame,data):
         Profile[5] = BackSample['Scale'][0]*G2frame.GPXtree.GetItemPyData(BackId)[1][1]
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ModelMenu)
     G2frame.dataWindow.ClearData()
-    G2frame.SetTitle('Modelling')
+    #G2frame.SetTitle('Modelling')
     G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
     G2frame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2G.wxID_MODELCOPYFLAGS)
     G2frame.Bind(wx.EVT_MENU, OnFitModel, id=G2G.wxID_MODELFIT)
@@ -5268,7 +5268,7 @@ def UpdateREFDModelsGrid(G2frame,data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.REFDModelMenu)
-    G2frame.SetTitle('Modelling')
+    #G2frame.SetTitle('Modelling')
     G2frame.dataWindow.ClearData()
     G2frame.Bind(wx.EVT_MENU, OnCopyModel, id=G2G.wxID_MODELCOPY)
     G2frame.Bind(wx.EVT_MENU, OnModelPlot, id=G2G.wxID_MODELPLOT)

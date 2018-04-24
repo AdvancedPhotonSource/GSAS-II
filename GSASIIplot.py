@@ -2704,7 +2704,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Ibeg = np.searchsorted(X,limits[1][0])
                     Ifin = np.searchsorted(X,limits[1][1])
                     Plot1.set_yscale("linear")                                                  
-                    DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+                    wtFactor = Pattern[0]['wtFactor']
+                    DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
                     Plot1.set_ylim(bottom=np.min(DZ[Ibeg:Ifin])*1.2,top=np.max(DZ[Ibeg:Ifin])*1.2)  
@@ -3644,6 +3645,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         ContourZ = []
         ContourY = []
         Nseq = 0
+        
     for N,Pattern in enumerate(PlotList):
         xye = Pattern[1]
         X = xye[0]

@@ -884,20 +884,22 @@ class GSASII(wx.Frame):
                 sub = GetGPXtreeItemId(self,self.root,'Phases')
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
+            wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
+#            self.GPXtree.SelectItem(psub)
             try:
                 rd.MPhase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName+' mag',phaseNameList)
                 PhaseName = rd.MPhase['General']['Name'][:]
                 newPhaseList.append(PhaseName)
                 psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
                 self.GPXtree.SetItemPyData(psub,rd.MPhase)
+#                self.GPXtree.SelectItem(psub)
+                wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
             except (AttributeError,TypeError):
                 pass
             self.GPXtree.Expand(self.root) # make sure phases are seen
             self.GPXtree.Expand(sub) 
             self.GPXtree.Expand(psub)
             self.PickIdText = None
-            wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
-            #wx.CallAfter(SelectDataTreeItem,self,psub) #bring up new phase General tab
 
             if rd.Constraints:
                 sub = GetGPXtreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
@@ -2893,27 +2895,6 @@ class GSASII(wx.Frame):
                 item = self.GPXtree.GetNextSibling(item)
                 if item.IsOk(): self.GPXtree.SelectItem(item)
                     
-#     def SetTitle(self,text,location=0):
-#         '''Override the standard method with a call that puts text into
-#         either the top box on the tree or the label on the frame.
-
-#         :param str text: text to be displayed
-#         :param int location: if 0 (default) labels go into the the Frame;
-#           if 1, labels go into the G2frame.treeTitle control, which is above the
-#           data Tree.
-#         '''
-#         if location == 1:
-# #            self.treeTitle.SetLabel(text)
-#             pass
-#         elif not location:
-#             wx.Frame.SetTitle(self,text)
-#         else:
-#             print(u'unexpected SetTitle option: '+str(location)+", "+
-#                   text)     
-#     def SetLabel(self,text,location=0):
-#         'implement unfortunate synonym. with luck no longer used'
-#         self.SetTitle(text,location=0)
-
     def OnColMetaTest(self,event):
         'Test the .par/.*lbls pair for contents'
         G2IO.testColumnMetadata(self)
@@ -3421,6 +3402,13 @@ class GSASII(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             PhaseName = dlg.GetValue()
         dlg.Destroy()
+        if not GetGPXtreeItemId(self,self.root,'Restraints'):
+            subr = self.GPXtree.AppendItem(parent=self.root,text='Restraints')
+            self.GPXtree.SetItemPyData(subr,{PhaseName:{}})
+        else:
+            subr = GetGPXtreeItemId(self,self.root,'Restraints')
+            self.GPXtree.GetItemPyData(subr).update({PhaseName:{}})
+        self.GPXtree.AppendItem(parent=subr,text=PhaseName)
         sub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
         self.GPXtree.SetItemPyData(sub,G2obj.SetNewPhase(Name=PhaseName,SGData=SGData))
@@ -3438,6 +3426,10 @@ class GSASII(wx.Frame):
             sub = GetGPXtreeItemId(self,self.root,'Phases')
         else:
             return
+        if GetGPXtreeItemId(self,self.root,'Restraints'):
+            subr = GetGPXtreeItemId(self,self.root,'Restraints')
+        else:
+            subr = 0
         if sub:
             item, cookie = self.GPXtree.GetFirstChild(sub)
             while item:
@@ -3468,15 +3460,21 @@ class GSASII(wx.Frame):
                                 for i,item in DelList:
                                     if item in refList:
                                         del(refList[item])
-#                            self.GPXtree.SetItemPyData(Id,refList)
                         elif 'HKLF' in name:
                             data = self.GPXtree.GetItemPyData(item)
                             data[0] = {}
-#                            self.GPXtree.SetItemPyData(item,data)
                             
                         item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             finally:
                 dlg.Destroy()
+        if subr:        #remove restraints for deleted phase
+            DelList = [itm[1] for itm in DelList]
+            item, cookie = self.GPXtree.GetFirstChild(subr)
+            while item:
+                name = self.GPXtree.GetItemText(item)
+                if name in DelList:
+                    self.GPXtree.Delete(item)
+                item, cookie = self.GPXtree.GetNextChild(subr, cookie)                
                 
     def OnRenameData(self,event):
         'Renames an existing phase. Called by Data/Rename Phase menu'
@@ -4716,11 +4714,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
 
         # Restraints
-        G2G.Define_wxId('wxID_RESTRAINTADD', 'wxID_RESTSELPHASE', 'wxID_RESTDELETE', 'wxID_RESRCHANGEVAL',
+        G2G.Define_wxId('wxID_RESTRAINTADD', 'wxID_RESTDELETE', 'wxID_RESRCHANGEVAL',
             'wxID_RESTCHANGEESD', 'wxID_AARESTRAINTADD', 'wxID_AARESTRAINTPLOT',)
         self.RestraintTab = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
-        self.RestraintEdit.Append(G2G.wxID_RESTSELPHASE,'Select phase','Select phase')
         self.RestraintEdit.Append(G2G.wxID_RESTRAINTADD,'Add restraints','Add restraints')
         self.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)    #gets disabled if macromolecule phase
         self.RestraintEdit.Append(G2G.wxID_AARESTRAINTADD,'Add residue restraints',
@@ -5400,8 +5397,6 @@ def UpdateNotebook(G2frame,data):
         if 'nt' not in os.name:
             text.AppendText('\n')
                     
-    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Notebook')
-    #G2frame.SetTitle('Notebook')
     text = wx.TextCtrl(G2frame.dataWindow,wx.ID_ANY,
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER | wx.TE_DONTWRAP)
     text.Bind(wx.EVT_TEXT_ENTER,OnNoteBook)
@@ -5418,8 +5413,6 @@ def UpdateNotebook(G2frame,data):
        
 def UpdateComments(G2frame,data):                   
 
-    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Comments')
-    #G2frame.SetTitle('Comments')
     lines = ""
     for line in data:
         lines += line.rstrip()+'\n'
@@ -5623,9 +5616,6 @@ def UpdateControls(G2frame,data):
     else:
         G2frame.GetStatusBar().SetStatusText('',1)
     G2frame.dataWindow.ClearData()
-    #G2frame.dataWindow.SetupScrolling()
-    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Controls')
-    #G2frame.SetTitle('Controls')
     SetDataMenuBar(G2frame,G2frame.dataWindow.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
@@ -6652,8 +6642,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[pId][i]
 
     SetDataMenuBar(G2frame,G2frame.dataWindow.SequentialMenu)
-    #G2frame.dataWindow.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+'Sequential refinement results')
-    #G2frame.SetTitle('Sequential refinement results')
     G2frame.Bind(wx.EVT_MENU, OnSelectUse, id=G2G.wxID_SELECTUSE)
     G2frame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=G2G.wxID_RENAMESEQSEL)
     G2frame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=G2G.wxID_SAVESEQSEL)
@@ -7277,8 +7265,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     # Start of UpdatePWHKPlot
     data = G2frame.GPXtree.GetItemPyData(item)
-    #G2frame.SetLabel(G2frame.GetLabel().split('||')[0]+' || '+G2frame.GPXtree.GetItemText(item))
-    #G2frame.SetTitle(G2frame.GPXtree.GetItemText(item))
 #patches
     if not data:
         return
@@ -7313,8 +7299,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Weight factor: '),0,WACV)
-    wtval = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),min=1.e-9)
-    wtSizer.Add(wtval,0,WACV)
+    wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'wtFactor',nDig=(10,3),min=1.e-9),0,WACV)
 #    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
 #        wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Compression factor: '),0,WACV)
 #        choice = ['1','2','3','4','5','6']
@@ -7327,10 +7312,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
     wtSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Histogram label: '),0,WACV)
     if 'histTitle' not in data[0]: data[0]['histTitle'] = ''
-    wtval = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'histTitle',typeHint=str,notBlank=False,
-                                 size=(300,-1))
-    wtSizer.Add(wtval,1,WACV)
-    mainSizer.Add(wtSizer,0,WACV|wx.EXPAND,1)
+    wtSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],'histTitle',typeHint=str,
+        notBlank=False,size=(300,-1)),1,WACV)
+    mainSizer.Add(wtSizer,0,WACV)
     if data[0].get('Dummy',False):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)
         Tmin = min(data[1][0])
@@ -7632,16 +7616,8 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Rigid bodies':
             data = G2frame.GPXtree.GetItemPyData(item)
             G2cnstG.UpdateRigidBodies(G2frame,data)
-        elif G2frame.GPXtree.GetItemText(item) == 'Restraints':
-            data = G2frame.GPXtree.GetItemPyData(item)
-            Phases = G2frame.GetPhaseData()
-            phaseName = ''
-            if Phases:
-                phaseName = list(Phases.keys())[0]
-            G2restG.UpdateRestraints(G2frame,data,Phases,phaseName)
         elif G2frame.GPXtree.GetItemText(item).startswith('IMG '):
             G2frame.Image = item
-            #G2frame.SetTitle('Image Data')
             data = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(
                 G2frame,item,'Image Controls'))
             G2imG.UpdateImageData(G2frame,data)
@@ -7677,6 +7653,18 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif G2frame.GPXtree.GetItemText(item) == 'Phases':
             G2frame.dataWindow.GetSizer().Add(
                 wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its parameters'))
+        elif G2frame.GPXtree.GetItemText(item) == 'Restraints':
+            data = G2frame.GPXtree.GetItemPyData(item)
+#patch - put phases in restraint tree
+            names = G2frame.GetPhaseNames()
+            for name in names:
+                if not GetGPXtreeItemId(G2frame,item,name):
+                    G2frame.GPXtree.AppendItem(parent=item,text=name)
+                if name not in data:
+                    data[name] = {}
+#end patch            
+            G2frame.dataWindow.GetSizer().Add(
+                wx.StaticText(G2frame.dataWindow,wx.ID_ANY,'Select one phase to see its restraints'))
     ############################################################################
     # process second-level entries in tree            
     elif G2frame.GPXtree.GetItemText(item) == 'PDF Peaks':
@@ -7700,13 +7688,18 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     elif G2frame.GPXtree.GetItemText(parentID) == 'Phases':
         data = G2frame.GPXtree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data)
+    elif G2frame.GPXtree.GetItemText(parentID) == 'Restraints':
+        data = G2frame.GPXtree.GetItemPyData(parentID)
+        phaseName = G2frame.GPXtree.GetItemText(item)
+        if phaseName not in data:
+            data[phaseName] = {}
+        G2restG.UpdateRestraints(G2frame,data[phaseName],phaseName)
     elif G2frame.GPXtree.GetItemText(item) == 'Comments':
         SetDataMenuBar(G2frame,G2frame.dataWindow.DataCommentsMenu)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)
         UpdateComments(G2frame,data)
     elif G2frame.GPXtree.GetItemText(item) == 'Image Controls':
-        #G2frame.SetTitle('Image Controls')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         masks = G2frame.GPXtree.GetItemPyData(
             GetGPXtreeItemId(G2frame,G2frame.Image, 'Masks'))
@@ -7715,7 +7708,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2imG.UpdateImageControls(G2frame,data,masks)
         G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.GPXtree.GetItemText(item) == 'Masks':
-        #G2frame.SetTitle('Masks')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         masks = G2frame.GPXtree.GetItemPyData(item)
         data = G2frame.GPXtree.GetItemPyData(
@@ -7724,7 +7716,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         G2imG.UpdateMasks(G2frame,masks)
         G2plt.PlotImage(G2frame,newPlot=False)
     elif G2frame.GPXtree.GetItemText(item) == 'Stress/Strain':
-        #G2frame.SetTitle('Stress/Strain')
         G2frame.Image = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(
             GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))

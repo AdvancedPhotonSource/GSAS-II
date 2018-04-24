@@ -52,22 +52,11 @@ def GetSelectedRows(widget):
         rows = sorted(list(set([cell[0] for cell in widget.GetSelectedCells()])))
     return rows
        
-def UpdateRestraints(G2frame,data,Phases,phaseName):
+def UpdateRestraints(G2frame,data,phaseName):
     '''Respond to selection of the Restraints item on the
     data tree
     '''
-    global Pages
-    def OnSelectPhase(event):
-        pageName = Pages[G2frame.restrBook.GetSelection()]
-        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',list(Phases.keys()))
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                phaseName = list(Phases.keys())[dlg.GetSelection()]
-                UpdateRestraints(G2frame,data,Phases,phaseName)
-                newPage = G2frame.restrBook.FindPage(pageName)
-                G2frame.restrBook.SetSelection(newPage)
-        finally:
-            dlg.Destroy()
+#    global Pages
     
     def getMacroFile(macName):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
@@ -826,7 +815,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             restData['Use'] = Obj.GetValue()
 
         wtBox = wx.BoxSizer(wx.HORIZONTAL)
-        wtBox.Add(wx.StaticText(wind,-1,'Restraint weight factor: '),0,WACV)
+        wtBox.Add(wx.StaticText(wind,-1,'Phase '+phaseName+' Restraint weight factor: '),0,WACV)
         wtfactor = G2G.ValidatedTxtCtrl(wind,restData,'wtFactor',nDig=(10,2),typeHint=float)
         wtBox.Add(wtfactor,0,WACV)
         useData = wx.CheckBox(wind,-1,label=' Use?')
@@ -1917,16 +1906,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     # UpdateRestraints execution starts here
-    if not Phases:
-        print ('There are no phases to form restraints')
-        return
-    if not len(Phases):
-        print ('There are no phases to form restraints')
-        return
-    phasedata = Phases[phaseName]
-    if phaseName not in data:
-        data[phaseName] = {}
-    restrData = data[phaseName]
+    phasedata = G2frame.GetPhaseData()[phaseName]
+    restrData = data
     if 'Bond' not in restrData:
         restrData['Bond'] = {'wtFactor':1.0,'Range':1.1,'Bonds':[],'Use':True}
     if 'Angle' not in restrData:
@@ -1968,10 +1949,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     rama = G2data.ramachandranDist['All']
     ramaName = 'All'
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)    
-    G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTSELPHASE,False)
-    if len(Phases) > 1:
-        G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTSELPHASE,True)
-        G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2G.wxID_RESTSELPHASE)
     G2frame.Bind(wx.EVT_MENU, OnAddRestraint, id=G2G.wxID_RESTRAINTADD)
     if 'macro' in phasedata['General']['Type']:
         G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_AARESTRAINTADD,True)
@@ -1979,8 +1956,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.Bind(wx.EVT_MENU, OnPlotAARestraint, id=G2G.wxID_AARESTRAINTPLOT)
     
     # GUI defined here
-    #G2frame.SetTitle('restraints for '+phaseName)
-    #G2frame.restrBook = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
     G2frame.restrBook = G2G.GSNoteBook(parent=G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(G2frame.restrBook,1,wx.ALL|wx.EXPAND,1)
     # clear menu and menu pointers

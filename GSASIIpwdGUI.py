@@ -2951,7 +2951,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnCellChange(invalid,value,tc):
         if invalid:
             return
-        OnHklShow(None)
+        SetCellValue(tc,Info[tc.GetId()],value)
+        OnHklShow(tc.event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnHklShow(event):
@@ -3335,11 +3336,13 @@ def UpdateUnitCellsGrid(G2frame, data):
             useGUI = cellGUI
     cellList = []
     valDict = {}
+    Info = {}
     littleSizer = wx.FlexGridSizer(0,useGUI[1],5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt),0,WACV)
         if ifEdit:          #a,b,c,etc.
             cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange)
+            Info[cellVal.GetId()] = Id
             valSizer = wx.BoxSizer(wx.HORIZONTAL)
             valSizer.Add(cellVal,0,WACV)
             cellSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,20))

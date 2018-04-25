@@ -525,6 +525,9 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Zref):
     values = A2values(ibrav,A)
     if Zref:
         values.append(Z)
+#TODO: try Hessian refinement here - might improve things
+#    result = G2mth.HessianLSQ(errFitZ,values,Hess=peakHess,        #would need "peakHess" routine; returns vec & Hess
+#        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref]),ftol=.01,maxcyc=10)
     result = so.leastsq(errFitZ,values,Dfun=dervFitZ,full_output=True,ftol=0.0001,
         args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref))
     A = Values2A(ibrav,result[0][:6])

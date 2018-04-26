@@ -5835,6 +5835,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
                 Plot1.plot(xy[0],xy[1])
+                Plot1.set_xlim(Data['IOtth'])
+                Plot1.set_xscale("linear")                                                  
                 Page.canvas.draw()
                 
             Page.figure.gca().draw_artist(pick)

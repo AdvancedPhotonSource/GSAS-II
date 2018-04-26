@@ -466,6 +466,30 @@ def checkEllipse(Zsum,distSum,xSum,ySum,dist,x,y):
     curr = np.array([dist,x,y])
     return abs(avg-curr)/avg < .02
 
+def GetLineScan(image,data):
+    Nx,Ny = data['size']
+    pixelSize = data['pixelSize']
+    scalex = 1000./pixelSize[0]         #microns --> 1/mm
+    scaley = 1000./pixelSize[1]
+    wave = data['wavelength']
+    numChans = data['outChannels']
+    LUtth = np.array(data['IOtth'],dtype=np.float)
+    azm = data['linescan'][1]
+    Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
+    Ty = np.zeros_like(Tx)
+    dsp = wave/(2.0*npsind(Tx/2.0))
+    xy = np.array([GetDetectorXY(d,azm,data) for d in dsp]).T
+    xy[1] *= scalex
+    xy[0] *= scaley
+    xy = np.array(xy,dtype=int)
+    Xpix = ma.masked_outside(xy[1],0,Ny-1)
+    Ypix = ma.masked_outside(xy[0],0,Nx-1)
+    xpix = Xpix[~(Xpix.mask+Ypix.mask)].compressed()
+    ypix = Ypix[~(Xpix.mask+Ypix.mask)].compressed()
+    Ty = image[xpix,ypix]
+    Tx = ma.array(Tx,mask=Xpix.mask+Ypix.mask).compressed()
+    return Tx,Ty
+
 def EdgeFinder(image,data):
     '''this makes list of all x,y where I>edgeMin suitable for an ellipse search?
     Not currently used but might be useful in future?

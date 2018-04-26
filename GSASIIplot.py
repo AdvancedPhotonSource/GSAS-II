@@ -2469,7 +2469,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     offsetY = Pattern[0]['Offset'][0]
     if G2frame.logPlot:
         Title = 'log('+Title+')'
-    #Plot.set_title(Title) # show title only w/o magnification
     if G2frame.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
     elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
@@ -2483,8 +2482,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             else:
                 xLabel = r'$TOF, \mathsf{\mu}$s'
     if G2frame.Weight:
-        Plot.tick_params('x',length=0,labelbottom=False)
-        Plot.tick_params('y',length=0,labelleft=False)
+        Plot.set_visible(False)         #hide old plot frame, will get replaced below
         GS_kw = {'height_ratios':[4, 1],}
         try:
             Plot,Plot1 = Page.figure.subplots(2,1,sharex=True,gridspec_kw=GS_kw)
@@ -5597,7 +5595,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     G2frame.ShiftDown = False
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    global Data,Masks,StrSta  # RVD: these are needed for multiple image controls/masks 
+    global Data,Masks,StrSta,Plot1  # RVD: these are needed for multiple image controls/masks 
     colors=['b','g','r','c','m','k'] 
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -5638,7 +5636,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
                         Page.SetToolTipString('%6d deg'%(azm))
                     elif 'line1' in  str(item) or 'line2' in str(item):
-                        Page.SetToolTipString('%8.3f deg'%(tth))                           
+                        Page.SetToolTipString('%8.3f deg'%(tth))
+                    elif 'linescan' in str(item):
+                        Data['linescan'][1] = azm                        
+                        Page.SetToolTipString('%6.1f deg'%(azm))
             else:
                 xcent,ycent = Data['center']
                 xpos = event.xdata
@@ -5749,8 +5750,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ypos = event.ydata
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 G2frame.calibDmin.SetValue(dsp)
-            elif event.key == 'l':
-                G2frame.logPlot = not G2frame.logPlot
             elif event.key in ['x',]:
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
@@ -5780,6 +5779,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
                 Data['LRazimuth'][1] = int(azm)
                 Data['LRazimuth'][1] %= 360
+            elif 'linescan' in itemPicked:
+                Data['linescan'][1] = azm
             else:
                 return
             if Data['LRazimuth'][0] > Data['LRazimuth'][1]: Data['LRazimuth'][1] += 360
@@ -5824,6 +5825,18 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 pick.set_data([[arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]]])
             elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
                 pick.set_data([[arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]]])
+            elif 'linescan' in itemPicked:
+                azm = Data['linescan'][1]
+                dspI = wave/(2.0*sind(0.1/2.0))
+                xyI = G2img.GetDetectorXY(dspI,azm,Data)
+                dspO = wave/(2.0*sind(60./2.0))
+                xyO = G2img.GetDetectorXY(dspO,azm,Data)
+                pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
+                xy = G2img.GetLineScan(G2frame.ImageZ,Data)
+                Plot1.cla()
+                Plot1.plot(xy[0],xy[1])
+                Page.canvas.draw()
+                
             Page.figure.gca().draw_artist(pick)
             Page.canvas.blit(Page.figure.gca().bbox)
             
@@ -6248,6 +6261,21 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=newImage)
+    
+    if Data.get('linescan',[False,0.])[0]:
+        Plot.set_visible(False)
+        GS_kw = {'width_ratios':[1,2],}
+        try:
+            Plot1,Plot = Page.figure.subplots(1,2,gridspec_kw=GS_kw)
+        except AttributeError: # figure.Figure.subplots added in MPL 2.2
+            Plot1,Plot = MPLsubplots(Page.figure, 1,2, gridspec_kw=GS_kw)
+        Plot1.set_title('Line scan at azm= %6.1f'%Data['linescan'][1])
+        Plot1.set_xlabel(r'$\mathsf{2\Theta}$',fontsize=12)
+        Plot1.set_ylabel('Intensity',fontsize=12)
+        xy = G2img.GetLineScan(G2frame.ImageZ,Data)
+        Plot1.plot(xy[0],xy[1])
+        Plot1.set_xlim(Data['IOtth'])
+        Plot1.set_xscale("linear")                                                  
     if newImage:
         G2frame.MaskKey = '' # subtitle will be removed, so turn off mode
     if not new:
@@ -6262,25 +6290,21 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Page.Choice = None
     Title = G2frame.GPXtree.GetItemText(G2frame.Image)[4:]
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
-    if G2frame.logPlot:
-        Title = 'log('+Title+')'
     Plot.set_title(Title)
     try:
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
-            Page.Choice = (' key press','l: log(I) on','d: set dmin','x: flip x','y: flip y',)
-            if G2frame.logPlot:
-                Page.Choice[1] = 'l: log(I) off'
+            Page.Choice = (' key press','c: set beam center','d: set dmin','x: flip x','y: flip y',)
+#            if G2frame.logPlot:
+#                Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Masks',]:
-            Page.Choice = [' key press','l: log(I) on','a: arc mask','r: ring mask',
+            Page.Choice = [' key press','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',
                 't: add spot mask at mouse position',
                 'd: select spot mask to delete with mouse',
                 ' typing a number sets diameter of new spot masks',
                 ' (space) input the spot mask diameter']
             Page.Choice.append('s: start multiple spot mask mode') # this must be the last choice
-            if G2frame.logPlot:
-                Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             Page.Choice = (' key press','a: add new ring',)
@@ -6314,18 +6338,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             MaskA = ma.getmaskarray(MA)
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
-            if G2frame.logPlot:
-                A = np.where(A>Imin,np.where(A<Imax,A,0),0)
-                A = np.where(A>0,np.log(A),0)
-                AM = np.where(AM>0,np.log(AM),0)
-                Imin,Imax = [np.amin(A),np.amax(A)]
             Plot.imshow(AM,aspect='equal',cmap='Reds',
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Page.ImgObj = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
             
         Plot.plot(xcent,ycent,'x')
-        #G2frame.GPXtree.GetItemText(item)
         if Data['showLines']: # draw integration range arc/circles/lines
             LRAzim = Data['LRazimuth']                  #NB: integers
             Nazm = Data['outAzimuths']
@@ -6367,6 +6385,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     cake += delAzm/2.
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
+        if 'linescan' in Data and Data['linescan'][0]:
+            azm = Data['linescan'][1]
+            IOtth = [0.1,60.]
+            wave = Data['wavelength']
+            dspI = wave/(2.0*sind(IOtth[0]/2.0))
+            xyI = G2img.GetDetectorXY(dspI,azm,Data)
+            dspO = wave/(2.0*sind(IOtth[1]/2.0))
+            xyO = G2img.GetDetectorXY(dspO,azm,Data)
+            Plot.plot([xyI[0],xyO[0]],[xyI[1],xyO[1]],picker=3,label='linescan')
                     
         if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:

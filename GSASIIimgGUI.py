@@ -172,6 +172,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         data['DetDepth'] /= data['distance']
     if 'setdist' not in data:
         data['setdist'] = data['distance']
+    if 'linescan' not in data:
+        data['linescan'] = [False,0.0]      #includes azimuth to draw line scan
 #end patch
 
 # Menu items
@@ -770,6 +772,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Page.canvas.draw()
             else:
                 Page.canvas.draw_idle()
+                
+        def OnLineScan(event):
+            data['linescan'][0] = linescan.GetValue()
+            G2plt.PlotExposedImage(G2frame,event=event)
 
         mplv = mpl.__version__.split('.')
         mplOld = mplv[0] == '1' and int(mplv[1]) < 4 # use draw_idle for newer matplotlib versions
@@ -816,6 +822,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             scaleSel.SetSelection(len(scaleChoices)-1)
         scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
         autoSizer.Add(scaleSel,0,WACV)
+        linescan = wx.CheckBox(G2frame.dataWindow,label=' Show line scan')
+        linescan.Bind(wx.EVT_CHECKBOX,OnLineScan)
+        linescan.SetValue(data['linescan'][0])
+        autoSizer.Add((5,0),0)
+        autoSizer.Add(linescan,0,WACV)
         maxSizer.Add(autoSizer)
         return maxSizer
         

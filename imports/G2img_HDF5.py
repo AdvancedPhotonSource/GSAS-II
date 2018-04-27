@@ -41,11 +41,8 @@ class HDF5_Reader(G2obj.ImportImage):
             if os.path.exists(conda):
                 print('To fix this use command:\n\t'+conda+' install h5py hdf5')
         super(self.__class__,self).__init__( # fancy way to self-reference
-                                             extensionlist=('.hdf5','.hd5','.h5','.hdf'),
-                                             strictExtension=True,
-                                             formatName = 'HDF5 image',
-                                             longFormatName = 'HDF5 image file'
-                                             )
+            extensionlist=('.hdf5','.hd5','.h5','.hdf'),strictExtension=True,
+            formatName = 'HDF5 image',longFormatName = 'HDF5 image file')
 
     def ContentsValidator(self, filename):
         '''Test if valid by seeing if the HDF5 library recognizes the file.
@@ -94,24 +91,24 @@ class HDF5_Reader(G2obj.ImportImage):
         ending in 'data' look at dimensions of contents. If the shape is
         length 2 or 4 assume an image and index in self.buffer['imagemap']
         ''' 
-        datakeyword = 'data'
+        datakeywords = ['data','images']
         head = []
         def func(name, dset):
             if not hasattr(dset,'shape'): return # not array, can't be image
             if isinstance(dset, h5py.Dataset):
                 if len(dset.shape) < 2:
                     head.append('%s: %s'%(dset.name,str(dset[()][0])))
-                if dset.name.endswith(datakeyword):
-                    dims = dset.shape
-                    if len(dims) == 4:
-                        self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[1])]
-                    elif len(dims) == 3:
-                        self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[0])]
-                    elif len(dims) == 2:
-                        self.buffer['imagemap'] += [(dset.name,None)]
-                    else:
-                        print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
-        #if GSASIIpath.GetConfigValue('debug'): print 'visit'
+                for datakeyword in datakeywords:
+                    if dset.name.endswith(datakeyword):
+                        dims = dset.shape
+                        if len(dims) == 4:
+                            self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[1])]
+                        elif len(dims) == 3:
+                            self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[0])]
+                        elif len(dims) == 2:
+                            self.buffer['imagemap'] += [(dset.name,None)]
+                        else:
+                            print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
         self.buffer['imagemap'] = []
         fp.visititems(func)
         return head

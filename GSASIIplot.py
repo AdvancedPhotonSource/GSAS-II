@@ -5633,9 +5633,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xpos = event.xdata-xcent
                     ypos = event.ydata-ycent
                     tth,azm = G2img.GetTthAzm(event.xdata,event.ydata,Data)
-                    if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
+                    if 'Lazm' in  str(item) or 'Uazm' in str(item) and not Data['fullIntegrate']:
                         Page.SetToolTipString('%6d deg'%(azm))
-                    elif 'line1' in  str(item) or 'line2' in str(item):
+                    elif 'Itth' in  str(item) or 'Otth' in str(item):
                         Page.SetToolTipString('%8.3f deg'%(tth))
                     elif 'linescan' in str(item):
                         Data['linescan'][1] = azm                        
@@ -5769,14 +5769,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 return
             tth,azm,D,dsp = G2img.GetTthAzmDsp(event.xdata,event.ydata,Data)
             itemPicked = str(G2frame.itemPicked)
-            if 'line1' in itemPicked and 'Line2D' in itemPicked:
+            if 'Itth' in itemPicked:
                 Data['IOtth'][0] = max(tth,0.001)
-            elif 'line2' in itemPicked and 'Line2D' in itemPicked:
+            elif 'Otth' in itemPicked:
                 Data['IOtth'][1] = tth
-            elif 'line3' in itemPicked and 'Line2D' in itemPicked:
+            elif 'Lazm' in itemPicked:
                 Data['LRazimuth'][0] = int(azm)
                 Data['LRazimuth'][0] %= 360
-            elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
+            elif 'Uazm' in itemPicked:
                 Data['LRazimuth'][1] = int(azm)
                 Data['LRazimuth'][1] %= 360
             elif 'linescan' in itemPicked:
@@ -5817,16 +5817,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     arcxO,arcyO = xyO.T                
 
             Page.canvas.restore_region(savedplot)
-            if 'line1' in itemPicked and 'Line2D' in itemPicked:
+            if 'Itth' in itemPicked:
                 pick.set_data([arcxI,arcyI])
-            elif 'line2' in itemPicked and 'Line2D' in itemPicked:
+            elif 'Otth' in itemPicked:
                 pick.set_data([arcxO,arcyO])
-            elif 'line3' in itemPicked and 'Line2D' in itemPicked:
+            elif 'Lazm' in itemPicked:
                 pick.set_data([[arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]]])
-            elif 'line4' in itemPicked  and 'Line2D' in itemPicked:
+            elif 'Uazm' in itemPicked:
                 pick.set_data([[arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]]])
             elif 'linescan' in itemPicked:
-                azm = Data['linescan'][1]
+                azm = Data['linescan'][1]-AzmthOff
                 dspI = wave/(2.0*sind(0.1/2.0))
                 xyI = G2img.GetDetectorXY(dspI,azm,Data)
                 dspO = wave/(2.0*sind(60./2.0))
@@ -5837,6 +5837,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Plot1.plot(xy[0],xy[1])
                 Plot1.set_xlim(Data['IOtth'])
                 Plot1.set_xscale("linear")                                                  
+                Plot1.set_title('Line scan at azm= %6.1f'%(azm+AzmthOff))
                 Page.canvas.draw()
                 
             Page.figure.gca().draw_artist(pick)
@@ -6201,13 +6202,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     if np.allclose(ring,xypos,.01,0):
                         rings.remove(ring)
             elif 'Line2D' in itemPicked and treeItem == 'Image Controls':
-                if 'line1' in itemPicked:
+                if 'Itth' in itemPicked:
                     Data['IOtth'][0] = max(tth,0.001)
-                elif 'line2' in itemPicked:
+                elif 'Otth' in itemPicked:
                     Data['IOtth'][1] = tth
-                elif 'line3' in itemPicked:
+                elif 'Lazm' in itemPicked:
                     Data['LRazimuth'][0] = int(azm)
-                elif 'line4' in itemPicked and not Data['fullIntegrate']:
+                elif 'Uazm' in itemPicked and not Data['fullIntegrate']:
                     Data['LRazimuth'][1] = int(azm)
 
                 Data['LRazimuth'][0] %= 360
@@ -6367,7 +6368,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if len(xyI):
                     xyI = np.array(xyI)
                     arcxI,arcyI = xyI.T
-                    Plot.plot(arcxI,arcyI,picker=3)
+                    Plot.plot(arcxI,arcyI,picker=3,label='Itth')
             if ellO:
                 xyO = []
                 for azm in Azm:
@@ -6377,10 +6378,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if len(xyO):
                     xyO = np.array(xyO)
                     arcxO,arcyO = xyO.T                
-                    Plot.plot(arcxO,arcyO,picker=3)
+                    Plot.plot(arcxO,arcyO,picker=3,label='Otth')
             if ellO and ellI:
-                Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
-                Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)
+                Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3,label='Lazm')
+                Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3,label='Uazm')
             for i in range(Nazm):
                 cake = LRAzim[0]+i*delAzm-AzmthOff
                 if Data.get('centerAzm',False):

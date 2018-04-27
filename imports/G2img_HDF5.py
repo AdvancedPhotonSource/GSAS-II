@@ -109,6 +109,7 @@ class HDF5_Reader(G2obj.ImportImage):
                             self.buffer['imagemap'] += [(dset.name,None)]
                         else:
                             print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
+                        break
         self.buffer['imagemap'] = []
         fp.visititems(func)
         return head
@@ -130,7 +131,7 @@ class HDF5_Reader(G2obj.ImportImage):
             raise Exception(msg)
         sizexy = list(image.shape) 
         Npix = sizexy[0]*sizexy[1]
-        data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':1000.,
+        data = {'pixelSize':[74.8,74.8],'wavelength':0.15,'distance':1000.,
                 'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy}
         for item in self.Comments:
             name,val = item.split(':',1)

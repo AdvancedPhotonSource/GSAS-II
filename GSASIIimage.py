@@ -474,7 +474,7 @@ def GetLineScan(image,data):
     wave = data['wavelength']
     numChans = data['outChannels']
     LUtth = np.array(data['IOtth'],dtype=np.float)
-    azm = data['linescan'][1]
+    azm = data['linescan'][1]-data['azmthOff']
     Tx = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
     Ty = np.zeros_like(Tx)
     dsp = wave/(2.0*npsind(Tx/2.0))
@@ -488,7 +488,7 @@ def GetLineScan(image,data):
     ypix = Ypix[~(Xpix.mask+Ypix.mask)].compressed()
     Ty = image[xpix,ypix]
     Tx = ma.array(Tx,mask=Xpix.mask+Ypix.mask).compressed()
-    return Tx,Ty
+    return [Tx,Ty]
 
 def EdgeFinder(image,data):
     '''this makes list of all x,y where I>edgeMin suitable for an ellipse search?

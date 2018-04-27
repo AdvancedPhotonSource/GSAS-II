@@ -5754,6 +5754,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
                 Data['invert_y'] = not Data['invert_y']
+            elif event.key in ['s',] and Data['linescan'][0]:
+                G2frame.logPlot = False
+                G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
+            elif event.key in ['n',] and Data['linescan'][0]:
+                G2frame.plotStyle['sqrtPlot'] = False
+                G2frame.logPlot = not G2frame.logPlot
             else:
                 return
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
@@ -5834,6 +5840,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
+                if G2frame.logPlot:
+                    xy[1] = np.log(xy[1])
+                elif G2frame.plotStyle['sqrtPlot']:
+                    xy[1] = np.sqrt(xy[1])
                 Plot1.plot(xy[0],xy[1])
                 Plot1.set_xlim(Data['IOtth'])
                 Plot1.set_xscale("linear")                                                  
@@ -6276,6 +6286,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         Plot1.set_xlabel(r'$\mathsf{2\Theta}$',fontsize=12)
         Plot1.set_ylabel('Intensity',fontsize=12)
         xy = G2img.GetLineScan(G2frame.ImageZ,Data)
+        if G2frame.logPlot:
+            xy[1] = np.log(xy[1])
+            Plot1.set_ylabel('log(Intensity)',fontsize=12)
+        elif G2frame.plotStyle['sqrtPlot']:
+            Plot1.set_ylabel(r'$\sqrt{Intensity}$',fontsize=12)
+            xy[1] = np.sqrt(xy[1])
         Plot1.plot(xy[0],xy[1])
         Plot1.set_xlim(Data['IOtth'])
         Plot1.set_xscale("linear")                                                  
@@ -6296,9 +6312,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_title(Title)
     try:
         if G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
-            Page.Choice = (' key press','c: set beam center','d: set dmin','x: flip x','y: flip y',)
-#            if G2frame.logPlot:
-#                Page.Choice[1] = 'l: log(I) off'
+            Page.Choice = [' key press','c: set beam center','d: set dmin','x: flip x','y: flip y',]
+            if Data.get('linescan',[False,0.])[0]:
+                Page.Choice += ['s: toggle sqrt plot line scan','n: toggle log plot line scan']
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Masks',]:
             Page.Choice = [' key press','a: arc mask','r: ring mask',
@@ -6389,7 +6405,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
         if 'linescan' in Data and Data['linescan'][0]:
-            azm = Data['linescan'][1]
+            azm = Data['linescan'][1]-Data['azmthOff']
             IOtth = [0.1,60.]
             wave = Data['wavelength']
             dspI = wave/(2.0*sind(IOtth[0]/2.0))

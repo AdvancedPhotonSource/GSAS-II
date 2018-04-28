@@ -3062,7 +3062,8 @@ class GSASII(wx.Frame):
                     self.Avg = wx.CheckBox(self.panel,label=' Make average?')
                     self.Avg.Bind(wx.EVT_CHECKBOX,self.OnAve)
                 self.dataGridSizer.Add(ScaleAll,0,wx.LEFT,10)
-                self.dataGridSizer.Add(self.Avg,0,wx.RIGHT,10)
+                if self.dataType == 'PWDR':
+                    self.dataGridSizer.Add(self.Avg,0,wx.RIGHT,10)
                 self.dataGridSizer.Add(wx.StaticText(self.panel,-1,' Result name: '+self.dataType),1,
                     wx.LEFT|wx.ALIGN_CENTER_VERTICAL,1)
                 self.name = G2G.ValidatedTxtCtrl(self.panel,self.data,-1,size=wx.Size(300,20))
@@ -3353,7 +3354,8 @@ class GSASII(wx.Frame):
                     else:
                         Id = self.GPXtree.AppendItem(parent=self.root,text=outname)
                     if Id:
-                        pth = G2G.GetExportPath(self)
+                        pth = os.path.split(os.path.abspath(imagefile))[0]
+#                        pth = G2G.GetExportPath(self)
                         dlg = wx.FileDialog(self, 'Choose sum image filename', pth,outname.split('IMG ')[1], 
                             'G2img files (*.G2img)|*.G2img', 
                             wx.SAVE|wx.FD_OVERWRITE_PROMPT)

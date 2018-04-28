@@ -390,6 +390,9 @@ class G2PlotMpl(_tabPlotWin):
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
         self.toolbar.Realize()
+        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,'logPlot':False}
+        self.logPlot = False
+        self.sqrtPlot = False
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
@@ -1592,7 +1595,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
 
        G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
-    global exclLines
+    global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
     global Pattern,mcolors,Plot
@@ -1619,7 +1622,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
             return
         newPlot = False
-        if event.key == 'w' and not G2frame.plotStyle['qPlot'] and not G2frame.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
+        if event.key == 'w' and not Page.plotStyle['qPlot'] and not Page.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
@@ -1634,15 +1637,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if G2frame.Contour:
                 pass
             else:
-                G2frame.logPlot = not G2frame.logPlot
-                if not G2frame.logPlot:
+                Page.plotStyle['logPlot'] = not Page.plotStyle['logPlot']
+                if not Page.plotStyle['logPlot']:
                     Pattern[0]['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
             if G2frame.SinglePlot:  #toggle sqrt plot
-                G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
+                Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
                 Ymax = max(Pattern[1][1])
-                if G2frame.plotStyle['sqrtPlot']:
+                if Page.plotStyle['sqrtPlot']:
                     Pattern[0]['delOffset'] = .002*np.sqrt(Ymax)
                     Pattern[0]['refOffset'] = -0.1*np.sqrt(Ymax)
                     Pattern[0]['refDelt'] = .1*np.sqrt(Ymax)
@@ -1697,10 +1700,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
             if G2frame.Contour:
-                G2frame.plotStyle['qPlot'] = False
-                G2frame.plotStyle['dPlot'] = False
+                Page.plotStyle['qPlot'] = False
+                Page.plotStyle['dPlot'] = False
         elif event.key == 'a' and 'PWDR' in plottype and G2frame.SinglePlot and not (
-                 G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             # add a magnification region
             try:
                 xpos = event.xdata
@@ -1708,9 +1711,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if 'Magnification' not in Pattern[0]:
                     Pattern[0]['Magnification'] = []
                 try:
-                    if G2frame.plotStyle['qPlot']:
+                    if Page.plotStyle['qPlot']:
                         xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
-                    elif G2frame.plotStyle['dPlot']:
+                    elif Page.plotStyle['dPlot']:
                         xpos = G2lat.Dsp2pos(Parms,xpos)
                 except ValueError:
                     return
@@ -1724,22 +1727,22 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         elif event.key == 'q': 
             newPlot = True
             if 'PWDR' in plottype:
-                G2frame.plotStyle['qPlot'] = not G2frame.plotStyle['qPlot']
-                if G2frame.plotStyle['qPlot']:
+                Page.plotStyle['qPlot'] = not Page.plotStyle['qPlot']
+                if Page.plotStyle['qPlot']:
                     G2frame.Weight = False
                     G2frame.Contour = False
-                G2frame.plotStyle['dPlot'] = False
+                Page.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
-                G2frame.plotStyle['sqPlot'] = not G2frame.plotStyle['sqPlot']
+                Page.plotStyle['sqPlot'] = not Page.plotStyle['sqPlot']
         elif event.key == 't' and 'PWDR' in plottype:
-            G2frame.plotStyle['dPlot'] = not G2frame.plotStyle['dPlot']
-            if G2frame.plotStyle['dPlot']:
+            Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
+            if Page.plotStyle['dPlot']:
                 G2frame.Contour = False                
                 G2frame.Weight = False
-            G2frame.plotStyle['qPlot'] = False
+            Page.plotStyle['qPlot'] = False
             newPlot = True      
         elif event.key == 'm':
-            G2frame.plotStyle['sqrtPlot'] = False
+            Page.plotStyle['sqrtPlot'] = False
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key == 'f' and not G2frame.SinglePlot:
@@ -1786,7 +1789,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(Id)
             limx = Plot.get_xlim()
             dT = tolerance = np.fabs(limx[1]-limx[0])/100.
-            if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
+            if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                 q = xpos
                 if q <= 0:
                     G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
@@ -1808,7 +1811,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     G2frame.G2plotNB.status.SetStatusText('q = %9.5f'%q)
                     return
                 dsp = 2.*np.pi/q
-            elif G2frame.plotStyle['dPlot']:
+            elif Page.plotStyle['dPlot']:
                 dsp = xpos
                 if dsp <= 0:
                     G2frame.G2plotNB.status.SetStatusText('d = %9.5f'%dsp)
@@ -1835,7 +1838,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             else:
                 if 'C' in Parms['Type'][0]:
                     if 'PWDR' in plottype:
-                        if G2frame.plotStyle['sqrtPlot']:
+                        if Page.plotStyle['sqrtPlot']:
                             G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                         else:
                             G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
@@ -1844,7 +1847,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     elif plottype == 'REFD':
                         G2frame.G2plotNB.status.SetStatusText('q =%12.5g Reflectivity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                 else:
-                    if G2frame.plotStyle['sqrtPlot']:
+                    if Page.plotStyle['sqrtPlot']:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                     else:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
@@ -1981,6 +1984,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
 
+        global Page
         try:
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
@@ -1998,12 +2002,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             ind = event.ind
             xy = list(list(zip(np.take(xpos,ind),np.take(ypos,ind)))[0])
             # convert from plot units
-            if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+            if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-            elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+            elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
                 xy[0] = G2lat.Dsp2pos(Parms,xy[0])
-            if G2frame.plotStyle['sqrtPlot']:
-                xy[1] = xy[1]**2
+#            if Page.plotStyle['sqrtPlot']:
+#                xy[1] = xy[1]**2
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId
         if G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
@@ -2028,9 +2032,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
-                if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+                if Page.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+                elif Page.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 if G2frame.ifGetExclude:
                     excl = [0,0]
@@ -2168,13 +2172,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             # unit conversions
             xy = [event.xdata,event.ydata]
             try:
-                if G2frame.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
+                if Page.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif G2frame.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
+                elif Page.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
             except:
                 return
-            if G2frame.plotStyle['sqrtPlot']:
+            if Page.plotStyle['sqrtPlot']:
                 xy[1] = xy[1]**2
             backPts = G2frame.dataWindow.wxID_BackPts
             for mode in backPts: # what menu is selected?
@@ -2206,9 +2210,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
             xpos = event.xdata
             try:
-                if G2frame.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
+                if Page.plotStyle['qPlot']:                            #qplot - convert back to 2-theta
                     xpos = G2lat.Dsp2pos(Parms,2*np.pi/xpos)
-                elif G2frame.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
+                elif Page.plotStyle['dPlot']:                          #dplot - convert back to 2-theta
                     xpos = G2lat.Dsp2pos(Parms,xpos)
             except:
                 return
@@ -2233,9 +2237,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 limits = G2frame.GPXtree.GetItemPyData(LimitId)
                 id = lineNo//2+1
                 id2 = lineNo%2
-                if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
+                if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                     limits[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
-                elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
+                elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
                     limits[id][id2] = G2lat.Dsp2pos(Parms,xpos)
                 else:
                     limits[id][id2] = xpos
@@ -2251,9 +2255,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if event.button == 3:
                     del peaks['peaks'][lineNo-2-nxcl]
                 else:
-                    if G2frame.plotStyle['qPlot']:
+                    if Page.plotStyle['qPlot']:
                         peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
-                    elif G2frame.plotStyle['dPlot']:
+                    elif Page.plotStyle['dPlot']:
                         peaks['peaks'][lineNo-2-nxcl][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
                         peaks['peaks'][lineNo-2-nxcl][0] = xpos
@@ -2298,7 +2302,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if G2frame.Contour or not G2frame.SinglePlot:
             if msg: msg += '\n'
             msg += " * only when a single histogram is plotted"
-        if G2frame.logPlot or G2frame.plotStyle['sqrtPlot']:
+        if Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot']:
             if msg: msg += '\n'
             msg += " * only when the intensity scale is linear (not log or sqrt)"
         if G2frame.Weight:
@@ -2322,7 +2326,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         G2frame.xylim = limits
     else:
         if plottype in ['SASD','REFD']:
-            G2frame.logPlot = True
+            Page.plotStyle['logPlot'] = True
             G2frame.ErrorBars = True
         newPlot = True
         G2frame.Cmax = 1.0
@@ -2360,7 +2364,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
-        if G2frame.logPlot:
+        if Page.plotStyle['logPlot']:
             if 'PWDR' in plottype:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','n: log(I) off',
@@ -2399,7 +2403,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
     if 'PWDR' in plottype and G2frame.SinglePlot and not (
-                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
         Page.Choice = Page.Choice + ('a: add magnification region',)
     magLineList = [] # null value indicates no magnification
     Page.toolbar.updateActions = None # no update actions
@@ -2467,11 +2471,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     if Ymax is None: return # nothing to plot
     offsetX = Pattern[0]['Offset'][1]
     offsetY = Pattern[0]['Offset'][0]
-    if G2frame.logPlot:
+    if Page.plotStyle['logPlot']:
         Title = 'log('+Title+')'
-    if G2frame.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
+    if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
-    elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
+    elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
         xLabel = r'$d, \AA$'
     else:
         if 'C' in ParmList[0]['Type'][0]:
@@ -2496,22 +2500,22 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Plot.set_xlabel(xLabel,fontsize=16)
     if 'C' in ParmList[0]['Type'][0]:
         if 'PWDR' in plottype:
-            if G2frame.plotStyle['sqrtPlot']:
+            if Page.plotStyle['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Intensity$',fontsize=16)
         elif plottype == 'SASD':
-            if G2frame.plotStyle['sqPlot']:
+            if Page.plotStyle['sqPlot']:
                 Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Intensity,\ cm^{-1}$',fontsize=16)
         elif plottype == 'REFD':
-            if G2frame.plotStyle['sqPlot']:
+            if Page.plotStyle['sqPlot']:
                 Plot.set_ylabel(r'$S(Q)=R*Q^{4}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Reflectivity$',fontsize=16)                
     else:       #neutron TOF
-        if G2frame.plotStyle['sqrtPlot']:
+        if Page.plotStyle['sqrtPlot']:
             Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
         else:
             Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
@@ -2544,9 +2548,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 xye0 = ma.masked_inside(xye0,excl[0],excl[1]) # sets mask on xye0 but not Pattern[1][0] !
             Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))
 #            Pattern[1][0].mask = xye0.mask # transfer the mask 
-        if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
+        if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
-        elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
+        elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
             X = G2lat.Pos2dsp(Parms,xye0)
         else:
             X = copy.deepcopy(xye0)
@@ -2557,10 +2561,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Plot.magLbls = []
         multArray = np.ones_like(Pattern[1][0])
         if 'PWDR' in plottype and G2frame.SinglePlot and not (
-                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             magLineList = data[0].get('Magnification',[])
-            if ('C' in ParmList[0]['Type'][0] and G2frame.plotStyle['dPlot']
-                ) or ('T' in ParmList[0]['Type'][0] and G2frame.plotStyle['qPlot']
+            if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']
+                ) or ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']
                 ): # reversed regions relative to data order
                 tcorner = 1
                 tpos = 1.0
@@ -2580,9 +2584,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     ml0 = ml
                     continue
                 multArray[Pattern[1][0]>x] = m
-                if G2frame.plotStyle['qPlot']:
+                if Page.plotStyle['qPlot']:
                     x = 2.*np.pi/G2lat.Pos2dsp(Parms,x)
-                elif G2frame.plotStyle['dPlot']:
+                elif Page.plotStyle['dPlot']:
                     x = G2lat.Pos2dsp(Parms,x)
                 # is range in displayed range (defined after newplot)?
                 if not newPlot:
@@ -2603,12 +2607,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
-            if G2frame.plotStyle['sqrtPlot']:
+            if Page.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))
                 np.seterr(invalid=olderr['invalid'])
             elif 'PWDR' in plottype and G2frame.SinglePlot and not (
-                G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                 Y = xye[1]*multArray+bxye+NoffY*Ymax/100.0
             else:
                 Y = xye[1]+bxye+NoffY*Ymax/100.0
@@ -2617,16 +2621,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 B = xye[5]
             else:
                 B = np.zeros_like(xye[5])
-            if G2frame.plotStyle['sqPlot']:
+            if Page.plotStyle['sqPlot']:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY*X**4
             else:
                 Y = xye[1]*Sample['Scale'][0]*(1.05)**NoffY
         if LimitId and ifpicked:
             limits = np.array(G2frame.GPXtree.GetItemPyData(LimitId))
             lims = limits[1]
-            if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
+            if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
-            elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
+            elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
                 lims = G2lat.Pos2dsp(Parms,lims)
             Lines.append(Plot.axvline(lims[0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(lims[1],color='r',dashes=(5,5),picker=3.))
@@ -2649,7 +2653,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 pP = '+'
             else:
                 pP = ''
-            if plottype in ['SASD','REFD'] and G2frame.logPlot:
+            if plottype in ['SASD','REFD'] and Page.plotStyle['logPlot']:
                 X *= (1.01)**(offsetX*N)
             else:
                 xlim = Plot.get_xlim()
@@ -2657,31 +2661,31 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 X += 0.002*offsetX*DX*N
             Xum = ma.getdata(X) # unmasked version of X, use to plot data (only)
             if ifpicked:
-                if G2frame.plotStyle['sqrtPlot']:
+                if Page.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                     Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
                     np.seterr(invalid=olderr['invalid'])
                 else:
                     if 'PWDR' in plottype and G2frame.SinglePlot and not (
-                        G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                        Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                         Z = xye[3]*multArray+NoffY*Ymax/100.0
                     else:
                         Z = xye[3]+NoffY*Ymax/100.0
                 if 'PWDR' in plottype:
-                    if G2frame.plotStyle['sqrtPlot']:
+                    if Page.plotStyle['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Pattern[0]['delOffset']
                     elif 'PWDR' in plottype and G2frame.SinglePlot and not (
-                        G2frame.logPlot or G2frame.plotStyle['sqrtPlot'] or G2frame.Contour):
+                        Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                         W = xye[4]*multArray+NoffY*Ymax/100.0
                         D = multArray*xye[5]-Pattern[0]['delOffset']  #powder background
                     else:
                         W = xye[4]+NoffY*Ymax/100.0
                         D = xye[5]-Pattern[0]['delOffset']  #powder background
                 elif plottype in ['SASD','REFD']:
-                    if G2frame.plotStyle['sqPlot']:
+                    if Page.plotStyle['sqPlot']:
                         W = xye[4]*X**4
                         Z = xye[3]*X**4
                         B = B*X**4
@@ -2707,7 +2711,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
                     Plot1.set_ylim(bottom=np.min(DZ[Ibeg:Ifin])*1.2,top=np.max(DZ[Ibeg:Ifin])*1.2)  
-                if G2frame.logPlot:
+                if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
                         Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
@@ -2719,7 +2723,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         Ifin = np.searchsorted(X,limits[1][1])
                         Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
-                            if G2frame.plotStyle['sqPlot']:
+                            if Page.plotStyle['sqPlot']:
                                 Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                     ecolor=colors[0],picker=3.,clip_on=Clip_on)
                             else:
@@ -2763,9 +2767,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                                 Ni = N+1
                             else:
                                 Ni = N
-                            if G2frame.plotStyle['qPlot']:
+                            if Page.plotStyle['qPlot']:
                                 Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
-                            elif G2frame.plotStyle['dPlot']:
+                            elif Page.plotStyle['dPlot']:
                                 Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
                             else:
                                 Lines.append(Plot.axvline(item[0],color=colors[Ni%6],picker=2.))
@@ -2778,7 +2782,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         
             else:   #not picked
                 icolor = 256*N//len(PlotList)
-                if G2frame.logPlot:
+                if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,color=mcolors.cmap(icolor),picker=False,nonposy='mask')
                     elif plottype in ['SASD','REFD']:
@@ -2790,7 +2794,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         Plot.loglog(X,Y,mcolors.cmap(icolor),picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                             
-                if G2frame.logPlot and 'PWDR' in plottype:
+                if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
 #    if not G2frame.SinglePlot and not G2frame.Contour:
 #        axcb = mpl.colorbar.ColorbarBase(N)
@@ -2805,9 +2809,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if not len(peaks): return # are there any peaks?
             for peak in peaks[0]:
                 if peak[2]:
-                    if G2frame.plotStyle['qPlot']:
+                    if Page.plotStyle['qPlot']:
                         Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    if G2frame.plotStyle['dPlot']:
+                    if Page.plotStyle['dPlot']:
                         Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
                     else:
                         Plot.axvline(peak[0],color='b')
@@ -2815,9 +2819,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 clr = 'r'
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
-                if G2frame.plotStyle['qPlot']:
+                if Page.plotStyle['qPlot']:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
-                if G2frame.plotStyle['dPlot']:
+                if Page.plotStyle['dPlot']:
                     Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
@@ -2839,9 +2843,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
                 plsym = Page.phaseColors.get(phase,'y')+'|' # yellow should never happen!
-                if G2frame.plotStyle['qPlot']:
+                if Page.plotStyle['qPlot']:
                     Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
-                elif G2frame.plotStyle['dPlot']:
+                elif Page.plotStyle['dPlot']:
                     Page.tickDict[phase],j = Plot.plot(peak.T[0],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
                 else:
                     Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
@@ -2869,16 +2873,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             # "normal" intensity modes only!
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
                 break
-            if y < 0 and (G2frame.plotStyle['sqrtPlot'] or G2frame.logPlot):
+            if y < 0 and (Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']):
                 y = Page.figure.gca().get_ylim()[0] # put out of range point at bottom of plot
-            elif G2frame.plotStyle['sqrtPlot']:
+            elif Page.plotStyle['sqrtPlot']:
                 y = math.sqrt(y)
-            if G2frame.plotStyle['qPlot']:     #Q - convert from 2-theta
+            if Page.plotStyle['qPlot']:     #Q - convert from 2-theta
                 if Parms:
                     x = 2*np.pi/G2lat.Pos2dsp(Parms,x)
                 else:
                     break
-            elif G2frame.plotStyle['dPlot']:   #d - convert from 2-theta
+            elif Page.plotStyle['dPlot']:   #d - convert from 2-theta
                 if Parms:
                     x = G2lat.Dsp2pos(Parms,x)
                 else:
@@ -2891,7 +2895,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)-1.))
         Plot.set_xlim(G2frame.xylim[0])
         Plot.set_ylim(G2frame.xylim[1])
-#        xylim = []
         Page.toolbar.push_current()
         Page.toolbar.draw()
     else:
@@ -2899,7 +2902,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         Page.canvas.draw()
     olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
     # and sqrt(-ve) in np.where usage               
-#    G2frame.Pwdr = True
     if 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         if len(Page.tickDict.keys()) == 1:
             G2frame.dataWindow.moveTickLoc.Enable(True)
@@ -5755,11 +5757,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif event.key in ['y',]:
                 Data['invert_y'] = not Data['invert_y']
             elif event.key in ['s',] and Data['linescan'][0]:
-                G2frame.logPlot = False
-                G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
+                Page.plotStyle['logPlot'] = False
+                Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
             elif event.key in ['n',] and Data['linescan'][0]:
-                G2frame.plotStyle['sqrtPlot'] = False
-                G2frame.logPlot = not G2frame.logPlot
+                Page.plotStyle['sqrtPlot'] = False
+                Page.plotStyle['logPlot'] = not Page.plotStyle['logPlot']
             else:
                 return
             wx.CallAfter(PlotImage,G2frame,newPlot=True)
@@ -5840,10 +5842,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 pick.set_data([[xyI[0],xyO[0]],[xyI[1],xyO[1]]])
                 xy = G2img.GetLineScan(G2frame.ImageZ,Data)
                 Plot1.cla()
-                if G2frame.logPlot:
+                olderr = np.seterr(invalid='ignore') #get around sqrt/log(-ve) error
+                if Page.plotStyle['logPlot']:
                     xy[1] = np.log(xy[1])
-                elif G2frame.plotStyle['sqrtPlot']:
+                elif Page.plotStyle['sqrtPlot']:
                     xy[1] = np.sqrt(xy[1])
+                np.seterr(invalid=olderr['invalid'])
                 Plot1.plot(xy[0],xy[1])
                 Plot1.set_xlim(Data['IOtth'])
                 Plot1.set_xscale("linear")                                                  
@@ -6286,12 +6290,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         Plot1.set_xlabel(r'$\mathsf{2\Theta}$',fontsize=12)
         Plot1.set_ylabel('Intensity',fontsize=12)
         xy = G2img.GetLineScan(G2frame.ImageZ,Data)
-        if G2frame.logPlot:
+        olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
+        if Page.plotStyle['logPlot']:
             xy[1] = np.log(xy[1])
             Plot1.set_ylabel('log(Intensity)',fontsize=12)
-        elif G2frame.plotStyle['sqrtPlot']:
+        elif Page.plotStyle['sqrtPlot']:
             Plot1.set_ylabel(r'$\sqrt{Intensity}$',fontsize=12)
             xy[1] = np.sqrt(xy[1])
+        np.seterr(invalid=olderr['invalid'])
         Plot1.plot(xy[0],xy[1])
         Plot1.set_xlim(Data['IOtth'])
         Plot1.set_xscale("linear")                                                  

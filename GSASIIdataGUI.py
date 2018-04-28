@@ -2667,7 +2667,6 @@ class GSASII(wx.Frame):
         self.GSASprojectfile = ''
         self.undofile = ''
         self.TreeItemDelete = False
-        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False}
         self.Weight = False
         self.IfPlot = False
         self.DDShowAll = False

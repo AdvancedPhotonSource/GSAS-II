@@ -340,7 +340,7 @@ def CopyPlotCtrls(G2frame):
     
     if 'Offset' not in sourceData[0]:    #patch for old data
         sourceData[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,
-            'refDelt':0.01,'qPlot':False,'dPlot':False,'sqrtPlot':False})
+            'refDelt':0.01,})
         G2frame.GPXtree.SetItemPyData(G2frame.PatternId,sourceData)
         
     dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy plot controls from\n'+str(hst[5:])+' to...',
@@ -355,7 +355,7 @@ def CopyPlotCtrls(G2frame):
     for i in results: 
         copyList.append(histList[i])
 
-    keys = ['Offset','delOffset','refOffset','refDelt','qPlot','dPlot','sqrtPlot']
+    keys = ['Offset','delOffset','refOffset','refDelt']
     source = dict(zip(keys,[sourceData[0][item] for item in keys]))
     for hist in copyList:
         Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,hist)

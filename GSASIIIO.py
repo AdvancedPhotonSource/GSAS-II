@@ -798,15 +798,10 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
         valuesdict = {
-            'wtFactor':1.0,
-            'Dummy':False,
-            'ranId':ran.randint(0,sys.maxsize),
-            'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,
-            'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
-            }
-        G2frame.GPXtree.SetItemPyData(
-            Id,[valuesdict,
-                [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
+            'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
+            'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
+        G2frame.GPXtree.SetItemPyData(Id,[valuesdict,
+            [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
     
 def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):

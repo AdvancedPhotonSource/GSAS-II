@@ -1078,7 +1078,6 @@ def load_pwd_from_reader(reader, instprm, existingnames=[]):
                   'ranId': ran.randint(0, sys.maxsize),
                   'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
                   'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
-                  'qPlot': False, 'dPlot': False, 'sqrtPlot': False,
                   'Yminmax': [Ymin, Ymax]}
     reader.Sample['ranId'] = valuesdict['ranId']
 

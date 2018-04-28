@@ -1661,7 +1661,7 @@ class GSASII(wx.Frame):
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-                'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
+                'Yminmax':[Ymin,Ymax]
                 }
             # apply user-supplied corrections to powder data
             if 'CorrectionCode' in Iparm1:
@@ -1879,7 +1879,7 @@ class GSASII(wx.Frame):
             'Dummy':True,'simType':simType,
             'ranId':ran.randint(0,sys.maxsize),
             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-            'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
+            'Yminmax':[Ymin,Ymax]
             }
         self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
         self.GPXtree.SetItemPyData(
@@ -2260,7 +2260,7 @@ class GSASII(wx.Frame):
             valuesdict = {
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
-                'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
+                'Yminmax':[Ymin,Ymax]
                 }
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='PDF Controls'),
@@ -3265,7 +3265,7 @@ class GSASII(wx.Frame):
                             'Dummy':False,
                             'ranId':ran.randint(0,sys.maxsize),
                             'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
-                            'qPlot':False,'dPlot':False,'sqrtPlot':False,'Yminmax':[Ymin,Ymax]
+                            'Yminmax':[Ymin,Ymax]
                             }
                         self.GPXtree.SetItemPyData(Id,[valuesdict,[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])

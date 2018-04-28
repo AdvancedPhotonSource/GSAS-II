@@ -391,8 +391,6 @@ class G2PlotMpl(_tabPlotWin):
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)
         self.toolbar.Realize()
         self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False,'sqPlot':False,'logPlot':False}
-        self.logPlot = False
-        self.sqrtPlot = False
         
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
@@ -1638,12 +1636,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 pass
             else:
                 Page.plotStyle['logPlot'] = not Page.plotStyle['logPlot']
-                if not Page.plotStyle['logPlot']:
+                if Page.plotStyle['logPlot']:
+                    Page.plotStyle['sqrtPlot'] = False
+                else:
                     Pattern[0]['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
             if G2frame.SinglePlot:  #toggle sqrt plot
                 Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
+                if Page.plotStyle['sqrtPlot']:
+                    Page.plotStyle['logPlot'] = False
                 Ymax = max(Pattern[1][1])
                 if Page.plotStyle['sqrtPlot']:
                     Pattern[0]['delOffset'] = .002*np.sqrt(Ymax)

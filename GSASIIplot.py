@@ -5599,7 +5599,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     G2frame.ShiftDown = False
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    global Data,Masks,StrSta,Plot1  # RVD: these are needed for multiple image controls/masks 
+    global Data,Masks,StrSta,Plot1,Page  # RVD: these are needed for multiple image controls/masks 
     colors=['b','g','r','c','m','k'] 
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -5836,6 +5836,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif 'Uazm' in itemPicked:
                 pick.set_data([[arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]]])
             elif 'linescan' in itemPicked:
+                xlim = Plot1.get_xlim()
                 azm = Data['linescan'][1]-AzmthOff
                 dspI = wave/(2.0*sind(0.1/2.0))
                 xyI = G2img.GetDetectorXY(dspI,azm,Data)
@@ -5851,7 +5852,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     xy[1] = np.sqrt(xy[1])
                 np.seterr(invalid=olderr['invalid'])
                 Plot1.plot(xy[0],xy[1])
-                Plot1.set_xlim(Data['IOtth'])
+                Plot1.set_xlim(xlim)
                 Plot1.set_xscale("linear")                                                  
                 Plot1.set_title('Line scan at azm= %6.1f'%(azm+AzmthOff))
                 Page.canvas.draw()
@@ -6032,10 +6033,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     def OnImRelease(event):
         '''Called when the mouse is released inside an image plot window
         '''
+        global Page
         try:
             treeItem = G2frame.GPXtree.GetItemText(G2frame.PickId)
         except TypeError:
             return
+        if Data['linescan']:
+            Page.xlim1 = Plot1.get_xlim()
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         if G2frame.cid is not None:         # if there is a drag connection, delete it
             Page.canvas.mpl_disconnect(G2frame.cid)
@@ -6301,8 +6305,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xy[1] = np.sqrt(xy[1])
         np.seterr(invalid=olderr['invalid'])
         Plot1.plot(xy[0],xy[1])
-        Plot1.set_xlim(Data['IOtth'])
-        Plot1.set_xscale("linear")                                                  
     if newImage:
         G2frame.MaskKey = '' # subtitle will be removed, so turn off mode
     if not new:
@@ -6412,7 +6414,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     cake += delAzm/2.
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
-        if 'linescan' in Data and Data['linescan'][0]:
+        if 'linescan' in Data and Data['linescan'][0] and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             azm = Data['linescan'][1]-Data['azmthOff']
             IOtth = [0.1,60.]
             wave = Data['wavelength']
@@ -6518,6 +6520,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.figure.colorbar(Page.ImgObj)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
+        if Data.get('linescan',[False,0.])[0]:
+            Plot1.set_xlim(Data['IOtth'])
         if Data['invert_x']:
             Plot.invert_xaxis()
         if Data['invert_y']:
@@ -6526,6 +6530,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
             Plot.set_ylim(xylim[1])
+            if Data['linescan']:
+                try:
+                    Plot1.set_xlim(Page.xlim1)
+                except:
+                    pass
             xylim = []
             Page.toolbar.push_current()
             Page.toolbar.draw()

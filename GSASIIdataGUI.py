@@ -4256,6 +4256,7 @@ class GSASII(wx.Frame):
             parmValDict[i] = parmDict[i][0]
             
         reqVaryList = tuple(varyList) # save requested variables
+        wx.BeginBusyCursor()
         try:
             # process constraints
             sub = GetGPXtreeItemId(self,self.root,'Constraints') 
@@ -4271,6 +4272,7 @@ class GSASII(wx.Frame):
             G2mv.Map2Dict(parmValDict,varyList)
         except:
             pass
+        wx.EndBusyCursor()
         dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()

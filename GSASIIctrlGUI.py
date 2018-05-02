@@ -3266,7 +3266,6 @@ class ShowLSParms(wx.Dialog):
         
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.panel = wxscroll.ScrolledPanel(self)
         self.parmChoice = 'Phase'
         self.parmDict = parmDict
         self.varyList = varyList
@@ -3329,19 +3328,19 @@ class ShowLSParms(wx.Dialog):
             self.listSel = listSel.GetStringSelection()
             wx.CallLater(100,self.DrawPanel)
 
-        if self.panel.GetSizer(): self.panel.GetSizer().Clear(True)
+        if self.GetSizer(): self.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         num = len(self.varyList)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Number of refined variables: '+str(num)),0)
+        mainSizer.Add(wx.StaticText(self,label=' Number of refined variables: '+str(num)),0)
         if len(self.varyList) != len(self.fullVaryList):
             num = len(self.fullVaryList) - len(self.varyList)
-            mainSizer.Add(wx.StaticText(self.panel,label=' + '+str(num)+' parameters are varied via constraints'))
+            mainSizer.Add(wx.StaticText(self,label=' + '+str(num)+' parameters are varied via constraints'))
         choiceDict = {'Global':self.globNames,'Phase':self.phasNames,'Phase/Histo':self.hapNames,'Histogram':self.hisNames}
         choice = ['Phase','Phase/Histo','Histogram']
         if len(self.globNames):
             choice += ['Global',]
         parmSizer = wx.FlexGridSizer(0,3,5,5)
-        parmSel = wx.RadioBox(self.panel,wx.ID_ANY,'Parameter type:',choices=choice,
+        parmSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',choices=choice,
             majorDimension=1,style=wx.RA_SPECIFY_COLS)
         parmSel.Bind(wx.EVT_RADIOBOX,_OnParmSel)
         parmSel.SetStringSelection(self.parmChoice)
@@ -3349,51 +3348,54 @@ class ShowLSParms(wx.Dialog):
         numSizer = wx.BoxSizer(wx.VERTICAL)
         numSizer.Add((5,25),0)
         if self.parmChoice in ['Phase','Phase/Histo'] and len(self.phasNums) > 1:
-            numSizer.Add(wx.StaticText(self.panel,label='Phase'),0)
-            phasSel = wx.ComboBox(self.panel,choices=self.phasNums,value=self.phasNum,
+            numSizer.Add(wx.StaticText(self,label='Phase'),0)
+            phasSel = wx.ComboBox(self,choices=self.phasNums,value=self.phasNum,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             phasSel.Bind(wx.EVT_COMBOBOX,OnPhasSel)
             numSizer.Add(phasSel,0)
         if self.parmChoice in ['Histogram','Phase/Histo'] and len(self.hisNums) > 1:
-            numSizer.Add(wx.StaticText(self.panel,label='Histogram'),0)
-            histSel = wx.ComboBox(self.panel,choices=self.hisNums,value=self.hisNum,
+            numSizer.Add(wx.StaticText(self,label='Histogram'),0)
+            histSel = wx.ComboBox(self,choices=self.hisNums,value=self.hisNum,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             histSel.Bind(wx.EVT_COMBOBOX,OnHistSel)
-#            histSel = wx.TextCtrl(self.panel,size=(50,25),value='0',style=wx.TE_PROCESS_ENTER)
+#            histSel = wx.TextCtrl(self,size=(50,25),value='0',style=wx.TE_PROCESS_ENTER)
 #            histSel.Bind(wx.EVT_TEXT_ENTER,OnHistSel)
 #            histSel.Bind(wx.EVT_KILL_FOCUS,OnHistSel)
             numSizer.Add(histSel,0)
         parmSizer.Add(numSizer)
         varSizer = wx.BoxSizer(wx.VERTICAL)
         if self.parmChoice in ['Phase',]:
-            varSel = wx.ComboBox(self.panel,choices=self.phasVars,value=self.varName,
+            varSel = wx.ComboBox(self,choices=self.phasVars,value=self.varName,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
         elif self.parmChoice in ['Histogram',]:
-            varSel = wx.ComboBox(self.panel,choices=self.hisVars,value=self.varName,
+            varSel = wx.ComboBox(self,choices=self.hisVars,value=self.varName,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
         elif self.parmChoice in ['Phase/Histo',]:
-            varSel = wx.ComboBox(self.panel,choices=self.hapVars,value=self.varName,
+            varSel = wx.ComboBox(self,choices=self.hapVars,value=self.varName,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
         if self.parmChoice != 'Global': 
-            varSizer.Add(wx.StaticText(self.panel,label='Parameter'))
+            varSizer.Add(wx.StaticText(self,label='Parameter'))
             varSizer.Add(varSel,0)
         parmSizer.Add(varSizer,0)
         mainSizer.Add(parmSizer,0)
-        listChoice = ['All','Refined']
-        listSel = wx.RadioBox(self.panel,wx.ID_ANY,'Parameter type:',choices=listChoice,
+        listSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',
+            choices=['All','Refined'],
             majorDimension=0,style=wx.RA_SPECIFY_COLS)
         listSel.SetStringSelection(self.listSel)
         listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
         mainSizer.Add(listSel,0)
+
+        self.panel = wxscroll.ScrolledPanel(self)        
         subSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
         subSizer.Add((-1,-1))
         subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'Parameter name  '))
         subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'refine?'))
         subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
         explainRefine = False
+        count = 0
         for name in choiceDict[self.parmChoice]:
             # skip entries without numerical values
             if isinstance(self.parmDict[name],basestring): continue
@@ -3425,24 +3427,32 @@ class ShowLSParms(wx.Dialog):
             else:
                 subSizer.Add((-1,-1))
             subSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
-
-        mainSizer.Add(subSizer,0)
+            count += 1
+            if count > 200:
+                msg = wx.StaticText(self,label='Too many parameters selected. Showing first 200')
+                msg.SetBackgroundColour(wx.YELLOW)
+                mainSizer.Add(msg,0,wx.ALIGN_LEFT)
+                mainSizer.Add((-1,10))
+                break
+        self.panel.SetSizer(subSizer)
+        mainSizer.Add(self.panel,1,wx.ALL|wx.EXPAND,1)
+        
         if explainRefine:
             mainSizer.Add(
-                wx.StaticText(self.panel,label='"R" indicates a refined variable\n'+
+                wx.StaticText(self,label='"R" indicates a refined variable\n'+
                     '"C" indicates generated from a constraint'),0, wx.ALL,0)
         # make OK button 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn = wx.Button(self.panel, wx.ID_CLOSE,"Close") 
+        btn = wx.Button(self, wx.ID_CLOSE,"Close") 
         btn.Bind(wx.EVT_BUTTON,self._onClose)
         btnsizer.Add(btn)
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        # Allow window to be enlarged but not made smaller
-        self.panel.SetSizer(mainSizer)
+        self.SetSizer(mainSizer)
         self.panel.SetAutoLayout(1)
         self.panel.SetupScrolling()
-        self.panel.SetMinSize(self.GetSize())
-
+        self.SetMinSize(self.GetSize())        # Allow window to be enlarged but not made smaller
+        self.SendSizeEvent()
+        
     def _onClose(self,event):
         self.EndModal(wx.ID_CANCEL)
 

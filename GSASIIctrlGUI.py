@@ -3387,13 +3387,15 @@ class ShowLSParms(wx.Dialog):
         listSel.SetStringSelection(self.listSel)
         listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
         mainSizer.Add(listSel,0)
-
+        
+        headSizer = wx.wx.BoxSizer(wx.HORIZONTAL) # non-scrolling header        
         self.panel = wxscroll.ScrolledPanel(self)        
         subSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
-        subSizer.Add((-1,-1))
-        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'Parameter name  '))
-        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'refine?'))
-        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
+        # header now gets created later
+#        subSizer.Add((-1,-1))
+#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'Parameter name  '))
+#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'refine?'))
+#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
         explainRefine = False
         count = 0
         for name in choiceDict[self.parmChoice]:
@@ -3420,12 +3422,12 @@ class ShowLSParms(wx.Dialog):
                 subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
             if name in self.varyList:
-                subSizer.Add(wx.StaticText(self.panel,label='R'))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
+                subSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
             elif name in self.fullVaryList:
-                subSizer.Add(wx.StaticText(self.panel,label='C'))
+                subSizer.Add(wx.StaticText(self.panel,label='C',size=(50,-1)))
                 explainRefine = True
             else:
-                subSizer.Add((-1,-1))
+                subSizer.Add((50,-1))
             subSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
             count += 1
             if count > 200:
@@ -3434,6 +3436,7 @@ class ShowLSParms(wx.Dialog):
                 mainSizer.Add(msg,0,wx.ALIGN_LEFT)
                 mainSizer.Add((-1,10))
                 break
+        mainSizer.Add(headSizer,0)
         self.panel.SetSizer(subSizer)
         mainSizer.Add(self.panel,1,wx.ALL|wx.EXPAND,1)
         
@@ -3451,6 +3454,9 @@ class ShowLSParms(wx.Dialog):
         self.panel.SetAutoLayout(1)
         self.panel.SetupScrolling()
         self.SetMinSize(self.GetSize())        # Allow window to be enlarged but not made smaller
+        for txt,wid,loc in zip(['','Parameter name','refine?','value'],subSizer.GetColWidths(),
+                           [wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_RIGHT]):
+            headSizer.Add(wx.StaticText(self,wx.ID_ANY,txt,size=(wid,-1),style=loc),0,loc)
         self.SendSizeEvent()
         
     def _onClose(self,event):

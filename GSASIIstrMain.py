@@ -249,7 +249,7 @@ def Refine(GPXfile,dlg=None,makeBack=True):
 #for testing purposes!!!
     if DEBUG and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
-        fl = open('testDeriv.dat','wb')
+        fl = open(ospath.splitext(GPXfile)[0]+'.testDeriv','wb')
         cPickle.dump(result[0],fl,1)
         cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
         cPickle.dump([constrDict,fixedList,G2mv.GetDependentVars()],fl,1)

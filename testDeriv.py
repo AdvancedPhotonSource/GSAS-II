@@ -58,7 +58,7 @@ class testDeriv(wx.Frame):
             size=wx.Size(800, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(wxID_FILEOPEN,'Open testDeriv.dat file','Open testDeriv.dat')
+        self.File.Append(wxID_FILEOPEN,'Open testDeriv file','Open testDeriv')
         self.File.Append(wxID_MAKEPLOTS,'Make plots','Make derivative plots')
         self.File.Append(wxID_FILEEXIT,'Exit','Exit from testDeriv')
         self.Bind(wx.EVT_MENU, self.OnTestRead, id=wxID_FILEOPEN)
@@ -86,8 +86,8 @@ class testDeriv(wx.Frame):
         self.Close()
 
     def OnTestRead(self,event):
-        dlg = wx.FileDialog(self, 'Open testDeriv.dat file',defaultFile='testDeriv.dat',
-            wildcard='testDeriv.dat')
+        dlg = wx.FileDialog(self, 'Open *.testDeriv file',defaultFile='*.testDeriv',
+            wildcard='*.testDeriv')
         if self.dirname:
             dlg.SetDirectory(self.dirname)
         try:

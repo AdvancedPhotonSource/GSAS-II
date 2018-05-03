@@ -33,10 +33,18 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         self.scriptable = True
 
     # Validate the contents -- make sure we only have valid lines
+    def Read(self,fp,nbytes):
+        data = fp.read(nbytes)
+        if 'bytes' in str(type(data)):
+            data = data.decode('latin-1')
+        return data
+    
     def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid Bruker RAW file'
         fp = open(filename,'rb')
-        head = fp.read(7)
+        head = self.Read(fp,7)
+        if 'bytes' in str(type(head)):
+            head = head.decode('latin-1')
         if head[:4] == 'RAW ':
             self.formatName = 'Bruker RAW ver. 1'
         elif head[:4] == 'RAW2':
@@ -73,8 +81,8 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             fp.seek(4)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
             fp.seek(168)
-            self.comments.append('Date/Time='+fp.read(20))
-            self.comments.append('Anode='+fp.read(2))
+            self.comments.append('Date/Time='+self.Read(fp,20))
+            self.comments.append('Anode='+self.Read(fp,2))
             self.comments.append('Ka1=%.5f'%(st.unpack('<f',fp.read(4))[0]))
             self.comments.append('Ka2=%.5f'%(st.unpack('<f',fp.read(4))[0]))
             self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<f',fp.read(4))[0]))
@@ -110,16 +118,16 @@ class raw_ReaderClass(G2obj.ImportPowderData):
         elif 'ver. 3' in self.formatName:
             fp.seek(12)
             nBlock = int(st.unpack('<i',fp.read(4))[0])
-            self.comments.append('Date='+fp.read(10))
-            self.comments.append('Time='+fp.read(10))
+            self.comments.append('Date='+self.Read(fp,10))
+            self.comments.append('Time='+self.Read(fp,10))
             fp.seek(326)
-            self.comments.append('Sample='+fp.read(60))
+            self.comments.append('Sample='+self.Read(fp,60))
             fp.seek(564)
             radius = st.unpack('<f',fp.read(4))[0]
             self.comments.append('Gonio. radius=%.2f'%(radius))
             self.Sample['Gonio. radius'] = radius
             fp.seek(608)
-            self.comments.append('Anode='+fp.read(4))
+            self.comments.append('Anode='+self.Read(fp,4))
             fp.seek(616)
             self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))
@@ -165,16 +173,16 @@ class raw_ReaderClass(G2obj.ImportPowderData):
             
         elif 'ver. 4' in self.formatName:   #does not work - format still elusive
             fp.seek(12)   #ok
-            self.comments.append('Date='+fp.read(10))
-            self.comments.append('Time='+fp.read(10))
+            self.comments.append('Date='+self.Read(fp,10))
+            self.comments.append('Time='+self.Read(fp,10))
             fp.seek(144)
-            self.comments.append('Sample='+fp.read(60))
+            self.comments.append('Sample='+self.Read(fp,60))
             fp.seek(564)  # where is it?
             radius = st.unpack('<f',fp.read(4))[0]
             self.comments.append('Gonio. radius=%.2f'%(radius))
             self.Sample['Gonio. radius'] = radius
             fp.seek(516)  #ok
-            self.comments.append('Anode='+fp.read(4))
+            self.comments.append('Anode='+self.Read(fp,4))
             fp.seek(472)  #ok
             self.comments.append('Ka mean=%.5f'%(st.unpack('<d',fp.read(8))[0]))
             self.comments.append('Ka1=%.5f'%(st.unpack('<d',fp.read(8))[0]))

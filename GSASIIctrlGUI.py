@@ -3270,135 +3270,48 @@ class ShowLSParms(wx.Dialog):
         self.parmDict = parmDict
         self.varyList = varyList
         self.fullVaryList = fullVaryList
+        self.choiceDict = {}
 
-        self.parmNames = list(parmDict.keys())
-        self.parmNames.sort()
+        # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
+        self.parmNames = sorted(list(parmDict.keys()))
         splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestring)]
-        self.globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
-        self.globVars = list(set([' ',]+[item[2] for item in splitNames if not item[0] and not item[1]]))
-        self.globVars.sort()
-        self.hisNames = [':'.join(item) for item in splitNames if not item[0] and item[1]]
-        self.hisNums = list(set([int(item.split(':')[1]) for item in self.hisNames]))
-        self.hisNums.sort()
+        globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
+        if len(globNames):
+            self.choiceDict['Global'] = G2obj.SortVariables(globNames)
+        self.globVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[0] and not item[1]])))
+        hisNames = [':'.join(item) for item in splitNames if not item[0] and item[1]]
+        self.choiceDict['Histogram'] = G2obj.SortVariables(hisNames)
+        self.hisNums = sorted(list(set([int(item.split(':')[1]) for item in hisNames])))
         self.hisNums = [' ',]+[str(item) for item in self.hisNums]
-        self.hisVars = list(set([' ',]+[item[2] for item in splitNames if not item[0]]))
-        self.hisVars.sort()
-        self.phasNames = [':'.join(item) for item in splitNames if not item[1] and 'is' not in item[2]]
-        self.phasNums = [' ',]+list(set([item.split(':')[0] for item in self.phasNames]))
+        self.hisVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[0]])))
+        phasNames = [':'.join(item) for item in splitNames if not item[1] and 'is' not in item[2]]
+        self.choiceDict['Phase'] = G2obj.SortVariables(phasNames)
+        self.phasNums = sorted([' ',]+list(set([item.split(':')[0] for item in phasNames])))
         if '' in self.phasNums: self.phasNums.remove('')
-        self.phasVars = list(set([' ',]+[item[2] for item in splitNames if not item[1] and 'is' not in item[2]]))
-        self.phasVars.sort()
-        self.phasNums.sort()
-        self.hapNames = [':'.join(item) for item in splitNames if item[0] and item[1]]
-        self.hapVars = list(set([' ',]+[item[2] for item in splitNames if item[0] and item[1]]))
-        self.hapVars.sort()
+        self.phasVars = sorted(list(set([' ',]+[item[2] for item in splitNames if not item[1] and 'is' not in item[2]])))
+        hapNames = [':'.join(item) for item in splitNames if item[0] and item[1]]
+        self.choiceDict['Phase/Histo'] = G2obj.SortVariables(hapNames)
+        self.hapVars = sorted(list(set([' ',]+[item[2] for item in splitNames if item[0] and item[1]])))
+        
         self.hisNum = ' '
         self.phasNum = ' '
         self.varName = ' '
         self.listSel = 'Refined'
         self.DrawPanel()
         
-            
-    def DrawPanel(self):
-            
-        def _OnParmSel(event):
-            self.parmChoice = parmSel.GetStringSelection()
-            self.varName = ' '
-            wx.CallLater(100,self.DrawPanel)
-            
-        def OnPhasSel(event):
-            event.Skip()
-            self.phasNum = phasSel.GetValue()
-            self.varName = ' '
-            wx.CallLater(100,self.DrawPanel)
+    def repaintScrollTbl(self):
+        '''Shows the selected variables
 
-        def OnHistSel(event):
-            event.Skip()
-            self.hisNum = histSel.GetValue()
-            self.varName = ' '
-            wx.CallLater(100,self.DrawPanel)
-            
-        def OnVarSel(event):
-            self.varName = varSel.GetValue()
-            self.phasNum = ' '
-            self.hisNum = ' '
-            wx.CallLater(100,self.DrawPanel)
-            
-        def OnListSel(event):
-            self.listSel = listSel.GetStringSelection()
-            wx.CallLater(100,self.DrawPanel)
-
-        if self.GetSizer(): self.GetSizer().Clear(True)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        num = len(self.varyList)
-        mainSizer.Add(wx.StaticText(self,label=' Number of refined variables: '+str(num)),0)
-        if len(self.varyList) != len(self.fullVaryList):
-            num = len(self.fullVaryList) - len(self.varyList)
-            mainSizer.Add(wx.StaticText(self,label=' + '+str(num)+' parameters are varied via constraints'))
-        choiceDict = {'Global':self.globNames,'Phase':self.phasNames,'Phase/Histo':self.hapNames,'Histogram':self.hisNames}
-        choice = ['Phase','Phase/Histo','Histogram']
-        if len(self.globNames):
-            choice += ['Global',]
-        parmSizer = wx.FlexGridSizer(0,3,5,5)
-        parmSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',choices=choice,
-            majorDimension=1,style=wx.RA_SPECIFY_COLS)
-        parmSel.Bind(wx.EVT_RADIOBOX,_OnParmSel)
-        parmSel.SetStringSelection(self.parmChoice)
-        parmSizer.Add(parmSel,0)
-        numSizer = wx.BoxSizer(wx.VERTICAL)
-        numSizer.Add((5,25),0)
-        if self.parmChoice in ['Phase','Phase/Histo'] and len(self.phasNums) > 1:
-            numSizer.Add(wx.StaticText(self,label='Phase'),0)
-            phasSel = wx.ComboBox(self,choices=self.phasNums,value=self.phasNum,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            phasSel.Bind(wx.EVT_COMBOBOX,OnPhasSel)
-            numSizer.Add(phasSel,0)
-        if self.parmChoice in ['Histogram','Phase/Histo'] and len(self.hisNums) > 1:
-            numSizer.Add(wx.StaticText(self,label='Histogram'),0)
-            histSel = wx.ComboBox(self,choices=self.hisNums,value=self.hisNum,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            histSel.Bind(wx.EVT_COMBOBOX,OnHistSel)
-#            histSel = wx.TextCtrl(self,size=(50,25),value='0',style=wx.TE_PROCESS_ENTER)
-#            histSel.Bind(wx.EVT_TEXT_ENTER,OnHistSel)
-#            histSel.Bind(wx.EVT_KILL_FOCUS,OnHistSel)
-            numSizer.Add(histSel,0)
-        parmSizer.Add(numSizer)
-        varSizer = wx.BoxSizer(wx.VERTICAL)
-        if self.parmChoice in ['Phase',]:
-            varSel = wx.ComboBox(self,choices=self.phasVars,value=self.varName,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
-        elif self.parmChoice in ['Histogram',]:
-            varSel = wx.ComboBox(self,choices=self.hisVars,value=self.varName,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
-        elif self.parmChoice in ['Phase/Histo',]:
-            varSel = wx.ComboBox(self,choices=self.hapVars,value=self.varName,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            varSel.Bind(wx.EVT_COMBOBOX,OnVarSel)
-        if self.parmChoice != 'Global': 
-            varSizer.Add(wx.StaticText(self,label='Parameter'))
-            varSizer.Add(varSel,0)
-        parmSizer.Add(varSizer,0)
-        mainSizer.Add(parmSizer,0)
-        listSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',
-            choices=['All','Refined'],
-            majorDimension=0,style=wx.RA_SPECIFY_COLS)
-        listSel.SetStringSelection(self.listSel)
-        listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
-        mainSizer.Add(listSel,0)
+        This routine is pretty slow when lots of variables are selected. Why?
+        '''
+        self.countSizer.Clear(True)
+        self.headSizer.Clear(True)
+        self.scrolledSizer.Clear(True)
+        self.explainSizer.Clear(True)
         
-        headSizer = wx.wx.BoxSizer(wx.HORIZONTAL) # non-scrolling header        
-        self.panel = wxscroll.ScrolledPanel(self)        
-        subSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
-        # header now gets created later
-#        subSizer.Add((-1,-1))
-#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'Parameter name  '))
-#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'refine?'))
-#        subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
         explainRefine = False
         count = 0
-        for name in choiceDict[self.parmChoice]:
+        for name in self.choiceDict[self.parmChoice]:
             # skip entries without numerical values
             if isinstance(self.parmDict[name],basestring): continue
             if 'Refined' in self.listSel and (name not in self.fullVaryList
@@ -3416,34 +3329,176 @@ class ShowLSParms(wx.Dialog):
                 #continue
             v = G2obj.getVarDescr(name)
             if v is None or v[-1] is None:
-                subSizer.Add((-1,-1))
+                self.scrolledSizer.Add((-1,-1))
             else:                
                 ch = HelpButton(self.panel,G2obj.fmtVarDescr(name))
-                subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
-            subSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
+                self.scrolledSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
+            self.scrolledSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
             if name in self.varyList:
-                subSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
+                self.scrolledSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
             elif name in self.fullVaryList:
-                subSizer.Add(wx.StaticText(self.panel,label='C',size=(50,-1)))
+                self.scrolledSizer.Add(wx.StaticText(self.panel,label='C',size=(50,-1)))
                 explainRefine = True
             else:
-                subSizer.Add((50,-1))
-            subSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
+                self.scrolledSizer.Add((50,-1))
+            self.scrolledSizer.Add(wx.StaticText(self.panel,label=value),0,wx.ALIGN_RIGHT)
             count += 1
             if count > 200:
                 msg = wx.StaticText(self,label='Too many parameters selected. Showing first 200')
                 msg.SetBackgroundColour(wx.YELLOW)
-                mainSizer.Add(msg,0,wx.ALIGN_LEFT)
-                mainSizer.Add((-1,10))
+                self.countSizer.Add(msg,0,wx.ALIGN_LEFT)
+                self.countSizer.Add((-1,10))
                 break
-        mainSizer.Add(headSizer,0)
-        self.panel.SetSizer(subSizer)
-        mainSizer.Add(self.panel,1,wx.ALL|wx.EXPAND,1)
         
         if explainRefine:
-            mainSizer.Add(
+            self.explainSizer.Add(
                 wx.StaticText(self,label='"R" indicates a refined variable\n'+
                     '"C" indicates generated from a constraint'),0, wx.ALL,0)
+        self.panel.SetAutoLayout(1)
+        self.panel.SetupScrolling()
+        self.SetMinSize(self.GetSize())        # Allow window to be enlarged but not made smaller
+        for txt,wid,loc in zip(['','Parameter name','refine?','value'],self.scrolledSizer.GetColWidths(),
+                           [wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_RIGHT]):
+            self.headSizer.Add(wx.StaticText(self,wx.ID_ANY,txt,size=(wid,-1),style=loc),0,loc)
+        self.SendSizeEvent()
+            
+    def DrawPanel(self):
+        '''Draws the contents of the entire dialog. Called initially & when radio buttons are pressed
+        '''
+        def _OnParmSel(event):
+            self.parmChoice = parmSel.GetStringSelection()
+            self.varName = ' '
+            wx.CallLater(100,self.DrawPanel)
+            
+        def OnPhasSel(event):
+            event.Skip()
+            self.phasNum = phasSel.GetValue()
+            self.varName = ' '
+            if varSel: varSel.SetSelection(0)
+            wx.CallAfter(self.repaintScrollTbl)
+
+        def OnHistSel(event):
+            event.Skip()
+            self.hisNum = histSel.GetValue()
+            self.varName = ' '
+            if varSel: varSel.SetSelection(0)
+            wx.CallAfter(self.repaintScrollTbl)
+            
+        def OnVarSel(event):
+            event.Skip()
+            self.varName = varSel.GetValue()
+            self.phasNum = ' '
+            if phasSel: phasSel.SetSelection(0)
+            self.hisNum = ' '
+            if histSel: histSel.SetSelection(0)
+            wx.CallAfter(self.repaintScrollTbl)
+            
+        def OnListSel(event):
+            self.listSel = listSel.GetStringSelection()
+            wx.CallLater(100,self.DrawPanel)
+                        
+        def OnVarSpin(event):
+            '''Respond when any of the SpinButton widgets are pressed'''
+            event.Skip()
+            Spinner = event.GetEventObject()
+            move = Spinner.GetValue()
+            Spinner.SetValue(0)
+            varSel,binding = self.SpinDict[Spinner.GetId()]
+            i = varSel.GetSelection() - move
+            if i < 0:
+                i = varSel.GetCount()-1
+            elif i >= varSel.GetCount():
+                i = 0
+            varSel.SetSelection(i)
+            wx.CallLater(100,binding,event)
+
+        def AddSpinner(varSizer,label,SelCtrl,binding):
+            '''Add a label and a SpinButton to a Combo widget (SelCtrl)
+            Saves a pointer to the combo widget and the callback used by that widget
+            '''
+            SelCtrl.Bind(wx.EVT_COMBOBOX,binding)
+            varSizer.Add(wx.StaticText(self,label=label))
+            varSelSizer = wx.BoxSizer(wx.HORIZONTAL)
+            varSelSizer.Add(SelCtrl,0)
+            varSpin = wx.SpinButton(self,style=wx.wx.SP_VERTICAL)
+            varSpin.SetValue(0)
+            varSpin.SetRange(-1,1)
+            varSpin.Bind(wx.EVT_SPIN, OnVarSpin)
+            self.SpinDict[varSpin.GetId()] = SelCtrl,binding
+            varSelSizer.Add(varSpin,0)
+            varSizer.Add(varSelSizer,0)
+            
+        if self.GetSizer(): self.GetSizer().Clear(True)
+        self.SpinDict = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        num = len(self.varyList)
+        mainSizer.Add(wx.StaticText(self,label=' Number of refined variables: '+str(num)),0,wx.ALIGN_CENTER)
+        if len(self.varyList) != len(self.fullVaryList):
+            num = len(self.fullVaryList) - len(self.varyList)
+            mainSizer.Add(wx.StaticText(self,label=' + '+str(num)+' parameters are varied via constraints'))
+        choice = ['Phase','Phase/Histo','Histogram']
+        if 'Global' in self.choiceDict:
+            choice += ['Global',]
+        parmSizer = wx.BoxSizer(wx.HORIZONTAL)
+        parmSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',choices=choice,
+            majorDimension=1,style=wx.RA_SPECIFY_COLS)
+        parmSel.Bind(wx.EVT_RADIOBOX,_OnParmSel)
+        parmSel.SetStringSelection(self.parmChoice)
+        parmSizer.Add(parmSel,0)
+        
+        selectionsSizer = wx.BoxSizer(wx.VERTICAL)        
+        varSizer = wx.BoxSizer(wx.VERTICAL)
+        varSel = None
+        if self.parmChoice != 'Global': 
+            if self.parmChoice in ['Phase',]:
+                varSel = wx.ComboBox(self,choices=self.phasVars,value=self.varName,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            elif self.parmChoice in ['Histogram',]:
+                varSel = wx.ComboBox(self,choices=self.hisVars,value=self.varName,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            elif self.parmChoice in ['Phase/Histo',]:
+                varSel = wx.ComboBox(self,choices=self.hapVars,value=self.varName,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            AddSpinner(varSizer,'Parameter',varSel,OnVarSel)
+        selectionsSizer.Add(varSizer,0)
+                
+        varSizer = wx.BoxSizer(wx.HORIZONTAL)
+        phasSel = None
+        if self.parmChoice in ['Phase','Phase/Histo'] and len(self.phasNums) > 1:
+            numSizer = wx.BoxSizer(wx.VERTICAL)
+            phasSel = wx.ComboBox(self,choices=self.phasNums,value=self.phasNum,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            AddSpinner(numSizer,'Phase',phasSel,OnPhasSel)
+            varSizer.Add(numSizer)
+
+        histSel = None
+        if self.parmChoice in ['Histogram','Phase/Histo'] and len(self.hisNums) > 1:
+            numSizer = wx.BoxSizer(wx.VERTICAL)
+            histSel = wx.ComboBox(self,choices=self.hisNums,value=self.hisNum,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            AddSpinner(numSizer,'Histogram',histSel,OnHistSel)
+            varSizer.Add(numSizer)
+        selectionsSizer.Add(varSizer,0)
+        parmSizer.Add(selectionsSizer,0)
+        mainSizer.Add(parmSizer,0)
+        
+        listSel = wx.RadioBox(self,wx.ID_ANY,'Parameter type:',
+            choices=['All','Refined'],
+            majorDimension=0,style=wx.RA_SPECIFY_COLS)
+        listSel.SetStringSelection(self.listSel)
+        listSel.Bind(wx.EVT_RADIOBOX,OnListSel)
+        mainSizer.Add(listSel,0)
+        
+        self.countSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(self.countSizer)
+        self.headSizer = wx.BoxSizer(wx.HORIZONTAL) # non-scrolling header        
+        mainSizer.Add(self.headSizer,0)
+        self.panel = wxscroll.ScrolledPanel(self)        
+        self.scrolledSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
+        self.panel.SetSizer(self.scrolledSizer)
+        mainSizer.Add(self.panel,1,wx.ALL|wx.EXPAND,1)
+        self.explainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(self.explainSizer)
         # make OK button 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self, wx.ID_CLOSE,"Close") 
@@ -3451,14 +3506,8 @@ class ShowLSParms(wx.Dialog):
         btnsizer.Add(btn)
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         self.SetSizer(mainSizer)
-        self.panel.SetAutoLayout(1)
-        self.panel.SetupScrolling()
-        self.SetMinSize(self.GetSize())        # Allow window to be enlarged but not made smaller
-        for txt,wid,loc in zip(['','Parameter name','refine?','value'],subSizer.GetColWidths(),
-                           [wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_LEFT,wx.ALIGN_RIGHT]):
-            headSizer.Add(wx.StaticText(self,wx.ID_ANY,txt,size=(wid,-1),style=loc),0,loc)
-        self.SendSizeEvent()
-        
+        wx.CallAfter(self.repaintScrollTbl)
+                
     def _onClose(self,event):
         self.EndModal(wx.ID_CANCEL)
 

@@ -203,7 +203,7 @@ def Refine(GPXfile,dlg=None,makeBack=True):
         #print G2mv.VarRemapShow(varyList)
         #print 'DependentVars',G2mv.GetDependentVars()
         #print 'IndependentVars',G2mv.GetIndependentVars()
-    except:
+    except G2mv.ConstraintException:
         print (' *** ERROR - your constraints are internally inconsistent ***')
         #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
         #print 'Errors',errmsg
@@ -387,8 +387,9 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            #print (G2mv.VarRemapShow(varyList,True))
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
-        except:
+        except G2mv.ConstraintException:
             print (' *** ERROR - your constraints are internally inconsistent ***')
             #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
             #print 'Errors',errmsg

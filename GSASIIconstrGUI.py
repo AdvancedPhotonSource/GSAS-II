@@ -452,7 +452,7 @@ def UpdateConstraints(G2frame,data):
                     varbs.append(var)
                 elif l[3] == "all":
                     for ph in phlist:
-                        key = G2obj.LookupPhaseName(l[0])[0]
+                        key = G2obj.LookupPhaseName(ph)[0]
                         for hst in hstlist: # should be blank
                             for iatm,at in enumerate(Phases[key]['Atoms']):
                                 var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
@@ -460,7 +460,7 @@ def UpdateConstraints(G2frame,data):
                                 varbs.append(var)
                 elif '=' in l[3]:
                     for ph in phlist:
-                        key = G2obj.LookupPhaseName(l[0])[0]
+                        key = G2obj.LookupPhaseName(ph)[0]
                         cx,ct,cs,cia = Phases[key]['General']['AtomPtrs']
                         for hst in hstlist: # should be blank
                             atyp = l[3].split('=')[1]
@@ -471,7 +471,7 @@ def UpdateConstraints(G2frame,data):
                                 varbs.append(var)
                 else:
                     for ph in phlist:
-                        key = G2obj.LookupPhaseName(l[0])[0]
+                        key = G2obj.LookupPhaseName(ph)[0]
                         for hst in hstlist: # should be blank
                             var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
                             if var in varbs: continue
@@ -605,8 +605,8 @@ def UpdateConstraints(G2frame,data):
         '''
         page = G2frame.Page
         vartype,varList,constrDictEnt = PageSelection(page)
-        varList = G2obj.SortVariables(varList)
         if vartype is None: return
+        varList = G2obj.SortVariables(varList)
         title1 = "Hold "+vartype+" variable"
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
@@ -1080,6 +1080,7 @@ def UpdateConstraints(G2frame,data):
         text = G2frame.constr.GetPageText(page)
         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
 #        G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
+        enableEditCons = True
         if text == 'Histogram/Phase':
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
@@ -1099,8 +1100,12 @@ def UpdateConstraints(G2frame,data):
             G2frame.Page = [page,'glb']
             UpdateConstraintPanel(GlobalConstr,'Global')
         else:
+            enableEditCons = False
             G2frame.Page = [page,'sym']
-            UpdateConstraintPanel(SymConstr,'Sym-Generated')            
+            UpdateConstraintPanel(SymConstr,'Sym-Generated')
+        # remove menu items when not allowed
+        for i in G2frame.dataWindow.ConstraintEdit.GetMenuItems(): 
+            i.Enable(enableEditCons)
         G2frame.dataWindow.SetDataSize()
 
     def RaisePage(event):

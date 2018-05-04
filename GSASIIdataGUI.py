@@ -4270,7 +4270,7 @@ class GSASII(wx.Frame):
             groups,parmlist = G2mv.GroupConstraints(constrDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmValDict)
             G2mv.Map2Dict(parmValDict,varyList)
-        except:
+        except G2mv.ConstraintException:
             pass
         wx.EndBusyCursor()
         dlg = G2G.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)

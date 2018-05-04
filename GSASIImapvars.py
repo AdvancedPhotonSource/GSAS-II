@@ -242,6 +242,11 @@ independentVars = []
 paramPrefix = "::constr"
 consNum = 0 # number of the next constraint to be created
 
+class ConstraintException(Exception):
+    '''Defines an Exception that is used when an exception is raised processing constraints
+    '''
+    pass
+
 def InitVars():
     '''Initializes all constraint information'''
     global dependentParmList,arrayList,invarrayList,indParmList,fixedDict,consNum,symGenList
@@ -574,7 +579,13 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         dependentParmList,indParmList,arrayList,invarrayList):
         if multarr is None: # true only if an equivalence
             zeromult = False
-            for mv in mapvars:
+            for i,mv in enumerate(mapvars):
+                if mv.split(':')[1] == '*' and SeqHist is not None:
+                    # convert wildcard var to reference current histogram; save translation in table
+                    sv = mv.split(':')
+                    sv[1] = str(SeqHist)
+                    mv = translateTable[mv] = ':'.join(sv)
+                    mapvars[i] = mv
                 #s = ''
                 varied = 0
                 notvaried = ''
@@ -588,7 +599,12 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     if mv not in dropVarList: dropVarList.append(mv)
                     #msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
                     #continue
-            for v,m in zip(varlist,invmultarr):
+            for i,(v,m) in enumerate(zip(varlist,invmultarr)):
+                if v.split(':')[1] == '*' and SeqHist is not None:
+                    # convert wildcard var to reference current histogram; save translation in table
+                    sv = v.split(':')
+                    sv[1] = str(SeqHist)
+                    varlist[i] = v = translateTable[v] = ':'.join(sv)
                 if parmDict is not None and v not in parmDict:
                     print ("Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement")
                     if v not in dropVarList: dropVarList.append(v)
@@ -660,7 +676,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         if msg:
             print (' *** ERROR in constraint definitions! ***')
             print (msg)
-            raise Exception
+            raise ConstraintException
         print ('*** Sequential refinement: ignoring constraint definition(s): ***')
         print (shortmsg)
         msg = ''
@@ -669,7 +685,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     if msg:
         print (' *** ERROR in constraint definitions! ***')
         print (msg)
-        raise Exception
+        raise ConstraintException
                 
     # now process each group and create the relations that are needed to form
     # a non-singular square matrix
@@ -761,7 +777,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         print (' *** ERROR in constraint definitions! ***')
         print (msg)
         print (VarRemapShow(varyList))
-        raise Exception
+        raise ConstraintException
     # setup dictionary containing the fixed values
     global fixedDict 
     # key is original ascii string, value is float
@@ -820,7 +836,7 @@ def StoreEquivalence(independentVar,dependentList,symGen=True):
     # added relationships to stored values
     arrayList.append(None)
     invarrayList.append(np.array(multlist))
-    indParmList.append(tuple((independentVar,)))
+    indParmList.append(list((independentVar,)))
     dependentParmList.append(mapList)
     symGenList.append(symGen)
     return
@@ -1161,7 +1177,7 @@ def GramSchmidtOrtho(a,nkeep=0):
         for i in range(j):
             a[j] -= proj(a[i],a[j])
         if np.allclose(np.linalg.norm(a[j]),0.0):
-            raise Exception("Singular input to GramSchmidtOrtho")
+            raise ConstraintException("Singular input to GramSchmidtOrtho")
         a[j] /= np.linalg.norm(a[j])
     return a
 
@@ -1196,7 +1212,7 @@ def _SwapColumns(i,m,v):
             v[i],v[j] = v[j],v[i]
             return
     else:
-        raise Exception('Singular input')
+        raise ConstraintException('Singular input')
 
 def _RowEchelon(m,arr,collist):
     '''Convert the first m rows in Matrix arr to row-echelon form

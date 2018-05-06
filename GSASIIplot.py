@@ -6038,7 +6038,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             treeItem = G2frame.GPXtree.GetItemText(G2frame.PickId)
         except TypeError:
             return
-        if Data['linescan']:
+        if Data['linescan'][0]:
             Page.xlim1 = Plot1.get_xlim()
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         if G2frame.cid is not None:         # if there is a drag connection, delete it

@@ -739,7 +739,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("*"*75)
 
 BinaryPathLoaded = False
-def SetBinaryPath(printInfo=True):
+def SetBinaryPath(printInfo=False):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
     

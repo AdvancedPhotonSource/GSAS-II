@@ -196,20 +196,24 @@ def UpdateConstraints(G2frame,data):
             phaseAtNames[item] = ''
             phaseAtTypes[item] = ''
              
-    # create a list of the hist*phase variables; include wildcards here
-    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
-    hapList = [i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)]
-    hapList.sort()
-    wildList = [] # list of variables with "*" for histogram number
-    for i in hapList:
-        s = i.split(':')
-        if s[1] == "": continue
-        s[1] = '*'
-        sj = ':'.join(s)
-        if sj not in wildList: wildList.append(sj)
-    #wildList.sort() # unneeded
-    hapList += wildList
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+    # create a list of the hist*phase variables
+    seqList = G2frame.testSeqRefineMode()
+    if seqList: # for sequential refinement, only process 1st histgram in list
+        histDict = {seqList[0]:Histograms[seqList[0]]}
+    else:
+        histDict = Histograms
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False)
+    hapList = sorted([i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)])
+    if seqList: # convert histogram # to wildcard
+        wildList = [] # list of variables with "*" for histogram number
+        for i in hapList:
+            s = i.split(':')
+            if s[1] == "": continue
+            s[1] = '*'
+            sj = ':'.join(s)
+            if sj not in wildList: wildList.append(sj)
+        hapList = wildList
+    histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
     histList = []
     for item in histDict:
         if item.split(':')[2] not in ['Omega','Type','Chi','Phi',
@@ -219,14 +223,15 @@ def UpdateConstraints(G2frame,data):
                                       ]:
             histList.append(item)
     histList.sort()
-    wildList = []
-    # for i in histList: # any reason to have this for hist constraints?
-    #     s = i.split(':')
-    #     if s[1] == "": continue
-    #     s[1] = '*'
-    #     sj = ':'.join(s)
-    #     if sj not in wildList: wildList.append(sj)
-    # histList += wildList
+    if seqList: # convert histogram # to wildcard
+        wildList = [] # list of variables with "*" for histogram number
+        for i in histList:
+            s = i.split(':')
+            if s[1] == "": continue
+            s[1] = '*'
+            sj = ':'.join(s)
+            if sj not in wildList: wildList.append(sj)
+        histList = wildList
     Indx = {}
     G2frame.Page = [0,'phs']
         
@@ -1080,14 +1085,16 @@ def UpdateConstraints(G2frame,data):
         text = G2frame.constr.GetPageText(page)
         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
 #        G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,False)
-        enableEditCons = True
         if text == 'Histogram/Phase':
+            enableEditCons = [False]+4*[True]
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
         elif text == 'Histogram':
+            enableEditCons = [False]+4*[True]
             G2frame.Page = [page,'hst']
             UpdateConstraintPanel(HistConstr,'Hist')
         elif text == 'Phase':
+            enableEditCons = 5*[True]
             G2frame.Page = [page,'phs']
             G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,True)
 #            G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_ADDRIDING,True)
@@ -1097,15 +1104,16 @@ def UpdateConstraints(G2frame,data):
                 return
             UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global':
+            enableEditCons = [False]+4*[True]
             G2frame.Page = [page,'glb']
             UpdateConstraintPanel(GlobalConstr,'Global')
         else:
-            enableEditCons = False
+            enableEditCons = 5*[False]
             G2frame.Page = [page,'sym']
             UpdateConstraintPanel(SymConstr,'Sym-Generated')
         # remove menu items when not allowed
-        for i in G2frame.dataWindow.ConstraintEdit.GetMenuItems(): 
-            i.Enable(enableEditCons)
+        for obj,flag in zip(G2frame.dataWindow.ConstraintEdit.GetMenuItems(),enableEditCons): 
+            obj.Enable(flag)
         G2frame.dataWindow.SetDataSize()
 
     def RaisePage(event):

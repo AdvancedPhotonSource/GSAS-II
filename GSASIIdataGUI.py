@@ -522,7 +522,10 @@ class GSASII(wx.Frame):
         item.Enable(state)
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
-        
+
+        #===============================================================================
+        # TODO: remove this, also EnableSeqRefineMenu and self.SeqRefine
+        # do when tutorials are updated so that references to menu item are gone
         item = parent.Append(wx.ID_ANY,'Sequential refine','')
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
         if len(self.SeqRefine): # extend state for new menus to match main (on mac)
@@ -531,6 +534,7 @@ class GSASII(wx.Frame):
             state = False
         item.Enable(state)
         self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
+        #================================================================================
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
 #                text='tree test')
@@ -550,12 +554,18 @@ class GSASII(wx.Frame):
         self.ImportImageReaderlist = G2fil.LoadImportRoutines('img','Images')
         self.ImportMenuId = {}
 
+    def testSeqRefineMode(self):
+        '''Returns the list of histograms included in a sequential refinement or
+        an empty list if a standard (non-sequential) refinement. 
+        '''
+        controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
+        return controls.get('Seq Data',[])
+        
     def EnableSeqRefineMenu(self):
         '''Enable or disable the sequential refinement menu items based on the
         contents of the Controls 'Seq Data' item (if present)
         '''
-        controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        if controls.get('Seq Data'):
+        if self.testSeqRefineMode():
             for i in self.SeqRefine: i.Enable(True)
         else:
             for i in self.SeqRefine: i.Enable(False)
@@ -3716,6 +3726,16 @@ class GSASII(wx.Frame):
             G2IO.ProjFileSave(self)
         else:
             self.OnFileSaveas(event)
+            
+    def SetTitleByGPX(self):
+        '''Set the title for the two window frames
+        '''
+        if self.testSeqRefineMode():
+            s = u' (sequential refinement)'
+        else:
+            s = u''
+        self.SetTitle("GSAS-II project: "+os.path.split(self.GSASprojectfile)[1]+s)
+        self.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(self.GSASprojectfile)[1])
 
     def OnFileSaveas(self, event):
         '''Save the current project in response to the
@@ -3735,10 +3755,9 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
-                self.SetTitle("GSAS-II project: "+os.path.split(self.GSASprojectfile)[1])
-                self.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(self.GSASprojectfile)[1])
                 self.CheckNotebook()
                 G2IO.ProjFileSave(self)
+                self.SetTitleByGPX()
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:
             dlg.Destroy()
@@ -4191,7 +4210,7 @@ class GSASII(wx.Frame):
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
         
-    def MakeLSParmDict(self):
+    def MakeLSParmDict(self,seqHist=None):
         '''Load all parameters used for computation from the tree into a
         dict of paired values [value, refine flag]. Note that this is
         different than the parmDict used in the refinement, which only has
@@ -4202,6 +4221,10 @@ class GSASII(wx.Frame):
         :func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine` (from
         a GPX file).
 
+        :param dict seqHist: defines a specific histogram to be loaded for a sequential
+          refinement, if None (default) all are loaded.
+          Note: at present this parameter is not used anywhere.
+
         :returns: (parmDict,varyList) where:
 
          * parmDict is a dict with values and refinement flags
@@ -4210,6 +4233,10 @@ class GSASII(wx.Frame):
         '''
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
+        if seqHist:
+            histDict = {seqHist:Histograms[seqHist]}
+        else:
+            histDict = Histograms
         for phase in Phases:
             if 'pId' not in Phases[phase]:
                 self.ErrorDialog('View parameter error','You must run least squares at least once')
@@ -4219,8 +4246,8 @@ class GSASII(wx.Frame):
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,MFtable,maxSSwave = G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
-        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
-        histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
+        hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False)
+        histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
         varyList = rbVary+phaseVary+hapVary+histVary
         parmDict.update(rbDict)
         parmDict.update(phaseDict)
@@ -4245,6 +4272,9 @@ class GSASII(wx.Frame):
     def OnShowLSParms(self,event):
         '''Displays a window showing all parameters in the refinement.
         Called from the Calculate/View LS Parms menu.
+
+        This could potentially be sped up by loading only the histogram that is needed
+        for a sequential fit. 
         '''
         try:
             parmDict,varyList = self.MakeLSParmDict()
@@ -4278,21 +4308,24 @@ class GSASII(wx.Frame):
         dlg.Destroy()
 
     def OnRefine(self,event):
-        '''Perform a refinement.
+        '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
-        Id = GetGPXtreeItemId(self,self.root,'Sequential results')
-        if Id:
-            dlg = wx.MessageDialog(
-                self,
-                'Your last refinement was sequential. Continue with "Refine", removing previous sequential results?',
-                'Remove sequential results?',wx.OK|wx.CANCEL)
-            if dlg.ShowModal() == wx.ID_OK:
-                self.GPXtree.Delete(Id)
-                dlg.Destroy()
-            else:
-                dlg.Destroy()
-                return
+        if self.testSeqRefineMode():
+            self.OnSeqRefine(event)
+            return
+        # Id = GetGPXtreeItemId(self,self.root,'Sequential results')
+        # if Id:
+        #     dlg = wx.MessageDialog(
+        #         self,
+        #         'Your last refinement was sequential. Continue with "Refine", removing previous sequential results?',
+        #         'Remove sequential results?',wx.OK|wx.CANCEL)
+        #     if dlg.ShowModal() == wx.ID_OK:
+        #         self.GPXtree.Delete(Id)
+        #         dlg.Destroy()
+        #     else:
+        #         dlg.Destroy()
+        #         return
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
@@ -4398,21 +4431,25 @@ class GSASII(wx.Frame):
         
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
-        Called from the Calculate/Sequential refine menu.
+        Called from self.OnRefine (Called from the Calculate/Refine menu)
+        
+        temporarily called from the Calculate/Sequential refine menu (to be removed)
         '''
+        seqList = self.testSeqRefineMode()
+        if not seqList:
+            self.OnRefine(event)
+            return
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
             self.GPXtree.SetItemPyData(Id,{})            
         self.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         Controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        if not Controls.get('Seq Data'):
-            print('Error: a sequential refinement has not been set up')
-            return
         Controls['ShowCell'] = True
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
+        #errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile,seqList[0]) # this would be faster, but at present it might not catch all errors
         if errmsg:
             self.ErrorDialog('Refinement error',errmsg)
             return
@@ -5488,6 +5525,7 @@ def UpdateControls(G2frame,data):
                 data['Seq Data'] = names                
                 G2frame.EnableSeqRefineMenu()
             dlg.Destroy()
+            G2frame.SetTitleByGPX()
             wx.CallAfter(UpdateControls,G2frame,data)
             
         def OnReverse(event):
@@ -7531,10 +7569,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 #    elif 'Phase Data for' in G2frame.dataWindow.GetLabel():
 #        if G2frame.dataDisplay: 
 #            oldPage = G2frame.dataDisplay.GetSelection()
-    G2frame.SetTitle("GSAS-II project: "+os.path.split(G2frame.GSASprojectfile)[1])
-    G2frame.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(G2frame.GSASprojectfile)[1])
         
     SetDataMenuBar(G2frame)
+    G2frame.SetTitleByGPX()
     G2frame.PickId = item
     G2frame.PickIdText = None
     parentID = G2frame.root

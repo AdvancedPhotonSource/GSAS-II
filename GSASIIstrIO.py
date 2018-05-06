@@ -181,8 +181,15 @@ def ProcessConstraints(constList):
             ignored += 1
     return constDict,fixedList,ignored
 
-def ReadCheckConstraints(GPXfile):
-    '''Load constraints and related info and return any error or warning messages'''
+def ReadCheckConstraints(GPXfile, seqHist=None):
+    '''Load constraints and related info and return any error or warning messages
+    This is done from the GPX file rather than the tree.
+    This this is called before a refinement is launched (OnRefine and OnSeqRefine), where the
+    tree could be used.
+    
+    :param dict seqHist: defines a specific histogram to be loaded for a sequential
+       refinement, if None (default) all are loaded.
+    '''
     # init constraints
     G2mv.InitVars()    
     # get variables
@@ -192,6 +199,7 @@ def ReadCheckConstraints(GPXfile):
     if not Histograms:
         return 'Error: no diffraction data',''
     constrDict,fixedList = GetConstraints(GPXfile) # load user constraints before internally generated ones
+    if seqHist: Histograms = {seqHist:Histograms[seqHist]}  # sequential fit: only need one histogram
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)

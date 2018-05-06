@@ -572,8 +572,6 @@ def ProjFileOpen(G2frame,showProvenance=True):
     LastSavedUsing = None
     file = open(G2frame.GSASprojectfile,'rb')
     if showProvenance: print ('loading from file: '+G2frame.GSASprojectfile)
-    G2frame.SetTitle("GSAS-II project: "+os.path.split(G2frame.GSASprojectfile)[1])
-    G2frame.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(G2frame.GSASprojectfile)[1])
     wx.BeginBusyCursor()
     try:
         while True:
@@ -647,6 +645,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
     finally:
         wx.EndBusyCursor()
         G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
+    G2frame.SetTitleByGPX()
     
 def ProjFileSave(G2frame):
     'Save a GSAS-II project file'
@@ -1512,6 +1511,9 @@ class ExportBaseclass(object):
         refined parameters in another dict (self.sigDict).
 
         Expands the parm & sig dicts to include values derived from constraints.
+
+        This could be made faster for sequential fits by reducing the histogram list to only
+        the active histogram being exported.
         '''
         self.parmDict = {}
         self.sigDict = {}

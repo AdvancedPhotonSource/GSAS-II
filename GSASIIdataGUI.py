@@ -558,8 +558,12 @@ class GSASII(wx.Frame):
         '''Returns the list of histograms included in a sequential refinement or
         an empty list if a standard (non-sequential) refinement. 
         '''
-        controls = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,self.root, 'Controls'))
-        return controls.get('Seq Data',[])
+        cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        if cId:
+            controls = self.GPXtree.GetItemPyData(cId)
+            return controls.get('Seq Data',[])
+        else:
+            return None
         
     def EnableSeqRefineMenu(self):
         '''Enable or disable the sequential refinement menu items based on the

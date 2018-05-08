@@ -523,18 +523,6 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
 
-        #===============================================================================
-        # TODO: remove this, also EnableSeqRefineMenu and self.SeqRefine
-        # do when tutorials are updated so that references to menu item are gone
-        item = parent.Append(wx.ID_ANY,'Sequential refine','')
-        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
-        if len(self.SeqRefine): # extend state for new menus to match main (on mac)
-            state = self.SeqRefine[0].IsEnabled()
-        else:
-            state = False
-        item.Enable(state)
-        self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
-        #================================================================================
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
 #                text='tree test')
@@ -561,19 +549,19 @@ class GSASII(wx.Frame):
         cId = GetGPXtreeItemId(self,self.root, 'Controls')
         if cId:
             controls = self.GPXtree.GetItemPyData(cId)
-            return controls.get('Seq Data',[])
+            seqSetting = controls.get('Seq Data',[])
+            if seqSetting:
+                for item in self.Refine:
+                    item.SetText('Se&quential refine')
+            else:
+                for item in self.Refine:
+                    item.SetText('&Refine')
+            return seqSetting
         else:
+            for item in self.Refine:
+                item.SetText('&Refine')
             return None
         
-    def EnableSeqRefineMenu(self):
-        '''Enable or disable the sequential refinement menu items based on the
-        contents of the Controls 'Seq Data' item (if present)
-        '''
-        if self.testSeqRefineMode():
-            for i in self.SeqRefine: i.Enable(True)
-        else:
-            for i in self.SeqRefine: i.Enable(False)
-
     def PreviewFile(self,filename):
         'confirm we have the right file'
         fp = open(filename,'r')
@@ -1551,16 +1539,16 @@ class GSASII(wx.Frame):
         haveData = False
         # check for phases connected to histograms
         sub = GetGPXtreeItemId(self,self.root,'Phases')
-        if not sub: return
-        item, cookie = self.GPXtree.GetFirstChild(sub)
-        while item: # loop over phases
-            data = self.GPXtree.GetItemPyData(item)
-            item, cookie = self.GPXtree.GetNextChild(sub, cookie)
-            UseList = data['Histograms']
-            if UseList: haveData = True
-        if haveData:
-            self.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,True)
-            for item in self.Refine: item.Enable(True)
+        if sub: 
+            item, cookie = self.GPXtree.GetFirstChild(sub)
+            while item: # loop over phases
+                data = self.GPXtree.GetItemPyData(item)
+                item, cookie = self.GPXtree.GetNextChild(sub, cookie)
+                UseList = data['Histograms']
+                if UseList: haveData = True
+            if haveData:
+                self.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,True)
+                for item in self.Refine: item.Enable(True)
         else:
             self.dataWindow.DataMenu.Enable(G2G.wxID_DATADELETE,False)
             for item in self.Refine: item.Enable(False)
@@ -2586,7 +2574,6 @@ class GSASII(wx.Frame):
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
         self.Refine = []
-        self.SeqRefine = [] # pointer(s) to Sequential Refinement menu objects
         #self.ExportPattern = []
         self.ExportPeakList = []
         self.ExportHKL = []
@@ -3682,7 +3669,6 @@ class GSASII(wx.Frame):
                 data = self.GPXtree.GetItemPyData(item)
                 if data:
                     for item in self.Refine: item.Enable(True)
-                    self.EnableSeqRefineMenu()
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if phaseId: # show all phases
             self.GPXtree.Expand(phaseId)
@@ -3716,6 +3702,8 @@ class GSASII(wx.Frame):
                 if len(self.HKL): self.HKL = []
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
+                self.SetTitleByGPX()
+                self.EnableRefineCommand()
         finally:
             dlg.Destroy()
 
@@ -3734,12 +3722,14 @@ class GSASII(wx.Frame):
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
         '''
+        projName = os.path.split(self.GSASprojectfile)[1]
+        if not projName: projName = "<unnamed project>"
         if self.testSeqRefineMode():
             s = u' (sequential refinement)'
         else:
             s = u''
-        self.SetTitle("GSAS-II project: "+os.path.split(self.GSASprojectfile)[1]+s)
-        self.plotFrame.SetTitle("GSAS-II plots: "+os.path.split(self.GSASprojectfile)[1])
+        self.SetTitle("GSAS-II project: "+projName + s)
+        self.plotFrame.SetTitle("GSAS-II plots: "+projName)
 
     def OnFileSaveas(self, event):
         '''Save the current project in response to the
@@ -5527,7 +5517,6 @@ def UpdateControls(G2frame,data):
                 for sel in dlg.GetSelections():
                     names.append(choices[sel])
                 data['Seq Data'] = names                
-                G2frame.EnableSeqRefineMenu()
             dlg.Destroy()
             G2frame.SetTitleByGPX()
             wx.CallAfter(UpdateControls,G2frame,data)
@@ -7630,7 +7619,6 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 data = copy.copy(G2obj.DefaultControls)    #least squares controls
                 G2frame.GPXtree.SetItemPyData(item,data)                             
             for i in G2frame.Refine: i.Enable(True)
-            G2frame.EnableSeqRefineMenu()
             UpdateControls(G2frame,data)
         elif G2frame.GPXtree.GetItemText(item).startswith('Sequential '):
             G2frame.dataWindow.helpKey = 'Sequential'  # for now all sequential refinements are documented in one place

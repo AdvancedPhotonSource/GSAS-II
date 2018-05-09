@@ -111,6 +111,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             (result[2]['nfev'],Histograms['Nobs'],len(varyList),Histograms['Nrej'],Histograms['Next']))
         printFile.write(' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles\n'%(runtime,runtime/ncyc,ncyc))
         printFile.write(' wR = %7.2f%%, chi**2 = %12.6g, GOF = %6.2f\n'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']))
+        sig = len(varyList)*[None,]
+        if 'None' in str(type(result[1])):
+            IfOK = False
+            covMatrix = []
+            break
         IfOK = True
         try:
             covMatrix = result[1]*Rvals['GOF']**2
@@ -124,7 +129,6 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             IfOK = False
             if not len(varyList):
                 covMatrix = []
-                sig = []
                 break
             print ('**** Refinement failed - singular matrix ****')
             if 'Hessian' in Controls['deriv type']:
@@ -449,6 +453,9 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
             print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2']))
             # add the uncertainties into the esd dictionary (sigDict)
+            if not IfOK:
+                print('***** Sequential refinement failed at histogram '+histogram)
+                break
             sigDict = dict(zip(varyList,sig))
             # the uncertainties for dependent constrained parms into the esd dict
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
@@ -488,9 +495,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
 #            printFile.close()
 #            print (' ***** Refinement aborted *****')
 #            return False,Msg.msg
-    if Controls.get('Reverse Seq'):
-        histNames.reverse()
-    SeqResult['histNames'] = histNames
+    SeqResult['histNames'] = [item for item in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if item in SeqResult.keys()]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')

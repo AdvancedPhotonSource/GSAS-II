@@ -5525,7 +5525,17 @@ def UpdateControls(G2frame,data):
             data['Reverse Seq'] = reverseSel.GetValue()
             
         def OnCopySel(event):
-            data['Copy2Next'] = copySel.GetValue() 
+            data['Copy2Next'] = copySel.GetValue()
+            
+        def OnClrSeq(event):
+            sId = GetGPXtreeItemId(G2frame,G2frame.root,'Sequential results')
+            if sId:
+                dlg = wx.MessageDialog(G2frame,'Are you sure?','Delete sequential results table',wx.OK|wx.CANCEL)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        G2frame.GPXtree.Delete(sId)
+                finally:
+                    dlg.Destroy()
                     
         seqSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5551,6 +5561,9 @@ def UpdateControls(G2frame,data):
             copySel.Bind(wx.EVT_CHECKBOX,OnCopySel)
             copySel.SetValue(data['Copy2Next'])
             selSizer.Add(copySel,0,WACV)
+            clrSeq = wx.Button(G2frame.dataWindow,label='Clear previous seq.results')
+            clrSeq.Bind(wx.EVT_BUTTON,OnClrSeq)
+            selSizer.Add(clrSeq,0,WACV)
             seqSizer.Add(selSizer,0)
         return seqSizer
         
@@ -6855,7 +6868,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
-        #GSASIIpath.IPyBreak()
     G2frame.colList += zip(*vals)
     G2frame.colSigs += zip(*esds)
     # compute and add weight fractions to table if varied

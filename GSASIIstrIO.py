@@ -1561,22 +1561,25 @@ def getCellEsd(pfx,SGData,A,covData):
     RMnames = [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     varyList = covData['varyList']
     covMatrix = covData['covMatrix']
-    vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
-    if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
-        vcov[1,1] = vcov[3,3] = vcov[0,1] = vcov[1,0] = vcov[0,0]
-        vcov[1,3] = vcov[3,1] = vcov[0,3] = vcov[3,0] = vcov[0,0]
-        vcov[1,2] = vcov[2,1] = vcov[2,3] = vcov[3,2] = vcov[0,2]
-    elif SGData['SGLaue'] in ['m3','m3m']:
-        vcov[0:3,0:3] = vcov[0,0]
-    elif SGData['SGLaue'] in ['4/m', '4/mmm']:
-        vcov[0:2,0:2] = vcov[0,0]
-        vcov[1,2] = vcov[2,1] = vcov[0,2]
-    elif SGData['SGLaue'] in ['3R','3mR']:
-        vcov[0:3,0:3] = vcov[0,0]
-#        vcov[4,4] = vcov[5,5] = vcov[3,3]
-        vcov[3:6,3:6] = vcov[3,3]
-        vcov[0:3,3:6] = vcov[0,3]
-        vcov[3:6,0:3] = vcov[3,0]
+    if len(covMatrix):
+        vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
+        if SGData['SGLaue'] in ['3', '3m1', '31m', '6/m', '6/mmm']:
+            vcov[1,1] = vcov[3,3] = vcov[0,1] = vcov[1,0] = vcov[0,0]
+            vcov[1,3] = vcov[3,1] = vcov[0,3] = vcov[3,0] = vcov[0,0]
+            vcov[1,2] = vcov[2,1] = vcov[2,3] = vcov[3,2] = vcov[0,2]
+        elif SGData['SGLaue'] in ['m3','m3m']:
+            vcov[0:3,0:3] = vcov[0,0]
+        elif SGData['SGLaue'] in ['4/m', '4/mmm']:
+            vcov[0:2,0:2] = vcov[0,0]
+            vcov[1,2] = vcov[2,1] = vcov[0,2]
+        elif SGData['SGLaue'] in ['3R','3mR']:
+            vcov[0:3,0:3] = vcov[0,0]
+    #        vcov[4,4] = vcov[5,5] = vcov[3,3]
+            vcov[3:6,3:6] = vcov[3,3]
+            vcov[0:3,3:6] = vcov[0,3]
+            vcov[3:6,0:3] = vcov[3,0]
+    else:
+        vcov = np.eye(6)
     delt = 1.e-9
     drVdA = np.zeros(6)
     for i in range(6):

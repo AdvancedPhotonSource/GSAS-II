@@ -69,6 +69,8 @@ def SpcGroup(SGSymbol):
     UniqSym = ('','','a','b','c','',)
     SysSym = ('triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic')
     SGData = {}
+    if len(SGSymbol.split()) < 2:
+        return SGErrors(0),SGData
     if ':R' in SGSymbol:
         SGSymbol = SGSymbol.replace(':',' ')    #get rid of ':' in R space group symbols from some cif files
     SGData['SGGray'] = False

@@ -6975,8 +6975,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 SeqId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'Sequential results')
                 if SeqId:
                     Seqdata = G2frame.GPXtree.GetItemPyData(SeqId)
-                    histNames = [seqKey for seqKey in Seqdata.keys() if 'PWDR' in seqKey]
-                    histNames.sort()
+                    histNames = Seqdata['histNames']
                     if key == '0':
                         G2frame.seq = 0
                     elif key in ['=','+']:

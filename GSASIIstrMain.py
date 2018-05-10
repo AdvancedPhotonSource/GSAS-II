@@ -495,7 +495,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
 #            printFile.close()
 #            print (' ***** Refinement aborted *****')
 #            return False,Msg.msg
-    SeqResult['histNames'] = [item for item in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if item in SeqResult.keys()]
+    SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')

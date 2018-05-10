@@ -2727,7 +2727,7 @@ class GSASII(wx.Frame):
         self.dataDisplayPhaseText = ''
         self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
         self.ExpandingAll = False
-        self.SeqTblHideList = []
+        self.SeqTblHideList = None
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
                 
         arg = sys.argv
@@ -4480,11 +4480,12 @@ class GSASII(wx.Frame):
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
-                    Id = GetGPXtreeItemId(self,self.root,'Sequential results')
-                    self.GPXtree.SelectItem(Id)
+                    sId = GetGPXtreeItemId(self,self.root,'Sequential results')
+                    self.GPXtree.SelectItem(sId)
             finally:
                 dlg.Destroy()
-            self.SeqTblHideList = []
+            
+#            self.SeqTblHideList = []
         else:
             self.ErrorDialog('Sequential refinement error',Msg)
         
@@ -6480,10 +6481,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def onSelectSeqVars(event):
         '''Select which variables will be shown in table'''
+        hides = [saveColLabels[1:].index(item) for item in G2frame.SeqTblHideList]
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to hide',
-                'Hide columns',colLabels[1:])
+                'Hide columns',saveColLabels[1:])
+        dlg.SetSelections(hides)
         if dlg.ShowModal() == wx.ID_OK:
-            G2frame.SeqTblHideList = [colLabels[1:][sel] for sel in dlg.GetSelections()]
+            G2frame.SeqTblHideList = [saveColLabels[1:][sel] for sel in dlg.GetSelections()]
             dlg.Destroy()
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         else:
@@ -7003,7 +7006,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #******************************************************************************
     # create a set of values for example evaluation of pseudovars and 
     # this does not work for refinements that have differing numbers of variables.
-    #raise Exception
+    saveColLabels = colLabels[:]
+    if G2frame.SeqTblHideList is None:      #set default hides
+        G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item]
+        G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
+        G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
     VarDict = {}
     for i,var in enumerate(colLabels):
         if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue
@@ -7013,9 +7020,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             val,sig = G2frame.colList[i][0],G2frame.colSigs[i][0]
         else:
             val,sig = G2frame.colList[i][0],None
-#        if val is None: continue
-#        elif sig is None or sig == 0.:
-#            VarDict[var] = val
         if striphist(var) not in Dlookup:
             VarDict[var] = val
     # add recip cell coeff. values

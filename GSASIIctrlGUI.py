@@ -4860,6 +4860,9 @@ tutorialIndex = (
     ['Getting started'],
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II',
      '''An introduction to GSAS-II with starting instructions and a brief description of the displays.'''],
+    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
+     '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
+     before beginning Rietveld refinement.'''],
 
     ['Rietveld refinement'],
     ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite',
@@ -4871,9 +4874,6 @@ tutorialIndex = (
      use is made of the lattice parameter offsets to account for thermal expansion.'''],
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement',
      '''This shows Rietveld refinement with high resolution synchrotron powder data and neutron TOF data'''],
-    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
-     '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
-     before beginning Rietveld refinement.'''],
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II',
      '''This show how to create a simulated powder pattern from a lab diffractometer.'''],
     

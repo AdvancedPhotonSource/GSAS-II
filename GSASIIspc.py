@@ -1726,6 +1726,18 @@ def SSpaceGroup(SGSymbol,SSymbol):
     for l in SSGPrint(B):
         print (l)
         
+def GetLittleGrpOps(SGData,vec):
+    ''' Find rotation part of operators that leave vec unchanged
+    
+    :param SGData: space group data structure as defined in SpcGroup above.
+    :param vec: a numpy array of fractional vector coordinates
+    '''
+    Little = []
+    for [M,T] in SGData['SGOps']:
+        if np.allclose(np.inner(M,vec),vec):
+            Little.append([M,T])
+    return Little
+        
 def SGProd(OpA,OpB):
     '''
     Form space group operator product. OpA & OpB are [M,V] pairs; 

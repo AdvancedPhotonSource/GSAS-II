@@ -4858,35 +4858,60 @@ G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 tutorialIndex = (
     # tutorial dir,      web page file name,      title for page,  description
     ['Getting started'],
-    ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II'],
+    ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II',
+     '''An introduction to GSAS-II with starting instructions and a brief description of the displays.'''],
 
     ['Rietveld fitting'],
-    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite'],
-    ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet'],
-    ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4'],
-    ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement'],
-    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points'],
-    ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II'],
+    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite',
+     '''This shows a simple Rietveld refinement with CuKa lab Bragg-Brentano powder data.'''],
+    ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet',
+     '''This shows a simple Rietveld refinement with constraints from CW neutron powder diffraction data.'''],
+    ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4',
+     '''This shows Rietveld refinement of a structure with room temperature lab CuKa data and low temperature CW neutron data; 
+     use is made of the lattice parameter offsets to account for thermal expansion.'''],
+    ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement',
+     '''This shows Rietveld refinement with high resolution synchrotron powder data and neutron TOF data'''],
+    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
+     '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
+     before beginning Rietveld refinement.'''],
+    ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II',
+     '''This show how to create a simulated powder pattern from a lab diffractometer.'''],
     ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
      '''This shows how to determine approximate profile parameters by fitting individual peaks
         with data collected on a standard using a lab diffractometer.'''],
     
     ['Parametric Rietveld fitting'],
-    ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],
-    ['SeqParametric', 'ParametricFitting.htm', '     Parametric Fitting and Pseudo Variables for Sequential Fits'],
+    ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
+     '''This shows the fitting of a structural model to multiple data sets collected as a function of temperature (7-300K). 
+     This tutorial is the prerequisite for the next one.'''],
+    ['SeqParametric', 'ParametricFitting.htm', '     Parametric Fitting and Pseudo Variables for Sequential Fits',
+     '''This explores the results of the sequential refinement obtained in the previous tutorial; includes 
+     plotting of variables and fitting the changes with simple equations.'''],
 
     ['Structure solution'],
-    ['FitPeaks', 'Fit Peaks.htm', 'Fitting individual peaks & autoindexing'],
-    ['CFjadarite', 'Charge Flipping in GSAS.htm', '     Charge Flipping structure solution for jadarite'],
-    ['CFsucrose', 'Charge Flipping - sucrose.htm','     Charge Flipping structure solution for sucrose'],
-    ['CFXraySingleCrystal', 'CFSingleCrystal.htm', 'Charge Flipping structure solution with Xray single crystal data'],       
-    ['TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm', 'Charge flipping with neutron TOF single crystal data'],
-    ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure determination'],
+    ['FitPeaks', 'Fit Peaks.htm', 'Fitting individual peaks & autoindexing',
+     '''This covers two examples of selecting individual powder diffraction peaks, fitting them and then 
+     indexing to determine the crystal lattice and possible space group. This is the prerequisite for the next two tutorials.'''],
+    ['CFjadarite', 'Charge Flipping in GSAS.htm', '     Charge Flipping structure solution for jadarite',
+     '''Solving the structure of jadarite (HLiNaSiB3O8) by charge flipping from Pawley extracted intensities
+     from a high resolution synchrotron powder pattern.'''],
+    ['CFsucrose', 'Charge Flipping - sucrose.htm','     Charge Flipping structure solution for sucrose',
+          '''Solving the structure of sucrose (C12H22O11) by charge flipping from Pawley extracted intensities
+     from a high resolution synchrotron powder pattern.'''],
+    ['CFXraySingleCrystal', 'CFSingleCrystal.htm', 'Charge Flipping structure solution with Xray single crystal data',
+     '''Solving the structure of dipyridyl disulfate by charge flipping and then refine the structure by least-squares.'''],       
+    ['TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm', 'Charge flipping with neutron TOF single crystal data',
+     '''Solving the crystal structure ubrene (C42H28) from single crystal neutron data via charge flipping and then refine the structure by least squares.'''],
+    ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure determination',
+     '''Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data via Monte Carlo/Simulated Annealing (MC/SA).'''],
 
     ['Stacking Fault Modeling'],
-    ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond'],
-    ['StackingFaults-II', 'Stacking Faults II.htm', 'Stacking fault simulations for Keokuk kaolinite'],
-    ['StackingFaults-III', 'Stacking Faults-III.htm', 'Stacking fault simulations for Georgia kaolinite'],
+    ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',
+     '''This shows how to simulate the diffraction patterns from faulted diamond.'''],
+    ['StackingFaults-II', 'Stacking Faults II.htm', 'Stacking fault simulations for Keokuk kaolinite',
+     '''This shows how to simulate some diffraction patterns from well ordered Keokuk kaolinite (Al2Si2O5(OH)4) clay.'''],
+    ['StackingFaults-III', 'Stacking Faults-III.htm', 'Stacking fault simulations for Georgia kaolinite',
+     '''This shows how to simulate some diffraction patterns from poorly ordered Georgia kaolinite (Al2Si2O5(OH)4) clay.'''],
 
     ['Image Calibration/Integration'],
     ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector'],
@@ -5029,10 +5054,10 @@ class OpenTutorial(wx.Dialog):
         if not indices:
             G2MessageBox(self,'All tutorials are downloaded','None to download')
             return
-        choices = [tutorialCatalog[i][2] for i in indices]
-        selected = self.ChooseTutorial(choices)
-        #choices2 = [tutorialCatalog[i][2:4] for i in indices]
-        #selected = self.ChooseTutorial2(choices2)
+#        choices = [tutorialCatalog[i][2] for i in indices]
+#        selected = self.ChooseTutorial(choices)
+        choices2 = [tutorialCatalog[i][2:4] for i in indices]
+        selected = self.ChooseTutorial2(choices2)
         if selected is None: return
         j = indices[selected]
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
@@ -5055,10 +5080,10 @@ class OpenTutorial(wx.Dialog):
                          'There are no downloaded tutorials in '+self.tutorialPath,
                          'None downloaded')
             return
-        choices = [tutorialCatalog[i][2] for i in indices]
-        selected = self.ChooseTutorial(choices)
-        #choices2 = [tutorialCatalog[i][2:4] for i in indices]
-        #selected = self.ChooseTutorial2(choices2)
+#        choices = [tutorialCatalog[i][2] for i in indices]
+#        selected = self.ChooseTutorial(choices)
+        choices2 = [tutorialCatalog[i][2:4] for i in indices]
+        selected = self.ChooseTutorial2(choices2)
         if selected is None: return
         j = indices[selected]
         fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
@@ -5069,10 +5094,10 @@ class OpenTutorial(wx.Dialog):
     def onWebBrowse(self,event):
         '''Make a list of all tutorials on web and allow user to view one.
         '''
-        choices = [i[2] for i in tutorialCatalog]
-        selected = self.ChooseTutorial(choices)
-        #choices2 = [i[2:4] for i in tutorialCatalog]
-        #selected = self.ChooseTutorial2(choices2)
+#        choices = [i[2] for i in tutorialCatalog]
+#        selected = self.ChooseTutorial(choices)
+        choices2 = [i[2:4] for i in tutorialCatalog]
+        selected = self.ChooseTutorial2(choices2)
         if selected is None: return        
         tutdir = tutorialCatalog[selected][0]
         tutfil = tutorialCatalog[selected][1]

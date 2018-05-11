@@ -330,6 +330,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         for name,rest in names:
             pWsum[name] = 0.
             pWnum[name] = 0
+            if name not in phaseRest:
+                continue
             itemRest = phaseRest[name]
             if itemRest[rest] and itemRest['Use']:
                 wt = itemRest['wtFactor']

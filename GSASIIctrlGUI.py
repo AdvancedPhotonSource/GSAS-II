@@ -4861,7 +4861,7 @@ tutorialIndex = (
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II',
      '''An introduction to GSAS-II with starting instructions and a brief description of the displays.'''],
 
-    ['Rietveld fitting'],
+    ['Rietveld refinement'],
     ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite',
      '''This shows a simple Rietveld refinement with CuKa lab Bragg-Brentano powder data.'''],
     ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet',
@@ -4876,11 +4876,8 @@ tutorialIndex = (
      before beginning Rietveld refinement.'''],
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II',
      '''This show how to create a simulated powder pattern from a lab diffractometer.'''],
-    ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
-     '''This shows how to determine approximate profile parameters by fitting individual peaks
-        with data collected on a standard using a lab diffractometer.'''],
     
-    ['Parametric Rietveld fitting'],
+    ['Parametric sequential fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
      '''This shows the fitting of a structural model to multiple data sets collected as a function of temperature (7-300K). 
      This tutorial is the prerequisite for the next one.'''],
@@ -4901,7 +4898,7 @@ tutorialIndex = (
     ['CFXraySingleCrystal', 'CFSingleCrystal.htm', 'Charge Flipping structure solution with Xray single crystal data',
      '''Solving the structure of dipyridyl disulfate by charge flipping and then refine the structure by least-squares.'''],       
     ['TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm', 'Charge flipping with neutron TOF single crystal data',
-     '''Solving the crystal structure ubrene (C42H28) from single crystal neutron data via charge flipping and then refine the structure by least squares.'''],
+     '''Solving the crystal structure or rubrene (C42H28) from single crystal neutron data via charge flipping and then refine the structure by least squares.'''],
     ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure determination',
      '''Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data via Monte Carlo/Simulated Annealing (MC/SA).'''],
 
@@ -4913,15 +4910,22 @@ tutorialIndex = (
     ['StackingFaults-III', 'Stacking Faults-III.htm', 'Stacking fault simulations for Georgia kaolinite',
      '''This shows how to simulate some diffraction patterns from poorly ordered Georgia kaolinite (Al2Si2O5(OH)4) clay.'''],
 
-    ['Image Calibration/Integration'],
-    ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector'],
-    ['2DIntegration', 'Integration of area detector data in GSAS.htm', '     Integration of area detector data'],
+    ['Powder diffractometer calibration'],
+    ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
+     '''This shows how to determine approximate profile parameters by fitting individual peaks
+        with data collected on a standard using a lab diffractometer.'''],
     ['TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a Neutron TOF diffractometer'],
 
-    ['Small-Angle Scattering'],       
+    ['2D Image Processing'],
+    ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector',
+     '''A demonstration of calibrating a Perkin-Elmer area detector,  where the detector was intentionally tilted at 45 degrees.
+     This exercise is the prerequisite for the next one.'''],
+    ['2DIntegration', 'Integration of area detector data in GSAS.htm', '     Integration of area detector data',
+     '''Integration of the image from a Perkin-Elmer area detector, where the detector was intentionally tilted at 45 degrees.'''],
     ['2DStrain', 'Strain fitting of 2D data in GSAS-II.htm', 'Strain fitting of 2D data'],
     ['2DTexture', 'Texture analysis of 2D data in GSAS-II.htm', 'Texture analysis of 2D data'],
               
+    ['Small-Angle Scattering'],       
     ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)'],
     ['SAfit', 'Fitting Small Angle Scattering Data.htm', '     Fitting small angle x-ray data (alumina powder)'],
     ['SAimages', 'Small Angle Image Processing.htm', 'Image Processing of small angle x-ray data'],
@@ -4933,12 +4937,12 @@ tutorialIndex = (
     ['PythonScript','Scripting.htm','Scripting a GSAS-II Refinement from Python'],
     ['PythonScript','CommandLine.htm','     Running a GSAS-II Refinement from the Command Line'],
     
-    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title'],
+    #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
     )
 '''A catalog of GSAS-II tutorials with headings. This is the master list of GSAS-II tutorials and must be updated when tutorials are
 added. Each item has either one or three items. 
-Titles are single item in a list or tuple. Tutorials have three items: (a) the name of the directory,
-(b) the name of the web page and (c) a title for the tutorial. 
+Titles are single item in a list or tuple. Tutorials have four items: (a) the name of the directory,
+(b) the name of the web page, (c) a title for the tutorial and (d) a short text description (optional). 
 Tutorials that depend on a previous tutorial being completed should have the title for
 the tutorial indented by five spaces.
 

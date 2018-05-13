@@ -2727,7 +2727,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Sgam = (1.8*wave/np.pi)/(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a']*costh)
             Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
         else:           #ellipsoidal crystallites
-            Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR = G2pwd.ellipseSize(H,Sij,GB)
             Sgam = 1.8*wave/(np.pi*costh*lenR)
@@ -2758,7 +2758,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4+im]**2/(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a'])
             Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
         else:           #ellipsoidal crystallites   #OK
-            Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR = G2pwd.ellipseSize(H,Sij,GB)
             Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4+im]**2/lenR
@@ -2793,8 +2793,8 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         tanth = tand(refl[5+im]/2.)
         #crystallite size derivatives
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            Sgam = 1.8*wave/(np.pi*parmDict[phfx+'Size;i']*costh)
-            gamDict[phfx+'Size;i'] = -1.8*wave*parmDict[phfx+'Size;mx']/(np.pi*costh)
+            Sgam = 1.8*wave/(np.pi*costh*parmDict[phfx+'Size;i'])
+            gamDict[phfx+'Size;i'] = -1.8*wave*parmDict[phfx+'Size;mx']/(np.pi*costh*parmDict[phfx+'Size;i']**2)
             sigDict[phfx+'Size;i'] = -3.6*Sgam*wave*(1.-parmDict[phfx+'Size;mx'])**2/(np.pi*costh*ateln2)
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
             H = np.array(refl[:3])
@@ -2813,11 +2813,11 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         else:           #ellipsoidal crystallites
             const = 1.8*wave/(np.pi*costh)
-            Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
             Sgam = const/lenR
-            for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
+            for i,item in enumerate([phfx+'Size;%d'%(j) for j in range(6)]):
                 gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size;mx']
                 sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         gamDict[phfx+'Size;mx'] = Sgam
@@ -2880,11 +2880,11 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         else:           #OK  ellipsoidal crystallites 
             const = 1.e-4*parmDict[hfx+'difC']*refl[4+im]**2
-            Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
+            Sij =[parmDict[phfx+'Size;%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
             Sgam = const/lenR
-            for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
+            for i,item in enumerate([phfx+'Size;%d'%(j) for j in range(6)]):
                 gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size;mx']
                 sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         gamDict[phfx+'Size;mx'] = Sgam  #OK

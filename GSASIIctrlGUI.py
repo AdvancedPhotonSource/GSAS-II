@@ -4912,9 +4912,14 @@ tutorialIndex = (
 
     ['Powder diffractometer calibration'],
     ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
-     '''This shows how to determine approximate profile parameters by fitting individual peaks
+     '''This shows how to determine profile parameters by fitting individual peaks
         with data collected on a standard using a lab diffractometer.'''],
-    ['TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a Neutron TOF diffractometer'],
+    ['TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a Neutron TOF diffractometer',
+     '''This uses the fitted positions of all visible peaks in a pattern of NIST SRM 660b La11B6 
+     (a=4.15689Å) obtained in a multiple single peak fit. The positions are compared to those expected from the 
+     known lattice parameters to establish the diffractometer constants (difC, difA, difB and Zero) used for 
+     calculating TOF peak positions from d-spacings. In addition, the peak fitting includes the various profile 
+     coefficients thus fully describing the instrument contribution to the peak profiles.''' ],
 
     ['2D Image Processing'],
     ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector',
@@ -4922,20 +4927,36 @@ tutorialIndex = (
      This exercise is the prerequisite for the next one.'''],
     ['2DIntegration', 'Integration of area detector data in GSAS.htm', '     Integration of area detector data',
      '''Integration of the image from a Perkin-Elmer area detector, where the detector was intentionally tilted at 45 degrees.'''],
-    ['2DStrain', 'Strain fitting of 2D data in GSAS-II.htm', 'Strain fitting of 2D data'],
-    ['2DTexture', 'Texture analysis of 2D data in GSAS-II.htm', 'Texture analysis of 2D data'],
+    ['2DStrain', 'Strain fitting of 2D data in GSAS-II.htm', 'Strain fitting of 2D data',
+     '''This show how to determine 3 strain tensor values using the method of He & Smith (Adv. in X-ray Anal. 41, 501, 1997) 
+     directly froom a sequence of 2D imges from a loaded sample.'''],
+    ['2DTexture', 'Texture analysis of 2D data in GSAS-II.htm', 'Texture analysis of 2D data',
+     '''This shows 3 different methods for determining texture via spherical harmonics from 2D x-ray diffraction images. '''],
               
     ['Small-Angle Scattering'],       
-    ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)'],
-    ['SAfit', 'Fitting Small Angle Scattering Data.htm', '     Fitting small angle x-ray data (alumina powder)'],
-    ['SAimages', 'Small Angle Image Processing.htm', 'Image Processing of small angle x-ray data'],
-    ['SAseqref', 'Sequential Refinement of Small Angle Scattering Data.htm', 'Sequential refinement with small angle scattering data'],
+    ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)',
+     '''This shows how to determine the size distribution of particles using data from a constant 
+     wavelength synchrotron X-ray USAXS instrument. This is the prerequisite for the next tutorial'''],
+    ['SAfit', 'Fitting Small Angle Scattering Data.htm', '     Fitting small angle x-ray data (alumina powder)',
+     '''This shows how to fit small angle scattering data using data from a constant wavelength synchrotron X-ray USAXS instrument. '''],
+    ['SAimages', 'Small Angle Image Processing.htm', 'Image Processing of small angle x-ray data',
+     '''This shows how to  reduce 2D SAXS data to create 1D absolute scaled data. '''],
+    ['SAseqref', 'Sequential Refinement of Small Angle Scattering Data.htm', 'Sequential refinement with small angle scattering data',
+     '''This shows how to fit USAXS small angle scattering data for a suite of samples to demonstrate the 
+     sequential refinement technique in GSAS-II for SASD and demonstrates fitting with a hard sphere structure 
+     factor for non-dilute systems. '''],
 
     ['Other'],    
-    ['MerohedralTwins', 'Merohedral twin refinement in GSAS.htm', 'Merohedral twin refinements'],
-    ['TOF Single Crystal Refinement', 'TOF single crystal refinement in GSAS.htm', 'Single crystal refinement from TOF data'],
-    ['PythonScript','Scripting.htm','Scripting a GSAS-II Refinement from Python'],
-    ['PythonScript','CommandLine.htm','     Running a GSAS-II Refinement from the Command Line'],
+    ['MerohedralTwins', 'Merohedral twin refinement in GSAS.htm', 'Merohedral twin refinements',
+     '''This shows how to use GSAS-II to refine the structure of a few single crystal structures where there is merohedral twinning. '''],
+    ['TOF Single Crystal Refinement', 'TOF single crystal refinement in GSAS.htm', 'Single crystal refinement from TOF data',
+     '''This shows how to refine the structure of sapphire (really corundum, Al2O3) from single crystal diffraction data 
+     collected at the SNS on the TOPAZ instrument at room temperature.  '''],
+    ['PythonScript','Scripting.htm','Scripting a GSAS-II Refinement from Python',
+     '''This demonstrates the use of the GSASIIscriptable module. This uses a Python script to perform a refinement or 
+     computation, but without use of the GSAS-II graphical user interface. This is a prerequisite for the next tutorial.'''],
+    ['PythonScript','CommandLine.htm','     Running a GSAS-II Refinement from the Command Line',
+     '''This shows a unix script that duplicates the previous Python Scripting GSAS-II tutorial. '''],
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title', '''Example descriptive text'''],
     )

@@ -71,7 +71,7 @@ if __name__ == '__main__':
             else:
                 print(' [No exercise files].',file=out)
             if len(l) > 3:
-                print("<UL><LI><I>"+l[3]+"</I></UL>",file=out)
+                print("<blockquote><I>"+l[3]+"</I></blockquote>",file=out)
             if suffix: print('</UL>',file=out)
     #        if l[2][0] == ' ':
     #            print(' (Note that this tutorial requires previous as prerequisite)',file=out)

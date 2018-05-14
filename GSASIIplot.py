@@ -1926,7 +1926,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2G.G2MessageBox(G2frame,'You must select one peak in the table first. # selected ='+
                              str(len(selectedPeaks)),'Select one peak')
             return
-        #GSASIIpath.IPyBreak()
         G2frame.itemPicked = G2frame.Lines[selectedPeaks[0]+2] # 1st 2 lines are limits
         G2frame.G2plotNB.Parent.Raise()
         OnPick(None)
@@ -5764,6 +5763,26 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             elif event.key in ['n',] and Data['linescan'][0]:
                 Page.plotStyle['sqrtPlot'] = False
                 Page.plotStyle['logPlot'] = not Page.plotStyle['logPlot']
+            elif event.key in ['+','=','-',] and Data['linescan'][0]:
+                if event.key in ['+','=']:
+                    Data['linescan'][1] += 0.5
+                else:
+                    Data['linescan'][1] -= 0.5
+                xlim = Plot1.get_xlim()
+                azm = Data['linescan'][1]-AzmthOff
+                xy = G2img.GetLineScan(G2frame.ImageZ,Data)
+                Plot1.cla()
+                olderr = np.seterr(invalid='ignore') #get around sqrt/log(-ve) error
+                if Page.plotStyle['logPlot']:
+                    xy[1] = np.log(xy[1])
+                elif Page.plotStyle['sqrtPlot']:
+                    xy[1] = np.sqrt(xy[1])
+                np.seterr(invalid=olderr['invalid'])
+                Plot1.plot(xy[0],xy[1])
+                Plot1.set_xlim(xlim)
+                Plot1.set_xscale("linear")                                                  
+                Plot1.set_title('Line scan at azm= %6.1f'%(azm+AzmthOff))
+                Page.canvas.draw()
             else:
                 return
             wx.CallAfter(PlotImage,G2frame,newPlot=True)

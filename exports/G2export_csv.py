@@ -179,6 +179,14 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
+        for parm in Parms:
+            if parm in ['Type','Source',]:
+                line = '"Instparm: %s","%s"'%(parm,Parms[parm][0])
+            elif parm in ['Lam','Zero',]:
+                line = '"Instparm: %s",%10.6f'%(parm,Parms[parm][1])
+            else:
+                line = '"Instparm: %s",%10.2f'%(parm,Parms[parm][1])
+            self.Write(line)
         WriteList(self,("x","y_obs","weight","y_calc","y_bkg","Q"))
         digitList = 2*((13,3),) + ((13,5),) + 3*((13,3),)
         for vallist in zip(histblk['Data'][0],

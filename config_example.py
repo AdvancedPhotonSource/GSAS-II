@@ -187,3 +187,8 @@ information on how this is done.
 Instprm_default = False
 '''when True, GSAS-II instprm file are shown as default; when False, old GSAS stype prm, etc files are default
 '''
+
+Plot_Colors = 'k r g b m c'
+'''The colors for line plots: use one of 'k'-black, 'r'-red, 'b'-blue, 'g'-green, 'm'-magenta, 'c'-cyan for the
+line colors in order of obs., calc., back., diff., color5 & color6 separated by spaces; 6 items required.
+'''

@@ -2412,11 +2412,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId
     PatternId = G2frame.PatternId
-    colors=['b','g','r','c','m','k']
+    try:
+        colors = GSASIIpath.GetConfigValue('Plot_Colors').split()
+        for color in colors:
+            if color not in ['k','r','g','b','m','c']:
+                print('**** bad color code: '+str(color)+' - redo Preferences/Plot Colors ****')
+                raise Exception
+    except:
+        colors = ['b','g','r','c','m','k']
     Lines = []
     exclLines = []
     if G2frame.SinglePlot and PatternId:
-        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
+        Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(PatternId))
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
         PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
@@ -2442,7 +2449,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             choices = G2frame.selections
         for item in choices:
             id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
-            Pattern = G2frame.GPXtree.GetItemPyData(id)
+            Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(id))
             if len(Pattern) < 3:                    # put name on end if needed
                 Pattern.append(G2frame.GPXtree.GetItemText(id))
             if 'Offset' not in Pattern[0]:     #plot offset data
@@ -2545,6 +2552,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             excls = limits[2:]
             xye0 = ma.array(xye0,mask=False)
 #            xye0.mask = False # resets mask for xye0 & Pattern[1][0](!)
+            xye0 = ma.masked_outside(xye0,limits[1][0],limits[1][1])
             for excl in excls:
                 xye0 = ma.masked_inside(xye0,excl[0],excl[1]) # sets mask on xye0 but not Pattern[1][0] !
             Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))
@@ -2660,7 +2668,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 xlim = Plot.get_xlim()
                 DX = xlim[1]-xlim[0]
                 X += 0.002*offsetX*DX*N
-            Xum = ma.getdata(X) # unmasked version of X, use to plot data (only)
+            if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+                Xum = ma.getdata(X) # unmasked version of X, use for data limits (only)
+            else:
+                Xum = X[:]
+            Ibeg = np.searchsorted(X,limits[1][0])
+            Ifin = np.searchsorted(X,limits[1][1])
             if ifpicked:
                 if Page.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -2704,8 +2717,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     else:
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
                 if G2frame.Weight:
-                    Ibeg = np.searchsorted(X,limits[1][0])
-                    Ifin = np.searchsorted(X,limits[1][1])
                     Plot1.set_yscale("linear")                                                  
                     wtFactor = Pattern[0]['wtFactor']
                     DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
@@ -2720,8 +2731,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #background
                     elif plottype in ['SASD','REFD']:
                         Plot.set_xscale("log",nonposx='mask')
-                        Ibeg = np.searchsorted(X,limits[1][0])
-                        Ifin = np.searchsorted(X,limits[1][1])
                         Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
                             if Page.plotStyle['sqPlot']:

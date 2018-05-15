@@ -1731,10 +1731,15 @@ def GetLittleGrpOps(SGData,vec):
     
     :param SGData: space group data structure as defined in SpcGroup above.
     :param vec: a numpy array of fractional vector coordinates
+    :returns: Little - list of operators [M,T] that form the little gropu
     '''
     Little = []
-    for [M,T] in SGData['SGOps']:
-        if np.allclose(np.inner(M,vec),vec):
+    Ops = SGData['SGOps'][:]
+    if SGData['SGInv']:
+        Ops += [[-M,-T] for [M,T] in Ops]
+    for [M,T] in Ops:
+        tvec = np.inner(M,vec)%1.
+        if np.allclose(tvec,vec%1.):
             Little.append([M,T])
     return Little
         

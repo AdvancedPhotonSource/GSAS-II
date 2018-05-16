@@ -4164,7 +4164,7 @@ class GSASII(wx.Frame):
         and any phase that uses a histogram.
         This also assigns numbers to used phases and histograms by the
         order they appear in the file. 
-        Note routine :func:`GSASIIstrIO.GetUsedHistogramsAndPhasesfromTree` also exists to
+        Note routine :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` also exists to
         get same info from GPX file.
 
         :returns: (Histograms,Phases)

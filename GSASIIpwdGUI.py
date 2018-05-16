@@ -1704,6 +1704,8 @@ def UpdateInstrumentGrid(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame)
             return
         copyList = []
+        copyData = copy.deepcopy(data)
+        del copyData['Azimuth'] #not to be copied!
         instType = data['Type'][0]
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy inst params from\n'+hst,
             'Copy parameters', histList)
@@ -1719,7 +1721,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'Bank' not in instData:
                 instData['Bank'] = [1,1,0]
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
-                instData.update(data)
+                instData.update(copyData)
             else:
                 print (item+' not copied - instrument parameters not commensurate')
                          

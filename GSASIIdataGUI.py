@@ -4183,12 +4183,12 @@ class GSASII(wx.Frame):
             pId = phaseNames.index(phase)
             Phase['pId'] = pId
             if Phase['Histograms']:
-                if phase not in Phases:
-                    Phases[phase] = Phase
                 for hist in Phase['Histograms']:
                     if 'Use' not in Phase['Histograms'][hist]:      #patch: add Use flag as True
                         Phase['Histograms'][hist]['Use'] = True         
                     if hist not in Histograms and Phase['Histograms'][hist]['Use']:
+                        if phase not in Phases:
+                            Phases[phase] = Phase
                         item = GetGPXtreeItemId(self,self.root,hist)
                         if item:
                             if 'PWDR' in hist[:4]: 
@@ -7741,7 +7741,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         phaseName = G2frame.GPXtree.GetItemText(item)
         if phaseName not in data:
             data[phaseName] = {}
-        G2restG.UpdateRestraints(G2frame,data[phaseName],phaseName)
+        G2restG.UpdateRestraints(G2frame,data,phaseName)
     elif G2frame.GPXtree.GetItemText(item) == 'Comments':
         SetDataMenuBar(G2frame,G2frame.dataWindow.DataCommentsMenu)
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)

@@ -438,14 +438,14 @@ def GetUsedHistogramsAndPhases(GPXfile):
         Phase = phaseData[phase]
         if Phase['General']['Type'] == 'faulted': continue      #don't use faulted phases!
         if Phase['Histograms']:
-            if phase not in Phases:
-                pId = phaseNames.index(phase)
-                Phase['pId'] = pId
-                Phases[phase] = Phase
             for hist in Phase['Histograms']:
                 if 'Use' not in Phase['Histograms'][hist]:      #patch
                     Phase['Histograms'][hist]['Use'] = True         
                 if hist not in Histograms and Phase['Histograms'][hist]['Use']:
+                    if phase not in Phases:
+                        pId = phaseNames.index(phase)
+                        Phase['pId'] = pId
+                        Phases[phase] = Phase
                     try:
                         Histograms[hist] = allHistograms[hist]
                         hId = histoList.index(hist)

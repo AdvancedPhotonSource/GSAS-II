@@ -1726,6 +1726,17 @@ def SSpaceGroup(SGSymbol,SSymbol):
     for l in SSGPrint(B):
         print (l)
         
+def SGProd(OpA,OpB):
+    '''
+    Form space group operator product. OpA & OpB are [M,V] pairs; 
+        both must be of same dimension (3 or 4). Returns [M,V] pair
+    '''
+    A,U = OpA
+    B,V = OpB
+    M = np.inner(B,A.T)
+    W = np.inner(B,U)+V
+    return M,W
+        
 def GetLittleGrpOps(SGData,vec):
     ''' Find rotation part of operators that leave vec unchanged
     
@@ -1742,17 +1753,6 @@ def GetLittleGrpOps(SGData,vec):
         if np.allclose(tvec,vec%1.):
             Little.append([M,T])
     return Little
-        
-def SGProd(OpA,OpB):
-    '''
-    Form space group operator product. OpA & OpB are [M,V] pairs; 
-        both must be of same dimension (3 or 4). Returns [M,V] pair
-    '''
-    A,U = OpA
-    B,V = OpB
-    M = np.inner(B,A.T)
-    W = np.inner(B,U)+V
-    return M,W
         
 def MoveToUnitCell(xyz):
     '''
@@ -1902,10 +1902,10 @@ def GenHKLf(HKL,SGData):
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
 
-def MagHKLchk(HKL,SGData):
-    SpnFlp = SGData['SpnFlp']
-    print(HKL)
-    Uniq = GenHKL(HKL,SGData)
+#def MagHKLchk(HKL,SGData):
+#    SpnFlp = SGData['SpnFlp']
+#    print(HKL)
+#    Uniq = GenHKL(HKL,SGData)
     
 def checkSSLaue(HKL,SGData,SSGData):
     #Laue check here - Toss HKL if outside unique Laue part

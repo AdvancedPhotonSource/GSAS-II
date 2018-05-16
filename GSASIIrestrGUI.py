@@ -1906,8 +1906,15 @@ def UpdateRestraints(G2frame,data,phaseName):
             print ("Warning: tab "+tabname+" was not found")
 
     # UpdateRestraints execution starts here
-    phasedata = G2frame.GetPhaseData()[phaseName]
-    restrData = data
+    try:
+        phasedata = G2frame.GetPhaseData()[phaseName]
+    except KeyError:        #delete unknown or previously deleted phases from Restraints
+        rId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Restraints')
+        pId = G2gd.GetGPXtreeItemId(G2frame,rId,phaseName)
+        G2frame.GPXtree.Delete(pId)
+        print('Unknown phase '+phaseName+' is deleted from Restraints')
+        return
+    restrData = data[phaseName]
     if 'Bond' not in restrData:
         restrData['Bond'] = {'wtFactor':1.0,'Range':1.1,'Bonds':[],'Use':True}
     if 'Angle' not in restrData:

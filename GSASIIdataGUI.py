@@ -4185,10 +4185,10 @@ class GSASII(wx.Frame):
             if Phase['Histograms']:
                 for hist in Phase['Histograms']:
                     if 'Use' not in Phase['Histograms'][hist]:      #patch: add Use flag as True
-                        Phase['Histograms'][hist]['Use'] = True         
+                        Phase['Histograms'][hist]['Use'] = True
+                    if Phase['Histograms'][hist]['Use'] and phase not in Phases:
+                        Phases[phase] = Phase
                     if hist not in Histograms and Phase['Histograms'][hist]['Use']:
-                        if phase not in Phases:
-                            Phases[phase] = Phase
                         item = GetGPXtreeItemId(self,self.root,hist)
                         if item:
                             if 'PWDR' in hist[:4]: 
@@ -4200,7 +4200,6 @@ class GSASII(wx.Frame):
                         else: # would happen if a referenced histogram were renamed or deleted
                             print(u'For phase "'+phase+
                                   u'" unresolved reference to histogram "'+hist+u'"')
-        #G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
         

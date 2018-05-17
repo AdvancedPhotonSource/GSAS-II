@@ -1593,10 +1593,30 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
 
        G2frame.HKL (used for tool tip display of hkl for selected phase reflection list)
     '''
+    def PublishPlot(event):
+        msg = ""
+        if 'PWDR' not in plottype:
+            msg += " * only PWDR histograms can be used"
+        if G2frame.Contour or not G2frame.SinglePlot:
+            if msg: msg += '\n'
+            msg += " * only when a single histogram is plotted"
+        if Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot']:
+            if msg: msg += '\n'
+            msg += " * only when the intensity scale is linear (not log or sqrt)"
+        if G2frame.Weight:
+            if msg: msg += '\n'
+            msg += " * only when weight plot is set to no weight plot"
+        if msg:
+            msg = 'Publication export is only available under limited plot settings\n'+msg
+            G2G.G2MessageBox(G2frame,msg,'Wrong plot settings')
+            print(msg)
+        else:
+            PublishRietveldPlot(G2frame,Pattern,Plot,Page)
+
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
-    global Pattern,mcolors,Plot
+    global Pattern,mcolors,Plot,Page
     plottype = plotType
     
     if not G2frame.PatternId:
@@ -1607,9 +1627,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
 #patch
     if data is None:
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-    if 'Offset' not in data[0] and plotType in ['PWDR','SASD','REFD']:     #plot offset data
+    if plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+        publish = PublishPlot
+    else:
+        publish = None
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+    if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
         Ymax = max(data[1][1])
-        data[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
+        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
             'refDelt':0.1*Ymax,})
         G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
 #end patch
@@ -1639,7 +1664,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if Page.plotStyle['logPlot']:
                     Page.plotStyle['sqrtPlot'] = False
                 else:
-                    Pattern[0]['Offset'][0] = 0
+                    Page.plotStyle['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
             if G2frame.SinglePlot:  #toggle sqrt plot
@@ -1648,13 +1673,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     Page.plotStyle['logPlot'] = False
                 Ymax = max(Pattern[1][1])
                 if Page.plotStyle['sqrtPlot']:
-                    Pattern[0]['delOffset'] = .002*np.sqrt(Ymax)
-                    Pattern[0]['refOffset'] = -0.1*np.sqrt(Ymax)
-                    Pattern[0]['refDelt'] = .1*np.sqrt(Ymax)
+                    Page.plotStyle['delOffset'] = .002*np.sqrt(Ymax)
+                    Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
+                    Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
                 else:
-                    Pattern[0]['delOffset'] = .02*Ymax
-                    Pattern[0]['refOffset'] = -0.1*Ymax
-                    Pattern[0]['refDelt'] = .1*Ymax
+                    Page.plotStyle['delOffset'] = .02*Ymax
+                    Page.plotStyle['refOffset'] = -0.1*Ymax
+                    Page.plotStyle['refDelt'] = .1*Ymax
             else:   #select color scheme for multiplots & contour plots
                 choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
                 choice.sort()
@@ -1669,35 +1694,35 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
-            elif Pattern[0]['Offset'][0] < 100.:
-                Pattern[0]['Offset'][0] += 1.
+            elif Page.plotStyle['Offset'][0] < 100.:
+                Page.plotStyle['Offset'][0] += 1.
         elif event.key == 'd' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif Pattern[0]['Offset'][0] > -100.:
-                Pattern[0]['Offset'][0] -= 1.
+            elif Page.plotStyle['Offset'][0] > -100.:
+                Page.plotStyle['Offset'][0] -= 1.
         elif event.key == 'U':
             if G2frame.Contour:
                 G2frame.Cmin += (G2frame.Cmax - G2frame.Cmin)/5.
-            elif Pattern[0]['Offset'][0] < 100.:
-               Pattern[0]['Offset'][0] += 10.
+            elif Page.plotStyle['Offset'][0] < 100.:
+               Page.plotStyle['Offset'][0] += 10.
         elif event.key == 'D':
             if G2frame.Contour:
                 G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
-            elif Pattern[0]['Offset'][0] > -100.:
-                Pattern[0]['Offset'][0] -= 10.
+            elif Page.plotStyle['Offset'][0] > -100.:
+                Page.plotStyle['Offset'][0] -= 10.
         elif event.key == 'l' and not G2frame.SinglePlot:
-            Pattern[0]['Offset'][1] -= 1.
+            Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
-            Pattern[0]['Offset'][1] += 1.
+            Page.plotStyle['Offset'][1] += 1.
         elif event.key == 'o' and not G2frame.SinglePlot:
             G2frame.Cmax = 1.0
-            Pattern[0]['Offset'] = [0,0]
+            Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
-                Pattern[0]['Offset'] = [0.,0.]
+                Page.plotStyle['Offset'] = [0.,0.]
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
@@ -1745,7 +1770,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             newPlot = True      
         elif event.key == 'm':
             Page.plotStyle['sqrtPlot'] = False
-            G2frame.SinglePlot = not G2frame.SinglePlot                
+            if not G2frame.Contour:                
+                G2frame.SinglePlot = not G2frame.SinglePlot                
+            G2frame.Contour = False
             newPlot = True
         elif event.key == 'f' and not G2frame.SinglePlot:
             choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
@@ -1960,11 +1987,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if event.ydata is None: return   # ignore if cursor out of window
             Page.canvas.restore_region(savedplot)
             if Page.pickTicknum:
-                refDelt = -(event.ydata-Pattern[0]['refOffset'])/Page.pickTicknum
-                refOffset = Pattern[0]['refOffset']
+                refDelt = -(event.ydata-Page.plotStyle['refOffset'])/Page.pickTicknum
+                refOffset = Page.plotStyle['refOffset']
             else:       #1st row of refl ticks
                 refOffset = event.ydata
-                refDelt = Pattern[0]['refDelt']
+                refDelt = Page.plotStyle['refDelt']
             for pId,phase in enumerate(Page.phaseList):
                 pos = refOffset - pId*refDelt
                 coords = Page.tickDict[phase].get_data()
@@ -2083,7 +2110,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             if DifLine[0] is G2frame.itemPicked:  # pick of difference curve
                 Page.canvas.draw() # save bitmap
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
-                Page.diffOffset = Pattern[0]['delOffset']
+                Page.diffOffset = Page.plotStyle['delOffset']
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragDiffCurve)
             elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
                 pick.set_dashes((1,4)) # set line as dotted sparse
@@ -2204,7 +2231,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.GPXtree.GetItemPyData(PickId)
             ypos = event.ydata
-            Pattern[0]['delOffset'] = -ypos
+            Page.plotStyle['delOffset'] = -ypos
             G2frame.itemPicked = None
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             return
@@ -2290,39 +2317,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     if pick in Page.phaseList:
                         num = Page.phaseList.index(pick)
                         if num:
-                            data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/num
+                            Page.plotStyle['refDelt'] = -(event.ydata-Page.plotStyle['refOffset'])/num
                         else:       #1st row of refl ticks
-                            data[0]['refOffset'] = event.ydata
+                            Page.plotStyle['refOffset'] = event.ydata
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None
         
-    def PublishPlot(event):
-        msg = ""
-        if 'PWDR' not in plottype:
-            msg += " * only PWDR histograms can be used"
-        if G2frame.Contour or not G2frame.SinglePlot:
-            if msg: msg += '\n'
-            msg += " * only when a single histogram is plotted"
-        if Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot']:
-            if msg: msg += '\n'
-            msg += " * only when the intensity scale is linear (not log or sqrt)"
-        if G2frame.Weight:
-            if msg: msg += '\n'
-            msg += " * only when weight plot is set to no weight plot"
-        if msg:
-            msg = 'Publication export is only available under limited plot settings\n'+msg
-            G2G.G2MessageBox(G2frame,msg,'Wrong plot settings')
-            print(msg)
-        else:
-            PublishRietveldPlot(G2frame,Pattern,Plot,Page)
-
     #=====================================================================================
     # beginning PlotPatterns execution
-    if plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
-        publish = PublishPlot
-    else:
-        publish = None
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
     if not new:
         G2frame.xylim = limits
     else:
@@ -2423,7 +2425,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     Lines = []
     exclLines = []
     if G2frame.SinglePlot and PatternId:
-        Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(PatternId))
+#        Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(PatternId))
+        Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
         PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
@@ -2449,12 +2452,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             choices = G2frame.selections
         for item in choices:
             id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
-            Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(id))
+            Pattern = G2frame.GPXtree.GetItemPyData(id)
+#            Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(id))
             if len(Pattern) < 3:                    # put name on end if needed
                 Pattern.append(G2frame.GPXtree.GetItemText(id))
-            if 'Offset' not in Pattern[0]:     #plot offset data
+            if 'Offset' not in Page.plotStyle:     #plot offset data
                 Ymax = max(Pattern[1][1])
-                Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
+                Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
             PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
             Pattern[0]['BackFile'] = ['',-1.0]
             if PId:
@@ -2477,8 +2481,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if Ymax is None: Ymax = max(xye[1]+bxye)
         Ymax = max(Ymax,max(xye[1]+bxye))
     if Ymax is None: return # nothing to plot
-    offsetX = Pattern[0]['Offset'][1]
-    offsetY = Pattern[0]['Offset'][0]
+    offsetX = Page.plotStyle['Offset'][1]
+    offsetY = Page.plotStyle['Offset'][0]
     if Page.plotStyle['logPlot']:
         Title = 'log('+Title+')'
     if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
@@ -2551,12 +2555,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             # recompute mask from excluded regions, in case they have changed
             excls = limits[2:]
             xye0 = ma.array(xye0,mask=False)
-#            xye0.mask = False # resets mask for xye0 & Pattern[1][0](!)
-            xye0 = ma.masked_outside(xye0,limits[1][0],limits[1][1])
             for excl in excls:
-                xye0 = ma.masked_inside(xye0,excl[0],excl[1]) # sets mask on xye0 but not Pattern[1][0] !
-            Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))
-#            Pattern[1][0].mask = xye0.mask # transfer the mask 
+                xye0 = ma.masked_inside(xye0,excl[0],excl[1])                   #excluded region mask
+            Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))       #save the excluded region masking
+            if not G2frame.Contour:
+                xye0 = ma.masked_outside(xye0,limits[1][0],limits[1][1])            #now mask for limits
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
         elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
@@ -2607,11 +2610,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         continue
                 magMarkers.append(Plot.axvline(x,color='0.5',dashes=(1,1),picker=2.,label='_magline'))
                 lbl = Plot.annotate("x{}".format(ml), xy=(x, tpos), xycoords=("data", "axes fraction"),
-                                verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
+                    verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
                 Plot.magLbls.append(lbl)
             if ml0:
                 lbl = Plot.annotate("x{}".format(ml0), xy=(tcorner, tpos), xycoords="axes fraction",
-                                verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
+                    verticalalignment='bottom',horizontalalignment=halign,label='_maglbl')
                 Plot.magLbls.append(lbl)
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
@@ -2690,14 +2693,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
-                        D = np.where(xye[5],(Y-Z),0.)-Pattern[0]['delOffset']
+                        D = np.where(xye[5],(Y-Z),0.)-Page.plotStyle['delOffset']
                     elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                         Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                         W = xye[4]*multArray+NoffY*Ymax/100.0
-                        D = multArray*xye[5]-Pattern[0]['delOffset']  #powder background
+                        D = multArray*xye[5]-Page.plotStyle['delOffset']  #powder background
                     else:
                         W = xye[4]+NoffY*Ymax/100.0
-                        D = xye[5]-Pattern[0]['delOffset']  #powder background
+                        D = xye[5]-Page.plotStyle['delOffset']  #powder background
                 elif plottype in ['SASD','REFD']:
                     if Page.plotStyle['sqPlot']:
                         W = xye[4]*X**4
@@ -2778,11 +2781,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                             else:
                                 Ni = N
                             if Page.plotStyle['qPlot']:
-                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
+                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color='b',picker=2.))
                             elif Page.plotStyle['dPlot']:
-                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[Ni%6],picker=2.))
+                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color='b',picker=2.))
                             else:
-                                Lines.append(Plot.axvline(item[0],color=colors[Ni%6],picker=2.))
+                                Lines.append(Plot.axvline(item[0],color='b',picker=2.))
                             if Ni == N+1:
                                 Lines[-1].set_lw(Lines[-1].get_lw()+1)
                     if G2frame.GPXtree.GetItemText(PickId) == 'Limits':
@@ -2851,8 +2854,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = Pattern[0]['refOffset']-pId*Pattern[0]['refDelt']*np.ones_like(peak)
-                plsym = Page.phaseColors.get(phase,'y')+'|' # yellow should never happen!
+                pos = Page.plotStyle['refOffset']-pId*Page.plotStyle['refDelt']*np.ones_like(peak)
+                plsym = Page.phaseColors[phase]+'|' # yellow should never happen!
                 if Page.plotStyle['qPlot']:
                     Page.tickDict[phase],j = Plot.plot(2*np.pi/peak.T[0],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
                 elif Page.plotStyle['dPlot']:
@@ -3340,10 +3343,7 @@ def PlotDeltSig(G2frame,kind,PatternName=None):
         G2frame.Cmax = 1.0
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
-                                           PlotDeltSig,(
-                                               G2frame,kind,
-                                               G2frame.GPXtree.GetItemText(G2frame.PatternId))
-                                           )
+        PlotDeltSig,(G2frame,kind,G2frame.GPXtree.GetItemText(G2frame.PatternId)))
     Page.Choice = None
     PatternId = G2frame.PatternId
     Pattern = G2frame.GPXtree.GetItemPyData(PatternId)

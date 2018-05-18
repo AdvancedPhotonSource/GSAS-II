@@ -3020,7 +3020,37 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)        
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+
+    def LoadUnitCell(event):
+        print('Load unit cell from phase - TBD')    #TODO:
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
+        if not pId: return
+        Phases = []
+        item, cookie = G2frame.GPXtree.GetFirstChild(pId)
+        while item:
+            Phases.append(G2frame.GPXtree.GetItemText(item))
+            item, cookie = G2frame.GPXtree.GetNextChild(pId, cookie)    
+        pNum = G2G.ItemSelector(Phases,G2frame,'Select phase',header='Phase')
+        if pNum is None: return
+        Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,Phases[pNum]))
+        Cell = Phase['General']['Cell']
+        SGData = Phase['General']['SGData']
+        controls[4] = 1
+        controls[5] = SGData['SGLatt']+SGData['SGLaue']
+        controls[6:12] = Cell[1:8]
+        controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+        G2frame.dataWindow.RefineCell.Enable(True)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+    def ImportUnitCell(event):
+        print('Import unit cell from file - TBD')   #TODO:
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+        G2frame.dataWindow.RefineCell.Enable(True)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefineCell(event):
         
@@ -3227,6 +3257,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
+    G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
+    G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)

@@ -4988,7 +4988,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         # PDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
-            'wxID_EXPORTCELLS',)
+            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL')
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
@@ -4996,6 +4996,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell','')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
             'Copy selected unit cell from indexing to cell refinement fields')
+        self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Cell', 
+            'Load unit cell from phase')
+        self.ImportCell = self.IndexEdit.Append(G2G.wxID_IMPORTCELL,'Import Cell', 
+            'Import unit cell from file')
         self.RefineCell = self.IndexEdit.Append(G2G.wxID_REFINECELL,'Refine Cell',
             'Refine unit cell parameters from indexed peaks')
         self.MakeNewPhase = self.IndexEdit.Append(G2G.wxID_MAKENEWPHASE,'Make new phase',

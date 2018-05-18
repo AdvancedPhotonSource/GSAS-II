@@ -1848,6 +1848,25 @@ entered the right symbol for your structure.
                 G2spc.CheckSpin(isym,SGData)
                 wx.CallAfter(UpdateGeneral)
                 
+            def OnBNSlatt(event):
+                Obj = event.GetEventObject()
+                BNSlatt = Obj.GetValue()
+                SGData = generalData['SGData']
+                SpcGrp = SGData['SpGrp']
+                SGErr,SGData = G2spc.SpcGroup(SpcGrp)
+                if '_' in BNSlatt:
+                    SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+                else:
+                    SGData['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
+                SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+                GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
+                SGData['GenSym'] = GenSym
+                SGData['GenFlg'] = GenFlg
+                SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+                generalData['SGData'] = SGData
+                wx.CallAfter(UpdateGeneral)
+            
             def OnShowSpins(event):
                 msg = 'Magnetic space group information'
                 text,table = G2spc.SGPrint(SGData,AddInv=not SGData['SGFixed'])
@@ -1860,6 +1879,9 @@ entered the right symbol for your structure.
                     SGData['SpnFlp'],SGData['SGGray']& (not SGData['SGFixed'])).Show()
                                
             SGData = generalData['SGData']            
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+            if 'BNSlattsym' not in SGData:
+                SGData['BNSlattsym'] = [SGData['SGLatt'],[0,0,0]]
             Indx = {}
             MagSym = SGData['MagSpGrp']
             if SGData['SGGray'] and "1'" not in MagSym:
@@ -1869,12 +1891,18 @@ entered the right symbol for your structure.
             spinSizer = wx.BoxSizer(wx.HORIZONTAL)
             if SGData['SGFixed']:
                 SpnFlp = SGData['SpnFlp']
+                spinSizer.Add(wx.StaticText(General,label=' Magnetic phase from mcif file; no change in spin inversion allowed'),0,WACV)
                 OprNames = G2spc.GenMagOps(SGData)[0]
             else:
                 if not len(GenSym) or SGData['SGGray']:
-                    magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
+                    spinSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:
+                    spinSizer.Add(wx.StaticText(General,label=' BNS lattice: '),0,WACV)
+                    BNS = wx.ComboBox(General,value=SGData['BNSlattsym'][0],
+                        choices=[SGData['SGLatt'],]+list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+                    spinSizer.Add(BNS,0,WACV)
                     spinColor = ['black','red']
                     spCode = {-1:'red',1:'black'}
                     for isym,sym in enumerate(GenSym[1:]):
@@ -1887,11 +1915,13 @@ entered the right symbol for your structure.
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)
                     SGData['SpnFlp'] = SpnFlp
             SGData['OprNames'] = OprNames
-            spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: %s  '%(MagSym)),0,WACV)
+            magSizer.Add(spinSizer)
+            msgSizer = wx.BoxSizer(wx.HORIZONTAL)
+            msgSizer.Add(wx.StaticText(General,label=' Magnetic space group: %s  '%(MagSym)),0,WACV)
             showSpins = wx.Button(General,label=' Show spins?')
             showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
-            spinSizer.Add(showSpins,0,WACV)
-            magSizer.Add(spinSizer)
+            msgSizer.Add(showSpins,0,WACV)
+            magSizer.Add(msgSizer)
             dminSizer = wx.BoxSizer(wx.HORIZONTAL)
             dminSizer.Add(wx.StaticText(General,label=' Magnetic reflection d-min: '),0,WACV)
             dminVal = G2G.ValidatedTxtCtrl(General,generalData,'MagDmin',nDig=(10,4),min=0.7)

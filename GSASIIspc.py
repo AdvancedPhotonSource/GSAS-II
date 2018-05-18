@@ -768,7 +768,7 @@ def GetGenSym(SGData):
             
     elif 'F' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','cubic','triclinic']:
-            BNSsym = {'F_S':[.5,.5,.5]}
+            BNSsym = {'F_s':[.5,.5,.5]}
             
     elif 'R' in SGData['SGLatt']:
         BNSsym = {'R_I':[0,0,.5]}
@@ -796,7 +796,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
         SGData['SGSpin'][-1] = -1
         if 'R' in BNS:
             SGData['SGSpin'][-1] = -1
-    elif '_S' in BNS:
+    elif '_s' in BNS:
         SGData['SGSpin'][-1] = -1
         SGData['SGSpin'] += [-1,-1,-1,]
         Tmat *= 2.0

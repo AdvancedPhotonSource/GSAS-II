@@ -3023,7 +3023,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
-        print('Load unit cell from phase - TBD')    #TODO:
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
         if not pId: return
@@ -3046,8 +3045,18 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
-        print('Import unit cell from file - TBD')   #TODO:
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
+        rdlist = G2frame.OnImportGeneric(reqrdr,
+            G2frame.ImportPhaseReaderlist,'phase')
+        if len(rdlist) == 0: return
+        rd = rdlist[0]
+        Cell = rd.Phase['General']['Cell']
+        SGData = rd.Phase['General']['SGData']
+        controls[4] = 1
+        controls[5] = SGData['SGLatt']+SGData['SGLaue']
+        controls[6:12] = Cell[1:8]
+        controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)

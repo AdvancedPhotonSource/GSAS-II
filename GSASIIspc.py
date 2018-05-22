@@ -3171,9 +3171,9 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
     SGCen = SGData['SGCen']
     Ax = A.split('+')
     Ax[0] = int(Ax[0])
-    iC = 0
+    iC = 1
     if Ax[0] < 0:
-        iC = 1
+        iC = -1
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
     cA = Ax[0]//100
@@ -3184,7 +3184,7 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         cellA = np.array([int(a) for a in cellA])
     else:
         cellA = np.zeros(3)
-    newX = Cen+(1-2*iC)*(np.inner(M,X).T+T)+cellA
+    newX = Cen+iC*(np.inner(M,X).T+T)+cellA
     if len(Uij):
         U = Uij2U(Uij)
         U = np.inner(M,np.inner(U,M).T)
@@ -3198,13 +3198,16 @@ def ApplyStringOpsMom(A,SGData,Mom):
     SGOps = SGData['SGOps']
     Ax = A.split('+')
     Ax[0] = int(Ax[0])
+    iC = 1
+    if Ax[0] < 0:
+        iC = -1
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
     M,T = SGOps[nA]
     if SGData['SGGray']:
         newMom = -(np.inner(Mom,M).T)*nl.det(M)
     else:
-        newMom = -(np.inner(Mom,M).T)*SGData['MagMom'][nA-1]*nl.det(M)
+        newMom = -np.inner(Mom,M).T*SGData['MagMom'][nA-1]
     return newMom
         
 def StringOpsProd(A,B,SGData):

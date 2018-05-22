@@ -11,7 +11,7 @@
       INTEGER*4     RT(3,5,24)          ! The symmetry matrices
       INTEGER*4     ICEN                ! Flag indicating 1bar
       INTEGER*4     NCV                 ! The number of lattice centering vectors
-      REAL*4        CEN(3,4)            ! The lattice centering vectors
+      REAL*4        CEN(3,NCV)            ! The lattice centering vectors
 
 !Output data list
 

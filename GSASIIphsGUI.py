@@ -5733,11 +5733,12 @@ entered the right symbol for your structure.
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         cx = colLabels.index('x')
         cn = colLabels.index('Name')
+        cs = colLabels.index('Sym Op')
         for i in indx:
             atom = atomDData[i]
             Dx = np.array(atom[cx:cx+3])-viewPt
             dist = np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0))
-            print ('Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cx+3],dist))
+            print ('Atom: %8s (%12s) distance = %.3f'%(atom[cn],atom[cs],dist))
     
     def OnDrawDAT(event):
         #distance, angle, torsion 

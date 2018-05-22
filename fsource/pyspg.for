@@ -53,7 +53,7 @@ Cf2py intent(out) MULP
 
       INTEGER*4     ICEN,NSYM
       REAL*4        SGMTRX(NSYM,3,3),SGTRNS(NSYM,3),SGCEN(NCV,3)
-      REAL*4        CEN(3,4),HKL(4,24),XH(4)
+      REAL*4        CEN(3,NCV),HKL(4,24),XH(4)
       INTEGER*4     JRT(3,5,24),JHK,NCV
 
       DO J=1,NCV

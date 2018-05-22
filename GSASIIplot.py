@@ -7623,7 +7623,7 @@ def PlotStructure(G2frame,data,firstCall=False):
 #        GL.glWindowPos3f(0,0,0)
         GL.glMultMatrixf(matRot)
         GL.glRotate(180,1,0,0)             #fix to flip about x-axis
-        text = gltext.Text(text=label,font=Font,foreground=color)
+        text = gltext.Text(text='   '+label,font=Font,foreground=color)
         text.draw_text(scale=0.025)
         GL.glEnable(GL.GL_LIGHTING)
         GL.glPopMatrix()
@@ -7760,7 +7760,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']
                 if atNum < 0:
-                    radius = 0.2
+                    radius = 0.3
                 elif 'H' == atom[ct]:
                     if drawingData['showHydrogen']:
                         if 'vdW' in atom[cs] and atNum >= 0:

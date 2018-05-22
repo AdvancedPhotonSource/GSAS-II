@@ -202,7 +202,7 @@ def UpdateConstraints(G2frame,data):
         histDict = {seqList[0]:Histograms[seqList[0]]}
     else:
         histDict = Histograms
-    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False)
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
     hapList = sorted([i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)])
     if seqList: # convert histogram # to wildcard
         wildList = [] # list of variables with "*" for histogram number

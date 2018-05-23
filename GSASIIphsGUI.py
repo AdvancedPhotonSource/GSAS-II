@@ -469,7 +469,8 @@ class TransformDialog(wx.Dialog):
             wx.CallAfter(self.Draw)
             
         def OnMag(event):
-            self.ifMag = mag.GetValue()
+            self.ifMag = True
+            self.BNSlatt = SGData['SGLatt']
             wx.CallAfter(self.Draw)
             
         def OnConstr(event):
@@ -477,10 +478,10 @@ class TransformDialog(wx.Dialog):
             
         def OnBNSlatt(event):
             Obj = event.GetEventObject()
-            BNSlatt = Obj.GetValue()
-            if BNSlatt == SGData['SGLatt']:
+            self.BNSlatt = Obj.GetValue()
+            if self.BNSlatt == SGData['SGLatt']:
                 return
-            SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+            SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
             SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
             self.Trans = G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
             wx.CallAfter(self.Draw)
@@ -546,12 +547,13 @@ class TransformDialog(wx.Dialog):
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
                 BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
                 BNS = wx.ComboBox(self.panel,value=SGData['SGLatt'],choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                BNS.SetValue(self.BNSlatt)
                 BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                 BNSizer.Add(BNS,0,WACV)
                 mainSizer.Add(BNSizer,0,WACV)
             else:
-                mag = wx.CheckBox(self.panel,label=' Make new phase magnetic?')
-                mag.Bind(wx.EVT_CHECKBOX,OnMag)
+                mag = wx.Button(self.panel,label=' Make new phase magnetic?')
+                mag.Bind(wx.EVT_BUTTON,OnMag)
                 mainSizer.Add(mag,0,WACV)
             mainSizer.Add(wx.StaticText(self.panel, \
                 label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
@@ -1513,13 +1515,7 @@ entered the right symbol for your structure.
                     SGTxt.SetLabel(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Information'
                     G2G.SGMessageBox(General,msg,text,table).Show()
-                Atoms = data['Atoms']
-                cx,ct,cs,cia = generalData['AtomPtrs']
-                for atom in Atoms:
-                    XYZ = atom[cx:cx+3]
-                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
-                    atom[cs] = Sytsym
-                    atom[cs+1] = Mult
+                G2spc.UpdateSytSym(data)
                 NShkl = len(G2spc.MustrainNames(SGData))
                 NDij = len(G2spc.HStrainNames(SGData))
                 for hist in data['Histograms']:
@@ -1865,6 +1861,7 @@ entered the right symbol for your structure.
                 SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                 G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
                 generalData['SGData'] = SGData
+                G2spc.UpdateSytSym(data)
                 wx.CallAfter(UpdateGeneral)
             
             def OnShowSpins(event):

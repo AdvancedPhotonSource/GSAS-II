@@ -3115,6 +3115,24 @@ def MagSytSym(SytSym,dupDir,SGData):
 #        return MagSytSym
 #            
     return SytSym
+
+def UpdateSytSym(Phase):
+    ''' Update site symmetry/site multiplicity after space group/VNS lattice change
+    '''
+    generalData = Phase['General']
+    SGData = generalData['SGData']
+    Atoms = Phase['Atoms']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    for atom in Atoms:
+        XYZ = atom[cx:cx+3]
+        sytsym,Mult = SytSym(XYZ,SGData)[:2]
+        sytSym,Mul,Nop,dupDir = SytSym(XYZ,SGData)
+        atom[cs] = sytsym
+        if generalData['Type'] == 'magnetic':
+            magSytSym = MagSytSym(sytSym,dupDir,SGData)
+            atom[cs] = magSytSym
+        atom[cs+1] = Mult
+    return
     
 def ElemPosition(SGData):
     ''' Under development. 
@@ -3198,16 +3216,13 @@ def ApplyStringOpsMom(A,SGData,Mom):
     SGOps = SGData['SGOps']
     Ax = A.split('+')
     Ax[0] = int(Ax[0])
-    iC = 1
-    if Ax[0] < 0:
-        iC = -1
     Ax[0] = abs(Ax[0])
     nA = Ax[0]%100-1
     M,T = SGOps[nA]
     if SGData['SGGray']:
         newMom = -(np.inner(Mom,M).T)*nl.det(M)
     else:
-        newMom = -np.inner(Mom,M).T*SGData['MagMom'][nA-1]
+        newMom = np.inner(Mom,M).T*nl.det(M)
     return newMom
         
 def StringOpsProd(A,B,SGData):

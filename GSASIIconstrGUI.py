@@ -145,6 +145,13 @@ def UpdateConstraints(G2frame,data):
     #reload(G2gd)
     ###################################################
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if not len(Phases) or not len(Histograms):
+        dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
+            'No phases or histograms')
+        dlg.CenterOnParent()
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
     G2obj.IndexAllIds(Histograms,Phases)
     ##################################################################################
     # patch: convert old-style (str) variables in constraints to G2VarObj objects

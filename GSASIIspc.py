@@ -3227,7 +3227,7 @@ def ApplyStringOpsMom(A,SGData,Mom):
         newMom = [0.,0.,0.]
     else:
         newMom = np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
-        print(len(SGOps),Ax[0],iAx,nC,nA,NA,SGData['SpnFlp'][NA],Mom,newMom)
+#        print(len(SGOps),Ax[0],iAx,nC,nA,NA,SGData['SpnFlp'][NA],Mom,newMom)
     return newMom
         
 def StringOpsProd(A,B,SGData):

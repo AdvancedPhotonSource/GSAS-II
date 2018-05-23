@@ -3216,13 +3216,18 @@ def ApplyStringOpsMom(A,SGData,Mom):
     SGOps = SGData['SGOps']
     Ax = A.split('+')
     Ax[0] = int(Ax[0])
-    Ax[0] = abs(Ax[0])
-    nA = Ax[0]%100-1
+    iAx = abs(Ax[0])
+    nA = iAx%100-1
+    nC = len(SGOps)*(iAx//100)
+    NA = nA
+    if Ax[0] < 0:
+        NA += len(SGOps)
     M,T = SGOps[nA]
-    if SGData['SGGray']:
-        newMom = -(np.inner(Mom,M).T)*nl.det(M)
+    if SGData['SGGray']:        #no nonzero moments for gray groups!
+        newMom = [0.,0.,0.]
     else:
-        newMom = np.inner(Mom,M).T*nl.det(M)
+        newMom = np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
+        print(len(SGOps),Ax[0],iAx,nC,nA,NA,SGData['SpnFlp'][NA],Mom,newMom)
     return newMom
         
 def StringOpsProd(A,B,SGData):

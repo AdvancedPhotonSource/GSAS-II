@@ -474,7 +474,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     matomlist = atomlist[:7]+[0.,0.,0.,]+atomlist[7:]
                     for mval,mkey in zip(magatomloop.GetKeyedPacket(magmoment,atomlist[0]),magatomkeys):
                         mcol = G2MagDict.get(mkey,-1)
-                        if mcol:
+                        if mcol > 0:
                             matomlist[mcol] = cif.get_number_with_esd(mval)[0]
                     self.MPhase['Atoms'].append(matomlist)
                 if Super:

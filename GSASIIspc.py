@@ -1038,8 +1038,11 @@ def MagText2MTS(mcifOpr,CIF=True):
         ip = len(op)
         if '/' in op:
             if CIF:
+                nP = op.count('+')
                 opMT = op.split('+')
-                T.append(eval(opMT[1]))
+                T.append(eval(opMT[nP]))
+                if nP == 2:
+                    opMT[0] = '+'.join(opMT[0:2])
             else:
                 ip = op.index('/')
                 T.append(eval(op[:ip+2]))
@@ -1818,8 +1821,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     spnflp = []
     X = np.array(XYZ)
     mj = 0
+    cell0 = np.zeros(3,dtype=np.int32)
     if Move:
-        X = MoveToUnitCell(X)[0]
+        X,cell0 = MoveToUnitCell(X)
     for ic,cen in enumerate(icen):
         C = np.array(cen)
         for invers in range(inv):
@@ -1833,7 +1837,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if invers:
                     XT = -XT
                 XT += C
-                cell = np.zeros(3,dtype=np.int32)
+                cell = np.zeros(3,dtype=np.int32)+cell0
                 cellj = np.zeros(3,dtype=np.int32)
                 if Move:
                     newX,cellj = MoveToUnitCell(XT)
@@ -2150,12 +2154,18 @@ CSuinel = [[],      # 0th empty - indices are Fortran style
     
 def GetOprPtrName(key):
     'Needs a doc string'
-    oprName = OprName[key][0]
+    try:
+        oprName = OprName[key][0]
+    except KeyError:
+        return key
     return oprName.replace('(','').replace(')','')
 
 def GetOprPtrNumber(key):
     'Needs a doc string'
-    return OprName[key][1]
+    try:
+        return OprName[key][1]
+    except KeyError:
+        return key
 
 def GetOprName(key):
     'Needs a doc string'

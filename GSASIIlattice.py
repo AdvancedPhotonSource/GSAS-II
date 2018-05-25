@@ -295,7 +295,6 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms,atCodes = FillUnitCell(oldPhase)
-#    GSASIIpath.IPyBreak()
     Unit =[abs(int(max(unit))-1) for unit in Trans]
     for i,unit in enumerate(Unit):
         if unit > 0:
@@ -330,16 +329,16 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans,Vvec)%1.
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans.T,Vvec)%1.
         if atom[cia] == 'A':
-            atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
+            atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans.T)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
         atom[cia+8] = ran.randint(0,sys.maxsize)
         if cm:
             mag = np.sqrt(np.sum(np.array(atom[cm:cm+3])**2))
             if mag:
                 mom = np.inner(np.array(atom[cm:cm+3]),oBmat)
-                mom = np.inner(mom,invTrans.T)
+                mom = np.inner(mom,invTrans)
                 mom = np.inner(mom,nAmat)
                 mom /= np.sqrt(np.sum(mom**2))
                 atom[cm:cm+3] = mom*mag

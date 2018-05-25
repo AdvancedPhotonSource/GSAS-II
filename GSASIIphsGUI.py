@@ -2396,6 +2396,7 @@ entered the right symbol for your structure.
     
             generalData = newPhase['General']
             SGData = generalData['SGData']
+            SGData['fromParent'] = [Trans,Uvec,Vvec]        #save these
             Atoms = newPhase['Atoms']
             if ifMag:
                 dlg = UseMagAtomDialog(G2frame,Atoms,atCodes)

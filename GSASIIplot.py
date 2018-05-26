@@ -2847,6 +2847,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue
+                if phase not in Page.phaseColors:
+                    continue
                 peaks = Phases[phase].get('RefList',[])
                 if not len(peaks):
                     continue

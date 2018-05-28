@@ -543,7 +543,7 @@ def UpdateConstraints(G2frame,data):
         if not len(allcons): return True
         errmsg,warnmsg = CheckConstraints(allcons)
         if errmsg:
-            res = G2frame.ErrorDialog('Constraint Error',
+            G2frame.ErrorDialog('Constraint Error',
                 'Error with newly added constraint:\n'+errmsg+
                 '\nIgnoring newly added constraint',parent=G2frame)
             # reset error status
@@ -572,11 +572,11 @@ def UpdateConstraints(G2frame,data):
         if not len(allcons): return True
         errmsg,warnmsg = CheckConstraints(allcons)
         if errmsg:
-            res = G2frame.ErrorDialog('Constraint Error',
+            G2frame.ErrorDialog('Constraint Error',
                 'Error after editing constraint:\n'+errmsg+
                 '\nDiscarding last constraint edit',parent=G2frame)
             # reset error status
-            errmsg,warnmsg = CheckConstraints(allcons1)
+            errmsg,warnmsg = CheckConstraints(allcons)
             if errmsg:
                 print (errmsg)
                 print (G2mv.VarRemapShow([],True))
@@ -1087,7 +1087,6 @@ def UpdateConstraints(G2frame,data):
             page = event.GetSelection()
         else: # called directly, get current page
             page = G2frame.constr.GetSelection()
-        #G2frame.constr.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         G2frame.constr.ChangeSelection(page)
         text = G2frame.constr.GetPageText(page)
         G2frame.dataWindow.ConstraintEdit.Enable(G2G.wxID_EQUIVALANCEATOMS,False)
@@ -1191,16 +1190,16 @@ def UpdateConstraints(G2frame,data):
         print ('Unexpected contraint warning:\n'+warnmsg)
 
 ################################################################################
-#### Make nuclear-magnetic phase constraints - called by OnTransform in G2phsGUI
+#### Make nuclear/magnetic phase transition constraints - called by OnTransform in G2phsGUI
 ################################################################################        
         
-def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
+def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     '''Add constraints for new magnetic phase created via transformation of old
     nuclear one
     NB: A = [G11,G22,G33,2*G12,2*G13,2*G23]
     '''
     
-    def SetUniqAj(pId,iA,Aname,SGLaue):
+    def SetUniqAj(pId,Aname,SGLaue):
         if SGLaue in ['4/m','4/mmm'] and iA in [0,1]:
             parm = '%d::%s'%(pId,'A0')
         elif SGLaue in ['m3','m3m'] and iA in [0,1,2]:
@@ -1237,10 +1236,15 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     constraints = G2frame.GPXtree.GetItemPyData(item)
     parmDict = {}
     varyList = []
+    xnames = ['dAx','dAy','dAz']
+    unames = [['U11','U12','U13'],['U12','U22','U23'],['U13','U23','U33']]
+#    Us = ['U11','U22','U33','U12','U13','U23']
+    Uids = [[0,0,'U11'],[1,1,'U22'],[2,2,'U33'],[0,1,'U12'],[0,2,'U13'],[1,2,'U23']]
     for ia,code in enumerate(atCodes):
         atom = nAtoms[ia]
         siteSym = G2spc.SytSym(atom[cx:cx+3],nSGData)[0]
         CSX = G2spc.GetCSxinel(siteSym)
+        CSU = G2spc.GetCSuinel(siteSym)
         item = code.split('+')[0]
         iat,opr = item.split(':')
         Nop = abs(int(opr))%100-1
@@ -1249,14 +1253,13 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
         if Nop < 0:         #inversion
             Opr *= -1
-        XOpr = np.inner(Opr,Trans.T)
-        names = ['dAx','dAy','dAz']
-        for ix,name in enumerate(names):
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
+        XOpr = np.inner(Opr,invTrans)
+        for ix,name in enumerate(xnames):
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
             DepCons = []
             for iop,opval in enumerate(XOpr[ix]):
-                if opval and CSX[0][ix]:    #-opval from defn of dAx, etc.
-                    DepCons.append([-opval,G2obj.G2VarObj('%d::%s:%d'%(npId,names[iop],ia))])
+                if opval and CSX[0][ix]:
+                    DepCons.append([opval,G2obj.G2VarObj('%d::%s:%d'%(opId,xnames[iop],ia))])
             if len(DepCons) == 1:
                 constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
             elif len(DepCons) > 1:
@@ -1264,37 +1267,56 @@ def MagConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                     Dep[0] *= -1
                 constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
         for name in ['Afrac','AUiso']:
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
-            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
+            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%d'%(opId,name,ia))]
             constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
+        for iu,Uid in enumerate(Uids):
+            if not CSU[0][iu]:
+                continue
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
+            DepCons = []
+            for iat in range(3):
+                for ibt in range(3):
+                    if abs(Trans[Uid[0],iat]) > 1.e-4 and abs(Trans[Uid[1],ibt]) > 1.e-4:
+                        parm = '%d::%s:%d'%(opId,unames[ibt][iat],ia)
+                        if not parm in varyList:
+                            varyList.append(parm)
+                        DepCons.append([Trans[ibt,iat]/detTrans,G2obj.G2VarObj(parm)])
+            if len(DepCons) == 1:
+                constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+            elif len(DepCons) > 1:        
+                for Dep in DepCons:
+                    Dep[0] *= -1
+                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+            
         #how do I do Uij's for most Trans?
     Anames = [['A0','A3','A4'],['A3','A1','A5'],['A4','A5','A2']]
     As = ['A0','A1','A2','A3','A4','A5']
-    Aids = [[0,0,'A0',-1],[1,1,'A1',-1],[2,2,'A2',-1],[0,1,'A3',2],[0,2,'A4',1],[1,2,'A5',0]]
+    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
     Axes = ['a','b','c']
     Holds = []
     for iA,Aid in enumerate(Aids):
-        parm = SetUniqAj(opId,iA,Aid[2],oSGData['SGLaue'])
-        parmDict[parm] = oAcof[iA]
+        parm = SetUniqAj(npId,Aid[2],nSGData['SGLaue'])
+        parmDict[parm] = nAcof[iA]
         varyList.append(parm)
         IndpCon = [1.0,G2obj.G2VarObj(parm)]
         DepCons = []
         for iat in range(3):
             if nSGData['SGLaue'] in ['-1','2/m']:       #set holds
                 if (abs(nAcof[iA]) < 1.e-8) and (abs(Trans[Aid[0],Aid[1]]) < 1.e-8):
-                    if Axes[iat] != oSGData['SGUniq'] and oSGData['SGLaue'] != nSGData['SGLaue']:
+                    if Axes[iat] != nSGData['SGUniq'] and nSGData['SGLaue'] != oSGData['SGLaue']:
                         HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
                         if not HoldObj in Holds: 
                             constraints['Phase'].append([[0.0,HoldObj],None,None,'h'])
                             Holds.append(HoldObj)
                             continue
-#            print iA,Aid,iat,invTrans[iat][Aid[0]],invTrans[Aid[1]][iat],Anames[Aid[0]][Aid[1]],parm
-            if abs(invTrans[iat,Aid[1]]) > 1.e-8 and abs(nAcof[iA]) > 1.e-8:
-                parm = SetUniqAj(npId,iA,Anames[Aid[0]][Aid[1]],nSGData['SGLaue'])
-                parmDict[parm] = nAcof[As.index(Aid[2])]
-                if not parm in varyList:
-                    varyList.append(parm)
-                DepCons.append([Trans[Aid[0],Aid[0]]*Trans[Aid[1],Aid[1]],G2obj.G2VarObj(parm)])
+            for ibt in range(3):
+                if abs(Trans[Aid[0],iat]) > 1.e-4 and abs(Trans[Aid[1],ibt]) > 1.e-4 and abs(oAcof[iA]) > 1.e-8:
+                    parm = SetUniqAj(opId,Anames[ibt][iat],nSGData['SGLaue'])
+                    parmDict[parm] = oAcof[As.index(Anames[ibt][iat])]
+                    if not parm in varyList:
+                        varyList.append(parm)
+                    DepCons.append([Trans[ibt,iat],G2obj.G2VarObj(parm)])
         if len(DepCons) == 1:
             constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
         elif len(DepCons) > 1:        
@@ -1351,7 +1373,6 @@ def UpdateRigidBodies(G2frame,data):
             page = event.GetSelection()
         else:
             page = G2frame.rbBook.GetSelection()
-        #G2frame.rbBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         G2frame.rbBook.ChangeSelection(page)
         text = G2frame.rbBook.GetPageText(page)
         if text == 'Vector rigid bodies':

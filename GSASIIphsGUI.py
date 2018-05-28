@@ -2423,9 +2423,8 @@ entered the right symbol for your structure.
             G2frame.GPXtree.SetItemPyData(sub,newPhase)
             newPhase['Drawing'] = []
             
-            if ifMag and ifConstr:
-                G2frame.GetUsedHistogramsAndPhasesfromTree()
-                G2cnstG.MagConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
+            if ifConstr:
+                G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
             G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################

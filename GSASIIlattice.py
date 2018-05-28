@@ -270,17 +270,21 @@ def TransformXYZ(XYZ,Trans,Vec):
     return np.inner(XYZ,Trans)+Vec
     
 def TransformU6(U6,Trans):
-    Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans).T)
+    Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans).T)/nl.det(Trans)
     return UijtoU6(Uij)
     
 def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
-    '''Transform atoms from oldPhase to newPhase by Trans & Vec
+    '''Transform atoms from oldPhase to newPhase
+    M' is inv(M)
+    does X' = (X-U)M'+V transformation for coordinates and U' = MUM/det(M)
+    for anisotropic thermal parameters
     
     :param oldPhase: dict G2 phase info for old phase
     :param newPhase: dict G2 phase info for new phase; with new cell & space group
             atoms are from oldPhase & will be transformed
-    :param Trans: array transformation matrix
-    :param Vec: array transformation vector
+    :param Trans: lattice transformation matrix M
+    :param Uvec: array parent coordinates transformation vector U
+    :param Vvec: array child coordinate transformation vector V
     :param ifMag: bool True if convert to magnetic phase; 
         if True all nonmagnetic atoms will be removed
         

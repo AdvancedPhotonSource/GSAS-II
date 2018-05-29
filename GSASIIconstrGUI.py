@@ -1237,9 +1237,9 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     parmDict = {}
     varyList = []
     xnames = ['dAx','dAy','dAz']
-    unames = [['U11','U12','U13'],['U12','U22','U23'],['U13','U23','U33']]
+    unames = [['AU11','AU12','AU13'],['AU12','AU22','AU23'],['AU13','AU23','AU33']]
 #    Us = ['U11','U22','U33','U12','U13','U23']
-    Uids = [[0,0,'U11'],[1,1,'U22'],[2,2,'U33'],[0,1,'U12'],[0,2,'U13'],[1,2,'U23']]
+    Uids = [[0,0,'AU11'],[1,1,'AU22'],[2,2,'AU33'],[0,1,'AU12'],[0,2,'AU13'],[1,2,'AU23']]
     for ia,code in enumerate(atCodes):
         atom = nAtoms[ia]
         siteSym = G2spc.SytSym(atom[cx:cx+3],nSGData)[0]

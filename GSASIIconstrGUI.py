@@ -1259,11 +1259,11 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             if not ix:
                 continue
             name = xnames[ix-1]
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = []
             for iop,opval in enumerate(XOpr[ix-1]):
                 if opval:
-                    DepCons.append([opval,G2obj.G2VarObj('%d::%s:%d'%(opId,xnames[iop],ia))])
+                    DepCons.append([opval,G2obj.G2VarObj('%d::%s:%s'%(opId,xnames[iop],iat))])
             if len(DepCons) == 1:
                 constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
             elif len(DepCons) > 1:
@@ -1271,8 +1271,8 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                     Dep[0] *= -1
                 constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
         for name in ['Afrac','AUiso']:
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
-            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%d'%(opId,name,ia))]
+            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
+            DepCons = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
             constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
 #        for iu,Uid in enumerate(Uids):
         for iu in list(set(CSU[0])):
@@ -1281,13 +1281,13 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             Uid = Uids[iu-1]
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
             DepCons = []
-            for iat in range(3):
-                for ibt in range(3):
-                    if abs(Trans[Uid[0],iat]) > 1.e-4 and abs(Trans[Uid[1],ibt]) > 1.e-4:
-                        parm = '%d::%s:%d'%(opId,unames[ibt][iat],ia)
+            for iau in range(3):
+                for ibu in range(3):
+                    if abs(Trans[Uid[0],iau]) > 1.e-4 and abs(Trans[Uid[1],ibu]) > 1.e-4:
+                        parm = '%d::%s:%s'%(opId,unames[ibu][iau],iat)
                         if not parm in varyList:
                             varyList.append(parm)
-                        DepCons.append([Trans[ibt,iat]/detTrans,G2obj.G2VarObj(parm)])
+                        DepCons.append([Trans[ibu,iau]/detTrans,G2obj.G2VarObj(parm)])
             if len(DepCons) == 1:
                 constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
             elif len(DepCons) > 1:        

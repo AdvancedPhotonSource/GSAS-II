@@ -1254,11 +1254,15 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         if Nop < 0:         #inversion
             Opr *= -1
         XOpr = np.inner(Opr,invTrans)
-        for ix,name in enumerate(xnames):
+#        for ix,name in enumerate(xnames):
+        for ix in list(set(CSX[0])):
+            if not ix:
+                continue
+            name = xnames[ix-1]
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
             DepCons = []
-            for iop,opval in enumerate(XOpr[ix]):
-                if opval and CSX[0][ix]:
+            for iop,opval in enumerate(XOpr[ix-1]):
+                if opval:
                     DepCons.append([opval,G2obj.G2VarObj('%d::%s:%d'%(opId,xnames[iop],ia))])
             if len(DepCons) == 1:
                 constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
@@ -1270,9 +1274,11 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,name,iat))]
             DepCons = [1.0,G2obj.G2VarObj('%d::%s:%d'%(opId,name,ia))]
             constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
-        for iu,Uid in enumerate(Uids):
-            if not CSU[0][iu]:
+#        for iu,Uid in enumerate(Uids):
+        for iu in list(set(CSU[0])):
+            if not iu:
                 continue
+            Uid = Uids[iu-1]
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
             DepCons = []
             for iat in range(3):

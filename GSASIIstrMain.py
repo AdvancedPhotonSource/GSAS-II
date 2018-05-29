@@ -47,7 +47,7 @@ ateln2 = 8.0*math.log(2.0)
 DEBUG = True
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
-    calcControls,pawleyLookup,ifPrint,printFile,dlg):
+    calcControls,pawleyLookup,ifSeq,printFile,dlg):
     '''Core optimization routines, shared between SeqRefine and Refine
 
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
@@ -55,6 +55,9 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
     G2mv.Map2Dict(parmDict,varyList)
+    ifPrint = True
+    if ifSeq:
+        ifPrint = False
     Rvals = {}
     while True:
         begin = time.time()
@@ -112,9 +115,20 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         printFile.write(' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles\n'%(runtime,runtime/ncyc,ncyc))
         printFile.write(' wR = %7.2f%%, chi**2 = %12.6g, GOF = %6.2f\n'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']))
         sig = len(varyList)*[None,]
-        if 'None' in str(type(result[1])):
+        if 'None' in str(type(result[1])) and ifSeq:    #this bails out of a sequential refinement on singular matrix
             IfOK = False
             covMatrix = []
+            print ('**** Refinement failed - singular matrix ****')
+            if 'Hessian' in Controls['deriv type']:
+                num = len(varyList)-1
+                for i,val in enumerate(np.flipud(result[2]['psing'])):
+                    if val:
+                        print ('Bad parameter: '+varyList[num-i])
+            else:
+                Ipvt = result[2]['ipvt']
+                for i,ipvt in enumerate(Ipvt):
+                    if not np.sum(result[2]['fjac'],axis=1)[i]:
+                        print ('Bad parameter: '+varyList[ipvt-1])
             break
         IfOK = True
         try:
@@ -215,14 +229,14 @@ def Refine(GPXfile,dlg=None,makeBack=True):
         return False,' Constraint error'
 #    print G2mv.VarRemapShow(varyList)
 
-    ifPrint = True
+    ifSeq = False
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
     if True:
 #    try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
-            rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
+            rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg)
         if IfOK:
             sigDict = dict(zip(varyList,sig))
             newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
@@ -440,13 +454,13 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
                 print(line[:-2])
             firstVaryList = newVaryList
 
-        ifPrint = False
+        ifSeq = True
         printFile.write('\n Refinement results for histogram: %s\n'%histogram)
         printFile.write(135*'-'+'\n')
         if True:
 #        try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
-                rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
+                rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg)
             if PlotFunction:
                 PlotFunction(G2frame,Histo[histogram]['Data'],histogram)
 

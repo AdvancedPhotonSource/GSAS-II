@@ -742,8 +742,7 @@ def UpdateConstraints(G2frame,data):
             sel = dlg.GetSelection()
             FrstVarb = varList[sel]
             VarObj = G2obj.G2VarObj(FrstVarb)
-            moreVarb = G2obj.SortVariables(
-                FindEquivVarb(FrstVarb,[i for i in varList if i not in omitVars]))
+            moreVarb = G2obj.SortVariables(FindEquivVarb(FrstVarb,[i for i in varList if i not in omitVars]))
             newcons = SelectVarbs(page,VarObj,moreVarb,title2+FrstVarb,constType)
             if len(newcons) > 0:
                 if CheckAddedConstraint(newcons):

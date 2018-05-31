@@ -21,6 +21,7 @@ calculation & for the 1st selected derivative (rest should be the same).
 '''
 
 import sys
+import os
 import platform
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
@@ -68,6 +69,15 @@ class testDeriv(wx.Frame):
         self.SetMenuBar(self.testDerivMenu)
         self.testDerivPanel = wx.ScrolledWindow(self)        
         self.plotNB = plot.PlotNotebook()
+        self.testFile = ''
+        arg = sys.argv
+        if len(arg) > 1 and arg[1]:
+            try:
+                self.testFile = os.path.splitext(arg[1])[0]+u'.testDeriv'
+            except:
+                self.testFile = os.path.splitext(arg[1])[0]+'.testDeriv'
+            self.TestRead()
+            self.UpdateControls(None)
         
     def __init__(self, parent):
         self._init_ctrls(parent)
@@ -93,34 +103,37 @@ class testDeriv(wx.Frame):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.dirname = dlg.GetDirectory()
-                testFile = dlg.GetPath()
-                file = open(testFile,'rb')
-                if '2' in platform.python_version_tuple()[0]:
-                    self.values = cPickle.load(file)
-                    self.HistoPhases = cPickle.load(file)
-                    (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
-                    self.parmDict = cPickle.load(file)
-                    self.varylist = cPickle.load(file)
-                    self.calcControls = cPickle.load(file)
-                    self.pawleyLookup = cPickle.load(file)
-                else:
-                    self.values = cPickle.load(file,encoding='Latin-1')
-                    self.HistoPhases = cPickle.load(file,encoding='Latin-1')
-                    (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
-                    self.parmDict = cPickle.load(file,encoding='Latin-1')
-                    self.varylist = cPickle.load(file,encoding='Latin-1')
-                    self.calcControls = cPickle.load(file,encoding='Latin-1')
-                    self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
-                self.use = [False for i in range(len(self.varylist+self.depVarList))]
-                self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.varylist+self.depVarList]
-                file.close()
-                groups,parmlist = G2mv.GroupConstraints(self.constrDict)
-                G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
+                self.testFile = dlg.GetPath()
+                self.TestRead()
                 self.UpdateControls(event)
-                print(G2mv.VarRemapShow(self.varylist))
-                print('Dependent Vary List:',self.depVarList)
         finally:
             dlg.Destroy()
+            
+    def TestRead(self):
+        file = open(self.testFile,'rb')
+        if '2' in platform.python_version_tuple()[0]:
+            self.values = cPickle.load(file)
+            self.HistoPhases = cPickle.load(file)
+            (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file)
+            self.parmDict = cPickle.load(file)
+            self.varylist = cPickle.load(file)
+            self.calcControls = cPickle.load(file)
+            self.pawleyLookup = cPickle.load(file)
+        else:
+            self.values = cPickle.load(file,encoding='Latin-1')
+            self.HistoPhases = cPickle.load(file,encoding='Latin-1')
+            (self.constrDict,self.fixedList,self.depVarList) = cPickle.load(file,encoding='Latin-1')
+            self.parmDict = cPickle.load(file,encoding='Latin-1')
+            self.varylist = cPickle.load(file,encoding='Latin-1')
+            self.calcControls = cPickle.load(file,encoding='Latin-1')
+            self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
+        self.use = [False for i in range(len(self.varylist+self.depVarList))]
+        self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.varylist+self.depVarList]
+        file.close()
+        groups,parmlist = G2mv.GroupConstraints(self.constrDict)
+        G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
+        print(G2mv.VarRemapShow(self.varylist))
+        print('Dependent Vary List:',self.depVarList)
             
     def UpdateControls(self,event):
         

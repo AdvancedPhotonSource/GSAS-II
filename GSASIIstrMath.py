@@ -859,7 +859,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fotp = np.reshape(FPP,cosp.shape)*Tcorr
         else:
             fotp = FPP*Tcorr     
-#            GSASIIpath.IPyBreak()
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([fot*cosp,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([fot*sinp,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])
@@ -909,7 +908,6 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdfl[iBeg:iFin] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
         dFdbab[iBeg:iFin] = 2.*(fas[0,nxs]*np.array([np.sum(dfadba.T*dBabdA,axis=0),np.sum(-dfadba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])+ \
                             fbs[0,nxs]*np.array([np.sum(dfbdba.T*dBabdA,axis=0),np.sum(-dfbdba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])).T
-#        GSASIIpath.IPyBreak()
         iBeg += blkSize
 #    print 'derv time %.4f, nref %d, blkSize %d'%(time.time()-time0,nRef,blkSize)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
@@ -981,7 +979,8 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering--> [Mxyz,nops,natms]
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    Kdata = np.inner(Gdata.T,uAmat).T*np.sqrt(nl.det(Ginv))/Mag     #Cartesian unit vectors
+    VGi = np.sqrt(nl.det(Ginv))
+    Kdata = np.inner(Gdata.T,uAmat).T*VGi/Mag     #Cartesian unit vectors
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -1074,6 +1073,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     
     :returns: dict dFdvDict: dictionary of derivatives
     '''
+    
     g = nl.inv(G)
     ast = np.sqrt(np.diag(G))
     ainv = np.sqrt(np.diag(g))
@@ -1096,15 +1096,21 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.array([np.sqrt(np.inner(mag,np.inner(mag,Ginv))) for mag in Gdata.T])
     dMdm = np.inner(Gdata.T,Ginv).T/Mag
+    Gones = np.ones_like(Gdata)
     Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
+    Gones = np.inner(Gones.T,SGMT).T
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
+        Gones = np.hstack((Gones,-Gones))       #inversion if any
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering
+    Gones = np.hstack([Gones for icen in range(Ncen)])        #dup over cell centering
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
+    Gones = SGData['MagMom'][nxs,:,nxs]*Gones   #flip vectors according to spin flip
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
     VGi = np.sqrt(nl.det(Ginv))
     Kdata = np.inner(Gdata.T,uAmat).T*VGi/Mag       #make unit vectors in Cartesian space
-    dkdG = (np.inner(np.ones(3),uAmat)*VGi)[:,nxs,nxs]/Mag[nxs,:,:]
+#    Gones = np.ones_like(Gdata)
+    dkdG = (np.inner(Gones.T,uAmat).T*VGi)/Mag
     dkdm = dkdG-Kdata*dMdm[:,nxs,:]/Mag[nxs,:,:]
     dFdMx = np.zeros((nRef,mSize,3))
     Uij = np.array(G2lat.U6toUij(Uijdata))
@@ -1158,11 +1164,10 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdk = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T     #Mxyz**2,Nref
-#        NQ = np.where(np.abs(Q)>0.,1./np.abs(Q),0.)     #this sort of works esp for 1 axis moments
         NQ = np.sqrt(np.sum(Q*Q,axis=0))
         NQ = np.where(NQ > 0.,1./NQ,0.)
         dqdm = dqdk[:,:,:,nxs,nxs]*dkdm[:,nxs,nxs,:,:]   #Mxyz**2,Nref,Nops,Natms
-        dmx = NQ*Q*dMdm[:,nxs,nxs,:]
+        dmx = Q*dMdm[:,nxs,nxs,:]/2.
         dmx = dmx[nxs,:,:,:,:]+dqdm*Mag[nxs,nxs,nxs,:,:]
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
@@ -1176,7 +1181,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*famx[:,:,:,:,nxs],axis=2)          #deriv OK
         dfadmx = np.sum(dmx*TMcorr[nxs,nxs,:,nxs,:]*cosm[nxs,nxs,:,:,:],axis=3)
         dfadui = np.sum(-SQfactor[:,nxs,nxs]*fam,axis=2) #array(Ops,refBlk,nAtoms)  deriv OK
-        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)    #deriv OK? not U12 & U23 in sarc
+        dfadua = np.sum(-Hij[nxs,:,:,nxs,:]*fam[:,:,:,:,nxs],axis=2)            #deriv OK
         # imaginary part; array(3,refBlk,nAtom,3) & array(3,refBlk,nAtom,6)
         dfbdfr = np.sum(fbm/occ,axis=2)        #array(mxyz,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfbdx = np.sum(twopi*Uniq[nxs,:,:,nxs,:]*fbmx[:,:,:,:,nxs],axis=2)
@@ -1186,7 +1191,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         #accumulate derivatives    
         dFdfr[iBeg:iFin] = 2.*np.sum((fams[:,:,nxs]*dfadfr+fbms[:,:,nxs]*dfbdfr)*Mdata/Nops,axis=0) #ok
         dFdx[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadx+fbms[:,:,nxs,nxs]*dfbdx,axis=0)         #ok
-        dFdMx[:,iBeg:iFin,:] = 2.*np.sum(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx,axis=0)/len(SGT)          #problems
+        dFdMx[:,iBeg:iFin,:] = 2.*np.sum(fams[:,:,nxs]*dfadmx+fbms[:,:,nxs]*dfbdmx,axis=0)          #problems
         dFdui[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs]*dfadui+fbms[:,:,nxs]*dfbdui,axis=0)              #ok
         dFdua[iBeg:iFin] = 2.*np.sum(fams[:,:,nxs,nxs]*dfadua+fbms[:,:,nxs,nxs]*dfbdua,axis=0)      #ok
         iBeg += blkSize

@@ -4865,10 +4865,10 @@ tutorialIndex = (
      before beginning Rietveld refinement.'''],
 
     ['Rietveld refinement'],
-    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite',
-     '''This shows a simple Rietveld refinement with CuKa lab Bragg-Brentano powder data.'''],
     ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet',
      '''This shows a simple Rietveld refinement with constraints from CW neutron powder diffraction data.'''],
+    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite',
+     '''This shows a simple Rietveld refinement with CuKa lab Bragg-Brentano powder data.'''],
     ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4',
      '''This shows Rietveld refinement of a structure with room temperature lab CuKa data and low temperature CW neutron data; 
      use is made of the lattice parameter offsets to account for thermal expansion.'''],

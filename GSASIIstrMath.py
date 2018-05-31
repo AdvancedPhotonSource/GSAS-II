@@ -1164,11 +1164,10 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         dqdk = np.array([np.outer(hm,hm)-np.eye(3) for hm in HM.T]).T     #Mxyz**2,Nref
-        NQ = np.sqrt(np.sum(Q*Q,axis=0))
-        NQ = np.where(NQ > 0.,1./NQ,0.)
         dqdm = dqdk[:,:,:,nxs,nxs]*dkdm[:,nxs,nxs,:,:]   #Mxyz**2,Nref,Nops,Natms
-        dmx = Q*dMdm[:,nxs,nxs,:]/2.
+        dmx = Q*dMdm[:,nxs,nxs,:]
         dmx = dmx[nxs,:,:,:,:]+dqdm*Mag[nxs,nxs,nxs,:,:]
+        dmx /= 2.
         
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #Mxyz,Nref,Nop,Natm
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]

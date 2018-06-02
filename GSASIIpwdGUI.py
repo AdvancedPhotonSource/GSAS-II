@@ -3091,6 +3091,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
+        controls[13] = SPGlist[ibrav][0]       
         SGData = G2spc.SpcGroup(controls[13])[1]
         if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
             if ssopt.get('Use',False):
@@ -3263,6 +3264,45 @@ def UpdateUnitCellsGrid(G2frame, data):
         finally:
             dlg.Destroy()
             
+    def OnSpinOp(event):
+        Obj = event.GetEventObject()
+        isym = Indx[Obj.GetId()]+1
+        spCode = {'red':-1,'black':1}                    
+        SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
+        G2spc.CheckSpin(isym,SGData)
+        GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+        SGData['GenSym'] = GenSym
+        SGData['GenFlg'] = GenFlg
+        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+        SGData['SpnFlp'] = SpnFlp
+        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+        
+    def OnBNSlatt(event):
+        Obj = event.GetEventObject()
+        SGData.update(G2spc.SpcGroup(SGData['SpGrp'])[1])
+        BNSlatt = Obj.GetValue()
+        if '_' in BNSlatt:
+            SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+        else:
+            SGData['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
+        SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+        GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
+        SGData['GenSym'] = GenSym
+        SGData['GenFlg'] = GenFlg
+        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+        G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+        SGData['SpnFlp'] = SpnFlp
+            
+    def OnShowSpins(event):
+        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+        msg = 'Magnetic space group information'
+        text,table = G2spc.SGPrint(SGData,AddInv=True)
+        text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+        text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+        G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
+            SGData['SpnFlp'],False).Show()
+        
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
@@ -3277,6 +3317,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space group used in indexing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
+    SGData = G2spc.SpcGroup(controls[13])[1]
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
@@ -3367,12 +3408,42 @@ def UpdateUnitCellsGrid(G2frame, data):
     SSopt.SetValue(ssopt.get('Use',False))
     SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
     littleSizer.Add(SSopt,0,WACV)
-    hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
-    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
-    littleSizer.Add(hklShow,0,WACV)
+    if 'X' in Inst['Type'][0]:
+        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
+        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+        littleSizer.Add(hklShow,0,WACV)
     mainSizer.Add(littleSizer,0)
-    
     mainSizer.Add((5,5),0)
+    if 'N' in Inst['Type'][0]:
+        Indx = {}
+        GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+        SGData['GenSym'] = GenSym
+        SGData['SGGray'] = False
+        neutSizer = wx.BoxSizer(wx.HORIZONTAL)
+        neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
+        BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
+            choices=[SGData['SGLatt'],]+list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
+        neutSizer.Add(BNS,0,WACV)
+        spinColor = ['black','red']
+        spCode = {-1:'red',1:'black'}
+        for isym,sym in enumerate(GenSym[1:]):
+            neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' %s: '%(sym.strip())),0,WACV)                
+            spinOp = wx.ComboBox(G2frame.dataWindow,value=spCode[SGData['SGSpin'][isym+1]],choices=spinColor,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+            Indx[spinOp.GetId()] = isym
+            spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+            neutSizer.Add(spinOp,0,WACV)
+        OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+        SGData['SpnFlp'] = SpnFlp
+        showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
+        showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
+        neutSizer.Add(showSpins,0,WACV)
+        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
+        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+        neutSizer.Add(hklShow,0,WACV)
+        mainSizer.Add(neutSizer,0)
+        mainSizer.Add((5,5),0)
     ibrav = SetLattice(controls)
     for cellGUI in cellGUIlist:
         if ibrav in cellGUI[0]:

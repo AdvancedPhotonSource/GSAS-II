@@ -139,14 +139,17 @@ except ImportError:
 import time
 import copy
 import webbrowser     # could postpone this for quicker startup
+import numpy as np
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIdataGUI as G2gd
 import GSASIIpwdGUI as G2pdG
+import GSASIIspc as G2spc
 import GSASIIpy3 as G2py3
 import GSASIIlog as log
 import GSASIIobj as G2obj
+
 
 # Define a short names for convenience
 WHITE = (255,255,255)
@@ -3144,6 +3147,113 @@ class SGMessageBox(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
+
+################################################################################
+class SGMagSpinBox(wx.Dialog):
+    ''' Special version of MessageBox that displays magnetic spin text
+    '''
+    def __init__(self,parent,title,text,table,Cents,names,spins,ifGray):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(420,350))
+        self.text = text
+        self.table = table
+        self.names = names
+        Nnames = len(self.names)
+        self.spins = spins
+        self.ifGray = ifGray
+        self.PrintTable = [' Magnetic symmetry operations for %s:'%self.text[0].split(':')[1],]
+        self.panel = wxscroll.ScrolledPanel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((0,10))
+        cents = [0,]
+        if len(Cents) > 1:
+            cents = self.text[-1].split(';')
+        lentable = len(self.table)
+        for line in self.text:
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+            if 'equivalent' in line:
+                break
+        ncol = self.table[0].count(',')+2
+        nBlk = 0
+        nG = 1
+        if self.ifGray:
+            nG = 2
+        for ng in range(nG):
+            for ic,cent in enumerate(cents):
+                Cent = np.array(Cents[ic])
+                if ic:
+                    if cent: cent = cent.strip(' (').strip(')+\n')
+                    label = '      for (%s)+'%(cent)
+                    if ng or self.spins[nBlk*lentable] < 0:     #test for gray operators
+                        label += "1'"
+                    mainSizer.Add(wx.StaticText(self.panel,label=label),0,WACV)
+                tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+                j = 0
+                for item in self.table:
+                    flds = item.split(')')[1]
+                    tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
+                    flds = flds.replace(' ','').split(',')
+                    for i,fld in enumerate(flds):
+                        if i < ncol-1:
+                            text = wx.StaticText(self.panel,label='%s, '%(fld))
+                            tableSizer.Add(text,0,WACV)
+                        else:
+                            text = wx.StaticText(self.panel,label='%s '%(fld))
+                            tableSizer.Add(text,0,WACV)
+                    text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
+                    try:
+                        if self.spins[j+nBlk*lentable] < 0:
+                            text.SetForegroundColour('Red')
+                            item += ',-1'
+                        else:
+                            item += ',+1'
+                    except IndexError:
+                        print(self.spins,j,ic,lentable,self.names[j%Nnames])
+                        item += ',+1'
+                    M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
+                    T = (T+Cent)%1.
+                    item = G2spc.MT2text([M,T],reverse=True)
+                    if S > 0:
+                        item += ',+1'
+                    else:
+                        item += ',-1'
+                    self.PrintTable.append(item.replace(' ','').lower())
+                    tableSizer.Add(text,0,WACV)
+                    if not j%2:
+                        tableSizer.Add((20,0))
+                    j += 1
+                nBlk += 1
+                mainSizer.Add(tableSizer,0,WACV)
+            
+            
+        def OnPrintOps(event):
+            for item in self.PrintTable:
+                print(item)
+            
+        btnsizer = wx.StdDialogButtonSizer()
+        printBtn = wx.Button(self.panel,label='Print Ops')
+        printBtn.Bind(wx.EVT_BUTTON, OnPrintOps)
+        btnsizer.Add(printBtn)
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        OKbtn.SetFocus()
+        mainSizer.Add((0,10))
+        mainSizer.Add(btnsizer,0)
+        
+        self.panel.SetSizer(mainSizer)
+        self.panel.SetAutoLayout(True)
+        self.panel.SetScrollRate(10,10)
+        self.panel.SendSizeEvent()
+
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        '''
+        self.ShowModal()
+        return
+    
 
 ################################################################################
 class DisAglDialog(wx.Dialog):

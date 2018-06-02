@@ -1109,7 +1109,6 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
     VGi = np.sqrt(nl.det(Ginv))
     Kdata = np.inner(Gdata.T,uAmat).T*VGi/Mag       #make unit vectors in Cartesian space
-#    Gones = np.ones_like(Gdata)
     dkdG = (np.inner(Gones.T,uAmat).T*VGi)/Mag
     dkdm = dkdG-Kdata*dMdm[:,nxs,:]/Mag[nxs,:,:]
     dFdMx = np.zeros((nRef,mSize,3))

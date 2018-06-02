@@ -800,6 +800,8 @@ def ApplyBNSlatt(SGData,BNSlatt):
         SGData['SGSpin'][-1] = -1
         SGData['SGSpin'] += [-1,-1,-1,]
         Tmat *= 2.0
+    else:
+        return Tmat
     SGData['SGSpin'].append(-1)
     if 'P' not in BNS:
         SGData['SGSpin'].append(-1)

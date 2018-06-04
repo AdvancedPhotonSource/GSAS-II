@@ -23,7 +23,7 @@ __version__ = '1.0.0'
 
 if __name__ == '__main__':
     try:
-        GSASIIpath.SetBinaryPath()
+        GSASIIpath.SetBinaryPath(True)
     except:
         print('Unable to run with current setup, do you want to update to the')
         try:

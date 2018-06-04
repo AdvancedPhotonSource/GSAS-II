@@ -3276,6 +3276,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
         SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+        OnHklShow(None)
         
     def OnBNSlatt(event):
         Obj = event.GetEventObject()
@@ -3293,6 +3294,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
         OprNames,SpnFlp = G2spc.GenMagOps(SGData)
         SGData['SpnFlp'] = SpnFlp
+        OnHklShow(None)
             
     def OnShowSpins(event):
         SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)

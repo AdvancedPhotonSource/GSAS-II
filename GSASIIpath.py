@@ -722,7 +722,6 @@ def TestSPG(fpth):
 # see if a directory for local modifications is defined. If so, stick that in the path
 if os.path.exists(os.path.expanduser('~/.G2local/')):
     sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-    import glob
     fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
     files = ""
     prev = None

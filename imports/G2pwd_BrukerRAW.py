@@ -146,6 +146,8 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                     if nBlock > 1:
                         fp.seek(pos+256)
                         headLen += st.unpack('<i',fp.read(4))[0]
+                    else:
+                        headLen += 40
                     if iBlock+1 == blockNum:
                         fp.seek(pos+8)
                         st.unpack('<d',fp.read(8))[0]
@@ -157,7 +159,7 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         fp.seek(pos+176)
                         step = st.unpack('<d',fp.read(8))[0]
                         pos += headLen      #position at start of data block
-                        fp.seek(pos)                                    
+                        fp.seek(pos)  
                         x = np.array([start2Th+i*step for i in range(nSteps)])
                         y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
                         w = 1./y

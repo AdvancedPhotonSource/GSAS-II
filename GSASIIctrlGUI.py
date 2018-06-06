@@ -5171,14 +5171,16 @@ class OpenTutorial(wx.Dialog):
         '''
         if GSASIIpath.GetConfigValue('Tutorial_location'):
             self.tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
-        elif (sys.platform.lower().startswith('win') and
-              os.path.exists(os.path.abspath(os.path.expanduser('~/My Documents')))):
-            self.tutorialPath = os.path.abspath(os.path.expanduser('~/My Documents/G2tutorials'))
-        elif (sys.platform.lower().startswith('win') and
-              os.path.exists(os.path.abspath(os.path.expanduser('~/Documents')))):
-            self.tutorialPath = os.path.abspath(os.path.expanduser('~/Documents/G2tutorials'))
+        elif (sys.platform.lower().startswith('win')):
+            for p in ('Documents','My Documents'):
+                if os.path.exists(os.path.abspath(os.path.expanduser(
+                      os.path.join('~',p)))):
+                    self.tutorialPath = os.path.abspath(os.path.expanduser(
+                      os.path.join('~',p,'G2tutorials')))
+                    return
         else:
-            self.tutorialPath = os.path.abspath(os.path.expanduser('~/G2tutorials'))
+            self.tutorialPath = os.path.abspath(os.path.expanduser(
+                    os.path.join('~','G2tutorials')))
 
     def SelectAndDownload(self,event):
         '''Make a list of all tutorials on web and allow user to choose one to

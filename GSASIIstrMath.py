@@ -372,7 +372,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                     for i,[indx,factors,obs,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
                         mul = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs+1))
-                        frac = np.array(G2mth.GetAtomItemsById(Atoms,AtLookup,indx,cs-1))
+                        frac = np.array(G2mth.GetAtomFracByID(pId,parmDict,AtLookup,indx))
                         calc = np.sum(mul*frac*factors)
                         pVals.append(obs-calc)
                         pWt.append(wt/esd**2)                    

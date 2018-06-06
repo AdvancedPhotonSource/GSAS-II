@@ -26,8 +26,7 @@ class testSSymbols(wx.Frame):
             size=wx.DefaultSize,style=wx.DEFAULT_FRAME_STYLE, title='Test SS symbols')
         self.testSSMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
-        self.File.Append(help='Exit from testSS', id=wxID_FILEEXIT, kind=wx.ITEM_NORMAL,
-            text='Exit')
+        self.File.Append(wxID_FILEEXIT,'Exit','Exit from testSS')
         self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
         self.testSSMenu.Append(menu=self.File, title='Run')
         self.SetMenuBar(self.testSSMenu)

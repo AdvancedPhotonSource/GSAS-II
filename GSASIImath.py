@@ -545,7 +545,21 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
     
-#def TransformAtoms(Atoms,cx,cia,Trans,Vec):
+def GetAtomFracByID(pId,parmDict,AtLookup,indx):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    pfx = str(pId)+'::Afrac:'
+    Frac = []
+    for ind in indx:
+        name = pfx+str(AtLookup[ind])
+        Frac.append(parmDict[name])
+    return Frac
+    
 #    for Atom in Atoms:
 #        XYZ = Atom[cx:cx+3]
 #        if 'A' in Atom[cia]:

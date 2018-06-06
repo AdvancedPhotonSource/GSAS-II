@@ -3530,7 +3530,7 @@ class ShowLSParms(wx.Dialog):
             varSizer.Add(wx.StaticText(self,label=label))
             varSelSizer = wx.BoxSizer(wx.HORIZONTAL)
             varSelSizer.Add(SelCtrl,0)
-            varSpin = wx.SpinButton(self,style=wx.wx.SP_VERTICAL)
+            varSpin = wx.SpinButton(self,style=wx.SP_VERTICAL)
             varSpin.SetValue(0)
             varSpin.SetRange(-1,1)
             varSpin.Bind(wx.EVT_SPIN, OnVarSpin)

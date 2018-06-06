@@ -9,8 +9,14 @@ Plotting module used for script testDeriv.
 import wx
 import wx.aui
 import matplotlib as mpl
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
-from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
+try:
+    from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+except ImportError:
+    from matplotlib.backends.backend_wx import FigureCanvas as Canvas
+try:
+    from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
+except ImportError:
+    from matplotlib.backends.backend_wxagg import Toolbar as Toolbar # name changes in wx4.0.1
 
 class Plot(wx.Panel):
     'Creates a plotting window'

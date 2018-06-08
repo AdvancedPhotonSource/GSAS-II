@@ -3095,7 +3095,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     def OnSelectColour(event):
         '''Respond to a change in color
         '''
-        lbl = plotOpt['colorButtons'].get(event.GetEventObject())
+        lbl = plotOpt['colorButtons'].get(list(event.GetEventObject())[:3])
         if lbl is None:
             print('Unexpected button',lbl)
             return

@@ -27,6 +27,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
+nxs = np.newaxis
 DEBUG = False
     
 ################################################################################
@@ -1960,6 +1961,38 @@ def checkSSLaue(HKL,SGData,SSGData):
         else:
             return True
         
+def checkHKLextc(HKL,SGData):
+    Ops = SGData['SGOps']
+    OpM = np.array([op[0] for op in Ops])
+    OpT = np.array([op[1] for op in Ops])
+    HKLS = np.array([HKL,-HKL])     #Freidel's Law
+    DHKL = np.reshape(np.inner(HKLS,OpM)-HKL,(-1,3))
+    PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
+    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
+        if dhkl.any():
+            continue
+        else:
+            if phkl%1.:
+                return False
+    return True
+
+def checkMagextc(HKL,SGData):
+    Ops = SGData['SGOps']
+    Spn = SGData['SpnFlp'][:len(Ops)]
+    OpM = np.array([op[0] for op in Ops])
+    OpT = np.array([op[1] for op in Ops])
+    Mag = np.array([nl.det(opm) for opm in OpM])*Spn
+    HKLS = np.array([HKL,-HKL])     #Freidel's Law
+    DHKL = np.reshape(np.inner(HKLS,OpM)*Mag[nxs,:,nxs],(-1,3))
+    PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
+    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
+        if not np.allclose(dhkl,HKL):
+            continue
+        else:
+            print(dhkl,HKL,phkl)
+            if phkl%1.:
+                return False
+    return True
     
 def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']
@@ -2276,27 +2309,27 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return CSI
         
     def fracCrenel(tau,Toff,Twid):
-        Tau = (tau-Toff[:,np.newaxis])%1.
-        A = np.where(Tau<Twid[:,np.newaxis],1.,0.)
+        Tau = (tau-Toff[:,nxs])%1.
+        A = np.where(Tau<Twid[:,nxs],1.,0.)
         return A
         
     def fracFourier(tau,nH,fsin,fcos):
         SA = np.sin(2.*nH*np.pi*tau)
         CB = np.cos(2.*nH*np.pi*tau)
-        A = SA[np.newaxis,np.newaxis,:]*fsin[:,:,np.newaxis]
-        B = CB[np.newaxis,np.newaxis,:]*fcos[:,:,np.newaxis]
+        A = SA[nxs,nxs,:]*fsin[:,:,nxs]
+        B = CB[nxs,nxs,:]*fcos[:,:,nxs]
         return A+B
         
     def posFourier(tau,nH,psin,pcos):
         SA = np.sin(2*nH*np.pi*tau)
         CB = np.cos(2*nH*np.pi*tau)
-        A = SA[np.newaxis,np.newaxis,:]*psin[:,:,np.newaxis]
-        B = CB[np.newaxis,np.newaxis,:]*pcos[:,:,np.newaxis]
+        A = SA[nxs,nxs,:]*psin[:,:,nxs]
+        B = CB[nxs,nxs,:]*pcos[:,:,nxs]
         return A+B    
 
     def posSawtooth(tau,Toff,slopes):
         Tau = (tau-Toff)%1.
-        A = slopes[:,np.newaxis]*Tau
+        A = slopes[:,nxs]*Tau
         return A
     
     def posZigZag(tau,Tmm,XYZmax):
@@ -2379,7 +2412,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             delt5 = np.ones(5)*0.001
             delt6 = np.eye(6)*0.001
             if 'Fourier' in waveType:
-                dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,nxs,nxs]
                   #3x6x12 modulated position array (X,Spos,tau)& force positive
                 CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
             elif waveType == 'Sawtooth':
@@ -2401,13 +2434,13 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
                 xsc = np.ones(6,dtype='i')
                 if 'Fourier' in waveType:
-                    dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                    dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,nxs,nxs]
                 elif waveType == 'Sawtooth':
-                    dXT = posSawtooth(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                    dXT = posSawtooth(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,nxs,nxs]
                 elif waveType == 'ZigZag':
-                    dXT = posZigZag(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                    dXT = posZigZag(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,nxs,nxs]
                 elif waveType == 'Block':
-                    dXT = posBlock(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                    dXT = posBlock(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,nxs,nxs]
                 dXT = np.inner(sop[0],dXT.T)    # X modulations array(3x6x49) -> array(3x49x6)
                 dXT = np.swapaxes(dXT,1,2)      # back to array(3x6x49)
                 dXT[:,:3,:] *= (ssdet*sdet)            # modify the sin component
@@ -2591,7 +2624,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI = 3*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
         else:
             delt6 = np.eye(6)*0.001
-            dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,np.newaxis,np.newaxis]
+            dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
               #3x6x12 modulated moment array (M,Spos,tau)& force positive
             CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
             MSC = np.ones(6,dtype='i')
@@ -2601,7 +2634,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 ssop = SSop[i]
                 sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
                 msc = np.ones(6,dtype='i')
-                dMT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
+                dMT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,nxs,nxs]
                 dMT = np.inner(sop[0],dMT.T)    # X modulations array(3x6x49) -> array(3x49x6)
                 dMT = np.swapaxes(dMT,1,2)      # back to array(3x6x49)
                 dMT[:,:3,:] *= (ssdet*sdet)            # modify the sin component
@@ -2892,8 +2925,8 @@ def Muiso2Shkl(muiso,SGData,cell):
     def minMus(Shkl,muiso,H,SGData,A):
         U = np.inner(A.T,H)
         S = np.array(MustrainCoeff(U,SGData))
-        Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:,np.newaxis]),axis=0))
-        rad = np.sqrt(np.sum((Sum[:,np.newaxis]*H)**2,axis=1))
+        Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:,nxs]),axis=0))
+        rad = np.sqrt(np.sum((Sum[:,nxs]*H)**2,axis=1))
         return (muiso-rad)**2
         
     laue = SGData['SGLaue']

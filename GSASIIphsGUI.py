@@ -5823,7 +5823,7 @@ entered the right symbol for your structure.
         def ShowSizer():
             
             def OnBackColor(event):
-                drawingData['backColor'] = event.GetValue()
+                drawingData['backColor'] = list(event.GetValue())[:3]
                 G2plt.PlotStructure(G2frame,data)
     
             def OnShowABC(event):
@@ -5978,7 +5978,7 @@ entered the right symbol for your structure.
                 G2plt.PlotStructure(G2frame,data)
             
             def OnPlaneColor(event):
-                drawingData['Plane'][4] = event.GetValue()
+                drawingData['Plane'][4] = list(event.GetValue())[:3]
                 G2plt.PlotStructure(G2frame,data)
 
             planeSizer = wx.BoxSizer(wx.VERTICAL)

@@ -4970,9 +4970,6 @@ tutorialIndex = (
     ['Getting started'],
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II',
      '''An introduction to GSAS-II with starting instructions and a brief description of the displays.'''],
-    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
-     '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
-     before beginning Rietveld refinement.'''],
 
     ['Rietveld refinement'],
     ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet',
@@ -4986,6 +4983,9 @@ tutorialIndex = (
      '''This shows Rietveld refinement with high resolution synchrotron powder data and neutron TOF data'''],
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II',
      '''This show how to create a simulated powder pattern from a lab diffractometer.'''],
+    ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
+     '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
+     before beginning Rietveld refinement.'''],
     
     ['Parametric sequential fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',

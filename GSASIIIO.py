@@ -562,6 +562,29 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     cPickle.dump([Comments,Data,Npix,image],File,2)
     File.close()
     return
+
+objectScanIgnore = [int,bool,float,str,np.float64,np.ndarray]
+if '2' in platform.python_version_tuple()[0]:
+    objectScanIgnore += [unicode,]
+    
+def objectScan(data,tag,indexStack=[]):
+    '''Scan an object looking for unexpected data types'''
+    if type(data) is list or type(data) is tuple:
+        for i in range(len(data)):
+            objectScan(data[i],tag,indexStack+[i])
+    elif type(data) is dict:
+        for key in data:
+            objectScan(data[key],tag,indexStack+[key])
+    elif data is None:
+        return
+    elif type(data) in objectScanIgnore:
+        return
+    else:
+        s = 'unexpected object in '+tag
+        for i in indexStack:
+            s += "[{}]".format(i)
+        #print(s,data.__class__.__name__) # loses full name of class
+        print(s,type(data))
     
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
@@ -583,7 +606,9 @@ def ProjFileOpen(G2frame,showProvenance=True):
             except EOFError:
                 break
             datum = data[0]
-            
+            # scan the GPX file for unexpected objects
+            if GSASIIpath.GetConfigValue('debug'):
+                objectScan(data,datum[0])
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
             if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present

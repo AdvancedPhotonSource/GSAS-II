@@ -1965,6 +1965,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             '''Respond to dragging of a plot Marker
             '''
             if event.xdata is None or event.ydata is None: return   # ignore if cursor out of window
+            if G2frame.itemPicked is None: return # not sure why this happens, if it does
             Page.canvas.restore_region(savedplot)
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
             Page.figure.gca().draw_artist(G2frame.itemPicked)
@@ -1974,6 +1975,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             '''Respond to dragging of a plot line
             '''
             if event.xdata is None: return   # ignore if cursor out of window
+            if G2frame.itemPicked is None: return # not sure why this happens 
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
             coords[0][0] = coords[0][1] = event.xdata
@@ -1985,6 +1987,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             '''Respond to dragging of the reflection tick marks
             '''
             if event.ydata is None: return   # ignore if cursor out of window
+            if Page.tickDict is None: return # not sure why this happens, if it does
             Page.canvas.restore_region(savedplot)
             if Page.pickTicknum:
                 refDelt = -(event.ydata-Page.plotStyle['refOffset'])/Page.pickTicknum
@@ -2004,6 +2007,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             '''Respond to dragging of the difference curve
             '''
             if event.ydata is None: return   # ignore if cursor out of window
+            if G2frame.itemPicked is None: return # not sure why this happens 
             Page.canvas.restore_region(savedplot)
             coords = G2frame.itemPicked.get_data()
             coords[1][:] += Page.diffOffset + event.ydata

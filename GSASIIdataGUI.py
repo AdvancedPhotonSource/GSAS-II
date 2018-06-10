@@ -2738,6 +2738,7 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.abspath(os.path.dirname(arg[1]))
             if self.dirname:
+                self.GSASprojectfile = os.path.split(self.GSASprojectfile)[1]
                 os.chdir(self.dirname)
                 self.LastGPXdir = self.dirname
             try:

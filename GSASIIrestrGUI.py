@@ -782,7 +782,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             dlg.Destroy()
             if len(ids) > 0:
                 value = 1.0
-                dlg = G2G.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
+                dlg = G2G.SingleFloatDialog(G2frame,'Cell sum','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()                
                     comp = [ids,factors,value,0.01]

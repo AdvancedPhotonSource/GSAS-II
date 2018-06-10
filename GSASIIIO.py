@@ -563,7 +563,7 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
 
-objectScanIgnore = [int,bool,float,str,np.float64,np.ndarray]
+objectScanIgnore = [int,bool,float,str,long,np.float64,np.ndarray,G2obj.G2VarObj]
 if '2' in platform.python_version_tuple()[0]:
     objectScanIgnore += [unicode,]
     

@@ -149,7 +149,7 @@ try:
 except ImportError:
     from matplotlib.backends.backend_wx import FigureCanvas as Canvas
 try:
-    from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
+    from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg as Toolbar
 except ImportError:
     from matplotlib.backends.backend_wxagg import Toolbar as Toolbar # name changes in wx4.0.1
 try:
@@ -399,7 +399,7 @@ class G2PlotMpl(_tabPlotWin):
         
     def SetToolTipString(self,text):
         if 'phoenix' in wx.version():
-            return self.canvas.SetToolTip(wx.ToolTip(text))
+            return self.canvas.SetToolTip(text)
         else:
             return self.canvas.SetToolTipString(text)
         

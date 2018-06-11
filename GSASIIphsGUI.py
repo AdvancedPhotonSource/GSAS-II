@@ -351,11 +351,14 @@ class TransformDialog(wx.Dialog):
                 SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 G2G.SGMessageBox(self.panel,msg,text,table).Show()
+            if self.ifMag:
+                self.BNSlatt = SGData['SGLatt']
             if self.Phase['General']['Type'] == 'magnetic':
                 Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
                 if SGData['SGInv']:
                     Nops *= 2
                 SGData['SpnFlp'] = Nops*[1,]
+            wx.CallAfter(self.Draw)
 
         def OnTest(event):
             self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans)

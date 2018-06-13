@@ -190,7 +190,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             M2 = func(x0+Xvec,*args)
             nfev += 1
             chisq1 = np.sum(M2**2)
-            if chisq1 > chisq0*(1.+chitol):     #TODO put Alan Coehlo's criteria for lambda here
+            if chisq1 > chisq0*(1.+chitol):     #TODO put Alan Coehlo's criteria for lambda here?
                 lam *= 10.
                 if Print:
                     print ('new chi^2 %.5g on %d obs., %d SVD zeros ; matrix modification needed; lambda now %.1e'  \
@@ -222,9 +222,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Amatlam = Amat/Anorm        
     try:
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-#        if Print:
         if Print: print ('Found %d SVD zeros'%(Nzero))
-#        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:

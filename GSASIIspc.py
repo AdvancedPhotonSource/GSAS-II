@@ -1909,11 +1909,6 @@ def GenHKLf(HKL,SGData):
     Uniq=np.array(list(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq])))
     phi = f[:Nuniq]
     return iabsnt,mulp,Uniq,phi
-
-#def MagHKLchk(HKL,SGData):
-#    SpnFlp = SGData['SpnFlp']
-#    print(HKL)
-#    Uniq = GenHKL(HKL,SGData)
     
 def checkSSLaue(HKL,SGData,SSGData):
     #Laue check here - Toss HKL if outside unique Laue part
@@ -1963,6 +1958,14 @@ def checkSSLaue(HKL,SGData,SSGData):
             return True
         
 def checkHKLextc(HKL,SGData):
+    '''
+    Checks if reflection extinct
+
+    :param HKL:  [h,k,l] 
+    :param SGData: space group data obtained from SpcGroup
+    :returns: False if  extinct; True if allowed
+
+    '''
     Ops = SGData['SGOps']
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])
@@ -1978,23 +1981,42 @@ def checkHKLextc(HKL,SGData):
     return True
 
 def checkMagextc(HKL,SGData):
+    '''
+    Checks if reflection magnetically extinct; 
+    uses algorthm from Gallego, et al., J. Appl. Cryst. 45, 1236-1247 (2012)
+
+    :param HKL:  [h,k,l] 
+    :param SGData: space group data obtained from SpcGroup; must have magnetic symmetry SpnFlp data
+    :returns: False if magnetically extinct; True if allowed
+
+    '''
     Ops = SGData['SGOps']
+    Ncen = len(SGData['SGCen'])
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])
     if SGData['SGInv']:
         OpM = np.vstack((OpM,-OpM))
         OpT = np.vstack((OpT,-OpT))%1.
+    OpM = np.reshape(np.array(list(OpM)*Ncen),(-1,3,3))
+    OpT = np.reshape(np.array([OpT+cen for cen in SGData['SGCen']]),(-1,3))
     Spn = SGData['SpnFlp'][:len(OpM)]
     Mag = np.array([nl.det(opm) for opm in OpM])*Spn
     DHKL = np.reshape(np.inner(HKL,OpM),(-1,3))
-    PHKL = np.reshape(np.cos(twopi*np.inner(HKL,OpT))*Mag,(-1,))[:,nxs,nxs]*OpM
-    Ftest = np.random.rand(3)
+    PHKL = np.reshape(np.cos(twopi*np.inner(HKL,OpT))*Mag,(-1,))[:,nxs,nxs]*OpM     #compute T(R,theta) eq(7)
+    Ftest = np.random.rand(3)       #random magnetic moment
     Psum = np.zeros(3)
+    nsum = 0.
+    nA = 0
     for dhkl,phkl in zip(DHKL,PHKL):
-        if not np.allclose(dhkl,HKL):
+        if not np.allclose(dhkl,HKL):           #test for eq(5)
             continue
         else:
-            Psum += np.inner(Ftest,phkl)
+            nA += 1
+            nsum += np.trace(phkl)          #eq(8)
+            pterm = np.inner(Ftest,phkl)    #eq(9)
+            Psum += pterm
+    if nsum/nA > 1.:        #only need to look at nA=1 frok eq(8)
+        return True
     if np.allclose(Psum,np.zeros(3)):
         return False
     else:

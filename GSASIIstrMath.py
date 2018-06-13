@@ -1039,7 +1039,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
         refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
         refl.T[7] = np.copy(refl.T[9])                
-        refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
+        refl.T[10] = atan2d(fbms[0],fams[0]) #- what is phase for mag refl?
 #        if 'P' in calcControls[hfx+'histType']:     #PXC, PNC & PNT: F^2 = A[0]^2 + A[1]^2 + B[0]^2 + B[1]^2
 #            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0) #add fam**2 & fbm**2 here    
 #            refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"

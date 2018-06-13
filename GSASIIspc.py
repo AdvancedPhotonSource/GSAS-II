@@ -28,6 +28,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis
+twopi = 2.0*np.pi
 DEBUG = False
     
 ################################################################################
@@ -1978,21 +1979,28 @@ def checkHKLextc(HKL,SGData):
 
 def checkMagextc(HKL,SGData):
     Ops = SGData['SGOps']
-    Spn = SGData['SpnFlp'][:len(Ops)]
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])
+    if SGData['SGInv']:
+        OpM = np.vstack((OpM,-OpM))
+        OpT = np.vstack((OpT,-OpT))%1.
+    Spn = SGData['SpnFlp'][:len(OpM)]
     Mag = np.array([nl.det(opm) for opm in OpM])*Spn
-    HKLS = np.array([HKL,-HKL])     #Freidel's Law
-    DHKL = np.reshape(np.inner(HKLS,OpM)*Mag[nxs,:,nxs],(-1,3))
-    PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
-    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
+    DHKL = np.reshape(np.inner(HKL,OpM),(-1,3))
+    PHKL = np.reshape(np.cos(twopi*np.inner(HKL,OpT))*Mag,(-1,))[:,nxs,nxs]*OpM
+    Ftest = np.random.rand(3)
+    Psum = np.zeros(3)
+    for dhkl,phkl in zip(DHKL,PHKL):
         if not np.allclose(dhkl,HKL):
             continue
         else:
-            print(dhkl,HKL,phkl)
-            if phkl%1.:
-                return False
-    return True
+            Psum += np.inner(Ftest,phkl)
+    if np.allclose(Psum,np.zeros(3)):
+        return False
+    else:
+        if np.inner(HKL,Psum):
+            return False
+        return True
     
 def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']

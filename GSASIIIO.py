@@ -30,6 +30,8 @@ except ImportError:
     wx = Placeholder()
 import math
 import numpy as np
+import numpy.ma as ma
+
 import copy
 import platform
 if '2' in platform.python_version_tuple()[0]:
@@ -563,7 +565,7 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
 
-objectScanIgnore = [int,bool,float,str,np.float64,np.int64,np.ndarray,G2obj.G2VarObj]
+objectScanIgnore = [int,bool,float,str,np.float64,np.int32,np.int64,np.ndarray,G2obj.G2VarObj,ma.MaskedArray]
 if '2' in platform.python_version_tuple()[0]:
     objectScanIgnore += [unicode,long,]
     

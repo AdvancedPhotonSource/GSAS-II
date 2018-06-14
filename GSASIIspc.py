@@ -1959,11 +1959,11 @@ def checkSSLaue(HKL,SGData,SSGData):
         
 def checkHKLextc(HKL,SGData):
     '''
-    Checks if reflection extinct
+    Checks if reflection extinct - does not check centering
 
     :param HKL:  [h,k,l] 
     :param SGData: space group data obtained from SpcGroup
-    :returns: False if  extinct; True if allowed
+    :returns: True if extinct; False if allowed
 
     '''
     Ops = SGData['SGOps']
@@ -1977,24 +1977,24 @@ def checkHKLextc(HKL,SGData):
             continue
         else:
             if phkl%1.:
-                return False
-    return True
+                return True
+    return False
 
 def checkMagextc(HKL,SGData):
     '''
-    Checks if reflection magnetically extinct; 
+    Checks if reflection magnetically extinct; does fullcheck (centering, too)
     uses algorthm from Gallego, et al., J. Appl. Cryst. 45, 1236-1247 (2012)
 
     :param HKL:  [h,k,l] 
     :param SGData: space group data obtained from SpcGroup; must have magnetic symmetry SpnFlp data
-    :returns: False if magnetically extinct; True if allowed
+    :returns: True if magnetically extinct; False if allowed (to match GenHKLf)
 
     '''
     Ops = SGData['SGOps']
     Ncen = len(SGData['SGCen'])
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])
-    if SGData['SGInv']:
+    if SGData['SGInv'] and not SGData['SGFixed']:
         OpM = np.vstack((OpM,-OpM))
         OpT = np.vstack((OpT,-OpT))%1.
     OpM = np.reshape(np.array(list(OpM)*Ncen),(-1,3,3))
@@ -2016,13 +2016,13 @@ def checkMagextc(HKL,SGData):
             pterm = np.inner(Ftest,phkl)    #eq(9)
             Psum += pterm
     if nsum/nA > 1.:        #only need to look at nA=1 frok eq(8)
-        return True
-    if np.allclose(Psum,np.zeros(3)):
         return False
+    if np.allclose(Psum,np.zeros(3)):
+        return True
     else:
         if np.inner(HKL,Psum):
-            return False
-        return True
+            return True
+        return False
     
 def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']

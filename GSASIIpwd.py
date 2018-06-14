@@ -1022,11 +1022,23 @@ def ellipseSizeDerv(H,Sij,GB):
     return lenR,dRdS
 
 def getHKLpeak(dmin,SGData,A,Inst=None):
-    'needs a doc string'
+    '''
+    Generates allowed by symmetry reflections with d >= dmin
+    NB: GenHKLf & checkMagextc return True for extinct reflections
+
+    :param dmin:  minimum d-spacing 
+    :param SGData: space group data obtained from SpcGroup
+    :param A: lattice parameter terms A1-A6
+    :param Inst: instrument parameter info
+    :returns: HKLs: list hkl, etc for allowed reflections
+
+    '''
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
+        if ext and 'MagSpGrp' in SGData:
+            ext = G2spc.checkMagextc([h,k,l],SGData)
         if not ext:
             if Inst == None:
                 HKLs.append([h,k,l,d,0,-1])

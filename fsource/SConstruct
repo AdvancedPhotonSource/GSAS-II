@@ -94,6 +94,7 @@ G77path = which_path('g77')     # path to compiler
 FORTpath = ""
 FORTflags = ""
 LDFLAGS = ''
+tmpdir = None
 #==========================================================================================
 # configure platform dependent options here: 
 if sys.platform == "win32":
@@ -114,6 +115,8 @@ elif sys.platform.startswith("linux"):
 else:
     print ("Sorry, parameters for platform "+sys.platform+" are not yet defined")
     sys.exit()
+if ARGUMENTS.get('TMP'):
+   tmpdir = ARGUMENTS.get('TMP')
 if FCompiler == 'gfortran':
     if ARGUMENTS.get('LIBGCC', '').upper().startswith('T'):
         LDFLAGS += ' -static-libgcc'
@@ -184,8 +187,12 @@ LIBGFORTRAN=T -- adds the option -static-libgfortran as an link option with
       
 LDFLAGS='string'   -- string of options to be used for f2py during link step
 
+TMP=<path> --- where <path> is something like /tmp sets builds to be performed
+   in that directory. 
+
 Note that at present, this has been tested with 32-bit python on windows and
-Mac & 64 bit on linux. Python 3.x is not supported in GSAS-II yet.
+Mac & 64 bit on linux. 32-bit builds with anaconda/gfortran in 32-bit Python
+is not working, at least not when installed in 64-bits Linux/Windows. 
 
 examples:
     scons -Q
@@ -254,7 +261,8 @@ if FCompiler == 'gfortran':
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check -m64"'
     elif sys.platform == "win32":
-        #if FORTflags == "": FORTflags = ' -w -O2 -m32'
+    	# the next line may need to be removed. When compiling with a 32-bit machine?
+	#if FORTflags == "": FORTflags = ' -w -O2 -m32'
         if F2PYflags == "":
             F2PYflags = '--compiler=mingw32 --fcompiler=gfortran --f77flags="-fno-range-check"'
 elif FCompiler == 'g77':
@@ -270,6 +278,8 @@ else:
     if F2PYflags == "":
         print ('Error: specify a F2PYflags value')
         sys.exit()
+if tmpdir:
+    F2PYflags += " --build-dir " + tmpdir
 #==========================================================================================
 # Setup build Environment
 env = Environment()

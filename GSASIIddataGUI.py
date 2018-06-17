@@ -125,8 +125,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)
-            weightFr = UseList[G2frame.hist]['Scale'][0]*generalData['Mass']/wtSum
-            scaleSizer.Add(wx.StaticText(DData,label=' Wt. fraction: %.3f'%(weightFr)),0,WACV)
+            if wtSum:
+                weightFr = UseList[G2frame.hist]['Scale'][0]*generalData['Mass']/wtSum
+                scaleSizer.Add(wx.StaticText(DData,label=' Wt. fraction: %.3f'%(weightFr)),0,WACV)
         return scaleSizer
         
     def OnLGmixRef(event):
@@ -794,17 +795,23 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
        
     def RepaintHistogramInfo(Scroll=0):
         if 'phoenix' in wx.version():
+#            if DData.__class__ is  not wx._core.ScrolledWindow:
+#                # How to determine window is closed in Phoenix? 
+#                return
             G2frame.bottomSizer.Clear(True)
         else:
+            if DData.__class__ is  not wx._windows.ScrolledWindow:
+                # fix bug where this is called after the Window is deleted
+                return
             G2frame.bottomSizer.DeleteWindows()
-            Indx.clear()
-            G2frame.bottomSizer = ShowHistogramInfo()
-            mainSizer.Add(G2frame.bottomSizer)
-            mainSizer.Layout()
-            G2frame.dataWindow.Refresh()
-            DData.SetVirtualSize(mainSizer.GetMinSize())
-            DData.Scroll(0,Scroll)
-            G2frame.dataWindow.SendSizeEvent()
+        Indx.clear()
+        G2frame.bottomSizer = ShowHistogramInfo()
+        mainSizer.Add(G2frame.bottomSizer)
+        mainSizer.Layout()
+        G2frame.dataWindow.Refresh()
+        DData.SetVirtualSize(mainSizer.GetMinSize())
+        DData.Scroll(0,Scroll)
+        G2frame.dataWindow.SendSizeEvent()
         
     def ShowHistogramInfo():
         '''This creates a sizer with all the information pulled out from the Phase/data dict

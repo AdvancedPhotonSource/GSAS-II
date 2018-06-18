@@ -62,7 +62,6 @@ def InitMP(allowMP=True):
     if ncores < 0: ncores = mp.cpu_count()/2
     if ncores > 1:
         useMP = True
-    #if GSASIIpath.GetConfigValue('debug') and useMP:
     if useMP:
         print('Multiprocessing with {} cores enabled'.format(ncores))
     return useMP,ncores

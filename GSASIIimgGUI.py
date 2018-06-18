@@ -1343,7 +1343,7 @@ def CleanupMasks(data):
         data[key] = [i for i in data[key] if len(i)]
         l2 = len(data[key])
         if GSASIIpath.GetConfigValue('debug') and l1 != l2:
-            print ('Mask Cleanup: %s was %d entries, now %d'%(key,l1,l2))
+            print ('DBG_Mask Cleanup: %s was %d entries, now %d'%(key,l1,l2))
     
 def UpdateMasks(G2frame,data):
     '''Shows and handles the controls on the "Masks" data tree entry
@@ -2736,8 +2736,8 @@ class AutoIntFrame(wx.Frame):
         except Exception as err:
             msg += 'PDF Processing Error: error with open or read of {}'.format(self.params['pdfprm'])
             if GSASIIpath.GetConfigValue('debug'):
-                print(msg)
-                print(err)
+                print('DBG_'+msg)
+                print('DBG_'+err)
             self.pdfControls = {}
             return msg
         finally:
@@ -2919,7 +2919,7 @@ class AutoIntFrame(wx.Frame):
         #dist = self.controlsDict['distance']
         interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
         if GSASIIpath.GetConfigValue('debug'):
-            print ('interpolated values: ',interpDict)
+            print ('DBG_interpolated values: ',interpDict)
         self.ImageControls = ReadControls(imgctrl)
         self.ImageControls.update(interpDict)
         self.ImageControls['showLines'] = True
@@ -3200,7 +3200,7 @@ class AutoIntFrame(wx.Frame):
                     return
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
-            print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
         self.PreventReEntryTimer = False
         self.Raise()
 

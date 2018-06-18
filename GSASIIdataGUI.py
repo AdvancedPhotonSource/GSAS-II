@@ -5454,7 +5454,10 @@ def UpdateComments(G2frame,data):
 
     lines = ""
     for line in data:
-        lines += line.rstrip()+'\n'
+        if 'phoenix' in wx.version():
+            lines += line.decode('latin-1').rstrip()+'\n'
+        else:
+            lines += line.rstrip()+'\n'
     text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lines)
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 

@@ -189,7 +189,7 @@ def whichsvn():
     if sys.platform.startswith('win'): svnprog += '.exe'
     host,port = getsvnProxy()
     if GetConfigValue('debug') and host:
-        print('Using proxy host {} port {}'.format(host,port))
+        print('DBG_Using proxy host {} port {}'.format(host,port))
     # add likely places to find subversion when installed with GSAS-II
     pathlist = os.environ["PATH"].split(os.pathsep)
     pathlist.insert(0,os.path.split(sys.executable)[0])

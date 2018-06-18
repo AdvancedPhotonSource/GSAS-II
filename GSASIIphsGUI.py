@@ -384,7 +384,9 @@ class TransformDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
-        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix & vectors: M*(X-U)+V = X'"))
+        transSizer.Add((5,5),0)
+        transSizer.Add(wx.StaticText(self.panel,label=
+            " Cell transformation via g'=gM; g=metric tensor \n XYZ transformation via M*(X-U)+V = X'; M* = inv(M)"))
 #        if self.Super:
 #            Trmat = wx.FlexGridSizer(4,4,0,0)
 #        else:
@@ -399,7 +401,14 @@ class TransformDialog(wx.Dialog):
         common.Bind(wx.EVT_COMBOBOX,OnCommon)
         commonSizer.Add(common,0,WACV)
         transSizer.Add(commonSizer)
-        Trmat = wx.FlexGridSizer(3,6,0,0)
+        Trmat = wx.FlexGridSizer(4,6,0,0)
+        Trmat.Add((10,0),0)
+        Trmat.Add(wx.StaticText(self.panel,label='      M'),wx.ALIGN_CENTER)
+        Trmat.Add((10,0),0)
+        Trmat.Add((10,0),0)
+        Trmat.Add(wx.StaticText(self.panel,label='      U'),wx.ALIGN_CENTER)
+        Trmat.Add(wx.StaticText(self.panel,label='      V'),wx.ALIGN_CENTER)
+        
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
                 item = G2G.ValidatedTxtCtrl(self.panel,self.Trans[iy],ix,nDig=(10,3),size=(65,25))
@@ -443,14 +452,14 @@ class TransformDialog(wx.Dialog):
                 BNSizer.Add(BNS,0,WACV)
                 mainSizer.Add(BNSizer,0,WACV)
             else:
-                mag = wx.Button(self.panel,label=' Make new phase magnetic?')
+                mag = wx.Button(self.panel,label='Make new phase magnetic?')
                 mag.Bind(wx.EVT_BUTTON,OnMag)
                 mainSizer.Add(mag,0,WACV)
             mainSizer.Add(wx.StaticText(self.panel, \
                 label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
             constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
-            mainSizer.Add(wx.StaticText(self.panel, \
-                label=' Constraints not correct for non-diagonal transforms'),0,WACV)
+#            mainSizer.Add(wx.StaticText(self.panel, \
+#                label=' Constraints not correct for non-diagonal transforms'),0,WACV)
             constr.SetValue(self.ifConstr)
             constr.Bind(wx.EVT_CHECKBOX,OnConstr)
             mainSizer.Add(constr,0,WACV)

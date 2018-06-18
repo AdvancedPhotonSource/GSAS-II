@@ -1005,7 +1005,7 @@ def import_generic(filename, readerlist, fmthint=None):
                     rd_list.append(copy.deepcopy(rd))
                     repeat = rd.repeat
                 else:
-                    if GSASIIpath.GetConfigValue('debug'): print("{} Reader failed to read {}".format(rd.formatName,filename))
+                    if GSASIIpath.GetConfigValue('debug'): print("DBG_{} Reader failed to read {}".format(rd.formatName,filename))
             if rd_list:
                 if rd.warnings:
                     print("Read warning by", rd.formatName, "reader:",

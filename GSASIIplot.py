@@ -7138,7 +7138,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def getSelection():
         try:
             return G2frame.phaseDisplay.GetSelection()
-        except AttributeError:
+        except:
             G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!',1)
             return 0
             

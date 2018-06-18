@@ -170,9 +170,9 @@ def Define_wxId(*args):
     '''
     for arg in args:
         if GSASIIpath.GetConfigValue('debug') and not arg.startswith('wxID_'):
-            print ('Problem in name'+arg)
+            print ('DBG_Problem in name'+arg)
         if arg in globals():
-            if GSASIIpath.GetConfigValue('debug'): print (arg+'already defined')
+            if GSASIIpath.GetConfigValue('debug'): print ('DBG_'+arg+'already defined')
             continue
         exec('global '+arg+';'+arg+' = wx.NewId()')
 
@@ -3057,7 +3057,7 @@ def GetImportPath(G2frame):
         if os.path.exists(G2frame.TutorialImportDir):
             return G2frame.TutorialImportDir
         elif GSASIIpath.GetConfigValue('debug'):
-            print('Tutorial location (TutorialImportDir) not found: '+G2frame.TutorialImportDir)
+            print('DBG_Tutorial location (TutorialImportDir) not found: '+G2frame.TutorialImportDir)
     pth = GSASIIpath.GetConfigValue('Import_directory')
     if pth:
         pth = os.path.expanduser(pth)
@@ -3070,7 +3070,7 @@ def GetImportPath(G2frame):
         if os.path.exists(G2frame.LastImportDir):
             return G2frame.LastImportDir
         elif GSASIIpath.GetConfigValue('debug'):
-            print('Warning: G2frame.LastImportDir not found = '+G2frame.LastImportDir)
+            print('DBG_Warning: G2frame.LastImportDir not found = '+G2frame.LastImportDir)
     return None
 
 def GetExportPath(G2frame):
@@ -4114,12 +4114,12 @@ class MyHelp(wx.Menu):
             return            
         try:
             helpKey = dW.helpKey # look up help from helpKey in data window
-            #if GSASIIpath.GetConfigValue('debug'): print 'dataWindow help: key=',helpKey
+            #if GSASIIpath.GetConfigValue('debug'): print 'DBG_dataWindow help: key=',helpKey
         except AttributeError:
             helpKey = ''
-            if GSASIIpath.GetConfigValue('debug'): print('No helpKey for current dataWindow!')
+            if GSASIIpath.GetConfigValue('debug'): print('DBG_No helpKey for current dataWindow!')
         helpType = self.HelpById.get(event.GetId(),helpKey) # see if there is a special help topic
-        #if GSASIIpath.GetConfigValue('debug'): print 'helpKey=',helpKey,'  helpType=',helpType
+        #if GSASIIpath.GetConfigValue('debug'): print 'DBG_helpKey=',helpKey,'  helpType=',helpType
         if helpType == 'Tutorials':
             dlg = OpenTutorial(self.frame)
             dlg.ShowModal()
@@ -4478,7 +4478,7 @@ def SaveGPXdirectory(path):
     vars = GetConfigValsDocs()
     try:
         vars['Starting_directory'][1] = path
-        if GSASIIpath.GetConfigValue('debug'): print('Saving GPX path: '+path)
+        if GSASIIpath.GetConfigValue('debug'): print('DBG_Saving GPX path: '+path)
         SaveConfigVars(vars)
     except KeyError:
         pass
@@ -4488,7 +4488,7 @@ def SaveImportDirectory(path):
     vars = GetConfigValsDocs()
     try:
         vars['Import_directory'][1] = path
-        if GSASIIpath.GetConfigValue('debug'): print('Saving Import path: '+path)
+        if GSASIIpath.GetConfigValue('debug'): print('DBG_Saving Import path: '+path)
         SaveConfigVars(vars)
     except KeyError:
         pass
@@ -4922,7 +4922,7 @@ def ShowHelp(helpType,frame):
         pfx = "file://"
         if sys.platform.lower().startswith('win'):
             pfx = ''
-        #if GSASIIpath.GetConfigValue('debug'): print 'Help link=',pfx+helplink
+        #if GSASIIpath.GetConfigValue('debug'): print 'DBG_Help link=',pfx+helplink
         if htmlFirstUse:
             wb.open_new(pfx+helplink)
             htmlFirstUse = False
@@ -5360,7 +5360,7 @@ class OpenTutorial(wx.Dialog):
         vars = GetConfigValsDocs()
         try:
             vars['Tutorial_location'][1] = pth
-            if GSASIIpath.GetConfigValue('debug'): print('Saving Tutorial_location: '+pth)
+            if GSASIIpath.GetConfigValue('debug'): print('DBG_Saving Tutorial_location: '+pth)
             GSASIIpath.SetConfigValue(vars)
             SaveConfigVars(vars)
         except KeyError:

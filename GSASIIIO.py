@@ -625,7 +625,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
                     LastSavedUsing = datum[1]['LastSavedUsing']
                 if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug') and showProvenance:
-                    print('Packages used to create .GPX file:')
+                    print('DBG_Packages used to create .GPX file:')
                     if 'dict' in str(type(datum[1]['PythonVersions'])):  #patch
                         for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
                             print("  {:<14s}: {:s}".format(p[0],p[1]))

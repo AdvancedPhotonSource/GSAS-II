@@ -2353,8 +2353,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapData.get('LeBail',True):         #stop regeneating reflections for LeBail
                         hapData['newLeBail'] = False
                     refList = []
-                    Uniq = []
-                    Phi = []
+#                    Uniq = []
+#                    Phi = []
                     useExt = 'magnetic' in Phases[phase]['General']['Type'] and 'N' in inst['Type'][0]
                     if Phases[phase]['General'].get('Modulated',False):
                         ifSuper = True
@@ -2369,8 +2369,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                     if limits[0] < pos < limits[1]:
                                         refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,1.0,1.0,1.0])
                                         #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
-                                        Uniq.append(uniq)
-                                        Phi.append(phi)
+#                                        Uniq.append(uniq)
+#                                        Phi.append(phi)
                                 elif 'T' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
@@ -2378,32 +2378,34 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                         refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                         #TODO - if tabulated put alp & bet in here
-                                        Uniq.append(uniq)
-                                        Phi.append(phi)
+#                                        Uniq.append(uniq)
+#                                        Phi.append(phi)
                     else:
                         ifSuper = False
                         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                         HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
+                            if 'N' in inst['Type'][0] and  'MagSpGrp' in SGData:
+                                ext = G2spc.checkMagextc([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
-                            if ext and not useExt:
+                            if ext:# and not useExt:
                                 continue
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
                                     refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,1.0,1.0,1.0])
                                     #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
-                                    Uniq.append(uniq)
-                                    Phi.append(phi)
+#                                    Uniq.append(uniq)
+#                                    Phi.append(phi)
                             elif 'T' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
                                     wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
                                     refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
-                                    Uniq.append(uniq)
-                                    Phi.append(phi)
+#                                    Uniq.append(uniq)
+#                                    Phi.append(phi)
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]

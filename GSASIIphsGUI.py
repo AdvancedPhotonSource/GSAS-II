@@ -320,13 +320,13 @@ class TransformDialog(wx.Dialog):
                         self.newSpGrp += ' r'
                         SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
                         self.Phase['General']['SGData'] = SGData
-                        SGTxt.SetValue(self.newSpGrp)
+                        SGTxt.SetLabel(self.newSpGrp)
             OnTest(event)
        
         def OnSpaceGroup(event):
             event.Skip()
             SpcGp = GetSpGrpfromUser(self.panel,self.newSpGrp)
-            if SpcGp == self.newSpGrp: #didn't change it!
+            if SpcGp == self.newSpGrp or SpcGp is None: #didn't change it!
                 return
             # try a lookup on the user-supplied name
             SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
@@ -336,7 +336,7 @@ class TransformDialog(wx.Dialog):
                 SGErr,SGData = G2spc.SpcGroup(SpcGp)
             if SGErr:
                 text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
-                SGTxt.SetValue(self.newSpGrp)
+                SGTxt.SetLabel(self.newSpGrp)
                 msg = 'Space Group Error'
                 Text = '\n'.join(text)
                 wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
@@ -344,7 +344,7 @@ class TransformDialog(wx.Dialog):
                 text,table = G2spc.SGPrint(SGData)
                 self.Phase['General']['SGData'] = SGData
                 self.newSpGrp = SpcGp
-                SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
+                SGTxt.SetLabel(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 G2G.SGMessageBox(self.panel,msg,text,table).Show()
             if self.ifMag:

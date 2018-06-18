@@ -2317,6 +2317,77 @@ class G2PwdrData(G2ObjectWrapper):
             else:
                 raise ValueError("Unknown key:", key)
 
+    def add_peak(self,area,dspace=None,Q=None,ttheta=None):
+        '''Adds a single peak to the peak list
+        :param float area: peak area
+        :param float dspace: peak position as d-space (A)
+        :param float Q: peak position as Q (A-1)
+        :param float ttheta: peak position as 2Theta (deg)
+
+        Note: only one of the parameters dspace, Q or ttheta may be specified
+        '''
+        import GSASIIlattice as G2lat
+        import GSASIImath as G2mth
+        if (not dspace) + (not Q) + (not ttheta) != 2:
+            print('add_peak error: too many or no peak position(s) specified')
+            return
+        pos = ttheta
+        Parms,Parms2 = self.data['Instrument Parameters']
+        if Q:
+            pos = G2lat.Dsp2pos(Parms,2.*np.pi/Q)
+        elif dspace:
+            pos = G2lat.Dsp2pos(Parms,dspace)
+        peaks = self.data['Peak List']
+        peaks['sigDict'] = {}        #no longer valid
+        peaks['peaks'].append(G2mth.setPeakparms(Parms,Parms2,pos,area))
+
+    def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None):
+        '''Set refinement flags for peaks
+        :param list peaklist: a list of peaks to change flags. If None (default), changes
+          are made to all peaks.
+        :param bool area: Sets or clears the refinement flag for the peak area value.
+          If None (the default), no change is made.
+        :param bool pos: Sets or clears the refinement flag for the peak position value.
+          If None (the default), no change is made.
+        :param bool sig: Sets or clears the refinement flag for the peak sig (Gaussian width) value.
+          If None (the default), no change is made.
+        :param bool gam: Sets or clears the refinement flag for the peak sig (Lorentzian width) value.
+          If None (the default), no change is made.
+          
+        Note that when peaks are first created the area flag is on and the other flags are
+        initially off.
+
+        Example::
+        
+           set_peakFlags(sig=False,gam=True)
+
+        causes the sig refinement flag to be cleared and the gam flag to be set, in both cases for
+        all peaks. The position and area flags are not changed from their previous values.
+        '''
+        peaks = self.data['Peak List']
+        if peaklist is None:
+            peaklist = range(len(peaks['peaks']))
+        for i in peaklist:
+            for var,j in [(area,3),(pos,1),(sig,5),(gam,7)]:
+                if var is not None:
+                    peaks['peaks'][i][j] = var
+            
+    def refine_peaks(self):
+        '''Causes a refinement of peak position, background and instrument parameters
+        '''
+        import GSASIIpwd as G2pwd
+        controls = self.proj.data.get('Controls',{})
+        controls = controls.get('data',
+                            {'deriv type':'analytic','min dM/M':0.001,}     #fill in defaults if needed
+                            )
+        peaks = self.data['Peak List']
+        Parms,Parms2 = self.data['Instrument Parameters']
+        background = self.data['Background']
+        limits = self.data['Limits'][1]
+        bxye = np.zeros(len(self.data['data'][1][1]))
+        peaks['sigDict'] = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
+                                           Parms,Parms2,self.data['data'][1],bxye,[],
+                                           False,controls,None)[0]
 
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.

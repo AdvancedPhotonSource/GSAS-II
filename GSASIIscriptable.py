@@ -2389,6 +2389,56 @@ class G2PwdrData(G2ObjectWrapper):
                                            Parms,Parms2,self.data['data'][1],bxye,[],
                                            False,controls,None)[0]
 
+    def SaveProfile(self,filename):
+        '''Writes a GSAS-II (new style) .instprm file
+        '''
+        data,Parms2 = self.data['Instrument Parameters']
+        filename = os.path.splitext(filename)[0]+'.instprm'         # make sure extension is .instprm
+        File = open(filename,'w')
+        File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
+        for item in data:
+            File.write(item+':'+str(data[item][1])+'\n')
+        File.close()
+        print ('Instrument parameters saved to: '+filename)
+
+    def LoadProfile(self,filename):
+        '''Reads a GSAS-II (new style) .instprm file and overwrites the current parameters
+        '''
+        filename = os.path.splitext(filename)[0]+'.instprm'         # make sure extension is .instprm
+        File = open(filename,'r')
+        S = File.readline()
+        newItems = []
+        newVals = []
+        Found = False
+        while S:
+            if S[0] == '#':
+                if Found:
+                    break
+                if 'Bank' in S:
+                    if bank == int(S.split(':')[0].split()[1]):
+                        S = File.readline()
+                        continue
+                    else:
+                        S = File.readline()
+                        while S and '#Bank' not in S:
+                            S = File.readline()
+                        continue
+                else:   #a non #Bank file
+                    S = File.readline()
+                    continue
+            Found = True
+            [item,val] = S[:-1].split(':')
+            newItems.append(item)
+            try:
+                newVals.append(float(val))
+            except ValueError:
+                newVals.append(val)                        
+            S = File.readline()                
+        File.close()
+        LoadG2fil()
+        self.data['Instrument Parameters'][0] = G2fil.makeInstDict(newItems,newVals,len(newVals)*[False,])
+
+        
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
 

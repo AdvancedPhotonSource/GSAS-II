@@ -161,7 +161,9 @@ def GetFileBackground(G2frame,xye,Pattern):
     return bxye
     
 def IsHistogramInAnyPhase(G2frame,histoName):
-    'Needs a doc string'
+    '''Tests a Histogram to see if it is linked to any phases.
+    Returns the name of the first phase where the histogram is used.
+    '''
     phases = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
     if phases:
         item, cookie = G2frame.GPXtree.GetFirstChild(phases)

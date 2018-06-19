@@ -4981,6 +4981,8 @@ tutorialIndex = (
      use is made of the lattice parameter offsets to account for thermal expansion.'''],
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement',
      '''This shows Rietveld refinement with high resolution synchrotron powder data and neutron TOF data'''],
+    ['SimpleMagnetic', 'SimpleMagnetic.htm',"Simple Magnetic Structure Analysis",
+     '''Analysis of a simple antiferromagnet and a simple ferromagnet from CW neutron powder data'''],
     ['Simulation', 'SimTutorial.htm',  'Simulating Powder Diffraction with GSAS-II',
      '''This show how to create a simulated powder pattern from a lab diffractometer.'''],
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',

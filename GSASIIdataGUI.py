@@ -3675,8 +3675,8 @@ class GSASII(wx.Frame):
             self.GPXtree.Expand(phaseId)
         if Id:
             self.EnablePlot = True
-            self.GPXtree.SelectItem(Id)
             self.GPXtree.Expand(Id)
+            self.GPXtree.SelectItem(Id)
         elif phaseId:
             self.GPXtree.SelectItem(phaseId)
         self.CheckNotebook()

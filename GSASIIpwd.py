@@ -756,14 +756,16 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             T1 = 1.0-T2
             yb = parmDict[pfx+'Back;0']*T1+parmDict[pfx+'Back;1']*T2
         else:
+            xnomask = ma.getdata(xdata)
+            xmin,xmax = xnomask[0],xnomask[-1]
             if bakType == 'lin interpolate':
-                bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+                bakPos = np.linspace(xmin,xmax,nBak,True)
             elif bakType == 'inv interpolate':
-                bakPos = 1./np.linspace(1./xdata[-1],1./xdata[0],nBak,True)
+                bakPos = 1./np.linspace(1./xmax,1./xmin,nBak,True)
             elif bakType == 'log interpolate':
-                bakPos = np.exp(np.linspace(np.log(xdata[0]),np.log(xdata[-1]),nBak,True))
-            bakPos[0] = xdata[0]
-            bakPos[-1] = xdata[-1]
+                bakPos = np.exp(np.linspace(np.log(xmin),np.log(xmax),nBak,True))
+            bakPos[0] = xmin
+            bakPos[-1] = xmax
             bakVals = np.zeros(nBak)
             for i in range(nBak):
                 bakVals[i] = parmDict[pfx+'Back;'+str(i)]
@@ -874,14 +876,16 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
             T1 = 1.0-T2
             dydb = [T1,T2]
         else:
+            xnomask = ma.getdata(xdata)
+            xmin,xmax = xnomask[0],xnomask[-1]
             if bakType == 'lin interpolate':
-                bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
+                bakPos = np.linspace(xmin,xmax,nBak,True)
             elif bakType == 'inv interpolate':
-                bakPos = 1./np.linspace(1./xdata[-1],1./xdata[0],nBak,True)
+                bakPos = 1./np.linspace(1./xmax,1./xmin,nBak,True)
             elif bakType == 'log interpolate':
-                bakPos = np.exp(np.linspace(np.log(xdata[0]),np.log(xdata[-1]),nBak,True))
-            bakPos[0] = xdata[0]
-            bakPos[-1] = xdata[-1]
+                bakPos = np.exp(np.linspace(np.log(xmin),np.log(xmax),nBak,True))
+            bakPos[0] = xmin
+            bakPos[-1] = xmax
             for i,pos in enumerate(bakPos):
                 if i == 0:
                     dydb[0] = np.where(xdata<bakPos[1],(bakPos[1]-xdata)/(bakPos[1]-bakPos[0]),0.)

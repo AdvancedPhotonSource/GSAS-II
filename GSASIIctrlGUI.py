@@ -1369,7 +1369,10 @@ class ScrolledMultiEditor(wx.Dialog):
                     parent=panel,colour=(255,255,200),size=wx.Size(30,23),
                     style=wx.RAISED_BORDER)
                 but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
-                but.SetToolTipString('Press to copy adjacent value to all rows below')
+                if 'phoenix' in wx.version():
+                    but.SetToolTip('Press to copy adjacent value to all rows below')
+                else:
+                    but.SetToolTipString('Press to copy adjacent value to all rows below')
                 self.ButtonIndex[but] = i
                 subSizer.Add(but)
             # create the validated TextCrtl, store it and add it to the sizer
@@ -3689,13 +3692,20 @@ class GSGrid(wg.Grid):
                 if event: event.Skip()
                 return
             if hinttext is None: hinttext = ''
-            win.SetToolTipString(hinttext)
+            if 'phoenix' in wx.version():
+                win.SetToolTip(hinttext)
+            else:
+                win.SetToolTipString(hinttext)
             prev_rowcol[:] = [row,col,win]
             if event: event.Skip()
-
-        wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
-        if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
-        if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
+        if 'phoenix' in wx.version():
+            self.GetGridWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
+            if colLblCallback: self.GetGridColLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
+            if rowLblCallback: self.GetGridRowLabelWindow().Bind(wx.EVT_MOTION,OnMouseMotion)
+        else:
+            wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
+            if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
+            if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
                                                     
 ################################################################################           
 class Table(wg.PyGridTableBase):        #TODO: this works in python 3/phoenix but pygridtablebase doesn't exist

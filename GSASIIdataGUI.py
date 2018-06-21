@@ -4481,7 +4481,7 @@ class GSASII(wx.Frame):
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
-                    self.GPXtree.SelectItem(sId)
+                    SelectDataTreeItem(self,sId)
             finally:
                 dlg.Destroy()
             

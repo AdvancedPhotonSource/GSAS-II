@@ -3676,9 +3676,11 @@ class GSASII(wx.Frame):
         if Id:
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
-            self.GPXtree.SelectItem(Id)
+            SelectDataTreeItem(self,Id)
+#            self.GPXtree.SelectItem(Id)
         elif phaseId:
-            self.GPXtree.SelectItem(phaseId)
+#            self.GPXtree.SelectItem(phaseId)
+            SelectDataTreeItem(self,phaseId)
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]

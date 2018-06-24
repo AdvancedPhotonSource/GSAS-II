@@ -795,11 +795,20 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
        
     def RepaintHistogramInfo(Scroll=0):
         if 'phoenix' in wx.version():
-#            if DData.__class__ is  not wx._core.ScrolledWindow:
-#                # How to determine window is closed in Phoenix? 
-#                return
             G2frame.bottomSizer.Clear(True)
+            # deal with case where this is called after another tree item has been selected
+            try:
+                DData.Shown
+            except RuntimeError:
+                if GSASIIpath.GetConfigValue('debug'):
+                    print('DBG: DData window deleted. Ignoring RepaintHistogramInfo, forcing redraw')
+                # Repaint called while DData window deleted, force redraw of entire window
+                import GSASIIdataGUI
+                G2frame.PickIdText = ''
+                wx.CallLater(100,GSASIIdataGUI.SelectDataTreeItem,G2frame,G2frame.GPXtree.Selection)
+                return
         else:
+            # deal with case where this is called after another tree item has been selected
             if DData.__class__ is  not wx._windows.ScrolledWindow:
                 # fix bug where this is called after the Window is deleted
                 return

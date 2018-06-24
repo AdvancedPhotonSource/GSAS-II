@@ -109,6 +109,7 @@ Documentation for all the routines in module :mod:`GSASIIctrlGUI`.
 from __future__ import division, print_function
 import os
 import sys
+import platform
 try:
     import wx
     import wx.grid as wg
@@ -3387,6 +3388,7 @@ class ShowLSParms(wx.Dialog):
 
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
+        if '2' not in platform.python_version_tuple()[0]: basestring = str
         splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestring)]
         globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         if len(globNames):
@@ -3426,6 +3428,7 @@ class ShowLSParms(wx.Dialog):
         count = 0
         for name in self.choiceDict[self.parmChoice]:
             # skip entries without numerical values
+            if '2' not in platform.python_version_tuple()[0]: basestring = str
             if isinstance(self.parmDict[name],basestring): continue
             if 'Refined' in self.listSel and (name not in self.fullVaryList
                                               ) and (name not in self.varyList):

@@ -1198,7 +1198,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
             eloc,efil = os.path.split(zinfo[zindex].filename)
             outfile = os.path.join(zloc, efil)
             fpin = z.open(zinfo[zindex])
-            fpout = file(outfile, "wb")
+            fpout = open(outfile, "wb")
             shutil.copyfileobj(fpin, fpout)
             fpin.close()
             fpout.close()

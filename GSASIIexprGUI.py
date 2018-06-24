@@ -24,6 +24,7 @@ Default expressions are read from file DefaultExpressions.txt using
 '''
 from __future__ import division, print_function
 import re
+import platform
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
@@ -126,12 +127,15 @@ class ExpressionDialog(wx.Dialog):
     :param list usedVars: defines a list of previously used variable names. These names
       will not be reused as defaults for new free variables.
       (The default is an empty list). 
+    :param bool wildCard: If True (default), histogram names are converted to wildcard
+      values, as is appropriate for the sequential refinement table
     '''
     def __init__(self, parent, parmDict, exprObj=None,
                  header='Enter restraint expression here',
                  wintitle='Expression Editor',
                  fit=True,VarLabel=None,depVarDict=None,
-                 ExtraButton=None,usedVars=[]):
+                 ExtraButton=None,usedVars=[],
+                 wildCard=True):
         self.fit = fit
         self.depVarDict = depVarDict
         'dict for dependent variables'
@@ -167,6 +171,7 @@ class ExpressionDialog(wx.Dialog):
         'name for dependent variable selection, when depVarDict is specified'
         self.usedVars = usedVars
         'variable names that have been used and should not be reused by default'
+        self.wildCard = wildCard
         defSize = (620,340) # seems like a good size
         'Starting size for dialog'
 
@@ -178,6 +183,7 @@ class ExpressionDialog(wx.Dialog):
                 continue # there were dicts in parmDict (should be gone now)
             except (TypeError,IndexError):
                 val = parmDict[key]
+            if '2' not in platform.python_version_tuple()[0]: basestring = str
             if isinstance(val, basestring): continue
             try:
                 self.parmDict[key] = float(val)
@@ -379,14 +385,16 @@ class ExpressionDialog(wx.Dialog):
                 invalid += 1
                 if msg: msg += "; "
                 msg += 'No variable for '+str(v)
-            elif self.varSelect.get(v) > 0:
-               if '*' in varname:
+            elif self.varSelect.get(v,0) > 0:
+                if varname in self.parmDict:
+                    pass
+                elif '*' in varname:
                    l = G2obj.LookupWildCard(varname,list(self.parmDict.keys()))
                    if len(l) == 0:
                        invalid += 1
                        if msg: msg += "; "
                        msg += 'No variables match '+str(varname)
-               elif varname not in self.parmDict.keys():
+                elif varname not in self.parmDict:
                    invalid += 1
                    if msg: msg += "; "
                    msg += 'No variables match '+str(varname)
@@ -457,16 +465,28 @@ class ExpressionDialog(wx.Dialog):
           3 for Histogram vars and 4 for Global vars.
         :returns: a variable name or None (if Cancel is pressed)
         '''
+        def wildHist(var):
+            '''Replace a histogram number with a wild card
+            '''
+            slst = var.split(':')
+            if len(slst) > 2 and slst[1]:
+                slst[1] = '*'
+                return ':'.join(slst)
+            return var
+
         if not parmList:
             return None
         l2 = l1 = 1
-        for i in parmList:
+        if self.wildCard:
+            wildList = [wildHist(i) for i in parmList]
+        else:
+            wildList = parmList
+        for i in wildList:
             l1 = max(l1,len(i))
             loc,desc = G2obj.VarDescr(i)
             l2 = max(l2,len(loc))
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in parmList]
-
+        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in wildList]
         dlg = G2G.G2SingleChoiceDialog(
             self,'Select GSAS-II variable for '+str(var)+':',
             'Select variable',
@@ -476,7 +496,7 @@ class ExpressionDialog(wx.Dialog):
         var = None
         if dlg.ShowModal() == wx.ID_OK:
             i = dlg.GetSelection()
-            var = parmList[i]
+            var = wildList[i]
         dlg.Destroy()
         return var
 
@@ -607,12 +627,12 @@ class ExpressionDialog(wx.Dialog):
                 wid.Bind(wx.EVT_CHAR,self.OnChar)
             else:
                 var = self.varName[v]
-                if '*' in var:
-                    vs = G2obj.LookupWildCard(var,self.parmDict.keys())
-                    s = '('+str(len(vs))+' values)'
-                elif var in self.parmDict:
+                if var in self.parmDict:
                     val = self.parmDict[var]
                     s = G2py3.FormatSigFigs(val).rstrip('0')
+                elif '*' in var:
+                    vs = G2obj.LookupWildCard(var,self.parmDict.keys())
+                    s = '('+str(len(vs))+' values)'
                 else:
                     s = '?'
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,s)
@@ -950,7 +970,6 @@ if __name__ == "__main__":
 
     #app.MainLoop()
 
-    import platform
     if '2' in platform.python_version_tuple()[0]:
         import cPickle
     else:

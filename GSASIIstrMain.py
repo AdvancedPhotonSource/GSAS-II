@@ -367,6 +367,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
             print("Error: not found!")
             continue
     #TODO - implement "Fix FXU" for seq refinement here - done?
+        hId = Histograms[histogram]['hId']
         redphaseVary = phaseCheck(phaseVary,Phases,histogram)
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
@@ -404,8 +405,9 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
-            #print (G2mv.VarRemapShow(varyList,True))
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=hId)
+#            if GSASIIpath.GetConfigValue('debug'): print("DBG_"+
+#                G2mv.VarRemapShow(varyList,True))
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
         except G2mv.ConstraintException:
             print (' *** ERROR - your constraints are internally inconsistent ***')

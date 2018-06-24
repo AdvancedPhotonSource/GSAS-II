@@ -2645,27 +2645,9 @@ class GSASII(wx.Frame):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
                     win.Center()
 
-    def __init__(self, parent):
-        self.ExportLookup = {}
-        self.exporterlist = []
-        self._init_ctrls(parent)
-        self.Image = wx.Image(
-            os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),
-            wx.BITMAP_TYPE_ICO)
-        if "wxMSW" in wx.PlatformInfo:
-            img = self.Image.Scale(16, 16).ConvertToBitmap()
-        elif "wxGTK" in wx.PlatformInfo:
-            img = self.Image.Scale(22, 22).ConvertToBitmap()
-        else:
-            img = self.Image.ConvertToBitmap()
-        if 'phoenix' in wx.version():
-            self.SetIcon(wx.Icon(img))
-        else:
-            self.SetIcon(wx.IconFromBitmap(img))
-        self.Bind(wx.EVT_CLOSE, self.ExitMain)
+    def init_vars(self):
         # initialize default values for GSAS-II "global" variables (saved in main Frame)
         self.oldFocus = None
-        self.GSASprojectfile = ''
         self.undofile = ''
         self.TreeItemDelete = False
         self.Weight = False
@@ -2718,18 +2700,39 @@ class GSASII(wx.Frame):
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
         self.hist = ''              # selected histogram in Phase/Data tab
+        self.dataDisplayPhaseText = ''
+        self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
+        self.ExpandingAll = False
+        self.SeqTblHideList = None
+        self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
+        
+    def __init__(self, parent):
+        self.ExportLookup = {}
+        self.exporterlist = []
+        self._init_ctrls(parent)
+        self.Image = wx.Image(
+            os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),
+            wx.BITMAP_TYPE_ICO)
+        if "wxMSW" in wx.PlatformInfo:
+            img = self.Image.Scale(16, 16).ConvertToBitmap()
+        elif "wxGTK" in wx.PlatformInfo:
+            img = self.Image.Scale(22, 22).ConvertToBitmap()
+        else:
+            img = self.Image.ConvertToBitmap()
+        if 'phoenix' in wx.version():
+            self.SetIcon(wx.Icon(img))
+        else:
+            self.SetIcon(wx.IconFromBitmap(img))
+        self.Bind(wx.EVT_CLOSE, self.ExitMain)
+        self.GSASprojectfile = ''
         self.dirname = os.path.abspath(os.path.expanduser('~'))       #start in the users home directory by default; may be meaningless
         self.TutorialImportDir = None  # location to read tutorial files, set when a tutorial is viewed
         self.LastImportDir = None # last-used directory where an import was done
         self.LastGPXdir = None    # directory where a GPX file was last read
         self.LastExportDir = None  # the last directory used for exports, if any.
         self.dataDisplay = None
-        self.dataDisplayPhaseText = ''
-        self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
-        self.ExpandingAll = False
-        self.SeqTblHideList = None
-        self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
-                
+        self.init_vars()
+                        
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             try:
@@ -3641,6 +3644,7 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
+        self.init_vars()
         try:
             self.StartProject()         #open the file if possible
         except:
@@ -6387,7 +6391,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,
                 data['SeqParFitEqList'][selected],depVarDict=VarDict,
                 header="Edit the formula for this minimization function",
-                ExtraButton=['Fit',SingleParEqFit])
+                ExtraButton=['Fit',SingleParEqFit],wildCard=False)
             newobj = dlg.Show(True)
             if newobj:
                 data['SeqParFitEqList'][selected] = newobj
@@ -6405,7 +6409,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
         dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,VarDict,depVarDict=VarDict,
             header='Define an equation to minimize in the parametric fit',
-            ExtraButton=['Fit',SingleParEqFit],usedVars=usedvarlist)
+            ExtraButton=['Fit',SingleParEqFit],usedVars=usedvarlist,wildCard=False)
         obj = dlg.Show(True)
         dlg.Destroy()
         if obj:
@@ -6436,7 +6440,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             dlg = G2exG.ExpressionDialog(
                 G2frame.dataDisplay,VarDict,newEqn,depVarDict=VarDict,
                 header="Edit the formula for this minimization function",
-                ExtraButton=['Fit',SingleParEqFit])
+                ExtraButton=['Fit',SingleParEqFit],wildCard=False)
             newobj = dlg.Show(True)
             if newobj:
                 data['SeqParFitEqList'].append(newobj)

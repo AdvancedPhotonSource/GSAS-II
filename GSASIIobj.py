@@ -1634,6 +1634,9 @@ def SortVariables(varlist):
     def cvnnums(var):
         v = []
         for i in var.split(':'):
+            if i == '':
+                v.append(-1)
+                continue
             try:
                 v.append(int(i))
             except:
@@ -2558,6 +2561,7 @@ class ExpressionCalcObj(object):
         '''Standard error evaluation where supplied by the evaluator
         '''
         # Patch: for old-style expressions with a (now removed step size)
+        if '2' not in platform.python_version_tuple()[0]: basestring = str
         for v in self.eObj.assgnVars:
             if not isinstance(self.eObj.assgnVars[v], basestring):
                 self.eObj.assgnVars[v] = self.eObj.assgnVars[v][0]
@@ -2577,6 +2581,7 @@ class ExpressionCalcObj(object):
 
         # look at first value in parmDict to determine its type
         parmsInList = True
+        if '2' not in platform.python_version_tuple()[0]: basestring = str
         for key in parmDict:
             val = parmDict[key]
             if isinstance(val, basestring):
@@ -2604,7 +2609,14 @@ class ExpressionCalcObj(object):
             self.exprDict[v] = self.eObj.freeVars[v][1]
         for v in self.eObj.assgnVars:
             varname = self.eObj.assgnVars[v]
-            if '*' in varname:
+            if varname in parmDict:
+                self.lblLookup[varname] = v
+                self.varLookup[v] = varname
+                if parmsInList:
+                    self.exprDict[v] = parmDict[varname][0]
+                else:
+                    self.exprDict[v] = parmDict[varname]
+            elif '*' in varname:
                 varlist = LookupWildCard(varname,list(parmDict.keys()))
                 if len(varlist) == 0:
                     raise Exception("No variables match "+str(v))
@@ -2615,13 +2627,6 @@ class ExpressionCalcObj(object):
                 else:
                     self.exprDict[v] = np.array([parmDict[var] for var in varlist])
                 self.varLookup[v] = [var for var in varlist]
-            elif varname in parmDict:
-                self.lblLookup[varname] = v
-                self.varLookup[v] = varname
-                if parmsInList:
-                    self.exprDict[v] = parmDict[varname][0]
-                else:
-                    self.exprDict[v] = parmDict[varname]
             else:
                 self.exprDict[v] = None
 #                raise Exception,"No value for variable "+str(v)

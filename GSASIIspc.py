@@ -3192,7 +3192,7 @@ def MagSytSym(SytSym,dupDir,SGData):
     return SytSym
 
 def UpdateSytSym(Phase):
-    ''' Update site symmetry/site multiplicity after space group/VNS lattice change
+    ''' Update site symmetry/site multiplicity after space group/BNS lattice change
     '''
     generalData = Phase['General']
     SGData = generalData['SGData']

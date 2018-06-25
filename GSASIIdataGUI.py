@@ -7636,7 +7636,9 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
                 G2obj.HowDidIgetHere()
         
     # clear out the old panel contents
-    G2frame.dataWindow.ClearData()
+    if G2frame.dataWindow:
+        G2frame.dataWindow.ClearData() 
+#    G2frame.dataWindow.ClearData()
     # process first-level entries in tree
     if G2frame.GPXtree.GetItemParent(item) == G2frame.root:
         G2frame.PatternId = 0

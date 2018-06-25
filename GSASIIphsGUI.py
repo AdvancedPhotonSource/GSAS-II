@@ -1407,6 +1407,11 @@ def UpdatePhaseData(G2frame,Item,data):
                         Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
                         if SGData['SGInv']:
                             Nops *= 2
+                        GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
+                        SGData['GenSym'] = GenSym
+                        SGData['GenFlg'] = GenFlg
+                        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                        G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
                         SGData['SpnFlp'] = Nops*[1,]
                     if generalData['Modulated']:
                         generalData['SuperSg'] = SetDefaultSSsymbol()
@@ -1425,6 +1430,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     if 'HStrain' in data['Histograms'][hist]:       #PWDR only
                         data['Histograms'][hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                         data['Histograms'][hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+                data['Drawing']['Atoms'] = []
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):

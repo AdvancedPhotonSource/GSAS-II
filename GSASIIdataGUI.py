@@ -6923,7 +6923,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # compute and add weight fractions to table if varied
     for phase in Phases:
         var = str(Phases[phase]['pId'])+':*:Scale'
-        if var not in combinedVaryList+depValDict.keys(): continue
+        if var not in combinedVaryList+list(depValDict.keys()): continue
         wtFrList = []
         sigwtFrList = []
         for i,name in enumerate(histNames):

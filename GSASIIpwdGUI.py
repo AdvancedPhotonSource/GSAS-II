@@ -2594,7 +2594,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     tree item.
     '''
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-        'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+        'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
     IndexId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     limitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
@@ -2740,9 +2740,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+        'Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
+        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','C -1','P -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
@@ -3040,7 +3040,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
         controls[4] = 1
-        controls[5] = SGData['SGLatt']+SGData['SGLaue']
+        controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         controls[6:12] = Cell[1:8]
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
@@ -3057,7 +3057,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Cell = rd.Phase['General']['Cell']
         SGData = rd.Phase['General']['SGData']
         controls[4] = 1
-        controls[5] = SGData['SGLatt']+SGData['SGLaue']
+        controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         controls[6:12] = Cell[1:8]
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
@@ -3349,7 +3349,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         [True,True,True,False],[0,1,2,0])],
     [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[13,],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+    [[13,14],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
         [(10,5),(10,5),(10,5),"%.3f",(10,3),(10,3),(10,3)],
         [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     

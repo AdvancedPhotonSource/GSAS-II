@@ -3388,8 +3388,8 @@ class ShowLSParms(wx.Dialog):
 
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
-        if '2' not in platform.python_version_tuple()[0]: basestring = str
-        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestring)]
+        basestr = basestring
+        splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestr)]
         globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         if len(globNames):
             self.choiceDict['Global'] = G2obj.SortVariables(globNames)
@@ -3427,9 +3427,8 @@ class ShowLSParms(wx.Dialog):
         explainRefine = False
         count = 0
         for name in self.choiceDict[self.parmChoice]:
-            # skip entries without numerical values
-            if '2' not in platform.python_version_tuple()[0]: basestring = str
-            if isinstance(self.parmDict[name],basestring): continue
+            basestr = basestring
+            if isinstance(self.parmDict[name],basestr): continue
             if 'Refined' in self.listSel and (name not in self.fullVaryList
                                               ) and (name not in self.varyList):
                 continue

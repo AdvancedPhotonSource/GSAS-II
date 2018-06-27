@@ -126,7 +126,7 @@ class PhaseReaderClass(G2obj.ImportPhase):
                     IA = 'A'
                     Uiso = 0.
                     Ustr = AtRec[6:8]
-                    S = file.readline()
+                    S = fp.readline()
                     if '!' in S:
                         S = S.split('!')[0]
                     AtRec = S.split()

@@ -517,6 +517,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
     def OnLoadMultiControls(event):         #TODO: how read in multiple image controls & match them by 'twoth' tag?
+        print('This is not implemented yet, sorry')
+        G2G.G2MessageBox(G2frame,'This is not implemented yet, sorry')
+        return
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         controlsDict = {}

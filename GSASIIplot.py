@@ -413,6 +413,8 @@ class G2PlotOgl(_tabPlotWin):
         else:                               #fix from Jim Hester for X systems
             attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,wx.glcanvas.WX_GL_DEPTH_SIZE,24)
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
+            GL.glEnable(GL.GL_NORMALIZE)
+        #GSASIIpath.IPyBreak()
         # create GL context
         i,j= wx.__version__.split('.')[0:2]
         if int(i)+int(j)/10. > 2.8:
@@ -6564,7 +6566,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
             Plot.set_ylim(xylim[1])
-            if Data['linescan']:
+            if Data.get('linescan',[False,0.])[0]:
                 try:
                     Plot1.set_xlim(Page.xlim1)
                 except:

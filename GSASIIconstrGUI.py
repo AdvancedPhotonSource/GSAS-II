@@ -1000,7 +1000,7 @@ def UpdateConstraints(G2frame,data):
         'Delete a constraint'
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
-        del(data[name][Id])
+        del data[name][Id]
         wx.CallAfter(OnPageChanged,None)
         
     def OnConstEdit(event):

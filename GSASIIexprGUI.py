@@ -183,8 +183,11 @@ class ExpressionDialog(wx.Dialog):
                 continue # there were dicts in parmDict (should be gone now)
             except (TypeError,IndexError):
                 val = parmDict[key]
-            if '2' not in platform.python_version_tuple()[0]: basestring = str
-            if isinstance(val, basestring): continue
+            if '2' in platform.python_version_tuple()[0]: 
+                string = basestring
+            else:
+                string = str
+            if isinstance(val, string): continue
             try:
                 self.parmDict[key] = float(val)
             except:

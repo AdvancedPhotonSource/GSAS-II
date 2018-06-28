@@ -3388,7 +3388,10 @@ class ShowLSParms(wx.Dialog):
 
         # make lists of variables of different types along with lists of parameter names, histogram #s, phase #s,...
         self.parmNames = sorted(list(parmDict.keys()))
-        basestr = basestring
+        if '2' in platform.python_version_tuple()[0]: 
+            basestr = basestring
+        else:
+            basestr = str
         splitNames = [item.split(':') for item in self.parmNames if len(item) > 3 and not isinstance(self.parmDict[item],basestr)]
         globNames = [':'.join(item) for item in splitNames if not item[0] and not item[1]]
         if len(globNames):
@@ -3427,7 +3430,10 @@ class ShowLSParms(wx.Dialog):
         explainRefine = False
         count = 0
         for name in self.choiceDict[self.parmChoice]:
-            basestr = basestring
+            if '2' in platform.python_version_tuple()[0]: 
+                basestr = basestring
+            else:
+                basestr = str
             if isinstance(self.parmDict[name],basestr): continue
             if 'Refined' in self.listSel and (name not in self.fullVaryList
                                               ) and (name not in self.varyList):

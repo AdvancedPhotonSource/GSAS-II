@@ -4614,7 +4614,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         # a bit lighter than the splitter bar
         Sizer = self.GetSizer()
         if Sizer:
-            Sizer.Clear(True)
+            try:
+                Sizer.Clear(True)
+            except:
+                pass
         else:
             print ('No sizer in dataWindow')
             if GSASIIpath.GetConfigValue('debug'): raise Exception

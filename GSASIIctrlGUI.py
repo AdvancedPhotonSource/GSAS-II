@@ -3879,7 +3879,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
         self._tc.Bind(wx.EVT_CHAR, self.OnChar)
 
     def SetSize(self, rect):
-        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
+        self._tc.SetSize(rect.x, rect.y, rect.width+2, rect.height+2,
                                wx.SIZE_ALLOW_MINUS_ONE)
 
     def BeginEdit(self, row, col, grid):

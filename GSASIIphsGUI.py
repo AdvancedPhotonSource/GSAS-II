@@ -978,7 +978,7 @@ entered the right symbol for your structure.
         value=SpGrp,help=helptext)
     if not dlg.Show():
         dlg.Destroy()
-        return
+        return SpGrp
     else:
         try:
             # has a space group number been input?
@@ -1391,6 +1391,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     return
                 # try a lookup on the user-supplied name
                 SpcGp = GetSpGrpfromUser(General,SpGrp)
+                if SpcGp == SpGrp:
+                    return      #unchanged - do nothing
                 SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
                 if SpGrpNorm:
                     SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)

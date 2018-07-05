@@ -377,3 +377,9 @@ if 'help' in COMMAND_LINE_TARGETS: sys.exit()
 if not os.path.exists(InstallLoc):
     print('Creating '+InstallLoc)
     os.makedirs(InstallLoc)
+    fp = open(os.path.join(InstallLoc,'Build.notes.txt'),'w')
+    fp.write('Created {} on {}\n'.format(datetime.datetime.isoformat(datetime.datetime.now()),
+                                         platform.node()))
+    if 'BUILDINFO' in os.environ:
+        fp.write('{}\n'.format(os.environ['BUILDINFO']))
+    fp.close()

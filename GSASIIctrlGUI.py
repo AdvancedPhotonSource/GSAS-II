@@ -4269,9 +4269,12 @@ For DIFFaX use cite:
             dlg.Destroy()
             return
         dlg.Destroy()
-        self.frame.OnFileSave(event)
-        GPX = self.frame.GSASprojectfile
-        GSASIIpath.svnUpdateProcess(projectfile=GPX)
+        if self.frame.GPXtree.GetCount() > 1:
+            self.frame.OnFileSave(event)
+            GPX = self.frame.GSASprojectfile
+            GSASIIpath.svnUpdateProcess(projectfile=GPX)
+        else:
+            GSASIIpath.svnUpdateProcess()
         return
 
     def OnSelectVersion(self,event):

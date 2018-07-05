@@ -2354,7 +2354,7 @@ class ExpressionObj(object):
         for v in self.freeVars:
             if not self.freeVars[v][2]: continue
             if "::"+self.freeVars[v][0] not in varyList: continue
-            indx = varyList.index("::"+self.freeVars[v][0])
+            indx = list(varyList).index("::"+self.freeVars[v][0])
             self.freeVars[v][1] = values[indx]
 
     def GetIndependentVars(self):
@@ -2374,7 +2374,7 @@ class ExpressionObj(object):
             raise Exception("Expression parse error")
         exprLblList,fxnpkgdict = ret
         # check each var used in expression is defined
-        defined = self.assgnVars.keys() + self.freeVars.keys()
+        defined = list(self.assgnVars.keys()) + list(self.freeVars.keys())
         notfound = []
         for var in exprLblList:
             if var not in defined:

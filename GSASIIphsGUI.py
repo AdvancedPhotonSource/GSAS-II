@@ -1104,67 +1104,6 @@ def FindBondsDrawCell(data,cell):
                         
 ################################################################################
 ################################################################################
-def CheckAllScalePhaseFractions(G2frame):
-    '''Check if scale factor and all phase fractions are refined without a constraint
-    for all used histograms, if so, offer the user a chance to create a constraint
-    on the sum of phase fractions
-    '''
-    histograms, phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    for i,hist in enumerate(histograms):
-        CheckScalePhaseFractions(G2frame,hist,histograms,phases)
-        
-def CheckScalePhaseFractions(G2frame,hist,histograms,phases):
-    '''Check if scale factor and all phase fractions are refined without a constraint
-    for histogram hist, if so, offer the user a chance to create a constraint
-    on the sum of phase fractions
-    '''
-    if G2frame.testSeqRefineMode():
-        histStr = '*'
-    else:
-        histStr = str(histograms[hist]['hId'])
-    # is scale factor varied
-    if not histograms[hist]['Sample Parameters']['Scale'][1]:
-        return
-    # are all phase fractions varied in all used histograms
-    phaseCount = 0
-    for p in phases:
-        if phases[p]['Histograms'][hist]['Use'] and not phases[p]['Histograms'][hist]['Scale'][1]:
-            return
-        else:
-            phaseCount += 1
-    
-    # all phase fractions and scale factor varied, now scan through constraints
-    sub = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints') 
-    Constraints = G2frame.GPXtree.GetItemPyData(sub)
-    fracConstr = False
-    for c in Constraints.get('HAP',[]):
-        if c[-1] != 'c': continue
-        if not c[-3]: continue
-        if len(c[:-3]) != phaseCount: continue
-        # got a constraint equation with right number of terms, is it on phase fractions for
-        # the correct histogram?
-        if all([(i[1].name == 'Scale' and i[1].varname().split(':')[1] == histStr) for i in c[:-3]]):
-            # got a constraint, this is OK
-            return
-    dlg = wx.MessageDialog(G2frame,
-                            'You are refining the scale factor and all phase fractions for histogram #'+
-                            histStr+'. This will produce an unstable refinement. '+
-                            'Do you want to constrain the sum of phase fractions?',
-                            'Create constraint?',
-                            wx.OK|wx.CANCEL)
-    if dlg.ShowModal() != wx.ID_OK:
-        dlg.Destroy()
-        return
-    dlg.Destroy()
-
-    constr = []
-    for p in phases:
-        if not phases[p]['Histograms'][hist]['Use']: continue
-        constr += [[1.0,G2obj.G2VarObj(':'.join((str(phases[p]['pId']),histStr,'Scale')))]]
-    constr += [1.0,None,'c']
-    Constraints['HAP'] += [constr]
-################################################################################
-################################################################################
 def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
@@ -9270,4 +9209,3 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.phaseDisplay.SetSelection(ind)
             return
     ChangePage(0)
-    CheckAllScalePhaseFractions(G2frame)

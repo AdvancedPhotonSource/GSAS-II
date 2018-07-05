@@ -4276,6 +4276,7 @@ class GSASII(wx.Frame):
         This could potentially be sped up by loading only the histogram that is needed
         for a sequential fit. 
         '''
+        G2cnstG.CheckAllScalePhaseFractions(self)
         try:
             parmDict,varyList = self.MakeLSParmDict()
         except:
@@ -4311,6 +4312,7 @@ class GSASII(wx.Frame):
         '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
+        G2cnstG.CheckAllScalePhaseFractions(self)
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return

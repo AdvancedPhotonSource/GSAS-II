@@ -1243,7 +1243,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         gonioSizer.Add(globEdit,0,WACV)
         return gonioSizer
         
-# Image Controls main code             
+    # UpdateImageControls: Image Controls main code             
                             
     #fix for old files:
     if 'azmthOff' not in data:
@@ -1261,6 +1261,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     #end fix
     
     if IntegrateOnly:
+        Masks = G2frame.GPXtree.GetItemPyData(
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
+        # Mhash = hash(str(Masks))  # TODO: implement this to save integration time (?)
+        # if  Mhash != oldMhash:
+        #     t0 = time.time()
+        useMask = G2img.MakeUseMask(data,Masks,blkSize)
+        #     print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
+        #     oldMhash = Mhash
         OnIntegrate(None,useTA=useTA,useMask=useMask)
         return
     
@@ -2869,7 +2877,10 @@ class AutoIntFrame(wx.Frame):
         UpdateImageControls(G2frame,data,masks,useTA=useTA,useMask=useMask,IntegrateOnly=True)
         G2frame.IntegratedList.append(img) # note this as integrated
         # split name and control number
-        s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
+        try:
+            s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
+        except AttributeError: # not sure why, but sometimes imagefile is a list here (should not be)!
+            s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile[0])[0])[1])
         namepre = s[0]
         if len(s) > 1:
             namenum = s[1]

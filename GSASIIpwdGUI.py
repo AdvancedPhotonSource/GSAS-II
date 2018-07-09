@@ -3041,6 +3041,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = Phase['General']['SGData']
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+        if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:12] = Cell[1:8]
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
@@ -3058,6 +3059,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = rd.Phase['General']['SGData']
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+        if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:12] = Cell[1:8]
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])

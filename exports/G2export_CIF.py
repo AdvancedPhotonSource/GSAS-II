@@ -191,6 +191,126 @@ def WriteAtomsNuclear(fp, phasedict, phasenam, parmDict, sigDict, labellist):
             s += PutInCol(G2mth.ValEsd(val,sig),11)
         WriteCIFitem(fp, s)
 
+def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
+    'Write atom positions to CIF'
+    # phasedict = self.Phases[phasenam] # pointer to current phase info
+    General = phasedict['General']
+    cx,ct,cs,cia = General['AtomPtrs']
+    Atoms = phasedict['Atoms']
+    cfrac = cx+3
+    fpfx = str(phasedict['pId'])+'::Afrac:'
+    for i,at in enumerate(Atoms):
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval != 0.0:
+            break
+    else:
+        WriteCIFitem(fp, '\n# PHASE HAS NO ATOMS!')
+        return
+
+    WriteCIFitem(fp, '\n# ATOMIC COORDINATES AND DISPLACEMENT PARAMETERS')
+    WriteCIFitem(fp, 'loop_ '+
+                 '\n   _atom_site_label'+
+                 '\n   _atom_site_type_symbol'+
+                 '\n   _atom_site_fract_x'+
+                 '\n   _atom_site_fract_y'+
+                 '\n   _atom_site_fract_z'+
+                 '\n   _atom_site_occupancy'+
+                 '\n   _atom_site_adp_type'+
+                 '\n   _atom_site_U_iso_or_equiv'+
+                 '\n   _atom_site_symmetry_multiplicity')
+
+    varnames = {cx:'Ax',cx+1:'Ay',cx+2:'Az',cx+3:'Afrac',
+                cx+4:'AMx',cx+5:'AMy',cx+6:'AMz',
+                cia+1:'AUiso',cia+2:'AU11',cia+3:'AU22',cia+4:'AU33',
+                cia+5:'AU12',cia+6:'AU13',cia+7:'AU23'}
+    # Empty the labellist
+    while labellist:
+        labellist.pop()
+
+    pfx = str(phasedict['pId'])+'::'
+    # loop over all atoms
+    naniso = 0
+    for i,at in enumerate(Atoms):
+        if phasedict['General']['Type'] == 'macromolecular':
+            label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+            s = PutInCol(MakeUniqueLabel(label,labellist),15) # label
+        else:
+            s = PutInCol(MakeUniqueLabel(at[ct-1],labellist),6) # label
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+        s += PutInCol(FmtAtomType(at[ct]),4) # type
+        if at[cia] == 'I':
+            adp = 'Uiso '
+        else:
+            adp = 'Uani '
+            naniso += 1
+            # compute Uequiv crudely
+            # correct: Defined as "1/3 trace of diagonalized U matrix".
+            # SEE cell2GS & Uij2Ueqv to GSASIIlattice. Former is needed to make the GS matrix used by the latter.
+            t = 0.0
+            for j in (2,3,4):
+                var = pfx+varnames[cia+j]+":"+str(i)
+                t += parmDict.get(var,at[cia+j])
+        for j in (cx,cx+1,cx+2,cx+3,cia,cia+1):
+            if j in (cx,cx+1,cx+2):
+                dig = 11
+                sigdig = -0.00009
+            else:
+                dig = 10
+                sigdig = -0.009
+            if j == cia:
+                s += adp
+            else:
+                var = pfx+varnames[j]+":"+str(i)
+                dvar = pfx+"d"+varnames[j]+":"+str(i)
+                if dvar not in sigDict:
+                    dvar = var
+                if j == cia+1 and adp == 'Uani ':
+                    val = t/3.
+                    sig = sigdig
+                else:
+                    #print var,(var in parmDict),(var in sigDict)
+                    val = parmDict.get(var,at[j])
+                    sig = sigDict.get(dvar,sigdig)
+                    if dvar in G2mv.GetDependentVars(): # do not include an esd for dependent vars
+                        sig = -abs(sig)
+                s += PutInCol(G2mth.ValEsd(val,sig),dig)
+        s += PutInCol(at[cs+1],3)
+        WriteCIFitem(fp, s)
+    if naniso == 0: return
+    # now loop over aniso atoms
+    WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_aniso_label' +
+                 '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
+                 '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
+                 '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
+    for i,at in enumerate(Atoms):
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+        if at[cia] == 'I': continue
+        s = PutInCol(labellist[i],6) # label
+        for j in (2,3,4,5,6,7):
+            sigdig = -0.0009
+            var = pfx+varnames[cia+j]+":"+str(i)
+            val = parmDict.get(var,at[cia+j])
+            sig = sigDict.get(var,sigdig)
+            s += PutInCol(G2mth.ValEsd(val,sig),11)
+        WriteCIFitem(fp, s)
+    # now loop over mag atoms (e.g. all of them)
+    WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_moment.label' +
+                 '\n   _atom_site_moment.crystalaxis_x' +
+                 '\n   _atom_site_moment.crystalaxis_y' +
+                 '\n   _atom_site_moment.crystalaxis_z')
+    for i,at in enumerate(Atoms):
+        fval = parmDict.get(fpfx+str(i),at[cfrac])
+        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+        s = PutInCol(labellist[i],6) # label
+        for j in (cx+4,cx+5,cx+6):
+            sigdig = -0.0009
+            var = pfx+varnames[j]+":"+str(i)
+            val = parmDict.get(var,at[j])
+            sig = sigDict.get(var,sigdig)
+            s += PutInCol(G2mth.ValEsd(val,sig),11)
+        WriteCIFitem(fp, s)
 
 # Refactored over here to allow access by GSASIIscriptable.py
 def MakeUniqueLabel(lbl, labellist):
@@ -1153,6 +1273,12 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteAtomsNuclear(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist)
             else:
+                try:
+                    self.labellist
+                except AttributeError:
+                    self.labellist = []
+                WriteAtomsMagnetic(self.fp, self.Phases[phasenam], phasenam,
+                                  self.parmDict, self.sigDict, self.labellist)
                 raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
             # report cell contents
             WriteComposition(self.fp, self.Phases[phasenam], phasenam, self.parmDict)

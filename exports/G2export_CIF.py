@@ -277,24 +277,24 @@ def WriteAtomsMagnetic(fp, phasedict, phasenam, parmDict, sigDict, labellist):
                 s += PutInCol(G2mth.ValEsd(val,sig),dig)
         s += PutInCol(at[cs+1],3)
         WriteCIFitem(fp, s)
-    if naniso == 0: return
-    # now loop over aniso atoms
-    WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_aniso_label' +
-                 '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
-                 '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
-                 '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
-    for i,at in enumerate(Atoms):
-        fval = parmDict.get(fpfx+str(i),at[cfrac])
-        if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
-        if at[cia] == 'I': continue
-        s = PutInCol(labellist[i],6) # label
-        for j in (2,3,4,5,6,7):
-            sigdig = -0.0009
-            var = pfx+varnames[cia+j]+":"+str(i)
-            val = parmDict.get(var,at[cia+j])
-            sig = sigDict.get(var,sigdig)
-            s += PutInCol(G2mth.ValEsd(val,sig),11)
-        WriteCIFitem(fp, s)
+    if naniso: 
+        # now loop over aniso atoms
+        WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_aniso_label' +
+                     '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
+                     '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
+                     '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
+        for i,at in enumerate(Atoms):
+            fval = parmDict.get(fpfx+str(i),at[cfrac])
+            if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)
+            if at[cia] == 'I': continue
+            s = PutInCol(labellist[i],6) # label
+            for j in (2,3,4,5,6,7):
+                sigdig = -0.0009
+                var = pfx+varnames[cia+j]+":"+str(i)
+                val = parmDict.get(var,at[cia+j])
+                sig = sigDict.get(var,sigdig)
+                s += PutInCol(G2mth.ValEsd(val,sig),11)
+            WriteCIFitem(fp, s)
     # now loop over mag atoms (e.g. all of them)
     WriteCIFitem(fp, '\nloop_' + '\n   _atom_site_moment.label' +
                  '\n   _atom_site_moment.crystalaxis_x' +
@@ -1231,17 +1231,36 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteCIFitem(self.fp, '_symmetry_cell_setting',
                          phasedict['General']['SGData']['SGSys'])
 
-            spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
-            # regularize capitalization and remove trailing H/R
-            spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
-            WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
-
-            # generate symmetry operations including centering and center of symmetry
-            SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
-                phasedict['General']['SGData'])
-            WriteCIFitem(self.fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
-            for i,op in enumerate(SymOpList,start=1):
-                WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,op.lower()))
+            if phasedict['General']['Type'] in ['nuclear','macromolecular']:
+                spacegroup = phasedict['General']['SGData']['SpGrp'].strip()
+                # regularize capitalization and remove trailing H/R
+                spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
+                WriteCIFitem(self.fp, '_symmetry_space_group_name_H-M',spacegroup)
+    
+                # generate symmetry operations including centering and center of symmetry
+                SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
+                    phasedict['General']['SGData'])
+                WriteCIFitem(self.fp, 'loop_\n    _space_group_symop_id\n    _space_group_symop_operation_xyz')
+                for i,op in enumerate(SymOpList,start=1):
+                    WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,op.lower()))
+            elif phasedict['General']['Type'] == 'magnetic':
+                parentSpGrp = phasedict['General']['SGData']['SpGrp'].strip()
+                parentSpGrp = parentSpGrp[0].upper() + parentSpGrp[1:].lower().rstrip('rh ')
+                WriteCIFitem(self.fp, '_parent_space_group.name_H-M_alt',parentSpGrp)
+                spacegroup = phasedict['General']['SGData']['MagSpGrp'].strip()
+                spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
+                WriteCIFitem(self.fp, '_space_group_magn.name_BNS',spacegroup)
+                # generate symmetry operations including centering and center of symmetry
+                SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
+                    phasedict['General']['SGData'])
+                SpnFlp = phasedict['General']['SGData']['SpnFlp']
+                WriteCIFitem(self.fp, 'loop_\n    _space_group_symop_magn_operation.id\n    _space_group_symop_magn_operation.xyz')
+                for i,op in enumerate(SymOpList,start=1):
+                    if SpnFlp[i-1] >0:
+                        opr = op.lower()+',+1'
+                    else:
+                        opr = op.lower()+',-1'
+                    WriteCIFitem(self.fp, '   {:3d}  {:}'.format(i,opr))
 
             # loop over histogram(s) used in this phase
             if not oneblock and not self.quickmode and not hist:
@@ -1279,7 +1298,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     self.labellist = []
                 WriteAtomsMagnetic(self.fp, self.Phases[phasenam], phasenam,
                                   self.parmDict, self.sigDict, self.labellist)
-                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
+#                self.CloseFile()
+#                raise Exception("no export for "+str(phasedict['General']['Type'])+" coordinates implemented")
             # report cell contents
             WriteComposition(self.fp, self.Phases[phasenam], phasenam, self.parmDict)
             if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles

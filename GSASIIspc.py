@@ -1041,13 +1041,13 @@ def MagText2MTS(mcifOpr,CIF=True):
     for op in ops[:3]:
         ip = len(op)
         if '/' in op:
-            if CIF:
+            try:    #mcif format
                 nP = op.count('+')
                 opMT = op.split('+')
                 T.append(eval(opMT[nP]))
                 if nP == 2:
                     opMT[0] = '+'.join(opMT[0:2])
-            else:
+            except NameError:   #normal cif format
                 ip = op.index('/')
                 T.append(eval(op[:ip+2]))
                 opMT = [op[ip+2:],'']

@@ -283,17 +283,26 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         SGData['SGCen'].append(C[:3])
                         censpn += list(np.array(spnflp)*S)
                     self.MPhase['General']['SSGData'] = SSGData
-                else:    
+                else:
                     try:
-                        sgoploop = blk.GetLoop('_space_group_symop_magn.id')
-                        sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
+                        sgoploop = blk.GetLoop('_space_group_symop_magn_operation.id')
                         opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
-                        centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
-                    except KeyError:        #old mag cif names
-                        sgoploop = blk.GetLoop('_space_group_symop.magn_id')
-                        sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
-                        opid = sgoploop.GetItemPosition('_space_group_symop.magn_operation_xyz')[1]
-                        centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
+                        try:
+                            sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
+                            centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]
+                        except KeyError:
+                            sgcenloop = None
+                    except KeyError:                                          
+                        try:
+                            sgoploop = blk.GetLoop('_space_group_symop_magn.id')
+                            sgcenloop = blk.GetLoop('_space_group_symop_magn_centering.id')
+                            opid = sgoploop.GetItemPosition('_space_group_symop_magn_operation.xyz')[1]
+                            centid = sgcenloop.GetItemPosition('_space_group_symop_magn_centering.xyz')[1]                    
+                        except KeyError:        #old mag cif names
+                            sgoploop = blk.GetLoop('_space_group_symop.magn_id')
+                            sgcenloop = blk.GetLoop('_space_group_symop.magn_centering_id')
+                            opid = sgoploop.GetItemPosition('_space_group_symop.magn_operation_xyz')[1]
+                            centid = sgcenloop.GetItemPosition('_space_group_symop.magn_centering_xyz')[1]
                     spnflp = []
                     for op in sgoploop:
                         try:
@@ -304,10 +313,15 @@ class CIFPhaseReader(G2obj.ImportPhase):
                             self.warnings += 'Space group operator '+op[opid]+' is not recognized by GSAS-II'
                             return False
                     censpn = []
-                    for cent in sgcenloop:
-                        M,C,S = G2spc.MagText2MTS(cent[centid])
-                        SGData['SGCen'].append(C)
-                        censpn += list(np.array(spnflp)*S)
+                    if sgcenloop:
+                        for cent in sgcenloop:
+                            M,C,S = G2spc.MagText2MTS(cent[centid])
+                            SGData['SGCen'].append(C)
+                            censpn += list(np.array(spnflp)*S)
+                    else:
+                            M,C,S = G2spc.MagText2MTS('x,y,z,+1')
+                            SGData['SGCen'].append(C)
+                            censpn += list(np.array(spnflp)*S)                        
                 self.MPhase['General']['SGData'] = SGData
                 self.MPhase['General']['SGData']['SpnFlp'] = censpn
                 G2spc.GenMagOps(SGData)         #set magMom

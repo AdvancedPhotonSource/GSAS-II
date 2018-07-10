@@ -1442,7 +1442,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     if 'HStrain' in data['Histograms'][hist]:       #PWDR only
                         data['Histograms'][hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
                         data['Histograms'][hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
-                data['Drawing']['Atoms'] = []
+                if data['Drawing']: data['Drawing']['Atoms'] = []
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):

@@ -1001,6 +1001,12 @@ def UpdateConstraints(G2frame,data):
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
         del data[name][Id]
+        allcons = []
+        for key in data:
+            if key.startswith('_'): continue
+            allcons += data[key]
+        if not len(allcons): return
+        errmsg,warnmsg = CheckConstraints(allcons)
         wx.CallAfter(OnPageChanged,None)
         
     def OnConstEdit(event):

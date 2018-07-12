@@ -1898,16 +1898,23 @@ class ImportBaseclass(object):
 
     def ExtensionValidator(self, filename):
         '''This methods checks if the file has the correct extension
-        Return False if this filename will not be supported by this reader
+        Return False if this filename will not be supported by this reader (only
+          when strictExtension is True)
         Return True if the extension matches the list supplied by the reader
         Return None if the reader allows un-registered extensions
         '''
         if filename:
             ext = ospath.splitext(filename)[1]
-            if sys.platform == 'windows': ext = ext.lower()
-            if ext in self.extensionlist: return True
-            if self.strictExtension: return False
-        return 
+            if not ext and self.strictExtension: return False
+            for ext in self.extensionlist:                
+                if sys.platform == 'windows':
+                    if filename.lower().endswith(ext): return True
+                else:
+                    if filename.endswith(ext): return True
+        if self.strictExtension:
+            return False
+        else:
+            return None
 
     def ContentsValidator(self, filename):
         '''This routine will attempt to determine if the file can be read

@@ -292,7 +292,7 @@ def phaseCheck(phaseVary,Phases,histogram):
             newVary = [item for item in phaseVary if item.split(':')[0] == str(pId)]
             FixVals = Phases[phase]['Histograms'][histogram].get('Fix FXU',' ')
             if 'F' in FixVals:
-                newVary = [item for item in newVary if not 'AF' in item]
+                newVary = [item for item in newVary if not 'Afrac' in item]
             if 'X' in FixVals:
                 newVary = [item for item in newVary if not 'dA' in item]
             if 'U' in FixVals:

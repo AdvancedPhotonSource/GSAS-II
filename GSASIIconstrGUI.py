@@ -1005,9 +1005,9 @@ def UpdateConstraints(G2frame,data):
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
         del data[name][Id]
-        allcons = FindAllCons(data)
+        allcons = FindAllCons(data)     #should I call CheckChangedConstraint() instead?
         if not len(allcons): return
-        errmsg,warnmsg = CheckConstraints(allcons)
+        CheckConstraints(allcons)
         wx.CallAfter(OnPageChanged,None)
         
     def OnConstEdit(event):

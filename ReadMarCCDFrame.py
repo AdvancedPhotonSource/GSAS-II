@@ -287,7 +287,7 @@ class marFrame():
         # MarCCD specific header info
         File.seek(IFD[34710][2][0])
         self.headerType = st.unpack(byteOrd+'I',File.read(4))[0] #/* flag for header type  (can be used as magic number) */
-        self.headerName = st.unpack(byteOrd+16*'s',File.read(16))[0].replace(b'\x00',b'')
+        self.headerName = b''.join(st.unpack(byteOrd+16*'s',File.read(16))).replace(b'\x00',b'')
         self.headerMajorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_major_version (n.) */
         self.headerMinorVersion = st.unpack(byteOrd+'I',File.read(4))[0] #/* header_minor_version (.n) */
         self.headerByteOrder = st.unpack(byteOrd+'I',File.read(4))[0] #/* BIG_ENDIAN (Motorola,MIPS); LITTLE_ENDIAN (DEC, Intel) */
@@ -360,7 +360,7 @@ class marFrame():
         self.pixelNoise = st.unpack(byteOrd+'I'*MAXIMAGES,File.read(4*MAXIMAGES)) # /* 1000*base noise value (ADUs) */
 
         File.seek(IFD[34710][2][0]+256+128)
-        self.barcode = st.unpack(byteOrd+16*'s',File.read(16))[0].replace(b'\x00',b'')
+        self.barcode = b''.join(st.unpack(byteOrd+16*'s',File.read(16))).replace(b'\x00',b'')
         self.barcodeAngle = st.unpack(byteOrd+'I',File.read(4))[0]
         self.barcodeStatus = st.unpack(byteOrd+'I',File.read(4))[0]
 
@@ -432,16 +432,16 @@ class marFrame():
         self.opticsPolarizationY = st.unpack(byteOrd+'i',File.read(4))[0] #/* () */
 
         File.seek(IFD[34710][2][0]+256+128+256+128+128+128)
-        self.filetitle = st.unpack(byteOrd+128*'s',File.read(128))[0].replace(b'\x00',b'')
-        self.filepath = st.unpack(byteOrd+'s'*128,File.read(128))[0].replace(b'\x00',b'') #/* path name for data file*/
-        self.filename = st.unpack(byteOrd+'s'*64,File.read(64))[0].replace(b'\x00',b'') #/* name of data file*/
-        self.acquireTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time of acquisition*/
-        self.headerTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time of header update*/
-        self.saveTimestamp = st.unpack(byteOrd+'s'*32,File.read(32))[0].replace(b'\x00',b'') #/* date and time file saved */
-        self.fileComment = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'') #/* comments  - can be used as desired */
-        self.datasetComment = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'') #/* comments  - can be used as desired */
+        self.filetitle = b''.join(st.unpack(byteOrd+128*'s',File.read(128))).replace(b'\x00',b'')
+        self.filepath = b''.join(st.unpack(byteOrd+'s'*128,File.read(128))).replace(b'\x00',b'') #/* path name for data file*/
+        self.filename = b''.join(st.unpack(byteOrd+'s'*64,File.read(64))).replace(b'\x00',b'') #/* name of data file*/
+        self.acquireTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time of acquisition*/
+        self.headerTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time of header update*/
+        self.saveTimestamp = b''.join(st.unpack(byteOrd+'s'*32,File.read(32))).replace(b'\x00',b'') #/* date and time file saved */
+        self.fileComment = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'') #/* comments  - can be used as desired */
+        self.datasetComment = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'') #/* comments  - can be used as desired */
 
-        self.userData = st.unpack(byteOrd+'s'*512,File.read(512))[0].replace(b'\x00',b'')
+        self.userData = b''.join(st.unpack(byteOrd+'s'*512,File.read(512))).replace(b'\x00',b'')
 
         File.seek(4096)
         self.image = ar.array(self.arrayTypeCode,File.read(self.byteDepth*self.TIFFsizeX*self.TIFFsizeY))

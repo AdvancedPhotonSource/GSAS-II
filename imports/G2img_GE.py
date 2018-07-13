@@ -10,6 +10,8 @@
 *Module G2img_GE: summed GE image file*
 ---------------------------------------
 
+Read data from General Electric angiography x-ray detectors,
+primarily as used at APS 1-ID. 
 This shows an example of an importer that will handle files with
 more than a single image. 
 
@@ -24,7 +26,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 class GE_ReaderClass(G2obj.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         
-        The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
+        The image files may be of form .geX (where X is ' ', 1, 2, 3, 4 or 5),
         which is a raw image from the detector. These files may contain more
         than one image and have a rudimentary header. 
         Files with extension .sum or .cor are 4 byte integers/pixel, one image/file.
@@ -33,7 +35,7 @@ class GE_ReaderClass(G2obj.ImportImage):
 
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.sum','.cor','.avg','.ge','.ge1','.ge2','.ge3','.ge4'),
+            extensionlist=('.sum','.cor','.avg','.ge','.ge1','.ge2','.ge3','.ge4','.ge5'),
             strictExtension=True,
             formatName = 'GE image',
             longFormatName = 'Summed GE image file'
@@ -72,7 +74,7 @@ class GE_ReaderClass(G2obj.ImportImage):
 class GEsum_ReaderClass(G2obj.ImportImage):
     '''Routine to read multiple GE images & sum them, typically from APS Sector 1.
         
-        The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
+        The image files may be of form .geX (where X is ' ', 1, 2, 3, 4 or 5),
         which is a raw image from the detector. These files may contain more
         than one image and have a rudimentary header. 
         Files with extension .sum or .cor are 4 byte integers/pixel, one image/file.
@@ -81,7 +83,7 @@ class GEsum_ReaderClass(G2obj.ImportImage):
 
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.ge1','.ge2','.ge3','.ge4'),
+            extensionlist=('.ge1','.ge2','.ge3','.ge4','.ge5'),
             strictExtension=True,
             formatName = 'sum GE multi-image',
             longFormatName = 'sum of GE multi-image file'
@@ -106,8 +108,8 @@ class GEsum_ReaderClass(G2obj.ImportImage):
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
-        self.Comments,self.Data,self.Npix,self.Image,more = \
-            GetGEsumData(self,filename,imagenum=imagenum,sum=True)
+        self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(
+            self,filename,imagenum=imagenum,sum=True)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)

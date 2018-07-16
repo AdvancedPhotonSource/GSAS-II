@@ -35,7 +35,7 @@ class GE_ReaderClass(G2obj.ImportImage):
 
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.sum','.cor','.avg','.ge','.ge1','.ge2','.ge3','.ge4','.ge5'),
+            extensionlist=('.sum','.cor','.cor32','.avg','.ge','.ge1','.ge2','.ge3','.ge4','.ge5'),
             strictExtension=True,
             formatName = 'GE image',
             longFormatName = 'Summed GE image file'
@@ -131,8 +131,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     more = False
     time0 = time.time()
     File = open(filename,'rb')
-    if filename.split('.')[-1] in ['sum',]:
-        head = ['GE detector sum  data from APS 1-ID',]
+    if filename.split('.')[-1] in ['sum','cor32']:
+        head = ['GE detector sum/corrected data from APS 1-ID',]
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
         image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32),dtype=np.int32)

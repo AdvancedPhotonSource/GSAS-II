@@ -7567,6 +7567,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
     Also Called in GSASIIphsGUI.UpdatePhaseData by OnTransform callback. 
     '''
     if G2frame.PickIdText == G2frame.GetTreeItemsList(item): # don't redo the current data tree item 
+        if GSASIIpath.GetConfigValue('debug'): print('Skipping SelectDataTreeItem as G2frame.PickIdText unchanged')
         return
 
     # save or finish processing of outstanding events

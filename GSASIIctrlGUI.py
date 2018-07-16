@@ -946,7 +946,6 @@ class NumberValidator(wx.PyValidator):
             else:
                 wx.CallAfter(self.CheckInput,False) 
             return
-        if not wx.Validator_IsSilent(): wx.Bell()
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################
@@ -1013,8 +1012,6 @@ class ASCIIValidator(wx.PyValidator):
             if event: event.Skip()
             self.TestValid(tc)
             return
-        if not wx.Validator_IsSilent():
-            wx.Bell()
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################

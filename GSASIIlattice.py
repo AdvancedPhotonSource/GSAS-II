@@ -392,7 +392,6 @@ def FillUnitCell(Phase):
                     opNum = G2spc.GetOpNum(item[1],SGData)
                     mom = np.inner(np.array(atom[cm:cm+3]),Bmat)
                     atom[cm:cm+3] = np.inner(np.inner(mom,M),Amat)*nl.det(M)*SpnFlp[opNum-1]
-#                GSASIIpath.IPyBreak()
                 atCodes.append('%d:%s'%(iat,str(item[1])))
                 atomData.append(atom[:cia+9])  #not SS stuff
             
@@ -422,10 +421,11 @@ def GetUnique(Phase,atCodes):
         if Indx[ind]:
             xyz = XYZ[ind]
             for jnd in range(Ind):
-                if ind != jnd and Indx[jnd]:                        
-                    Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
-                    xyzs = np.array([equiv[0] for equiv in Equiv])
-                    Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
+                if Atoms[ind][ct] == Atoms[jnd][ct]:
+                    if ind != jnd and Indx[jnd]:                        
+                        Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
+                        xyzs = np.array([equiv[0] for equiv in Equiv])
+                        Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
     Ind = []
     for ind in Indx:
         if Indx[ind]:

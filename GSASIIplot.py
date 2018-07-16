@@ -187,7 +187,6 @@ else:
     Angstr = chr(0x00c5)
     Pwrm1 = chr(0x207b)+chr(0x0b9)
 nxs = np.newaxis
-#    GSASIIpath.IPyBreak()
 plotDebug = False
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
@@ -1517,7 +1516,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             pass
         Page.canvas.SwapBuffers()
 
-    # PlotStructure execution starts here (N.B. initialization above)
+    # Plot3DSngl execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('3D Structure Factors','ogl')
     if new:
         Page.views = False

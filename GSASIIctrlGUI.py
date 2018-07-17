@@ -5014,6 +5014,9 @@ tutorialIndex = (
     ['SeqParametric', 'ParametricFitting.htm', '     Parametric Fitting and Pseudo Variables for Sequential Fits',
      '''This explores the results of the sequential refinement obtained in the previous tutorial; includes 
      plotting of variables and fitting the changes with simple equations.'''],
+     ['TOF Sequential Single Peak Fit','TOF Sequential Single Peak Fit.htm','     Sequential fitting of single peaks and strain analysis of reult',
+      '''This shows the fitting of single peaks in a sequence of TOF powder patterns from a sample under load; includes
+      fitting of the result to get Hookes Law coefficients for elastic deformations.'''],
 
     ['Structure solution'],
     ['FitPeaks', 'Fit Peaks.htm', 'Fitting individual peaks & autoindexing',

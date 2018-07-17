@@ -698,8 +698,8 @@ def UpdatePeakGrid(G2frame, data):
         try:
             peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,bxye,[],oneCycle,controls,dlg)[0]
         finally:
+#            dlg.Destroy()
             print ('finished')
-            dlg.Destroy()
         newpeaks = copy.copy(peaks)
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')

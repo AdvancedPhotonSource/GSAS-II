@@ -777,7 +777,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Page.canvas.draw_idle()
                 
         def OnLineScan(event):
-            data['linescan'][0] = linescan.GetValue()
+            Azm = (data['LRazimuth'][1]+data['LRazimuth'][0])/2.
+            data['linescan'] = [linescan.GetValue(),Azm]
             G2plt.PlotExposedImage(G2frame,event=event)
 
         mplv = mpl.__version__.split('.')

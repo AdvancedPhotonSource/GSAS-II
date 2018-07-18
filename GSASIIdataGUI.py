@@ -2909,24 +2909,25 @@ class GSASII(wx.Frame):
         pth = G2G.GetImportPath(self)
         if not pth: pth = '.'
         dlg = wx.FileDialog(self, 'Choose file with peak list', pth, '', 
-            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.FD_OPEN)
+            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.FD_MULTIPLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                self.HKL = []
-                self.powderfile = dlg.GetPath()
-                comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
-                Id = self.GPXtree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
-                data = ['PKS',wave,0.0]
-                names = ['Type','Lam','Zero'] 
-                codes = [0,0,0]
-                inst = [G2fil.makeInstDict(names,data,codes),{}]
-                self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Instrument Parameters'),inst)
-                self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),comments)
-                self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Limits'),[tuple(limits),limits])
-                self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Index Peak List'),[peaks,[]])
-                self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Unit Cells List'),[])             
-                self.GPXtree.Expand(Id)
-                self.GPXtree.SelectItem(Id)
+                for file_ajk in dlg.GetPaths():
+                    self.HKL = []
+                    self.powderfile = file_ajk
+                    comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
+                    Id = self.GPXtree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
+                    data = ['PKS',wave,0.0]
+                    names = ['Type','Lam','Zero'] 
+                    codes = [0,0,0]
+                    inst = [G2fil.makeInstDict(names,data,codes),{}]
+                    self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Instrument Parameters'),inst)
+                    self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Comments'),comments)
+                    self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Limits'),[tuple(limits),limits])
+                    self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Index Peak List'),[peaks,[]])
+                    self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Unit Cells List'),[])             
+                    self.GPXtree.Expand(Id)
+                    self.GPXtree.SelectItem(Id)
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:
             dlg.Destroy()

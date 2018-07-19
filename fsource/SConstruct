@@ -375,6 +375,7 @@ print (80*'=')
 #print (env.Dump())
 if 'help' in COMMAND_LINE_TARGETS: sys.exit()
 if not os.path.exists(InstallLoc):
+    import datetime
     print('Creating '+InstallLoc)
     os.makedirs(InstallLoc)
     fp = open(os.path.join(InstallLoc,'Build.notes.txt'),'w')

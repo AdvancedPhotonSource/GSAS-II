@@ -23,6 +23,7 @@ import sys
 import random as ran
 import numpy as np
 import re
+import copy
 import GSASIIIO as G2IO
 import GSASIIobj as G2obj
 import GSASIIspc as G2spc
@@ -106,7 +107,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if name is None or name == '?' or name == '.':
                         continue
                     else:
-                        choice[-1] += name.strip()[:20] + ', '
+                        choice[-1] += name.strip() + ', '
                         break
                 na = len(cf[blknm].get("_atom_site_fract_x"))
                 if na == 1:
@@ -580,11 +581,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     break
             else: # no name found, use block name for lack of a better choice
                 name = blknm
-            self.Phase['General']['Name'] = name.strip()[:20]
+            self.Phase['General']['Name'] = name.strip()
             self.Phase['General']['Super'] = Super
             if magnetic:
                 self.MPhase['General']['Type'] = 'magnetic'                
-                self.MPhase['General']['Name'] = name.strip()[:20]+' mag'
+                self.MPhase['General']['Name'] = name.strip()+' mag'
                 self.MPhase['General']['Super'] = Super
                 if Super:
                     if self.MPhase['General']['SGData']['SGGray']:
@@ -592,6 +593,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     self.MPhase['General']['Modulated'] = True
                     self.MPhase['General']['SuperVec'] = SuperVec
                     self.MPhase['General']['SuperSg'] = SuperSg
+                if 'mcif' not in filename:
+                    self.Phase = copy.deepcopy(self.MPhase)
+                    del self.MPhase
             else:
                 self.MPhase = None
             if Super:

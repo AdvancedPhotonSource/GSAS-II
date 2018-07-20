@@ -1250,6 +1250,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 spacegroup = phasedict['General']['SGData']['MagSpGrp'].strip()
                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
                 WriteCIFitem(self.fp, '_space_group_magn.name_BNS',spacegroup)
+                WriteCIFitem(self.fp, '_space_group.magn_point_group',phasedict['General']['SGData']['MagPtGp'])
+
                 # generate symmetry operations including centering and center of symmetry
                 SymOpList,offsetList,symOpList,G2oprList,G2opcodes = G2spc.AllOps(
                     phasedict['General']['SGData'])
@@ -2064,7 +2066,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.quickmode = True
             self.Write(' ')
             self.Write(70*'#')
-            WriteCIFitem(self.fp, 'data_'+phaseOnly)
+            WriteCIFitem(self.fp, 'data_'+phaseOnly.replace(' ','_'))
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             WritePhaseInfo(phaseOnly)

@@ -2064,7 +2064,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.quickmode = True
             self.Write(' ')
             self.Write(70*'#')
-            WriteCIFitem(self.fp, 'data_'+self.CIFname)
+            WriteCIFitem(self.fp, 'data_'+phaseOnly)
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             WritePhaseInfo(phaseOnly)
@@ -2497,11 +2497,12 @@ class ExportPhaseCIF(ExportCIF):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        self.multiple = False
+        self.multiple = True
         self.currentExportType = 'phase'
         if self.ExportSelect('ask'): return
         self.OpenFile()
-        self._Exporter(event=event,phaseOnly=self.phasenam[0])
+        for name in self.phasenam:
+            self._Exporter(event=event,phaseOnly=name)  #TODO: repeat for magnetic phase
         self.CloseFile()
 
     def Writer(self,hist,phasenam,mode='w'):

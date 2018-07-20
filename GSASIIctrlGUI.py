@@ -1634,7 +1634,10 @@ class G2MultiChoiceDialog(wx.Dialog):
             
     def _SetAll(self,event):
         'Set all viewed choices on'
-        self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
+        if 'phoenix' in wx.version():
+            self.clb.SetCheckedItems(range(0,len(self.filterlist),self.Stride))
+        else:
+            self.clb.SetChecked(range(0,len(self.filterlist),self.Stride))
         self.stride.SetValue('1')
         self.Stride = 1
         

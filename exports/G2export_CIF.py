@@ -1247,6 +1247,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 parentSpGrp = phasedict['General']['SGData']['SpGrp'].strip()
                 parentSpGrp = parentSpGrp[0].upper() + parentSpGrp[1:].lower().rstrip('rh ')
                 WriteCIFitem(self.fp, '_parent_space_group.name_H-M_alt',parentSpGrp)
+#                [Trans,Uvec,Vvec] = phasedict['General']['SGData']['fromParent']         #save these
                 spacegroup = phasedict['General']['SGData']['MagSpGrp'].strip()
                 spacegroup = spacegroup[0].upper() + spacegroup[1:].lower().rstrip('rh ')
                 WriteCIFitem(self.fp, '_space_group_magn.name_BNS',spacegroup)

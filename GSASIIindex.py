@@ -385,7 +385,7 @@ def IndexSSPeaks(peaks,HKL):
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
             if pos >= N:
-                print ('%.4f %d'%(pos,N))
+#                print ('%.4f %d'%(pos,N))
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better

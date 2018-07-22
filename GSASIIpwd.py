@@ -1797,7 +1797,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
         Ftol = 0.0001
     if oneCycle:
         Ftol = 1.0
-    x,y,w,yc,yb,yd = ma.getdata(data)   #these are numpy arrays - remove masks!
+    x,y,w,yc,yb,yd = data   #these are numpy arrays - remove masks!
     yc *= 0.                            #set calcd ones to zero
     yb *= 0.
     yd *= 0.

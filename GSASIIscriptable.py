@@ -388,11 +388,12 @@ Mustrain
                                        integers,
                                        the [hkl] direction of the axis.
 \               refine                 Usually boolean, set to True to refine.
-                                       When in doubt, set it to true.
-                                       For uniaxial model, can specify list
-                                       of 'axial' or 'equatorial' or a single
+                                       or False to clear. 
+                                       For uniaxial model, can specify a value
+                                       of 'axial' or 'equatorial' to set that flag
+                                       to True or a single
                                        boolean sets both axial and equatorial.
-Size                                   Not yet implemented
+Size                                   
 \               type                   Size broadening model. One of 'isotropic',
                                        'uniaxial', or 'ellipsoid'. Should always
                                        be specified.
@@ -400,6 +401,7 @@ Size                                   Not yet implemented
                                        integers,
                                        the [hkl] direction of the axis.
 \               refine                 Boolean, True to refine.
+\               value                  float, size value in microns 
 Pref.Ori.                              Boolean, True to refine
 Show                                   Boolean, True to refine
 Use                                    Boolean, True to refine
@@ -2760,16 +2762,17 @@ class G2Phase(G2ObjectWrapper):
                         if newType:
                             mustrain[0] = newType
                             if newType == 'isotropic':
-                                mustrain[2][0] = True
+                                mustrain[2][0] = True == val.get('refine',False)
                                 mustrain[5] = [False for p in mustrain[4]]
                             elif newType == 'uniaxial':
                                 if 'refine' in val:
+                                    mustrain[2][0] = False
                                     types = val['refine']
                                     if isinstance(types, strtypes):
                                         types = [types]
                                     elif isinstance(types, bool):
-                                        mustrain[2][0] = types
                                         mustrain[2][1] = types
+                                        mustrain[2][2] = types
                                         types = []
                                     else:
                                         raise ValueError("Not sure what to do with: "
@@ -2787,6 +2790,8 @@ class G2Phase(G2ObjectWrapper):
                                         raise ValueError(msg + ': ' + unitype)
                             else:  # newtype == 'generalized'
                                 mustrain[2] = [False for p in mustrain[1]]
+                                if 'refine' in val:
+                                    mustrain[5] = [True == val['refine']]*len(mustrain[5])
 
                         if direction:
                             if len(direction) != 3:
@@ -2794,6 +2799,9 @@ class G2Phase(G2ObjectWrapper):
                             direction = [int(n) for n in direction]
                             mustrain[3] = direction
                 elif key == 'Size':
+                    newSize = None
+                    if 'value' in val:
+                        newSize = float(val['value'])
                     for h in histograms:
                         size = h['Size']
                         newType = None
@@ -2809,14 +2817,17 @@ class G2Phase(G2ObjectWrapper):
 
                         if newType:
                             size[0] = newType
-                            refine = val.get('refine')
+                            refine = True == val.get('refine')
                             if newType == 'isotropic' and refine is not None:
                                 size[2][0] = bool(refine)
+                                if newSize: size[1][0] = newSize
                             elif newType == 'uniaxial' and refine is not None:
                                 size[2][1] = bool(refine)
                                 size[2][2] = bool(refine)
+                                if newSize: size[1][1] = size[1][2] =newSize
                             elif newType == 'ellipsoidal' and refine is not None:
                                 size[5] = [bool(refine) for p in size[5]]
+                                if newSize: size[4] = [newSize for p in size[4]]
 
                         if direction:
                             if len(direction) != 3:

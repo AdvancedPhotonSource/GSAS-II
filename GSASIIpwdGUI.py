@@ -2779,6 +2779,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnBravais(event):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
@@ -3281,8 +3282,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
         else:
             del SGData['MagSpGrp']
-        OnHklShow(None)
         ssopt['SGData'] = SGData
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
             
     def OnSpinOp(event):

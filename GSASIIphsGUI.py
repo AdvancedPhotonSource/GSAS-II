@@ -300,6 +300,7 @@ class TransformDialog(wx.Dialog):
             self.newSpGrp = newSpGrp
         else:
             self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
+        self.SGData = G2spc.SpcGroup(self.newSpGrp)[1]
         self.oldCell = phase['General']['Cell'][1:8]
         self.newCell = self.Phase['General']['Cell'][1:8]
         self.Common = 'abc'
@@ -346,9 +347,9 @@ class TransformDialog(wx.Dialog):
             # try a lookup on the user-supplied name
             SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
             if SpGrpNorm:
-                SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)
+                SGErr,self.SGData = G2spc.SpcGroup(SpGrpNorm)
             else:
-                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+                SGErr,self.SGData = G2spc.SpcGroup(SpcGp)
             if SGErr:
                 text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
                 SGTxt.SetLabel(self.newSpGrp)
@@ -356,19 +357,19 @@ class TransformDialog(wx.Dialog):
                 Text = '\n'.join(text)
                 wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
             else:
-                text,table = G2spc.SGPrint(SGData)
-                self.Phase['General']['SGData'] = SGData
+                text,table = G2spc.SGPrint(self.SGData)
+                self.Phase['General']['SGData'] = self.SGData
                 self.newSpGrp = SpcGp
                 SGTxt.SetLabel(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 G2G.SGMessageBox(self.panel,msg,text,table).Show()
             if self.ifMag:
-                self.BNSlatt = SGData['SGLatt']
+                self.BNSlatt = self.SGData['SGLatt']
             if self.Phase['General']['Type'] == 'magnetic':
-                Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
-                if SGData['SGInv']:
+                Nops = len(self.SGData['SGOps'])*len(self.SGData['SGCen'])
+                if self.SGData['SGInv']:
                     Nops *= 2
-                SGData['SpnFlp'] = Nops*[1,]
+                self.SGData['SpnFlp'] = Nops*[1,]
             wx.CallAfter(self.Draw)
 
         def OnTest(event):
@@ -380,7 +381,7 @@ class TransformDialog(wx.Dialog):
             
         def OnMag(event):
             self.ifMag = True
-            self.BNSlatt = SGData['SGLatt']
+            self.BNSlatt = self.SGData['SGLatt']
             wx.CallAfter(self.Draw)
             
         def OnConstr(event):
@@ -389,26 +390,26 @@ class TransformDialog(wx.Dialog):
         def OnBNSlatt(event):
             Obj = event.GetEventObject()
             self.BNSlatt = Obj.GetValue()
-            if self.BNSlatt == SGData['SGLatt']:
+            if self.BNSlatt == self.SGData['SGLatt']:
                 return
-            SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
-            SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
-            self.Trans = G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
+            self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
+            self.SGData['SGSpin'] = [1,]*len(self.SGData['SGSpin'])
             wx.CallAfter(self.Draw)
             
         def OnMtrans(event):
             Obj = event.GetEventObject()
             self.Mtrans = Obj.GetValue()
 
-        SGData = self.Phase['General']['SGData']
+#        self.SGData = self.Phase['General']['SGData']
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if self.ifMag:
-            if self.BNSlatt != SGData['SGLatt']:
-                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
-                SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
-                SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+            if self.BNSlatt != self.SGData['SGLatt']:
+                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
+                self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
+                self.SGData['SGSpin'] = [1,]*len(self.SGData['SGSpin'])
         else:
             mag = wx.Button(self.panel,label='Make new phase magnetic?')
             mag.Bind(wx.EVT_BUTTON,OnMag)
@@ -478,11 +479,17 @@ class TransformDialog(wx.Dialog):
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
             if self.ifMag:
-                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(SGData)
+                GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
                 BNSizer = wx.BoxSizer(wx.HORIZONTAL)
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
-                BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
-                BNS = wx.ComboBox(self.panel,value=SGData['SGLatt'],choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                BNSkeys = [self.SGData['SGLatt'],]+list(BNSsym.keys())
+                BNSkeys.sort()
+                try:        #this is an ugly kluge - bug in wx.ComboBox
+                    if self.BNSlatt[2] in ['a','b','c']:
+                        BNSkeys.reverse()
+                except:
+                    pass
+                BNS = wx.ComboBox(self.panel,choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 BNS.SetValue(self.BNSlatt)
                 BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                 BNSizer.Add(BNS,0,WACV)
@@ -514,6 +521,7 @@ class TransformDialog(wx.Dialog):
         self.Fit()
         
     def GetSelection(self):
+        self.Phase['General']['SGData'] = self.SGData
         if self.ifMag:
             self.Phase['General']['Name'] += ' mag'
         else:
@@ -1845,8 +1853,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:
                     spinSizer.Add(wx.StaticText(General,label=' BNS lattice: '),0,WACV)
-                    BNS = wx.ComboBox(General,value=SGData['BNSlattsym'][0],
-                        choices=[SGData['SGLatt'],]+list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
+                    BNSkeys.sort()
+                    try:        #this is an ugly kluge - bug in wx.ComboBox
+                        if SGData['BNSlattsym'][0][2] in ['a','b','c']:
+                            BNSkeys.reverse()
+                    except:
+                        pass
+                    BNS = wx.ComboBox(General,
+                        choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    BNS.SetValue(SGData['BNSlattsym'][0])
                     BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                     spinSizer.Add(BNS,0,WACV)
                     spinColor = ['black','red']

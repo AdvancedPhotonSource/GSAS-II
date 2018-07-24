@@ -46,6 +46,7 @@ import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIdataGUI as G2gd
+import GSASIIphsGUI as G2phsG
 import GSASIIctrlGUI as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
@@ -3325,11 +3326,36 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
             SGData['SpnFlp'],False).Show()
         
+    def TransposeUnitCell(event):
+        Trans = np.eye(3)
+        Uvec = np.zeros(3)
+        Vvec = np.zeros(3)
+        ifMag = False
+        Type = 'nuclear'
+        newSpGrp = ''
+        BNSlatt = ''
+        phase = {'General':{'Name':'','Type':Type,'Cell':['',]+controls[6:13],'SGData':SGData}}
+        dlg = G2phsG.TransformDialog(G2frame,phase,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
+                sgData = newPhase['General']['SGData']
+                controls[5] = sgData['SGLatt']+sgData['SGLaue']
+                controls[13] = sgData['SpGrp']
+                ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+                controls[6:13] = newPhase['General']['Cell'][1:8]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
+    G2frame.Bind(wx.EVT_MENU, TransposeUnitCell, id=G2G.wxID_TRANSPOSECELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)

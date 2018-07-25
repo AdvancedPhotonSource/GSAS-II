@@ -4264,7 +4264,7 @@ def PlotSASDSizeDist(G2frame):
     Plot.set_xlabel(r'$D, \AA$',fontsize=14)
     Plot.set_ylabel(r'$Volume distribution f(D)$',fontsize=14)
     if data['Size']['logBins']:
-        Plot.set_xscale("log",nonposy='mask')
+        Plot.set_xscale("log",nonposx='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
     Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='green')       #plot diameters
     colors=['b','r','c','m','k']

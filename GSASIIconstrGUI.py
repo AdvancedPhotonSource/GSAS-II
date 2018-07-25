@@ -1216,9 +1216,10 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases):
     # is scale factor varied
     if not histograms[hist]['Sample Parameters']['Scale'][1]:
         return
-    # are all phase fractions varied in all used histograms
+    # are all phase fractions varied in all used histograms?
     phaseCount = 0
     for p in phases:
+        if hist not in phases[p]['Histograms']: continue
         if phases[p]['Histograms'][hist]['Use'] and not phases[p]['Histograms'][hist]['Scale'][1]:
             return
         else:
@@ -1250,6 +1251,7 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases):
 
     constr = []
     for p in phases:
+        if hist not in phases[p]['Histograms']: continue
         if not phases[p]['Histograms'][hist]['Use']: continue
         constr += [[1.0,G2obj.G2VarObj(':'.join((str(phases[p]['pId']),histStr,'Scale')))]]
     constr += [1.0,None,'c']

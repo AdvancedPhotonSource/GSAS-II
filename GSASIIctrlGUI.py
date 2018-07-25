@@ -433,7 +433,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
        ([nDig,nPlc,fmt]) after decimal to use for display of float. The format 
        is either 'f' (default) or 'g'. Alternately, None can be specified which 
        causes numbers to be displayed with approximately 5 significant figures
-       for floats. If this is specified, then :obj:`typeHint`=float becomes the
+       for floats. If this is specified, then :obj:`typeHint` = float becomes the
        default. 
        (Default=None).
 
@@ -2837,7 +2837,8 @@ class MultiColumnSelection(wx.Dialog):
       column in the table (pixels). There must be a value for every column label (colLabels).
     :param int height: an optional height (pixels) for the table (defaults to 400)
     
-    Example use:: 
+    Example use::
+    
         lbls = ('col 1','col 2','col 3')
         choices=(['test1','explanation of test 1'],
                  ['b', 'a really really long line that will be word-wrapped'],

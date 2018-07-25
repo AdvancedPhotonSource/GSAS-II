@@ -156,6 +156,8 @@ try:
     from matplotlib.backends.backend_agg import FigureCanvasAgg as hcCanvas
 except ImportError:
     from matplotlib.backends.backend_agg import FigureCanvas as hcCanvas # standard name
+except RuntimeError:  # happens during doc builds
+    pass
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -255,26 +257,27 @@ def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
         
         Add a set of subplots to this figure.
         
-        Parameters
-        ----------
-        nrows, ncols : int, default: 1
+        :param nrows, ncols : int, default: 1
             Number of rows/cols of the subplot grid.
-        sharex, sharey : bool or {'none', 'all', 'row', 'col'}, default: False
+        :param sharex, sharey : bool or {'none', 'all', 'row', 'col'}, default: False
             Controls sharing of properties among x (`sharex`) or y (`sharey`)
             axes:
+            
                 - True or 'all': x- or y-axis will be shared among all
                   subplots.
                 - False or 'none': each subplot x- or y-axis will be
                   independent.
                 - 'row': each subplot row will share an x- or y-axis.
                 - 'col': each subplot column will share an x- or y-axis.
+                
             When subplots have a shared x-axis along a column, only the x tick
             labels of the bottom subplot are visible.  Similarly, when
             subplots have a shared y-axis along a row, only the y tick labels
             of the first column subplot are visible.
-        squeeze : bool, default: True
+        :param squeeze : bool, default: True
             - If True, extra dimensions are squeezed out from the returned
               axis object:
+              
                 - if only one subplot is constructed (nrows=ncols=1), the
                   resulting single Axes object is returned as a scalar.
                 - for Nx1 or 1xN subplots, the returned object is a 1D numpy
@@ -282,25 +285,26 @@ def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
                   arrays.
                 - for NxM, subplots with N>1 and M>1 are returned as a 2D
                   arrays.
+                  
             - If False, no squeezing at all is done: the returned Axes object
               is always a 2D array containing Axes instances, even if it ends
               up being 1x1.
-        subplot_kw : dict, default: {}
+              
+        :param subplot_kw : dict, default: {}
             Dict with keywords passed to the
             :meth:`~matplotlib.figure.Figure.add_subplot` call used to create
             each subplots.
-        gridspec_kw : dict, default: {}
+        :param gridspec_kw : dict, default: {}
             Dict with keywords passed to the
             :class:`~matplotlib.gridspec.GridSpec` constructor used to create
             the grid the subplots are placed on.
-        Returns
-        -------
-        ax : single Axes object or array of Axes objects
+            
+        :return: ax : single Axes object or array of Axes objects
             The added axes.  The dimensions of the resulting array can be
             controlled with the squeeze keyword, see above.
-        See Also
-        --------
-        pyplot.subplots : pyplot API; docstring includes examples.
+            
+        See Also pyplot.subplots : pyplot API; docstring includes examples.
+        
         """
 
         # for backwards compatibility

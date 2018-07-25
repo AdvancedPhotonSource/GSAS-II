@@ -1898,10 +1898,14 @@ class ImportBaseclass(object):
 
     def ExtensionValidator(self, filename):
         '''This methods checks if the file has the correct extension
-        Return False if this filename will not be supported by this reader (only
-          when strictExtension is True)
-        Return True if the extension matches the list supplied by the reader
-        Return None if the reader allows un-registered extensions
+        
+        :returns:
+        
+          * False if this filename will not be supported by this reader (only
+            when strictExtension is True)
+          * True if the extension matches the list supplied by the reader
+          * None if the reader allows un-registered extensions
+          
         '''
         if filename:
             ext = ospath.splitext(filename)[1]

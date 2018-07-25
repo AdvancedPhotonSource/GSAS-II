@@ -1200,7 +1200,17 @@ class G2Project(G2ObjectWrapper):
     """
     Represents an entire GSAS-II project.
 
-    There are two ways to initialize it:
+    :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
+            creates an empty project.
+    :param str author: Author's name (not yet implemented)
+    :param str newgpx: The filename the project should be saved to in
+            the future. If both newgpx and gpxfile are present, the project is
+            loaded from the gpxfile, then when saved will be written to newgpx.
+    :param str filename: Name to be used to save the project. Has same function as
+            parameter newgpx (do not use both gpxfile and filename). Use of newgpx
+            is preferred over filename.
+
+    There are two ways to initialize this object:
 
     >>> # Load an existing project file
     >>> proj = G2Project('filename.gpx')
@@ -1236,18 +1246,6 @@ class G2Project(G2ObjectWrapper):
     :meth:`~G2Project.iter_refinements`, :meth:`~G2Project.do_refinements`.
     """
     def __init__(self, gpxfile=None, author=None, filename=None, newgpx=None):
-        """Loads a GSAS-II project from a specified filename.
-
-        :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
-            creates an empty project.
-        :param str author: Author's name (not yet implemented)
-        :param str newgpx: The filename the project should be saved to in
-            the future. If both newgpx and gpxfile are present, the project is
-            loaded from the gpxfile, then when saved will be written to newgpx.
-        :param str filename: Name to be used to save the project. Has same function as
-            parameter newgpx (do not use both gpxfile and filename). Use of newgpx
-            is preferred over filename.
-        """
         if filename is not None and newgpx is not None:
             raise G2ScriptException('Do not use filename and newgpx together')
         elif newgpx is not None:
@@ -1591,8 +1589,10 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Project.phases`
             """
         output = []
+        # loop through each tree entry. If it is more than one level (more than one item in the
+        # list of names) then it must be a histogram, unless labeled Phases or Restraints
         for obj in self.names:
-            if len(obj) > 1 and obj[0] != u'Phases':
+            if len(obj) > 1 and obj[0] != u'Phases' and obj[0] != u'Restraints':
                 output.append(self.histogram(obj[0]))
         return output
 
@@ -2345,6 +2345,7 @@ class G2PwdrData(G2ObjectWrapper):
 
     def set_peakFlags(self,peaklist=None,area=None,pos=None,sig=None,gam=None):
         '''Set refinement flags for peaks
+        
         :param list peaklist: a list of peaks to change flags. If None (default), changes
           are made to all peaks.
         :param bool area: Sets or clears the refinement flag for the peak area value.
@@ -3310,4 +3311,6 @@ def main():
     result.func(result)
 
 if __name__ == '__main__':
+    #fname='/tmp/corundum-template.gpx'
+    #prj = G2Project(fname)
     main()

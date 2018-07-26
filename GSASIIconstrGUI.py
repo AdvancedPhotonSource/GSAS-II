@@ -1213,9 +1213,10 @@ def CheckScalePhaseFractions(G2frame,hist,histograms,phases):
         histStr = '*'
     else:
         histStr = str(histograms[hist]['hId'])
-    # is scale factor varied
-    if not histograms[hist]['Sample Parameters']['Scale'][1]:
-        return
+    # Is this powder? 
+    if not hist.startswith('PWDR '): return
+    # do this only if the scale factor is varied
+    if not histograms[hist]['Sample Parameters']['Scale'][1]: return
     # are all phase fractions varied in all used histograms?
     phaseCount = 0
     for p in phases:

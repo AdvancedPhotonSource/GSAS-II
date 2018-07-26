@@ -1138,6 +1138,20 @@ def FindBondsDrawCell(data,cell):
                         
 ################################################################################
 ################################################################################
+def SetDrawingDefaults(drawingData):
+    """Add required items into data['drawing'] array if not present. This does not add
+    all the items in SetupDrawingData, but it seems that this is not a problem. Perhaps the
+    two routines could be combined?
+    """
+    defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
+            'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
+            'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
+            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
+            'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
+            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
+    for key in defaultDrawing:
+        if key not in drawingData: drawingData[key] = defaultDrawing[key]
+            
 def UpdatePhaseData(G2frame,Item,data):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
@@ -5180,6 +5194,7 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         SetupDrawingData()
         drawingData = data['Drawing']
+        SetDrawingDefaults(drawingData)        
         cx,ct,cs,ci = drawingData['atomPtrs']
         atomData = drawingData['Atoms']
         if atomStyle:
@@ -6103,6 +6118,7 @@ def UpdatePhaseData(G2frame,Item,data):
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
+        SetDrawingDefaults(drawingData)        
 
         G2frame.GetStatusBar().SetStatusText('',1)
         if drawOptions.GetSizer():

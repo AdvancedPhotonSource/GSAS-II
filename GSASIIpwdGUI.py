@@ -3353,6 +3353,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     OprNames,SpnFlp = G2spc.GenMagOps(ssopt['SGData'])
                     ssopt['SGData']['SpnFlp'] = SpnFlp
                     ssopt['SGData']['MagSpGrp'] = G2spc.MagSGSym(ssopt['SGData'])
+                    G2spc.ApplyBNSlatt(ssopt['SGData'],ssopt['SGData']['BNSlattsym'])
                 else:
                     del SGData['MagSpGrp']
             else:
@@ -3486,8 +3487,15 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData['GenSym'] = GenSym
             SGData['SGGray'] = False
             neutSizer.Add(wx.StaticText(G2frame.dataWindow,label=' BNS lattice: '),0,WACV)
+            BNSkeys = [SGData['SGLatt'],]+list(BNSsym.keys())
+            BNSkeys.sort()
+            try:        #this is an ugly kluge - bug in wx.ComboBox
+                if SGData['BNSlattsym'][0][2] in ['a','b','c']:
+                    BNSkeys.reverse()
+            except:
+                pass
             BNS = wx.ComboBox(G2frame.dataWindow,value=SGData['BNSlattsym'][0],
-                choices=[SGData['SGLatt'],]+list(BNSsym.keys()),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                choices=BNSkeys,style=wx.CB_READONLY|wx.CB_DROPDOWN)
             BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
             neutSizer.Add(BNS,0,WACV)
             spinColor = ['black','red']

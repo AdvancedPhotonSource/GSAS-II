@@ -229,6 +229,9 @@ def svnVersion(svn=None):
     if err:
         print ('subversion error!\nout=%s'%out)
         print ('err=%s'%err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
         return None
     return out.strip()
 
@@ -271,6 +274,9 @@ def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
     if err:
         print ('out=%s'%out)
         print ('err=%s'%err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
         return None
     x = ET.fromstring(out)
     d = {}
@@ -313,6 +319,9 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     if err:
         print ('svn failed\n%s'%out)
         print ('err=%s'%err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
         global svnLastError
         svnLastError = err
         return None
@@ -382,6 +391,9 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
         print("****** An error was noted, see below *********")
         print(60*"=")
         print(err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
         sys.exit()
     elif verbose:
         print(out)
@@ -402,6 +414,9 @@ def svnUpgrade(fpath=os.path.split(__file__)[0]):
     if err:
         print("svn upgrade did not happen (this is probably OK). Messages:")
         print (err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
 
 def svnUpdateProcess(version=None,projectfile=None,branch=None):
     '''perform an update of GSAS-II in a separate python process'''
@@ -456,6 +471,9 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         print(60*"=")
         print ('out=%s'%out)
         print ('err=%s'%err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
         return False
     if verbose:
         print('=== Output from svn switch'+(43*'='))
@@ -483,6 +501,10 @@ def svnInstallDir(URL,loadpath):
         print ("****** An error was noted, see below *********")
         print(60*"=")
         print (err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
+
         return False
     print ("Files installed at: "+loadpath)
     return True

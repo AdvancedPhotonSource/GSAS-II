@@ -3343,8 +3343,18 @@ def UpdateUnitCellsGrid(G2frame, data):
                 sgData = newPhase['General']['SGData']
                 controls[5] = sgData['SGLatt']+sgData['SGLaue']
                 controls[13] = sgData['SpGrp']
-                ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+                ssopt['SGData'] = sgData
                 controls[6:13] = newPhase['General']['Cell'][1:8]
+                if ifMag:
+                    ssopt['SGData']['SGSpin'] = [1,]*len(ssopt['SGData']['SGSpin'])
+                    GenSym,GenFlg,BNSsym = G2spc.GetGenSym(ssopt['SGData'])
+                    ssopt['SGData']['GenSym'] = GenSym
+                    ssopt['SGData']['GenFlg'] = GenFlg
+                    OprNames,SpnFlp = G2spc.GenMagOps(ssopt['SGData'])
+                    ssopt['SGData']['SpnFlp'] = SpnFlp
+                    ssopt['SGData']['MagSpGrp'] = G2spc.MagSGSym(ssopt['SGData'])
+                else:
+                    del SGData['MagSpGrp']
             else:
                 return
         finally:

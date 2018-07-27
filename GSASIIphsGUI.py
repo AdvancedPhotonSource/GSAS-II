@@ -455,7 +455,7 @@ class TransformDialog(wx.Dialog):
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
         if self.ifMag:
-            Mtrans = wx.CheckBox(self.panel,label=' M from Bilbao routine MAXMAGN? Use matrix transform')
+            Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
             Mtrans.SetValue(self.Mtrans)
             Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
             mainSizer.Add(Mtrans,0,WACV)

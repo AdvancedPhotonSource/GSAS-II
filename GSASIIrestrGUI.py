@@ -252,55 +252,6 @@ def UpdateRestraints(G2frame,data,phaseName):
             if 'F' in items[0]:
                 restrData['Bond']['wtFactor'] = float(items[1])
             elif 'S' in items[0]:
-                
-                
-#                Res = items[1]
-#                Value = float(items[2])
-#                Esd = float(items[3])
-#                Atms = items[4:6]
-#                pAtms = ['','']
-#                for i,atm in enumerate(Atms):
-#                    if '+' in atm:
-#                        pAtms[i] = atm.strip('+')
-#                ids = [0,0]
-#                chains = list(Chains.keys())
-#                chains.sort()
-#                for chain in chains:
-#                    residues = list(Chains[chain].keys())
-#                    residues.sort()
-#                    for residue in residues:
-#                        for ires in [0,1]:
-#                            if Res != '*':  #works with disordered res
-#                                for res,name,Id in Chains[chain][residue][ires]:
-#                                    if Res == res:
-#                                        try:
-#                                            ipos = Atms.index(name[:3].strip())
-#                                            ids[ipos] = Id
-#                                        except ValueError:
-#                                            continue
-#                            else:
-#                                try:
-#                                    for res,name,Id in Chains[chain][residue][ires]:
-#                                        try:
-#                                            ipos = Atms.index(name[:3].strip())
-#                                            ids[ipos] = Id
-#                                        except ValueError:
-#                                            continue
-#                                    for res,name,Id in Chains[chain][residue+1][ires]:
-#                                        try:
-#                                            ipos = pAtms.index(name[:3].strip())
-#                                            ids[ipos] = Id
-#                                        except ValueError:
-#                                            continue
-#                                except KeyError:
-#                                    continue
-#                            if all(ids):
-#                                bond = [list(ids),['1','1'],Value,Esd]
-#                                if bond not in bondRestData['Bonds']:
-#                                    bondRestData['Bonds'].append(bond)
-#                                ids = [0,0]
-                                
-                                
                 oIds = []
                 oCoords = []
                 oDis = []
@@ -331,8 +282,6 @@ def UpdateRestraints(G2frame,data,phaseName):
                             newBond = [[oId,tId],['1','1'],dist,esd]
                             if newBond not in bondRestData['Bonds']:
                                 bondRestData['Bonds'].append(newBond)              
-
-            
             macStr = macro.readline()
         macro.close()
         print(' Found %d bond restraints'%len(bondRestData['Bonds']))

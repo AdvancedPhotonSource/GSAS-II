@@ -166,11 +166,12 @@ def setsvnProxy(host,port):
     proxycmds = []
     host = host.strip()
     port = port.strip()
-    if not host.strip(): return
+    if not host: return
     proxycmds.append('--config-option')
     proxycmds.append('servers:global:http-proxy-host='+host)
-    proxycmds.append('--config-option')
-    proxycmds.append('servers:global:http-proxy-port='+port)
+    if port:
+        proxycmds.append('--config-option')
+        proxycmds.append('servers:global:http-proxy-port='+port)
         
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
@@ -576,7 +577,7 @@ def DownloadG2Binaries(g2home,verbose=True):
             versions[v] = d
     intVersionsList = sorted(versions.keys())
     if not intVersionsList:
-        print('No binaries located')
+        print('No binaries located matching',bindir)
         return
     elif inpver < min(intVersionsList):
         vsel = min(intVersionsList)

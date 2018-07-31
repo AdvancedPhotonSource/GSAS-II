@@ -9,10 +9,8 @@ Use this to check form factors used in neutron scattering
 '''
 
 import sys
-import time
 import wx
 import numpy as np
-import matplotlib as mpl
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 import GSASIItestplot as plot
@@ -87,6 +85,8 @@ class testXNFF(wx.Frame):
                 fplot.plot(lams,bpp[0],label=isotope+El+' b"')
                 
             fplot.legend(loc='best')
+            fplot.set_xlabel('wavelength, A')
+            fplot.set_ylabel('b')
 
         def test2():
             fplot = self.plotNB.add('X-ray form factors').gca()

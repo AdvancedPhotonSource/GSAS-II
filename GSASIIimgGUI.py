@@ -39,6 +39,7 @@ import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
 import GSASIIpy3 as G2py3
+import ImageCalibrants as calFile
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -148,7 +149,6 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
     '''Shows and handles the controls on the "Image Controls"
     data tree entry
     '''
-    import ImageCalibrants as calFile
 #patch
     if 'Flat Bkg' not in data:
         data['Flat Bkg'] = 0.0

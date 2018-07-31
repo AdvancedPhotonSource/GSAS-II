@@ -309,6 +309,8 @@ class TransformDialog(wx.Dialog):
             self.BNSlatt = BNSlatt
         self.ifConstr = True
         self.Mtrans = False
+        self.kvec = [0.,0.,0.]
+        self.Bilbao = ''
         self.Draw()
 
     def Draw(self):
@@ -370,6 +372,7 @@ class TransformDialog(wx.Dialog):
                 if self.SGData['SGInv']:
                     Nops *= 2
                 self.SGData['SpnFlp'] = Nops*[1,]
+                del self.oldSGdata['MAXMAGN']
             wx.CallAfter(self.Draw)
 
         def OnTest(event):
@@ -400,8 +403,47 @@ class TransformDialog(wx.Dialog):
         def OnMtrans(event):
             Obj = event.GetEventObject()
             self.Mtrans = Obj.GetValue()
+            
+        def OnBilbao(event):
+            import MAXMAGN
+            oldkvec = self.kvec
+            SGNo = G2spc.SpaceGroupNumber(self.SGData['SpGrp'])
+            if not SGNo+1:
+                wx.MessageBox('Nonstandard space group '+self.SGData['SpGrp']+' is not known by MAXMAGN',
+                    caption='Bilbao MAXMAGN error',style=wx.ICON_EXCLAMATION)
+                return
+            dlg = G2G.MultiFloatDialog(self,title='Propagation vector',prompts=['kx','ky','kz'],
+                    values=self.kvec,limits=[[0.,1.],[0.,1.],[0.,1.]],formats=['%4.1f','%4.1f','%4.1f'])
+            if dlg.ShowModal() == wx.ID_OK:
+                self.kvec = dlg.GetValues()
+                if self.kvec != oldkvec or 'MAXMAGN' not in self.oldSGdata:
+                    self.oldSGdata['MAXMAGN'] = MAXMAGN.MAXMAGN(SGNo,self.kvec)
+            wx.CallAfter(self.Draw)
+                    
+        def OnBilbaoSG(event):
+            Obj = event.GetEventObject()
+            result = self.oldSGdata['MAXMAGN'][Obj.GetSelection()]
+            self.Bilbao = result[0]
+            numbs = [eval(item+'.') for item in result[2].split()]
+            self.Uvec = np.array(numbs[3::4])
+            self.Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
+            SpGrp = G2spc.StandardizeSpcName(result[0])
+            self.SGData = G2spc.SpcGroup(SpGrp)[1]
+            text,table = G2spc.SGPrint(self.SGData)
+            self.Phase['General']['SGData'] = self.SGData
+            self.newSpGrp = SpGrp
+            msg = 'Space Group Information'
+            G2G.SGMessageBox(self.panel,msg,text,table).Show()
+            self.BNSlatt = self.SGData['SGLatt']+'_'+result[1]
+            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
+            self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
+            self.SGData['SGSpin'] = [1,]*len(self.SGData['SGSpin'])
+            Nops = len(self.SGData['SGOps'])*len(self.SGData['SGCen'])
+            if self.SGData['SGInv']:
+                Nops *= 2
+            self.SGData['SpnFlp'] = Nops*[1,]                    
+            wx.CallAfter(self.Draw)
 
-#        self.SGData = self.Phase['General']['SGData']
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -455,10 +497,15 @@ class TransformDialog(wx.Dialog):
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
         if self.ifMag:
+            MagSizer = wx.BoxSizer(wx.HORIZONTAL)
             Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
             Mtrans.SetValue(self.Mtrans)
             Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
-            mainSizer.Add(Mtrans,0,WACV)
+            MagSizer.Add(Mtrans,0,WACV)
+            Bilbao = wx.Button(self.panel,label='Run Bilbao MAXMAGN')
+            Bilbao.Bind(wx.EVT_BUTTON,OnBilbao)
+            MagSizer.Add(Bilbao,0,WACV)
+            mainSizer.Add(MagSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Old lattice parameters:'),0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=
             ' a = %.5f       b = %.5f      c = %.5f'%(self.oldCell[0],self.oldCell[1],self.oldCell[2])),0,WACV)
@@ -473,9 +520,17 @@ class TransformDialog(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.newCell[6])),0,WACV)
         sgSizer = wx.BoxSizer(wx.HORIZONTAL)
         sgSizer.Add(wx.StaticText(self.panel,label=' Target space group: '),0,WACV)
-        SGTxt = wx.Button(self.panel,wx.ID_ANY,self.newSpGrp,size=(100,-1))
-        SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
-        sgSizer.Add(SGTxt,0,WACV)
+        if self.oldSGdata.get('MAXMAGN',[]):
+            Bilbao = []
+            for result in self.oldSGdata['MAXMAGN']:
+                Bilbao.append(result[0])
+            SGTxtB = wx.ComboBox(self.panel,choices=Bilbao,value=self.Bilbao,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            SGTxtB.Bind(wx.EVT_COMBOBOX,OnBilbaoSG)
+            sgSizer.Add(SGTxtB,0,WACV)
+        else:
+            SGTxt = wx.Button(self.panel,wx.ID_ANY,self.newSpGrp,size=(100,-1))
+            SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
+            sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
             if self.ifMag:

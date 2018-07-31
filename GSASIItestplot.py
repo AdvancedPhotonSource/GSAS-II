@@ -61,7 +61,7 @@ class PlotNotebook(wx.Panel):
             xpos = event.xdata
             if xpos:                                        #avoid out of frame mouse position
                 ypos = event.ydata
-                self.status.SetStatusText('X= %.2f Y= %.2f'%(xpos,ypos))
+                self.status.SetStatusText('X= %.3f Y= %.3f'%(xpos,ypos))
                 
         page = Plot(self.nb)
         page.canvas.mpl_connect('motion_notify_event', OnMotion)

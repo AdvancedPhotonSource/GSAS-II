@@ -3375,10 +3375,17 @@ def StandardizeSpcName(spcgroup):
     if "1'" in rspc:
         gray = " 1'"
         rspc = rspc.replace("1'",'')
-    elif rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
+    rspc = rspc.replace("'",'')
+    if rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
         rspc = rspc[:-1]
-    else:
-        rspc = rspc.replace("'",'')
+    if rspc[1:3] in ['M3','N3','A3','D3']:      #fix cubic old style
+        rspc.replace('3','-3')
+    bns = -1
+    try:
+        bns = rspc.index('_')
+        rspc = rspc.replace(rspc[bns:bns+2],'')
+    except ValueError:
+        pass
     # look for a match in the spacegroup lists
     for i in spglist.values():
         for spc in i:
@@ -3390,6 +3397,18 @@ def StandardizeSpcName(spcgroup):
     else:
     # not found
         return ''
+    
+def SpaceGroupNumber(spcgroup):
+    SGNo = -1
+    SpcGp = StandardizeSpcName(spcgroup)
+    if not SpcGp:
+        return SGNo
+    try:
+        SGNo = spgbyNum.index(SpcGp)
+    except ValueError:
+        pass
+    return SGNo
+
 
 spgbyNum = []
 '''Space groups indexed by number'''

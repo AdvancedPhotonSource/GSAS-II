@@ -3044,7 +3044,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:12] = Cell[1:8]
-        controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+        controls[13] = SGData['SpGrp']
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3062,7 +3062,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:12] = Cell[1:8]
-        controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+        controls[13] = SGData['SpGrp']
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3327,7 +3327,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
             SGData['SpnFlp'],False).Show()
         
-    def TransposeUnitCell(event):
+    def TransformUnitCell(event):
         Trans = np.eye(3)
         Uvec = np.zeros(3)
         Vvec = np.zeros(3)
@@ -3367,7 +3367,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
-    G2frame.Bind(wx.EVT_MENU, TransposeUnitCell, id=G2G.wxID_TRANSPOSECELL)
+    G2frame.Bind(wx.EVT_MENU, TransformUnitCell, id=G2G.wxID_TRANSFORMCELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2G.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)

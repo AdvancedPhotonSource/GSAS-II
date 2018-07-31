@@ -388,10 +388,10 @@ class GSASIIGUI(wx.App):
     '''
     def OnInit(self):
         '''Called automatically when the app is created.'''
-        knownVersions = ['2.7','3.6']
+        knownVersions = ['2.7','3.6','3.7']
         if platform.python_version()[:3] not in knownVersions: 
             dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x or 3.6.x\n Yours is '+sys.version.split()[0],
+                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
                 'Python version error',  wx.OK)
             try:
                 dlg.ShowModal()

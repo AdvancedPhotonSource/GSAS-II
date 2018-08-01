@@ -627,7 +627,6 @@ def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.
     '''
-    import copy
     import ImageCalibrants as calFile
     print ('Image calibration:')
     time0 = time.time()
@@ -970,6 +969,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         Masks['Points'][2] = np.square(Masks['Points'][2]/2.)
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
+    H2 = np.linspace(lutth[0],lutth[1],numChans+1)
     Nx,Ny = data['size']
     nXBlks = (Nx-1)//blkSize+1
     nYBlks = (Ny-1)//blkSize+1
@@ -1017,10 +1017,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             times[3] += time.time()-t0
-            del tax; del tay; del taz; del tad; del tabs
+#            del tax; del tay; del taz; del tad; del tabs
+    print('End integration loops')
     t0 = time.time()
-    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
-    NST = np.array(NST,dtype=np.float)
+#    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
+#    NST = np.array(NST,dtype=np.float32)
     #prepare masked arrays of bins with pixels for interpolation setup
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
     H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]

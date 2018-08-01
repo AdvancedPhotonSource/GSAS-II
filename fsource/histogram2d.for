@@ -36,9 +36,9 @@ C     1    print *,k,x(k),xlim,y(k),ylim
         IF ( ( X(K).GE.XLIM(0) .AND. X(K).LT.XLIM(1) ) .AND.
      1    ( Y(K).GE.YLIM(0) .AND. Y(K).LT.YLIM(1) )) THEN
           DDX = (X(K)-XLIM(0))/DX
-          I = INT(DDX)
+          I = MIN(MAX(0,INT(DDX)),NXBINS-1)
           DDY = (Y(K)-YLIM(0))/DY
-          J = INT(DDY)
+          J = MIN(MAX(0,INT(DDY)),NYBINS-1)
           NST(I,J) = NST(I,J)+1.0
           HST(I,J) = HST(I,J)+Z(K)
 C          if ( mod(k,8000) .eq. 0 )

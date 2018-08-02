@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #makeTutorial.py
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: 3167 $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *makeTutorial: Make Tutorial Web Page*

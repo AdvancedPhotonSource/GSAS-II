@@ -3605,14 +3605,15 @@ class GSASII(wx.Frame):
             try:
                 result = dlg.ShowModal()
                 if result == wx.ID_OK:
-                    dlg.Destroy()
+                    if GSASIIpath.GetConfigValue('debug'): print('DBG: Starting cleanup')
                     self.GPXtree.DeleteChildren(self.root)
                     self.GSASprojectfile = ''
                     self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
+                    if GSASIIpath.GetConfigValue('debug'): print('DBG: cleanup done')
             finally:
-                pass
+                dlg.Destroy()
             return result
         
         def GetGPX():

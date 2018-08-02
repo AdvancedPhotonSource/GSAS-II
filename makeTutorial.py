@@ -18,6 +18,7 @@ index.
 
 from __future__ import print_function
 import os
+import requests
 import GSASIIpath
 #import GSASIIctrl as G2G
 
@@ -65,7 +66,14 @@ if __name__ == '__main__':
                 print('<UL><LI><A href="{}">{}</A>{}'.format(pageURL,l[2].strip(),suffix),file=out)
             else:
                 print('<LI><A href="{}">{}</A>'.format(pageURL,l[2].strip()),file=out)
-
+            
+            # check for video tutorial
+            vname = 'https://anl.box.com/v/' + os.path.splitext(l[1])[0].replace(' ','')[:30]
+            if requests.get(vname).status_code == 200:
+                print(' [link: <A href="{}">video</A>].'.format(vname),file=out)
+                #print('Found video',vname)
+            else:
+                print('No video',vname)
             if GSASIIpath.svnList(dataURL,False):
                 print(' [link: <A href="{}">Exercise files</A>].'.format(dataURL),file=out)
             else:

@@ -4029,7 +4029,7 @@ class GSNoteBook(wx.aui.AuiNotebook):
 #            return
 #        wx.aui.AuiNotebook.Bind(self,eventtype,handler,*args,**kwargs)
                                                       
-    def Clear(self):        
+    def Clear(self):
         GSNoteBook.DeleteAllPages(self)
         
     def FindPage(self,name):
@@ -5069,7 +5069,16 @@ tutorialIndex = (
      directly froom a sequence of 2D imges from a loaded sample.'''],
     ['2DTexture', 'Texture analysis of 2D data in GSAS-II.htm', 'Texture analysis of 2D data',
      '''This shows 3 different methods for determining texture via spherical harmonics from 2D x-ray diffraction images. '''],
-              
+    ['DeterminingWavelength', 'DeterminingWavelength.html', 'Area Detector Calibration with Multiple Distances: Determine Wavelength',
+     '''To get an accurate wavelength, without knowing the sample-to-detector distance accurately, images recorded with
+     several different distances can be used. This exercise shows how to determine the wavelength from such a series. 
+     This exercise is the prerequisite for the next one.'''],
+    ['CalibrationTutorial', 'CalibrationTutorial.html', '    Area Detector Calibration with Multiple Distances: Calibrate Detector Distances',
+     '''To get an accurate wavelength, without knowing the sample-to-detector distance accurately, images recorded with
+     several different distances can be used. After using the previous exercise to determine the wavelength,
+     this exercise calibrates the detector distances and shows examples of how to mask, integrate, and save those parameters
+     for future reuse.'''],
+                   
     ['Small-Angle Scattering'],       
     ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)',
      '''This shows how to determine the size distribution of particles using data from a constant 

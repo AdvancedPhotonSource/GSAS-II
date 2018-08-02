@@ -640,8 +640,8 @@ class G2PlotNoteBook(wx.Panel):
                 
     def clear(self):
         'clear all pages from plot window'
-        while self.nb.GetPageCount():
-            self.nb.DeletePage(0)
+        for i in range(self.nb.GetPageCount()-1,-1,-1):
+            self.nb.DeletePage(i)
         self.plotList = []
         self.panelList = []
         self.status.DestroyChildren() #get rid of special stuff on status bar

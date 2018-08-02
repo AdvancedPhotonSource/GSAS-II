@@ -85,7 +85,7 @@ def MAXMAGN(sg,kvec):
     For use of MAXMAGN, please cite:
       Symmetry-Based Computational Tools for Magnetic Crystallography,
       J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
-      Annu. Rev. Mater. Res. 2015. 45:217–48.
+      Annu. Rev. Mater. Res. 2015. 45,217–48.
       doi: 10.1146/annurev-matsci-070214-021008
     ''')
     postdict = {'gua':'','gor':'','grha':'','kb':'conventional+dual+%28ITA%29',

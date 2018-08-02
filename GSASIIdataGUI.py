@@ -3607,6 +3607,7 @@ class GSASII(wx.Frame):
                 if result == wx.ID_OK:
                     if GSASIIpath.GetConfigValue('debug'): print('DBG: Starting cleanup')
                     self.GPXtree.DeleteChildren(self.root)
+                    if GSASIIpath.GetConfigValue('debug'): print('DBG: DeleteChildren done')
                     self.GSASprojectfile = ''
                     self.HKL = []
                     if self.G2plotNB.plotList:

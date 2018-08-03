@@ -70,7 +70,7 @@ if __name__ == '__main__':
             # check for video tutorial
             vname = 'https://anl.box.com/v/' + os.path.splitext(l[1])[0].replace(' ','')[:30]
             if requests.get(vname).status_code == 200:
-                print(' [link: <A href="{}">video</A>].'.format(vname),file=out)
+                print(' [link: <A href="{}">video</A>]'.format(vname),file=out)
                 #print('Found video',vname)
             else:
                 print('No video',vname)

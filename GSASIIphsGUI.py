@@ -412,7 +412,7 @@ class TransformDialog(wx.Dialog):
                 wx.MessageBox('Nonstandard space group '+self.SGData['SpGrp']+' is not known by MAXMAGN',
                     caption='Bilbao MAXMAGN error',style=wx.ICON_EXCLAMATION)
                 return
-            dlg = G2G.MultiFloatDialog(self,title='Propagation vector',prompts=['kx','ky','kz'],
+            dlg = G2G.MultiFloatDialog(self,title='Propagation vector',prompts=[' kx',' ky',' kz'],
                     values=self.kvec,limits=[[0.,1.],[0.,1.],[0.,1.]],formats=['%4.1f','%4.1f','%4.1f'])
             if dlg.ShowModal() == wx.ID_OK:
                 self.kvec = dlg.GetValues()

@@ -2766,7 +2766,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[9] = controls[10] = controls[11] = 90.
         elif controls[5] in ['C2/m','P2/m']:
             controls[9] = controls[11] = 90.  # b unique
-        if len(controls) < 13: controls.append(0)
+#        if len(controls) < 13: controls.append(0)
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         return ibrav
         
@@ -3019,7 +3019,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         cell = Cell[2:9]
         controls[4] = 1
         controls[5] = bravaisSymb[cell[0]]
-        controls[6:12] = cell[1:8]
+        controls[6:13] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
@@ -3043,10 +3043,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if 'R' in controls[5]: controls[5] = 'R3-H'
-        controls[6:12] = Cell[1:8]
+        controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
-        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+#        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
@@ -3061,10 +3062,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if 'R' in controls[5]: controls[5] = 'R3-H'
-        controls[6:12] = Cell[1:8]
+        controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
-        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+#        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefineCell(event):
@@ -3335,6 +3337,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Type = 'nuclear'
         newSpGrp = ''
         BNSlatt = ''
+        E,SGData = G2spc.SpcGroup(controls[13])
         phase = {'General':{'Name':'','Type':Type,'Cell':['',]+controls[6:13],'SGData':SGData}}
         dlg = G2phsG.TransformDialog(G2frame,phase,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
         try:
@@ -3373,10 +3376,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
         
     controls,bravais,cells,dminx,ssopt = data
-    if len(controls) < 13:              #add cell volume if missing
+    if len(controls) < 13:              #add cell volume & space group if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
-    if len(controls) < 14:              #add space group used in indexing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
+    controls,bravais,cells,dminx,ssopt = data
     SGData = ssopt.get('SGData',G2spc.SpcGroup(controls[13])[1])
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',

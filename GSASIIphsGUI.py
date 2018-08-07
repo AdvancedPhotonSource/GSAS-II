@@ -407,6 +407,7 @@ class TransformDialog(wx.Dialog):
         def OnBilbao(event):
             import MAXMAGN
             oldkvec = self.kvec
+            self.Mtrans = True
             SGNo = G2spc.SpaceGroupNumber(self.SGData['SpGrp'])
             if not SGNo+1:
                 wx.MessageBox('Nonstandard space group '+self.SGData['SpGrp']+' is not known by MAXMAGN',
@@ -417,7 +418,10 @@ class TransformDialog(wx.Dialog):
             if dlg.ShowModal() == wx.ID_OK:
                 self.kvec = dlg.GetValues()
                 if self.kvec != oldkvec or 'MAXMAGN' not in self.oldSGdata:
+                    wx.BeginBusyCursor()
                     self.oldSGdata['MAXMAGN'] = MAXMAGN.MAXMAGN(SGNo,self.kvec)
+                    wx.EndBusyCursor()
+                    self.Bilbao = ''
             wx.CallAfter(self.Draw)
                     
         def OnBilbaoSG(event):
@@ -427,21 +431,32 @@ class TransformDialog(wx.Dialog):
             numbs = [eval(item+'.') for item in result[2].split()]
             self.Uvec = np.array(numbs[3::4])
             self.Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
-            SpGrp = G2spc.StandardizeSpcName(result[0])
-            self.SGData = G2spc.SpcGroup(SpGrp)[1]
-            text,table = G2spc.SGPrint(self.SGData)
-            self.Phase['General']['SGData'] = self.SGData
+
+            SpGp = result[0].replace("'",'')
+            SpGrp = G2spc.StandardizeSpcName(SpGp)
             self.newSpGrp = SpGrp
+            self.SGData = G2spc.SpcGroup(SpGrp)[1]
+            G2spc.GetSGSpin(self.SGData,result[0])
+            self.BNSlatt = self.SGData['SGLatt']
+            if result[1]:
+                self.BNSlatt += '_'+result[1]
+                BNSsym = G2spc.GetGenSym(self.SGData)[2]
+                self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
+                G2spc.ApplyBNSlatt(self.SGData,self.SGData['BNSlattsym'])
+
+            self.SGData['GenSym'],self.SGData['GenFlg'],BNSsym = G2spc.GetGenSym(self.SGData)
+            self.SGData['MagSpGrp'] = G2spc.MagSGSym(self.SGData)
+            OprNames,self.SGData['SpnFlp'] = G2spc.GenMagOps(self.SGData)                    
+                    
             msg = 'Space Group Information'
-            G2G.SGMessageBox(self.panel,msg,text,table).Show()
-            self.BNSlatt = self.SGData['SGLatt']+'_'+result[1]
-            GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
-            self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
-            self.SGData['SGSpin'] = [1,]*len(self.SGData['SGSpin'])
-            Nops = len(self.SGData['SGOps'])*len(self.SGData['SGCen'])
-            if self.SGData['SGInv']:
-                Nops *= 2
-            self.SGData['SpnFlp'] = Nops*[1,]                    
+            text,table = G2spc.SGPrint(self.SGData,AddInv=True)
+            text[0] = ' Magnetic Space Group: '+self.SGData['MagSpGrp']
+            text[3] = ' The magnetic lattice point group is '+self.SGData['MagPtGp']
+            G2G.SGMagSpinBox(self.panel,msg,text,table,self.SGData['SGCen'],OprNames,
+                self.SGData['SpnFlp'],False).Show()
+            
+            self.Phase['General']['SGData'] = self.SGData
+
             wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
@@ -451,7 +466,6 @@ class TransformDialog(wx.Dialog):
             if self.BNSlatt != self.SGData['SGLatt']:
                 GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
                 self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
-                self.SGData['SGSpin'] = [1,]*len(self.SGData['SGSpin'])
         else:
             mag = wx.Button(self.panel,label='Make new phase magnetic?')
             mag.Bind(wx.EVT_BUTTON,OnMag)
@@ -496,7 +510,7 @@ class TransformDialog(wx.Dialog):
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
-        if self.ifMag:
+        if self.ifMag and not self.oldSGdata.get('MAXMAGN',[]):
             MagSizer = wx.BoxSizer(wx.HORIZONTAL)
             Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
             Mtrans.SetValue(self.Mtrans)
@@ -533,7 +547,7 @@ class TransformDialog(wx.Dialog):
             sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
-            if self.ifMag:
+            if self.ifMag and not self.oldSGdata.get('MAXMAGN',[]):
                 GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
                 BNSizer = wx.BoxSizer(wx.HORIZONTAL)
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
@@ -549,6 +563,7 @@ class TransformDialog(wx.Dialog):
                 BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                 BNSizer.Add(BNS,0,WACV)
                 mainSizer.Add(BNSizer,0,WACV)
+            if self.ifMag:
                 mainSizer.Add(wx.StaticText(self.panel, \
                     label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)
             constr = wx.CheckBox(self.panel,label=' Make constraints between phases?')
@@ -578,7 +593,7 @@ class TransformDialog(wx.Dialog):
     def GetSelection(self):
         self.Phase['General']['SGData'] = self.SGData
         if self.ifMag:
-            self.Phase['General']['Name'] += ' mag'
+            self.Phase['General']['Name'] += ' mag: '+self.Bilbao
         else:
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         if self.Mtrans:
@@ -2450,8 +2465,8 @@ def UpdatePhaseData(G2frame,Item,data):
                         if dlg.ShowModal() == wx.ID_OK:
                             newPhase['Atoms'],atCodes = dlg.GetSelection()
                             SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
-                            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                             SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
+                            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                             generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
                             break
                     finally:
@@ -3584,7 +3599,7 @@ def UpdatePhaseData(G2frame,Item,data):
     
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
-        fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
+        fp = open(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
         OnDistAngle(event,fp=fp)
         fp.close()
     

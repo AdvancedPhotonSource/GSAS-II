@@ -105,7 +105,8 @@ def MAXMAGN(sg,kvec):
     
     p = TableParser()
     p.feed(page)
-    return zip(p.SPGPs,p.BNSs,p.MVs)
+    result = list(zip(p.SPGPs,p.BNSs,p.MVs))
+    return result
 
 def test():
     results = MAXMAGN(141,(0.5,0,0))

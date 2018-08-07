@@ -1085,6 +1085,43 @@ def MagSSText2MTS(mcifOpr):
     if '-1' in ops[4]:
         spnflp = -1
     return np.array(M),np.array(T),spnflp
+
+def GetSGSpin(SGData,MSgSym):
+    'get spin generators from magnetic space group symbol'
+    SpGrp = SGData['SpGrp']
+    mSgSym = MSgSym+' '
+    Flds = SpGrp.split()
+    iB = 0
+    Spn = [1,]          #for identity generator
+    if len(Flds) == 2:  #-1,  2/m, 4/m & 6/m; 1 or 2 generators
+        fld = Flds[1]
+        iF = mSgSym[iB:].index(fld[0])+iB
+        jF = mSgSym[iF:].index(fld[-1])+iF
+        if '/' in mSgSym[iF:jF]:
+            if "'" in mSgSym[iF:jF]:
+                Spn.append(-1)
+            else:
+                Spn.append(1)
+        if "'" == mSgSym[jF+1]:
+            Spn.append(-1)
+        else:
+            Spn.append(1)
+    elif len(Flds) == 3:    # 3m & m3; one generator
+        if "'" in mSgSym:   #could be 1 or 2 '; doesn't matter. 
+            Spn.append(-1)
+        else:
+            Spn.append(1)
+    else:                   #the rest; 3 generators. NB:  any ' before / in 1st field ignored
+        for fld in Flds[1:]:
+            iF = mSgSym[iB:].index(fld[0])+iB
+            jF = mSgSym[iF:].index(fld[-1])+iF
+            if "'" == mSgSym[jF+1]:
+                Spn.append(-1)
+                iB = jF+2
+            else:
+                Spn.append(1)
+                iB = jF+1
+    SGData['SGSpin'] = Spn
             
 def GenMagOps(SGData):
     FlpSpn = SGData['SGSpin']

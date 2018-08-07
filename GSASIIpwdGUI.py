@@ -3321,7 +3321,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
             
     def OnShowSpins(event):
-        SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
         msg = 'Magnetic space group information'
         text,table = G2spc.SGPrint(SGData,AddInv=True)
         text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
@@ -3348,17 +3347,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 controls[13] = sgData['SpGrp']
                 ssopt['SGData'] = sgData
                 controls[6:13] = newPhase['General']['Cell'][1:8]
-                if ifMag:
-                    ssopt['SGData']['SGSpin'] = [1,]*len(ssopt['SGData']['SGSpin'])
-                    GenSym,GenFlg,BNSsym = G2spc.GetGenSym(ssopt['SGData'])
-                    ssopt['SGData']['GenSym'] = GenSym
-                    ssopt['SGData']['GenFlg'] = GenFlg
-                    OprNames,SpnFlp = G2spc.GenMagOps(ssopt['SGData'])
-                    ssopt['SGData']['SpnFlp'] = SpnFlp
-                    ssopt['SGData']['MagSpGrp'] = G2spc.MagSGSym(ssopt['SGData'])
-                    G2spc.ApplyBNSlatt(ssopt['SGData'],ssopt['SGData']['BNSlattsym'])
-                else:
-                    del SGData['MagSpGrp']
             else:
                 return
         finally:

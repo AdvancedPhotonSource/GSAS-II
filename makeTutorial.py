@@ -50,9 +50,11 @@ if __name__ == '__main__':
     <b>Help/Tutorials</b> menu item.
     When this menu entry is used from inside GSAS-II (unless "browse tutorial on web" is selected),
     the data files are downloaded to a local directory and GSAS-II will start from that directory
-    for most file open commands. 
+    for most file open commands. Most tutorials have also been recorded as videos of the computer screen
+    along with naration. Links are provided below where videos are available. 
     </p>''',file=out)
 
+    videolist = '<UL>'
     for l in tutorialIndex:
         if len(l) == 1:
             print("</UL><h4>{}</H4><UL>".format(l[0]),file=out)
@@ -70,19 +72,37 @@ if __name__ == '__main__':
             # check for video tutorial
             vname = 'https://anl.box.com/v/' + os.path.splitext(l[1])[0].replace(' ','')[:30]
             if requests.get(vname).status_code == 200:
-                print(' [link: <A href="{}">video</A>]'.format(vname),file=out)
+                video = '<A href="{}">video</A>'.format(vname)
+                #print(' [link: <A href="{}">video</A>]'.format(vname),file=out)
                 #print('Found video',vname)
+                videolist += '<LI><A href="{}">{}</A></LI>\n'.format(vname,l[2].strip())
             else:
-                print('No video',vname)
+                video =''
+                print('No video for',vname)
+            # check for data
             if GSASIIpath.svnList(dataURL,False):
-                print(' [link: <A href="{}">Exercise files</A>].'.format(dataURL),file=out)
+                exampledata = '<A href="{}">Exercise files</A>'.format(dataURL)
+                #print(' [link: <A href="{}">Exercise files</A>].'.format(dataURL),file=out)
             else:
-                print(' [No exercise files].',file=out)
+                exampledata = ''
+                #print(' [No exercise files].',file=out)
+            if video and exampledata:
+                print(' [links: {}, {}].'.format(video, exampledata),file=out)
+            elif exampledata:
+                print(' [link: {}].'.format(exampledata),file=out)
+            elif video:
+                print(' [link: {}, no example data].'.format(video),file=out)
+            else:
+                print(' [no example data or video].',file=out)
+                
             if len(l) > 3:
                 print("<blockquote><I>"+l[3]+"</I></blockquote>",file=out)
             if suffix: print('</UL>',file=out)
     #        if l[2][0] == ' ':
     #            print(' (Note that this tutorial requires previous as prerequisite)',file=out)
 
+    videolist += '</UL>\n'
     print('</UL>\n<A name=prereq>* Indented tutorials require the previous unindented tutorial as a prerequisite',file=out)
+    print('<h3>Tutorials with video-recorded examples</H3>', file=out)
+    print(videolist, file=out)
     out.close()

@@ -2704,6 +2704,7 @@ class GSASII(wx.Frame):
         self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
         self.ExpandingAll = False
         self.SeqTblHideList = None
+        self.MagPhases = False      #will contain possible magnetic phases from Bilbao MAXMAGN
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
         
     def __init__(self, parent):

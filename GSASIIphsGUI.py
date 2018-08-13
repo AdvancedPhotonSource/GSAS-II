@@ -277,14 +277,16 @@ class TransformDialog(wx.Dialog):
     ''' Phase transformation X' = M*(X-U)+V
     
     :param wx.Frame parent: reference to parent frame (or None)
-    :param phase: phase data
+    :param phase: parent phase data
     
     #NB: commonNames & commonTrans defined in GSASIIdataGUI = G2gd 
     '''
-    def __init__(self,parent,phase,Trans=np.eye(3),Uvec=np.zeros(3),Vvec=np.zeros(3),ifMag=False,newSpGrp='',BNSlatt=''):
+    def __init__(self,parent,phases,Trans=np.eye(3),Uvec=np.zeros(3),Vvec=np.zeros(3),ifMag=False,newSpGrp='',BNSlatt=''):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Phases = phases
+        phase = self.Phases['parent']
         self.Phase = copy.deepcopy(phase)   #will be a new phase!
 #        self.Super = phase['General']['Super']
 #        if self.Super:
@@ -404,6 +406,13 @@ class TransformDialog(wx.Dialog):
             Obj = event.GetEventObject()
             self.Mtrans = Obj.GetValue()
             
+        def OnNewBilbao(event):
+            del self.oldSGdata['MAXMAGN']
+            self.BNSlatt = ''
+            self.Phases = self.Phases['parent']
+            self.ifMag = False
+            wx.CallAfter(self.Draw)
+            
         def OnBilbao(event):
             import MAXMAGN
             oldkvec = self.kvec
@@ -421,32 +430,42 @@ class TransformDialog(wx.Dialog):
                     wx.BeginBusyCursor()
                     self.oldSGdata['MAXMAGN'] = MAXMAGN.MAXMAGN(SGNo,self.kvec)
                     wx.EndBusyCursor()
+                    for result in self.oldSGdata['MAXMAGN']:
+                        phase = {}
+                        numbs = [eval(item+'.') for item in result[2].split()]
+                        phase['Name'] = self.Phases['parent']['General']['Name']+' mag: '+result[0]
+                        phase['Uvec'] = np.array(numbs[3::4])
+                        phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
+                        SpGp = result[0].replace("'",'')
+                        SpGrp = G2spc.StandardizeSpcName(SpGp)
+                        phase['newSpGrp'] = SpGrp
+                        phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
+                        G2spc.GetSGSpin(phase['SGData'],result[0])
+                        phase['BNSlatt'] = phase['SGData']['SGLatt']
+                        if result[1]:
+                            phase['BNSlatt'] += '_'+result[1]
+                            BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
+                            phase['SGData']['BNSlattsym'] = [phase['BNSlatt'],BNSsym[phase['BNSlatt']]]
+                            G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
+            
+                        phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+                        phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
+                        OprNames,phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])    
+                        self.Phases[result[0]] = phase
                     self.Bilbao = ''
             wx.CallAfter(self.Draw)
                     
         def OnBilbaoSG(event):
             Obj = event.GetEventObject()
-            result = self.oldSGdata['MAXMAGN'][Obj.GetSelection()]
-            self.Bilbao = result[0]
-            numbs = [eval(item+'.') for item in result[2].split()]
-            self.Uvec = np.array(numbs[3::4])
-            self.Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
-
-            SpGp = result[0].replace("'",'')
-            SpGrp = G2spc.StandardizeSpcName(SpGp)
-            self.newSpGrp = SpGrp
-            self.SGData = G2spc.SpcGroup(SpGrp)[1]
-            G2spc.GetSGSpin(self.SGData,result[0])
-            self.BNSlatt = self.SGData['SGLatt']
-            if result[1]:
-                self.BNSlatt += '_'+result[1]
-                BNSsym = G2spc.GetGenSym(self.SGData)[2]
-                self.SGData['BNSlattsym'] = [self.BNSlatt,BNSsym[self.BNSlatt]]
-                G2spc.ApplyBNSlatt(self.SGData,self.SGData['BNSlattsym'])
-
-            self.SGData['GenSym'],self.SGData['GenFlg'],BNSsym = G2spc.GetGenSym(self.SGData)
-            self.SGData['MagSpGrp'] = G2spc.MagSGSym(self.SGData)
-            OprNames,self.SGData['SpnFlp'] = G2spc.GenMagOps(self.SGData)                    
+            result = Obj.GetValue()
+            self.Bilbao = result
+            phase = self.Phases[result]
+            self.Uvec = phase['Uvec']
+            self.Trans = phase['Trans']
+            self.newSpGrp = phase['newSpGrp']
+            self.SGData = phase['SGData']
+            self.BNSlatt = phase['BNSlatt']
+            OprNames = G2spc.GenMagOps(self.SGData)[0]                   
                     
             msg = 'Space Group Information'
             text,table = G2spc.SGPrint(self.SGData,AddInv=True)
@@ -510,15 +529,20 @@ class TransformDialog(wx.Dialog):
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
-        if self.ifMag and not self.oldSGdata.get('MAXMAGN',[]):
+        if self.ifMag:
             MagSizer = wx.BoxSizer(wx.HORIZONTAL)
-            Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
-            Mtrans.SetValue(self.Mtrans)
-            Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
-            MagSizer.Add(Mtrans,0,WACV)
-            Bilbao = wx.Button(self.panel,label='Run Bilbao MAXMAGN')
-            Bilbao.Bind(wx.EVT_BUTTON,OnBilbao)
-            MagSizer.Add(Bilbao,0,WACV)
+            if not self.oldSGdata.get('MAXMAGN',[]):
+                Mtrans = wx.CheckBox(self.panel,label=' Use matrix transform?')
+                Mtrans.SetValue(self.Mtrans)
+                Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
+                MagSizer.Add(Mtrans,0,WACV)
+                Bilbao = wx.Button(self.panel,label='Run Bilbao MAXMAGN')
+                Bilbao.Bind(wx.EVT_BUTTON,OnBilbao)
+                MagSizer.Add(Bilbao,0,WACV)
+            else:
+                Bilbao = wx.Button(self.panel,label='Clear MAXMAGN')
+                Bilbao.Bind(wx.EVT_BUTTON,OnNewBilbao)
+                MagSizer.Add(Bilbao,0,WACV)
             mainSizer.Add(MagSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Old lattice parameters:'),0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=
@@ -598,10 +622,10 @@ class TransformDialog(wx.Dialog):
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         if self.Mtrans:
             self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans.T)            
-            return self.Phase,self.Trans.T,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
+            return self.Phase,self.Trans.T,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common,self.Phases
         else:
             self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-            return self.Phase,self.Trans,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
+            return self.Phase,self.Trans,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common,self.Phases
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -2425,11 +2449,16 @@ def UpdatePhaseData(G2frame,Item,data):
         ifMag = False
         newSpGrp = ''
         BNSlatt = ''
+        if not G2frame.MagPhases:
+            G2frame.MagPhases = {'parent':data}
+        else:
+            G2frame.MagPhases['parent'] = data
         while True:
-            dlg = TransformDialog(G2frame,data,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
+            dlg = TransformDialog(G2frame,G2frame.MagPhases,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
+                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common,MagPhases = dlg.GetSelection()
+                    G2frame.MagPhases = MagPhases
                     newSpGrp = newPhase['General']['SGData']['SpGrp']
                     if ifMag:
                         BNSlatt = newPhase['General']['SGData']['BNSlattsym'][0]

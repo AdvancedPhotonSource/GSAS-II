@@ -3013,6 +3013,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def CopyUnitCell(event):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls = controls[:5]+10*[0.,]
         for Cell in cells:
             if Cell[-2]:
                 break
@@ -3020,7 +3021,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = bravaisSymb[cell[0]]
         controls[6:13] = cell[1:8]
-        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
+#        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
@@ -3028,6 +3029,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     def LoadUnitCell(event):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls = controls[:5]+10*[0.,]
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
         if not pId: return
         Phases = []
@@ -3045,13 +3047,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
-#        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls = controls[:5]+10*[0.,]
         reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
         rdlist = G2frame.OnImportGeneric(reqrdr,
             G2frame.ImportPhaseReaderlist,'phase')
@@ -3338,10 +3340,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         BNSlatt = ''
         E,SGData = G2spc.SpcGroup(controls[13])
         phase = {'General':{'Name':'','Type':Type,'Cell':['',]+controls[6:13],'SGData':SGData}}
-        dlg = G2phsG.TransformDialog(G2frame,phase,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
+        if not G2frame.MagPhases:
+            G2frame.MagPhases = {'parent':phase}
+        else:
+            G2frame.MagPhases['parent'] = phase         #do I want to do this or reverse??
+        dlg = G2phsG.TransformDialog(G2frame,G2frame.MagPhases,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
+                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common,MagPhases = dlg.GetSelection()
+                G2frame.MagPhases = MagPhases
                 sgData = newPhase['General']['SGData']
                 controls[5] = sgData['SGLatt']+sgData['SGLaue']
                 controls[13] = sgData['SpGrp']
@@ -3351,6 +3358,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 return
         finally:
             dlg.Destroy()
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
@@ -3364,10 +3372,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
         
     controls,bravais,cells,dminx,ssopt = data
-    if len(controls) < 13:              #add cell volume & space group if missing
+    if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
+    if len(controls) < 14:              #add space group if missing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
-    controls,bravais,cells,dminx,ssopt = data
     SGData = ssopt.get('SGData',G2spc.SpcGroup(controls[13])[1])
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',

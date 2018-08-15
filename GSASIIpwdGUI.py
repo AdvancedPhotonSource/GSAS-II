@@ -1125,7 +1125,6 @@ def UpdateBackground(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 RDFcontrols = dlg.GetSelection()
-                print(RDFcontrols)
             else:
                 return
         finally:

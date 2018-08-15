@@ -532,6 +532,14 @@ def TextOps(text,table,reverse=False):
             txt = MT2text([opM,(OpsT[iop]+cent)%1.],reverse)
             OpText.append(txt.replace(' ','').lower())
     return OpText
+
+def TextGen(SGData,reverse=False):
+    text,table = SGPrint(SGData)
+    GenText = []
+    OpText = TextOps(text,table,reverse)
+    for gid in SGData['GenFlg']:
+        GenText.append(OpText[gid])
+    return GenText
     
 def MT2text(Opr,reverse=False):
     "From space group matrix/translation operator returns text version"

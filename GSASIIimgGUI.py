@@ -359,7 +359,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             return
         Source = G2frame.GPXtree.GetItemText(G2frame.Image)
         # Assemble a list of item labels
-        keyList = ['type','wavelength','calibrant','distance','center','Oblique',
+        keyList = ['type','color','wavelength','calibrant','distance','center','Oblique',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
@@ -407,7 +407,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
     def WriteControls(filename,data):
         File = open(filename,'w')
-        keys = ['type','wavelength','calibrant','distance','center','Oblique',
+        keys = ['type','color','wavelength','calibrant','distance','center','Oblique',
             'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
             'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
@@ -467,7 +467,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             WriteControls(filename,data)
             
     def LoadControls(Slines,data):
-        cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
+        cntlList = ['color','wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','setdist',
             'PolaVal','SampleAbs','dark image','background image','twoth']
@@ -476,7 +476,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             if S[0] == '#':
                 continue
             [key,val] = S.strip().split(':',1)
-            if key in ['type','calibrant','binType','SampleShape',]:    #strings
+            if key in ['type','calibrant','binType','SampleShape','color',]:    #strings
                 save[key] = val
             elif key in ['varyList',]:
                 save[key] = eval(val)   #dictionary

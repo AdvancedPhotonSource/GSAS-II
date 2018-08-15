@@ -500,6 +500,38 @@ def AllOps(SGData):
                 G2oprList.append((cen,mult,j))
                 G2opcodes.append(mult*(100*icen+j+1))
     return SGTextList,offsetList,symOpList,G2oprList,G2opcodes
+
+def TextOps(text,table,reverse=False):
+    ''' Makes formatted operator list
+        :param text,table: arrays of text made by SGPrint
+        :param reverse: True for x+1/2 form; False for 1/2+x form
+        :returns: OpText: full list of symmetry operators; one operation per line
+        generally printed to console for use via cut/paste in other programs, but
+        could be used for direct input
+    '''
+    OpText = []
+    Inv = True
+    if 'noncentro' in text[1]:
+        Inv = False
+    Cent = [[0,0,0],]
+    if '0,0,0' in text[-1]:
+        Cent = np.array(eval(text[-1].split('+')[0].replace(';','),(')))
+    OpsM = []
+    OpsT = []
+    for item in table:
+        M,T = Text2MT(item.split(')')[1].replace(' ',''),CIF=True)
+        OpsM.append(M)
+        OpsT.append(T)
+    OpsM = np.array(OpsM)
+    OpsT = np.array(OpsT)
+    if Inv:
+        OpsM = np.concatenate((OpsM,-OpsM))
+        OpsT = np.concatenate((OpsT,-OpsT%1.))
+    for cent in Cent:
+        for iop,opM in enumerate(list(OpsM)):
+            txt = MT2text([opM,(OpsT[iop]+cent)%1.],reverse)
+            OpText.append(txt.replace(' ','').lower())
+    return OpText
     
 def MT2text(Opr,reverse=False):
     "From space group matrix/translation operator returns text version"
@@ -1030,6 +1062,33 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
     magSym[0] = SGData.get('BNSlattsym',[SGData['SGLatt'],[0,0,0]])[0]
     return ' '.join(magSym)
 
+def Text2MT(mcifOpr,CIF=True):
+    "From space group cif text returns matrix/translation"
+    XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
+           'z':[0,0,1],'+z':[0,0,1],'-z':[0,0,-1],'x-y':[1,-1,0],'-x+y':[-1,1,0],'y-x':[-1,1,0],
+           '+x-y':[1,-1,0],'+y-x':[-1,1,0]}
+    ops = mcifOpr.split(",")
+    M = []
+    T = []
+    for op in ops[:3]:
+        ip = len(op)
+        if '/' in op:
+            try:    #mcif format
+                nP = op.count('+')
+                opMT = op.split('+')
+                T.append(eval(opMT[nP]))
+                if nP == 2:
+                    opMT[0] = '+'.join(opMT[0:2])
+            except NameError:   #normal cif format
+                ip = op.index('/')
+                T.append(eval(op[:ip+2]))
+                opMT = [op[ip+2:],'']
+        else:
+            opMT = [op,'']
+            T.append(0.)
+        M.append(XYZ[opMT[0].lower()])
+    return np.array(M),np.array(T)
+            
 def MagText2MTS(mcifOpr,CIF=True):
     "From magnetic space group cif text returns matrix/translation + spin flip"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],

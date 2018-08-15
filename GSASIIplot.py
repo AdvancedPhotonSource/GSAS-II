@@ -2731,7 +2731,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if G2frame.Weight:
                     Plot1.set_yscale("linear")                                                  
                     wtFactor = Pattern[0]['wtFactor']
-                    DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
+                    if plottype in ['SASD','REFD']:
+                        DZ = (Y-B-Z)*np.sqrt(wtFactor*xye[2])
+                    else:
+                        DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
                     Plot1.set_ylim(bottom=np.min(DZ[Ibeg:Ifin])*1.2,top=np.max(DZ[Ibeg:Ifin])*1.2)  

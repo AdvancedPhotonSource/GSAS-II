@@ -471,10 +471,12 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
         powQ = 2.*np.pi*difC/TOF
     piDQ = np.pi/(maxQ-minQ)
     Qpoints = np.linspace(minQ,maxQ,len(pwddata[0]),endpoint=True)
-    if RDFcontrols['UseObsCalc']:
+    if RDFcontrols['UseObsCalc'] == 'obs-calc':
         Qdata = si.griddata(powQ,pwddata[1]-pwddata[3],Qpoints,method=RDFcontrols['Smooth'],fill_value=0.)
-    else:
+    elif RDFcontrols['UseObsCalc'] == 'obs-back':
         Qdata = si.griddata(powQ,pwddata[1]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
+    elif RDFcontrols['UseObsCalc'] == 'calc-back':
+        Qdata = si.griddata(powQ,pwddata[3]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
     Qdata *= np.sin((Qpoints-minQ)*piDQ)/piDQ
     Qdata *= 0.5*np.sqrt(Qpoints)       #Qbin normalization
 #    GSASIIpath.IPyBreak()
@@ -488,7 +490,7 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
 #    auxPlot.append([Qpoints,Qsmooth,'interpolate:'+RDFcontrols['Smooth']])
     DofR = dq*np.imag(fft.fft(Qsmooth,16*nR)[:nR])
 #    DofR = dq*np.imag(ft.fft(Qsmooth,16*nR)[:nR])
-    auxPlot.append([R[:iFin],DofR[:iFin],'D(R)'])    
+    auxPlot.append([R[:iFin],DofR[:iFin],'D(R) for '+RDFcontrols['UseObsCalc']])    
     return auxPlot
 
 ################################################################################        

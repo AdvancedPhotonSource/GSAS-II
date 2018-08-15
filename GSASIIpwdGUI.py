@@ -86,14 +86,14 @@ class RDFDialog(wx.Dialog):
         wx.Dialog.__init__(self,parent,-1,'Background radial distribution function',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
-        self.result = {'UseObsCalc':True,'maxR':20.0,'Smooth':'linear'}
+        self.result = {'UseObsCalc':'obs-calc','maxR':20.0,'Smooth':'linear'}
         
         self.Draw()
         
     def Draw(self):
         
         def OnUseOC(event):
-            self.result['UseObsCalc'] = not self.result['UseObsCalc']
+            self.result['UseObsCalc'] = useOC.GetValue()
             
         def OnSmCombo(event):
             self.result['Smooth'] = smCombo.GetValue()
@@ -102,10 +102,15 @@ class RDFDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
-        useOC = wx.CheckBox(self.panel,label=' Use obs - calc intensities?')
+        plotType = wx.BoxSizer(wx.HORIZONTAL)
+        plotType.Add(wx.StaticText(self.panel,label=' Select plot type:'),0,WACV)
+        Choices = ['obs-back','calc-back','obs-calc']
+        useOC = wx.ComboBox(self.panel,value=Choices[2],choices=Choices,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
         useOC.SetValue(self.result['UseObsCalc'])
-        useOC.Bind(wx.EVT_CHECKBOX,OnUseOC)
-        mainSizer.Add(useOC,0,WACV)
+        useOC.Bind(wx.EVT_COMBOBOX,OnUseOC)
+        plotType.Add(useOC,0,WACV)
+        mainSizer.Add(plotType,0,WACV)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
         dataSizer.Add(wx.StaticText(self.panel,label=' Smoothing type: '),0,WACV)
         smChoice = ['linear','nearest',]
@@ -1120,6 +1125,7 @@ def UpdateBackground(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 RDFcontrols = dlg.GetSelection()
+                print(RDFcontrols)
             else:
                 return
         finally:
@@ -1129,7 +1135,10 @@ def UpdateBackground(G2frame,data):
         inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
         auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
-        superMinusOne = unichr(0xaf)+unichr(0xb9)
+        if '2' in platform.python_version_tuple()[0]:
+            superMinusOne = unichr(0xaf)+unichr(0xb9)
+        else:
+            superMinusOne = chr(0xaf)+chr(0xb9)
         for plot in auxPlot:
             XY = np.array(plot[:2])
             if plot[2] == 'D(R)':
@@ -2571,7 +2580,11 @@ def UpdateSampleGrid(G2frame,data):
             volfrac = G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,'VolFrac',
                 min=0.,max=1.,nDig=(10,3),typeHint=float,OnLeave=OnVolFrac)
             subSizer.Add(volfrac,0,WACV)
-            material = Substances['Substances'][item['Name']]
+            try:
+                material = Substances['Substances'][item['Name']]
+            except KeyError:
+                print('ERROR - missing substance: '+item['Name'])
+                material = Substances['Substances']['vacuum']
             mu += item['VolFrac']*material.get('XAbsorption',0.)
             rho[id] = material['Scatt density']
             anomrho[id] = material.get('XAnom density',0.)
@@ -3029,7 +3042,6 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     def LoadUnitCell(event):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        controls = controls[:5]+10*[0.,]
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
         if not pId: return
         Phases = []
@@ -3053,7 +3065,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def ImportUnitCell(event):
         controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        controls = controls[:5]+10*[0.,]
         reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
         rdlist = G2frame.OnImportGeneric(reqrdr,
             G2frame.ImportPhaseReaderlist,'phase')

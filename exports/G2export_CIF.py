@@ -1501,7 +1501,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                          '\n   ' + refprx + 'F_squared_meas' +
                          '\n   ' + refprx + 'F_squared_calc' +
                          '\n   ' + refprx + 'phase_calc' +
-                         '\n   _pd_refln_d_spacing')
+                         '\n   _refln_d_spacing')
             if Imax > 0:
                 WriteCIFitem(self.fp, '   _gsas_i100_meas')
 

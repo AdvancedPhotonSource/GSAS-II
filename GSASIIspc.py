@@ -534,12 +534,25 @@ def TextOps(text,table,reverse=False):
     return OpText
 
 def TextGen(SGData,reverse=False):
+    GenSym,GenFlg,BNSsym = GetGenSym(SGData)
+    SGData['GenSym'] = GenSym
+    SGData['GenFlg'] = GenFlg
     text,table = SGPrint(SGData)
     GenText = []
+    OprNames = GetOprNames(SGData)
     OpText = TextOps(text,table,reverse)
-    for gid in SGData['GenFlg']:
+    for name in SGData['GenSym']:
+        gid = OprNames.index(name.replace(' ',''))
         GenText.append(OpText[gid])
+    if len(SGData['SGCen']) > 1:
+        GenText.append(OpText[-1])
     return GenText
+
+def GetOprNames(SGData):
+    OprNames = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
+    if SGData['SGInv']:
+        OprNames += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
+    return OprNames
     
 def MT2text(Opr,reverse=False):
     "From space group matrix/translation operator returns text version"

@@ -1036,7 +1036,7 @@ def getHKLpeak(dmin,SGData,A,Inst=None):
     :param SGData: space group data obtained from SpcGroup
     :param A: lattice parameter terms A1-A6
     :param Inst: instrument parameter info
-    :returns: HKLs: list hkl, etc for allowed reflections
+    :returns: HKLs: np.array hkl, etc for allowed reflections
 
     '''
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
@@ -1050,7 +1050,7 @@ def getHKLpeak(dmin,SGData,A,Inst=None):
                 HKLs.append([h,k,l,d,0,-1])
             else:
                 HKLs.append([h,k,l,d,G2lat.Dsp2pos(Inst,d),-1])
-    return HKLs
+    return np.array(HKLs)
 
 def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'

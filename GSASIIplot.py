@@ -1890,8 +1890,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 pickIdText = G2frame.GPXtree.GetItemText(G2frame.PickId)
             else:
                 pickIdText = '?' # unexpected
-            if pickIdText in ['Index Peak List',
-                              'Unit Cells List','Reflection Lists'] and len(G2frame.HKL):
+            if pickIdText in ['Index Peak List','Unit Cells List','Reflection Lists'] and len(G2frame.HKL):
                 found = []
                 indx = -1
                 if pickIdText in ['Index Peak List','Unit Cells List',]:

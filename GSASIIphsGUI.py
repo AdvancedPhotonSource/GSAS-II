@@ -281,12 +281,10 @@ class TransformDialog(wx.Dialog):
     
     #NB: commonNames & commonTrans defined in GSASIIdataGUI = G2gd 
     '''
-    def __init__(self,parent,phases,Trans=np.eye(3),Uvec=np.zeros(3),Vvec=np.zeros(3),ifMag=False,newSpGrp='',BNSlatt=''):
+    def __init__(self,parent,phase,Trans=np.eye(3),Uvec=np.zeros(3),Vvec=np.zeros(3),ifMag=False,BNSlatt=''):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
-        self.Phases = phases
-        phase = self.Phases['parent']
         self.Phase = copy.deepcopy(phase)   #will be a new phase!
 #        self.Super = phase['General']['Super']
 #        if self.Super:
@@ -298,10 +296,7 @@ class TransformDialog(wx.Dialog):
         self.Vvec = Vvec
         self.oldSpGrp = phase['General']['SGData']['SpGrp']
         self.oldSGdata = phase['General']['SGData']
-        if newSpGrp:
-            self.newSpGrp = newSpGrp
-        else:
-            self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
+        self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
         self.SGData = G2spc.SpcGroup(self.newSpGrp)[1]
         self.oldCell = phase['General']['Cell'][1:8]
         self.newCell = self.Phase['General']['Cell'][1:8]
@@ -406,77 +401,6 @@ class TransformDialog(wx.Dialog):
             Obj = event.GetEventObject()
             self.Mtrans = Obj.GetValue()
             
-        def OnNewBilbao(event):
-            del self.oldSGdata['MAXMAGN']
-            self.BNSlatt = ''
-            self.Phases = self.Phases['parent']
-            self.ifMag = False
-            wx.CallAfter(self.Draw)
-            
-        def OnBilbao(event):
-            import MAXMAGN
-            oldkvec = self.kvec
-            self.Mtrans = True
-            SGNo = G2spc.SpaceGroupNumber(self.SGData['SpGrp'])
-            if not SGNo+1:
-                wx.MessageBox('Nonstandard space group '+self.SGData['SpGrp']+' is not known by MAXMAGN',
-                    caption='Bilbao MAXMAGN error',style=wx.ICON_EXCLAMATION)
-                return
-            dlg = G2G.MultiFloatDialog(self,title='Propagation vector',prompts=[' kx',' ky',' kz'],
-                    values=self.kvec,limits=[[0.,1.],[0.,1.],[0.,1.]],formats=['%4.1f','%4.1f','%4.1f'])
-            if dlg.ShowModal() == wx.ID_OK:
-                self.kvec = dlg.GetValues()
-                if self.kvec != oldkvec or 'MAXMAGN' not in self.oldSGdata:
-                    wx.BeginBusyCursor()
-                    self.oldSGdata['MAXMAGN'] = MAXMAGN.MAXMAGN(SGNo,self.kvec)
-                    wx.EndBusyCursor()
-                    for result in self.oldSGdata['MAXMAGN']:
-                        phase = {}
-                        numbs = [eval(item+'.') for item in result[2].split()]
-                        phase['Name'] = self.Phases['parent']['General']['Name']+' mag: '+result[0]
-                        phase['Uvec'] = np.array(numbs[3::4])
-                        phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
-                        SpGp = result[0].replace("'",'')
-                        SpGrp = G2spc.StandardizeSpcName(SpGp)
-                        phase['newSpGrp'] = SpGrp
-                        phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
-                        G2spc.GetSGSpin(phase['SGData'],result[0])
-                        phase['BNSlatt'] = phase['SGData']['SGLatt']
-                        if result[1]:
-                            phase['BNSlatt'] += '_'+result[1]
-                            BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
-                            phase['SGData']['BNSlattsym'] = [phase['BNSlatt'],BNSsym[phase['BNSlatt']]]
-                            G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
-            
-                        phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
-                        phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
-                        OprNames,phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])    
-                        self.Phases[result[0]] = phase
-                    self.Bilbao = ''
-            wx.CallAfter(self.Draw)
-                    
-        def OnBilbaoSG(event):
-            Obj = event.GetEventObject()
-            result = Obj.GetValue()
-            self.Bilbao = result
-            phase = self.Phases[result]
-            self.Uvec = phase['Uvec']
-            self.Trans = phase['Trans']
-            self.newSpGrp = phase['newSpGrp']
-            self.SGData = phase['SGData']
-            self.BNSlatt = phase['BNSlatt']
-            OprNames = G2spc.GenMagOps(self.SGData)[0]                   
-                    
-            msg = 'Space Group Information'
-            text,table = G2spc.SGPrint(self.SGData,AddInv=True)
-            text[0] = ' Magnetic Space Group: '+self.SGData['MagSpGrp']
-            text[3] = ' The magnetic lattice point group is '+self.SGData['MagPtGp']
-            G2G.SGMagSpinBox(self.panel,msg,text,table,self.SGData['SGCen'],OprNames,
-                self.SGData['SpnFlp'],False).Show()
-            
-            self.Phase['General']['SGData'] = self.SGData
-
-            wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -536,13 +460,6 @@ class TransformDialog(wx.Dialog):
                 Mtrans.SetValue(self.Mtrans)
                 Mtrans.Bind(wx.EVT_CHECKBOX,OnMtrans)
                 MagSizer.Add(Mtrans,0,WACV)
-                Bilbao = wx.Button(self.panel,label='Run Bilbao MAXMAGN')
-                Bilbao.Bind(wx.EVT_BUTTON,OnBilbao)
-                MagSizer.Add(Bilbao,0,WACV)
-            else:
-                Bilbao = wx.Button(self.panel,label='Clear MAXMAGN')
-                Bilbao.Bind(wx.EVT_BUTTON,OnNewBilbao)
-                MagSizer.Add(Bilbao,0,WACV)
             mainSizer.Add(MagSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Old lattice parameters:'),0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=
@@ -558,20 +475,12 @@ class TransformDialog(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.newCell[6])),0,WACV)
         sgSizer = wx.BoxSizer(wx.HORIZONTAL)
         sgSizer.Add(wx.StaticText(self.panel,label=' Target space group: '),0,WACV)
-        if self.oldSGdata.get('MAXMAGN',[]):
-            Bilbao = []
-            for result in self.oldSGdata['MAXMAGN']:
-                Bilbao.append(result[0])
-            SGTxtB = wx.ComboBox(self.panel,choices=Bilbao,value=self.Bilbao,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            SGTxtB.Bind(wx.EVT_COMBOBOX,OnBilbaoSG)
-            sgSizer.Add(SGTxtB,0,WACV)
-        else:
-            SGTxt = wx.Button(self.panel,wx.ID_ANY,self.newSpGrp,size=(100,-1))
-            SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
-            sgSizer.Add(SGTxt,0,WACV)
+        SGTxt = wx.Button(self.panel,wx.ID_ANY,self.newSpGrp,size=(100,-1))
+        SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
+        sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
-            if self.ifMag and not self.oldSGdata.get('MAXMAGN',[]):
+            if self.ifMag:
                 GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
                 BNSizer = wx.BoxSizer(wx.HORIZONTAL)
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
@@ -622,10 +531,10 @@ class TransformDialog(wx.Dialog):
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         if self.Mtrans:
             self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans.T)            
-            return self.Phase,self.Trans.T,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common,self.Phases
+            return self.Phase,self.Trans.T,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
         else:
             self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-            return self.Phase,self.Trans,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common,self.Phases
+            return self.Phase,self.Trans,self.Uvec,self.Vvec,self.ifMag,self.ifConstr,self.Common
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -641,12 +550,13 @@ class TransformDialog(wx.Dialog):
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
-    def __init__(self,parent,Atoms,atCodes):
+    def __init__(self,parent,Atoms,atCodes,atMxyz):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Atoms = Atoms
         self.atCodes = atCodes
+        self.atMxyz = atMxyz
         self.Use = len(self.Atoms)*[True,]
         self.Draw()
         
@@ -661,17 +571,22 @@ class UseMagAtomDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         Indx = {}
+        Mstr = ['Mx','My','Mz']
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         
-        mainSizer.Add(wx.StaticText(self.panel,label=' Name, x, y, z:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments:'),0,WACV)
         atmSizer = wx.FlexGridSizer(0,2,5,5)
-        for iuse,[use,atom] in enumerate(zip(self.Use,self.Atoms)):
+        for iuse,[use,atom,mxyz] in enumerate(zip(self.Use,self.Atoms,self.atMxyz)):
+            mstr = ['___','___','___']
+            for i,mx in enumerate(mxyz):
+                if mx:
+                    mstr[i] = Mstr[i]
             useChk = wx.CheckBox(self.panel,label='Use?')
             Indx[useChk.GetId()] = iuse
             useChk.SetValue(use)
             useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
             atmSizer.Add(useChk,0,WACV)
-            text = ' %s %10.5f %10.5f %10.5f'%(atom[0],atom[3],atom[4],atom[5])
+            text = '  %s %10.5f %10.5f %10.5f %4s %4s %4s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2])
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
         
@@ -2447,19 +2362,12 @@ def UpdatePhaseData(G2frame,Item,data):
         Uvec = np.zeros(3)
         Vvec = np.zeros(3)
         ifMag = False
-        newSpGrp = ''
         BNSlatt = ''
-        if not G2frame.MagPhases:
-            G2frame.MagPhases = {'parent':data}
-        else:
-            G2frame.MagPhases['parent'] = data
         while True:
-            dlg = TransformDialog(G2frame,G2frame.MagPhases,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
+            dlg = TransformDialog(G2frame,data,Trans,Uvec,Vvec,ifMag,BNSlatt)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common,MagPhases = dlg.GetSelection()
-                    G2frame.MagPhases = MagPhases
-                    newSpGrp = newPhase['General']['SGData']['SpGrp']
+                    newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
                     if ifMag:
                         BNSlatt = newPhase['General']['SGData']['BNSlattsym'][0]
                 else:
@@ -2482,20 +2390,24 @@ def UpdatePhaseData(G2frame,Item,data):
                 phaseName = newPhase['General']['Name']
                 newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
-        
-                newPhase['ParentId'] = data['ranId']
                 generalData = newPhase['General']
                 SGData = generalData['SGData']
                 SGData['fromParent'] = [Trans,Uvec,Vvec]        #save these
                 Atoms = newPhase['Atoms']
                 if ifMag:
-                    dlg = UseMagAtomDialog(G2frame,Atoms,atCodes)
+                    atMxyz = []
+                    SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
+                    SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
+                    SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                    for atom in Atoms:
+                        SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
+                        CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
+                        atMxyz.append(CSI[0])
+                        print (atom[3:6],CSI)
+                    dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
                     try:
                         if dlg.ShowModal() == wx.ID_OK:
                             newPhase['Atoms'],atCodes = dlg.GetSelection()
-                            SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
-                            SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
-                            SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                             generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
                             break
                     finally:
@@ -2518,6 +2430,62 @@ def UpdatePhaseData(G2frame,Item,data):
         
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
+        G2frame.GPXtree.SelectItem(sub)
+                
+    def OnUseBilbao(event):
+        PatternName = data['magPhases']
+        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
+        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
+        magData = G2frame.GPXtree.GetItemPyData(UnitCellsId)[5]
+        magKeep = []
+        magchoices = []
+        for magdata in magData:
+            if magdata['Keep']:
+                magKeep.append(magdata)
+                magchoices.append(magdata['Name'])
+        if not len(magKeep):
+            G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
+            return
+        dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
+        if dlg.ShowModal() == wx.ID_OK:
+            vvec = np.zeros(3)
+            magchoice = magKeep[dlg.GetSelection()]
+            phaseName = magchoice['Name']+ 'mag'
+            newPhase = copy.deepcopy(data)
+            del newPhase['magPhases']
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
+            detTrans = np.abs(nl.det(magchoice['Trans']))
+            generalData = newPhase['General']
+            generalData['SGData'] = copy.deepcopy(magchoice['SGData'])
+            SGData = generalData['SGData']
+            Atoms = newPhase['Atoms']
+            atMxyz = []
+            for atom in Atoms:
+                SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
+                CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
+                atMxyz.append(CSI[0])
+            dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    newPhase['Atoms'],atCodes = dlg.GetSelection()
+                    generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        NShkl = len(G2spc.MustrainNames(SGData))
+        NDij = len(G2spc.HStrainNames(SGData))
+        UseList = newPhase['Histograms']
+        for hist in UseList:
+            UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
+            UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]
+            UseList[hist]['HStrain'] = [NDij*[0.0,],NDij*[False,]]
+        newPhase['General']['Map'] = mapDefault.copy()
+        sub = G2frame.GPXtree.AppendItem(parent=
+            G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
+        G2frame.GPXtree.SetItemPyData(sub,newPhase)
+        newPhase['Drawing'] = []
+        G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################
@@ -9180,6 +9148,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
         # Data
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.DataMenu)
@@ -9374,6 +9343,7 @@ def UpdatePhaseData(G2frame,Item,data):
     Pages.append('Pawley reflections')
     G2frame.dataWindow.AtomCompute.Enable(G2G.wxID_ISODISP,'ISODISTORT' in data)
     G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_VALIDPROTEIN,'macro' in data['General']['Type'])
+    G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_USEBILBAOMAG,'magPhases' in data)
     G2frame.phaseDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     FillMenus()
     if G2frame.lastSelectedPhaseTab in Pages:

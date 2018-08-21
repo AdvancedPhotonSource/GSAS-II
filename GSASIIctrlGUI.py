@@ -2251,7 +2251,7 @@ class SingleIntDialog(SingleFloatDialog):
 
 ################################################################################
 class MultiFloatDialog(wx.Dialog):
-    'Dialog to obtain a multi float value from user'
+    'Dialog to obtain multiple values from user'
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],formats=['%.5g',]):
         wx.Dialog.__init__(self,parent,-1,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
@@ -2268,14 +2268,17 @@ class MultiFloatDialog(wx.Dialog):
             if event: event.Skip()
             Obj = event.GetEventObject()
             id,limits,format = Indx[Obj]
-            try:
-                val = float(Obj.GetValue())
-                if val < limits[0] or val > limits[1]:
-                    raise ValueError
-            except ValueError:
-                val = self.values[id]
-            self.values[id] = val
-            Obj.SetValue(format%(val))
+            if 'bool' in format:
+                self.values[id] = Obj.GetValue()
+            else:
+                try:
+                    val = float(Obj.GetValue())
+                    if val < limits[0] or val > limits[1]:
+                        raise ValueError
+                except ValueError:
+                    val = self.values[id]
+                self.values[id] = val
+                Obj.SetValue(format%(val))
             
         Indx = {}
         if self.panel: self.panel.Destroy()
@@ -2284,11 +2287,16 @@ class MultiFloatDialog(wx.Dialog):
         lineSizer = wx.FlexGridSizer(0,2,5,5)
         for id,[prompt,value,limits,format] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
+            if 'bool' in format:
+                valItem = wx.CheckBox(self.panel,label='')
+                valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
+                valItem.SetValue(value)
+            else:
+                valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
+                valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
             Indx[valItem] = [id,limits,format]
             lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
-            valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
-            valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
         mainSizer.Add(lineSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)

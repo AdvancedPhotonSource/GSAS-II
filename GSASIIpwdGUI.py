@@ -2672,7 +2672,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
         if Unit:
             if len(Unit) == 4:  #patch
                 Unit.append({})
-            controls,bravais,cellist,dmin,ssopt = Unit
+            if len(Unit) == 5:  #patch
+                Unit.append({})
+            controls,bravais,cellist,dmin,ssopt,magcells = Unit
             if 'T' in Inst['Type'][0]:   #TOF - use other limit!
                 dmin = G2lat.Pos2dsp(Inst,Limits[1][0])
             else:
@@ -2976,7 +2978,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnHklShow(event):
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         spc = controls[13]
@@ -3040,7 +3042,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
         if not pId: return
         Phases = []
@@ -3051,6 +3053,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         pNum = G2G.ItemSelector(Phases,G2frame,'Select phase',header='Phase')
         if pNum is None: return
         Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,Phases[pNum]))
+        Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible mag phases
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
         controls[4] = 1
@@ -3058,6 +3061,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
+        if 'N' in Inst['Type'][0]:
+            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3107,7 +3112,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print (' Refine cell')
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
@@ -3137,7 +3142,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
-        G2frame.HKL = np.array(G2frame.HKL)
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
@@ -3150,7 +3154,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
         else:
             G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-        data = [controls,bravais,cells,dmin,ssopt]
+        G2frame.HKL = np.array(G2frame.HKL)
+        data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
         print (" %s%10.3f" % ('refinement M20 = ',M20))
         print (' unindexed lines = %d'%X20)
@@ -3173,7 +3178,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         print ('Peak Indexing')
         keepcells = []
         try:
-            controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+            controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
             for cell in cells:
                 if cell[11]:
                     cell[10] = False    #clear selection flag on keepers
@@ -3210,7 +3215,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells = G2indx.sortM20(cells)
         if OK:
             cells[0][10] = True         #select best M20
-            data = [controls,bravais,cells,dmin,ssopt]
+            data = [controls,bravais,cells,dmin,ssopt,magcells]
             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
@@ -3258,6 +3263,33 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[r][c] = True
                     UnitCellsTable.SetValue(r,c,True)
                 gridDisplay.ForceRefresh()
+            G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+        
+    def RefreshMagCellsGrid(event):
+        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        magcells = data[5]
+        r,c =  event.GetRow(),event.GetCol()
+        if magcells:
+            if c == 1:
+                for i in range(len(magcells)):
+                    magcells[i]['Use'] = False
+                    MagCellsTable.SetValue(i,c,False)
+                MagCellsTable.SetValue(r,c,True)
+                magDisplay.ForceRefresh()
+                magcells[r]['Use'] = True
+                SGData = magcells[r]['SGData']
+                A = G2lat.cell2A(magcells[r]['Cell'][:6])  
+                G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
+                G2plt.PlotPatterns(G2frame)
+            elif c == 2:
+                if MagCellsTable.GetValue(r,c):
+                    MagCellsTable.SetValue(r,c,False)
+                    magcells[r]['Keep'] = False
+                else:
+                    magcells[r]['Keep'] = True
+                    MagCellsTable.SetValue(r,c,True)
+                magDisplay.ForceRefresh()
+            data[5] = magcells
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
     def MakeNewPhase(event):
@@ -3346,19 +3378,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         Vvec = np.zeros(3)
         ifMag = False
         Type = 'nuclear'
-        newSpGrp = ''
         BNSlatt = ''
         E,SGData = G2spc.SpcGroup(controls[13])
         phase = {'General':{'Name':'','Type':Type,'Cell':['',]+controls[6:13],'SGData':SGData}}
-        if not G2frame.MagPhases:
-            G2frame.MagPhases = {'parent':phase}
-        else:
-            G2frame.MagPhases['parent'] = phase         #do I want to do this or reverse??
-        dlg = G2phsG.TransformDialog(G2frame,G2frame.MagPhases,Trans,Uvec,Vvec,ifMag,newSpGrp,BNSlatt)
+        dlg = G2phsG.TransformDialog(G2frame,phase,Trans,Uvec,Vvec,ifMag,BNSlatt)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common,MagPhases = dlg.GetSelection()
-                G2frame.MagPhases = MagPhases
+                newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
                 sgData = newPhase['General']['SGData']
                 controls[5] = sgData['SGLatt']+sgData['SGLaue']
                 controls[13] = sgData['SpGrp']
@@ -3371,8 +3397,61 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
+    def OnRunSubsMag(event):
+        import kSUBGROUPSMAG as kMAG
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
+        E,SGData = G2spc.SpcGroup(controls[13])
+        kvec = [0.,0.,0.]
+        dlg = G2G.MultiFloatDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' kx',' ky',' kz',' Use whole star',' Landau transition',' Give intermediate cells'],
+                values=kvec+[False,False,False],limits=[[0.,1.],[0.,1.],[0.,1.],[True,False],[True,False],[True,False]],formats=['%4.1f','%4.1f','%4.1f','bool','bool','bool'])
+        if dlg.ShowModal() == wx.ID_OK:
+            magcells = []
+            newVals = dlg.GetValues()
+            kvec = newVals[:3]
+            star = newVals[3]
+            Landau = newVals[4]
+            intermed = newVals[5]
+            wx.BeginBusyCursor()
+            MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,intermed)
+            wx.EndBusyCursor()
+            for result in MAXMAGN:
+                if result[0].strip().endswith("1'"):    #skip gray groups
+                    continue
+                phase = {}
+                numbs = [eval(item+'.') for item in result[2].split()]
+                phase['Name'] = result[0].strip()
+                phase['Uvec'] = np.array(numbs[3::4])
+                phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],phase['Trans'].T)   
+                phase['Keep'] = False
+                phase['Use'] = False
+                SpGp = result[0].replace("'",'')
+                SpGrp = G2spc.StandardizeSpcName(SpGp)
+                phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
+                G2spc.GetSGSpin(phase['SGData'],result[0])
+                phase['BNSlatt'] = phase['SGData']['SGLatt']
+                if result[1]:
+                    phase['BNSlatt'] += '_'+result[1]
+                    BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
+                    phase['SGData']['BNSlattsym'] = [phase['BNSlatt'],BNSsym[phase['BNSlatt']]]
+                    G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])    
+                phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+                phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
+                OprNames,SpnFlp = G2spc.GenMagOps(phase['SGData'])
+                phase['SGData']['SpnFlp'] = SpnFlp
+                magcells.append(phase)
+            magcells[0]['Use'] = True
+            SGData = magcells[0]['SGData']
+            A = G2lat.cell2A(magcells[0]['Cell'][:6])  
+            G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
+            G2plt.PlotPatterns(G2frame)
+        data = [controls,bravais,cells,dmin,ssopt,magcells]
+        G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'),data)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
@@ -3381,7 +3460,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2G.wxID_MAKENEWPHASE)
     G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2G.wxID_EXPORTCELLS)
         
-    controls,bravais,cells,dminx,ssopt = data
+    if len(data) < 6:
+        data.append([])
+    controls,bravais,cells,dminx,ssopt,magcells = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space group if missing
@@ -3415,6 +3496,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)
         G2frame.dataWindow.MakeNewPhase.Enable(True)
         G2frame.dataWindow.ExportCells.Enable(True)
+#    G2frame.dataWindow.RunSubGroupsMag.Enable(False)
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)
@@ -3638,6 +3720,34 @@ def UpdateUnitCellsGrid(G2frame, data):
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(gridDisplay,0,WACV)
+    if magcells and 'N' in Inst['Type'][0]:
+        if 'N' in Inst['Type'][0]:
+            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Magnetic cells from Bilbao k-SUBGROUPSMAG:'),0,WACV)
+        rowLabels = []
+        colLabels = ['Space Gp.','Try','Keep','a','b','c','alpha','beta','gamma','Volume']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
+        table = []
+        for phase in magcells:
+            rowLabels.append('')
+            cell  = list(phase['Cell'])
+            row = [phase['Name'],phase['Use'],phase['Keep'],]+cell
+            table.append(row)
+        MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        magDisplay = G2G.GSGrid(G2frame.dataWindow)
+        magDisplay.SetTable(MagCellsTable, True)
+        magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
+        magDisplay.SetRowLabelSize(0)
+        magDisplay.AutoSizeColumns(False)
+        for r in range(magDisplay.GetNumberRows()):
+            for c in range(magDisplay.GetNumberCols()):
+                if c in [1,2]:
+                    magDisplay.SetReadOnly(r,c,isReadOnly=False)
+                else:
+                    magDisplay.SetReadOnly(r,c,isReadOnly=True)
+        mainSizer.Add(magDisplay,0,WACV)
+        
     G2frame.dataWindow.SetDataSize()
     
 ################################################################################

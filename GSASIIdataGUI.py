@@ -2704,7 +2704,6 @@ class GSASII(wx.Frame):
         self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
         self.ExpandingAll = False
         self.SeqTblHideList = None
-        self.MagPhases = False      #will contain possible magnetic phases from Bilbao MAXMAGN
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
         
     def __init__(self, parent):
@@ -5004,12 +5003,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         # PDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
-            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL')
+            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUBMAG')
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
-        self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell','')
+        self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
+            'Find cells that index fitted peaks')
+        self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',
+            'If disabled, do Load Cell first')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
             'Copy selected unit cell from indexing to cell refinement fields')
         self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Cell', 
@@ -5025,6 +5027,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         self.PostfillDataMenu()
         self.IndexPeaks.Enable(False)
+        self.RunSubGroupsMag.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)
         self.MakeNewPhase.Enable(False)
@@ -5197,7 +5200,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         # Phase / General tab
         G2G.Define_wxId('wxID_FOURCALC', 'wxID_FOURSEARCH', 'wxID_FOURCLEAR','wxID_CHARGEFLIP','wxID_VALIDPROTEIN', 
-            'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE',)
+            'wxID_MULTIMCSA','wxID_SINGLEMCSA', 'wxID_4DCHARGEFLIP', 'wxID_TRANSFORMSTRUCTURE','wxID_USEBILBAOMAG',)
         self.DataGeneral = wx.MenuBar()
         self.PrefillDataMenu(self.DataGeneral)
         self.DataGeneral.Append(menu=wx.Menu(title=''),title='Select tab')
@@ -5212,6 +5215,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
+        self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic phase','If disabled, make in PWDR/Unit Cells')        
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         
@@ -7880,6 +7884,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
             data.append([])                                 #empty cell list
             data.append([])                                 #empty dmin
             data.append({})                                 #empty superlattice stuff
+            data.append([])                                 #empty mag cells list
             G2frame.GPXtree.SetItemPyData(item,data)                             
 #patch
         if len(data) < 5:

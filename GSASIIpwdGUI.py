@@ -3011,7 +3011,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2plt.PlotPatterns(G2frame)
             
     def OnSortCells(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
@@ -3021,24 +3021,36 @@ def UpdateUnitCellsGrid(G2frame, data):
             cells = G2indx.sortCells(cells,c-1)     #an extra column (Use) not in cells
         else:
             return
-        data = [controls,bravais,cells,dmin,ssopt]
+        data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def CopyUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         controls = controls[:5]+10*[0.,]
-        for Cell in cells:
-            if Cell[-2]:
-                break
-        cell = Cell[2:9]
-        controls[4] = 1
-        controls[5] = bravaisSymb[cell[0]]
-        controls[6:13] = cell[1:8]
-#        controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
-        controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
-        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
-        G2frame.dataWindow.RefineCell.Enable(True)
+        if len(cells):
+            for Cell in cells:
+                if Cell[-2]:
+                    break
+            cell = Cell[2:9]
+            controls[4] = 1
+            controls[5] = bravaisSymb[cell[0]]
+            controls[6:13] = cell[1:8]
+            controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
+            G2frame.dataWindow.RefineCell.Enable(True)
+        elif magcells:
+            for phase in magcells:
+                if phase['Use']:
+                    break
+            SGData = phase['SGData']
+            controls[4] = 1
+            controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+            controls[6:13] = phase['Cell']
+            controls[13] = SGData['SpGrp']
+            ssopt['SGData'] = SGData
+        data = [controls,bravais,cells,dminx,ssopt,magcells]
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+        OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
@@ -3496,7 +3508,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.CopyCell.Enable(True)
         G2frame.dataWindow.MakeNewPhase.Enable(True)
         G2frame.dataWindow.ExportCells.Enable(True)
-#    G2frame.dataWindow.RunSubGroupsMag.Enable(False)
+    elif magcells:
+        G2frame.dataWindow.CopyCell.Enable(True)        
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)

@@ -3440,17 +3440,17 @@ def UpdateUnitCellsGrid(G2frame, data):
                 SpGp = result[0].replace("'",'')
                 SpGrp = G2spc.StandardizeSpcName(SpGp)
                 phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
-                G2spc.GetSGSpin(phase['SGData'],result[0])
+                phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+                phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
                 phase['BNSlatt'] = phase['SGData']['SGLatt']
                 if result[1]:
                     phase['BNSlatt'] += '_'+result[1]
                     BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
                     phase['SGData']['BNSlattsym'] = [phase['BNSlatt'],BNSsym[phase['BNSlatt']]]
-                    G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])    
+                    G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])  
                 phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
                 phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
-                OprNames,SpnFlp = G2spc.GenMagOps(phase['SGData'])
-                phase['SGData']['SpnFlp'] = SpnFlp
+                phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
                 magcells.append(phase)
             magcells[0]['Use'] = True
             SGData = magcells[0]['SGData']
@@ -3738,14 +3738,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Magnetic cells from Bilbao k-SUBGROUPSMAG:'),0,WACV)
         rowLabels = []
-        colLabels = ['Space Gp.','Try','Keep','a','b','c','alpha','beta','gamma','Volume']
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-            3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
+        colLabels = ['Space Gp.','Try','Keep','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
         for phase in magcells:
             rowLabels.append('')
             cell  = list(phase['Cell'])
-            row = [phase['Name'],phase['Use'],phase['Keep'],]+cell
+            trans = G2spc.Trans2Text(phase['Trans'])
+            vec = G2spc.Latt2text([phase['Uvec'],])
+            row = [phase['Name'],phase['Use'],phase['Keep'],trans,vec]+cell
             table.append(row)
         MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         magDisplay = G2G.GSGrid(G2frame.dataWindow)

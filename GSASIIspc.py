@@ -205,11 +205,11 @@ def SpcGroup(SGSymbol):
 
     if SGData['SGLatt'] == 'R':
         if SGData['SGPtGrp'] in ['3',]:
-            SGData['SGSpin'] = 4*[1,]
+            SGData['SGSpin'] = 3*[1,]
         elif SGData['SGPtGrp'] in  ['-3','32','3m']:
-            SGData['SGSpin'] = 5*[1,]
+            SGData['SGSpin'] = 4*[1,]
         elif SGData['SGPtGrp'] in  ['-3m',]:
-            SGData['SGSpin'] = 6*[1,]
+            SGData['SGSpin'] = 5*[1,]
         
     else:
         if SGData['SGPtGrp'] in ['1','3','23',]:
@@ -823,7 +823,7 @@ def GetGenSym(SGData):
             
     elif 'F' in SGData['SGLatt']:
         if SGData['SGSys'] in ['monoclinic','orthorhombic','cubic','triclinic']:
-            BNSsym = {'F_s':[.5,.5,.5]}
+            BNSsym = {'F_S':[.5,.5,.5]}
             
     elif 'R' in SGData['SGLatt']:
         BNSsym = {'R_I':[0,0,.5]}
@@ -833,6 +833,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
     Tmat = np.eye(3)
     BNS = BNSlatt[0]
     A = np.array(BNSlatt[1])
+    Laue = SGData['SGLaue']
     SGCen = SGData['SGCen']
     if '_a' in BNS:
         Tmat[0,0] = 2.0
@@ -848,10 +849,11 @@ def ApplyBNSlatt(SGData,BNSlatt):
         Tmat[2,2] = 2.0
     elif '_I' in BNS:
         Tmat *= 2.0
-        SGData['SGSpin'][-1] = -1
-        if 'R' in BNS:
+        if 'R' in Laue:
             SGData['SGSpin'][-1] = -1
-    elif '_s' in BNS:
+        else:
+            SGData['SGSpin'].append(-1)
+    elif '_S' in BNS:
         SGData['SGSpin'][-1] = -1
         SGData['SGSpin'] += [-1,-1,-1,]
         Tmat *= 2.0
@@ -1082,6 +1084,18 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
 #    print SpnFlp
     magSym[0] = SGData.get('BNSlattsym',[SGData['SGLatt'],[0,0,0]])[0]
     return ' '.join(magSym)
+
+def Trans2Text(Trans):
+    "from transformation matrix to text"
+    cells = ['a','b','c']
+    Text = ''
+    for row in Trans:
+        for i in [0,1,2]:
+            if row[i]:
+                Text += str(int(row[i]))+cells[i]
+        Text += ','
+        Text = Text.replace('1','')
+    return Text[:-1]
 
 def Text2MT(mcifOpr,CIF=True):
     "From space group cif text returns matrix/translation"

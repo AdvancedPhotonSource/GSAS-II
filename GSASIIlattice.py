@@ -399,14 +399,12 @@ def FillUnitCell(Phase):
        
 def GetUnique(Phase,atCodes):
     
-    def noDuplicate(xyzA,XYZ,Amat):
-        if True in [np.allclose(np.inner(Amat,xyzA),np.inner(Amat,xyzB),atol=0.05) for xyzB in XYZ]:
+    def noDuplicate(xyzA,XYZ):
+        if True in [np.allclose(xyzA,xyzB,atol=0.0002) for xyzB in XYZ]:
             return False
         return True
 
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
-    cell = Phase['General']['Cell'][1:7]
-    Amat,Bmat = cell2AB(cell)
     SGData = Phase['General']['SGData']
     Atoms = Phase['Atoms']
     Ind = len(Atoms)
@@ -421,11 +419,11 @@ def GetUnique(Phase,atCodes):
         if Indx[ind]:
             xyz = XYZ[ind]
             for jnd in range(Ind):
-                if Atoms[ind][ct] == Atoms[jnd][ct]:
+                if Atoms[ind][ct-1] == Atoms[jnd][ct-1]:
                     if ind != jnd and Indx[jnd]:                        
                         Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
                         xyzs = np.array([equiv[0] for equiv in Equiv])
-                        Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
+                        Indx[jnd] = noDuplicate(xyz,xyzs)
     Ind = []
     for ind in Indx:
         if Indx[ind]:

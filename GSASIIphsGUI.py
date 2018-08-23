@@ -571,13 +571,13 @@ class UseMagAtomDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         Indx = {}
-        Mstr = ['Mx','My','Mz']
+        Mstr = [' Mx ',' My ',' Mz ']
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         
         mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments:'),0,WACV)
         atmSizer = wx.FlexGridSizer(0,2,5,5)
         for iuse,[use,atom,mxyz] in enumerate(zip(self.Use,self.Atoms,self.atMxyz)):
-            mstr = ['___','___','___']
+            mstr = [' __ ',' __ ',' __ ']
             for i,mx in enumerate(mxyz):
                 if mx:
                     mstr[i] = Mstr[i]
@@ -586,7 +586,7 @@ class UseMagAtomDialog(wx.Dialog):
             useChk.SetValue(use)
             useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
             atmSizer.Add(useChk,0,WACV)
-            text = '  %s %10.5f %10.5f %10.5f %4s %4s %4s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2])
+            text = '  %5s %10.5f %10.5f %10.5f %4s %4s %4s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2])
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
         
@@ -2441,29 +2441,36 @@ def UpdatePhaseData(G2frame,Item,data):
         magchoices = []
         for magdata in magData:
             if magdata['Keep']:
+                trans = G2spc.Trans2Text(magdata['Trans'])
+                vec = G2spc.Latt2text([magdata['Uvec'],])
                 magKeep.append(magdata)
-                magchoices.append(magdata['Name'])
+                magchoices.append('%s %s %s'%(magdata['Name'],trans,vec))
         if not len(magKeep):
             G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return
         dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
         if dlg.ShowModal() == wx.ID_OK:
-            vvec = np.zeros(3)
+            vvec = np.zeros(3)  #spg2origins
             magchoice = magKeep[dlg.GetSelection()]
-            phaseName = magchoice['Name']+ 'mag'
+            phaseName = magchoice['Name']+ ' mag'
             newPhase = copy.deepcopy(data)
             del newPhase['magPhases']
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
-            detTrans = np.abs(nl.det(magchoice['Trans']))
             generalData = newPhase['General']
-            generalData['SGData'] = copy.deepcopy(magchoice['SGData'])
+            generalData['SGData'] = copy.deepcopy(magchoice['SGData'])            
+            generalData['Cell'][1:] = magchoice['Cell']
             SGData = generalData['SGData']
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
+            
+
+#            for item in SGData: print(item,SGData[item])
+
             Atoms = newPhase['Atoms']
             atMxyz = []
             for atom in Atoms:
                 SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                 CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                 atMxyz.append(CSI[0])
+                
             dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -2473,9 +2480,12 @@ def UpdatePhaseData(G2frame,Item,data):
                     return
             finally:
                 dlg.Destroy()
+        else:
+            return
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
         UseList = newPhase['Histograms']
+        detTrans = np.abs(nl.det(magchoice['Trans']))
         for hist in UseList:
             UseList[hist]['Scale'] /= detTrans      #scale by 1/volume ratio
             UseList[hist]['Mustrain'][4:6] = [NShkl*[0.01,],NShkl*[False,]]

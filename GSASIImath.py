@@ -3659,13 +3659,6 @@ def SearchMap(generalData,drawingData,Neg=False):
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
     
-#    def noDuplicate(xyz,peaks,Amat):
-#        XYZ = np.inner(Amat,xyz)
-#        if True in [np.allclose(XYZ,np.inner(Amat,peak),atol=0.5) for peak in peaks]:
-#            print ' Peak',xyz,' <0.5A from another peak'
-#            return False
-#        return True
-#                            
     def fixSpecialPos(xyz,SGData,Amat):
         equivs = G2spc.GenAtom(xyz,SGData,Move=True)
         X = []

@@ -1810,7 +1810,7 @@ def UpdateRigidBodies(G2frame,data):
                 rbId,imag = Indx[Obj.GetId()]
                 rbData['VectRef'][imag] = Obj.GetValue()
                         
-            magSizer = wx.wx.BoxSizer(wx.HORIZONTAL)
+            magSizer = wx.BoxSizer(wx.HORIZONTAL)
             magSizer.Add(wx.StaticText(VectorRBDisplay,-1,'Translation magnitude: '),
                 0,wx.ALIGN_CENTER_VERTICAL)
             magValue = wx.TextCtrl(VectorRBDisplay,-1,'%8.4f'%(rbData['VectMag'][imag]))
@@ -2218,6 +2218,8 @@ def UpdateRigidBodies(G2frame,data):
         RBnames = {}
         for rbid in data['RBIds']['Residue']:
             RBnames.update({data['Residue'][rbid]['RBname']:rbid,})
+        if not RBnames:
+            return
         rbchoice = RBnames.keys()
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         if len(RBnames) > 1:

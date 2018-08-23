@@ -8242,7 +8242,10 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
     Page.camera['position'] = defaults['cameraPos']
     Page.camera['backColor'] = np.array([0,0,0,0])
-    Page.canvas.SetCurrent()
+    try:
+        if Page.context: Page.canvas.SetCurrent(Page.context)
+    except:
+        pass
     Draw('main')
     Draw('main')    #to fill both buffers so save works
 

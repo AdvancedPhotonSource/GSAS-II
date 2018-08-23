@@ -346,7 +346,7 @@ def ShowVersions():
             print ("Image (PIL):%s"%Image.VERSION)
         except ImportError:
             print ("Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations")
-    print ("  Platform:   %s%s%s"%(sys.platform,platform.architecture()[0],platform.machine()))
+    print ("  Platform:   %s %s %s"%(sys.platform,platform.architecture()[0],platform.machine()))
     try:
         import mkl
         print ("  Max threads:%s"%mkl.get_max_threads())

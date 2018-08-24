@@ -2449,10 +2449,12 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return
         dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
-        if dlg.ShowModal() == wx.ID_OK:
+        opt = dlg.ShowModal()
+        if opt == wx.ID_OK:
             vvec = np.zeros(3)  #spg2origins
-            magchoice = magKeep[dlg.GetSelection()]
-            phaseName = magchoice['Name']+ ' mag'
+            sel = dlg.GetSelection()
+            magchoice = magKeep[sel]
+            phaseName = '%s mag (%d)'%(data['General']['Name'],sel)
             newPhase = copy.deepcopy(data)
             del newPhase['magPhases']
             generalData = newPhase['General']
@@ -2460,13 +2462,10 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Cell'][1:] = magchoice['Cell']
             SGData = generalData['SGData']
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
-            
-
-#            for item in SGData: print(item,SGData[item])
-
             Atoms = newPhase['Atoms']
             atMxyz = []
-            for atom in Atoms:
+            for ia,atom in enumerate(Atoms):
+                atom[0] += '_%d'%ia
                 SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                 CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                 atMxyz.append(CSI[0])
@@ -2496,6 +2495,8 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
         G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
+        G2frame.newGPXfile = phaseName+'.gpx'
+        G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################

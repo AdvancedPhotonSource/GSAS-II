@@ -3459,6 +3459,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2plt.PlotPatterns(G2frame)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'),data)
+        G2frame.OnFileSaveas(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)

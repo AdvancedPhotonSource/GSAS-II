@@ -2704,6 +2704,7 @@ class GSASII(wx.Frame):
         self.lastTreeSetting = [] # used to track the selected Tree item before a refinement
         self.ExpandingAll = False
         self.SeqTblHideList = None
+        self.newGPXfile = ''
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
         
     def __init__(self, parent):
@@ -3752,7 +3753,7 @@ class GSASII(wx.Frame):
             pth = self.LastGPXdir
         else:
             pth = '.'
-        dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', pth, '', 
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', pth, self.newGPXfile, 
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:

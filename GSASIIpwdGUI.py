@@ -1140,7 +1140,7 @@ def UpdateBackground(G2frame,data):
             superMinusOne = chr(0xaf)+chr(0xb9)
         for plot in auxPlot:
             XY = np.array(plot[:2])
-            if plot[2] == 'D(R)':
+            if 'D(R)' in plot[2]:
                 xlabel = r'$R, \AA$'
                 ylabel = r'$D(R), arb. units$'
             else:
@@ -1238,7 +1238,7 @@ def UpdateBackground(G2frame,data):
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye scattering: '),0,WACV)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Number of terms: '),0,WACV)
-        debTerms = wx.ComboBox(G2frame.dataWindow,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(12)],
+        debTerms = wx.ComboBox(G2frame.dataWindow,-1,value=str(data[1]['nDebye']),choices=[str(i) for i in range(21)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         debTerms.Bind(wx.EVT_COMBOBOX,OnDebTerms)
         topSizer.Add(debTerms,0,WACV)

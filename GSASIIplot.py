@@ -4342,7 +4342,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
             G2frame.G2plotNB.status.SetStatusText('q =%.3f%s %sq/q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
-
+            
     if PatternName:
         G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
     PatternId = G2frame.PatternId
@@ -4437,7 +4437,8 @@ def PlotPeakWidths(G2frame,PatternName=None):
             Plot.plot(X,Y,'+',color='r',label='G peak')
             Plot.plot(X,Z,'+',color='g',label='L peak')
             Plot.plot(X,W,'+',color='b',label='G+L peak')
-        Plot.legend(loc='best')
+        legend = Plot.legend(loc='best')
+        SetupLegendPick(legend,new)
         Page.canvas.draw()
     else:   #'T'OF
         Plot.set_title('Instrument and sample peak coefficients')
@@ -8710,46 +8711,7 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     :func:`GSASIIfpaGUI.doFPAcalc`
     '''
     import NIST_profile as FP
-    def clearHighlight(event):
-        l,lm,lms = Page.timer.lineinfo
-        l.set_marker(lm)
-        l.set_markersize(lms)
-        Page.canvas.draw()
-        Page.timer = None
-        
-    def onPick(event):
-        '''When a line in the legend is selected, find the matching line
-        in the plot and then highlight it by adding/enlarging markers.
-        Set up a timer to make a reset after 2.5 seconds
-        '''
-        plot = event.artist.get_figure().get_axes()[0]
-        if event.artist not in plot.get_legend().get_lines():  # is this an item in the legend?
-            return
-        if Page.timer: # clear previous highlight
-            Page.timer.Stop()
-            clearHighlight(None)
-            return   # if this is removed, the selected item is automatically highlighted
-        lbl = event.artist.get_label()
-        for l in plot.get_lines():
-            if lbl == l.get_label():
-                Page.timer = wx.Timer()
-                Page.timer.Bind(wx.EVT_TIMER, clearHighlight)
-                Page.timer.lineinfo = (l,l.get_marker(),l.get_markersize())
-                # highlight the selected item
-                if l.get_marker() == 'None':
-                    l.set_marker('o')
-                else:
-                    l.set_markersize(2*l.get_markersize())
-                Page.canvas.draw()
-                Page.timer.Start(5000,oneShot=True)
-                break
-        else:
-            print('Warning: artist matching ',lbl,' not found')
-                    
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('FPA convolutors','mpl')
-    if new:
-        Page.canvas.mpl_connect('pick_event',onPick)
-    Page.timer = None
     Page.SetToolTipString('')
     cntr = NISTpk.twotheta_window_center_deg
     Plot.set_title('Peak convolution functions @ 2theta={:.3f}'.format(cntr))
@@ -8757,7 +8719,9 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     Plot.set_ylabel(r'Intensity (arbitrary)',fontsize=14)
     refColors=['b','r','c','g','m','k']
     ttmin = ttmax = 0
+    #GSASIIpath.IPyBreak()
     for i,conv in enumerate(NISTpk.convolvers):
+        if 'smoother' in conv: continue
         f = NISTpk.convolver_funcs[conv]()
         if f is None: continue
         FFT = FP.best_irfft(f)
@@ -8770,10 +8734,72 @@ def PlotFPAconvolutors(G2frame,NISTpk):
         color = refColors[i%len(refColors)]
         Plot.plot(ttArr,FFT,color,label=conv[5:])
     legend = Plot.legend(loc='best')
-    for line in legend.get_lines():
-        line.set_picker(4)
+    SetupLegendPick(legend,new)
     Page.toolbar.push_current()
     Plot.set_xlim((ttmin,ttmax))
     Page.toolbar.push_current()
     Page.toolbar.draw()
     Page.canvas.draw()
+
+def SetupLegendPick(legend,new,delay=5):
+    legend.delay = delay*1000 # Hold time in ms for clear; 0 == forever
+    for line in legend.get_lines():
+        line.set_picker(4)
+        # bug: legend items with single markers don't seem to respond to a "pick"
+    #GSASIIpath.IPyBreak()
+    for txt in legend.get_texts():
+        txt.set_picker(4)
+    if new:
+        legend.figure.canvas.mpl_connect('pick_event',onLegendPick)
+        
+def onLegendPick(event):
+    '''When a line in the legend is selected, find the matching line
+    in the plot and then highlight it by adding/enlarging markers.
+    Set up a timer to make a reset after delay selected in SetupLegendPick
+    '''
+    def clearHighlight(event):
+        if not canvas.timer: return
+        l,lm,lms,lmw = canvas.timer.lineinfo
+        l.set_marker(lm)
+        l.set_markersize(lms)
+        l.set_markeredgewidth(lmw)
+        canvas.draw()
+        canvas.timer = None
+    canvas = event.artist.get_figure().canvas
+    if not hasattr(canvas,'timer'): canvas.timer = None
+    plot = event.artist.get_figure().get_axes()[0]
+    if hasattr(plot.get_legend(),'delay'):
+        delay = plot.get_legend().delay
+    if canvas.timer: # clear previous highlight
+        if delay > 0: canvas.timer.Stop()
+        clearHighlight(None)
+        #if delay <= 0: return   # use this in place of return
+        # so that the next selected item is automatically highlighted (except when delay is 0)
+        return
+    if event.artist in plot.get_legend().get_lines():  # is this an artist item in the legend?
+        lbl = event.artist.get_label()
+    elif event.artist in plot.get_legend().get_texts():  # is this a text item in the legend?
+        lbl = event.artist.get_text()
+    else:
+        #GSASIIpath.IPyBreak()
+        return
+    
+    for l in plot.get_lines():
+        if lbl == l.get_label():
+            canvas.timer = wx.Timer()
+            canvas.timer.Bind(wx.EVT_TIMER, clearHighlight)
+            #GSASIIpath.IPyBreak()
+            canvas.timer.lineinfo = (l,l.get_marker(),l.get_markersize(),l.get_markeredgewidth())
+            # highlight the selected item
+            if l.get_marker() == 'None':
+                l.set_marker('o')
+            else:
+                l.set_markersize(2*l.get_markersize())
+                l.set_markeredgewidth(2*l.get_markeredgewidth())
+            canvas.draw()
+            if delay > 0:
+                canvas.timer.Start(delay,oneShot=True)
+            break
+    else:
+            print('Warning: artist matching ',lbl,' not found')
+    

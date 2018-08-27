@@ -3019,8 +3019,9 @@ class OrderBox(wxscroll.ScrolledPanel):
         self.FitInside()
         
 ################################################################################
-def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.FD_OPEN,
-                  *args, **kwargs):
+def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
+                      style=wx.FD_OPEN, parent=None,
+                      *args, **kwargs):
     '''Uses a customized dialog that gets files from the appropriate import directory. 
     Arguments are used the same as in :func:`wx.FileDialog`. Selection of
     multiple files is allowed if argument style includes wx.FD_MULTIPLE.
@@ -3034,7 +3035,8 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.FD_O
 
     :returns: a list of files or an empty list
     '''
-    dlg = wx.FileDialog(G2frame, message, defaultDir, defaultFile, *args,
+    if not parent: parent = G2frame
+    dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,
                         style=style, **kwargs)
     pth = GetImportPath(G2frame)
     if not defaultDir and pth: dlg.SetDirectory(pth)
@@ -3964,15 +3966,23 @@ class GridFractionEditor(wg.PyGridCellEditor):
 ################################################################################
 #####  Get an output file or directory
 ################################################################################           
-def askSaveFile(G2frame,defnam,extension,longFormatName):
+def askSaveFile(G2frame,defnam,extension,longFormatName,parent=None):
     '''Ask the user to supply a file name
+
+    :param wx.Frame G2frame: The main GSAS-II window
+    :param str defnam: a default file name
+    :param str extension: the default file extension beginning with a '.'
+    :param str longFormatName: a description of the type of file
+    :param wx.Frame parent: the parent window for the dialog. Defaults
+      to G2frame.
 
     :returns: a file name (str) or None if Cancel is pressed
     '''
 
+    if not parent: parent = G2frame
     pth = GetExportPath(G2frame)
     dlg = wx.FileDialog(
-        G2frame, 'Input name for file to write', pth, defnam,
+        parent, 'Input name for file to write', pth, defnam,
         longFormatName+' (*'+extension+')|*'+extension,
         wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
     dlg.CenterOnParent()

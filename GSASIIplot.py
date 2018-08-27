@@ -47,6 +47,7 @@ plotting routine               action
 :func:`PlotTRImage`           test plot routine
 :func:`PlotRigidBody`         show rigid body structures as balls & sticks
 :func:`PlotLayers`            show layer structures as balls & sticks
+:func:`PlotFPAconvolutors`    plots the convolutors from Fundamental Parameters
 ============================  ===========================================================================
 
 These plotting routines place their graphics in the GSAS-II Plot Window, which contains a
@@ -8703,3 +8704,76 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.context = wx.glcanvas.GLContext(Page.canvas)
     Page.canvas.SetCurrent(Page.context)
     wx.CallAfter(Draw,'main')
+
+def PlotFPAconvolutors(G2frame,NISTpk):
+    '''Plot the convolutions used for the current peak computed with
+    :func:`GSASIIfpaGUI.doFPAcalc`
+    '''
+    import NIST_profile as FP
+    def clearHighlight(event):
+        l,lm,lms = Page.timer.lineinfo
+        l.set_marker(lm)
+        l.set_markersize(lms)
+        Page.canvas.draw()
+        Page.timer = None
+        
+    def onPick(event):
+        '''When a line in the legend is selected, find the matching line
+        in the plot and then highlight it by adding/enlarging markers.
+        Set up a timer to make a reset after 2.5 seconds
+        '''
+        plot = event.artist.get_figure().get_axes()[0]
+        if event.artist not in plot.get_legend().get_lines():  # is this an item in the legend?
+            return
+        if Page.timer: # clear previous highlight
+            Page.timer.Stop()
+            clearHighlight(None)
+            return   # if this is removed, the selected item is automatically highlighted
+        lbl = event.artist.get_label()
+        for l in plot.get_lines():
+            if lbl == l.get_label():
+                Page.timer = wx.Timer()
+                Page.timer.Bind(wx.EVT_TIMER, clearHighlight)
+                Page.timer.lineinfo = (l,l.get_marker(),l.get_markersize())
+                # highlight the selected item
+                if l.get_marker() == 'None':
+                    l.set_marker('o')
+                else:
+                    l.set_markersize(2*l.get_markersize())
+                Page.canvas.draw()
+                Page.timer.Start(5000,oneShot=True)
+                break
+        else:
+            print('Warning: artist matching ',lbl,' not found')
+                    
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('FPA convolutors','mpl')
+    if new:
+        Page.canvas.mpl_connect('pick_event',onPick)
+    Page.timer = None
+    Page.SetToolTipString('')
+    cntr = NISTpk.twotheta_window_center_deg
+    Plot.set_title('Peak convolution functions @ 2theta={:.3f}'.format(cntr))
+    Plot.set_xlabel(r'$\Delta 2\theta, deg$',fontsize=14)
+    Plot.set_ylabel(r'Intensity (arbitrary)',fontsize=14)
+    refColors=['b','r','c','g','m','k']
+    ttmin = ttmax = 0
+    for i,conv in enumerate(NISTpk.convolvers):
+        f = NISTpk.convolver_funcs[conv]()
+        if f is None: continue
+        FFT = FP.best_irfft(f)
+        if f[1].real > 0: FFT = np.roll(FFT,int(len(FFT)/2.))
+        FFT /= FFT.max()
+        ttArr = np.linspace(-NISTpk.twotheta_window_fullwidth_deg/2,
+                             NISTpk.twotheta_window_fullwidth_deg/2,len(FFT))
+        ttmin = min(ttmin,ttArr[np.argmax(FFT>.005)])
+        ttmax = max(ttmax,ttArr[::-1][np.argmax(FFT[::-1]>.005)])
+        color = refColors[i%len(refColors)]
+        Plot.plot(ttArr,FFT,color,label=conv[5:])
+    legend = Plot.legend(loc='best')
+    for line in legend.get_lines():
+        line.set_picker(4)
+    Page.toolbar.push_current()
+    Plot.set_xlim((ttmin,ttmax))
+    Page.toolbar.push_current()
+    Page.toolbar.draw()
+    Page.canvas.draw()

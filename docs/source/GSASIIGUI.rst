@@ -27,3 +27,6 @@
 
 .. automodule:: GSASIIexprGUI
     :members: 
+
+.. automodule:: GSASIIfpaGUI
+    :members: 

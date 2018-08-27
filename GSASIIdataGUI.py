@@ -69,6 +69,8 @@ import GSASIIctrlGUI as G2G
 import GSASIIElem as G2elem
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2stMn
+import defaultIparms as dI
+import GSASIIfpaGUI as G2fpa
 
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -1199,6 +1201,8 @@ class GSASII(wx.Frame):
         submenu.AppendSeparator()
         item = submenu.Append(wx.ID_ANY,'Simulate a dataset','Create a powder data set entry that will be simulated')
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,'Fit instr. profile from fundamental parms...','')
+        self.Bind(wx.EVT_MENU, self.OnPowderFPA, id=item.GetId())
         
     def OpenPowderInstprm(self,instfile):
         '''Read a GSAS-II (new) instrument parameter file
@@ -1385,7 +1389,6 @@ class GSASII(wx.Frame):
             '''       
             sind = lambda x: math.sin(x*math.pi/180.)
             tand = lambda x: math.tan(x*math.pi/180.)
-            import defaultIparms as dI
             while True: # loop until we get a choice
                 choices = []
                 head = 'Select from default instrument parameters for '+rd.idstring
@@ -1948,7 +1951,107 @@ class GSASII(wx.Frame):
             refList[generalData['Name']] = []
         self.EnableRefineCommand()
         return # success
-        
+
+    def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):
+        '''Create a PDWR entry for a computed powder pattern
+        '''
+        # get a list of existing histograms
+        PWDRlist = []
+        if self.GPXtree.GetCount():
+            item, cookie = self.GPXtree.GetFirstChild(self.root)
+            while item:
+                name = self.GPXtree.GetItemText(item)
+                if name.startswith('PWDR ') and name not in PWDRlist:
+                    PWDRlist.append(name)
+                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        # Initialize a base class reader
+        rd = G2obj.ImportPowderData(
+            extensionlist=tuple(),
+            strictExtension=False,
+            formatName = 'FPA Simulated dataset',
+            longFormatName = 'Fundamental Parameters simulated pattern')
+        rd.powderentry[0] = '' # no filename
+        # #self.powderentry[1] = pos # bank offset (N/A here)
+        rd.powderentry[2] = 1 # only one bank
+        rd.comments.append('This is a powder pattern simulated with Fundamental Parameters')
+        self.CheckNotebook()
+        #self.zipfile = None
+        # get instrument parameters for it
+        rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+            'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+        Iparm1, Iparm2 = G2fil.ReadPowderInstprm(dI.defaultIparms[0],1,1,rd)
+        rd.idstring = ' CW'
+        simType = 'CW'
+        # set wavelength
+        if Lam2:
+            Iparm1['Lam1'][0] = Lam1
+            Iparm1['Lam2'][0] = Lam2
+            Iparm1['Lam1'][1] = Lam1
+            Iparm1['Lam2'][1] = Lam2
+        else:
+            Iparm1['Lam'] = Iparm1['Lam1']
+            del Iparm1['Lam1'],Iparm1['Lam2']
+            Iparm1['Lam'][0] = Lam1
+            Iparm1['Lam'][1] = Lam1
+
+        rd.powderdata = [
+            np.array(ttArr), # x-axis values
+            np.array(intArr), # powder pattern intensities
+            np.ones_like(ttArr), # 1/sig(intensity)^2 values (weights)
+            np.zeros_like(intArr), # calc. intensities (zero)
+            np.zeros_like(ttArr), # calc. background (zero)
+            np.zeros_like(ttArr), # obs-calc profiles
+            ]
+        Tmin = rd.powderdata[0][0]
+        Tmax = rd.powderdata[0][-1]
+        # data are read, now store them in the tree
+        HistName = 'PWDR '+HistName
+        HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)  # make new histogram names unique
+        Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
+        Ymin = np.min(rd.powderdata[1])
+        Ymax = np.max(rd.powderdata[1])
+        valuesdict = {
+            'wtFactor':1.0,
+            'Dummy':True,'simType':simType,
+            'ranId':ran.randint(0,sys.maxsize),
+            'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
+            'Yminmax':[Ymin,Ymax]
+            }
+        self.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Comments'),
+            rd.comments)
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Limits'),
+            [(Tmin,Tmax),[Tmin,Tmax]])
+        self.PatternId = GetGPXtreeItemId(self,Id,'Limits')
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Background'),
+            [['chebyschev',True,3,1.0,0.0,0.0],
+             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Instrument Parameters'),
+            [Iparm1,Iparm2])
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Sample Parameters'),
+            rd.Sample)
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Peak List')
+            ,{'peaks':[],'sigDict':{}})
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Index Peak List'),
+            [[],[]])
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Unit Cells List'),
+            [])
+        self.GPXtree.SetItemPyData(
+            self.GPXtree.AppendItem(Id,text='Reflection Lists'),
+            {})
+        self.GPXtree.Expand(Id)
+        self.GPXtree.SelectItem(Id)
+        print(u'Added simulation powder data {}'.format(HistName))
+        return Id
+    
     def OnPreferences(self,event):
         'Edit the GSAS-II configuration variables'
         dlg = G2G.SelectConfigSetting(self)
@@ -2904,6 +3007,10 @@ class GSASII(wx.Frame):
         'Test the .par/.*lbls pair for contents'
         G2IO.testColumnMetadata(self)
                 
+    def OnPowderFPA(self,event):
+        'Perform FPA simulation/peak fitting'
+        G2fpa.GetFPAInput(self)
+        
     def OnReadPowderPeaks(self,event):
         'Bound to menu Data/Read Powder Peaks'
         self.CheckNotebook()
@@ -3715,6 +3822,7 @@ class GSASII(wx.Frame):
                     self.G2plotNB.clear()
                 self.SetTitleByGPX()
                 self.EnableRefineCommand()
+                self.init_vars()
         finally:
             dlg.Destroy()
 

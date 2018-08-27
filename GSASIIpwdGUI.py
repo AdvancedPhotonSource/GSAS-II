@@ -1606,7 +1606,7 @@ def UpdateInstrumentGrid(G2frame,data):
         It does not write Bank n: on # line & thus can be used any time w/o clash of bank nos.
         '''
         pth = G2G.GetExportPath(G2frame)
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
+        dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II instrument parameters file', pth, '', 
             'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:

@@ -72,6 +72,9 @@ BBPSDDetector = [
 '''Additional FPA dict entries used in :func:`MakeTopasFPASizer` 
 needed for Bragg Brentano instruments with linear (1-D) PSD detectors.
 '''
+
+Citation = '''MH Mendenhall, K Mullen && JP Cline. (2015) J. Res. of NIST 120, 223-251. doi:10.6028/jres.120.014.
+'''
     
 def SetCu2Wave():
     '''Set the parameters to the two-line Cu K alpha 1+2 spectrum
@@ -157,7 +160,7 @@ def MakeTopasFPASizer(G2frame,FPdlg,mode,SetButtonStatus):
                      labelY=r'Intensity (arbitrary)',
                      Title='FPA peak', newPlot=True, lines=True)
 
-    if FPdlg.GetSizer(): FPdlg.GetSizer().Clear(delete_windows=True)
+    if FPdlg.GetSizer(): FPdlg.GetSizer().Clear(True)
     numWave = parmDict['numWave']
     if mode == 'BBpoint':
         itemList = BraggBrentanoParms+BBPointDetector
@@ -463,11 +466,12 @@ def MakeSimSizer(G2frame, dlg):
         plswait.CenterOnParent()
         plswait.Show() # post "please wait"
         wx.BeginBusyCursor()
-        ints = NISTparms['emission']['emiss_intensities'][:]
-        Lam1 = NISTparms['emission']['emiss_wavelengths'][ints.argmax()]*1e10
-        if len(ints) > 1: # pick out most intense wavelengths
-            ints[ints.argmax()] = -1
-            Lam2 = NISTparms['emission']['emiss_wavelengths'][ints.argmax()]*1e10
+        # pick out one or two most intense wavelengths
+        ints = list(NISTparms['emission']['emiss_intensities'])
+        Lam1 = NISTparms['emission']['emiss_wavelengths'][np.argmax(ints)]*1e10
+        if len(ints) > 1: 
+            ints[np.argmax(ints)] = -1
+            Lam2 = NISTparms['emission']['emiss_wavelengths'][np.argmax(ints)]*1e10
         else:
             Lam2 = None
         histId = G2frame.AddSimulatedPowder(ttArr,intArr,
@@ -601,7 +605,7 @@ def MakeSimSizer(G2frame, dlg):
         #GSASIIpath.IPyBreak()
         SetButtonStatus()
 
-    if dlg.GetSizer(): dlg.GetSizer().Clear(delete_windows=True)
+    if dlg.GetSizer(): dlg.GetSizer().Clear(True)
     MainSizer = wx.BoxSizer(wx.VERTICAL)
     MainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
             'Fit Profile Parameters to Peaks from Fundamental Parameters',
@@ -640,9 +644,12 @@ def MakeSimSizer(G2frame, dlg):
     btnsizer.Add(readBtn)
     readBtn.Bind(wx.EVT_BUTTON,_onReadFPA)
     MainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER, 0)
-    #MainSizer.Add((-1,5))
-    
     MainSizer.Add((-1,4),1,wx.EXPAND,1)
+    txt = wx.StaticText(dlg,wx.ID_ANY,
+                            'If you use this, please cite: '+Citation,
+                            size=(350,-1))
+    txt.Wrap(340)
+    MainSizer.Add(txt,0,wx.ALIGN_CENTER)
     btnsizer = wx.BoxSizer(wx.HORIZONTAL)
     OKbtn = wx.Button(dlg, wx.ID_OK)
     OKbtn.SetDefault()

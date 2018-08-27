@@ -753,7 +753,7 @@ def GetRigidBodyModels(rigidbodyDict,Print=True,pFile=None):
     def PrintVecRBModel(RBModel):
         rbRef = RBModel['rbRef']
         atTypes = RBModel['rbTypes']
-        pFile.write('Vector RB name: %s no.atoms: No. times used: %d\n'%
+        pFile.write('Vector RB name: %s no.atoms: %d No. times used: %d\n'%
             (RBModel['RBname'],len(RBModel['rbTypes']),RBModel['useCount']))
         for i in range(len(RBModel['VectMag'])):
             pFile.write('Vector no.: %d Magnitude: %8.4f Refine? %s\n'%(i,RBModel['VectMag'][i],RBModel['VectRef'][i]))
@@ -927,7 +927,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 Oxyz = RB['Orig'][0]
                 Qrijk = RB['Orient'][0]
                 Angle = 2.0*acosd(Qrijk[0])
-                pFile.write('\nRBObject %s',' at %10.4f %10.4f %10.4f Refine? %s\n'%
+                pFile.write('\nRBObject %s at %10.4f %10.4f %10.4f Refine? %s\n'%
                     (RB['RBname'],Oxyz[0],Oxyz[1],Oxyz[2],RB['Orig'][1]))
                 pFile.write('Orientation angle,vector: %10.3f %10.4f %10.4f %10.4f Refine? %s\n'%
                     (Angle,Qrijk[1],Qrijk[2],Qrijk[3],RB['Orient'][1]))

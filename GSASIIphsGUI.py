@@ -2451,7 +2451,6 @@ def UpdatePhaseData(G2frame,Item,data):
         dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
         opt = dlg.ShowModal()
         if opt == wx.ID_OK:
-            vvec = np.zeros(3)  #spg2origins
             sel = dlg.GetSelection()
             magchoice = magKeep[sel]
             phaseName = '%s mag (%d)'%(data['General']['Name'],sel)
@@ -2461,6 +2460,7 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])            
             generalData['Cell'][1:] = magchoice['Cell']
             SGData = generalData['SGData']
+            vvec = np.array(G2spc.spg2origins.get(SGData['SpGrp'],[0.,0.,0.]))
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
             Atoms = newPhase['Atoms']
             atMxyz = []

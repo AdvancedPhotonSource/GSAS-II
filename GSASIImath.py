@@ -157,7 +157,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     lamMax = lam
     nfev = 0
     if Print:
-        print (' Hessian Levenburg-Marquardt SVD refinement on %d variables:'%(n))
+        print (' Hessian Levenberg-Marquardt SVD refinement on %d variables:'%(n))
     Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()

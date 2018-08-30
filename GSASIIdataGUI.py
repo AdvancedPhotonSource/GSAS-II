@@ -1244,7 +1244,7 @@ class GSASII(wx.Frame):
                     banklist.add(int(S.split(':')[0].split()[1]))
             if len(banklist) > 1: # yes, the user must make a selection
                 choices = [str(i) for i in banklist]
-                bank = int(G2G.ItemSelector(choices,self.G2frame,multiple=False))
+                bank = int(G2G.ItemSelector(choices,self,multiple=False))
             else:
                 bank = 1
             rd.powderentry[2] = bank

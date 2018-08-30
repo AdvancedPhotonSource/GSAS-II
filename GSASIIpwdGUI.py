@@ -2764,7 +2764,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
     else:
         difC = Inst['difC'][1]
-        dmin = G2lat.Pos2dsp(Inst,Limits[0])
+        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[0]))
     
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -3068,11 +3068,18 @@ def UpdateUnitCellsGrid(G2frame, data):
         Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible mag phases
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
+        if 'mono' in SGData['SGSys']:
+            SpGrp = G2spc.fixMono(SGData['SpGrp'])
+            if SpGrp == None:
+                wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
+                return
+        controls[13] = SpGrp
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+        if controls[5][1:] == 'm3': controls[5] += 'm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
-        controls[13] = SGData['SpGrp']
+        
         if 'N' in Inst['Type'][0]:
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
@@ -3080,7 +3087,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def ImportUnitCell(event):
-        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dminx,ssopt = G2frame.GPXtree.GetItemPyData(UnitCellsId)[:5]
         reqrdr = G2frame.dataWindow.ReImportMenuId.get(event.GetId())
         rdlist = G2frame.OnImportGeneric(reqrdr,
             G2frame.ImportPhaseReaderlist,'phase')
@@ -3088,8 +3095,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         rd = rdlist[0]
         Cell = rd.Phase['General']['Cell']
         SGData = rd.Phase['General']['SGData']
+        if '1 1' in SGData['SpGrp']:
+            wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
+            return
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+        if controls[5][1:] == 'm3': controls[5] += 'm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']

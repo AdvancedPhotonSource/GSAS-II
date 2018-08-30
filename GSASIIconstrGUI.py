@@ -1288,7 +1288,6 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
     invTrans = nl.inv(Trans)
-#    print 'invTrans',invTrans
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     
     opId = oldPhase['pId']
@@ -1322,8 +1321,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         Opr = oldPhase['General']['SGData']['SGOps'][abs(Nop)][0]
         if Nop < 0:         #inversion
             Opr *= -1
-        XOpr = np.inner(Opr,invTrans)
-#        for ix,name in enumerate(xnames):
+        XOpr = np.inner(Opr,Trans)
         for ix in list(set(CSX[0])):
             if not ix:
                 continue
@@ -1334,7 +1332,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                 if opval:
                     DepCons.append([opval,G2obj.G2VarObj('%d::%s:%s'%(opId,xnames[iop],iat))])
             if len(DepCons) == 1:
-                constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
             elif len(DepCons) > 1:
                 for Dep in DepCons:
                     Dep[0] *= -1
@@ -1342,7 +1340,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         for name in ['Afrac','AUiso']:
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
-            constraints['Phase'].append([IndpCon,DepCons,None,None,'e'])
+            constraints['Phase'].append([DepCons,IndpCon,None,None,'e'])
 #        for iu,Uid in enumerate(Uids):
         for iu in list(set(CSU[0])):
             if not iu:
@@ -1358,7 +1356,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                             varyList.append(parm)
                         DepCons.append([Trans[ibu,iau]/detTrans,G2obj.G2VarObj(parm)])
             if len(DepCons) == 1:
-                constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
             elif len(DepCons) > 1:        
                 for Dep in DepCons:
                     Dep[0] *= -1
@@ -1378,7 +1376,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         DepCons = []
         for iat in range(3):
             if nSGData['SGLaue'] in ['-1','2/m']:       #set holds
-                if (abs(nAcof[iA]) < 1.e-8) and (abs(Trans[Aid[0],Aid[1]]) < 1.e-8):
+                if (abs(nAcof[iA]) < 1.e-8) and (abs(invTrans[Aid[0],Aid[1]]) < 1.e-8):
                     if Axes[iat] != nSGData['SGUniq'] and nSGData['SGLaue'] != oSGData['SGLaue']:
                         HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
                         if not HoldObj in Holds: 
@@ -1386,12 +1384,12 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                             Holds.append(HoldObj)
                             continue
             for ibt in range(3):
-                if abs(Trans[Aid[0],iat]) > 1.e-4 and abs(Trans[Aid[1],ibt]) > 1.e-4 and abs(oAcof[iA]) > 1.e-8:
+                if abs(Trans[Aid[0],iat]) > 1.e-4 and abs(invTrans[Aid[1],ibt]) > 1.e-4 and abs(oAcof[iA]) > 1.e-8:
                     parm = SetUniqAj(opId,Anames[ibt][iat],nSGData['SGLaue'])
                     parmDict[parm] = oAcof[As.index(Anames[ibt][iat])]
                     if not parm in varyList:
                         varyList.append(parm)
-                    DepCons.append([Trans[ibt,iat],G2obj.G2VarObj(parm)])
+                    DepCons.append([invTrans[ibt,iat]*invTrans[iat,ibt],G2obj.G2VarObj(parm)])
         if len(DepCons) == 1:
             constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
         elif len(DepCons) > 1:        
@@ -1409,7 +1407,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         nhapkey = '%d:%d:'%(npId,hId)
         IndpCon = [1.0,G2obj.G2VarObj(ohapkey+'Scale')]
         DepCons = [detTrans,G2obj.G2VarObj(nhapkey+'Scale')]
-        constraints['HAP'].append([IndpCon,DepCons,None,None,'e'])
+        constraints['HAP'].append([DepCons,IndpCon,None,None,'e'])
         for name in ['Size;i','Mustrain;i']:
             IndpCon = [1.0,G2obj.G2VarObj(ohapkey+name)]
             DepCons = [1.0,G2obj.G2VarObj(nhapkey+name)]

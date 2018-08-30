@@ -2386,7 +2386,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
-                            if 'N' in inst['Type'][0] and  'MagSpGrp' in SGData:
+                            if ext and 'N' in inst['Type'][0] and  'MagSpGrp' in SGData:
                                 ext = G2spc.checkMagextc([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
                             if ext:# and not useExt:

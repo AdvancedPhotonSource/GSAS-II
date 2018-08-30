@@ -307,7 +307,6 @@ class TransformDialog(wx.Dialog):
         self.ifConstr = True
         self.Mtrans = False
         self.kvec = [0.,0.,0.]
-        self.Bilbao = ''
         self.Draw()
 
     def Draw(self):
@@ -526,7 +525,7 @@ class TransformDialog(wx.Dialog):
     def GetSelection(self):
         self.Phase['General']['SGData'] = self.SGData
         if self.ifMag:
-            self.Phase['General']['Name'] += ' mag: '+self.Bilbao
+            self.Phase['General']['Name'] += ' mag: '
         else:
             self.Phase['General']['Name'] += ' %s'%(self.Common)
         if self.Mtrans:
@@ -2368,6 +2367,7 @@ def UpdatePhaseData(G2frame,Item,data):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
+                    newPhase['ranId'] = ran.randint(0,sys.maxsize),
                     if ifMag:
                         BNSlatt = newPhase['General']['SGData']['BNSlattsym'][0]
                 else:
@@ -2427,7 +2427,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
-        
+        print(newPhase)
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
@@ -2453,12 +2453,13 @@ def UpdatePhaseData(G2frame,Item,data):
         if opt == wx.ID_OK:
             sel = dlg.GetSelection()
             magchoice = magKeep[sel]
-            phaseName = '%s mag (%d)'%(data['General']['Name'],sel)
+            phaseName = '%s mag_%d'%(data['General']['Name'],sel)
             newPhase = copy.deepcopy(data)
+            newPhase['ranId'] = ran.randint(0,sys.maxsize),
             del newPhase['magPhases']
             generalData = newPhase['General']
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])            
-            generalData['Cell'][1:] = magchoice['Cell']
+            generalData['Cell'][1:] = magchoice['Cell'][:]
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)

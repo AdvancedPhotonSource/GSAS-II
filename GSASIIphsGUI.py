@@ -2427,7 +2427,6 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
-        print(newPhase)
         if ifConstr:
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)

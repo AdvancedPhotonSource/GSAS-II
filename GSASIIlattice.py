@@ -333,7 +333,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans.T,Vvec)%1.
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans,Vvec)%1.
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],Trans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]

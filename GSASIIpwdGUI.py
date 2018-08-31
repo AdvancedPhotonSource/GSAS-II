@@ -3068,8 +3068,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible mag phases
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
+        SpGrp = SGData['SpGrp']
         if 'mono' in SGData['SGSys']:
-            SpGrp = G2spc.fixMono(SGData['SpGrp'])
+            SpGrp = G2spc.fixMono(SpGrp)
             if SpGrp == None:
                 wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
                 return
@@ -3444,8 +3445,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 numbs = [eval(item+'.') for item in result[2].split()]
                 phase['Name'] = result[0].strip()
                 phase['Uvec'] = np.array(numbs[3::4])
-                phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]])
-                phase['Cell'] = G2lat.TransformCell(controls[6:12],phase['Trans'].T)   
+                phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],phase['Trans'])   
                 phase['Keep'] = False
                 phase['Use'] = False
                 SpGp = result[0].replace("'",'')

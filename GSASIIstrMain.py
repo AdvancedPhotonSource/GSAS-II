@@ -91,6 +91,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             maxCyc = Controls['max cyc']
             result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+            if result[1] is None:
+                IfOK = False
+                covMatrix = []
+                sig = len(varyList)*[None,]
+                break
             ncyc = result[2]['num cyc']+1
         else:           #'numeric'
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
@@ -146,6 +151,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 break
             print ('**** Refinement failed - singular matrix ****')
             if 'Hessian' in Controls['deriv type']:
+                if result[1] is None:
+                    IfOK = False
+                    covMatrix = []
+                    sig = len(varyList)*[None,]
+                    break
                 num = len(varyList)-1
                 for i,val in enumerate(np.flipud(result[2]['psing'])):
                     if val:

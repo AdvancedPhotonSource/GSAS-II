@@ -2958,6 +2958,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         figure.clear()
         plotOpt['fmtChoices'] = [fmtDict[j]+', '+j for j in sorted(fmtDict)]
         plotOpt['fmtChoices'].append('Data file with plot elements, csv')
+        plotOpt['fmtChoices'].append('Grace input file, agr')
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
@@ -3021,6 +3022,257 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 line += item
         fil.write(line+'\n')
 
+    # blocks of code used in grace .agr files
+    linedef = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol {3}
+@{0} symbol fill color {2}
+@{0} linewidth {4}
+@{0} symbol linewidth {6}
+@{0} line type {7}
+@{0} symbol size {5}
+@{0} symbol char 46
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar off\n'''
+    linedef1 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol fill color {2}
+@{0} symbol 11
+@{0} linewidth 0
+@{0} linestyle 0
+@{0} symbol size {3}
+@{0} symbol linewidth {4}
+@{0} symbol char 124
+@{0} symbol fill pattern 1
+@{0} hidden false\n'''
+    linedef2 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol fill color {2}
+@{0} symbol 0
+@{0} linewidth 0
+@{0} linestyle 0
+@{0} symbol size 1
+@{0} symbol linewidth 0
+@{0} symbol char 124
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar on
+@{0} errorbar size 0
+@{0} errorbar riser linewidth {3}\n'''
+    linedef3 = '''@{0} legend "{1}"
+@{0} line color {2}
+@{0} errorbar color {2}
+@{0} symbol color {2}
+@{0} symbol {3}
+@{0} symbol fill color {2}
+@{0} linewidth {4}
+@{0} symbol linewidth {6}
+@{0} line type {7}
+@{0} symbol size {5}
+@{0} symbol char 46
+@{0} symbol fill pattern 1
+@{0} hidden false
+@{0} errorbar off\n'''    
+        
+    def CopyRietveld2Grace(Pattern,Plot,Page,plotOpt,filename):
+        '''Copy the contents of the Rietveld graph from the plot window to
+        a Grace input file (tested with QtGrace). Uses values from Pattern 
+        to also generate a delta/sigma plot below. 
+        '''
+        def ClosestColorNumber(color):
+            '''Convert a RGB or RGBA value to the closest default Grace color
+            '''
+            import matplotlib.colors as mpcls
+            colorlist = ('white','black','red','green','blue','yellow','brown',
+                            'gray','purple','cyan','magenta','orange') # ordered by grace's #
+            if not hasattr(mpcls,'to_rgba'): mpcls = mpcls.ColorConverter()
+            return (np.sum(([np.array(mpcls.to_rgb(c)) for c in colorlist] -
+                                np.array(color[:3]))**2,axis=1)).argmin()
+
+        grace_symbols = {"":0, "o":1 ,"s":2, "D":3, "^":4, "3":5, 'v':6,
+            "4": 7, "+":8, "P":8, "x":9, "X":9, "*":10, ".":11}
+
+        fp = open(filename,'w')
+        fp.write("# Grace project file\n#\n@version 50010\n")
+        # size of plots on page
+        xmar = (.15,1.2)
+        ymar = (.15,.9)
+        top2bottom = 4. # 4 to 1 spacing for top to bottom boxes
+
+        # scaling for top box
+        fp.write('@g{0} hidden false\n@with g{0}\n@legend {1}\n'.format(0,"on"))
+        fp.write('@legend {}, {}\n'.format(xmar[1]-.2,ymar[1]-.05))
+        fp.write('@world xmin {}\n@world xmax {}\n'.format(Plot.get_xlim()[0],Plot.get_xlim()[1]))
+        fp.write('@world ymin {}\n@world ymax {}\n'.format(Plot.get_ylim()[0],Plot.get_ylim()[1]))
+        fp.write('@view xmin {}\n@view xmax {}\n'.format(xmar[0],xmar[1]))
+        fp.write('@view ymin {}\n@view ymax {}\n'.format((1./top2bottom)*(ymar[1]-ymar[0])+ymar[0],ymar[1]))
+        xticks = Plot.get_xaxis().get_majorticklocs()
+        fp.write('@{}axis tick major {}\n'.format('x',xticks[1]-xticks[0]))
+        yticks = Plot.get_yaxis().get_majorticklocs()    
+        fp.write('@{}axis tick major {}\n'.format('y',yticks[1]-yticks[0]))
+        fp.write('@{}axis ticklabel char size {}\n'.format('x',0)) # turns off axis labels
+        ylbl = Plot.get_ylabel().replace('$','')
+        fp.write('@{0}axis label "{1}"\n@{0}axis label char size {2}\n'.format(
+            'y',ylbl,float(plotOpt['labelSize'])/8.))
+        fp.write('@{0}axis label place spec\n@{0}axis label place {1}, {2}\n'.format('y',0.0,0.1))
+    # ======================================================================
+    # plot magnification lines and labels (first, so "under" data)
+        for i,l in enumerate(Plot.lines):
+            lbl = l.get_label()
+            if 'mag' not in lbl: continue
+            #ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
+            # verical line
+            s = '@with line\n@ line on\n@ line loctype world\n@ line g0\n'
+            fp.write(s)
+            s = '@ line {0}, {1}, {0}, {2}\n'
+            fp.write(s.format(
+                l.get_data()[0][0],Plot.get_ylim()[0],Plot.get_ylim()[1]))
+            s = '@ line linewidth 2\n@ line linestyle 2\n@ line color 1\n@ line arrow 0\n@line def\n'
+            fp.write(s)
+        for l in Plot.texts:
+            if 'mag' not in l.get_label(): continue
+            if l.xycoords[0] == 'data':
+                xpos = l.get_position()[0]
+            elif l.get_position()[0] == 0:
+                xpos = Plot.get_xlim()[0]
+            else:
+                xpos = Plot.get_xlim()[1]*.95
+            s = '@with string\n@    string on\n@    string loctype world\n'
+            fp.write(s)
+            s = '@    string g{0}\n@    string {1}, {2}\n@    string color 1\n'
+            fp.write(s.format(0,xpos,Plot.get_ylim()[1]))
+            s = '@    string rot 0\n@    string font 0\n@    string just 4\n'
+            fp.write(s)
+            s = '@    string char size {1}\n@    string def "{0}"\n'
+            fp.write(s.format(l.get_text(),float(plotOpt['labelSize'])/8.))
+        datnum = -1
+    # ======================================================================
+    # plot data 
+        for l in Plot.lines:
+            lbl = l.get_label()
+            if lbl[1:] not in ('obs','calc','bkg','zero','diff'): continue
+            c = plotOpt['colors'].get(lbl[1:],l.get_color())
+            gc = ClosestColorNumber(c)
+            if sum(c) == 4.0: # white on white, skip
+                continue
+            marker = l.get_marker()
+            lineWid = l.get_lw()
+            siz = l.get_markersize()
+            mkwid = l.get_mew()
+            glinetyp = 1
+            if lbl[1:] == 'obs':
+                obsartist = l
+                gsiz = float(plotOpt['markerSiz'])/8.
+                marker = plotOpt['markerSym']
+                gmw = float(plotOpt['markerWid'])
+                gsym = grace_symbols.get(marker,5)
+                glinetyp = 0
+            else:
+                gsym = 0
+                gsiz = 0
+                gmw = 0
+                lineWid = float(plotOpt['lineWid'])
+            if plotOpt['legend'].get(lbl[1:]):
+                glbl = lbl[1:]
+            else:
+                glbl = ""
+            datnum += 1
+            fp.write("@type xy\n")
+            if lbl[1:] == 'zero':
+                fp.write("{} {}\n".format(Plot.get_xlim()[0],0))
+                fp.write("{} {}\n".format(Plot.get_xlim()[1],0))
+            else:
+                for x,y,m in zip(l.get_xdata(),l.get_ydata(),l.get_xdata().mask):
+                    if not m: 
+                        fp.write("{} {}\n".format(x,y))
+            fp.write("&\n")
+            fp.write(linedef.format("s"+str(datnum),glbl,gc,gsym,lineWid,gsiz,gmw,glinetyp))
+    #======================================================================
+    # reflection markers. Create a single hidden entry for the legend
+    # and use error bars for the vertical lines
+        for l in Plot.lines:
+            glbl = lbl = l.get_label()
+            if l not in Page.tickDict.values(): continue
+            c = plotOpt['colors'].get(lbl,l.get_color())
+            gc = ClosestColorNumber(c)
+            siz = float(plotOpt['tickSiz'])*(Plot.get_ylim()[1] - Plot.get_ylim()[0])/(100*6) # 1% for siz=6
+            mkwid = float(plotOpt['tickWid'])
+            if sum(c) == 4.0: continue # white: ignore
+            if plotOpt['legend'].get(lbl):
+                # invisible data point for 
+                datnum += 1
+                fp.write("@type xy\n")
+                fp.write("-1 -1\n".format(x,y))
+                fp.write("&\n")
+                fp.write(linedef1.format(
+                    "s"+str(datnum),glbl,gc,float(plotOpt['tickSiz'])/8.,mkwid))
+            # plot values with error bars
+            datnum += 1
+            fp.write("@type xydy\n")
+            for x,y in zip(l.get_xdata(),l.get_ydata()):
+                fp.write("{} {} {}\n".format(x,y,siz))
+            fp.write("&\n")
+            fp.write(linedef2.format("s"+str(datnum),'',gc,mkwid))
+    #======================================================================
+    # Start (obs-cal)/sigma plot
+        rsig = np.sqrt(Pattern[1][2])
+        rsig[rsig>1] = 1
+        fp.write("@type xy\n")
+        l = obsartist
+        ysig = Pattern[1][5]*rsig
+        # scaling for bottom box
+        fp.write('@g{0} hidden false\n@with g{0}\n@legend {1}\n'.format(1,"off"))
+        fp.write('@world xmin {}\n@world xmax {}\n'.format(Plot.get_xlim()[0],Plot.get_xlim()[1]))
+        fp.write('@world ymin {}\n@world ymax {}\n'.format(ysig.min(),ysig.max()))
+        fp.write('@view xmin {}\n@view xmax {}\n'.format(xmar[0],xmar[1]))
+        fp.write('@view ymin {}\n@view ymax {}\n'.format(
+            ymar[0],(1./top2bottom)*(ymar[1]-ymar[0])+ymar[0]))
+        if 'theta' in Plot.get_xlabel():
+            xlbl = r'2\f{Symbol}q'
+        elif 'TOF' in Plot.get_xlabel():
+            xlbl = r'TOF, \f{Symbol}m\f{}s'
+        else:
+            xlbl = Plot.get_xlabel().replace('$','')        
+        fp.write('@{0}axis label "{1}"\n@{0}axis label char size {2}\n'.format(
+            'x',xlbl,float(plotOpt['labelSize'])/8.))
+        fp.write('@{0}axis label "{1}"\n@{0}axis label char size {2}\n'.format(
+            'y',r'\f{Symbol}D/s',float(plotOpt['labelSize'])/8.))
+        xticks = Plot.get_xaxis().get_majorticklocs()
+        # come up with a "nice" tick interval for (o-c)/sig, since I am not sure
+        # if this can be defaulted
+        ytick = (ysig.max()-ysig.min())/5.
+        l10 = np.log10(ytick)
+        if l10 < 0:
+            yti = int(10**(1 + l10 - int(l10)))
+            r = -0.5
+        else:
+            yti = int(10**(l10 - int(l10)))
+            r = 0.5
+        if yti == 3:
+            yti = 2
+        elif yti > 5:
+            yti = 5
+        ytick = yti * 10**int(np.log10(ytick/yti)+.5)
+        fp.write('@{}axis tick major {}\n'.format('x',xticks[1]-xticks[0]))
+        fp.write('@{}axis tick major {}\n'.format('y',ytick))
+        rsig = np.sqrt(Pattern[1][2])
+        rsig[rsig>1] = 1
+        fp.write("@type xy\n")
+        l = obsartist
+        for x,y,m in zip(l.get_xdata(),Pattern[1][5]*rsig,l.get_xdata().mask):
+            if not m: 
+                fp.write("{} {}\n".format(x,y))
+        fp.write("&\n")
+        fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))
+        fp.close()
+        
     def CopyRietveld2csv(Pattern,Plot,Page,filename):
         '''Copy the contents of the Rietveld graph from the plot window to
         .csv file
@@ -3094,8 +3346,11 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,hcfigure)
         longFormatName,typ = plotOpt['format'].split(',')
         fil = G2G.askSaveFile(G2frame,'','.'+typ.strip(),longFormatName)
-        if 'csv' in typ:
+        if 'csv' in typ and fil:
             CopyRietveld2csv(Pattern,Plot,Page,fil)
+            dlg.EndModal(wx.ID_OK)
+        elif 'agr' in typ and fil:
+            CopyRietveld2Grace(Pattern,Plot,Page,plotOpt,fil)
             dlg.EndModal(wx.ID_OK)
         elif fil:
             if hcfigure.canvas is None:
@@ -3107,10 +3362,11 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     def OnSelectColour(event):
         '''Respond to a change in color
         '''
-        lbl = plotOpt['colorButtons'].get(list(event.GetEventObject())[:3])
-        if lbl is None:
-            print('Unexpected button',lbl)
+#        lbl = plotOpt['colorButtons'].get(list(event.GetEventObject())[:3])
+        if event.GetEventObject() not in plotOpt['colorButtons']:
+            print('Unexpected button',str(event.GetEventObject()))
             return
+        lbl = plotOpt['colorButtons'][event.GetEventObject()]
         c = event.GetValue()
         plotOpt['colors'][lbl] = (c.Red()/255.,c.Green()/255.,c.Blue()/255.,c.alpha/255.)
         RefreshPlot()
@@ -3259,7 +3515,13 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
 def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     '''Copy the contents of the Rietveld graph from the plot window to another
     mpl figure which can be on screen or can be a file for hard copy.
-    Uses values from Pattern to also generate a delta/sigma plot below.
+    Uses values from Pattern to also generate a delta/sigma plot below the 
+    main figure, since the weights are not available from the plot. 
+
+    :param list Pattern: histogram object from data tree
+    :param mpl.axes Plot: The axes object from the Rietveld plot
+    :param wx.Panel Page: The tabbed panel for the Rietveld plot
+    :param mpl.figure figure: The figure object from the Rietveld plot
     '''
     gs = mpl.gridspec.GridSpec(2, 1, height_ratios=[4, 1])
     ax0 = figure.add_subplot(gs[0])

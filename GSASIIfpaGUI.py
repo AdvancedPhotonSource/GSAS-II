@@ -56,6 +56,10 @@ BraggBrentanoParms = [
     ('LAC_cm', 0.,'Linear absorption coef. adjusted for packing density (cm-1)'),
     ('sample_thickness', 1., 'Depth of sample (mm)'),
     ('convolution_steps', 8, 'Number of Fourier-space bins per two-theta step'),
+    ('tube-tails_width', 0.04,'Tube filament width, in projection at takeoff angle (mm)'),
+    ('tube-tails_L-tail', -1.,'Left-side tube tails width, in projection (mm)'),    
+    ('tube-tails_R-tail', 1.,'Right-side tube tails width, in projection (mm)'),
+    ('tube-tails_rel-I', 0.001,'Tube tails fractional intensity (no units)'),
     ]
 '''FPA dict entries used in :func:`MakeTopasFPASizer`. Tuple contains
 a dict key, a default value and a description. These are the parameters
@@ -231,8 +235,8 @@ def MakeTopasFPASizer(G2frame,FPdlg,mode,SetButtonStatus):
         if lbl not in parmDict: parmDict[lbl] = defVal
         ctrl = G2G.ValidatedTxtCtrl(FPdlg,parmDict,lbl,size=(70,-1))
         prmSizer.Add(ctrl,1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,1)
-        txt = wx.StaticText(FPdlg,wx.ID_ANY,text,size=(200,-1))
-        txt.Wrap(180)
+        txt = wx.StaticText(FPdlg,wx.ID_ANY,text,size=(400,-1))
+        txt.Wrap(380)
         prmSizer.Add(txt)
     MainSizer.Add(prmSizer)
     MainSizer.Add((-1,4),1,wx.EXPAND,1)
@@ -325,9 +329,15 @@ def XferFPAsettings(InpParms):
     elif "receiver_slit" in NISTparms:
         del NISTparms["receiver_slit"]
 
-    #p.set_parameters(convolver="tube_tails",
-    #        main_width=200e-6, tail_left=-1e-3,tail_right=1e-3, tail_intens=0.001
-    #    )
+    if InpParms.get('tube-tails_width', 0) > 0 and InpParms.get(
+            'tube-tails_rel-I',0) > 0:
+        NISTparms["tube_tails"] = {
+            'main_width' : 1e-3 * InpParms.get('tube-tails_width', 0.),
+            'tail_left' : -1e-3 * InpParms.get('tube-tails_L-tail',0.),
+            'tail_right' : 1e-3 * InpParms.get('tube-tails_R-tail',0.),
+            'tail_intens' : InpParms.get('tube-tails_rel-I',0.),}
+    elif "tube_tails" in NISTparms:
+        del NISTparms["tube_tails"]
 
     # set Global parameters
     max_wavelength = source_wavelengths_m[np.argmax(source_intensities)]
@@ -573,6 +583,7 @@ def MakeSimSizer(G2frame, dlg):
         FPdlg = wx.Dialog(dlg,wx.ID_ANY,'FPA parameters',
                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         MakeTopasFPASizer(G2frame,FPdlg,'BBpoint',SetButtonStatus)
+        FPdlg.CenterOnParent()
         FPdlg.Raise()
         FPdlg.Show() 
     def _onSaveFPA(event):
@@ -676,6 +687,7 @@ def GetFPAInput(G2frame):
     dlg = wx.Dialog(G2frame,wx.ID_ANY,'FPA input',
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     MakeSimSizer(G2frame,dlg)
+    dlg.CenterOnParent()
     dlg.Show()
     return
         

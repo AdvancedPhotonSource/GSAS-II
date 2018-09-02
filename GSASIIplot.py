@@ -3188,13 +3188,12 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             if lbl[1:] == 'zero':
                 fp.write("{} {}\n".format(Plot.get_xlim()[0],0))
                 fp.write("{} {}\n".format(Plot.get_xlim()[1],0))
-            elif get_xdata().mask is None:
+            elif not ma.all(l.get_xdata().mask):
                 for x,y in zip(l.get_xdata(),l.get_ydata()):
                     fp.write("{} {}\n".format(x,y))
             else:
                 for x,y,m in zip(l.get_xdata(),l.get_ydata(),l.get_xdata().mask):
-                    if not m: 
-                        fp.write("{} {}\n".format(x,y))
+                    if not m: fp.write("{} {}\n".format(x,y))
             fp.write("&\n")
             fp.write(linedef.format("s"+str(datnum),glbl,gc,gsym,lineWid,gsiz,gmw,glinetyp))
     #======================================================================
@@ -3269,12 +3268,16 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         rsig[rsig>1] = 1
         fp.write("@type xy\n")
         l = obsartist
-        for x,y,m in zip(l.get_xdata(),Pattern[1][5]*rsig,l.get_xdata().mask):
-            if not m: 
+        if ma.all(l.get_xdata().mask):
+            for x,y,m in zip(l.get_xdata(),Pattern[1][5]*rsig,l.get_xdata().mask):
+                if not m: fp.write("{} {}\n".format(x,y))
+        else:
+            for x,y in zip(l.get_xdata(),Pattern[1][5]*rsig):
                 fp.write("{} {}\n".format(x,y))
         fp.write("&\n")
         fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))
         fp.close()
+        print('file',filename,'written')
         
     def CopyRietveld2csv(Pattern,Plot,Page,filename):
         '''Copy the contents of the Rietveld graph from the plot window to
@@ -3454,7 +3457,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     plotOpt['colorButtons'] = {}
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
         import  wx.lib.colourselect as csel
-        color = wx.Colour([255*i for i in plotOpt['colors'][lbl]])
+        color = wx.Colour(*[int(255*i) for i in plotOpt['colors'][lbl]])
         b = csel.ColourSelect(dlg, -1, '', color)
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
         plotOpt['colorButtons'][b] = lbl

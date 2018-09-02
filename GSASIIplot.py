@@ -3188,6 +3188,9 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             if lbl[1:] == 'zero':
                 fp.write("{} {}\n".format(Plot.get_xlim()[0],0))
                 fp.write("{} {}\n".format(Plot.get_xlim()[1],0))
+            elif get_xdata().mask is None:
+                for x,y in zip(l.get_xdata(),l.get_ydata()):
+                    fp.write("{} {}\n".format(x,y))
             else:
                 for x,y,m in zip(l.get_xdata(),l.get_ydata(),l.get_xdata().mask):
                     if not m: 
@@ -3451,7 +3454,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     plotOpt['colorButtons'] = {}
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
         import  wx.lib.colourselect as csel
-        color = wx.Colour(*[255*i for i in plotOpt['colors'][lbl]])
+        color = wx.Colour([255*i for i in plotOpt['colors'][lbl]])
         b = csel.ColourSelect(dlg, -1, '', color)
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
         plotOpt['colorButtons'][b] = lbl

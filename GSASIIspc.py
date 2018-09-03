@@ -1233,7 +1233,7 @@ def GetSGSpin(SGData,MSgSym):
             else:
                 Spn.append(1)
                 iB = jF+1
-    SGData['SGSpin'] = Spn
+    return Spn
             
 def GenMagOps(SGData):
     FlpSpn = SGData['SGSpin']
@@ -3619,7 +3619,7 @@ spgbyNum = [None,
 altSettingOrtho = {}
 ''' A dictionary of alternate settings for orthorhombic unit cells
 '''
-altSettingsOrtho = {
+altSettingOrtho = {
         'P 2 2 21' :{'abc':'P 2 2 21','cab':'P 21 2 2','bca':'P 2 21 2','acb':'P 2 21 2','bac':'P 2 2 21','cba':'P 21 2 2'},
         'P 21 21 2':{'abc':'P 2121 2','cab':'P 2 21 21','bca':'P 21 2 21','acb':'P 21 2 21','bac':'P 21 21 2','cba':'P 2 21 21'},
         'C 2 2 21':{'abc':'C 2 2 21','cab':'A 21 2 2','bca':'B 2 21 2','acb':'B 2 21 2','bac':'C 2 2 21','cba':'A 21 2 2'},

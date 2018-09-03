@@ -352,6 +352,87 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     newPhase['ranId'] = ran.randint(0,sys.maxsize)
     return newPhase,atCodes
     
+def FindNonstandard(Phase):
+    abc = np.eye(3)
+    cba = np.rot90(np.eye(3))
+    cba[0,2] *= -1      #makes -cba
+    Mats = {'abc':abc,'cab':np.roll(abc,2,1),'bca':np.roll(abc,1,1),
+            'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}
+    BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'B','bac':'C','cba':'A'},
+           'B':{'abc':'B','cab':'A','bca':'C','acb':'C','bac':'A','cba':'B'},
+           'C':{'abc':'C','cab':'B','bca':'A','acb':'A','bac':'B','cba':'C'},
+           'a':{'abc':'a','cab':'c','bca':'b','acb':'b','bac':'c','cba':'a'},
+           'b':{'abc':'b','cab':'a','bca':'c','acb':'c','bac':'a','cba':'b'},
+           'c':{'abc':'c','cab':'b','bca':'a','acb':'a','bac':'b','cba':'c'},
+           'S':{'abc':'S','cab':'S','bca':'S','acb':'S','bac':'S','cba':'S'},
+           }
+    Fives = {'ababc':'abc','bcbca':'cba'}
+    Trans = Phase['Trans']
+    Uvec = Phase['Uvec']
+    SGData = Phase['SGData']
+    MSG = SGData['MagSpGrp'].split(' ',1)
+    bns = ''
+    if '_' in MSG[0]:
+        bns = MSG[0][2]
+    spn = SGData['SGSpin']
+        
+    
+    if 'ortho' in SGData['SGSys']:
+        transText = G2spc.Trans2Text(nl.inv(Trans))
+        lattSym = ''
+        for fld in transText.split(','):
+            if 'a' in fld: lattSym += 'a'
+            if 'b' in fld: lattSym += 'b'
+            if 'c' in fld: lattSym += 'c'
+        if len(lattSym) == 5:
+            print(transText,lattSym)
+            lattSym = Fives[lattSym]
+#            return None
+        SpGrp = SGData['SpGrp']
+        NUvec = np.inner(np.abs(Mats[lattSym]),Uvec)
+        NTrans = np.inner(Mats[lattSym],Trans.T)
+        spn[1:4] = np.inner(Mats[lattSym],spn[1:4])
+        if SpGrp in G2spc.altSettingOrtho:
+            NSG = G2spc.altSettingOrtho[SpGrp].get(lattSym,SpGrp).replace("'",'').split(' ')
+            Bns = ''
+            if bns:
+                Bns = BNS[bns][lattSym]
+                NSG[0] += '_'+Bns+' '
+            else:
+                for ifld in [1,2,3]:
+                    if spn[ifld] < 0:
+                        NSG[ifld] += "'"
+            Nresult = [''.join(NSG)+'  ',Bns]
+            return Nresult,NUvec,NTrans
+        else:
+            Nresult = [SpGrp,'']
+            return None
+    return None
+        
+def makeBilbaoPhase(result,uvec,trans):
+    phase = {}
+    phase['Name'] = result[0].strip()
+    phase['Uvec'] = uvec
+    phase['Trans'] = trans
+    phase['Keep'] = False
+    phase['Use'] = False
+    SpGp = result[0].replace("'",'')
+    SpGrp = G2spc.StandardizeSpcName(SpGp)
+    phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
+    phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+    phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
+    phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
+    BNSlatt = phase['SGData']['SGLatt']
+    if result[1]:
+        BNSlatt += '_'+result[1]
+        BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
+        phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+        G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])  
+    phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+    phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
+    phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
+    return phase
+
 def FillUnitCell(Phase):
     Atoms = copy.deepcopy(Phase['Atoms'])
     atomData = []

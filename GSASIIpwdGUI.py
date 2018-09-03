@@ -3441,29 +3441,20 @@ def UpdateUnitCellsGrid(G2frame, data):
             for result in MAXMAGN:
                 if result[0].strip().endswith("1'"):    #skip gray groups
                     continue
-                phase = {}
                 numbs = [eval(item+'.') for item in result[2].split()]
-                phase['Name'] = result[0].strip()
-                phase['Uvec'] = np.array(numbs[3::4])
-                phase['Trans'] = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
-                phase['Cell'] = G2lat.TransformCell(controls[6:12],phase['Trans'])   
-                phase['Keep'] = False
-                phase['Use'] = False
-                SpGp = result[0].replace("'",'')
-                SpGrp = G2spc.StandardizeSpcName(SpGp)
-                phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
-                phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
-                phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
-                phase['BNSlatt'] = phase['SGData']['SGLatt']
-                if result[1]:
-                    phase['BNSlatt'] += '_'+result[1]
-                    BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
-                    phase['SGData']['BNSlattsym'] = [phase['BNSlatt'],BNSsym[phase['BNSlatt']]]
-                    G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])  
-                phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
-                phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
-                phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
-                magcells.append(phase)
+                Uvec = np.array(numbs[3::4])
+                Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
+                phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans)
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
+                RVT = G2lat.FindNonstandard(phase)
+                if RVT is None:
+                    magcells.append(phase)
+                else:
+#                    magcells.append(phase)          #temporary??
+                    Nresult,NUvec,NTrans = RVT
+                    newphase = G2lat.makeBilbaoPhase(Nresult,NUvec,NTrans)
+                    newphase['Cell'] = G2lat.TransformCell(controls[6:12],NTrans)   
+                    magcells.append(newphase)
             magcells[0]['Use'] = True
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  

@@ -3188,7 +3188,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             if lbl[1:] == 'zero':
                 fp.write("{} {}\n".format(Plot.get_xlim()[0],0))
                 fp.write("{} {}\n".format(Plot.get_xlim()[1],0))
-            elif not ma.all(l.get_xdata().mask):
+            elif not ma.any(l.get_xdata().mask):
                 for x,y in zip(l.get_xdata(),l.get_ydata()):
                     fp.write("{} {}\n".format(x,y))
             else:
@@ -3268,7 +3268,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         rsig[rsig>1] = 1
         fp.write("@type xy\n")
         l = obsartist
-        if ma.all(l.get_xdata().mask):
+        if ma.any(l.get_xdata().mask):
             for x,y,m in zip(l.get_xdata(),Pattern[1][5]*rsig,l.get_xdata().mask):
                 if not m: fp.write("{} {}\n".format(x,y))
         else:

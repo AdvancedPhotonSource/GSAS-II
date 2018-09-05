@@ -1406,7 +1406,7 @@ class GSASII(wx.Frame):
                     rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
                         'DisplaceY':[0.,False]})
                 if 'Generic' in choices[res]:
-                    dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
+                    dlg = G2G.MultiDataDialog(self,title='Generic TOF detector bank',
                         prompts=['Total FP','2-theta',],values=[25.0,150.,],
                             limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
                     if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.

@@ -2463,14 +2463,20 @@ def UpdatePhaseData(G2frame,Item,data):
             vvec = np.array([0.,0.,0.])
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'].T,magchoice['Uvec'],vvec,True)
             Atoms = newPhase['Atoms']
+            aType = magchoice['aType']
+            Atms = []
+            AtCods = []
             atMxyz = []
             for ia,atom in enumerate(Atoms):
+                if aType and aType not in atom[1]:
+                    continue
                 atom[0] += '_%d'%ia
                 SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                 CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
+                Atms.append(atom)
+                AtCods.append(atCodes[ia])
                 atMxyz.append(CSI[0])
-                
-            dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
+            dlg = UseMagAtomDialog(G2frame,Atms,AtCods,atMxyz)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     newPhase['Atoms'],atCodes = dlg.GetSelection()

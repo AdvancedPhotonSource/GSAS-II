@@ -26,6 +26,7 @@ try:
 except ImportError:
     pass
 import numpy as np
+import numpy.linalg as nl
 import numpy.ma as ma
 import math
 import copy
@@ -3081,8 +3082,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'P3' in controls[5]: controls[5] = 'P6/mmm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
-        
         if 'N' in Inst['Type'][0]:
+            testAtoms = []
+            cx,ct,cs,cia = Phase['General']['AtomPtrs']
+            Atoms = Phase['Atoms']
+            for atom in Atoms:
+                if len(G2elem.GetMFtable([atom[ct],],[2.0,])):
+                    testAtoms.append(atom[:cx+3])
+            controls.append(testAtoms)
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
@@ -3426,12 +3433,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         import kSUBGROUPSMAG as kMAG
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         E,SGData = G2spc.SpcGroup(controls[13])
+        if len(controls) > 14:
+            testAtoms = ['',]+list(set([atom[1] for atom in controls[14]]))
         kvec = ['0','0','0']
-        dlg = G2G.MultiFloatDialog(G2frame,title='k-SUBGROUPSMAG options',
-            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes'],
-            values=kvec+[False,False,False,True],
-            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],[True,False],[True,False],[True,False],[True,False]],
-            formats=['str','str','str','bool','bool','bool','bool'])
+        dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
+            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms'],
+            values=kvec+[False,False,False,True,''],
+            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],[True,False],[True,False],[True,False],[True,False],testAtoms],
+            formats=['str','str','str','bool','bool','bool','bool','choice'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
@@ -3440,6 +3449,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             Landau = newVals[4]
             intermed = newVals[5]
             keepaxes = newVals[6]
+            atype = newVals[7]
+            magAtms = [atom for atom in controls[14] if atom[1] == atype]
             wx.BeginBusyCursor()
             MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,intermed)
             wx.EndBusyCursor()
@@ -3449,15 +3460,21 @@ def UpdateUnitCellsGrid(G2frame, data):
                 numbs = [eval(item+'.') for item in result[2].split()]
                 Uvec = np.array(numbs[3::4])
                 Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
+                invTrans = nl.inv(Trans)
                 phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans)
                 phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
+                phase['aType'] = atype
+                for matm in magAtms:    #TODO: this is a shortcut - atoms don't include all possible after transformation
+                    xyz = G2lat.TransformXYZ(matm[3:6]-Uvec,invTrans.T,np.zeros(3))%1.
+                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
+                    CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
+                    if any(CSI[0]): phase['Keep'] = True
                 RVT = None
                 if keepaxes:
                     RVT = G2lat.FindNonstandard(phase)
                 if RVT is None:
                     magcells.append(phase)
                 else:
-                    magcells.append(phase)          #temporary??
                     Nresult,NUvec,NTrans = RVT
                     newphase = G2lat.makeBilbaoPhase(Nresult,NUvec,NTrans)
                     newphase['Cell'] = G2lat.TransformCell(controls[6:12],NTrans)   

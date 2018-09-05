@@ -42,8 +42,8 @@ Class or function name             Description
                                    checkbox for each. 
 :class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
                                    optional range validation.
-:class:`MultiFloatDialog`          Dialog to obtain multiple float values from user, 
-                                   with optional range validation.
+:class:`MultiDataDialog`           Dialog to obtain multiple data values from user, 
+                                   with optional range validation; items can be float, str or bool
 :class:`SingleStringDialog`        Dialog to obtain a single string value from user, 
                                    with optional an optional default value.
 :class:`MultiStringDialog`         Dialog to obtain multiple string values from user, 
@@ -2250,7 +2250,7 @@ class SingleIntDialog(SingleFloatDialog):
         return int(self.value)
 
 ################################################################################
-class MultiFloatDialog(wx.Dialog):
+class MultiDataDialog(wx.Dialog):
     'Dialog to obtain multiple values from user'
     def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],formats=['%.5g',]):
         wx.Dialog.__init__(self,parent,-1,title, 
@@ -2279,6 +2279,8 @@ class MultiFloatDialog(wx.Dialog):
                     val = self.values[id]
                 self.values[id] = val
                 Obj.SetValue('%s'%(val))
+            elif 'choice' in format:
+                self.values[id] = Obj.GetValue()
             else:
                 try:
                     val = float(Obj.GetValue())
@@ -2305,6 +2307,9 @@ class MultiFloatDialog(wx.Dialog):
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
                 valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
                 valItem.SetValue('%s'%value)
+            elif 'choice' in format:
+                valItem = wx.ComboBox(self.panel,value=limits[0],choices=limits,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                valItem.Bind(wx.EVT_COMBOBOX,OnValItem)
             else:
                 valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)

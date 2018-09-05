@@ -366,7 +366,7 @@ def FindNonstandard(Phase):
            'c':{'abc':'c','cab':'b','bca':'a','acb':'a','bac':'b','cba':'c'},
            'S':{'abc':'S','cab':'S','bca':'S','acb':'S','bac':'S','cba':'S'},
            }
-    Fives = {'ababc':'abc','bcbca':'cba'}
+    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb'}
     Trans = Phase['Trans']
     Uvec = Phase['Uvec']
     SGData = Phase['SGData']
@@ -392,7 +392,7 @@ def FindNonstandard(Phase):
         NUvec = np.inner(np.abs(Mats[lattSym]),Uvec)
         NTrans = np.inner(Mats[lattSym],Trans.T)
         spn[1:4] = np.inner(Mats[lattSym],spn[1:4])
-        if SpGrp in G2spc.altSettingOrtho:
+        if lattSym != 'abc' and SpGrp in G2spc.altSettingOrtho:
             NSG = G2spc.altSettingOrtho[SpGrp].get(lattSym,SpGrp).replace("'",'').split(' ')
             Bns = ''
             if bns:
@@ -416,6 +416,7 @@ def makeBilbaoPhase(result,uvec,trans):
     phase['Trans'] = trans
     phase['Keep'] = False
     phase['Use'] = False
+    phase['aType'] = ''
     SpGp = result[0].replace("'",'')
     SpGrp = G2spc.StandardizeSpcName(SpGp)
     phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
@@ -424,7 +425,9 @@ def makeBilbaoPhase(result,uvec,trans):
         BNSlatt += '_'+result[1]
         phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
         phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
-        G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])  
+        G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
+    else:
+        phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
     phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
     phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
     return phase

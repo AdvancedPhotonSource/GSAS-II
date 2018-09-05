@@ -2270,6 +2270,15 @@ class MultiFloatDialog(wx.Dialog):
             id,limits,format = Indx[Obj]
             if 'bool' in format:
                 self.values[id] = Obj.GetValue()
+            elif 'str' in format:
+                try:
+                    val = Obj.GetValue()
+                    if val not in limits:
+                        raise ValueError
+                except ValueError:
+                    val = self.values[id]
+                self.values[id] = val
+                Obj.SetValue('%s'%(val))
             else:
                 try:
                     val = float(Obj.GetValue())
@@ -2291,6 +2300,11 @@ class MultiFloatDialog(wx.Dialog):
                 valItem = wx.CheckBox(self.panel,label='')
                 valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
                 valItem.SetValue(value)
+            elif 'str' in format:
+                valItem = wx.TextCtrl(self.panel,value='%s'%(value),style=wx.TE_PROCESS_ENTER)
+                valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+                valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+                valItem.SetValue('%s'%value)
             else:
                 valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
                 valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)

@@ -2388,14 +2388,15 @@ def UpdatePhaseData(G2frame,Item,data):
                 break
             else:
                 phaseName = newPhase['General']['Name']
-                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
+                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans.T,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
                 generalData = newPhase['General']
                 SGData = generalData['SGData']
                 SGData['fromParent'] = [Trans,Uvec,Vvec]        #save these
                 Atoms = newPhase['Atoms']
                 if ifMag:
-                    atMxyz = []
+                    atMxyz = []                    
+                    G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
                     SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
                     SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
                     SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
@@ -2403,7 +2404,6 @@ def UpdatePhaseData(G2frame,Item,data):
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                         atMxyz.append(CSI[0])
-                        print (atom[3:6],CSI)
                     dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
                     try:
                         if dlg.ShowModal() == wx.ID_OK:
@@ -2461,7 +2461,7 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Cell'][1:] = magchoice['Cell'][:]
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'].T,magchoice['Uvec'],vvec,True)
             Atoms = newPhase['Atoms']
             atMxyz = []
             for ia,atom in enumerate(Atoms):

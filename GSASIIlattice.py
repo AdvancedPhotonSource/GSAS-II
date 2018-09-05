@@ -419,16 +419,12 @@ def makeBilbaoPhase(result,uvec,trans):
     SpGp = result[0].replace("'",'')
     SpGrp = G2spc.StandardizeSpcName(SpGp)
     phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
-    phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
-    phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
-    phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
     BNSlatt = phase['SGData']['SGLatt']
     if result[1]:
         BNSlatt += '_'+result[1]
-        BNSsym = G2spc.GetGenSym(phase['SGData'])[2]
+        phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
         phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
         G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])  
-    phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
     phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
     phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
     return phase

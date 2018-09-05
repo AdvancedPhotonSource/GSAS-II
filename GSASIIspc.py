@@ -590,6 +590,9 @@ def Latt2text(Cen):
     for i,cen in enumerate(Cen):
         txt = ''
         for icen in cen:
+            if icen == 1:
+                txt += '1,'
+                continue
             if not icen:
                 txt += '0,'
                 continue
@@ -3620,10 +3623,15 @@ altSettingOrtho = {}
 ''' A dictionary of alternate settings for orthorhombic unit cells
 '''
 altSettingOrtho = {
+        'P 2 2 2' :{'abc':'P 2 2 2','cab':'P 2 2 2','bca':'P 2 2 2','acb':'P 2 2 2','bac':'P 2 2 2','cba':'P 2 2 2'},
         'P 2 2 21' :{'abc':'P 2 2 21','cab':'P 21 2 2','bca':'P 2 21 2','acb':'P 2 21 2','bac':'P 2 2 21','cba':'P 21 2 2'},
-        'P 21 21 2':{'abc':'P 2121 2','cab':'P 2 21 21','bca':'P 21 2 21','acb':'P 21 2 21','bac':'P 21 21 2','cba':'P 2 21 21'},
+        'P 21 21 2':{'abc':'P 21 21 2','cab':'P 2 21 21','bca':'P 21 2 21','acb':'P 21 2 21','bac':'P 21 21 2','cba':'P 2 21 21'},
+        'P 21 21 21':{'abc':'P 21 21 21','cab':'P 21 21 21','bca':'P 21 21 21','acb':'P 21 21 21','bac':'P 21 21 21','cba':'P 21 21 21'},
         'C 2 2 21':{'abc':'C 2 2 21','cab':'A 21 2 2','bca':'B 2 21 2','acb':'B 2 21 2','bac':'C 2 2 21','cba':'A 21 2 2'},
         'C 2 2 2':{'abc':'C 2 2 2','cab':'A 2 2 2','bca':'B 2 2 2','acb':'B 2 2 2','bac':'C 2 2 2','cba':'A 2 2 2'},
+        'F 2 2 2':{'abc':'F 2 2 2','cab':'F 2 2 2','bca':'F 2 2 2','acb':'F 2 2 2','bac':'F 2 2 2','cba':'F 2 2 2'},
+        'I 2 2 2':{'abc':'I 2 2 2','cab':'I 2 2 2','bca':'I 2 2 2','acb':'I 2 2 2','bac':'I 2 2 2','cba':'I 2 2 2'},
+        'I 21 21 21':{'abc':'I 21 21 21','cab':'I 21 21 21','bca':'I 21 21 21','acb':'I 21 21 21','bac':'I 21 21 21','cba':'I 21 21 21'},
         'P m m 2':{'abc':'P m m 2','cab':'P 2 m m','bca':'P m 2 m','acb':'P m 2 m','bac':'P m m 2','cba':'P 2 m m'},
         'P m c 21':{'abc':'P m c 21','cab':'P 21 m a','bca':'P b 21 m','acb':'P m 21 b','bac':'P c m 21','cba':'P 21 a m'},
         'P c c 2':{'abc':'P c c 2','cab':'P 2 a a','bca':'P b 2 b','acb':'P b 2 b','bac':'P c c 2','cba':'P 2 a a'},
@@ -3646,6 +3654,8 @@ altSettingOrtho = {
         'I m m 2':{'abc':'I m m 2','cab':'I 2 m m','bca':'I m 2 m','acb':'I m 2 m','bac':'I m m 2','cba':'I 2 m m'},
         'I b a 2':{'abc':'I b a 2','cab':'I 2 c b','bca':'I c 2 a','acb':'I c 2 a','bac':'I b a 2','cba':'I 2 c b'},
         'I m a 2':{'abc':'I m a 2','cab':'I 2 m b','bca':'I c 2 m','acb':'I m 2 a','bac':'I b m 2','cba':'I 2 c m'},
+        'P m m m':{'abc':'P m m m','cab':'P m m m','bca':'P m m m','acb':'P m m m','bac':'P m m m','cba':'P m m m'},
+        'P n n n':{'abc':'P n n n','cab':'P n n n','bca':'P n n n','acb':'P n n n','bac':'P n n n','cba':'P n n n'},
         'P c c m':{'abc':'P c c m','cab':'P m a a','bca':'P b m b','acb':'P b m b','bac':'P c c m','cba':'P m a a'},
         'P b a n':{'abc':'P b a n','cab':'P n c b','bca':'P c n a','acb':'P c n a','bac':'P b a n','cba':'P n c b'},
         'P m m a':{'abc':'P m m a','cab':'P b m m','bca':'P m c m','acb':'P m a m','bac':'P m m b','cba':'P c m m'},
@@ -3666,6 +3676,9 @@ altSettingOrtho = {
         'C c c m':{'abc':'C c c m','cab':'A m a a','bca':'B b m b','acb':'B b m b','bac':'C c c m','cba':'A m a a'},
         'C m m a':{'abc':'C m m a','cab':'A b m m','bca':'B m c m','acb':'B m a m','bac':'C m m b','cba':'A c m m'},
         'C c c a':{'abc':'C c a a','cab':'A b a a','bca':'B b c b','acb':'B b a b','bac':'C c c b','cba':'A c a a'},
+        'F m m m':{'abc':'F m m m','cab':'F m m m','bca':'F m m m','acb':'F m m m','bac':'F m m m','cba':'F m m m'},
+        'F d d d':{'abc':'F d d d','cab':'F d d d','bca':'F d d d','acb':'F d d d','bac':'F d d d','cba':'F d d d'},
+        'I m m m':{'abc':'I m m m','cab':'I m m m','bca':'I m m m','acb':'I m m m','bac':'I m m m','cba':'I m m m'},
         'I b a m':{'abc':'I b a m','cab':'I m c b','bca':'I c m a','acb':'I c m a','bac':'I b a m','cba':'I m c b'},
         'I b c a':{'abc':'I b c a','cab':'I b c a','bca':'I b c a','acb':'I c a b','bac':'I c a b','cba':'I c a b'},
         'I m m a':{'abc':'I m m a','cab':'I b m m','bca':'I m c m','acb':'I m a m','bac':'I m m  b','cba':'I c m m'},

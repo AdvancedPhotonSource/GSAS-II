@@ -3078,6 +3078,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if controls[5][1:] == 'm3': controls[5] += 'm'
+        if 'P3' in controls[5]: controls[5] = 'P6/mmm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         
@@ -3425,9 +3426,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         import kSUBGROUPSMAG as kMAG
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         E,SGData = G2spc.SpcGroup(controls[13])
-        kvec = [0.,0.,0.]
-        dlg = G2G.MultiFloatDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' kx',' ky',' kz',' Use whole star',' Landau transition',' Give intermediate cells'],
-                values=kvec+[False,False,False],limits=[[0.,1.],[0.,1.],[0.,1.],[True,False],[True,False],[True,False]],formats=['%4.1f','%4.1f','%4.1f','bool','bool','bool'])
+        kvec = ['0','0','0']
+        dlg = G2G.MultiFloatDialog(G2frame,title='k-SUBGROUPSMAG options',
+            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes'],
+            values=kvec+[False,False,False,True],
+            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],[True,False],[True,False],[True,False],[True,False]],
+            formats=['str','str','str','bool','bool','bool','bool'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
@@ -3435,6 +3439,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             star = newVals[3]
             Landau = newVals[4]
             intermed = newVals[5]
+            keepaxes = newVals[6]
             wx.BeginBusyCursor()
             MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,intermed)
             wx.EndBusyCursor()
@@ -3445,12 +3450,14 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Uvec = np.array(numbs[3::4])
                 Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
                 phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans)
-                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
-                RVT = G2lat.FindNonstandard(phase)
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
+                RVT = None
+                if keepaxes:
+                    RVT = G2lat.FindNonstandard(phase)
                 if RVT is None:
                     magcells.append(phase)
                 else:
-#                    magcells.append(phase)          #temporary??
+                    magcells.append(phase)          #temporary??
                     Nresult,NUvec,NTrans = RVT
                     newphase = G2lat.makeBilbaoPhase(Nresult,NUvec,NTrans)
                     newphase['Cell'] = G2lat.TransformCell(controls[6:12],NTrans)   

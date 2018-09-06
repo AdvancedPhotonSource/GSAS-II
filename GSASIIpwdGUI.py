@@ -3452,8 +3452,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             atype = newVals[7]
             magAtms = [atom for atom in controls[14] if atom[1] == atype]
             wx.BeginBusyCursor()
+            wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
+      Symmetry-Based Computational Tools for Magnetic Crystallography,
+      J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
+      Annu. Rev. Mater. Res. 2015. 45,217-48.
+      doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+            
             MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,intermed)
             wx.EndBusyCursor()
+            if MAXMAGN is None:
+                wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
+                return
             for result in MAXMAGN:
                 if result[0].strip().endswith("1'"):    #skip gray groups
                     continue

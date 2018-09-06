@@ -549,13 +549,14 @@ class TransformDialog(wx.Dialog):
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
-    def __init__(self,parent,Atoms,atCodes,atMxyz):
+    def __init__(self,parent,Atoms,atCodes,atMxyz,ifDelete=False):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Atoms = Atoms
         self.atCodes = atCodes
         self.atMxyz = atMxyz
+        self.ifDelete = ifDelete
         self.Use = len(self.Atoms)*[True,]
         self.Draw()
         
@@ -589,15 +590,20 @@ class UseMagAtomDialog(wx.Dialog):
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
         
-        OkBtn = wx.Button(self.panel,-1,"Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        cancelBtn = wx.Button(self.panel,-1,"Cancel")
-        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        YesBtn = wx.Button(self.panel,-1,"Yes")
+        YesBtn.Bind(wx.EVT_BUTTON, self.OnYes)
+        NoBtn = wx.Button(self.panel,-1,"No")
+        NoBtn.Bind(wx.EVT_BUTTON, self.OnNo)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
+        btnSizer.Add(YesBtn)
         btnSizer.Add((20,20),1)
-        btnSizer.Add(cancelBtn)
+        btnSizer.Add(NoBtn)
+        if self.ifDelete:
+            DeleteBtn = wx.Button(self.panel,-1,"Delete")
+            DeleteBtn.Bind(wx.EVT_BUTTON, self.OnDelete)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(DeleteBtn)
         btnSizer.Add((20,20),1)
         
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
@@ -614,15 +620,20 @@ class UseMagAtomDialog(wx.Dialog):
                 useatCodes.append(code)
         return useAtoms,useatCodes
 
-    def OnOk(self,event):
+    def OnYes(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_OK)
+        self.EndModal(wx.ID_YES)
 
-    def OnCancel(self,event):
+    def OnNo(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)
+        self.EndModal(wx.ID_NO)
+            
+    def OnDelete(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_DELETE)
             
                 
 ################################################################################
@@ -2404,9 +2415,9 @@ def UpdatePhaseData(G2frame,Item,data):
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                         atMxyz.append(CSI[0])
-                    dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz)
+                    dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz,ifDelete=False)
                     try:
-                        if dlg.ShowModal() == wx.ID_OK:
+                        if dlg.ShowModal() == wx.ID_YES:
                             newPhase['Atoms'],atCodes = dlg.GetSelection()
                             generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
                             break
@@ -2437,12 +2448,14 @@ def UpdatePhaseData(G2frame,Item,data):
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
         magData = G2frame.GPXtree.GetItemPyData(UnitCellsId)[5]
         magKeep = []
+        magIds = []
         magchoices = []
-        for magdata in magData:
+        for mid,magdata in enumerate(magData):
             if magdata['Keep']:
                 trans = G2spc.Trans2Text(magdata['Trans'])
                 vec = G2spc.Latt2text([magdata['Uvec'],])
                 magKeep.append(magdata)
+                magIds.append(mid)
                 magchoices.append('%s %s %s'%(magdata['Name'],trans,vec))
         if not len(magKeep):
             G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
@@ -2452,6 +2465,7 @@ def UpdatePhaseData(G2frame,Item,data):
         if opt == wx.ID_OK:
             sel = dlg.GetSelection()
             magchoice = magKeep[sel]
+            magId = magIds[sel]
             phaseName = '%s mag_%d'%(data['General']['Name'],sel)
             newPhase = copy.deepcopy(data)
             newPhase['ranId'] = ran.randint(0,sys.maxsize),
@@ -2476,12 +2490,16 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atms.append(atom)
                 AtCods.append(atCodes[ia])
                 atMxyz.append(CSI[0])
-            dlg = UseMagAtomDialog(G2frame,Atms,AtCods,atMxyz)
+            dlg = UseMagAtomDialog(G2frame,Atms,AtCods,atMxyz,ifDelete=True)
             try:
-                if dlg.ShowModal() == wx.ID_OK:
+                opt = dlg.ShowModal()
+                if  opt == wx.ID_YES:
                     newPhase['Atoms'],atCodes = dlg.GetSelection()
                     generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
-                else:
+                elif opt == wx.ID_DELETE:
+                    magData[magId]['Keep'] = False
+                    return
+                else:   #wx.ID_NO
                     return
             finally:
                 dlg.Destroy()

@@ -1096,12 +1096,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             print (Fname+' saved')
             size = Page.canvas.GetSize()
             GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-            if mode in ['jpeg',]:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA,GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGBA", (size[0],size[1]))
-            else:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB,GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGB", (size[0],size[1]))
+            Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB,GL.GL_UNSIGNED_BYTE)
+            im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
             except AttributeError:
@@ -3087,7 +3083,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         to also generate a delta/sigma plot below. 
         '''
         def ClosestColorNumber(color):
-            '''Convert a RGB or RGBA value to the closest default Grace color
+            '''Convert a RGB value to the closest default Grace color
             '''
             import matplotlib.colors as mpcls
             colorlist = ('white','black','red','green','blue','yellow','brown',
@@ -7110,28 +7106,29 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             else:
                 dlg = wx.FileDialog(G2frame, 'Choose graphics save file', 
-                    wildcard='Graphics file (*.'+mode+')|*.'+mode,style=wx.FD_OPEN| wx.CHANGE_DIR)
+                    wildcard='Graphics file (*.'+mode+')|*.'+mode,style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         Fname = dlg.GetPath()
                 finally:
                     dlg.Destroy()            
             size = Page.canvas.GetSize()
-            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-            if mode in ['jpeg',]:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGBA", (size[0],size[1]))
-            else:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGB", (size[0],size[1]))
-            try:
-                im.frombytes(Pix)
-            except AttributeError:
-                im.fromstring(Pix)
-            im = im.transpose(Im.FLIP_TOP_BOTTOM)
-            im.save(Fname,mode)
-            cb.SetValue(' save as/key:')
-            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+            if Fname:
+                GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+                if mode in ['jpeg',]:
+                    Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+                    im = Im.new("RGB", (size[0],size[1]))
+                else:
+                    Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+                    im = Im.new("RGB", (size[0],size[1]))
+                try:
+                    im.frombytes(Pix)
+                except AttributeError:
+                    im.fromstring(Pix)
+                im = im.transpose(Im.FLIP_TOP_BOTTOM)
+                im.save(Fname,mode)
+                cb.SetValue(' save as/key:')
+                G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
         else:
             event.key = cb.GetValue()[0]
             cb.SetValue(' save as/key:')
@@ -8477,12 +8474,8 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             print (Fname+' saved')
             size = Page.canvas.GetSize()
             GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-            if mode in ['jpeg',]:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGBA", (size[0],size[1]))
-            else:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGB", (size[0],size[1]))
+            Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+            im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
             except AttributeError:
@@ -8624,12 +8617,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             size = Page.canvas.GetSize()
             GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
-            if mode in ['jpeg',]:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGBA", (size[0],size[1]))
-            else:
-                Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
-                im = Im.new("RGB", (size[0],size[1]))
+            Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+            im = Im.new("RGB", (size[0],size[1]))
             try:
                 im.frombytes(Pix)
             except AttributeError:

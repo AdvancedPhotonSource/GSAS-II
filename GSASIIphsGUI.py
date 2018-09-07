@@ -4079,7 +4079,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
         def OnImportLayer(event):
             dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
-                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.CHANGE_DIR)
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     GPXFile = dlg.GetPath()
@@ -4530,7 +4530,7 @@ def UpdatePhaseData(G2frame,Item,data):
         
     def OnCopyPhase(event):
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
-            wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.CHANGE_DIR)
+            wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 GPXFile = dlg.GetPath()
@@ -4560,7 +4560,7 @@ def UpdatePhaseData(G2frame,Item,data):
             finally:
                 dlg.Destroy()
         dlg = wx.FileDialog(G2frame, 'Choose DIFFaX file name to read', '.', '',
-            'DIFFaX file (*.*)|*.*',style=wx.FD_OPEN | wx.CHANGE_DIR)
+            'DIFFaX file (*.*)|*.*',style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 DIFFaXfile = dlg.GetPath()

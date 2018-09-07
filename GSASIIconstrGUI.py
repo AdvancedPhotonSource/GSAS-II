@@ -1465,7 +1465,7 @@ def UpdateRigidBodies(G2frame,data):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' rigid body macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
-            style=wx.FD_OPEN | wx.CHANGE_DIR)
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 macfile = dlg.GetPath()
@@ -1485,7 +1485,7 @@ def UpdateRigidBodies(G2frame,data):
         dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
             "Sybyl mol2 file (*.mol2)|*.mol2|PDB file (*.pdb;*.ent)|*.pdb;*.ent",
-            wx.FD_OPEN | wx.CHANGE_DIR)
+            wx.FD_OPEN | wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 txtfile = dlg.GetPath()

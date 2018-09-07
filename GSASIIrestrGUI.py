@@ -62,7 +62,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,message='Choose '+macName+' restraint macro file',
             defaultDir=defDir,defaultFile="",wildcard="GSAS-II macro file (*.mac)|*.mac",
-            style=wx.FD_OPEN | wx.CHANGE_DIR)
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         try:
             macro = ''
             if dlg.ShowModal() == wx.ID_OK:

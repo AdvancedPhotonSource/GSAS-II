@@ -3046,6 +3046,9 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = phase['SGData']
             controls[4] = 1
             controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
+            if controls[5][1:] == 'm3': controls[5] += 'm'
+            if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
+            if 'R' in controls[5]: controls[5] = 'R3-H'
             controls[6:13] = phase['Cell']
             controls[13] = SGData['SpGrp']
             ssopt['SGData'] = SGData
@@ -3079,7 +3082,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if controls[5][1:] == 'm3': controls[5] += 'm'
-        if 'P3' in controls[5]: controls[5] = 'P6/mmm'
+        if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         if 'N' in Inst['Type'][0]:
@@ -3110,6 +3113,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[4] = 1
         controls[5] = (SGData['SGLatt']+SGData['SGLaue']).replace('-','')
         if controls[5][1:] == 'm3': controls[5] += 'm'
+        if 'P3' in controls[5] or 'P-3' in controls[5]: controls[5] = 'P6/mmm'
         if 'R' in controls[5]: controls[5] = 'R3-H'
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
@@ -3469,25 +3473,29 @@ def UpdateUnitCellsGrid(G2frame, data):
                 numbs = [eval(item+'.') for item in result[2].split()]
                 Uvec = np.array(numbs[3::4])
                 Trans = np.array([numbs[:3],numbs[4:7],numbs[8:11]]).T         #Bilbao gives transpose
-                invTrans = nl.inv(Trans)
                 phase = G2lat.makeBilbaoPhase(result[:2],Uvec,Trans)
-                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)
-                phase['aType'] = atype
-                for matm in magAtms:    #TODO: this is a shortcut - atoms don't include all possible after transformation
-                    xyz = G2lat.TransformXYZ(matm[3:6]-Uvec,invTrans.T,np.zeros(3))%1.
-                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
-                    CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
-                    if any(CSI[0]): phase['Keep'] = True
+
                 RVT = None
                 if keepaxes:
                     RVT = G2lat.FindNonstandard(phase)
-                if RVT is None:
-                    magcells.append(phase)
-                else:
-                    Nresult,NUvec,NTrans = RVT
-                    newphase = G2lat.makeBilbaoPhase(Nresult,NUvec,NTrans)
-                    newphase['Cell'] = G2lat.TransformCell(controls[6:12],NTrans)   
-                    magcells.append(newphase)
+                if RVT is not None:
+                    result,Uvec,Trans = RVT
+                invTrans = nl.inv(Trans)
+                phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
+                phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
+                phase['aType'] = atype
+                for matm in magAtms:
+                    xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
+                    for x in xyzs:
+                        xyz = G2lat.TransformXYZ(x[0]-Uvec,invTrans.T,np.zeros(3))%1.
+                        SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
+                        CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
+                        if any(CSI[0]):     #found one - can quit looking
+                            phase['Keep'] = True
+                            break
+                    if phase['Keep']:   #found one 
+                        break
+                magcells.append(phase)
             magcells[0]['Use'] = True
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  

@@ -860,13 +860,12 @@ def ApplyBNSlatt(SGData,BNSlatt):
         else:
             SGData['SGSpin'].append(-1)
     elif '_S' in BNS:
-        SGData['SGSpin'] += [1,1,1,]
+        SGData['SGSpin'][-1] = -1
+        SGData['SGSpin'] += [-1,-1,-1,]
         Tmat *= 2.0
     else:
         return Tmat
     SGData['SGSpin'].append(-1)
-    if 'P' not in BNS:
-        SGData['SGSpin'].append(-1)
     C = SGCen+A
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat

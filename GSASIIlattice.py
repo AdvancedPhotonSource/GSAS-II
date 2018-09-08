@@ -375,10 +375,9 @@ def FindNonstandard(Phase):
     if '_' in MSG[0]:
         bns = MSG[0][2]
     spn = SGData['SGSpin']
-        
-    
     if 'ortho' in SGData['SGSys']:
-        transText = G2spc.Trans2Text(nl.inv(Trans))
+#        transText = G2spc.Trans2Text(nl.inv(Trans.T))
+        transText = G2spc.Trans2Text(Trans.T)
         lattSym = ''
         for fld in transText.split(','):
             if 'a' in fld: lattSym += 'a'
@@ -421,7 +420,8 @@ def makeBilbaoPhase(result,uvec,trans):
     SpGrp = G2spc.StandardizeSpcName(SpGp)
     phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
     BNSlatt = phase['SGData']['SGLatt']
-    phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
+    if not result[1]:
+        phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
     phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
     if result[1]:
         BNSlatt += '_'+result[1]

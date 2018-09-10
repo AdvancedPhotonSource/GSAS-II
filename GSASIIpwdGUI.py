@@ -3443,7 +3443,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
             prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms'],
             values=kvec+[False,False,False,True,''],
-            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],[True,False],[True,False],[True,False],[True,False],testAtoms],
+            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4','3/2'],[True,False],[True,False],[True,False],[True,False],testAtoms],
             formats=['str','str','str','bool','bool','bool','bool','choice'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
@@ -3487,6 +3487,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for matm in magAtms:
                     xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
                     for x in xyzs:
+#                        xyz = np.inner((x[0]-Uvec),invTrans.T)
                         xyz = G2lat.TransformXYZ(x[0]-Uvec,invTrans.T,np.zeros(3))%1.
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
                         CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)

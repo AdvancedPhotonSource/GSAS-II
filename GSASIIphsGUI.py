@@ -549,8 +549,8 @@ class TransformDialog(wx.Dialog):
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
-    def __init__(self,parent,Atoms,atCodes,atMxyz,ifDelete=False):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
+    def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifDelete=False):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection for '+Name, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Atoms = Atoms
@@ -2415,7 +2415,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                         atMxyz.append(CSI[0])
-                    dlg = UseMagAtomDialog(G2frame,Atoms,atCodes,atMxyz,ifDelete=False)
+                    dlg = UseMagAtomDialog(G2frame,SGData['MagSpGrp'],Atoms,atCodes,atMxyz,ifDelete=False)
                     try:
                         if dlg.ShowModal() == wx.ID_YES:
                             newPhase['Atoms'],atCodes = dlg.GetSelection()
@@ -2475,14 +2475,13 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Cell'][1:] = magchoice['Cell'][:]
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'].T,magchoice['Uvec'],vvec,True)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
             Atoms = newPhase['Atoms']
-            aType = magchoice['aType']
             Atms = []
             AtCods = []
             atMxyz = []
             for ia,atom in enumerate(Atoms):
-                if aType and aType not in atom[1]:
+                if not len(G2elem.GetMFtable([atom[1],],[2.0,])):
                     continue
                 atom[0] += '_%d'%ia
                 SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
@@ -2490,7 +2489,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atms.append(atom)
                 AtCods.append(atCodes[ia])
                 atMxyz.append(CSI[0])
-            dlg = UseMagAtomDialog(G2frame,Atms,AtCods,atMxyz,ifDelete=True)
+            dlg = UseMagAtomDialog(G2frame,magchoice['Name'],Atms,AtCods,atMxyz,ifDelete=True)
             try:
                 opt = dlg.ShowModal()
                 if  opt == wx.ID_YES:

@@ -3487,7 +3487,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for matm in magAtms:
                     xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
                     for x in xyzs:
-#                        xyz = np.inner((x[0]-Uvec),invTrans.T)
                         xyz = G2lat.TransformXYZ(x[0]-Uvec,invTrans.T,np.zeros(3))%1.
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
                         CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)

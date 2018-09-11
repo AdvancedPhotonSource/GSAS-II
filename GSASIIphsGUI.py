@@ -571,14 +571,14 @@ class UseMagAtomDialog(wx.Dialog):
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         Indx = {}
-        Mstr = [' Mx ',' My ',' Mz ']
+        Mstr = [' Mx',' My',' Mz']
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         
-        mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments, mag. site sym:'),0,WACV)
         atmSizer = wx.FlexGridSizer(0,2,5,5)
         for iuse,[use,atom,mxyz] in enumerate(zip(self.Use,self.Atoms,self.atMxyz)):
-            mstr = [' __ ',' __ ',' __ ']
-            for i,mx in enumerate(mxyz):
+            mstr = [' ---',' ---',' ---']
+            for i,mx in enumerate(mxyz[1]):
                 if mx:
                     mstr[i] = Mstr[i]
             useChk = wx.CheckBox(self.panel,label='Use?')
@@ -586,7 +586,7 @@ class UseMagAtomDialog(wx.Dialog):
             useChk.SetValue(use)
             useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
             atmSizer.Add(useChk,0,WACV)
-            text = '  %5s %10.5f %10.5f %10.5f %4s %4s %4s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2])
+            text = '  %5s %10.5f %10.5f %10.5f (%s,%s,%s) %s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2],mxyz[0])
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
         
@@ -2414,13 +2414,17 @@ def UpdatePhaseData(G2frame,Item,data):
                     for atom in Atoms:
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
-                        atMxyz.append(CSI[0])
+                        MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
+                        atMxyz.append([MagSytSym,CSI[0]])
                     dlg = UseMagAtomDialog(G2frame,SGData['MagSpGrp'],Atoms,atCodes,atMxyz,ifDelete=False)
                     try:
-                        if dlg.ShowModal() == wx.ID_YES:
+                        opt = dlg.ShowModal()
+                        if  opt == wx.ID_YES:
                             newPhase['Atoms'],atCodes = dlg.GetSelection()
                             generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
                             break
+                        else:
+                            return
                     finally:
                         dlg.Destroy()
                 else:
@@ -2488,7 +2492,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                 Atms.append(atom)
                 AtCods.append(atCodes[ia])
-                atMxyz.append(CSI[0])
+                MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
+                atMxyz.append([MagSytSym,CSI[0]])
             dlg = UseMagAtomDialog(G2frame,magchoice['Name'],Atms,AtCods,atMxyz,ifDelete=True)
             try:
                 opt = dlg.ShowModal()

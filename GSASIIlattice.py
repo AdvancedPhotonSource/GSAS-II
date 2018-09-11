@@ -356,17 +356,16 @@ def FindNonstandard(Phase):
     abc = np.eye(3)
     cba = np.rot90(np.eye(3))
     cba[0,2] *= -1      #makes -cba
-    Mats = {'abc':abc,'cab':np.roll(abc,2,1),'bca':np.roll(abc,1,1),
-            'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}
-    BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'B','bac':'C','cba':'A'},
+    Mats = {'abc':abc,'cab':np.roll(abc,1,1),'bca':np.roll(abc,2,1),
+            'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}        #ok
+    BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'A','bac':'B','cba':'C'},   
            'B':{'abc':'B','cab':'A','bca':'C','acb':'C','bac':'A','cba':'B'},
-           'C':{'abc':'C','cab':'B','bca':'A','acb':'A','bac':'B','cba':'C'},
-           'a':{'abc':'a','cab':'c','bca':'b','acb':'b','bac':'c','cba':'a'},
+           'C':{'abc':'C','cab':'B','bca':'A','acb':'B','bac':'C','cba':'A'},
+           'a':{'abc':'a','cab':'c','bca':'b','acb':'a','bac':'b','cba':'c'},   #Ok
            'b':{'abc':'b','cab':'a','bca':'c','acb':'c','bac':'a','cba':'b'},
-           'c':{'abc':'c','cab':'b','bca':'a','acb':'a','bac':'b','cba':'c'},
+           'c':{'abc':'c','cab':'b','bca':'a','acb':'b','bac':'c','cba':'a'},
            'S':{'abc':'S','cab':'S','bca':'S','acb':'S','bac':'S','cba':'S'},
            }
-    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb'}
     Trans = Phase['Trans']
     Uvec = Phase['Uvec']
     SGData = Phase['SGData']
@@ -376,23 +375,15 @@ def FindNonstandard(Phase):
         bns = MSG[0][2]
     spn = SGData['SGSpin']
     if 'ortho' in SGData['SGSys']:
-#        transText = G2spc.Trans2Text(nl.inv(Trans.T))
-        transText = G2spc.Trans2Text(Trans.T)
-        lattSym = ''
-        for fld in transText.split(','):
-            if 'a' in fld: lattSym += 'a'
-            if 'b' in fld: lattSym += 'b'
-            if 'c' in fld: lattSym += 'c'
-        if len(lattSym) == 5:
-            print(transText,lattSym)
-            lattSym = Fives[lattSym]
-#            return None
+        lattSym = G2spc.getlattSym(Trans)
         SpGrp = SGData['SpGrp']
-        NUvec = np.inner(np.abs(Mats[lattSym]),Uvec)
-        NTrans = np.inner(Mats[lattSym],Trans.T)
-        spn[1:4] = np.inner(Mats[lattSym],spn[1:4])
-        if lattSym != 'abc' and SpGrp in G2spc.altSettingOrtho:
-            NSG = G2spc.altSettingOrtho[SpGrp].get(lattSym,SpGrp).replace("'",'').split(' ')
+        NUvec = np.inner(Uvec,Mats[lattSym])    #ok
+        NTrans = np.inner(Mats[lattSym],Trans.T)        #ok
+        spn[1:4] = np.inner(np.abs(Mats[lattSym]),spn[1:4])         #ok
+        SGsym = G2spc.getlattSym(Mats[lattSym])
+        
+        if lattSym != 'abc':
+            NSG = G2spc.altSettingOrtho[SpGrp].get(SGsym,SpGrp).replace("'",'').split(' ')
             Bns = ''
             if bns:
                 Bns = BNS[bns][lattSym]

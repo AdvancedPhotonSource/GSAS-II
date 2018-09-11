@@ -1116,6 +1116,19 @@ def Trans2Text(Trans):
         Text = Text.replace('1.0','').replace('.0','').replace('0.5','1/2')
     return Text[:-1]
 
+def getlattSym(Trans):
+    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb'}
+    transText = Trans2Text(Trans)
+    lattSym = ''
+    for fld in transText.split(','):
+        if 'a' in fld: lattSym += 'a'
+        if 'b' in fld: lattSym += 'b'
+        if 'c' in fld: lattSym += 'c'
+    if len(lattSym) == 5:
+        lattSym = Fives[lattSym]
+    return lattSym
+
+
 def Text2MT(mcifOpr,CIF=True):
     "From space group cif text returns matrix/translation"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],

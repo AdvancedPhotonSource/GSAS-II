@@ -2955,6 +2955,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         plotOpt['fmtChoices'] = [fmtDict[j]+', '+j for j in sorted(fmtDict)]
         plotOpt['fmtChoices'].append('Data file with plot elements, csv')
         plotOpt['fmtChoices'].append('Grace input file, agr')
+        plotOpt['fmtChoices'].append('Igor Pro input file, itx')
         if plotOpt['format'] is None:
             if 'pdf' in fmtDict:
                 plotOpt['format'] = fmtDict['pdf'] + ', pdf'
@@ -3124,7 +3125,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             lbl = l.get_label()
             if 'mag' not in lbl: continue
             #ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
-            # verical line
+            # vertical line
             s = '@with line\n@ line on\n@ line loctype world\n@ line g0\n'
             fp.write(s)
             s = '@ line {0}, {1}, {0}, {2}\n'
@@ -3274,7 +3275,214 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         fp.write(linedef3.format("s1",'',1,0,1.0,0,0,1))
         fp.close()
         print('file',filename,'written')
+
+    def CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,filename,G2frame):
+        '''Copy the contents of the Rietveld graph from the plot window to
+        a Igor Pro input file (tested with v7.05). Uses values from Pattern 
+        to also generate a delta/sigma plot below. 
+
+        Coded with lots of help from Jan Ilavsky.
+        '''
+        import itertools # delay this until called, since not commonly needed
+        InameDict = {'obs':'Intensity', 'calc':'FitIntensity',
+                        'bkg':'Background','diff':'Difference',
+                        'omcos':'NormResidual','zero':'Zero'}
+        igor_symbols = {"o":19, "s":18, "D":29, "^":17, "3":46, 'v':23,
+                "4":49, "+":1, "P":60, "x":0, "X":62, "*":2}
+        def Write2cols(fil,dataItems):
+                '''Write a line to a file in space-separated columns. 
+                Skips masked items. 
+
+                :param object fil: file object
+                :param list dataItems: items to write as row in file
+                '''
+                line = ''
+                for item in dataItems:
+                    if ma.is_masked(item): return
+                    if line: line += ' '
+                    item = str(item)
+                    if ' ' in item:
+                        line += '"'+item+'"'
+                    else:
+                        line += item
+                fil.write(line+'\n')
+        proj = os.path.splitext(G2frame.GSASprojectfile)[0]
+        if not proj: proj = 'GSASIIproject'
+        proj = proj.replace(' ','')
+        valueList = []
+        markerSettings = []
+        Icolor = {}
+        legends = []
+        zerovals = None
+        fontsize = 18*float(plotOpt['labelSize'])/12.
+        for i,l in enumerate(Plot.lines):
+            lbl = l.get_label()
+            if plotOpt['legend'].get(lbl[1:]):
+                legends.append((InameDict[lbl[1:]],lbl[1:]))
+            if 'mag' in lbl:
+                pass
+            elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
+                if lbl[1:] == 'obs':
+                    x = l.get_xdata()
+                    valueList.append(x)
+                    zerovals = (x.min(),x.max())
+                    gsiz = 5*float(plotOpt['markerSiz'])/8.
+                    marker = plotOpt['markerSym']
+                    gsym = igor_symbols.get(marker,12)
+                    gmw = float(plotOpt['markerWid'])
+                    markerSettings.append(
+                        'mode({0})=3,marker({0})={1},msize({0})={2},mrkThick({0})={3}'
+                        .format('Intensity',gsym,gsiz,gmw))
+                else:
+                    markerSettings.append(
+                        'mode({0})=0, lsize({0})={1}'
+                        .format(InameDict[lbl[1:]],plotOpt['lineWid']))
+                c = plotOpt['colors'].get(lbl[1:],l.get_color())
+                #if sum(c) == 4.0: continue
+                Icolor[InameDict[lbl[1:]]] = [j*65535 for j in c[0:3]]
+                if lbl[1:] != 'zero':
+                    valueList.append(l.get_ydata())
+        valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
+        # invert lists into columns, use iterator for all values
+        if hasattr(itertools,'zip_longest'): #Python 3+
+            invertIter = itertools.zip_longest(*valueList,fillvalue=' ')
+        else:
+            invertIter = itertools.izip_longest(*valueList,fillvalue=' ')
+        fp = open(filename,'w')
+        fp.write('''IGOR
+X setDataFolder root:
+X //   ***   Replace GSAS2Data with name of current project in GSAS. 
+X //   ***   this name will get "order" number (0,1,2...) to be unique and data will be stored there. 
+X //   ***   and the graph will also be named using this base name. 
+X NewDataFolder/O/S $(UniqueName(CleanupName("{}",0),11, 0))
+X string GSAXSProjectName = GetDataFolder(0)
+WAVES /D/O TwoTheta, Intensity, FitIntensity, Background, Difference, NormResidual
+BEGIN
+'''.format(proj))
+        for row in invertIter:
+            Write2cols(fp,row)
+        fp.write('''END
+X //  ***   static part of the code, NB reflection tickmarks later ****
+X SetScale d 0,0, "degree", TwoTheta
+X //  ***   this is where graph is created and data added
+X string G_Name=CleanupName(GSAXSProjectName,0)
+X Display/K=1/W=(50,40,850,640) Intensity vs twoTheta; DoWindow/C $(G_Name) 
+X DoWindow/T $(G_Name), G_Name
+X AppendToGraph FitIntensity vs TwoTheta
+X AppendToGraph Background vs TwoTheta
+X AppendToGraph Difference vs TwoTheta
+X AppendToGraph/L=Res_left/B=Res_bot NormResidual vs TwoTheta
+X //  ***   Here we have modification of the four axes used in the graph
+X ModifyGraph mode=2,lsize=5, mirror=2
+X SetAxis/A/E=2 Res_left
+X ModifyGraph freePos(Res_left)={0,kwFraction}
+X ModifyGraph freePos(Res_bot)={0.2,kwFraction}
+X ModifyGraph standoff(bottom)=0
+X ModifyGraph axisEnab(left)={0.2,1}
+X ModifyGraph axisEnab(Res_left)={0,0.2}
+X ModifyGraph lblPosMode(Res_left)=1, mirror(Res_bot)=0
+X ModifyGraph tickUnit(bottom)=1,manTick=0,manMinor(bottom)={0,50}
+X ModifyGraph tick(Res_bot)=1,noLabel(Res_bot)=2,standoff(Res_bot)=0
+X ModifyGraph manMinor(Res_bot)={0,50},tick(Res_bot)=2
+X ModifyGraph axThick=2
+X ModifyGraph mirror(Res_bot)=0,nticks(Res_left)=3,highTrip(left)=1e+06,manTick(bottom)=0
+X ModifyGraph btLen=5
+''')
+        fp.write('X ModifyGraph gfSize={}\n'.format(int(fontsize+.5)))
         
+        # line at zero
+        if not zerovals:
+            zerovals = (Plot.get_xlim()[0],Plot.get_xlim()[1])
+        fp.write('X //  ***   add line at y=zero\n')
+        fp.write('WAVES /D/O ZeroX, Zero\nBEGIN\n')
+        fp.write(' {0} 0.0\n {1} 0.0\n'.format(*zerovals))
+        fp.write('END\nX AppendToGraph Zero vs ZeroX\n')
+        fp.write('''X //  ***   add axis labels and position them
+X Label left "{1}"
+X Label Res_left "{2}"
+X Label bottom "{0}"
+X ModifyGraph lblPosMode=0,lblPos(Res_left)=84
+'''.format("2Θ","Intensity","∆/σ"))
+        fp.write('''X //  ***   set display limits. 
+X SetAxis left {2}, {3}
+X SetAxis bottom {0}, {1}
+X SetAxis Res_bot {0}, {1}
+'''
+                    .format(Plot.get_xlim()[0],Plot.get_xlim()[1],
+                                    Plot.get_ylim()[0],Plot.get_ylim()[1]))
+        fp.write('X //  ***   modify how data are displayed ****\n')
+#         fp.write(
+# '''X //  ***   here starts mostly static part of the code, here we modify how data are displayed ****
+# X ModifyGraph mode(FitIntensity)=0,rgb(FitIntensity)=(1,39321,19939), lsize(FitIntensity)=1
+# X ModifyGraph mode(Background)=0,lsize(Background)=2, rgb(Background)=(65535,0,0)
+# X ModifyGraph mode(Difference)=0,lsize(Difference)=2,rgb(Difference)=(0,65535,65535)
+# X //  ***   modifications for the bottom graph, here we modify how data are displayed ****
+# X ModifyGraph mode(NormResidual)=0,lsize(NormResidual)=1,rgb(NormResidual)=(0,0,0)
+# X //  ***   end of modifications for the main data in graph
+# ''')
+        for m in markerSettings:
+                fp.write('X ModifyGraph {}\n'.format(m))
+        for lbl in Icolor:
+                fp.write('X ModifyGraph rgb({})=({:.0f},{:.0f},{:.0f})\n'
+                                 .format(lbl,*Icolor[lbl]))
+        fp.write('X ModifyGraph mode(NormResidual)=0,lsize(NormResidual)=1,rgb(NormResidual)=(0,0,0)\n')
+        fp.write('X //  ***   End modify how data are displayed ****\n')
+        # loop over reflections
+        ticknum = 0
+        for i,l in enumerate(Plot.lines):
+            lbl = l.get_label()
+            if l in Page.tickDict.values():
+                c = plotOpt['colors'].get(lbl,l.get_color())
+                if sum(c) == 4.0: continue # white is invisible
+                ticknum += 1
+                phasename = 'tick{}'.format(ticknum)
+                if plotOpt['legend'].get(lbl):
+                    legends.append((phasename,plotOpt['phaseLabels'].get(lbl,lbl)))
+                tickpos = l.get_ydata()[0]
+                fp.write(
+'''X //  reflection tickmark for phase {1}
+WAVES /D/O {0}X, {0}
+BEGIN
+'''.format(phasename,lbl))
+                for x in l.get_xdata():
+                    fp.write('{} {}\n'.format(x,tickpos))
+                fp.write('''END
+X //  ***   controls for {1} reflection tickmarks
+X AppendToGraph {0} vs {0}X
+X ModifyGraph mode({0})=3,mrkThick({0})=2,gaps({0})=0
+X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
+'''.format(phasename,lbl,*[j*65535 for j in c[0:3]]))
+                
+        # plot magnification lines and labels
+        j = 0
+        for i,l in enumerate(Plot.lines):
+            lbl = l.get_label()
+            if 'mag' not in lbl: continue
+            j += 1
+            fp.write('WAVES /D/O mag{0}X, mag{0}\nBEGIN\n'.format(j))
+            fp.write(' {0} {1}\n {0} {2}\n'.format(
+                l.get_data()[0][0],Plot.get_ylim()[0],Plot.get_ylim()[1]))
+            fp.write('END\nX AppendToGraph mag{0} vs mag{0}X\n'.format(j))
+            fp.write('X ModifyGraph lstyle(mag{0})=3,rgb(mag{0})=(0,0,0)\n'.format(j))
+        for l in Plot.texts:
+            if 'mag' not in l.get_label(): continue
+            if l.xycoords[0] == 'data':
+                xpos = l.get_position()[0]
+            elif l.get_position()[0] == 0:
+                xpos = Plot.get_xlim()[0]
+            else:
+                xpos = Plot.get_xlim()[1]*.95
+            fp.write('X SetDrawEnv xcoord=bottom, ycoord= abs,textyjust=2,fsize={}\n'.format(fontsize))
+            fp.write('X DrawText {0},2,"{1}"\n'.format(xpos,l.get_text()))
+
+        # legend
+        s = ""
+        for nam,txt in legends:
+            if s: s += r'\r'
+            s += r'\\s({}) {}'.format(nam,txt)
+        fp.write('X Legend/C/N=text0/J "{}"\n'.format(s))
+        fp.close()
+                
     def CopyRietveld2csv(Pattern,Plot,Page,filename):
         '''Copy the contents of the Rietveld graph from the plot window to
         .csv file
@@ -3354,6 +3562,9 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         elif 'agr' in typ and fil:
             CopyRietveld2Grace(Pattern,Plot,Page,plotOpt,fil)
             dlg.EndModal(wx.ID_OK)
+        elif 'itx' in typ and fil:
+            CopyRietveld2Igor(Pattern,Plot,Page,plotOpt,fil,G2frame)
+            dlg.EndModal(wx.ID_OK)
         elif fil:
             if hcfigure.canvas is None:
                 if GSASIIpath.GetConfigValue('debug'): print('creating canvas')
@@ -3428,7 +3639,10 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     $\\rm FeO_2$ (for a subscript 2) or $\\gamma$-Ti for a Greek "gamma"
     
     Note that the dpi value is ignored for svg and pdf files, which are
-    drawn with vector graphics (infinite resolution).
+    drawn with vector graphics (infinite resolution). Likewise, the agr and 
+    itx options create input files for programs Grace (QtGrace) and Igor 
+    Pro, that largely duplicate the displayed plot. Once read into Grace
+    or Igor the graphs can then be customized.
     '''
     hlp = G2G.HelpButton(dlg,helpinfo)
     sizebox.Add(hlp,0,wx.ALL)
@@ -3568,7 +3782,12 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                 uselbl = lbl[1:]
             else:
                 uselbl = lbl
-            art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
+            if lbl[1:] == 'zero':
+                art = ax0.axhline(0.,color=c,
+                     lw=lineWid,label=uselbl,ls=l.get_ls(),
+                     marker=marker,ms=siz,mew=mew)
+            else:
+                art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
                      lw=lineWid,label=uselbl,ls=l.get_ls(),
                      marker=marker,ms=siz,mew=mew,
                      )

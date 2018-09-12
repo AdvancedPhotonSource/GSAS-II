@@ -550,9 +550,10 @@ class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
     def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifDelete=False):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection for '+Name, 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Name = Name
         self.Atoms = Atoms
         self.atCodes = atCodes
         self.atMxyz = atMxyz
@@ -573,6 +574,7 @@ class UseMagAtomDialog(wx.Dialog):
         Indx = {}
         Mstr = [' Mx',' My',' Mz']
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label='For: %s'%self.Name),0,WACV)
         
         mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments, mag. site sym:'),0,WACV)
         atmSizer = wx.FlexGridSizer(0,2,5,5)

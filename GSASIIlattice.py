@@ -333,7 +333,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]-Uvec,invTrans.T,Vvec)%1.
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]+Uvec,invTrans.T,Vvec)%1.
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],Trans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
@@ -377,13 +377,12 @@ def FindNonstandard(Phase):
     if 'ortho' in SGData['SGSys']:
         lattSym = G2spc.getlattSym(Trans)
         SpGrp = SGData['SpGrp']
-        NUvec = np.inner(Uvec,Mats[lattSym])    #ok
         NTrans = np.inner(Mats[lattSym],Trans.T)        #ok
         spn[1:4] = np.inner(np.abs(Mats[lattSym]),spn[1:4])         #ok
-        SGsym = G2spc.getlattSym(Mats[lattSym])
+        SGsym = G2spc.getlattSym(nl.inv(Mats[lattSym]).T)
         
         if lattSym != 'abc':
-            NSG = G2spc.altSettingOrtho[SpGrp].get(SGsym,SpGrp).replace("'",'').split(' ')
+            NSG = G2spc.altSettingOrtho[SpGrp][SGsym].replace("'",'').split(' ')
             Bns = ''
             if bns:
                 Bns = BNS[bns][lattSym]
@@ -393,7 +392,7 @@ def FindNonstandard(Phase):
                     if spn[ifld] < 0:
                         NSG[ifld] += "'"
             Nresult = [''.join(NSG)+'  ',Bns]
-            return Nresult,NUvec,NTrans
+            return Nresult,Uvec,NTrans
         else:
             Nresult = [SpGrp,'']
             return None

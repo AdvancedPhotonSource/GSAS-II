@@ -2460,7 +2460,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 vec = G2spc.Latt2text([magdata['Uvec'],])
                 magKeep.append(magdata)
                 magIds.append(mid)
-                magchoices.append('%s %s %s'%(magdata['Name'],trans,vec))
+                magchoices.append('%s; (%s) + (%s)'%(magdata['Name'],trans,vec))
         if not len(magKeep):
             G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return
@@ -2494,7 +2494,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 AtCods.append(atCodes[ia])
                 MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
                 atMxyz.append([MagSytSym,CSI[0]])
-            dlg = UseMagAtomDialog(G2frame,magchoice['Name'],Atms,AtCods,atMxyz,ifDelete=True)
+            dlg = UseMagAtomDialog(G2frame,magchoices[sel],Atms,AtCods,atMxyz,ifDelete=True)
             try:
                 opt = dlg.ShowModal()
                 if  opt == wx.ID_YES:

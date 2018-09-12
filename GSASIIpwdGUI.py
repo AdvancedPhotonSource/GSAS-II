@@ -3441,10 +3441,10 @@ def UpdateUnitCellsGrid(G2frame, data):
             testAtoms = ['',]+list(set([atom[1] for atom in controls[14]]))
         kvec = ['0','0','0']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
-            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms'],
-            values=kvec+[False,False,False,True,''],
-            limits=[['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4'],['0','1/2','1/3','1/4','3/2'],[True,False],[True,False],[True,False],[True,False],testAtoms],
-            formats=['str','str','str','bool','bool','bool','bool','choice'])
+            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
+            values=kvec+[False,False,False,True,'',False],
+            limits=[['0','1/2','-1/2','1/3','-1/3','2/3','1'],['0','1/2','1/3','2/3','1'],['0','1/2','3/2','1/3','2/3','1'],[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
+            formats=['choice','choice','choice','bool','bool','bool','bool','choice','bool'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
@@ -3454,6 +3454,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             intermed = newVals[5]
             keepaxes = newVals[6]
             atype = newVals[7]
+            allmom = newVals[8]
             magAtms = [atom for atom in controls[14] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
@@ -3484,6 +3485,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
                 phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
                 phase['aType'] = atype
+                found = False
                 for matm in magAtms:
                     xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
                     for x in xyzs:
@@ -3492,8 +3494,12 @@ def UpdateUnitCellsGrid(G2frame, data):
                         CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
                         if any(CSI[0]):     #found one - can quit looking
                             phase['Keep'] = True
-                            break
-                    if phase['Keep']:   #found one 
+                        if allmom:
+                            if not any(CSI[0]):
+                                phase['Keep'] = False
+                                found = True
+                                break
+                    if found:   #found one 
                         break
                 magcells.append(phase)
             magcells[0]['Use'] = True

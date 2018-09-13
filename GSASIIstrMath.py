@@ -615,6 +615,8 @@ def GetAtomFXU(pfx,calcControls,parmDict):
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
     Fdata = np.where(Fdata,Fdata,1.e-8)         #avoid divide by zero in derivative calc.
+    Gdata = np.where(Gdata,Gdata,1.e-8)         #avoid divide by zero in derivative calc.
+    
     return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata,Gdata
     
 def GetAtomSSFXU(pfx,calcControls,parmDict):

@@ -1018,6 +1018,67 @@ def UpdateBackground(G2frame,data):
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             G2frame.GPXtree.SetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),copy.deepcopy(data))
+            
+    def OnBackSave(event):
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Set name to save GSAS-II background parameters file', pth, '', 
+            'background parameter files (*.pwdrbck)|*.pwdrbck',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is .pwdrbck
+                filename = os.path.splitext(filename)[0]+'.pwdrbck'
+                File = open(filename,'w')
+                File.write("#GSAS-II background parameter file; do not add/delete items!\n")
+                File.write(str(data[0])+'\n')
+                for item in data[1]:
+                    if item in ['nPeaks','background PWDR','nDebye'] or not len(data[1][item]):
+                        File.write(item+':'+str(data[1][item])+'\n')
+                    else:
+                        File.write(item+':\n')
+                        for term in data[1][item]:
+                            File.write(str(term)+'\n')
+                File.close()
+                print ('Background parameters saved to: '+filename)
+        finally:
+            dlg.Destroy()
+        
+    def OnBackLoad(event):
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II background parameters file', pth, '', 
+            'background parameter files (*.pwdrbck)|*.pwdrbck',wx.FD_OPEN)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                newback = [[],{}]
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.readline()
+                if S[0] == '#':    #skip the heading
+                    S = File.readline()     #should contain the std. bck fxn
+                newback[0] = eval(S[:-1])
+                S = File.readline()                
+                while S:
+                    [item,vals] = S[:-1].split(':')
+                    if item in ['nPeaks','nDebye']:
+                        newback[1][item] = int(vals)
+                    elif 'PWDR' in item:
+                        newback[1][item] = eval(vals)
+                    elif item in ['FixedPoints','debyeTerms','peakList']:
+                        newback[1][item] = []
+                        S = File.readline()
+                        while ':' not in S:
+                            newback[1][item].append(eval(S[:-1]))
+                            S = File.readline()
+                        else:
+                            continue
+                    S = File.readline()                
+                File.close()
+                G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Background'),newback)
+        finally:
+            dlg.Destroy()
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        wx.CallLater(100,UpdateBackground,G2frame,newback)
 
     def OnBkgFit(event):
         
@@ -1109,7 +1170,7 @@ def UpdateBackground(G2frame,data):
         if 'FixedPoints' not in data[1]:
             return
         else:
-            del data[1]['FixedPoints']
+            data[1]['FixedPoints'] = []
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
     
     def OnPeaksMove(event):
@@ -1355,6 +1416,8 @@ def UpdateBackground(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.BackMenu)
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2G.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2G.wxID_BACKFLAGCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnBackSave,id=G2G.wxID_BACKSAVE)
+    G2frame.Bind(wx.EVT_MENU,OnBackLoad,id=G2G.wxID_BACKLOAD)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2G.wxID_BACKPEAKSMOVE)
     G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2G.wxID_MAKEBACKRDF)
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataWindow.wxID_BackPts['Fit'])

@@ -5010,7 +5010,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PDR / Background
         G2G.Define_wxId('wxID_BACKCOPY', 'wxID_BACKFLAGCOPY','wxID_MAKEBACKRDF', 
-            'wxID_RESCALEALL','wxID_BACKPEAKSMOVE',)
+            'wxID_RESCALEALL','wxID_BACKPEAKSMOVE','wxID_BACKSAVE','wxID_BACKLOAD')
         self.BackMenu = wx.MenuBar()
         self.PrefillDataMenu(self.BackMenu)
         self.BackEdit = wx.Menu(title='')
@@ -5018,6 +5018,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.BackEdit.Append(G2G.wxID_BACKCOPY,'Copy','Copy background parameters to other histograms')
         self.BackEdit.Append(G2G.wxID_BACKFLAGCOPY,'Copy flags',
             'Copy background refinement flags to other histograms')
+        self.BackEdit.Append(G2G.wxID_BACKSAVE,'Save ...','Save background parameters to file')
+        self.BackEdit.Append(G2G.wxID_BACKLOAD,'Load ...','Load background parameters from file')
         self.BackEdit.Append(G2G.wxID_BACKPEAKSMOVE,'Move peaks','Move background peaks to Peak List')
         self.BackEdit.Append(G2G.wxID_MAKEBACKRDF,'Plot RDF','Plot radial distribution from differences')
         self.BackFixed = wx.Menu(title='') # fixed background point menu

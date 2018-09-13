@@ -2380,9 +2380,22 @@ def UpdatePhaseData(G2frame,Item,data):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     newPhase,Trans,Uvec,Vvec,ifMag,ifConstr,Common = dlg.GetSelection()
-                    newPhase['ranId'] = ran.randint(0,sys.maxsize),
+                    newPhase['ranId'] = ran.randint(0,sys.maxsize)
+                    SGData = newPhase['General']['SGData']
                     if ifMag:
-                        BNSlatt = newPhase['General']['SGData']['BNSlattsym'][0]
+                        BNSlatt = SGData['BNSlattsym'][0]
+                        
+                    if not '_' in BNSlatt:
+                        SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
+                    SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
+                    if '_' in BNSlatt:
+                        SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+                        G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
+                    SGData['SpnFlp'] = G2spc.GenMagOps(SGData)[1]
+                    SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                        
+                        
+                        
                 else:
                     return
             finally:
@@ -2401,7 +2414,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 break
             else:
                 phaseName = newPhase['General']['Name']
-                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans.T,Uvec,Vvec,ifMag)
+                
+                
+                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
                 generalData = newPhase['General']
                 SGData = generalData['SGData']
@@ -2409,10 +2424,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms = newPhase['Atoms']
                 if ifMag:
                     atMxyz = []                    
-                    G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
-                    SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
-                    SGData['OprNames'],SGData['SpnFlp'] = G2spc.GenMagOps(SGData)
-                    SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                     for atom in Atoms:
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)

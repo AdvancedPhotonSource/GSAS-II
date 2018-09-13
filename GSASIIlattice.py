@@ -355,7 +355,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
 def FindNonstandard(Phase):
     abc = np.eye(3)
     cba = np.rot90(np.eye(3))
-    cba[0,2] *= -1      #makes -cba
+    cba[1,1] *= -1      #makes -cba
     Mats = {'abc':abc,'cab':np.roll(abc,1,1),'bca':np.roll(abc,2,1),
             'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}        #ok
     BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'A','bac':'B','cba':'C'},   

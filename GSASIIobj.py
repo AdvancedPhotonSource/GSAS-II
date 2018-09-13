@@ -1553,6 +1553,24 @@ def CompileVarDesc():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value
 
+def removeNonRefined(parmList):
+    '''Remove items from variable list that are not refined and should not 
+    appear as options for constraints
+
+    :param list parmList: a list of strings of form "p:h:VAR:a" where
+      VAR is the variable name
+
+    :returns: a list after removing variables where VAR matches a 
+      entry in local variable NonRefinedList
+    '''
+    NonRefinedList = ['Omega','Type','Chi','Phi', 'Azimuth','Gonio. radius',
+                          'Lam1','Lam2','Back','Temperature','Pressure',
+                          'FreePrm1','FreePrm2','FreePrm3',
+                          'Source','nPeaks','LeBail','newLeBail','Bank',
+                          'nDebye', #'',
+                    ]
+    return [prm for prm in parmList if prm.split(':')[2] not in NonRefinedList]
+        
 def getDescr(name):
     '''Return a short description for a GSAS-II variable
 

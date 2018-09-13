@@ -5052,6 +5052,11 @@ tutorialIndex = (
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points',
      '''This shows how to get an initial estimate of background parameters from a suite of fixed points 
      before beginning Rietveld refinement.'''],
+    ['RietPlot', 'PublicationPlot.htm', 'Create a Publication-Ready Rietveld Plot',
+     '''Shows how to create a customized version of a plot from a fit, 
+     with enlarged letters, different colors or symbols which can be written 
+     as a bitmap file, a pdf file or be exported to the Grace or Igor Pro 
+     plotting programs.'''],
     
     ['Parametric sequential fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',

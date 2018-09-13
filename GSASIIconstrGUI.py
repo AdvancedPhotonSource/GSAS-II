@@ -174,11 +174,12 @@ def UpdateConstraints(G2frame,data):
     badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
     globalList = list(rbDict.keys())
     globalList.sort()
+    globalList = G2obj.removeNonRefined(globalList)   # remove any non-refinable prms from list
     try:
         AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     except KeyError:
         G2frame.ErrorDialog('Constraint Error','Constraints cannot be set until a cycle of least squares'+
-                            'has been run.\nWe suggest you refine a scale factor.')
+                            ' has been run.\nWe suggest you refine a scale factor.')
         return
 
     # create a list of the phase variables
@@ -202,6 +203,7 @@ def UpdateConstraints(G2frame,data):
         else:
             phaseAtNames[item] = ''
             phaseAtTypes[item] = ''
+    phaseList = G2obj.removeNonRefined(phaseList)  # remove any non-refinable prms from list
              
     # create a list of the hist*phase variables
     seqList = G2frame.testSeqRefineMode()
@@ -220,15 +222,9 @@ def UpdateConstraints(G2frame,data):
             sj = ':'.join(s)
             if sj not in wildList: wildList.append(sj)
         hapList = wildList
+    hapList = G2obj.removeNonRefined(hapList)  # remove any non-refinable prms from list
     histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
-    histList = []
-    for item in histDict:
-        if item.split(':')[2] not in ['Omega','Type','Chi','Phi',
-                                      'Azimuth','Gonio. radius',
-                                      'Lam1','Lam2','Back','Temperature','Pressure',
-                                      'FreePrm1','FreePrm2','FreePrm3',
-                                      ]:
-            histList.append(item)
+    histList = list(histDict.keys())
     histList.sort()
     if seqList: # convert histogram # to wildcard
         wildList = [] # list of variables with "*" for histogram number
@@ -239,6 +235,7 @@ def UpdateConstraints(G2frame,data):
             sj = ':'.join(s)
             if sj not in wildList: wildList.append(sj)
         histList = wildList
+    histList = G2obj.removeNonRefined(histList)  # remove any non-refinable prms from list
     Indx = {}
     G2frame.Page = [0,'phs']
         

@@ -2209,13 +2209,19 @@ def UpdateRigidBodies(G2frame,data):
             rbId = RBnames[rbname]
             wx.CallLater(100,UpdateResidueRB,rbId)
             
-        if ResidueRBDisplay.GetSizer(): ResidueRBDisplay.GetSizer().Clear(True)
+        GS = ResidueRBDisplay.GetSizer()
+        if GS: 
+            try:        #get around a c++ error in wx 4.0; doing is again seems to be OK
+                GS.Clear(True)
+            except:
+                GS.Clear(True)
+        
         RBnames = {}
         for rbid in data['RBIds']['Residue']:
             RBnames.update({data['Residue'][rbid]['RBname']:rbid,})
         if not RBnames:
             return
-        rbchoice = RBnames.keys()
+        rbchoice = list(RBnames.keys())
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         if len(RBnames) > 1:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)

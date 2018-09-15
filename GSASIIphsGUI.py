@@ -2385,14 +2385,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     if ifMag:
                         BNSlatt = SGData['BNSlattsym'][0]
                         
-                    if not '_' in BNSlatt:
-                        SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
                     SGData['GenSym'],SGData['GenFlg'],BNSsym = G2spc.GetGenSym(SGData)
                     if '_' in BNSlatt:
                         SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
                         G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
                     SGData['SpnFlp'] = G2spc.GenMagOps(SGData)[1]
                     SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
+                    if not '_' in BNSlatt:
+                        SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
                         
                         
                         

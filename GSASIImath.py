@@ -90,7 +90,7 @@ def pinv(a, rcond=1e-15 ):
     .. [1] G. Strang, *Linear Algebra and Its Applications*, 2nd Ed., Orlando, FL, Academic Press, Inc., 1980, pp. 139-142.
 
     """
-    u, s, vt = nl.svd(a, 0)
+    u, s, vt = nl.svd(a)
     cutoff = rcond*np.maximum.reduce(s)
     s = np.where(s>cutoff,1./s,0.)
     nzero = s.shape[0]-np.count_nonzero(s)
@@ -182,8 +182,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             try:
                 Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
             except nl.LinAlgError:
-                print ('ouch #1 bad SVD inversion; change parameterization')
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
+                print ('ouch #1 bad SVD inversion; change parameterization for ',psing)
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
             Xvec = np.inner(Ainv,Yvec)      #solve
             Xvec /= Adiag

@@ -3502,22 +3502,27 @@ def UpdateUnitCellsGrid(G2frame, data):
         E,SGData = G2spc.SpcGroup(controls[13])
         if len(controls) > 14:
             testAtoms = ['',]+list(set([atom[1] for atom in controls[14]]))
-        kvec = ['0','0','0']
+        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = [' ','0','1/2','1/3','2/3','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
-            prompts=[' kx as fr.',' ky as fr.',' kz as fr.',' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
+            prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.',' kx3 as fr.',' ky3 as fr.',' kz3 as fr.',\
+                     ' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
             values=kvec+[False,False,False,True,'',False],
-            limits=[['0','1/2','-1/2','1/3','-1/3','2/3','1'],['0','1/2','1/3','2/3','1'],['0','1/2','3/2','1/3','2/3','1'],[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
-            formats=['choice','choice','choice','bool','bool','bool','bool','choice','bool'])
+            limits=[Kx,Ky,Kz,Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
+            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','bool','bool','bool',
+                     'choice','bool'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
-            kvec = newVals[:3]
-            star = newVals[3]
-            Landau = newVals[4]
-            intermed = newVals[5]
-            keepaxes = newVals[6]
-            atype = newVals[7]
-            allmom = newVals[8]
+            kvec = newVals[:9]
+            star = newVals[9]
+            Landau = newVals[10]
+            intermed = newVals[11]
+            keepaxes = newVals[12]
+            atype = newVals[13]
+            allmom = newVals[14]
             magAtms = [atom for atom in controls[14] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
@@ -3530,6 +3535,10 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.EndBusyCursor()
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
+                return
+            if not MAXMAGN:
+                wx.MessageBox('No results from k-SUBGROUPSMAG, check your propagation vector(s)',
+                    caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
             for result in MAXMAGN:
                 if result[0].strip().endswith("1'"):    #skip gray groups

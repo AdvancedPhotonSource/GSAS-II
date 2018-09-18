@@ -3502,27 +3502,27 @@ def UpdateUnitCellsGrid(G2frame, data):
         E,SGData = G2spc.SpcGroup(controls[13])
         if len(controls) > 14:
             testAtoms = ['',]+list(set([atom[1] for atom in controls[14]]))
-        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ']
+        kvec = ['0','0','0',' ',' ',' ']
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
-            prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.',' kx3 as fr.',' ky3 as fr.',' kz3 as fr.',\
+            prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.',\
                      ' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
             values=kvec+[False,False,False,True,'',False],
-            limits=[Kx,Ky,Kz,Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
-            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','bool','bool','bool',
+            limits=[Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
+            formats=['choice','choice','choice','choice','choice','choice','bool','bool','bool','bool',
                      'choice','bool'])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
-            kvec = newVals[:9]
-            star = newVals[9]
-            Landau = newVals[10]
-            intermed = newVals[11]
-            keepaxes = newVals[12]
-            atype = newVals[13]
-            allmom = newVals[14]
+            kvec = newVals[:6]
+            star = newVals[6]
+            Landau = newVals[7]
+            intermed = newVals[8]
+            keepaxes = newVals[9]
+            atype = newVals[10]
+            allmom = newVals[11]
             magAtms = [atom for atom in controls[14] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:

@@ -132,7 +132,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,intermed=False):
         #if sym: sym += ' ' # use this for testing to generate an error in place of previous
         sym += i.lower()
     postdict['generators'] = sym
-    for j in [1,2,3]:
+    for j in [1,2]:
         if kvec[3*j-3] == ' ':
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):

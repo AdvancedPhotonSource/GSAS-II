@@ -180,7 +180,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         else:
             try:
                 size = float(Obj.GetValue())
-                if size <= 0.001:            #10A lower limit!
+                if size < 0.001:            #10A lower limit!
                     raise ValueError
                 UseList[G2frame.hist]['Size'][1][pid] = size
             except ValueError:

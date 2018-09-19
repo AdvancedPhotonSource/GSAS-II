@@ -171,7 +171,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         if UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
             try:
                 size = float(Obj.GetValue())
-                if pid < 3 and size <= 0.001:            #10A lower limit!
+                if pid < 3 and size < 0.001:            #10A lower limit!
                     raise ValueError
                 UseList[G2frame.hist]['Size'][4][pid] = size                    
             except ValueError:

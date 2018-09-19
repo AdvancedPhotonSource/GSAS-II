@@ -2488,6 +2488,7 @@ def UpdatePhaseData(G2frame,Item,data):
             newPhase['ranId'] = ran.randint(0,sys.maxsize),
             del newPhase['magPhases']
             generalData = newPhase['General']
+            generalData['Name'] = phaseName
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])            
             generalData['Cell'][1:] = magchoice['Cell'][:]
             SGData = generalData['SGData']
@@ -2535,7 +2536,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
-#        G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
+        G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
         G2frame.newGPXfile = phaseName+'.gpx'
         G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)

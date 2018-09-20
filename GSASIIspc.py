@@ -1117,7 +1117,7 @@ def Trans2Text(Trans):
     return Text[:-1]
 
 def getlattSym(Trans):
-    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb'}
+    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb','cabab':'cab'}
     transText = Trans2Text(Trans)
     lattSym = ''
     for fld in transText.split(','):

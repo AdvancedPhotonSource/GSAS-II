@@ -3122,6 +3122,9 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     def LoadUnitCell(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        controls = controls[:14]+[['0','0','0',' ',' ',' '],[],]
+        data = controls,bravais,cells,dminx,ssopt,magcells
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases')
         if not pId: return
         Phases = []
@@ -3155,7 +3158,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             for atom in Atoms:
                 if len(G2elem.GetMFtable([atom[ct],],[2.0,])):
                     testAtoms.append(atom[:cx+3])
-            controls.append(testAtoms)
+            controls[15] = testAtoms
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
@@ -3500,12 +3503,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         import kSUBGROUPSMAG as kMAG
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         E,SGData = G2spc.SpcGroup(controls[13])
-        if len(controls) > 14:
-            testAtoms = ['',]+list(set([atom[1] for atom in controls[14]]))
-        kvec = ['0','0','0',' ',' ',' ']
-        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
-        Ky = [' ','0','1/2','1/3','2/3','1']
-        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
+        testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
+        kvec = ['0','0','0','0','0','0']
+        Kx = ['0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = ['0','1/2','1/3','2/3','1']
+        Kz = ['0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
             prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.',\
                      ' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
@@ -3523,7 +3525,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             keepaxes = newVals[9]
             atype = newVals[10]
             allmom = newVals[11]
-            magAtms = [atom for atom in controls[14] if atom[1] == atype]
+            magAtms = [atom for atom in controls[15] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
       Symmetry-Based Computational Tools for Magnetic Crystallography,
@@ -3540,6 +3542,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 wx.MessageBox('No results from k-SUBGROUPSMAG, check your propagation vector(s)',
                     caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
+            controls[14] = kvec
             for result in MAXMAGN:
                 if result[0].strip().endswith("1'"):    #skip gray groups
                     continue
@@ -3859,14 +3862,16 @@ def UpdateUnitCellsGrid(G2frame, data):
     if magcells and 'N' in Inst['Type'][0]:
         if 'N' in Inst['Type'][0]:
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Magnetic cells from Bilbao k-SUBGROUPSMAG:'),0,WACV)
+        
+        Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1: (%s), kvec2: (%s):'%(SGData['SpGrp'],''.join(controls[14][:3]),''.join(controls[14][3:]))
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label),0,WACV)
         rowLabels = []
+        for i in range(len(magcells)): rowLabels.append(str(i+1))
         colLabels = ['Space Gp.','Try','Keep','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
         for phase in magcells:
-            rowLabels.append('')
             cell  = list(phase['Cell'])
             trans = G2spc.Trans2Text(phase['Trans'])
             vec = G2spc.Latt2text([phase['Uvec'],])
@@ -3876,7 +3881,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         magDisplay = G2G.GSGrid(G2frame.dataWindow)
         magDisplay.SetTable(MagCellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
-        magDisplay.SetRowLabelSize(0)
         magDisplay.AutoSizeColumns(False)
         for r in range(magDisplay.GetNumberRows()):
             for c in range(magDisplay.GetNumberCols()):

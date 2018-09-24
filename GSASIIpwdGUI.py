@@ -3393,6 +3393,22 @@ def UpdateUnitCellsGrid(G2frame, data):
                 magDisplay.ForceRefresh()
             data[5] = magcells
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+            
+    def OnRefreshKeep(event):
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        c =  event.GetCol()
+        E,SGData = G2spc.SpcGroup(controls[13])
+        if c == 2:
+            for phase in magcells:
+                Uvec = phase['Uvec']
+                Trans = phase['Trans']
+                allmom = phase['allmom']
+                invTrans = nl.inv(Trans)
+                magAtms = phase['magAtms']
+                TestMagAtoms(phase,magAtms,SGData,Uvec,invTrans,allmom)
+            data = controls,bravais,cells,dminx,ssopt,magcells
+            G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def MakeNewPhase(event):
         if not G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
@@ -3499,6 +3515,27 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
+    def TestMagAtoms(phase,magAtms,SGData,Uvec,invTrans,allmom):
+        found = False
+        if not magAtms:
+            phase['Keep'] = True
+            return
+        for matm in magAtms:
+            xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
+            for x in xyzs:
+                xyz = G2lat.TransformXYZ(x[0]-Uvec,invTrans.T,np.zeros(3))%1.
+                SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
+                CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
+                if any(CSI[0]):     #found one - can quit looking
+                    phase['Keep'] = True
+                if allmom:
+                    if not any(CSI[0]):
+                        phase['Keep'] = False
+                        found = True
+                        break
+            if found:   #found one 
+                break
+        
     def OnRunSubsMag(event):
         import kSUBGROUPSMAG as kMAG
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
@@ -3560,24 +3597,9 @@ def UpdateUnitCellsGrid(G2frame, data):
                 phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)
                 phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
                 phase['aType'] = atype
-                found = False
-                if not magAtms:
-                    phase['Keep'] = True
-                for matm in magAtms:
-                    xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
-                    for x in xyzs:
-                        xyz = G2lat.TransformXYZ(x[0]-Uvec,invTrans.T,np.zeros(3))%1.
-                        SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
-                        CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
-                        if any(CSI[0]):     #found one - can quit looking
-                            phase['Keep'] = True
-                        if allmom:
-                            if not any(CSI[0]):
-                                phase['Keep'] = False
-                                found = True
-                                break
-                    if found:   #found one 
-                        break
+                phase['allmom'] = allmom
+                phase['magAtms'] = magAtms
+                TestMagAtoms(phase,magAtms,SGData,Uvec,invTrans,allmom)
                 magcells.append(phase)
             magcells[0]['Use'] = True
             SGData = magcells[0]['SGData']
@@ -3880,9 +3902,11 @@ def UpdateUnitCellsGrid(G2frame, data):
             row = [phase['Name'],phase['Use'],phase['Keep'],trans,vec]+cell
             table.append(row)
         MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        G2frame.GetStatusBar().SetStatusText('Double click Keep to refresh Keep flags',1)
         magDisplay = G2G.GSGrid(G2frame.dataWindow)
         magDisplay.SetTable(MagCellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
+        magDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnRefreshKeep)
         magDisplay.AutoSizeColumns(False)
         for r in range(magDisplay.GetNumberRows()):
             for c in range(magDisplay.GetNumberCols()):

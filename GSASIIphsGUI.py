@@ -2469,12 +2469,12 @@ def UpdatePhaseData(G2frame,Item,data):
         magchoices = []
         for mid,magdata in enumerate(magData):
             if magdata['Keep']:
-                magdata['No.'] = mid
+                magdata['No.'] = mid+1
                 trans = G2spc.Trans2Text(magdata['Trans'])
                 vec = G2spc.Latt2text([magdata['Uvec'],])
                 magKeep.append(magdata)
                 magIds.append(mid)
-                magchoices.append('(%d) %s; (%s) + (%s)'%(mid,magdata['Name'],trans,vec))
+                magchoices.append('(%d) %s; (%s) + (%s)'%(mid+1,magdata['Name'],trans,vec))
         if not len(magKeep):
             G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return

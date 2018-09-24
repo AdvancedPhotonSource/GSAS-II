@@ -1117,7 +1117,7 @@ def Trans2Text(Trans):
     return Text[:-1]
 
 def getlattSym(Trans):
-    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb','cabab':'cab'}
+    Fives = {'ababc':'abc','bcbca':'cba','acacb':'acb','cabab':'cab','abcab':'acb'}
     transText = Trans2Text(Trans)
     lattSym = ''
     for fld in transText.split(','):
@@ -3238,7 +3238,7 @@ def MagSytSym(SytSym,dupDir,SGData):
             MagSytSym += '('+SplitSytSym[1]
         return MagSytSym
     if len(dupDir) == 1:
-        return dupDir.keys()[0]
+        return list(dupDir.keys())[0]
     
     
     if '2/m' in SytSym:         #done I think; last 2wo might be not needed

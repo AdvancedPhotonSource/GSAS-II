@@ -3504,15 +3504,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         E,SGData = G2spc.SpcGroup(controls[13])
         testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
-        kvec = ['0','0','0','0','0','0']
-        Kx = ['0','1/2','-1/2','1/3','-1/3','2/3','1']
-        Ky = ['0','1/2','1/3','2/3','1']
-        Kz = ['0','1/2','3/2','1/3','2/3','1']
+        kvec = ['0','0','0',' ',' ',' ']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = [' ','0','1/2','1/3','2/3','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
             prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.',\
                      ' Use whole star',' Landau transition',' Give intermediate cells','preserve axes','test for mag. atoms','all have moment'],
             values=kvec+[False,False,False,True,'',False],
-            limits=[Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
+            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,[True,False],[True,False],[True,False],[True,False],testAtoms,[True,False]],
             formats=['choice','choice','choice','choice','choice','choice','bool','bool','bool','bool',
                      'choice','bool'])
         if dlg.ShowModal() == wx.ID_OK:
@@ -3561,6 +3561,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 phase['Cell'] = G2lat.TransformCell(controls[6:12],Trans)   
                 phase['aType'] = atype
                 found = False
+                if not magAtms:
+                    phase['Keep'] = True
                 for matm in magAtms:
                     xyzs = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
                     for x in xyzs:

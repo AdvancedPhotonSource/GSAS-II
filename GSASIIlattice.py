@@ -249,7 +249,10 @@ def prodMGMT(G,Mat):
     :return: array new metric tensor
     
     '''
-    return np.inner(Mat,np.inner(G,Mat).T)
+    return np.inner(np.inner(Mat,G),Mat)        #right
+#    return np.inner(Mat,np.inner(Mat,G))       #right
+#    return np.inner(np.inner(G,Mat).T,Mat)      #right
+#    return np.inner(Mat,np.inner(G,Mat).T)     #right
     
 def TransformCell(cell,Trans):
     '''Transform lattice parameters by matrix
@@ -276,7 +279,7 @@ def TransformU6(U6,Trans):
 def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     '''Transform atoms from oldPhase to newPhase
     M' is inv(M)
-    does X' = (X-U)M'+V transformation for coordinates and U' = MUM/det(M)
+    does X' = M(X-U)+V transformation for coordinates and U' = MUM/det(M)
     for anisotropic thermal parameters
     
     :param oldPhase: dict G2 phase info for old phase
@@ -299,7 +302,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms,atCodes = FillUnitCell(oldPhase)
-    Unit =[abs(int(max(unit))-1) for unit in Trans]
+    Unit =[abs(int(max(unit))-1) for unit in Trans.T]
     for i,unit in enumerate(Unit):
         if unit > 0:
             for j in range(unit):
@@ -333,7 +336,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
         atCodes = magatCodes
         newPhase['Draw Atoms'] = []
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]+Uvec,invTrans.T,Vvec)%1.
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3]+Uvec,invTrans,Vvec)%1.
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],Trans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)[:2]
@@ -353,9 +356,10 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     return newPhase,atCodes
     
 def FindNonstandard(Phase):
+    'This makes occasional mistakes!'
     abc = np.eye(3)
     cba = np.rot90(np.eye(3))
-    cba[1,1] *= -1      #makes -cba
+    cba[1,1] *= -1      #makes c-ba
     Mats = {'abc':abc,'cab':np.roll(abc,1,1),'bca':np.roll(abc,2,1),
             'acb':np.roll(cba,1,1),'bac':np.roll(cba,2,1),'cba':cba}        #ok
     BNS = {'A':{'abc':'A','cab':'C','bca':'B','acb':'A','bac':'B','cba':'C'},   

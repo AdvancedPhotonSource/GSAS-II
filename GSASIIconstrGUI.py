@@ -1338,61 +1338,91 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
             constraints['Phase'].append([DepCons,IndpCon,None,None,'e'])
-#        for iu,Uid in enumerate(Uids):
-        for iu in list(set(CSU[0])):
-            if not iu:
-                continue
-            Uid = Uids[iu-1]
-            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
-            DepCons = []
-            for iau in range(3):
-                for ibu in range(3):
-                    if abs(Trans[Uid[0],iau]) > 1.e-4 and abs(Trans[Uid[1],ibu]) > 1.e-4:
-                        parm = '%d::%s:%s'%(opId,unames[ibu][iau],iat)
-                        if not parm in varyList:
-                            varyList.append(parm)
-                        DepCons.append([Trans[ibu,iau]/detTrans,G2obj.G2VarObj(parm)])
-            if len(DepCons) == 1:
-                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
-            elif len(DepCons) > 1:        
-                for Dep in DepCons:
-                    Dep[0] *= -1
-                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+#        for iu,Uid in enumerate(Uids): Not right
+#        for iu in list(set(CSU[0])):
+#            if not iu:
+#                continue
+#            Uid = Uids[iu-1]
+#            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
+#            DepCons = []
+#            for iau in range(3):
+#                for ibu in range(3):
+#                    if abs(Trans[Uid[0],iau]) > 1.e-4 and abs(Trans[Uid[1],ibu]) > 1.e-4:
+#                        parm = '%d::%s:%s'%(opId,unames[ibu][iau],iat)
+#                        if not parm in varyList:
+#                            varyList.append(parm)
+#                        DepCons.append([Trans[ibu,iau]/detTrans,G2obj.G2VarObj(parm)])
+#            if len(DepCons) == 1:
+#                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
+#            elif len(DepCons) > 1:        
+#                for Dep in DepCons:
+#                    Dep[0] *= -1
+#                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
             
         #how do I do Uij's for most Trans?
-    Anames = [['A0','A3','A4'],['A3','A1','A5'],['A4','A5','A2']]
     As = ['A0','A1','A2','A3','A4','A5']
     Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
     Axes = ['a','b','c']
     Holds = []
+    DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
     for iA,Aid in enumerate(Aids):
-        parm = SetUniqAj(npId,Aid[2],nSGData['SGLaue'])
+        GT = np.zeros((3,3))
+        if abs(oAcof[iA]) > 1.e-8:
+            GT[Aid[0],Aid[1]] = 1
+            nGT = G2lat.prodMGMT(GT,invTrans)
+            nAT = G2lat.Gmat2A(nGT)
+            for ia,nA in enumerate(nAT):
+                if abs(nA) > 1.e-8 and abs(oAcof[ia]) > 1.e-8:
+                    parm = SetUniqAj(opId,As[ia],nSGData['SGLaue'])
+                    DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
+    for Asi in As:
+        parm = SetUniqAj(npId,Asi,nSGData['SGLaue'])
         parmDict[parm] = nAcof[iA]
         varyList.append(parm)
         IndpCon = [1.0,G2obj.G2VarObj(parm)]
-        DepCons = []
-        for iat in range(3):
-            if nSGData['SGLaue'] in ['-1','2/m']:       #set holds
-                if (abs(nAcof[iA]) < 1.e-8) and (abs(invTrans[Aid[0],Aid[1]]) < 1.e-8):
-                    if Axes[iat] != nSGData['SGUniq'] and nSGData['SGLaue'] != oSGData['SGLaue']:
-                        HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
-                        if not HoldObj in Holds: 
-                            constraints['Phase'].append([[0.0,HoldObj],None,None,'h'])
-                            Holds.append(HoldObj)
-                            continue
-            for ibt in range(3):
-                if abs(Trans[Aid[0],iat]) > 1.e-4 and abs(invTrans[Aid[1],ibt]) > 1.e-4 and abs(oAcof[iA]) > 1.e-8:
-                    parm = SetUniqAj(opId,Anames[ibt][iat],nSGData['SGLaue'])
-                    parmDict[parm] = oAcof[As.index(Anames[ibt][iat])]
-                    if not parm in varyList:
-                        varyList.append(parm)
-                    DepCons.append([invTrans[ibt,iat]*invTrans[iat,ibt],G2obj.G2VarObj(parm)])
-        if len(DepCons) == 1:
-            constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
-        elif len(DepCons) > 1:        
-            for Dep in DepCons:
+        if len(DepConsDict[Asi]) == 1:
+            if DepConsDict[Asi][0]:
+                constraints['Phase'].append([IndpCon,DepConsDict[Asi][0],None,None,'e'])
+        elif len(DepConsDict[Asi]) > 1:        
+            for Dep in DepConsDict[Asi]:
                 Dep[0] *= -1
-            constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
+            constraints['Phase'].append([IndpCon]+DepConsDict[Asi]+[0.0,None,'c'])
+        
+        
+    
+    
+    
+    
+    
+    
+#    for iA,Aid in enumerate(Aids):      #TODO: this is not generally correct - ok for orthonormal cases
+#        parm = SetUniqAj(npId,Aid[2],nSGData['SGLaue'])
+#        parmDict[parm] = nAcof[iA]
+#        varyList.append(parm)
+#        IndpCon = [1.0,G2obj.G2VarObj(parm)]
+#        DepCons = []
+#        for iat in range(3):
+#            if nSGData['SGLaue'] in ['-1','2/m']:       #set holds
+#                if (abs(nAcof[iA]) < 1.e-8) and (abs(invTrans[Aid[0],Aid[1]]) < 1.e-8):
+#                    if Axes[iat] != nSGData['SGUniq'] and nSGData['SGLaue'] != oSGData['SGLaue']:
+#                        HoldObj = G2obj.G2VarObj('%d::%s'%(npId,Aid[2]))
+#                        if not HoldObj in Holds: 
+#                            constraints['Phase'].append([[0.0,HoldObj],None,None,'h'])
+#                            Holds.append(HoldObj)
+#                            continue
+#            for ibt in range(3):
+#                if abs(Trans[Aid[0],iat]) > 1.e-4 and abs(invTrans[Aid[1],ibt]) > 1.e-4 and abs(oAcof[iA]) > 1.e-8:
+#                    parm = SetUniqAj(opId,As[iat],nSGData['SGLaue'])
+#                    parmDict[parm] = oAcof[iat]
+#                    if not parm in varyList:
+#                        varyList.append(parm)
+#                    DepCons.append([invTrans[ibt,iat]*invTrans[iat,ibt],G2obj.G2VarObj(parm)])
+#        if len(DepCons) == 1:
+#            constraints['Phase'].append([IndpCon,DepCons[0],None,None,'e'])
+#        elif len(DepCons) > 1:        
+#            for Dep in DepCons:
+#                Dep[0] *= -1
+#            constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
 #    constDict,fixedList,ignored = G2stIO.ProcessConstraints(constraints['Phase'])
 #    groups,parmlist = G2mv.GroupConstraints(constDict)
 #    G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,parmDict)

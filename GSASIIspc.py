@@ -1232,11 +1232,21 @@ def GetSGSpin(SGData,MSgSym):
             Spn.append(-1)
         else:
             Spn.append(1)
-    elif len(Flds) == 3:    # 3m & m3; one generator
-        if "'" in mSgSym:   #could be 1 or 2 '; doesn't matter. 
-            Spn.append(-1)
+    elif len(Flds) == 3:    # 3m & m3; 1 or 2 generator
+        if SGData['SGPtGrp'] == '-3m':
+            if not mSgSym.count("'"):
+                Spn += [1,1,]
+            elif mSgSym.count("'") == 2:
+                Spn += [-1,1,]
+            elif "3'" in mSgSym:
+                Spn += [1,-1,]
+            else:
+                Spn += [-1,-1,]
         else:
-            Spn.append(1)
+            if "'" in mSgSym:   #could be 1 or 2 '; doesn't matter. 
+                Spn.append(-1)
+            else:
+                Spn.append(1)
     else:                   #the rest; 3 generators. NB:  any ' before / in 1st field ignored
         for fld in Flds[1:]:
             iF = mSgSym[iB:].index(fld[0])+iB

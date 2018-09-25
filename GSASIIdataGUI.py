@@ -3864,7 +3864,7 @@ class GSASII(wx.Frame):
         dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', pth, self.newGPXfile, 
             'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
-            if dlg.ShowModal() == wx.ID_OK:
+            if dlg.ShowModal() == wx.ID_OK:     #TODO: what about Cancel?
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)

@@ -2463,7 +2463,8 @@ def UpdatePhaseData(G2frame,Item,data):
         PatternName = data['magPhases']
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        magData = G2frame.GPXtree.GetItemPyData(UnitCellsId)[5]
+        UCdata = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        magData = UCdata[5]
         magKeep = []
         magIds = []
         magchoices = []
@@ -2539,6 +2540,8 @@ def UpdatePhaseData(G2frame,Item,data):
         newPhase['Drawing'] = []
         G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
         G2frame.newGPXfile = phaseName+'.gpx'
+        UCdata[5] = []      #clear away other mag choices from chem phase in new project
+        G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
         G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
         

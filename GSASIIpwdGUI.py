@@ -3409,6 +3409,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             data = controls,bravais,cells,dminx,ssopt,magcells
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        elif c < 0:
+            r = event.GetRow()
+            phase = magcells[r]
+            SGData = phase['SGData']
+            msg = 'Magnetic space group information for '+phase['Name']
+            text,table = G2spc.SGPrint(SGData,AddInv=True)
+            text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+            text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            G2G.SGMagSpinBox(G2frame.dataWindow,msg,text,table,SGData['SGCen'],OprNames,
+                SGData['SpnFlp'],False).Show()
         
     def MakeNewPhase(event):
         if not G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'):
@@ -3902,7 +3913,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             row = [phase['Name'],phase['Use'],phase['Keep'],trans,vec]+cell
             table.append(row)
         MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        G2frame.GetStatusBar().SetStatusText('Double click Keep to refresh Keep flags',1)
+        G2frame.GetStatusBar().SetStatusText('Double click Keep to refresh Keep flags, row no. to see sym. ops.',1)
         magDisplay = G2G.GSGrid(G2frame.dataWindow)
         magDisplay.SetTable(MagCellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)

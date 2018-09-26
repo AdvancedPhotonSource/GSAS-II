@@ -624,6 +624,14 @@ def SpaceGroup(SGSymbol):
 ################################################################################
 #### Magnetic space group stuff
 ################################################################################
+        
+def SetMagnetic(SGData):
+    GenSym,GenFlg,BNSsym = GetGenSym(SGData)
+    SGData['GenSym'] = GenSym
+    SGData['GenFlg'] = GenFlg
+    OprNames,SpnFlp = GenMagOps(SGData)
+    SGData['SpnFlp'] = SpnFlp
+    SGData['MagSpGrp'] = MagSGSym(SGData)
 
 def GetGenSym(SGData):
     '''

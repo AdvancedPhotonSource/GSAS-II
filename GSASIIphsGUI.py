@@ -363,6 +363,7 @@ class TransformDialog(wx.Dialog):
                 G2G.SGMessageBox(self.panel,msg,text,table).Show()
             if self.ifMag:
                 self.BNSlatt = self.SGData['SGLatt']
+                G2spc.SetMagnetic(self.SGData)
             if self.Phase['General']['Type'] == 'magnetic':
                 Nops = len(self.SGData['SGOps'])*len(self.SGData['SGCen'])
                 if self.SGData['SGInv']:
@@ -370,6 +371,19 @@ class TransformDialog(wx.Dialog):
                 self.SGData['SpnFlp'] = Nops*[1,]
                 del self.oldSGdata['MAXMAGN']
             wx.CallAfter(self.Draw)
+            
+        def OnShowOps(event):
+            text,table = G2spc.SGPrint(self.SGData,AddInv=True)
+            if self.ifMag:
+                msg = 'Magnetic space group information'
+                OprNames,SpnFlp = G2spc.GenMagOps(self.SGData)
+                text[0] = ' Magnetic Space Group: '+self.SGData['MagSpGrp']
+                text[3] = ' The magnetic lattice point group is '+self.SGData['MagPtGp']
+                G2G.SGMagSpinBox(self.panel,msg,text,table,self.SGData['SGCen'],OprNames,
+                    self.SGData['SpnFlp'],False).Show()
+            else:
+                msg = 'Space group information'
+                G2G.SGMessageBox(self.panel,msg,text,table).Show()
 
         def OnTest(event):
             if self.Mtrans:
@@ -381,6 +395,7 @@ class TransformDialog(wx.Dialog):
         def OnMag(event):
             self.ifMag = True
             self.BNSlatt = self.SGData['SGLatt']
+            G2spc.SetMagnetic(self.SGData)
             wx.CallAfter(self.Draw)
             
         def OnConstr(event):
@@ -400,6 +415,14 @@ class TransformDialog(wx.Dialog):
             Obj = event.GetEventObject()
             self.Mtrans = Obj.GetValue()
             
+        def OnSpinOp(event):
+            Obj = event.GetEventObject()
+            isym = Indx[Obj.GetId()]+1
+            spCode = {'red':-1,'black':1}                    
+            self.SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
+            G2spc.CheckSpin(isym,self.SGData)
+            G2spc.SetMagnetic(self.SGData)
+            wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -476,10 +499,14 @@ class TransformDialog(wx.Dialog):
         sgSizer.Add(wx.StaticText(self.panel,label=' Target space group: '),0,WACV)
         SGTxt = wx.Button(self.panel,wx.ID_ANY,self.newSpGrp,size=(100,-1))
         SGTxt.Bind(wx.EVT_BUTTON,OnSpaceGroup)
-        sgSizer.Add(SGTxt,0,WACV)
+        sgSizer.Add(SGTxt,0,WACV)        
+        showOps = wx.Button(self.panel,label=' Show operators?')
+        showOps.Bind(wx.EVT_BUTTON,OnShowOps)
+        sgSizer.Add(showOps,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
         if 'magnetic' not in self.Phase['General']['Type']:
             if self.ifMag:
+                Indx = {}
                 GenSym,GenFlg,BNSsym = G2spc.GetGenSym(self.SGData)
                 BNSizer = wx.BoxSizer(wx.HORIZONTAL)
                 BNSizer.Add(wx.StaticText(self.panel,label=' Select BNS lattice:'),0,WACV)
@@ -494,7 +521,20 @@ class TransformDialog(wx.Dialog):
                 BNS.SetValue(self.BNSlatt)
                 BNS.Bind(wx.EVT_COMBOBOX,OnBNSlatt)
                 BNSizer.Add(BNS,0,WACV)
+                
+                spinColor = ['black','red']
+                spCode = {-1:'red',1:'black'}
+                for isym,sym in enumerate(GenSym[1:]):
+                    BNSizer.Add(wx.StaticText(self.panel,label=' %s: '%(sym.strip())),0,WACV)                
+                    spinOp = wx.ComboBox(self.panel,value=spCode[self.SGData['SGSpin'][isym+1]],choices=spinColor,
+                        style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+                    Indx[spinOp.GetId()] = isym
+                    spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+                    BNSizer.Add(spinOp,0,WACV)
+                OprNames,SpnFlp = G2spc.GenMagOps(self.SGData)
+                self.SGData['SpnFlp'] = SpnFlp
                 mainSizer.Add(BNSizer,0,WACV)
+                mainSizer.Add(wx.StaticText(self.panel,label=' Magnetic Space Group: '+self.SGData['MagSpGrp']),0,WACV)
             if self.ifMag:
                 mainSizer.Add(wx.StaticText(self.panel, \
                     label=' NB: Nonmagnetic atoms will be deleted from new phase'),0,WACV)

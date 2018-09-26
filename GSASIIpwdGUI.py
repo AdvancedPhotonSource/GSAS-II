@@ -3368,8 +3368,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
     def RefreshMagCellsGrid(event):
-        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
-        magcells = data[5]
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         r,c =  event.GetRow(),event.GetCol()
         if magcells:
             if c == 1:
@@ -3391,7 +3390,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     magcells[r]['Keep'] = True
                     MagCellsTable.SetValue(r,c,True)
                 magDisplay.ForceRefresh()
-            data[5] = magcells
+            data = [controls,bravais,cells,dminx,ssopt,magcells]
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
             
     def OnRefreshKeep(event):

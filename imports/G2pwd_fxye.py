@@ -212,11 +212,11 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
             j = 0
             while S and S[:4] != 'BANK' and S[0] != '#':
                 for i in range(0,80,20):
-                    if S[i:i+8] == 9*' ':
+                    if S[i:i+8] == 8*' ':
                         break
-                    xi = sfloat(S[i:i+9])/3200.
-                    yi = sfloat(S[i+9:i+16])/1000.
-                    ei = sfloat(S[i+16:i+21])/1000.
+                    xi = sfloat(S[i:i+8])/3200.
+                    yi = sfloat(S[i+8:i+15])/1000.
+                    ei = sfloat(S[i+15:i+21])/1000.
                     x.append(xi)
                     if yi > 0.0:
                         y.append(yi)

@@ -387,6 +387,12 @@ def FindNonstandard(Phase):
         
         if lattSym != 'abc':
             NSG = G2spc.altSettingOrtho[SpGrp][SGsym].replace("'",'').split(' ')
+            if ' '.join(NSG) in ['P 2 21 2',]:
+                Uvec[1] += .25
+            elif ' '.join(NSG) in ['P 21 2 2',]:
+                Uvec[0] += .25
+            elif ' '.join(NSG) in ['P 2 2 21',]:
+                Uvec[2] += .25
             Bns = ''
             if bns:
                 Bns = BNS[bns][lattSym]

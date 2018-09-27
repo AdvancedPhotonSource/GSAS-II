@@ -1132,8 +1132,9 @@ def getlattSym(Trans):
         if 'a' in fld: lattSym += 'a'
         if 'b' in fld: lattSym += 'b'
         if 'c' in fld: lattSym += 'c'
-    if len(lattSym) == 5:
-        lattSym = Fives[lattSym]
+    if len(lattSym) != 3:
+        lattSym = 'abc'
+#        lattSym = Fives[lattSym]
     return lattSym
 
 
@@ -3294,7 +3295,7 @@ def MagSytSym(SytSym,dupDir,SGData):
                '(z010)':['m(010)','m(210)','2(z)'],'(z110)':['m(110)','m(+-0)','2(z)'],
                '(+-0)':[ 'm(110)','m(z)','2(+-0)'],'(d100)':['m(yz)','m(0+-)','2(xz)'],
                '(d010)':['m(xz)','m(+0-)','2(y)'],'(d001)':['m(110)','m(+-0)','2(z)'],
-               '(210)':['m(z)','m(010)','2(210)'],
+               '(210)':['m(z)','m(010)','2(210)'],'(120)':['m(z)','m(100)','2(120)'],
                '(100)':['m(z)','m(120)','2(100)',],'(010)':['m(z)','m(210)','2(010)',],
                '(110)':['m(z)','m(+-0)','2(110)',],}
     elif 'mmm' in SytSym:

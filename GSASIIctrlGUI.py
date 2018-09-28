@@ -5069,7 +5069,7 @@ tutorialIndex = (
     ['Magnetic-I', 'Magnetic Structures-I.htm',"Magnetic Structure Analysis-I",
      '''Analysis of a simple antiferromagnet using Bilbao k-SUBGROUPSMAG from CW neutron powder data'''],
      
-    ['Magnetic-II', 'Magnetic Structures-II.htm',"Magnetic Structure Analysis-II",
+    ['Magnetic-II', 'Magnetic-II.htm',"Magnetic Structure Analysis-II",
      '''Analysis of a antiferromagnet with change of space group using Bilbao k-SUBGROUPSMAG from CW neutron powder data'''],
      
     

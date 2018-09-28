@@ -215,6 +215,8 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
                     if S[i:i+8] == 8*' ':
                         break
                     xi = sfloat(S[i:i+8])/3200.
+                    if not xi:
+                        break
                     yi = sfloat(S[i+8:i+15])/1000.
                     ei = sfloat(S[i+15:i+21])/1000.
                     x.append(xi)

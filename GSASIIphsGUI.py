@@ -2554,6 +2554,7 @@ def UpdatePhaseData(G2frame,Item,data):
             try:
                 opt = dlg.ShowModal()
                 if  opt == wx.ID_YES:
+                    G2frame.OnFileSave(event)       #saves current state of Unit Cell List
                     newPhase['Atoms'],atCodes = dlg.GetSelection()
                     generalData['Lande g'] = len(generalData['AtomTypes'])*[2.,]
                 elif opt == wx.ID_DELETE:

@@ -1017,16 +1017,20 @@ def GetBraviasNum(center,system):
         return 7
     elif center.upper() == 'I' and system.lower() == 'orthorhombic':
         return 8
-    elif center.upper() == 'C' and system.lower() == 'orthorhombic':
+    elif center.upper() == 'A' and system.lower() == 'orthorhombic':
         return 9
-    elif center.upper() == 'P' and system.lower() == 'orthorhombic':
+    elif center.upper() == 'B' and system.lower() == 'orthorhombic':
         return 10
-    elif center.upper() == 'C' and system.lower() == 'monoclinic':
+    elif center.upper() == 'C' and system.lower() == 'orthorhombic':
         return 11
-    elif center.upper() == 'P' and system.lower() == 'monoclinic':
+    elif center.upper() == 'P' and system.lower() == 'orthorhombic':
         return 12
-    elif center.upper() == 'P' and system.lower() == 'triclinic':
+    elif center.upper() == 'C' and system.lower() == 'monoclinic':
         return 13
+    elif center.upper() == 'P' and system.lower() == 'monoclinic':
+        return 14
+    elif center.upper() == 'P' and system.lower() == 'triclinic':
+        return 15
     raise ValueError('non-standard Bravais lattice center=%s, cell=%s' % (center,system))
 
 def GenHBravais(dmin,Bravais,A):
@@ -1044,17 +1048,23 @@ def GenHBravais(dmin,Bravais,A):
             * 6 P tetragonal
             * 7 F orthorhombic
             * 8 I orthorhombic
-            * 9 C orthorhombic
-            * 10 P orthorhombic
-            * 11 C monoclinic
-            * 12 P monoclinic
-            * 13 P triclinic
+            * 9 A orthorhombic
+            * 10 B orthorhombic
+            * 11 C orthorhombic
+            * 12 P orthorhombic
+            * 13 C monoclinic
+            * 14 P monoclinic
+            * 15 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
             
     """
-    if Bravais in [9,11]:
+    if Bravais in [9,]:
+        Cent = 'A'
+    elif Bravais in [10,]:
+        Cent = 'B'
+    elif Bravais in [11,13]:
         Cent = 'C'
     elif Bravais in [1,5,8]:
         Cent = 'I'
@@ -1067,7 +1077,7 @@ def GenHBravais(dmin,Bravais,A):
     Hmax = MaxIndex(dmin,A)
     dminsq = 1./(dmin**2)
     HKL = []
-    if Bravais == 13:                       #triclinic
+    if Bravais == 15:                       #triclinic
         for l in range(-Hmax[2],Hmax[2]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
                 hmin = 0
@@ -1078,7 +1088,7 @@ def GenHBravais(dmin,Bravais,A):
                     rdsq = calc_rDsq(H,A)
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [11,12]:                #monoclinic - b unique
+    elif Bravais in [13,14]:                #monoclinic - b unique
         Hmax = SwapIndx(2,Hmax)
         for h in range(Hmax[0]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
@@ -1093,7 +1103,7 @@ def GenHBravais(dmin,Bravais,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
                     [h,k,l] = SwapIndx(2,[h,k,l])
-    elif Bravais in [7,8,9,10]:            #orthorhombic
+    elif Bravais in [7,8,9,10,11,12]:            #orthorhombic
         for h in range(Hmax[0]+1):
             for k in range(Hmax[1]+1):
                 for l in range(Hmax[2]+1):

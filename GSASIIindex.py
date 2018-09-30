@@ -105,12 +105,12 @@ def ranAbyR(Bravais,A,k,N,ranFunc):
         A[0] = A[1] = A[0]*R
         A[2] *= R
         A[3] = A[4] = A[5] = 0.        
-    elif Bravais in [7,8,9,10]:     #orthorhombic
+    elif Bravais in [7,8,9,10,11,12]:     #orthorhombic
         A[0] *= R
         A[1] *= R
         A[2] *= R
         A[3] = A[4] = A[5] = 0.        
-    elif Bravais in [11,12]:        #monoclinic
+    elif Bravais in [13,14]:        #monoclinic
         A[0] *= R
         A[1] *= R
         A[2] *= R
@@ -139,17 +139,17 @@ def rancell(Bravais,dmin,dmax):
         a = b = ranaxis(dmin,dmax)
         c = ranaxis(dmin,dmax)
         alp = bet = gam = 90
-    elif Bravais in [7,8,9,10]:       #orthorhombic - F,I,C,P - a<b<c convention
+    elif Bravais in [7,8,9,10,11,12]:       #orthorhombic - F,I,P - a<b<c convention
         abc = [ranaxis(dmin,dmax),ranaxis(dmin,dmax),ranaxis(dmin,dmax)]
-        if Bravais in [7,8,10]:
+        if Bravais in [7,8,12]:
             abc.sort()
         a = abc[0]
         b = abc[1]
         c = abc[2]
         alp = bet = gam = 90
-    elif Bravais in [11,12]:        #monoclinic - C,P - a<c convention
+    elif Bravais in [13,14]:        #monoclinic - C,P - a<c convention
         ac = [ranaxis(dmin,dmax),ranaxis(dmin,dmax)]
-        if Bravais == 12:
+        if Bravais == 13:
             ac.sort()
         a = ac[0]
         b = ranaxis(dmin,dmax)
@@ -420,9 +420,9 @@ def Values2A(ibrav,values):
         return [values[0],values[0],values[1],values[0],0,0]
     elif ibrav in [5,6]:
         return [values[0],values[0],values[1],0,0,0]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         return [values[0],values[1],values[2],0,0,0]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         return [values[0],values[1],values[2],0,values[3],0]
     else:
         return list(values[:6])
@@ -433,9 +433,9 @@ def A2values(ibrav,A):
         return [A[0],]
     elif ibrav in [3,4,5,6]:
         return [A[0],A[2]]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         return [A[0],A[1],A[2]]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         return [A[0],A[1],A[2],A[4]]
     else:
         return A
@@ -443,9 +443,9 @@ def A2values(ibrav,A):
 def Values2Vec(ibrav,vec,Vref,val):
     if ibrav in [3,4,5,6]:
         Nskip = 2
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         Nskip = 3
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         Nskip = 4
     else:
         Nskip = 6
@@ -475,9 +475,9 @@ def FitHKL(ibrav,peaks,A,Pwr):
             derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
         elif ibrav in [5,6]:
             derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
-        elif ibrav in [7,8,9,10]:
+        elif ibrav in [7,8,9,10,11,12]:
             derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
-        elif ibrav in [11,12]:
+        elif ibrav in [13,14]:
             derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
         else:
             derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
@@ -507,9 +507,9 @@ def dervFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
         derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
     elif ibrav in [5,6]:
         derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
     else:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
@@ -554,9 +554,9 @@ def dervFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
         derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
     elif ibrav in [5,6]:
         derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
     else:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
@@ -607,9 +607,9 @@ def dervFitT(values,ibrav,d,H,tof,difC,Z,Zref):
         derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
     elif ibrav in [5,6]:
         derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
     else:
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
@@ -651,9 +651,9 @@ def dervFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
         derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
     elif ibrav in [5,6]:
         derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [7,8,9,10]:
+    elif ibrav in [7,8,9,10,11,12]:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
-    elif ibrav in [11,12]:
+    elif ibrav in [13,14]:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
     else:
         derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
@@ -851,7 +851,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
     while tries < Ntries and GoOn:
         if A:
             Abeg = ranAbyR(ibrav,A,tries+1,Ntries,ran2axis)
-            if ibrav in [11,12,13]:         #monoclinic & triclinic
+            if ibrav in [13,14,15]:         #monoclinic & triclinic
                 Abeg = ranAbyR(ibrav,A,tries/10+1,Ntries,ran2axis)
         else:
             Abeg = ranAbyV(ibrav,amin,amax,V1)
@@ -870,14 +870,14 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
             Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
-            if ibrav == 9:                          #C-centered orthorhombic
+            if ibrav in [9,10,11]:                          #C-centered orthorhombic
                 for i in range(2):
                     Abeg = rotOrthoA(Abeg[:])
                     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                     peaks = IndexPeaks(peaks,HKL)[1]
                     Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
-            elif ibrav == 11:                      #C-centered monoclinic
+            elif ibrav == 13:                      #C-centered monoclinic
                 Abeg = swapMonoA(Abeg[:])
                 Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
                 HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
@@ -898,7 +898,7 @@ def monoCellReduce(ibrav,A):
     'needs a doc string'
     a,b,c,alp,bet,gam = G2lat.A2cell(A)
     G,g = G2lat.A2Gmat(A)
-    if ibrav in [11]:
+    if ibrav in [13]:
         u = [0,0,-1]
         v = [1,0,2]
         anew = math.sqrt(np.dot(np.dot(v,g),v))
@@ -924,12 +924,13 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
     amax = 5.0*getDmax(peaks)
     dmin = getDmin(peaks)-delt
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
-        'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
+        'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
+        'Orthorhombic-B','Orthorhombic-C',
         'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic']
     tries = ['1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th']
-    N1s = [1,1,1,   5,5,  5,5, 50,50,50,50,  50,50, 200]
-    N2s = [1,1,1,   2,2,  2,2,     2,2,2,2,   2,2,   4]
-    Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,   2,2,   4]
+    N1s = [1,1,1,   5,5,  5,5, 50,50,50,50,50,50,  50,50, 200]
+    N2s = [1,1,1,   2,2,  2,2,     2,2,2,2,2,2,   2,2,   4]
+    Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,1,1,   2,2,   4]
     notUse = 0
     for peak in peaks:
         if not peak[2]:
@@ -941,7 +942,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
     print ("%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs))
     cells = []
     lastcell = np.zeros(7)
-    for ibrav in range(14):
+    for ibrav in range(16):
         begin = time.time()
         if bravais[ibrav]:
             print ('cell search for ',bravaisNames[ibrav])
@@ -982,7 +983,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                                 if 1.e6 > M20 > 1.0:    #exclude nonsense
                                     bestM20 = max(bestM20,M20)
                                     A = halfCell(ibrav,A[:],peaks)
-                                    if ibrav in [12]:
+                                    if ibrav in [14,]:
                                         A = monoCellReduce(ibrav,A[:])
                                     HKL = G2lat.GenHBravais(dmin,ibrav,A)
                                     peaks = IndexPeaks(peaks,HKL)[1]

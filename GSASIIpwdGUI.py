@@ -2670,7 +2670,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     tree item.
     '''
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-        'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
+        'P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
     IndexId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     limitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
@@ -2818,9 +2818,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
+        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','C2/m','P2/m','C1','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','C -1','P -1']
+        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','C 2/m','P 2/m','C -1','P -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
@@ -2840,7 +2840,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[9] = controls[10] = controls[11] = 90.
             if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
-        elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
+        elif controls[5] in ['Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
             controls[9] = controls[10] = controls[11] = 90.
         elif controls[5] in ['C2/m','P2/m']:
             controls[9] = controls[11] = 90.  # b unique
@@ -2857,7 +2857,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnBravais(event):
         Obj = event.GetEventObject()
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+#        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
@@ -3197,7 +3197,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 print (" %s%10.6f" % ('a =',cell[0]))
             elif ibrav in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
                 print (" %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol))
-            elif ibrav in ['P4/mmm','Fmmm','Immm','Cmmm','Pmmm']:
+            elif ibrav in ['P4/mmm','Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm']:
                 print (" %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol))
             elif ibrav in ['C2/m','P2/m']:
                 print (" %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol))
@@ -3639,18 +3639,21 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space group if missing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
+    if len(bravais) < 16:
+        bravais += [0,0,]
     SGData = ssopt.get('SGData',G2spc.SpcGroup(controls[13])[1])
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
-        'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-C',
-        'Orthorhombic-P','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic']
+        'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
+        'Orthorhombic-B','Orthorhombic-C','Orthorhombic-P',
+        'Monoclinic-C','Monoclinic-P','Triclinic','Triclinic']
     cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
     [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
-    [[7,8,9,10],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
+    [[7,8,9,10,11,12],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
         [True,True,True,False],[0,1,2,0])],
-    [[11,12],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
+    [[13,14],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[13,14],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
+    [[15,16],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
         [(10,5),(10,5),(10,5),"%.3f",(10,3),(10,3),(10,3)],
         [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
     
@@ -3896,7 +3899,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     if magcells and 'N' in Inst['Type'][0]:
         if 'N' in Inst['Type'][0]:
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-        
+        G2frame.dataWindow.CopyCell.Enable(False)
         Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1: (%s), kvec2: (%s):'%(SGData['SpGrp'],''.join(controls[14][:3]),''.join(controls[14][3:]))
         mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label),0,WACV)
         rowLabels = []

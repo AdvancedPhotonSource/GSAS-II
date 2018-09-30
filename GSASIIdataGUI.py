@@ -7991,7 +7991,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         data = G2frame.GPXtree.GetItemPyData(item)
         if not data:
             data.append([0,0.0,4,25.0,0,'P1',1.,1.,1.,90.,90.,90.,1.,'P 1']) #zero error flag, zero value, max Nc/No, start volume
-            data.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0])      #Bravais lattice flags
+            data.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])      #Bravais lattice flags
             data.append([])                                 #empty cell list
             data.append([])                                 #empty dmin
             data.append({})                                 #empty superlattice stuff

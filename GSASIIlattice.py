@@ -369,6 +369,7 @@ def FindNonstandard(Phase):
            'b':{'abc':'b','cab':'a','bca':'c','acb':'c','bac':'a','cba':'b'},
            'c':{'abc':'c','cab':'b','bca':'a','acb':'b','bac':'c','cba':'a'},
            'S':{'abc':'S','cab':'S','bca':'S','acb':'S','bac':'S','cba':'S'},
+           'I':{'abc':'I','cab':'I','bca':'I','acb':'I','bac':'I','cba':'I'},
            }
     Trans = Phase['Trans']
     Uvec = Phase['Uvec']

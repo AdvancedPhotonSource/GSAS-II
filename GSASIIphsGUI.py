@@ -5284,9 +5284,11 @@ def UpdatePhaseData(G2frame,Item,data):
                             drawAtoms.SetCellValue(r,c,parms)
                     dlg.Destroy()                    
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    dlg = wx.ColourDialog(G2frame)
+                    colors = wx.ColourData()
+                    colors.SetChooseFull(True)
+                    dlg = wx.ColourDialog(G2frame.GetParent(),colors)
                     if dlg.ShowModal() == wx.ID_OK:
-                        color = dlg.GetColourData().GetColour()
+                        color = dlg.GetColourData().GetColour()[:3]
                         attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
                         attr.SetReadOnly(True)
                         attr.SetBackgroundColour(color)
@@ -5315,9 +5317,11 @@ def UpdatePhaseData(G2frame,Item,data):
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
                     FindBondsDraw(data)
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
-                    dlg = wx.ColourDialog(G2frame)
+                    colors = wx.ColourData()
+                    colors.SetChooseFull(True)
+                    dlg = wx.ColourDialog(G2frame.GetParent(),colors)
                     if dlg.ShowModal() == wx.ID_OK:
-                        color = dlg.GetColourData().GetColour()
+                        color = dlg.GetColourData().GetColour()[:3]
                         attr = wg.GridCellAttr()                #needs to be here - gets lost if outside loop!
                         attr.SetReadOnly(True)
                         attr.SetBackgroundColour(color)
@@ -5485,10 +5489,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         break
             colors = wx.ColourData()
             colors.SetChooseFull(True)
-            dlg = wx.ColourDialog(G2frame)
+            dlg = wx.ColourDialog(None,colors)
             if dlg.ShowModal() == wx.ID_OK:
                 for i in range(len(atmColors)):                    
-                    atmColors[i] = dlg.GetColourData().GetColour()
+                    atmColors[i] = dlg.GetColourData().GetColour()[:3]
                 colorDict = dict(zip(atmTypes,atmColors))
                 for r in indx:
                     color = colorDict[atomData[r][ct]]

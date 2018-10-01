@@ -835,7 +835,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
 # A != 0 find the best A near input A,
 # A = 0 for random cell, volume normalized to V1;
 # returns number of generated hkls, M20, X20 & A for best found
-    mHKL = [3,3,3, 5,5, 5,5, 7,7,7,7, 9,9, 10]
+    mHKL = [3,3,3, 5,5, 5,5, 7,7,7,7,7,7, 9,9, 10]
     dmin = getDmin(peaks)-0.05
     amin = 2.5
     amax = 5.*getDmax(peaks)
@@ -1004,9 +1004,9 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                             cycle = 10
                             GoOn = False
                             break
-                        if ibrav < 11:
+                        if ibrav < 13:
                             V1 *= 1.1
-                        elif ibrav in range(11,14):
+                        elif ibrav in range(13,16):
                             V1 *= 1.05
                         if not GoOn:
                             if bestM20 > topM20:
@@ -1038,7 +1038,7 @@ def TestData():
     global NeedTestData
     NeedTestData = False
     global TestData
-    TestData = [12, [7.,8.70,10.86,90.,102.95,90.], [7.76006,8.706215,10.865679,90.,102.947,90.],3,
+    TestData = [14, [7.,8.70,10.86,90.,102.95,90.], [7.76006,8.706215,10.865679,90.,102.947,90.],3,
         [[2.176562137832974, 761.60902227696033, True, True, 0, 0, 1, 10.591300714328161, 10.589436], 
         [3.0477561489789498, 4087.2956049071572, True, True, 1, 0, 0, 7.564238997554908, 7.562777], 
         [3.3254921120068524, 1707.0253890991009, True, True, 1, 0, -1, 6.932650301411212, 6.932718], 
@@ -1069,7 +1069,7 @@ def TestData():
         [7.4121734953058924, 482.84120827021826, True, True, 2, 1, 1, 3.1120858221599876, 3.112308]]
         ]
     global TestData2
-    TestData2 = [12, [0.15336547830008007, 0.017345499139401827, 0.008122368657493792, 0, 0.02893538955687591, 0], 3,
+    TestData2 = [14, [0.15336547830008007, 0.017345499139401827, 0.008122368657493792, 0, 0.02893538955687591, 0], 3,
         [[2.176562137832974, 761.6090222769603, True, True, 0, 0, 1, 10.591300714328161, 11.095801], 
         [3.0477561489789498, 4087.295604907157, True, True, 0, 1, 0, 7.564238997554908, 7.592881], 
         [3.3254921120068524, 1707.025389099101, True, False, 0, 0, 0, 6.932650301411212, 0.0], 

@@ -484,7 +484,7 @@ def GetUnique(Phase,atCodes):
             return False
         return True
 
-    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    cx,ct = Phase['General']['AtomPtrs'][:2]
     SGData = Phase['General']['SGData']
     Atoms = Phase['Atoms']
     Ind = len(Atoms)

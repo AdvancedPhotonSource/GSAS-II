@@ -6026,7 +6026,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
             ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
             ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
-            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=1.0)
+            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             ZstepSizer.Add(Zstep,0,WACV)
             slideSizer.Add(ZstepSizer)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)

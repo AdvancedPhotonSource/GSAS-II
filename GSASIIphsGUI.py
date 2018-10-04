@@ -589,7 +589,7 @@ class TransformDialog(wx.Dialog):
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
-    def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifDelete=False):
+    def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifOK=False,ifDelete=False):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
@@ -597,6 +597,7 @@ class UseMagAtomDialog(wx.Dialog):
         self.Atoms = Atoms
         self.atCodes = atCodes
         self.atMxyz = atMxyz
+        self.ifOK = ifOK
         self.ifDelete = ifDelete
         self.Use = len(self.Atoms)*[True,]
         self.Draw()
@@ -632,21 +633,26 @@ class UseMagAtomDialog(wx.Dialog):
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
         
-        YesBtn = wx.Button(self.panel,-1,"Yes")
-        YesBtn.Bind(wx.EVT_BUTTON, self.OnYes)
-        NoBtn = wx.Button(self.panel,-1,"No")
-        NoBtn.Bind(wx.EVT_BUTTON, self.OnNo)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(YesBtn)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(NoBtn)
-        if self.ifDelete:
-            DeleteBtn = wx.Button(self.panel,-1,"Delete")
-            DeleteBtn.Bind(wx.EVT_BUTTON, self.OnDelete)
+        if self.ifOK:
+            OKBtn = wx.Button(self.panel,-1,"OK")
+            OKBtn.Bind(wx.EVT_BUTTON, self.OnNo)
+            btnSizer.Add(OKBtn)            
+        else:
+            YesBtn = wx.Button(self.panel,-1,"Yes")
+            YesBtn.Bind(wx.EVT_BUTTON, self.OnYes)
+            NoBtn = wx.Button(self.panel,-1,"No")
+            NoBtn.Bind(wx.EVT_BUTTON, self.OnNo)
             btnSizer.Add((20,20),1)
-            btnSizer.Add(DeleteBtn)
-        btnSizer.Add((20,20),1)
+            btnSizer.Add(YesBtn)
+            btnSizer.Add((20,20),1)
+            btnSizer.Add(NoBtn)
+            if self.ifDelete:
+                DeleteBtn = wx.Button(self.panel,-1,"Delete")
+                DeleteBtn.Bind(wx.EVT_BUTTON, self.OnDelete)
+                btnSizer.Add((20,20),1)
+                btnSizer.Add(DeleteBtn)
+            btnSizer.Add((20,20),1)
         
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)

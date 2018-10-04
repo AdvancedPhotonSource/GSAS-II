@@ -275,6 +275,27 @@ def TransformXYZ(XYZ,Trans,Vec):
 def TransformU6(U6,Trans):
     Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans).T)/nl.det(Trans)
     return UijtoU6(Uij)
+
+def ExpandCell(Atoms,atCodes,cx,Trans):
+    Unit =[int(max(abs(np.array(unit)))-1) for unit in Trans.T]
+    for i,unit in enumerate(Unit):
+        if unit > 0:
+            for j in range(unit):
+                moreAtoms = copy.deepcopy(Atoms)
+                moreCodes = []
+                for atom,code in zip(moreAtoms,atCodes):
+                    atom[cx+i] += 1.
+                    if '+' in code:
+                        cell = list(eval(code.split('+')[1]))
+                        ops = code.split('+')[0]
+                    else:
+                        cell = [0,0,0]
+                        ops = code
+                    cell[i] += 1
+                    moreCodes.append('%s+%d,%d,%d'%(ops,cell[0],cell[1],cell[2])) 
+                Atoms += moreAtoms
+                atCodes += moreCodes
+    return Atoms,atCodes
     
 def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     '''Transform atoms from oldPhase to newPhase
@@ -302,24 +323,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms,atCodes = FillUnitCell(oldPhase)
-    Unit =[abs(int(max(unit))-1) for unit in Trans.T]
-    for i,unit in enumerate(Unit):
-        if unit > 0:
-            for j in range(unit):
-                moreAtoms = copy.deepcopy(newAtoms)
-                moreCodes = []
-                for atom,code in zip(moreAtoms,atCodes):
-                    atom[cx+i] += 1.
-                    if '+' in code:
-                        cell = list(eval(code.split('+')[1]))
-                        ops = code.split('+')[0]
-                    else:
-                        cell = [0,0,0]
-                        ops = code
-                    cell[i] += 1
-                    moreCodes.append('%s+%d,%d,%d'%(ops,cell[0],cell[1],cell[2])) 
-                newAtoms += moreAtoms
-                atCodes += moreCodes
+    newAtoms,atCodes = ExpandCell(newAtoms,atCodes,cx,Trans)
     if ifMag:
         cia += 3
         cs += 3

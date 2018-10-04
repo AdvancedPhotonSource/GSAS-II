@@ -174,7 +174,6 @@ def UpdateConstraints(G2frame,data):
     badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
     globalList = list(rbDict.keys())
     globalList.sort()
-    globalList = G2obj.removeNonRefined(globalList)   # remove any non-refinable prms from list
     try:
         AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
     except KeyError:
@@ -203,7 +202,6 @@ def UpdateConstraints(G2frame,data):
         else:
             phaseAtNames[item] = ''
             phaseAtTypes[item] = ''
-    phaseList = G2obj.removeNonRefined(phaseList)  # remove any non-refinable prms from list
              
     # create a list of the hist*phase variables
     seqList = G2frame.testSeqRefineMode()
@@ -222,7 +220,6 @@ def UpdateConstraints(G2frame,data):
             sj = ':'.join(s)
             if sj not in wildList: wildList.append(sj)
         hapList = wildList
-    hapList = G2obj.removeNonRefined(hapList)  # remove any non-refinable prms from list
     histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
     histList = list(histDict.keys())
     histList.sort()
@@ -234,8 +231,7 @@ def UpdateConstraints(G2frame,data):
             s[1] = '*'
             sj = ':'.join(s)
             if sj not in wildList: wildList.append(sj)
-        histList = wildList
-    histList = G2obj.removeNonRefined(histList)  # remove any non-refinable prms from list
+        histList = wildList        
     Indx = {}
     G2frame.Page = [0,'phs']
         
@@ -590,19 +586,20 @@ def UpdateConstraints(G2frame,data):
         'Decode page reference'
         if page[1] == "phs":
             vartype = "phase"
-            varList = phaseList
+            varList = G2obj.removeNonRefined(phaseList)  # remove any non-refinable prms from list
             constrDictEnt = 'Phase'
         elif page[1] == "hap":
             vartype = "Histogram*Phase"
-            varList = hapList
+            varList = G2obj.removeNonRefined(hapList)  # remove any non-refinable prms from list
             constrDictEnt = 'HAP'
         elif page[1] == "hst":
             vartype = "Histogram"
-            varList = histList
+            varList = G2obj.removeNonRefined(histList)  # remove any non-refinable prms from list
             constrDictEnt = 'Hist'
         elif page[1] == "glb":
             vartype = "Global"
-            varList = globalList
+            varList = G2obj.removeNonRefined(globalList)   # remove any non-refinable prms from list
+
             constrDictEnt = 'Global'
         elif page[1] == "sym":
             return None,None,None

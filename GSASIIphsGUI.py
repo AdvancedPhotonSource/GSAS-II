@@ -2509,7 +2509,7 @@ def UpdatePhaseData(G2frame,Item,data):
         PatternName = data['magPhases']
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
-        UCdata = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
         magData = UCdata[5]
         magKeep = []
         magIds = []

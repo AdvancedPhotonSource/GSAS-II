@@ -1023,7 +1023,9 @@ def GetSymEquiv():
         for i,mv in enumerate(mapvars):
             if not symFlag: continue
             if multarr is None:
-                s1 = str(mv) + ' = '
+                #s1 = str(mv) + ' = '
+                s1 = ''
+                s2 = ' = ' + str(mv)
                 j = 0
                 for v,m in zip(varlist,invmultarr):
                     if debug: print ('v,m[0]: ',v,m[0])
@@ -1033,7 +1035,7 @@ def GetSymEquiv():
                     s1 += str(v)
                     if m != 1:
                         s1 += " / " + str(m[0])
-                    symout.append(s1)
+                    symout.append(s1+s2)
                 continue
             else:
                 s = '  %s = ' % mv

@@ -944,18 +944,27 @@ def UpdateConstraints(G2frame,data):
                     eqString[-1] += ' = '+str(item[-3])
                 elif item[-1] == 'e':
                     helptext = "The following variables are set to be equivalent, noting multipliers:"
-                    for term in item[:-3]:
+                    normval = item[:-3][1][0]
+                    for i,term in enumerate(item[:-3]):
                         var = str(term[1])
                         if term[0] == 0: term[0] = 1.0
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
-                        if eqString[-1] == '':
-                            eqString[-1] += var+' '
-                            first = term[0]
+                        if i == 0: # move independent variable to end
+                            indepterm = term
+                            continue
+                        elif eqString[-1] != '':
+                            eqString[-1] += ' = '
+                        if normval/term[0] == 1:
+                            eqString[-1] += '%s'% var
                         else:
-                            eqString[-1] += ' = %.3f*%s '%(first/term[0],var)
+                            eqString[-1] += '%.3f*%s'%(normval/term[0],var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
+                    if normval/indepterm[0] == 1:
+                        eqString[-1] += ' = %s'% str(indepterm[1])
+                    else:
+                        eqString[-1] += ' = %.3f*%s'%(normval/indepterm[0],str(indepterm[1]))
                     typeString = 'EQUIV'
                 else:
                     print ('Unexpected constraint'+item)

@@ -3368,6 +3368,45 @@ def UpdateUnitCellsGrid(G2frame, data):
                 gridDisplay.ForceRefresh()
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
+    KeyList = []
+    def ClearCurrentShowNext():
+        KeepShowNext(False)
+    KeyList += [['j',ClearCurrentShowNext,'Show next Mag. Spc. Group, clear keep flag on current']]        
+    def KeepCurrentShowNext():
+        KeepShowNext(True)
+    KeyList += [['k',KeepCurrentShowNext,'Show next Mag. Spc. Group, keep current']]        
+    def KeepShowNext(KeepCurrent=True):
+        '''Show next "keep" item in Magnetic Space Group list, possibly resetting the 
+        keep flag for the current displayed cell
+        '''
+        for i in range(len(magcells)): # find plotted setting
+            if magcells[i]['Use']: break
+        else:
+            return # no Try is set
+        if not KeepCurrent:  # clear current
+            magcells[i]['Keep'] = False
+            MagCellsTable.SetValue(i,2,False)
+        keeps = [j for j in range(i+1,len(magcells)) if magcells[j]['Keep']]
+        if not keeps:
+            if not KeepCurrent: magDisplay.ForceRefresh()
+            return # no remaining Keep-flagged entries
+        next = keeps[0]
+        # update table
+        magcells[i]['Use'] = False
+        MagCellsTable.SetValue(i,1,False)
+        magcells[next]['Use'] = True
+        MagCellsTable.SetValue(next,1,True)
+        # get SG info and plot
+        SGData = magcells[next]['SGData']
+        A = G2lat.cell2A(magcells[next]['Cell'][:6])  
+        G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
+        G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
+        magDisplay.ForceRefresh()
+        # change Scroll to display new setting
+        xscroll = G2frame.dataWindow.GetScrollPos(wx.HORIZONTAL)
+        yscroll = magDisplay.CellToRect(next,1)[1]/G2frame.dataWindow.GetScrollPixelsPerUnit()[1]
+        G2frame.dataWindow.Scroll(xscroll,yscroll)
+        
     def RefreshMagCellsGrid(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         r,c =  event.GetRow(),event.GetCol()
@@ -3393,7 +3432,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 mSGData = magcells[r]['SGData']
                 A = G2lat.cell2A(magcells[r]['Cell'][:6])  
                 G2frame.HKL = G2pwd.getHKLpeak(1.0,mSGData,A,Inst)
-                G2plt.PlotPatterns(G2frame)
+                G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
             elif c == 2:
                 if MagCellsTable.GetValue(r,c):
                     MagCellsTable.SetValue(r,c,False)
@@ -3660,7 +3699,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  
             G2frame.HKL = G2pwd.getHKLpeak(1.0,SGData,A,Inst)
-            G2plt.PlotPatterns(G2frame)
+            G2plt.PlotPatterns(G2frame,extraKeys=KeyList)
         data = [controls,bravais,cells,dmin,ssopt,magcells]
         G2frame.GPXtree.SetItemPyData(pUCid,data)
         G2frame.OnFileSave(event)
@@ -3945,7 +3984,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'N' in Inst['Type'][0]:
             G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.CopyCell.Enable(False)
-        Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1: (%s), kvec2: (%s):'%(controls[13],''.join(controls[14][:3]),''.join(controls[14][3:]))
+        Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],''.join(controls[14][:3]))
+        kvec2 = ''.join(controls[14][3:])
+        if kvec2.strip():
+            Label += ', kvec2=(%s)' % kvec2
+        Label += ':'
         mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label),0,WACV)
         rowLabels = []
         for i in range(len(magcells)): rowLabels.append(str(i+1))

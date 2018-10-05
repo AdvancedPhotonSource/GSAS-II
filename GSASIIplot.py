@@ -1583,7 +1583,8 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     G2frame.HKL = [] # TODO
     PlotPatterns(G2frame,newPlot,plotType)
 
-def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
+def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
+                     extraKeys=[]):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
@@ -1803,11 +1804,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             else:
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
+        elif event.key in [KeyItem[0] for KeyItem in extraKeys]:
+            for KeyItem in extraKeys:
+                if event.key == KeyItem[0]:
+                    KeyItem[1]()
+                    break
         else:
-#            print 'no binding for key',event.key
+            print('no binding for key',event.key)
             #GSASIIpath.IPyBreak()
             return
-        wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype)
+        wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -2050,7 +2056,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 data['peaks'].append(XY)
                 data['sigDict'] = {}    #now invalid
                 G2pdG.UpdatePeakGrid(G2frame,data)
-                PlotPatterns(G2frame,plotType=plottype)
+                PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a peak list line
                 # prepare to animate move of line
                 G2frame.itemPicked = pick
@@ -2082,7 +2088,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                         data[1][1] = max(xy[0],data[1][0])
                 G2frame.GPXtree.SetItemPyData(LimitId,data)
                 G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
-                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a limit line
                 # prepare to animate move of line
                 G2frame.itemPicked = pick
@@ -2103,7 +2109,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                 if mouse.button==3:
                     data[1][1] = max(xy[0],data[1][0])
                 G2frame.GPXtree.SetItemPyData(LimitId,data)
-                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
         elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
@@ -2167,7 +2173,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                     pick.set_marker('D') # put it back
                 elif mode == 'Del':
                     del backDict['FixedPoints'][G2frame.fixPtMarker]
-                    wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                    wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return
                 
     def OnRelease(event):
@@ -2182,7 +2188,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
         if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
-            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if not G2frame.PickId:
             return
@@ -2191,7 +2197,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
         if G2frame.GPXtree.GetItemText(PickId) == 'Background' and event.xdata:
             if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
                 # after any mouse release event (could be a zoom), redraw magnification lines
-                if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return 
             # Background page, deal with fixed background points
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
@@ -2226,19 +2232,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             elif G2frame.itemPicked is not None: # end of drag in move
                 backDict['FixedPoints'][G2frame.fixPtMarker] = xy
                 G2frame.itemPicked = None
-                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
                 return
         
         if G2frame.itemPicked is None:
             # after any mouse release event (could be a zoom), redraw magnification lines
-            if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
             data = G2frame.GPXtree.GetItemPyData(PickId)
             ypos = event.ydata
             Page.plotStyle['delOffset'] = -ypos
             G2frame.itemPicked = None
-            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         elif G2frame.itemPicked in G2frame.MagLines: # drag of magnification marker
             xpos = event.xdata
@@ -2325,7 +2331,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
                             Page.plotStyle['refDelt'] = -(event.ydata-Page.plotStyle['refOffset'])/num
                         else:       #1st row of refl ticks
                             Page.plotStyle['refOffset'] = event.ydata
-        PlotPatterns(G2frame,plotType=plottype)
+        PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
         G2frame.itemPicked = None
         
     #=====================================================================================
@@ -2338,11 +2344,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
             G2frame.ErrorBars = True
         newPlot = True
         G2frame.Cmax = 1.0
-        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+#        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
+        Page.bindings = []
+    # redo OnPlotKeyPress binding each time the Plot is updated
+    # since needs values that may have been changed after 1st call
+    for b in Page.bindings:
+        Page.canvas.mpl_disconnect(b)
+    Page.bindings = []
+    Page.bindings.append(
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+    )
     if 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         refColors=['b','r','c','g','m','k']
@@ -2413,6 +2428,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None):
     if 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
         Page.Choice = Page.Choice + ('a: add magnification region',)
+    for KeyItem in extraKeys:
+        Page.Choice = Page.Choice + (KeyItem[0] + ': '+KeyItem[2],)
     magLineList = [] # null value indicates no magnification
     Page.toolbar.updateActions = None # no update actions
     G2frame.cid = None

@@ -5078,6 +5078,9 @@ tutorialIndex = (
     ['Magnetic-IV', 'Magnetic-IV.htm',"Magnetic Structure Analysis-IV",
      '''Analysis of a Type IV antiferromagnet with a lattice centering change using Bilbao k-SUBGROUPSMAG from CW neutron powder data'''],
          
+    ['Magnetic-V', 'Magnetic-V.htm',"Magnetic Structure Analysis-V",
+     '''Analysis of a complex Type IV antiferromagnet with two propagation vectorse using Bilbao k-SUBGROUPSMAG from TOF neutron powder data'''],
+         
     ['Parametric sequential fitting'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets',
      '''This shows the fitting of a structural model to multiple data sets collected as a function of temperature (7-300K). 

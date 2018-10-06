@@ -689,10 +689,11 @@ def ImageCalibrate(G2frame,data):
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
             hkl = G2pwd.getHKLpeak(dmin,SGData,A)
-            HKL += hkl
+            print(hkl)
+            HKL += list(hkl)
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
-            HKL += hkl
+            HKL += list(hkl)
     HKL = G2lat.sortHKLd(HKL,True,False)[skip:]
 #set up 1st ring
     elcent,phi,radii = ellipse              #from fit of 1st ring

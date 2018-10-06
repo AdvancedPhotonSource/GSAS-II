@@ -312,6 +312,9 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     :param ifMag: bool True if convert to magnetic phase; 
         if True all nonmagnetic atoms will be removed
         
+    :return: newPhase dict modified G2 phase info
+    :return: atCodes list atom transformation codes
+        
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
@@ -359,8 +362,15 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     newPhase['ranId'] = ran.randint(0,sys.maxsize)
     return newPhase,atCodes
     
-def FindNonstandard(Phase):
-    'This makes occasional mistakes!'
+def FindNonstandard(controls,Phase):
+    '''
+    Find nonstandard setting of magnetic cell that aligns with parent nuclear cell
+    
+    :param controls: list unit cell indexing controls
+    :param Phase: dict new magnetic phase data (NB:not G2 phase construction); modified here
+    :return: None
+        
+    '''
     abc = np.eye(3)
     cba = np.rot90(np.eye(3))
     cba[1,1] *= -1      #makes c-ba
@@ -409,8 +419,30 @@ def FindNonstandard(Phase):
             Nresult = [''.join(NSG)+'  ',Bns]
             return Nresult,Uvec,NTrans
         else:
-            Nresult = [SpGrp,'']
             return None
+    elif 'mono' in SGData['SGSys']:
+        return None         #temp. disable
+        newcell = TransformCell(controls[6:12],Trans)
+        MatsA = np.array([[1.,0.,0.],[0.,1.,0.],[1.,0,1.]])
+        MatsB = np.array([[1.,0.,0.],[0.,1.,0.],[-1.,0,1.]])
+        if not 70. < newcell[4] < 110.:
+            MSG[1] = MSG[1].replace('c','n')
+            MSG[0] = MSG[0].replace('C_c','C_B').replace('P_A','P_I')
+            if '_' in MSG[0]:
+                bns = MSG[0][2]
+            Nresult = [' '.join(MSG)+'  ',bns]
+            if newcell[4] > 110.:
+                if newcell[2] > newcell[0]:
+                    Mats = MatsA
+                else:
+                    Mats = MatsA.T
+            elif newcell[4] < 70.:
+                if newcell[2] > newcell[0]:
+                    Mats = MatsB
+                else:
+                    Mats = MatsB.T
+            NTrans = np.inner(Mats,Trans.T)
+            return Nresult,Uvec,NTrans
     return None
         
 def makeBilbaoPhase(result,uvec,trans):

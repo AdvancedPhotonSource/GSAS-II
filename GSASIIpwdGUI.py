@@ -3600,7 +3600,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         phase['Keep'] = False
         if not magAtms:
             phase['Keep'] = True
-            return
+            return []
         invTrans = nl.inv(Trans)
         atCodes = []
         Phase = {'General':{'AtomPtrs':[2,1],'SGData':copy.deepcopy(phase['SGData'])},'Atoms':[]}
@@ -3684,7 +3684,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 
                 RVT = None
                 if keepaxes:
-                    RVT = G2lat.FindNonstandard(phase)
+                    RVT = G2lat.FindNonstandard(controls,phase)
                 if RVT is not None:
                     result,Uvec,Trans = RVT
                 phase = G2lat.makeBilbaoPhase(result,Uvec,Trans)

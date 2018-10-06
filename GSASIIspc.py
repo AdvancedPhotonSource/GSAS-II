@@ -775,7 +775,7 @@ def GetGenSym(SGData):
             if SGData['SGUniq'] == 'a':
                 BNSsym.update({'P_B':[.5,0,.5],'P_C':[.5,.5,0]})
             elif SGData['SGUniq'] == 'b':
-                BNSsym.update({'P_A':[.5,.5,0],'P_C':[0,.5,.5]})
+                BNSsym.update({'P_A':[.5,.5,0],'P_C':[0,.5,.5],'P_I':[.5,.5,.5]})
             elif SGData['SGUniq'] == 'c':
                 BNSsym.update({'P_A':[0,.5,.5],'P_B':[.5,0,.5]})
         elif SGData['SGSys'] == 'orthorhombic':
@@ -820,7 +820,7 @@ def GetGenSym(SGData):
             if SGData['SGUniq'] == 'a':
                 BNSsym.update({'C_b':[0,.5,.0],'C_c':[0,0,.5]})
             elif SGData['SGUniq'] == 'b':
-                BNSsym.update({'C_a':[.5,0,0],'C_c':[0,0,.5]})
+                BNSsym.update({'C_a':[.5,0,0],'C_c':[0,0,.5],'C_B':[.5,0.,.5]})
         elif SGData['SGSys'] == 'orthorhombic':
             BNSsym = {'C_a':[.5,0,0],'C_b':[0,.5,0],'C_c':[0,0,.5],
                 'C_A':[0,.5,.5],'C_B':[.5,0,.5]}      

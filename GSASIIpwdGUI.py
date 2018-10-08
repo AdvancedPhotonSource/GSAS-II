@@ -4004,7 +4004,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             row = [phase['Name'],phase['Use'],phase['Keep'],natms,trans,vec]+cell
             table.append(row)
         MagCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        G2frame.GetStatusBar().SetStatusText('Double click Keep to refresh Keep flags; click Space Gp to see sym. ops., Uniq to see unique atoms list',1)
+        G2frame.GetStatusBar().SetStatusText(
+                'Double click Keep to refresh Keep flags; click Space Gp to see sym. ops., Uniq to see unique atoms list; Try to trigger K & J keys on plot',1)
         magDisplay = G2G.GSGrid(G2frame.dataWindow)
         magDisplay.SetTable(MagCellsTable, True)
         magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)

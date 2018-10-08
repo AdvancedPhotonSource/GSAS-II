@@ -420,8 +420,8 @@ def FindNonstandard(controls,Phase):
             return Nresult,Uvec,NTrans
         else:
             return None
-    elif 'mono' in SGData['SGSys']:
-        return None         #temp. disable
+    elif 'mono' in SGData['SGSys'] and not 'P_A' in Phase['Name']:  #skip the one that doesn't work
+#        return None         #temp. disable
         newcell = TransformCell(controls[6:12],Trans)
         MatsA = np.array([[1.,0.,0.],[0.,1.,0.],[1.,0,1.]])
         MatsB = np.array([[1.,0.,0.],[0.,1.,0.],[-1.,0,1.]])

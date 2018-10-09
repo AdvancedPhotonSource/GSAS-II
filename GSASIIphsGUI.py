@@ -1615,7 +1615,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 TabSelectionIdDict[Id] = 'Wave Data'
                         Atoms = data['Atoms']
                         for atom in Atoms:
-                            atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
+                            atom += [{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
                         wx.CallAfter(UpdateGeneral)
                     else:
                         G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')

@@ -435,14 +435,17 @@ def FindNonstandard(controls,Phase):
                 if newcell[2] > newcell[0]:
                     Mats = MatsA
                 else:
+                    MSG[1] = MSG[1].replace('n','c')
+                    MSG[0] = MSG[0].replace('C ','I ')
                     Mats = MatsA.T
             elif newcell[4] < 70.:
                 if newcell[2] > newcell[0]:
                     Mats = MatsB
                 else:
+                    MSG[1] = MSG[1].replace('n','c')
                     MSG[0] = MSG[0].replace('C ','I ')
                     Mats = MatsB.T
-            Nresult = [' '.join(MSG)+'  ',bns]
+            Nresult = [' '.join(MSG)+' ',bns]
             NTrans = np.inner(Mats,Trans.T)
             return Nresult,Uvec,NTrans
     return None

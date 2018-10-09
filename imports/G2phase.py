@@ -582,8 +582,6 @@ class JANA_ReaderClass(G2obj.ImportPhase):
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
             Atom += Uij
             Atom.append(ran.randint(0,sys.maxsize))
-            Atom.append([])
-            Atom.append([])
             Atom.append({'SS1':{'Sfrac':[waveType,]+Sfrac,'Spos':[waveType,]+Spos,'Sadp':['Fourier',]+Sadp,'Smag':['Fourier',]+Smag}})    #SS2 is for (3+2), etc.
             Atoms.append(Atom)
         file2.close()

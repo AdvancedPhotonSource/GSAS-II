@@ -1305,8 +1305,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 generalData['4DmapData'].update({'MapType':'Fobs'})
             atomData = data['Atoms']
             for atom in atomData:
-                if 'SS1' not in atom:
-                    atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
+#                if 'SS1' not in atom:
+#                    atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
                 if 'waveType' in atom[-1]['SS1']:
                     waveType = atom[-1]['SS1']['waveType']
                     for parm in ['Sfrac','Spos','Sadp','Smag']:

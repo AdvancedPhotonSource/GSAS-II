@@ -389,6 +389,7 @@ def FindNonstandard(controls,Phase):
     Uvec = Phase['Uvec']
     SGData = Phase['SGData']
     MSG = SGData['MagSpGrp'].split(' ',1)
+    MSG[0] += ' '
     bns = ''
     if '_' in MSG[0]:
         bns = MSG[0][2]
@@ -430,7 +431,6 @@ def FindNonstandard(controls,Phase):
             MSG[0] = MSG[0].replace('C_c','C_B').replace('P_A','P_I')
             if '_' in MSG[0]:
                 bns = MSG[0][2]
-            Nresult = [' '.join(MSG)+'  ',bns]
             if newcell[4] > 110.:
                 if newcell[2] > newcell[0]:
                     Mats = MatsA
@@ -440,7 +440,9 @@ def FindNonstandard(controls,Phase):
                 if newcell[2] > newcell[0]:
                     Mats = MatsB
                 else:
+                    MSG[0] = MSG[0].replace('C ','I ')
                     Mats = MatsB.T
+            Nresult = [' '.join(MSG)+'  ',bns]
             NTrans = np.inner(Mats,Trans.T)
             return Nresult,Uvec,NTrans
     return None

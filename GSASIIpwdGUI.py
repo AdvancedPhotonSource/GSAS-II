@@ -3632,30 +3632,31 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
         testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
-        kvec = ['0','0','0',' ',' ',' ']
+        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ']
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
             prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.', \
-                     ' Use whole star',' Landau transition',' Give intermediate cells','preserve axes', \
+                     ' kx3 as fr.',' ky3 as fr.',' kz3 as fr.', \
+                     ' Use whole star',' Landau transition',' Only maximal subgroups','preserve axes', \
                      'test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,False,False,True,'',False,100],
-            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,[True,False],[True,False],[True,False],
+            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],
                 [True,False],testAtoms,[True,False],[1,100]],
-            formats=['choice','choice','choice','choice','choice','choice','bool','bool',
+            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','bool',
                     'bool','bool','choice','bool','%d',])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
-            kvec = newVals[:6]
-            star = newVals[6]
-            Landau = newVals[7]
-            intermed = newVals[8]
-            keepaxes = newVals[9]
-            atype = newVals[10]
-            allmom = newVals[11]
-            maxequiv = newVals[12]
+            kvec = newVals[:9]
+            star = newVals[9]
+            Landau = newVals[10]
+            maximal = newVals[11]
+            keepaxes = newVals[12]
+            atype = newVals[13]
+            allmom = newVals[14]
+            maxequiv = newVals[15]
             magAtms = [atom for atom in controls[15] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
@@ -3664,7 +3665,7 @@ def UpdateUnitCellsGrid(G2frame, data):
       Annu. Rev. Mater. Res. 2015. 45,217-48.
       doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
             
-            MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,intermed)
+            MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,maximal)
             wx.EndBusyCursor()
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
@@ -5519,7 +5520,6 @@ def UpdateREFDModelsGrid(G2frame,data):
             data['2% weight'] = weight.GetValue()
             
         def OnSLDplot(event):
-            sld.SetValue(False)
             x,xr,y = G2pwd.makeSLDprofile(data,Substances)
             ModelPlot(data,x,xr,y)
             
@@ -5572,8 +5572,8 @@ def UpdateREFDModelsGrid(G2frame,data):
         controlSizer.Add(minimiz,0,WACV)
         plotSizer = wx.BoxSizer(wx.HORIZONTAL)
         plotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Plot controls: '),0,WACV)
-        sld = wx.CheckBox(G2frame.dataWindow,label='Plot SLD?')
-        sld.Bind(wx.EVT_CHECKBOX, OnSLDplot)
+        sld = wx.Button(G2frame.dataWindow,label='Plot SLD?')
+        sld.Bind(wx.EVT_BUTTON, OnSLDplot)
         plotSizer.Add(sld,0,WACV)
         plotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Zero position location: '),0,WACV)
         poslist = ['Top','Bottom']

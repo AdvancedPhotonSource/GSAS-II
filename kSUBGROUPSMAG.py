@@ -87,7 +87,7 @@ class TableParser(HTML.HTMLParser):
         elif tag == 'sub':
             self.in_sub = False
             
-def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,intermed=False):
+def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's k-Subgroupsmag for a non-standard space group. 
     This requires doing a post to the Bilboa site, which returns all
     magnetic subgroups of the entered subgroup as the text of a web page 
@@ -114,11 +114,12 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,intermed=False):
     if landau:
         land = 'yes'
     celtodas = 'no'
-    if intermed:
-        celtodas = 'yes'
+    limite = 'spgroup'
+    if maximal:
+        limite = 'maximal'
     postdict = {'centrosymmetry':'0','crystalsystem':'0','landau':land,
                'eleccion':'subgrmag1_k','inicio':'nostandard','celtodas':celtodas,
-               'limite':'spgroup','list':'Submit','listado':'lista','starmagnetica':starmag,
+               'limite':limite,'list':'Submit','listado':'lista','starmagnetica':starmag,
                'pointgroup':'0','polarity':'0','sub':'1.1',
                'super':'','tipog':'gmag','wyckoffstrain':''}
     text,table = G2spc.SGPrint(SGData)
@@ -132,7 +133,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,intermed=False):
         #if sym: sym += ' ' # use this for testing to generate an error in place of previous
         sym += i.lower()
     postdict['generators'] = sym
-    for j in [1,2]:
+    for j in [1,2,3]:
         if kvec[3*j-3] == ' ':
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):

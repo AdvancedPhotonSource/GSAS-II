@@ -3632,31 +3632,48 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
         testAtoms = ['',]+list(set([atom[1] for atom in controls[15]]))
-        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ']
+        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ',' ']
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',
             prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.', \
                      ' kx3 as fr.',' ky3 as fr.',' kz3 as fr.', \
-                     ' Use whole star',' Landau transition',' Only maximal subgroups','preserve axes', \
+                     ' Use whole star',' Filter by','preserve axes', \
                      'test for mag. atoms','all have moment','max unique'],
-            values=kvec+[False,False,False,True,'',False,100],
-            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,Kx,Ky,Kz,[True,False],[True,False],[True,False],
+            values=kvec[:9]+[False,'',True,'',False,100],
+            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,Kx,Ky,Kz,[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],testAtoms,[True,False],[1,100]],
-            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','bool',
-                    'bool','bool','choice','bool','%d',])
+            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','choice',
+                    'bool','choice','bool','%d',])
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
-            kvec = newVals[:9]
+            kvec[:9] = newVals[:9]
+            nkvec = kvec.index(' ')
             star = newVals[9]
-            Landau = newVals[10]
-            maximal = newVals[11]
-            keepaxes = newVals[12]
-            atype = newVals[13]
-            allmom = newVals[14]
-            maxequiv = newVals[15]
+            filterby = newVals[10]
+            keepaxes = newVals[11]
+            atype = newVals[12]
+            allmom = newVals[13]
+            maxequiv = newVals[14]
+            if 'maximal' in filterby:
+                maximal = True
+                Landau = False
+            elif 'Landau' in filterby:
+                maximal = False
+                Landau = True
+            else:
+                maximal = False
+                Landau = False            
+            if nkvec not in [0,3,6,9]:
+                wx.MessageBox('Error: check your propagation vector(s)',
+                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+                return
+            if nkvec in [6,9] and Landau:
+                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                    caption='Bilbao k-SUBGROUPSMAG setup error',style=wx.ICON_EXCLAMATION)
+                return
             magAtms = [atom for atom in controls[15] if atom[1] == atype]
             wx.BeginBusyCursor()
             wx.MessageBox(''' For use of k-SUBGROUPSMAG, please cite:
@@ -3665,16 +3682,20 @@ def UpdateUnitCellsGrid(G2frame, data):
       Annu. Rev. Mater. Res. 2015. 45,217-48.
       doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
             
-            MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec,star,Landau,maximal)
+            MAXMAGN = kMAG.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau,maximal)
             wx.EndBusyCursor()
             if MAXMAGN is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
             if not MAXMAGN:
-                wx.MessageBox('No results from k-SUBGROUPSMAG, check your propagation vector(s)',
-                    caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
+                if Landau:
+                    wx.MessageBox('No results from k-SUBGROUPSMAG, multi k-vectors & Landau not compatible',
+                        caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
+                else:
+                    wx.MessageBox('No results from k-SUBGROUPSMAG, check your propagation vector(s)',
+                        caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
-            controls[14] = kvec
+            controls[14] = kvec[:9]
             for result in MAXMAGN:
                 if result[0].strip().endswith("1'"):    #skip gray groups
                     continue

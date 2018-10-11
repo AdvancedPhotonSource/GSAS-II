@@ -19,15 +19,18 @@ import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
+
+asind = lambda x: 180.*np.arcsin(x)/np.pi
+
 GSASIIpath.SetVersionNumber("$Revision$")
 class xye_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a .xye/.chi file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.xye','.chi',),
+            extensionlist=('.xye','.chi','.qchi',),
             strictExtension=False,
             formatName = 'Topas xye or 2th Fit2D chi',
-            longFormatName = 'Topas .xye or 2th Fit2D .chi powder data file'
+            longFormatName = 'Topas .xye or 2th Fit2D .chi/.qchi powder data file'
             )
         self.scriptable = True
 
@@ -38,19 +41,37 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         begin = True
         self.GSAS = False
         self.Chi = False
+        Qchi = False
+        self.Wave = None
         fp = open(filename,'r')
         if '.chi' in filename:
             self.Chi = True
+        if '.qchi' in filename:
+            Qchi = True
         if2theta = False
+        ifQ = False
         for i,S in enumerate(fp):
             if not S:
                 break
             if i > 1000: break
             if begin:
-                if self.Chi:
+                if self.Chi or Qchi:
                     if i < 4:
                         if  '2-theta' in S.lower():
                             if2theta = True
+                        elif  'q ' in S.lower():
+                            ifQ = True
+                            wave = ''
+                            wave = S.split()[1:]
+                            if wave: 
+                                try:
+                                    self.Wave = float(wave[0])
+                                except:
+                                    pass
+                            if not self.Wave:
+                                self.errors = 'No wavelength in a Q chi file'
+                                fp.close()
+                                return False
                         continue
                     else:
                         begin = False
@@ -68,7 +89,9 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         begin = False
                 # valid line to read? 
             #vals = S.split()
-            if not if2theta:
+            if ifQ:
+                pass
+            elif not if2theta:
                 self.errors = 'Not a 2-theta chi file'
                 fp.close()
                 return False
@@ -99,7 +122,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#'
             if begin:
-                if self.Chi:
+                if self.Chi or self.Wave:
                     if i < 4:
                         continue
                     else:
@@ -125,7 +148,16 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                 print ('Line '+str(i+1)+' cannot be read:\n\t'+S)
                 continue
             try:
-                x.append(float(vals[0]))
+                if self.Wave:
+                    try:
+                        val = min(0.995,self.Wave/(4.*np.pi/float(vals[0])))  #set max at 168deg
+                        x.append(2.0*asind(val))
+                    except:
+                        msg = 'Error converting '+str(vals[0]
+                        ) + 'with wavelength ' + str(self.Wave) 
+                        break
+                else:
+                    x.append(float(vals[0]))
                 f = float(vals[1])
                 if f <= 0.0:
                     y.append(0.0)

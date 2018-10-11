@@ -92,7 +92,12 @@ class ExportPowderQCHI(G2IO.ExportBaseclass):
         histblk = self.Histograms[TreeName]
         inst = histblk['Instrument Parameters'][0]
         self.Write(str(TreeName)[5:]) # drop 'PWDR '
-        self.Write("Q")
+        if 'Lam1' in inst: 
+            print('Do you really want to write a multi-wavelength pattern in Q?')
+            lam = 0.
+        else:
+            lam = inst['Lam'][1]
+        self.Write("Q{:>20.6f}".format(lam))
         self.Write("Intensity")
         self.Write("       "+str(len(histblk['Data'][0])))
         for X,Y in zip(histblk['Data'][0],histblk['Data'][1]):

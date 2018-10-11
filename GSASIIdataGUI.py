@@ -1628,10 +1628,13 @@ class GSASII(wx.Frame):
                 finally:
                     dlg.Destroy()
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
-            print('Read powder data '+HistName+ 
-                ' from file '+rd.readfilename +
-                ' (format: '+ rd.formatName + 
-                '). Inst parameters from '+rd.instmsg)
+            try:
+                print('Read powder data '+HistName+ 
+                    ' from file '+G2obj.StripUnicode(rd.readfilename) +
+                    ' (format: '+ rd.formatName + 
+                    '). Inst parameters from '+G2obj.StripUnicode(rd.instmsg))
+            except:
+                print('Read powder data') 
             # data are read, now store them in the tree
             Id = self.GPXtree.AppendItem(parent=self.root,text=HistName)
             if 'T' in Iparm1['Type'][0]:

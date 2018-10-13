@@ -3596,7 +3596,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
-    def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=1000):
+    def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=100):
         found = False
         phase['Keep'] = False
         if not magAtms:

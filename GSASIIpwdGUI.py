@@ -3159,7 +3159,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 if len(G2elem.GetMFtable([atom[ct],],[2.0,])):
                     testAtoms.append(atom[:cx+3])
             controls[15] = testAtoms
-            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+            if not ssopt.get('Use',False):
+                G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
@@ -3460,7 +3461,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     CSI = G2spc.GetCSpqinel(mSGData['SpnFlp'],dupDir)
                     Atms.append(atom[:2]+['',]+atom[2:5])
                     AtCods.append('1')
-                    MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
+                    MagSytSym = G2spc.MagSytSym(SytSym,dupDir,mSGData)
                     atMxyz.append([MagSytSym,CSI[0]])
                 G2phsG.UseMagAtomDialog(G2frame,magcells[r]['Name'],Atms,AtCods,atMxyz,ifOK=True).ShowModal()
             data = [controls,bravais,cells,dminx,ssopt,magcells]
@@ -4004,7 +4005,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         mainSizer.Add(gridDisplay,0,WACV)
     if magcells and 'N' in Inst['Type'][0]:
         if 'N' in Inst['Type'][0]:
-            G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+            if not ssopt.get('Use',False):
+                G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.CopyCell.Enable(False)
         Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],''.join(controls[14][:3]))
         kvec2 = ''.join(controls[14][3:])

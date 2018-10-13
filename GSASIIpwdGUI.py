@@ -4008,10 +4008,14 @@ def UpdateUnitCellsGrid(G2frame, data):
             if not ssopt.get('Use',False):
                 G2frame.dataWindow.RunSubGroupsMag.Enable(True)
         G2frame.dataWindow.CopyCell.Enable(False)
-        Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],''.join(controls[14][:3]))
-        kvec2 = ''.join(controls[14][3:])
-        if kvec2.strip():
+        kvec1 = ','.join(controls[14][:3])
+        kvec2 = ','.join(controls[14][3:6])
+        kvec3 = ','.join(controls[14][6:])
+        Label = '\n Magnetic cells from Bilbao k-SUBGROUPSMAG for %s; kvec1=(%s)'%(controls[13],kvec1)
+        if ' ' not in kvec2:
             Label += ', kvec2=(%s)' % kvec2
+        if ' ' not in kvec3:
+            Label += ', kvec3=(%s)' % kvec3
         Label += ':'
         mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=Label),0,WACV)
         rowLabels = []

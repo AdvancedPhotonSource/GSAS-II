@@ -1711,7 +1711,9 @@ def ApplyModulation(data,tau):
                 for i,sadp in enumerate(Sadp[1:]):
                     scof.append(sadp[0][:6])
                     ccof.append(sadp[0][6:])
-                uwave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)
+                ures = posFourier(tauT,np.array(scof),np.array(ccof))
+                if np.any(ures):
+                    uwave += np.sum(ures,axis=1)
             if atom[cia] == 'A':                    
                 X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atuij+uwave)
                 drawatom[dcx:dcx+3] = X

@@ -1537,7 +1537,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += PutInCol(G2mth.ValEsd(ref[10],-0.9),7)
                     dmax = max(dmax,ref[4])
                     dmin = min(dmin,ref[4])
-                    s += PutInCol(G2mth.ValEsd(ref[4],-0.009),8)
+                    s += PutInCol(G2mth.ValEsd(ref[4],-0.00009),8)
                     if Imax > 0:
                         s += PutInCol(G2mth.ValEsd(100.*I100[j]/Imax,-0.09),6)
                     WriteCIFitem(self.fp, "  "+s)

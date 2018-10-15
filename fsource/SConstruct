@@ -282,7 +282,10 @@ if tmpdir:
     F2PYflags += " --build-dir " + tmpdir
 #==========================================================================================
 # Setup build Environment
-env = Environment()
+if sys.platform == "win32":
+   env = Environment(ENV = os.environ)
+else:
+   env = Environment()
 # Define a builder to run f2py 
 def generate_f2py(source, target, env, for_signature):
     module = os.path.splitext(str(source[0]))[0]

@@ -17,6 +17,7 @@ sets a few misc. values and then launches :func:`GSASIIdataGUI.GSASIImain`, whic
 creates a wx.Application which in turns creates the GUI. 
 '''
 
+import platform
 import GSASIIpath
 
 __version__ = '1.0.0'
@@ -27,7 +28,10 @@ if __name__ == '__main__':
     except:
         print('Unable to run with current setup, do you want to update to the')
         try:
-            ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+            if '2' in platform.python_version_tuple()[0]:            
+                ans = raw_input("latest GSAS-II version? Update ([Yes]/no): ")
+            else:
+                ans = input("latest GSAS-II version? Update ([Yes]/no): ")                
         except:
             ans = 'no'
         if ans.strip().lower() == "no":

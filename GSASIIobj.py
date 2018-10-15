@@ -2776,7 +2776,7 @@ def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]
     G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
         {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
     return Id
-
+#%%
 class ShowTiming(object):
     '''An object to use for timing repeated sections of code.
 
@@ -2797,13 +2797,13 @@ class ShowTiming(object):
        tim0.show()
        
     '''
-    import time
     def __init__(self):
         self.timeSum =  []
         self.timeStart = []
         self.label = []
         self.prev = None
     def start(self,label):
+        import time
         if label in self.label:
             i = self.label.index(label)
             self.timeStart[i] = time.time()
@@ -2816,6 +2816,7 @@ class ShowTiming(object):
             self.timeSum[self.prev] += self.timeStart[i] - self.timeStart[self.prev]
         self.prev = i
     def end(self):
+        import time
         if self.prev is not None:
             self.timeSum[self.prev] += time.time() - self.timeStart[self.prev]
         self.prev = None
@@ -2824,7 +2825,7 @@ class ShowTiming(object):
         print('Timing results (total={:.2f} sec)'.format(sumT))
         for i,(lbl,val) in enumerate(zip(self.label,self.timeSum)):
             print('{} {:20} {:8.2f} ms {:5.2f}%'.format(i,lbl,1000.*val,100*val/sumT))
-
+#%%
 
 if __name__ == "__main__":
     # test equation evaluation

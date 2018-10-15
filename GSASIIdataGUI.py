@@ -684,7 +684,12 @@ class GSASII(wx.Frame):
             mode = wx.FD_OPEN|wx.FD_MULTIPLE
         else:
             mode = wx.FD_OPEN
-        filelist = G2G.GetImportFile(self,message="Choose "+label+" input file",
+        if len(readerlist) > 1: 
+            typ = ' (type to be guessed)'
+        else:
+            typ = '( type '+readerlist[0].formatName+')'
+        filelist = G2G.GetImportFile(self,
+                    message="Choose "+label+" input file"+typ,
                     defaultFile="",wildcard=choices,style=mode)
         rd_list = []
         filelist1 = []

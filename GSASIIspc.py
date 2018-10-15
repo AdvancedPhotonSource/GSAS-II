@@ -3481,7 +3481,7 @@ def ApplyStringOpsMom(A,SGData,Mom):
         NA += len(SGOps)
     M,T = SGOps[nA]
     if SGData['SGGray']:        #no nonzero moments for gray groups!
-        newMom = [0.,0.,0.]
+        newMom = -np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
     else:
         newMom = np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
 #        print(len(SGOps),Ax[0],iAx,nC,nA,NA,SGData['SpnFlp'][NA],Mom,newMom)

@@ -61,11 +61,11 @@ if __name__ == '__main__':
     fp = open(os.path.join(G2bat),'w')
     fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
-    activate = "call "+os.path.join(os.path.split(gsaspath)[0],'Scripts','activate')
+    activate = os.path.join(os.path.split(gsaspath)[0],'Scripts','activate')
     print(activate)
     if os.path.exists(activate):
         print('adding activate to .bat file')
-        activate = os.path.realpath(activate) + '\n'
+        activate = "call "+os.path.realpath(activate) + '\n'
     else:
         print('activate not found')
         activate = ''

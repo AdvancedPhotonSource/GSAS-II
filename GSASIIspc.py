@@ -2829,12 +2829,15 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return list(CSI),dU,dUTP
     
     def DoMag():
+        dM = []
+        dMTP = []
         CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         elif siteSym in ['-1','mmm','2/m(x)','2/m(y)','2/m(z)','4/mmm001']:
             CSI = 3*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
         else:
+            tau = np.linspace(0,1,49,True)
             delt6 = np.eye(6)*0.001
             dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
               #3x6x12 modulated moment array (M,Spos,tau)& force positive
@@ -2905,7 +2908,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     CSI[0][i][0] = n+1
                     CSI[1][i][0] = 1.0
 
-        return CSI,None,None
+        return list(CSI),dM,dMTP
         
     if debug: print ('super space group: '+SSGData['SSpGrp'])
     xyz = np.array(XYZ)%1.
@@ -2947,7 +2950,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         CSI[0] = orderParms(CSI[0]) 
     elif Stype == 'Smag':
         CSI,dF,dFTP = DoMag()
-        
+
     if debug:
         return CSI,dF,dFTP
     else:
@@ -3480,7 +3483,7 @@ def ApplyStringOpsMom(A,SGData,Mom):
     if Ax[0] < 0:
         NA += len(SGOps)
     M,T = SGOps[nA]
-    if SGData['SGGray']:        #no nonzero moments for gray groups!
+    if SGData['SGGray']:
         newMom = -np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
     else:
         newMom = np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]

@@ -1619,7 +1619,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     global exclLines,Page
     global DifLine # BHT: probably does not need to be global
     global Ymax
-    global Pattern,mcolors,Plot,Page
+    global Pattern,mcolors,Plot,Page,imgAx,Temps
     plottype = plotType
     
     if not G2frame.PatternId:
@@ -1765,12 +1765,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             elif plottype in ['SASD','REFD']:
                 Page.plotStyle['sqPlot'] = not Page.plotStyle['sqPlot']
         elif event.key == 't' and 'PWDR' in plottype:
-            Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
-            if Page.plotStyle['dPlot']:
-                G2frame.Contour = False                
-                G2frame.Weight = False
-            Page.plotStyle['qPlot'] = False
-            newPlot = True      
+            if G2frame.Contour:
+                G2frame.TforYaxis = not G2frame.TforYaxis
+            else:
+                Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
+                if Page.plotStyle['dPlot']:
+                    G2frame.Contour = False                
+                    G2frame.Weight = False
+                Page.plotStyle['qPlot'] = False
+                newPlot = True      
         elif event.key == 'm':
             Page.plotStyle['sqrtPlot'] = False
             if not G2frame.Contour:                
@@ -1816,6 +1819,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
+        if event.button and G2frame.Contour and G2frame.TforYaxis:
+            ytics = imgAx.get_yticks()
+            ytics = np.where(ytics<len(Temps),ytics,-1)
+            ylabs = [np.where(0<=i ,Temps[int(i)],' ') for i in ytics]
+            imgAx.set_yticklabels(ylabs)            
         xpos = event.xdata
         if xpos is None: return  #avoid out of frame mouse position
         ypos = event.ydata
@@ -2385,7 +2393,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     DifLine = ['']
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
-            'i: interpolation method','s: color scheme','c: contour off')
+            'i: interpolation method','s: color scheme','c: contour off','t: temperature for y-axis')
     else:
         if Page.plotStyle['logPlot']:
             if 'PWDR' in plottype:
@@ -2468,6 +2476,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         PlotList = []
         ParmList = []
         SampleList = []
+        Temps = []
         if G2frame.selections is None:
             choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
         else:
@@ -2490,13 +2499,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 id,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id, 'Sample Parameters')))
+            Temps.append('%.1fK'%SampleList[-1]['Temperature'])
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
             SampleList.reverse()
     lenX = 0
     Ymax = None
-    for Pattern in PlotList:
+    for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
         bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if xye[1] is None: continue
@@ -2681,7 +2691,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else: #'T'OF
                     ContourX = range(lenX)
                 Nseq += 1
-                Plot.set_ylabel('Data sequence',fontsize=12)
+                if G2frame.TforYaxis:
+                    Plot.set_ylabel('Temperature',fontsize=14)
+                else:
+                    Plot.set_ylabel('Data sequence',fontsize=14)
         else:
             if G2frame.plusPlot:
                 pP = '+'
@@ -2898,6 +2911,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
+        if G2frame.TforYaxis:
+            imgAx = Img.axes
+            ytics = imgAx.get_yticks()
+            ylabs = [Temps[int(i)] for i in ytics[:-1]]
+            imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Img)
     else:
         G2frame.Lines = Lines

@@ -61,12 +61,15 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
         tag = tag.split('}')[0]+'}'
         sample = self.root.find(tag+'sample')
         self.idstring = ospath.basename(filename) + ' Scan '+str(blockNum)
-        data = self.root.find(tag+'xrdMeasurement')
+        blks = self.root.findall(tag+'xrdMeasurement')
+        scans = []
+        for data in blks:
+            scans += data.findall(tag+'scan')
+        data = self.root.find(tag+'xrdMeasurement')        
         wave = data.find(tag+'usedWavelength')
         incident = data.find(tag+'incidentBeamPath')
         radius = float(incident.find(tag+'radius').text)
         tube = incident.find(tag+'xRayTube')
-        scans = data.findall(tag+'scan')
         if len(scans) > 1:
             self.repeat = True
         if blockNum-1 == len(scans):
@@ -107,7 +110,7 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
             np.zeros(N), # obs-calc profiles
             ]
         conditions = scan.find(tag+'nonAmbientPoints')
-        if conditions:
+        if conditions is not None:
             kind = conditions.attrib['type']
             if kind == 'Temperature':
                 Temperature = float(conditions.find(tag+'nonAmbientValues').text.split()[-1])

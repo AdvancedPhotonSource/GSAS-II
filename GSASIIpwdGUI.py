@@ -3116,6 +3116,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[13] = SGData['SpGrp']
             ssopt['SGData'] = SGData
         data = [controls,bravais,cells,dminx,ssopt,magcells]
+        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3161,6 +3162,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[15] = testAtoms
             if not ssopt.get('Use',False):
                 G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
@@ -3186,6 +3188,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
 #        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
+        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3626,9 +3629,57 @@ def UpdateUnitCellsGrid(G2frame, data):
         if natm > maxequiv or found: #too many allowed atoms found
             phase['Keep'] = False
         return uAtms
+
+    def OnRunSubs(event):
+#        import SUBGROUPS as kSUB
+        G2frame.dataWindow.RunSubGroupsMag.Enable(False)
+        pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+        E,SGData = G2spc.SpcGroup(controls[13])
+        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ',' ']
+        Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
+        Ky = [' ','0','1/2','1/3','2/3','1']
+        Kz = [' ','0','1/2','3/2','1/3','2/3','1']
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',
+            prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.', \
+                     ' kx3 as fr.',' ky3 as fr.',' kz3 as fr.', \
+                     ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec[:9]+[False,'',True,100],
+            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,Kx,Ky,Kz,[True,False],['',' Landau transition',' Only maximal subgroups',],
+                [True,False],[1,100]],
+            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','choice',
+                    'bool','%d',])
+        if dlg.ShowModal() == wx.ID_OK:
+            subcells = []
+            newVals = dlg.GetValues()
+            kvec[:9] = newVals[:9]
+            nkvec = kvec.index(' ')
+            star = newVals[9]
+            filterby = newVals[10]
+            keepaxes = newVals[11]
+            maxequiv = newVals[12]
+            if 'maximal' in filterby:
+                maximal = True
+                Landau = False
+            elif 'Landau' in filterby:
+                maximal = False
+                Landau = True
+            else:
+                maximal = False
+                Landau = False            
+            if nkvec not in [0,3,6,9]:
+                wx.MessageBox('Error: check your propagation vector(s)',
+                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+                return
+            if nkvec in [6,9] and Landau:
+                wx.MessageBox('Error, multi k-vectors & Landau not compatible',
+                    caption='Bilbao SUBGROUPS setup error',style=wx.ICON_EXCLAMATION)
+                return
+        print('run Bilbao SUBGROUPS - TBD')
         
     def OnRunSubsMag(event):
         import kSUBGROUPSMAG as kMAG
+        G2frame.dataWindow.RunSubGroups.Enable(False)
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
@@ -3730,6 +3781,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)

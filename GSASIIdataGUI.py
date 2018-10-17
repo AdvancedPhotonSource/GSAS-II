@@ -2784,6 +2784,7 @@ class GSASII(wx.Frame):
         self.plusPlot = True
         self.ErrorBars = False
         self.Contour = False
+        self.TforYaxis = False
         self.Legend = False
         self.SinglePlot = True
         self.Waterfall = False
@@ -5122,13 +5123,15 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         # PDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
-            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUBMAG')
+            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUB','wxID_RUNSUBMAG')
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
             'Find cells that index fitted peaks')
+        self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
+            'If disabled, do Load Cell first')
         self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',
             'If disabled, do Load Cell first')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
@@ -5146,6 +5149,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         self.PostfillDataMenu()
         self.IndexPeaks.Enable(False)
+        self.RunSubGroups.Enable(False)
         self.RunSubGroupsMag.Enable(False)
         self.CopyCell.Enable(False)
         self.RefineCell.Enable(False)

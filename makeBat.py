@@ -38,7 +38,7 @@ Script = '''@echo ==============================================================
 @echo                   Proc. Roy. Soc. Lond. 433A, 499-520 (1991)
 @echo ========================================================================
 @
-{:s} {:s} "%~1"
+{:s}{:s} {:s} "%~1"
 @REM To keep the window from disappearing with any error messages
 pause
 
@@ -61,6 +61,12 @@ if __name__ == '__main__':
     fp = open(os.path.join(G2bat),'w')
     fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
+    activate = "call "+os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')+'\n'
+    if os.path.exists(activate):
+        print('adding activate to .bat file')
+    else:
+        print('activate not found')
+        activate = ''
     pexe = pythonexe
     if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
     G2s = G2script
@@ -70,7 +76,7 @@ if __name__ == '__main__':
     #mdir = os.path.join(d,'Library','mingw-w64','bin')
     #if os.path.exists(mdir):
     #    fp.write('@path={};%path%\n'.format(mdir))
-    fp.write(Script.format(pexe,G2s))
+    fp.write(Script.format(activate,pexe,G2s))
     fp.close()
     print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
 

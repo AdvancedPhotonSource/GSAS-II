@@ -1978,8 +1978,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 event.Skip()
                 try:
                     SSymbol = superGp.GetValue()
+                    refresh = True
                 except AttributeError:
                     SSymbol = superGp.GetLabel()
+                    refresh = False
                 SSGData = generalData['SSGData']
                 if not generalData['SGData']['SGFixed']:
                     E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
@@ -1999,7 +2001,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     Style = wx.ICON_EXCLAMATION
                     Text = '\n'.join(text)
                     wx.MessageBox(Text,caption=msg,style=Style)
-                wx.CallAfter(UpdateGeneral)                
+                if refresh: wx.CallAfter(UpdateGeneral)                
                             
             def OnVecRef(event):
                 generalData['SuperVec'][1] = Ref.GetValue()

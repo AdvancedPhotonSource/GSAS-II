@@ -77,6 +77,24 @@ def UpdateRestraints(G2frame,data,phaseName):
             dlg.Destroy()
         return macro        #advanced past 1st line
         
+    def getMOGULFile():
+        dlg = wx.FileDialog(G2frame,message='Choose MOGUL csv file',
+            defaultDir='.',defaultFile="",wildcard="MOGUL csv file (*.csv)|*.csv",
+            style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
+        try:
+            mogul = ''
+            if dlg.ShowModal() == wx.ID_OK:
+                csvfile = dlg.GetPath()
+                mogul = open(csvfile,'Ur')
+                head = mogul.readline()
+                if 'Type' not in head:
+                    print (head)
+                    print ('**** ERROR - not a MOGUL csv file selected, try again ****')
+                    mogul = []
+        finally:
+            dlg.Destroy()
+        return mogul        #advanced past 1st line
+        
     def OnPlotAARestraint(event):
         page = G2frame.restrBook.GetSelection()
         if 'Torsion' in G2frame.restrBook.GetPageText(page):
@@ -161,6 +179,13 @@ def UpdateRestraints(G2frame,data,phaseName):
         elif 'Rama' in G2frame.restrBook.GetPageText(page):
             AddAARamaRestraint(restrData['Rama'])
             
+    def OnUseMogul(event):
+        page = G2frame.restrBook.GetSelection()
+        if 'Bond' in G2frame.restrBook.GetPageText(page):
+            AddMogulBondRestraint(restrData['Bond'])
+        elif 'Angle' in G2frame.restrBook.GetPageText(page):
+            AddMogulAngleRestraint(restrData['Angle'])
+            
     def makeChains(Names,Ids):
         Chains = {}
         atoms = zip(Names,Ids)
@@ -243,7 +268,6 @@ def UpdateRestraints(G2frame,data,phaseName):
         macro = getMacroFile('bond')
         if not macro:
             return
-#        Chains = makeChains(Names,Ids)            
         macStr = macro.readline()
         atoms = zip(Names,Coords,Ids)
         Factor = bondRestData['Range']
@@ -285,7 +309,26 @@ def UpdateRestraints(G2frame,data,phaseName):
             macStr = macro.readline()
         macro.close()
         print(' Found %d bond restraints'%len(bondRestData['Bonds']))
-        UpdateBondRestr(bondRestData)                
+        UpdateBondRestr(bondRestData)
+
+    def AddMogulBondRestraint(bondRestData):
+        mogul = getMOGULFile()
+        for line in mogul:
+            items = line.split(',')
+            if 'bond' == items[0]:
+                oName,tName = items[2].split()
+                oInd = Names.index(oName)
+                tInd = Names.index(tName)
+                if items[3] != 'No hits':
+                    dist = float(items[6])
+                    esd = float(items[7])
+                else:
+                    dist = float(items[5])
+                    esd = 0.02
+                newBond = [[Ids[oInd],Ids[tInd]],['1','1'],dist,esd]
+                if newBond not in bondRestData['Bonds']:
+                    bondRestData['Bonds'].append(newBond)              
+        UpdateBondRestr(bondRestData)
             
     def AddAngleRestraint(angleRestData):
         Radii = dict(zip(General['AtomTypes'],zip(General['BondRadii'],General['AngleRadii'])))
@@ -421,6 +464,26 @@ def UpdateRestraints(G2frame,data,phaseName):
         print(' Found %d angle restraints'%len(angleRestData['Angles']))
         UpdateAngleRestr(angleRestData)                
         
+    def AddMogulAngleRestraint(angleRestData):
+        mogul = getMOGULFile()
+        for line in mogul:
+            items = line.split(',')
+            if 'angle' == items[0]:
+                aName,bName,cName = items[2].split()
+                aInd = Names.index(aName)
+                bInd = Names.index(bName)
+                cInd = Names.index(cName)
+                if items[3] != 'No hits':
+                    angle = float(items[6])
+                    esd = float(items[7])
+                else:
+                    angle = float(items[5])
+                    esd = 2.00
+                newAngle = [[Ids[aInd],Ids[bInd],Ids[cInd]],['1','1','1'],angle,esd]
+                if newAngle not in angleRestData['Angles']:
+                    angleRestData['Angles'].append(newAngle)              
+        UpdateAngleRestr(angleRestData)                
+
     def AddPlaneRestraint(restrData):
         ids = []
         dlg = wx.MultiChoiceDialog(G2frame,'Select 4 or more atoms for plane in '+General['Name'],
@@ -1771,16 +1834,19 @@ def UpdateRestraints(G2frame,data,phaseName):
         #G2frame.restrBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
         text = G2frame.restrBook.GetPageText(page)
         G2frame.dataWindow.RestraintEdit.SetLabel(G2G.wxID_RESRCHANGEVAL,'Change value')
+        G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,False)
         if text == 'Bond':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,True)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,True)
             bondRestData = restrData['Bond']
             UpdateBondRestr(bondRestData)
         elif text == 'Angle':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,True)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,True)
             angleRestData = restrData['Angle']
             UpdateAngleRestr(angleRestData)
         elif text == 'Plane':
@@ -1906,6 +1972,8 @@ def UpdateRestraints(G2frame,data,phaseName):
     ramaName = 'All'
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)    
     G2frame.Bind(wx.EVT_MENU, OnAddRestraint, id=G2G.wxID_RESTRAINTADD)
+    G2frame.Bind(wx.EVT_MENU, OnUseMogul, id=G2G.wxID_USEMOGUL)
+    G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_USEMOGUL,True)
     if 'macro' in phasedata['General']['Type']:
         G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_AARESTRAINTADD,True)
         G2frame.Bind(wx.EVT_MENU, OnAddAARestraint, id=G2G.wxID_AARESTRAINTADD)

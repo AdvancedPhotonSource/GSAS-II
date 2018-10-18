@@ -4882,7 +4882,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
 
         # Restraints
         G2G.Define_wxId('wxID_RESTRAINTADD', 'wxID_RESTDELETE', 'wxID_RESRCHANGEVAL',
-            'wxID_RESTCHANGEESD', 'wxID_AARESTRAINTADD', 'wxID_AARESTRAINTPLOT',)
+            'wxID_RESTCHANGEESD', 'wxID_AARESTRAINTADD', 'wxID_AARESTRAINTPLOT','wxID_USEMOGUL')
         self.RestraintTab = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
         self.RestraintEdit.Append(G2G.wxID_RESTRAINTADD,'Add restraints','Add restraints')
@@ -4890,6 +4890,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.RestraintEdit.Append(G2G.wxID_AARESTRAINTADD,'Add residue restraints',
             'Add residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(G2G.wxID_AARESTRAINTADD,False)    #gets enabled if macromolecule phase
+        self.RestraintEdit.Append(G2G.wxID_USEMOGUL,'Add MOGUL restraints',
+            'Add restraints from MOGUL csv file')
+        self.RestraintEdit.Enable(G2G.wxID_USEMOGUL,False)    #gets enabled if bonds or angles
         self.RestraintEdit.Append(G2G.wxID_AARESTRAINTPLOT,'Plot residue restraints',
             'Plot selected residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(G2G.wxID_AARESTRAINTPLOT,False)    #gets enabled if macromolecule phase

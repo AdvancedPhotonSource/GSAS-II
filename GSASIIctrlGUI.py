@@ -2267,10 +2267,14 @@ class MultiDataDialog(wx.Dialog):
         def OnValItem(event):
             if event: event.Skip()
             Obj = event.GetEventObject()
-            id,limits,format = Indx[Obj]
-            if 'bool' in format:
-                self.values[id] = Obj.GetValue()
+            format = Indx[Obj][-1]
+            if type(format) is list:
+                id,idl,limits = Indx[Obj][:3]
+                self.values[id][idl] = Obj.GetValue()
+            elif 'bool' in format:
+                self.values[Indx[Obj][0]] = Obj.GetValue()
             elif 'str' in format:
+                id,limits = Indx[Obj][:2]
                 try:
                     val = Obj.GetValue()
                     if val not in limits:
@@ -2280,8 +2284,9 @@ class MultiDataDialog(wx.Dialog):
                 self.values[id] = val
                 Obj.SetValue('%s'%(val))
             elif 'choice' in format:
-                self.values[id] = Obj.GetValue()
+                self.values[Indx[Obj][0]] = Obj.GetValue()
             else:
+                id,limits = Indx[Obj][:2]
                 try:
                     val = float(Obj.GetValue())
                     if val < limits[0] or val > limits[1]:
@@ -2298,7 +2303,14 @@ class MultiDataDialog(wx.Dialog):
         lineSizer = wx.FlexGridSizer(0,2,5,5)
         for id,[prompt,value,limits,format] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
             lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
-            if 'bool' in format:
+            if type(format) is list:  #let's assume these are 'choice' for now
+                valItem = wx.BoxSizer(wx.HORIZONTAL)
+                for idl,item in enumerate(format):
+                    listItem = wx.ComboBox(self.panel,value=limits[idl][0],choices=limits[idl],style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    listItem.Bind(wx.EVT_COMBOBOX,OnValItem)
+                    valItem.Add(listItem,0,WACV)
+                    Indx[listItem] = [id,idl,limits,format]
+            elif 'bool' in format:
                 valItem = wx.CheckBox(self.panel,label='')
                 valItem.Bind(wx.EVT_CHECKBOX,OnValItem)
                 valItem.SetValue(value)

@@ -520,7 +520,7 @@ def FillUnitCell(Phase):
 def GetUnique(Phase,atCodes):
     
     def noDuplicate(xyzA,XYZ):
-        if True in [np.allclose(xyzA,xyzB,atol=0.0002) for xyzB in XYZ]:
+        if True in [np.allclose(xyzA%1.,xyzB%1.,atol=0.0002) for xyzB in XYZ]:
             return False
         return True
 

@@ -3743,7 +3743,11 @@ def UpdateUnitCellsGrid(G2frame, data):
                         caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
             controls[14] = kvec[:9]
-            for result in MAXMAGN:
+            dlg = wx.ProgressDialog('k-SUBGROUPSMAG results','Processing '+MAXMAGN[0][0],len(MAXMAGN), 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+            
+            for ir,result in enumerate(MAXMAGN):
+                dlg.Update(ir,newmsg='Processing '+result[0])
                 if result[0].strip().endswith("1'"):    #skip gray groups
                     continue
                 numbs = [eval(item+'.') for item in result[2].split()]
@@ -3764,6 +3768,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 phase['maxequiv'] = maxequiv
                 phase['nAtoms'] = len(TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv))
                 magcells.append(phase)
+            dlg.Destroy()
             magcells[0]['Use'] = True
             SGData = magcells[0]['SGData']
             A = G2lat.cell2A(magcells[0]['Cell'][:6])  

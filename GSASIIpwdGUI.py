@@ -3636,28 +3636,26 @@ def UpdateUnitCellsGrid(G2frame, data):
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
-        kvec = ['0','0','0',' ',' ',' ',' ',' ',' ',' ']
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
-        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',
-            prompts=[' kx1 as fr.',' ky1 as fr.',' kz1 as fr.',' kx2 as fr.',' ky2 as fr.',' kz2 as fr.', \
-                     ' kx3 as fr.',' ky3 as fr.',' kz3 as fr.', \
-                     ' Use whole star',' Filter by','preserve axes','max unique'],
-            values=kvec[:9]+[False,'',True,100],
-            limits=[Kx[1:],Ky[1:],Kz[1:],Kx,Ky,Kz,Kx,Ky,Kz,[True,False],['',' Landau transition',' Only maximal subgroups',],
+        kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
+        dlg = G2G.MultiDataDialog(G2frame,title='SUBGROUPS options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
+            ' Use whole star',' Filter by','preserve axes','max unique'],
+            values=kvec+[False,'',True,'',False,100],
+            limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
                 [True,False],[1,100]],
-            formats=['choice','choice','choice','choice','choice','choice','choice','choice','choice','bool','choice',
+            formats=[['choice','choice','choice'],['choice','choice','choice'],['choice','choice','choice'],'bool','choice',
                     'bool','%d',])
         if dlg.ShowModal() == wx.ID_OK:
             subcells = []
             newVals = dlg.GetValues()
-            kvec[:9] = newVals[:9]
+            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
             nkvec = kvec.index(' ')
-            star = newVals[9]
-            filterby = newVals[10]
-            keepaxes = newVals[11]
-            maxequiv = newVals[12]
+            star = newVals[3]
+            filterby = newVals[4]
+            keepaxes = newVals[5]
+            maxequiv = newVals[6]
             if 'maximal' in filterby:
                 maximal = True
                 Landau = False
@@ -3688,7 +3686,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
         kvec = [['0','0','0'],[' ',' ',' '],[' ',' ',' ',' ']]
-        dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' k-vector1',' k-vector2',' k-vector3', \
+        dlg = G2G.MultiDataDialog(G2frame,title='k-SUBGROUPSMAG options',prompts=[' k-vector 1',' k-vector 2',' k-vector 3', \
             ' Use whole star',' Filter by','preserve axes','test for mag. atoms','all have moment','max unique'],
             values=kvec+[False,'',True,'',False,100],
             limits=[[Kx[1:],Ky[1:],Kz[1:]],[Kx,Ky,Kz],[Kx,Ky,Kz],[True,False],['',' Landau transition',' Only maximal subgroups',],
@@ -3698,7 +3696,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if dlg.ShowModal() == wx.ID_OK:
             magcells = []
             newVals = dlg.GetValues()
-            kvec[:9] = newVals[0]+newVals[1]+newVals[2]
+            kvec[:9] = newVals[0]+newVals[1]+newVals[2]+[' ',]
             nkvec = kvec.index(' ')
             star = newVals[3]
             filterby = newVals[4]

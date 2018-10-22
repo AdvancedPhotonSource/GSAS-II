@@ -594,7 +594,7 @@ class UseMagAtomDialog(wx.Dialog):
         if ifMag:
             title = 'Magnetic atom selection'
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
 #        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Name = Name
@@ -2563,6 +2563,7 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Name'] = phaseName
             generalData['SGData'] = copy.deepcopy(magchoice['SGData'])            
             generalData['Cell'][1:] = magchoice['Cell'][:]
+            generalData['MagDmin'] = 1.0
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
             newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,ifMag)

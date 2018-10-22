@@ -1282,7 +1282,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         else:
             parm = '%d::%s'%(pId,Aname)
         return parm
-        
+    
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
@@ -1367,30 +1367,6 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #                for Dep in DepConsDict[Usi]:
 #                    Dep[0] *= -1
 #                constraints['Phase'].append([IndpCon]+DepConsDict[Usi]+[0.0,None,'c'])
-            
-
-
-
-
-#        for iu in list(set(CSU[0])):
-#            if not iu:
-#                continue
-#            Uid = Uids[iu-1]
-#            IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%s'%(npId,Uid[2],ia))]
-#            DepCons = []
-#            for iau in range(3):
-#                for ibu in range(3):
-#                    if abs(Trans[Uid[0],iau]) > 1.e-4 and abs(Trans[Uid[1],ibu]) > 1.e-4:
-#                        parm = '%d::%s:%s'%(opId,unames[ibu][iau],iat)
-#                        if not parm in varyList:
-#                            varyList.append(parm)
-#                        DepCons.append([Trans[ibu,iau]/detTrans,G2obj.G2VarObj(parm)])
-#            if len(DepCons) == 1:
-#                constraints['Phase'].append([DepCons[0],IndpCon,None,None,'e'])
-#            elif len(DepCons) > 1:        
-#                for Dep in DepCons:
-#                    Dep[0] *= -1
-#                constraints['Phase'].append([IndpCon]+DepCons+[0.0,None,'c'])
             
         #how do I do Uij's for most Trans?
     As = ['A0','A1','A2','A3','A4','A5']

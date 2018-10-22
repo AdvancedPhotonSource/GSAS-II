@@ -3416,7 +3416,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 phase = magcells[r]
                 mSGData = phase['SGData']
                 text,table = G2spc.SGPrint(mSGData,AddInv=True)
-                if 'magAtoms' in phase:
+                if 'magAtms' in phase:
                     msg = 'Magnetic space group information for '+phase['Name']
                     text[0] = ' Magnetic Space Group: '+mSGData['MagSpGrp']
                     text[3] = ' The magnetic lattice point group is '+mSGData['MagPtGp']

@@ -589,14 +589,19 @@ class TransformDialog(wx.Dialog):
 class UseMagAtomDialog(wx.Dialog):
     '''Get user selected magnetic atoms after cell transformation
     '''
-    def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifOK=False,ifDelete=False):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Magnetic atom selection', 
+    def __init__(self,parent,Name,Atoms,atCodes,atMxyz,ifMag=True,ifOK=False,ifDelete=False):
+        title = 'Subgroup atom list'
+        if ifMag:
+            title = 'Magnetic atom selection'
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+#        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.Name = Name
         self.Atoms = Atoms
         self.atCodes = atCodes
         self.atMxyz = atMxyz
+        self.ifMag = ifMag
         self.ifOK = ifOK
         self.ifDelete = ifDelete
         self.Use = len(self.Atoms)*[True,]
@@ -611,24 +616,34 @@ class UseMagAtomDialog(wx.Dialog):
             Obj.SetValue(self.Use[iuse])
         
         self.panel.Destroy()
-        self.panel = wx.Panel(self)
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
         Indx = {}
         Mstr = [' Mx',' My',' Mz']
+        Xstr = ['X','Y','Z']
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label='For: %s'%self.Name),0,WACV)
         
-        mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments, mag. site sym:'),0,WACV)
+        if self.ifMag:
+            mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed moments, mag. site sym:'),0,WACV)
+        else:
+            mainSizer.Add(wx.StaticText(self.panel,label='        Name, x, y, z, allowed xyz, site sym:'),0,WACV)
         atmSizer = wx.FlexGridSizer(0,2,5,5)
         for iuse,[use,atom,mxyz] in enumerate(zip(self.Use,self.Atoms,self.atMxyz)):
             mstr = [' ---',' ---',' ---']
             for i,mx in enumerate(mxyz[1]):
                 if mx:
-                    mstr[i] = Mstr[i]
-            useChk = wx.CheckBox(self.panel,label='Use?')
-            Indx[useChk.GetId()] = iuse
-            useChk.SetValue(use)
-            useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
-            atmSizer.Add(useChk,0,WACV)
+                    if self.ifMag:
+                        mstr[i] = Mstr[i]
+                    else:
+                        mstr[i] = Xstr[i]
+            if self.ifMag:
+                useChk = wx.CheckBox(self.panel,label='Use?')
+                Indx[useChk.GetId()] = iuse
+                useChk.SetValue(use)
+                useChk.Bind(wx.EVT_CHECKBOX, OnUseChk)
+                atmSizer.Add(useChk,0,WACV)
+            else:
+                atmSizer.Add((2,2),0)
             text = '  %5s %10.5f %10.5f %10.5f (%s,%s,%s) %s   '%(atom[0],atom[3],atom[4],atom[5],mstr[0],mstr[1],mstr[2],mxyz[0])
             atmSizer.Add(wx.StaticText(self.panel,label=text),0,WACV)
         mainSizer.Add(atmSizer)
@@ -656,8 +671,11 @@ class UseMagAtomDialog(wx.Dialog):
         
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)
-        self.panel.Fit()
-        self.Fit()
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        self.panel.SetAutoLayout(1)
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
         
     def GetSelection(self):
         useAtoms = []
@@ -2441,9 +2459,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                     if not '_' in BNSlatt:
                         SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
-                        
-                        
-                        
                 else:
                     return
             finally:
@@ -2462,8 +2477,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 break
             else:
                 phaseName = newPhase['General']['Name']
-                
-                
                 newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
                 generalData = newPhase['General']
@@ -2516,8 +2529,11 @@ def UpdatePhaseData(G2frame,Item,data):
         magKeep = []
         magIds = []
         magchoices = []
+        ifMag = False
         for mid,magdata in enumerate(magData):
             if magdata['Keep']:
+                if 'magAtms' in magdata:
+                    ifMag = True
                 magdata['No.'] = mid+1
                 trans = G2spc.Trans2Text(magdata['Trans'])
                 vec = G2spc.Latt2text([magdata['Uvec'],])
@@ -2525,15 +2541,21 @@ def UpdatePhaseData(G2frame,Item,data):
                 magIds.append(mid)
                 magchoices.append('(%d) %s; (%s) + (%s)'%(mid+1,magdata['Name'],trans,vec))
         if not len(magKeep):
-            G2frame.ErrorDialog('Magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
+            G2frame.ErrorDialog('Subgroup/magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return
-        dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
+        if ifMag:
+            dlg = wx.SingleChoiceDialog(G2frame,'Select magnetic space group','Make new magnetic phase',magchoices)
+        else:
+            dlg = wx.SingleChoiceDialog(G2frame,'Select subgroup','Make new subgroup phase',magchoices)
         opt = dlg.ShowModal()
         if opt == wx.ID_OK:
             sel = dlg.GetSelection()
             magchoice = magKeep[sel]
             magId = magIds[sel]
-            phaseName = '%s mag_%d'%(data['General']['Name'],magchoice['No.'])
+            if ifMag:
+                phaseName = '%s mag_%d'%(data['General']['Name'],magchoice['No.'])
+            else:
+                phaseName = '%s sub_%d'%(data['General']['Name'],magchoice['No.'])
             newPhase = copy.deepcopy(data)
             newPhase['ranId'] = ran.randint(0,sys.maxsize),
             del newPhase['magPhases']
@@ -2543,22 +2565,27 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Cell'][1:] = magchoice['Cell'][:]
             SGData = generalData['SGData']
             vvec = np.array([0.,0.,0.])
-            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,True)
+            newPhase,atCodes = G2lat.TransformPhase(data,newPhase,magchoice['Trans'],magchoice['Uvec'],vvec,ifMag)
             Atoms = newPhase['Atoms']
             Atms = []
             AtCods = []
             atMxyz = []
             for ia,atom in enumerate(Atoms):
-                if not len(G2elem.GetMFtable([atom[1],],[2.0,])):
+                if ifMag and not len(G2elem.GetMFtable([atom[1],],[2.0,])):
                     continue
                 atom[0] += '_%d'%ia
+                atom[2] = ''                    #clear away refinement flags
                 SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
-                CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                 Atms.append(atom)
                 AtCods.append(atCodes[ia])
-                MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
-                atMxyz.append([MagSytSym,CSI[0]])
-            dlg = UseMagAtomDialog(G2frame,magchoices[sel],Atms,AtCods,atMxyz,ifDelete=True)
+                if ifMag:
+                    MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
+                    CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
+                    atMxyz.append([MagSytSym,CSI[0]])
+                else:
+                    CSI = G2spc.GetCSxinel(SytSym)
+                    atMxyz.append([SytSym,CSI[0]])
+            dlg = UseMagAtomDialog(G2frame,magchoices[sel],Atms,AtCods,atMxyz,ifMag=ifMag,ifDelete=True)
             try:
                 opt = dlg.ShowModal()
                 if  opt == wx.ID_YES:
@@ -2587,11 +2614,12 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.GPXtree.SetItemPyData(sub,newPhase)
         newPhase['Drawing'] = []
-        G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
-        G2frame.newGPXfile = phaseName+'.gpx'
-        UCdata[5] = []      #clear away other mag choices from chem phase in new project
-        G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
-        G2frame.OnFileSaveas(event)
+        if ifMag: 
+            G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
+            G2frame.newGPXfile = phaseName+'.gpx'
+            UCdata[5] = []      #clear away other mag choices from chem phase in new project
+            G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
+            G2frame.OnFileSaveas(event)
         G2frame.GPXtree.SelectItem(sub)
         
 ################################################################################

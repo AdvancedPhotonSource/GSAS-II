@@ -5341,7 +5341,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.GeneralCalc.Append(G2G.wxID_SINGLEMCSA,'MC/SA','Run Monte Carlo - Simulated Annealing')
         self.GeneralCalc.Append(G2G.wxID_MULTIMCSA,'Multi MC/SA','Run Monte Carlo - Simulated Annealing on multiprocessors')
         self.GeneralCalc.Append(G2G.wxID_TRANSFORMSTRUCTURE,'Transform','Transform crystal structure')
-        self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic phase','If disabled, make in PWDR/Unit Cells')        
+        self.GeneralCalc.Append(G2G.wxID_USEBILBAOMAG,'Select magnetic/subgroup phase','If disabled, make in PWDR/Unit Cells')        
         self.GeneralCalc.Append(G2G.wxID_VALIDPROTEIN,'Protein quality','Protein quality analysis')
         self.PostfillDataMenu()
         

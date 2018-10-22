@@ -388,17 +388,17 @@ def FindNonstandard(controls,Phase):
     Trans = Phase['Trans']
     Uvec = Phase['Uvec']
     SGData = Phase['SGData']
-    MSG = SGData['MagSpGrp'].split(' ',1)
+    MSG = SGData.get('MagSpGrp',SGData['SpGrp']).split(' ',1)
     MSG[0] += ' '
     bns = ''
     if '_' in MSG[0]:
         bns = MSG[0][2]
-    spn = SGData['SGSpin']
+    spn = SGData.get('SGSpin',[])
     if 'ortho' in SGData['SGSys']:
         lattSym = G2spc.getlattSym(Trans)
         SpGrp = SGData['SpGrp']
         NTrans = np.inner(Mats[lattSym].T,Trans.T)        #ok
-        spn[1:4] = np.inner(np.abs(nl.inv(Mats[lattSym])),spn[1:4])         #ok
+        if len(spn): spn[1:4] = np.inner(np.abs(nl.inv(Mats[lattSym])),spn[1:4])         #ok
         SGsym = G2spc.getlattSym(nl.inv(Mats[lattSym]))
         
         if lattSym != 'abc':
@@ -413,7 +413,7 @@ def FindNonstandard(controls,Phase):
             if bns:
                 Bns = BNS[bns][lattSym]
                 NSG[0] += '_'+Bns+' '
-            else:
+            elif len(spn):
                 for ifld in [1,2,3]:
                     if spn[ifld] < 0:
                         NSG[ifld] += "'"
@@ -449,7 +449,7 @@ def FindNonstandard(controls,Phase):
             return Nresult,Uvec,NTrans
     return None
         
-def makeBilbaoPhase(result,uvec,trans):
+def makeBilbaoPhase(result,uvec,trans,ifMag=False):
     phase = {}
     phase['Name'] = result[0].strip()
     phase['Uvec'] = uvec
@@ -460,16 +460,17 @@ def makeBilbaoPhase(result,uvec,trans):
     SpGp = result[0].replace("'",'')
     SpGrp = G2spc.StandardizeSpcName(SpGp)
     phase['SGData'] = G2spc.SpcGroup(SpGrp)[1]
-    BNSlatt = phase['SGData']['SGLatt']
-    if not result[1]:
-        phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
-    phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
-    if result[1]:
-        BNSlatt += '_'+result[1]
-        phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
-        G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
-    phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
-    phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
+    if ifMag:
+        BNSlatt = phase['SGData']['SGLatt']
+        if not result[1]:
+            phase['SGData']['SGSpin'] = G2spc.GetSGSpin(phase['SGData'],result[0])
+        phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
+        if result[1]:
+            BNSlatt += '_'+result[1]
+            phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
+            G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
+        phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]
+        phase['SGData']['MagSpGrp'] = G2spc.MagSGSym(phase['SGData'])
     return phase
 
 def FillUnitCell(Phase):

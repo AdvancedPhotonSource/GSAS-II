@@ -3123,6 +3123,7 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     def LoadUnitCell(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        magcells = []           #clear away old mag cells list (if any)
         controls = controls[:14]+[['0','0','0',' ',' ',' '],[],]
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)

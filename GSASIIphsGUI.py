@@ -4167,7 +4167,7 @@ def UpdatePhaseData(G2frame,Item,data):
             else:
                 Trans = [[[1.,0.,0.,0.,'',False],],]
             data['Layers']['Transitions'] = Trans
-            wx.CallAfter(UpdateLayerData)
+            wx.CallLater(100,UpdateLayerData)
             
         def OnDeleteLast(event):
             del(data['Layers']['Layers'][-1])

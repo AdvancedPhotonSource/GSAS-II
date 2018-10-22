@@ -1293,6 +1293,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     npId = newPhase['pId']
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
     nAtoms = newPhase['Atoms']
+    oSGData = oldPhase['General']['SGData']
     nSGData = newPhase['General']['SGData']
     oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
@@ -1397,17 +1398,17 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
     for iA,Aid in enumerate(Aids):
         GT = np.zeros((3,3))
-        if abs(oAcof[iA]) > 1.e-8:
+        if abs(nAcof[iA]) > 1.e-8:
             GT[Aid[0],Aid[1]] = 1
-            nGT = G2lat.prodMGMT(GT,invTrans)
+            nGT = G2lat.prodMGMT(GT,Trans)
             nAT = G2lat.Gmat2A(nGT)
             for ia,nA in enumerate(nAT):
-                if abs(nA) > 1.e-8 and abs(oAcof[ia]) > 1.e-8:
-                    parm = SetUniqAj(opId,As[ia],nSGData['SGLaue'])
+                if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
+                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
                     DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
     for iA,Asi in enumerate(As):
-        parm = SetUniqAj(npId,Asi,nSGData['SGLaue'])
-        parmDict[parm] = nAcof[iA]
+        parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
+        parmDict[parm] = oAcof[iA]
         varyList.append(parm)
         IndpCon = [1.0,G2obj.G2VarObj(parm)]
         if len(DepConsDict[Asi]) == 1:

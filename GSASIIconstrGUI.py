@@ -1286,7 +1286,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
-    invTrans = nl.inv(Trans)
+#    invTrans = nl.inv(Trans)
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     
     opId = oldPhase['pId']
@@ -1382,11 +1382,16 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                 if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
                     parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
                     DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
+    conStrings = []
     for iA,Asi in enumerate(As):
         parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
         parmDict[parm] = oAcof[iA]
         varyList.append(parm)
         IndpCon = [1.0,G2obj.G2VarObj(parm)]
+        conStr = str([IndpCon,DepConsDict[Asi]])
+        if conStr in conStrings:
+            continue
+        conStrings.append(conStr)
         if len(DepConsDict[Asi]) == 1:
             if DepConsDict[Asi][0]:
                 constraints['Phase'].append([IndpCon,DepConsDict[Asi][0],None,None,'e'])

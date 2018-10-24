@@ -2556,14 +2556,14 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return A
         
     def DoFrac():
-        dF = None
-        dFTP = None
+        delt2 = np.eye(2)*0.001
+        dF = fracFourier(tau,nH,delt2[:1],delt2[1:]).squeeze()
+        dFTP = []
         if siteSym == '1':
             CSI = [[1,0],[2,0]],2*[[1.,0.],]
         elif siteSym == '-1':
             CSI = [[1,0],[0,0]],2*[[1.,0.],]
         else:
-            delt2 = np.eye(2)*0.001
             FSC = np.ones(2,dtype='i')
             CSI = [np.zeros((2),dtype='i'),np.zeros(2)]
             if 'Crenel' in waveType:
@@ -2614,28 +2614,31 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return CSI,dF,dFTP
         
     def DoXYZ():
-        dX,dXTP = None,None
+        delt4 = np.ones(4)*0.001
+        delt5 = np.ones(5)*0.001
+        delt6 = np.eye(6)*0.001
+        if 'Fourier' in waveType:
+            dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,nxs,nxs]
+              #3x6x12 modulated position array (X,Spos,tau)& force positive
+        elif waveType == 'Sawtooth':
+            dX = posSawtooth(tau,delt4[0],delt4[1:])
+        elif waveType in ['ZigZag','Block']:
+            if waveType == 'ZigZag':
+                dX = posZigZag(tau,delt5[:2],delt5[2:])
+            else:
+                dX = posBlock(tau,delt5[:2],delt5[2:])
+        dXTP = []
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         elif siteSym == '-1':
             CSI = [[1,0,0],[2,0,0],[3,0,0], [0,0,0],[0,0,0],[0,0,0]],3*[[1.,0.,0.],]+3*[[0.,0.,0.],]
         else:
-            delt4 = np.ones(4)*0.001
-            delt5 = np.ones(5)*0.001
-            delt6 = np.eye(6)*0.001
             if 'Fourier' in waveType:
-                dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,nxs,nxs]
-                  #3x6x12 modulated position array (X,Spos,tau)& force positive
                 CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
             elif waveType == 'Sawtooth':
-                dX = posSawtooth(tau,delt4[0],delt4[1:])
                 CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0]]),
                     np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
             elif waveType in ['ZigZag','Block']:
-                if waveType == 'ZigZag':
-                    dX = posZigZag(tau,delt5[:2],delt5[2:])
-                else:
-                    dX = posBlock(tau,delt5[:2],delt5[2:])
                 CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0]]),
                     np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
             XSC = np.ones(6,dtype='i')
@@ -2716,7 +2719,9 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return list(CSI),dX,dXTP
         
     def DoUij():
-        dU,dUTP = None,None
+        delt12 = np.eye(12)*0.0001
+        dU = posFourier(tau,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x12 array
+        dUTP = []
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
                 [7,0,0],[8,0,0],[9,0,0],[10,0,0],[11,0,0],[12,0,0]],12*[[1.,0.,0.],]
@@ -2724,9 +2729,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI = 6*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],   \
                 6*[[0.,0.,0.],]+[[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]
         else:
-            tau = np.linspace(0,1,49,True)
-            delt12 = np.eye(12)*0.0001
-            dU = posFourier(tau,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x12 array
             CSI = [np.zeros((12,3),dtype='i'),np.zeros((12,3))]
             USC = np.ones(12,dtype='i')
             dUTP = []
@@ -2829,7 +2831,8 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return list(CSI),dU,dUTP
     
     def DoMag():
-        dM = []
+        delt6 = np.eye(6)*0.001
+        dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
         dMTP = []
         CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         if siteSym == '1':
@@ -2837,9 +2840,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         elif siteSym in ['-1','mmm','2/m(x)','2/m(y)','2/m(z)','4/mmm001']:
             CSI = 3*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
         else:
-            tau = np.linspace(0,1,49,True)
-            delt6 = np.eye(6)*0.001
-            dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
               #3x6x12 modulated moment array (M,Spos,tau)& force positive
             CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
             MSC = np.ones(6,dtype='i')
@@ -2954,7 +2954,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
     if debug:
         return CSI,dF,dFTP
     else:
-        return CSI
+        return CSI,[],[]
     
 def MustrainNames(SGData):
     'Needs a doc string'

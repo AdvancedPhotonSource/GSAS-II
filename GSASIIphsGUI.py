@@ -5004,9 +5004,9 @@ def UpdatePhaseData(G2frame,Item,data):
                         if not iwave:
                             if waveTyp in ['ZigZag','Block','SawTooth','Crenel']:
                                 nx = 1
-                            CSI = G2spc.GetSSfxuinel(waveTyp,Stype,1,xyz,SGData,SSGData,debug=True)[0]
+                            CSI = G2spc.GetSSfxuinel(waveTyp,Stype,1,xyz,SGData,SSGData)[0]
                         else:
-                            CSI = G2spc.GetSSfxuinel('Fourier',Stype,iwave+1-nx,xyz,SGData,SSGData)
+                            CSI = G2spc.GetSSfxuinel('Fourier',Stype,iwave+1-nx,xyz,SGData,SSGData)[0]
                         waveName = 'Fourier'
                         if Stype == 'Sfrac':
                             if 'Crenel' in waveTyp and not iwave:

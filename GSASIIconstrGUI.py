@@ -1286,7 +1286,6 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
-#    invTrans = nl.inv(Trans)
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     
     opId = oldPhase['pId']
@@ -1304,6 +1303,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     parmDict = {}
     varyList = []
     xnames = ['dAx','dAy','dAz']
+#    invTrans = nl.inv(Trans)
 #    Us = ['AU11','AU22','AU33','AU12','AU13','AU23']
 #    Uids = [[0,0,'AU11'],[1,1,'AU22'],[2,2,'AU33'],[0,1,'AU12'],[0,2,'AU13'],[1,2,'AU23']]
     for ia,code in enumerate(atCodes):
@@ -1355,11 +1355,16 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #                    parm = '%d::%s;%s'%(opId,Us[iu],iat)
 #                    DepConsDict[Uid[2]].append([abs(nU%1.),G2obj.G2VarObj(parm)])
 #        nUcof = atom[iu:iu+6]
+#        conStrings = []
 #        for iU,Usi in enumerate(Us):
 #            parm = '%d::%s;%d'%(npId,Usi,ia)
 #            parmDict[parm] = nUcof[iU]
 #            varyList.append(parm)
 #            IndpCon = [1.0,G2obj.G2VarObj(parm)]
+#            conStr = str([IndpCon,DepConsDict[Usi]])
+#            if conStr in conStrings:
+#                continue
+#            conStrings.append(conStr)
 #            if len(DepConsDict[Usi]) == 1:
 #                if DepConsDict[Usi][0]:
 #                    constraints['Phase'].append([IndpCon,DepConsDict[Usi][0],None,None,'e'])

@@ -5151,6 +5151,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Make new phase from selected unit cell')
         self.ExportCells = self.IndexEdit.Append(G2G.wxID_EXPORTCELLS,'Export cell list','Export cell list to csv file')
         self.PostfillDataMenu()
+        self.LoadCell.Enable(False)
         self.IndexPeaks.Enable(False)
         self.RunSubGroups.Enable(False)
         self.RunSubGroupsMag.Enable(False)

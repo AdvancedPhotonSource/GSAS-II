@@ -3184,7 +3184,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[6:13] = Cell[1:8]
         controls[13] = SGData['SpGrp']
 #        G2frame.GPXtree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
-        G2frame.dataWindow.RunSubGroups.Enable(True)
+#        G2frame.dataWindow.RunSubGroups.Enable(True)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
@@ -3667,7 +3667,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
         E,SGData = G2spc.SpcGroup(controls[13])
-        atoms = list(set([atom[1] for atom in controls[15]]))        
         Kx = [' ','0','1/2','-1/2','1/3','-1/3','2/3','1']
         Ky = [' ','0','1/2','1/3','2/3','1']
         Kz = [' ','0','1/2','3/2','1/3','2/3','1']
@@ -3913,6 +3912,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataWindow.ExportCells.Enable(True)
     elif magcells:
         G2frame.dataWindow.CopyCell.Enable(True)        
+    if G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Phases'):
+        G2frame.dataWindow.LoadCell.Enable(True)
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Indexing controls: '),0,WACV)

@@ -3310,7 +3310,7 @@ def MagSytSym(SytSym,dupDir,SGData):
                    '(x)':['m(x)','m(y)','m(z)'],'(y)':['m(x)','m(y)','m(z)'],'(z)':['m(x)','m(y)','m(z)'],}
         
     elif '32' in SytSym:
-        ops = {'(120)':['3','2(120)',],'(100)':['3','2(100)']}
+        ops = {'(120)':['3','2(120)',],'(100)':['3','2(100)'],'(111)':['3(111)','2(x)']}
     elif '23' in SytSym:
         ops = {'':['2(x)','3(111)']}
     elif 'm3' in SytSym:
@@ -3320,7 +3320,7 @@ def MagSytSym(SytSym,dupDir,SGData):
                '(-+-)':['3(-+-)','m(+0-)',],'(--+)':['3(--+)','m(+-0)',],
                '(100)':['3','m(100)'],'(120)':['3','m(210)',]}
     
-    if SytSym.split('(')[0] in ['6/m','6mm','-6m2','622','-6','-3','-3m',]:     #not simple cases
+    if SytSym.split('(')[0] in ['6/m','6mm','-6m2','622','-6','-3','-3m','-43m',]:     #not simple cases
         MagSytSym = SytSym
         if "-1'" in dupDir:
             if '-6' in SytSym:
@@ -3338,6 +3338,9 @@ def MagSytSym(SytSym,dupDir,SGData):
         elif '6mm' in SytSym:
             if "m'(110)" in dupDir:
                 MagSytSym = "6'm'm"
+        elif '-43m' in SytSym:
+            if "m'(110)" in dupDir:
+                MagSytSym = "-43m'"
         return MagSytSym
     try:
         axis = '('+SytSym.split('(')[1]

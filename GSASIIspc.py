@@ -1063,7 +1063,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             magSym[1] += "'"
             magSym[2] += "'"
             SGData['MagPtGp'] = "m'3'"
-        if SpnFlp[2] < 0:
+        if SpnFlp[1] < 0:
             if not 'm' in magSym[1]:    #only Ia3
                 magSym[1].strip("'")
                 SGData['MagPtGp'] = "m3'"
@@ -2837,7 +2837,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
-        elif siteSym in ['-1','mmm','2/m(x)','2/m(y)','2/m(z)','4/mmm001']:
+        elif siteSym in ['-1',]:
             CSI = 3*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
         else:
               #3x6x12 modulated moment array (M,Spos,tau)& force positive
@@ -2855,9 +2855,9 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 dMT[:,:3,:] *= (ssdet*sdet)            # modify the sin component
                 dMTP.append(dMT)
                 for i in range(3):
-                    if not np.allclose(dM[i,i,:],dMT[i,i,:]):
+                    if not np.allclose(dM[i,i,:],-dMT[i,i,:]):
                         msc[i] = 0
-                    if not np.allclose(dM[i,i+3,:],dMT[i,i+3,:]):
+                    if not np.allclose(dM[i,i+3,:],-dMT[i,i+3,:]):
                         msc[i+3] = 0
                 if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                     msc[3:6] = 0
@@ -2865,17 +2865,17 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                         [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
                     if dT:
                         if '(x)' in siteSym:
-                            CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
+                            CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
+                                CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
                         elif '(y)' in siteSym:
-                            CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                            CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                                CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
                         elif '(z)' in siteSym:
-                            CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                            CSI[1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
-                                CSI[1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                                CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                     else:
                         CSI[1][3:] = [0.,0.,0.],[0.,0.,0.],[0.,0.,0.]
                 if '4/mmm' in laue:
@@ -2918,7 +2918,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
     if debug: print ('siteSym: '+siteSym)
     SSGOps = copy.deepcopy(SSGData['SSGOps'])
     #expand ops to include inversions if any
-    if SGData['SGInv']:
+    if SGData['SGInv'] and not SGData['SGFixed']:
         for op,sop in zip(SGData['SGOps'],SSGData['SSGOps']):
             SGOps.append([-op[0],-op[1]%1.])
             SSGOps.append([-sop[0],-sop[1]%1.])
@@ -3208,13 +3208,15 @@ def SytSym(XYZ,SGData):
     dupDir = {}
     inv = SGData['SGInv']+1
     icen = SGData['SGCen']
+    Ncen = len(icen)
     if SGData['SGFixed']:       #already in list of operators
         inv = 1
+        if Ncen > 1: Ncen //= 2
     Xeqv = list(GenAtom(XYZ,SGData,True))
 #    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData['SGOps'])
     L = -1
-    for ic,cen in enumerate(icen):
+    for ic,cen in enumerate(icen[:Ncen]):
         for invers in range(int(inv)):
             for io,ops in enumerate(SGData['SGOps']):
                 irtx = (1-2*invers)*IRT[io]
@@ -3403,6 +3405,7 @@ def ElemPosition(SGData):
     Inv = SGData['SGInv']
     eleSym = {-3:['','-1'],-2:['',-6],-1:['2','-4'],0:['3','-3'],1:['4','m'],2:['6',''],3:['1','']}
     # get operators & expand if centrosymmetric
+    SymElements = []
     Ops = SGData['SGOps']
     opM = np.array([op[0].T for op in Ops])
     opT = np.array([op[1] for op in Ops])
@@ -3439,9 +3442,9 @@ def ElemPosition(SGData):
         else:               #rotations
             print ('rotation',Es)
             X = [-1,-1,-1]
-        #SymElements.append([Es,X])
+        SymElements.append([Es,X])
         
-    return #SymElements
+    return SymElements
     
 def ApplyStringOps(A,SGData,X,Uij=[]):
     'Needs a doc string'

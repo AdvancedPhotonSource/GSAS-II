@@ -3243,6 +3243,8 @@ class SGMagSpinBox(wx.Dialog):
                 tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
                 j = 0
                 for item in self.table:
+                    if ')' not in item:
+                        continue
                     flds = item.split(')')[1]
                     tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV)            
                     flds = flds.replace(' ','').split(',')

@@ -327,6 +327,8 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.MPhase['General']['SGData']['SpnFlp'] = censpn
                 G2spc.GenMagOps(SGData)         #set magMom
                 self.MPhase['General']['SGData']['MagSpGrp'] = MSpGrp
+                if "1'" in MSpGrp:
+                    SGData['SGGray'] = True
                 MagPtGp = blk.get('_space_group.magn_point_group')
                 if not MagPtGp:
                     MagPtGp = blk.get('_space_group.magn_point_group_name')
@@ -583,7 +585,9 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 name = blknm
             self.Phase['General']['Name'] = name.strip()
             self.Phase['General']['Super'] = Super
+            self.Phase = copy.deepcopy(self.Phase)      #clean copy
             if magnetic:
+                self.MPhase = copy.deepcopy(self.MPhase)    #clean copy
                 self.MPhase['General']['Type'] = 'magnetic'                
                 self.MPhase['General']['Name'] = name.strip()+' mag'
                 self.MPhase['General']['Super'] = Super
@@ -599,6 +603,12 @@ class CIFPhaseReader(G2obj.ImportPhase):
             else:
                 self.MPhase = None
             if Super:
+                if self.Phase['General']['SGData']['SGGray']:
+                    SGData = self.Phase['General']['SGData']
+                    SGData['SGGray'] = False
+                    ncen = len(SGData['SGCen'])
+                    SGData['SGCen'] = SGData['SGCen'][:ncen//2]
+                    self.Phase['General']['SGData'].update(SGData)
                 self.Phase['General']['Modulated'] = True
                 self.Phase['General']['SuperVec'] = SuperVec
                 self.Phase['General']['SuperSg'] = SuperSg

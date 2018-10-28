@@ -1788,7 +1788,7 @@ def splitSSsym(SSymbol):
     gensym = list(gensym)
     return modsym,gensym
         
-def SSGPrint(SGData,SSGData):
+def SSGPrint(SGData,SSGData,AddInv=False):
     '''
     Print the output of SSpcGroup in a nicely formatted way. Used in SSpaceGroup
 
@@ -1830,6 +1830,10 @@ def SSGPrint(SGData,SSGData):
     SSGTable = []
     for i,Opr in enumerate(SSGData['SSGOps']):
         SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
+    if AddInv and SGData['SGInv']:
+        for i,Opr in enumerate(SSGData['SSGOps']):
+            IOpr = [-Opr[0],-Opr[1]]
+            SSGTable.append('(%2d) %s'%(i+1,SSMT2text(IOpr)))        
     if SGData['SGGray']:
         SSGTable.append("     for 1'")
         for i,Opr in enumerate(SSGData['SSGOps']):
@@ -3211,7 +3215,7 @@ def SytSym(XYZ,SGData):
     Ncen = len(icen)
     if SGData['SGFixed']:       #already in list of operators
         inv = 1
-        if Ncen > 1: Ncen //= 2
+    if SGData['SGGray'] and Ncen > 1: Ncen //= 2
     Xeqv = list(GenAtom(XYZ,SGData,True))
 #    for xeqv in Xeqv:   print(xeqv)
     IRT = PackRot(SGData['SGOps'])
@@ -3237,7 +3241,7 @@ def SytSym(XYZ,SGData):
                         dupDir[px] = L
                         Isym += 2**(jx-1)
     if Isym == 1073741824: Isym = 0
-    Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*inv//Jdup
+    Mult = len(SGData['SGOps'])*Ncen*inv//Jdup
           
     return GetKNsym(str(Isym)),Mult,Ndup,dupDir
    

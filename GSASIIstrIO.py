@@ -184,8 +184,8 @@ def ProcessConstraints(constList):
 def ReadCheckConstraints(GPXfile, seqHist=None):
     '''Load constraints and related info and return any error or warning messages
     This is done from the GPX file rather than the tree.
-    This this is called before a refinement is launched (OnRefine and OnSeqRefine), where the
-    tree could be used.
+    This is called before a refinement is launched (OnRefine and OnSeqRefine), 
+    where the tree could be used.
     
     :param dict seqHist: defines a specific histogram to be loaded for a sequential
        refinement, if None (default) all are loaded.
@@ -208,6 +208,9 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=True)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
+    msg = G2mv.EvaluateMultipliers(constDict,phaseDict,hapDict,histDict)
+    if msg:
+        return 'Unable to interpret multiplier(s): '+msg,''
     errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
     if errmsg:
         # print some diagnostic info on the constraints
@@ -2259,7 +2262,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+'LeBail'] = hapData.get('LeBail',False)
                     hapDict[pfx+'newLeBail'] = hapData.get('newLeBail',True)
                 if Phases[phase]['General']['Type'] == 'magnetic':
-                    dmin = max(dmin,Phases[phase]['General']['MagDmin'])
+                    dmin = max(dmin,Phases[phase]['General'].get('MagDmin',0.))
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]
                     if hapData[item][1] and not hapDict[pfx+'LeBail']:

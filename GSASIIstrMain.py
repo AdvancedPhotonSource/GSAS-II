@@ -225,9 +225,11 @@ def Refine(GPXfile,dlg=None,makeBack=True):
     G2stIO.GetFprime(calcControls,Histograms)
     # do constraint processing
     varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
+    msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
+    if msg:
+        return False,'Unable to interpret multiplier(s): '+msg
     try:
-        groups,parmlist = G2mv.GroupConstraints(constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict)
+        G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
         #print G2mv.VarRemapShow(varyList)
         #print 'DependentVars',G2mv.GetDependentVars()
         #print 'IndependentVars',G2mv.GetIndependentVars()
@@ -413,9 +415,11 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         G2mv.InitVars()
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
+        msg = G2mv.EvaluateMultipliers(constDict,parmDict)
+        if msg:
+            return False,'Unable to interpret multiplier(s): '+msg
         try:
-            groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=hId)
+            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
 #            if GSASIIpath.GetConfigValue('debug'): print("DBG_"+
 #                G2mv.VarRemapShow(varyList,True))
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)

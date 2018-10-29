@@ -4419,9 +4419,12 @@ class GSASII(wx.Frame):
                 constList += Constraints[item]
             G2mv.InitVars()
             constrDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
-            groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmValDict)
-            G2mv.Map2Dict(parmValDict,varyList)
+            msg = G2mv.EvaluateMultipliers(constrDict,parmValDict)
+            if msg:
+                print('Unable to interpret multiplier(s):',msg)
+            else:
+                G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmValDict)
+                G2mv.Map2Dict(parmValDict,varyList)
         except G2mv.ConstraintException:
             pass
         wx.EndBusyCursor()
@@ -5596,13 +5599,13 @@ def UpdateNotebook(G2frame,data):
             
 ################################################################################
 #####  Comments
-################################################################################           
-       
-def UpdateComments(G2frame,data):                   
-
+################################################################################       
+def UpdateComments(G2frame,data):
+    '''Place comments into the data window
+    '''
     lines = ""
     for line in data:
-        if 'phoenix' in wx.version():
+        if 'phoenix' in wx.version() and hasattr(line,'decode'):
             lines += line.decode('latin-1').rstrip()+'\n'
         else:
             lines += line.rstrip()+'\n'
@@ -7104,7 +7107,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             groups,parmlist,constrDict,fixedList,ihst = constraintInfo
             varyList = data[name]['varyList']
             parmDict = data[name]['parmDict']
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
+            if msg:
+                print('Unable to interpret multiplier(s) for',name,':',msg)
+                continue
+            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
             if 'Dist' in expr:
                 derivs = G2mth.CalcDistDeriv(obj.distance_dict,obj.distance_atoms, parmDict)
                 pId = obj.distance_dict['pId']

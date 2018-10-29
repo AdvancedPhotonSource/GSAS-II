@@ -525,6 +525,8 @@ def UpdateConstraints(G2frame,data):
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+        msg = G2mv.EvaluateMultipliers(constDictList,phaseDict)
+        if msg: return 'Unable to interpret multiplier(s): '+msg
         return G2mv.CheckConstraints('',constDictList,fixedList)
 
     def CheckAddedConstraint(newcons):
@@ -546,6 +548,7 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('Constraint Error',
                 'Error with newly added constraint:\n'+errmsg+
                 '\nIgnoring newly added constraint',parent=G2frame)
+            # Note no multiplier formulas in GUI, skipping EvaluateMultipliers  
             # reset error status
             errmsg,warnmsg = CheckConstraints(allcons1)
             if errmsg:
@@ -567,6 +570,7 @@ def UpdateConstraints(G2frame,data):
         '''
         allcons = FindAllCons(data)
         if not len(allcons): return True
+        # Note no multiplier formulas in GUI, skipping EvaluateMultipliers  
         errmsg,warnmsg = CheckConstraints(allcons)
         if errmsg:
             G2frame.ErrorDialog('Constraint Error',
@@ -649,7 +653,7 @@ def UpdateConstraints(G2frame,data):
         page = G2frame.Page
         vartype,varList,constrDictEnt = PageSelection(page)
         if vartype is None: return
-        title1 = "Setup equivalent "+vartype+" variables"
+        title1 = "Create equivalence constraint between "+vartype+" variables"
         title2 = "Select additional "+vartype+" variable(s) to be equivalent with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
@@ -705,7 +709,7 @@ def UpdateConstraints(G2frame,data):
         page = G2frame.Page
         vartype,varList,constrDictEnt = PageSelection(page)
         if vartype is None: return
-        title1 = "Setup constraint on "+vartype+" variables"
+        title1 = "Creating constraint on "+vartype+" variables"
         title2 = "Select additional "+vartype+" variable(s) to include in constraint with "
         if not varList:
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,

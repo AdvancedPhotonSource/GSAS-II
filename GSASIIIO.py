@@ -669,9 +669,13 @@ def ProjFileOpen(G2frame,showProvenance=True):
         else:
             print('project load successful')
         G2frame.NewPlot = True
-    except:
+    except Exception as errmsg:
+        if GSASIIpath.GetConfigValue('debug'):
+            print('\nError reading GPX file:',errmsg)
+            import traceback
+            print (traceback.format_exc())
         msg = wx.MessageDialog(G2frame,message="Error reading file "+
-            str(G2frame.GSASprojectfile)+". This is not a GSAS-II .gpx file",
+            str(G2frame.GSASprojectfile)+". This is not a current GSAS-II .gpx file",
             caption="Load Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
         msg.ShowModal()
     finally:
@@ -1606,9 +1610,12 @@ class ExportBaseclass(object):
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+        msg = G2mv.EvaluateMultipliers(constDict,phaseDict)
+        if msg:
+            print('Unable to interpret multiplier(s): '+msg)
+            raise Exception(' *** CIF creation aborted ***')
         try:
-            groups,parmlist = G2mv.GroupConstraints(constDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,self.parmDict)
+            G2mv.GenerateConstraints(varyList,constDict,fixedList,self.parmDict)
             #print(G2mv.VarRemapShow(varyList))
         except:
             # this really should not happen

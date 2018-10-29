@@ -130,8 +130,11 @@ class testDeriv(wx.Frame):
         self.use = [False for i in range(len(self.varylist+self.depVarList))]
         self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.varylist+self.depVarList]
         file.close()
-        groups,parmlist = G2mv.GroupConstraints(self.constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
+        msg = G2mv.EvaluateMultipliers(self.constrDict,self.parmDict)
+        if msg:
+            print('Unable to interpret multiplier(s): '+msg)
+            raise Exception
+        G2mv.GenerateConstraints(self.varylist,self.constrDict,self.fixedList,self.parmDict)
         print(G2mv.VarRemapShow(self.varylist))
         print('Dependent Vary List:',self.depVarList)
             

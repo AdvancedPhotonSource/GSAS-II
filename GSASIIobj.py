@@ -79,8 +79,7 @@ Note that the last three items in the list play a special role:
    a variable name can be specified as a str (used for externally
    generated constraints)
  * <varyflag> is True or False for `New variable` (``constype=f``) constraints
-   or is None. This will be implemented in the future to indicate if these variables
-   should be refined.
+   or is None. This indicates if this variable should be refined.
  * <constype> is one of four letters, 'e', 'c', 'h', 'f' that determines the type of constraint:
 
     * 'e' defines a set of equivalent variables. Only the first variable is refined (if the

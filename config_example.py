@@ -192,3 +192,7 @@ Plot_Colors = 'k r g b m c'
 '''The colors for line plots: use one of 'k'-black, 'r'-red, 'b'-blue, 'g'-green, 'm'-magenta, 'c'-cyan for the
 line colors in order of obs., calc., back., diff., color5 & color6 separated by spaces; 6 items required.
 '''
+
+PDF_Rmax = 100.
+'''Maximum radius for G(r) calculations: range is from 10-200A; default is 100A
+'''

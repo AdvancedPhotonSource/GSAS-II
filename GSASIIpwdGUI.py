@@ -6506,7 +6506,7 @@ def UpdatePDFGrid(G2frame,data):
         resetQ = wx.Button(G2frame.dataWindow,label='Reset?',style=wx.BU_EXACTFIT)
         sqBox.Add(resetQ,0,WACV)
         resetQ.Bind(wx.EVT_BUTTON, OnResetQ)
-        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Rmax: '),0,WACV)
+        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Plot Rmax: '),0,WACV)
         rmax = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Rmax',nDig=(10,1),min=10.,max=200.,
             typeHint=float,OnLeave=AfterChangeNoRefresh,size=wx.Size(50,20))
         sqBox.Add(rmax,0,WACV)
@@ -6579,7 +6579,7 @@ def UpdatePDFGrid(G2frame,data):
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        od = {'label_1':'Only refine flag','value_1':False}
+        od = {'label_1':'Only refine flag','value_1':False,'label_2':'Only Lorch flag','value_2':False}
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList,extraOpts=od)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -6589,6 +6589,8 @@ def UpdatePDFGrid(G2frame,data):
                     olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Controls'))
                     if od['value_1']:
                         olddata['Sample Bkg.']['Refine'] = data['Sample Bkg.']['Refine']    #only one flag
+                    elif od['value_2']:
+                        olddata['Lorch'] = data['Lorch']    #only one flag                        
                     else:
                         sample = olddata['Sample']
                         olddata.update(copy.deepcopy(data))
@@ -6688,7 +6690,7 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
         else:
-            G2plt.PlotISFG(G2frame,data,newPlot=False)
+            G2plt.PlotISFG(G2frame,data,newPlot=True)
         
     def OnComputeAllPDF(event):
         print('Calculating PDFs...')
@@ -6861,7 +6863,7 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         def OnRefBack(event):
             peaks['Background'][2] = refbk.GetValue()
         
-        backBox = wx.wx.BoxSizer(wx.HORIZONTAL)
+        backBox = wx.BoxSizer(wx.HORIZONTAL)
         backBox.Add(wx.StaticText(G2frame.dataWindow,label=' Background slope: '),0,WACV)
         slope = G2G.ValidatedTxtCtrl(G2frame.dataWindow,peaks['Background'][1],1,nDig=(10,3),
             min=-4.*np.pi,max=0.,typeHint=float,OnLeave=NewBack)
@@ -6902,12 +6904,10 @@ def UpdatePDFPeaks(G2frame,peaks,data):
         colLabels = ['position','magnitude','sig','refine','Atom A','Atom B','Bond No.']
         Types = 3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_CHOICE+': ,P,M,S,PM,PS,MS,PMS',]+     \
             2*[wg.GRID_VALUE_STRING,]+[wg.GRID_VALUE_FLOAT+':10,3',]
-        rowLabels = range(len(peaks['Peaks']))
+        rowLabels = [str(i) for i in range(len(peaks['Peaks']))]
         peakTable = G2G.Table(peaks['Peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
         PDFPeaks = G2G.GSGrid(G2frame.dataWindow)
-        PDFPeaks.SetTable(peakTable,False)
-        PDFPeaks.SetMargins(0,0)
-        PDFPeaks.SetRowLabelSize(40)
+        PDFPeaks.SetTable(peakTable,True)
         PDFPeaks.AutoSizeColumns(False)
         PDFPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PeaksRefine)
         PDFPeaks.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, ElTypeSelect)

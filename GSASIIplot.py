@@ -4103,8 +4103,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         if event.button == 3:
             del Peaks['Peaks'][lineNo-2]
         G2frame.itemPicked = None
-        G2pdG.UpdatePDFPeaks(G2frame,Peaks,data)
-        PlotISFG(G2frame,data,peaks=Peaks,newPlot=False)
+        wx.CallAfter(G2pdG.UpdatePDFPeaks,G2frame,Peaks,data)
+        wx.CallAfter(PlotISFG,G2frame,data,peaks=Peaks,newPlot=False)
 
     # PlotISFG continues here
     ############################################################
@@ -4171,6 +4171,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     if plotType == 'G(R)':
         Plot.set_xlabel(r'r,$\AA$',fontsize=14)
         Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
+        if lim is not None:
+            lim[0] = list([lim[0][0],data['Rmax']])
+            Plot.set_xlim(lim[0])
     else:
         Plot.set_xlabel(r'$Q,\AA^{-1}$',fontsize=14)
         Plot.set_ylabel(r''+plotType,fontsize=14)
@@ -4274,6 +4277,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 Xb = [0.,2.5]
                 Yb = [0.,-10.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
+                Plot.set_xlim([0.,PDFdata['Rmax']])
             elif plotType == 'F(Q)':
                 Plot.axhline(0.,color='k')
             elif plotType == 'S(Q)':

@@ -48,7 +48,8 @@ where Pj is a GSAS-II parameter name and Mjk is a constant (float) multiplier.
 Alternately, multipliers Mjk can contain a formula (str) that will be evaluated prior 
 to the start of the refinement. In a formula, GSAS-II parameters will be replaced by the 
 value of the parameter before the formula is evaluated, so ``'np.cos(0::Ax:2)'`` is a valid 
-multiplier. 
+multiplier. At present, only phase (atom/cell) parameters are available for use in 
+a formula, but this can be expanded if needed. 
 
 This type of constraint describes an alternate 
 degree of freedom where parameter Px and Py, etc. are varied to keep 
@@ -76,7 +77,8 @@ where Cn is a constant (float), where Pj is a GSAS-II parameter name,
 and where Njk is a constant multiplier (float) or a formula (str) that will be evaluated prior 
 to the start of the refinement. In a formula, GSAS-II parameters will be replaced by the 
 value of the parameter before the formula is evaluated, so ``'np.cos(0::Ax:2)'`` is a valid 
-multiplier. 
+multiplier. At present, only phase (atom/cell) parameters are available for use in 
+a formula, but this can be expanded if needed. 
 
 These equations set an interdependence between variables. 
 Common uses of parameter constraints are to set rules that decrease the number of parameters, 
@@ -106,7 +108,8 @@ parameter P1. Alternately, equivalences can be created with :func:`StoreEquivale
 where the multipliers can be a formula (str) that will be evaluated prior to the start of
 the refinement. In a formula, GSAS-II parameters will be replaced by the value of the
 parameter before the formula is evaluate, so ``'np.cos(0::Ax:2)'`` is a valid multiplier. 
-
+At present, only phase (atom/cell) parameters are available for use in 
+a formula, but this can be expanded if needed. 
 Note that 
 the latter constraint expression is conceptually identical to 
 defining constraint equations. In practice, however, 
@@ -436,8 +439,10 @@ is below:
    generate the internally used tables from constraints and equivalences
 
 :func:`EvaluateMultipliers`
-   Convert any string-specified multipliers to numbers. Call this before 
+   Convert any string-specified (formula-based) multipliers to numbers. Call this before 
    using :func:`CheckConstraints` or :func:`GenerateConstraints`. 
+   At present, the code may pass only the dict for phase (atom/cell) parameters, 
+   but this could be expanded if needed. 
 
 :func:`Map2Dict`
    To determine values for the parameters created in this module, one

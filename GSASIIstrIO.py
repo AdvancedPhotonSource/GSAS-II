@@ -208,7 +208,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=True)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
-    msg = G2mv.EvaluateMultipliers(constDict,phaseDict,hapDict,histDict)
+    msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
     if msg:
         return 'Unable to interpret multiplier(s): '+msg,''
     errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)

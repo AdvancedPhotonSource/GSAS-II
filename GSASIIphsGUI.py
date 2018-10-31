@@ -5485,6 +5485,8 @@ def UpdatePhaseData(G2frame,Item,data):
             FindBondsDraw(data)
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
 
     def DrawAtomLabel(event):
         indx = drawAtoms.GetSelectedRows()
@@ -5505,6 +5507,8 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg.Destroy()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def DrawAtomColor(event):
 
@@ -5542,6 +5546,8 @@ def UpdatePhaseData(G2frame,Item,data):
             dlg.Destroy()
             G2frame.GetStatusBar().SetStatusText('',1)
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def ResetAtomColors(event):
         generalData = data['General']
@@ -5575,6 +5581,8 @@ def UpdatePhaseData(G2frame,Item,data):
             data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
             drawAtoms.ClearSelection()                                  #do I really want to do this?
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def noDuplicate(xyz,atomData):                  #be careful where this is used - it's slow
         cx = data['Drawing']['atomPtrs'][0]
@@ -5637,6 +5645,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def AddSphere(event):
         generalData = data['General']
@@ -5750,6 +5760,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def FillCoordSphere(event):
         generalData = data['General']
@@ -5797,6 +5809,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def FillUnitCell(event):
         indx = drawAtoms.GetSelectedRows()
@@ -5848,6 +5862,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()
@@ -5860,6 +5876,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
+        else:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
         event.StopPropagation()
         
     def OnReloadDrawAtoms(event):
@@ -5898,6 +5916,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnDrawPlane(event):
         indx = drawAtoms.GetSelectedRows()
         if len(indx) < 4:
+            G2G.G2MessageBox(G2frame,'Select four or more atoms first')
             print ('**** ERROR - need 4+ atoms for plane calculation')
             return
         PlaneData = {}
@@ -5920,6 +5939,7 @@ def UpdatePhaseData(G2frame,Item,data):
         # distance to view point
         indx = drawAtoms.GetSelectedRows()
         if not indx:
+            G2G.G2MessageBox(G2frame,'Select atoms first')
             print ('***** ERROR - no atoms selected')
             return
         generalData = data['General']
@@ -5942,6 +5962,7 @@ def UpdatePhaseData(G2frame,Item,data):
         #distance, angle, torsion 
         indx = drawAtoms.GetSelectedRows()
         if len(indx) not in [2,3,4]:
+            G2G.G2MessageBox(G2frame,'Select 2, 3 or 4 atoms first')
             print ('**** ERROR - wrong number of atoms for distance, angle or torsion calculation')
             return
         DATData = {}

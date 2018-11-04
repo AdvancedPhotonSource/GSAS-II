@@ -1392,23 +1392,23 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #                if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
 #                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
 #                    DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
-    conStrings = []
-    for iA,Asi in enumerate(As):
-        parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
-        parmDict[parm] = oAcof[iA]
-        varyList.append(parm)
-        IndpCon = [1.0,G2obj.G2VarObj(parm)]
-        conStr = str([IndpCon,DepConsDict[Asi]])
-        if conStr in conStrings:
-            continue
-        conStrings.append(conStr)
-        if len(DepConsDict[Asi]) == 1:
-            if DepConsDict[Asi][0]:
-                constraints['Phase'].append([IndpCon,DepConsDict[Asi][0],None,None,'e'])
-        elif len(DepConsDict[Asi]) > 1:        
-            for Dep in DepConsDict[Asi]:
-                Dep[0] *= -1
-            constraints['Phase'].append([IndpCon]+DepConsDict[Asi]+[0.0,None,'c'])
+#    conStrings = []
+#    for iA,Asi in enumerate(As):
+#        parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
+#        parmDict[parm] = oAcof[iA]
+#        varyList.append(parm)
+#        IndpCon = [1.0,G2obj.G2VarObj(parm)]
+#        conStr = str([IndpCon,DepConsDict[Asi]])
+#        if conStr in conStrings:
+#            continue
+#        conStrings.append(conStr)
+#        if len(DepConsDict[Asi]) == 1:
+#            if DepConsDict[Asi][0]:
+#                constraints['Phase'].append([IndpCon,DepConsDict[Asi][0],None,None,'e'])
+#        elif len(DepConsDict[Asi]) > 1:        
+#            for Dep in DepConsDict[Asi]:
+#                Dep[0] *= -1
+#            constraints['Phase'].append([IndpCon]+DepConsDict[Asi]+[0.0,None,'c'])
     for hId,hist in enumerate(UseList):    #HAP - seems OK
         ohapkey = '%d:%d:'%(opId,hId)
         nhapkey = '%d:%d:'%(npId,hId)

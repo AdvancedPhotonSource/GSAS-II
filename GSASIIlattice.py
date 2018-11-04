@@ -467,6 +467,7 @@ def makeBilbaoPhase(result,uvec,trans,ifMag=False):
         phase['SGData']['GenSym'],phase['SGData']['GenFlg'],BNSsym = G2spc.GetGenSym(phase['SGData'])
         if result[1]:
             BNSlatt += '_'+result[1]
+            if 'P_S' in BNSlatt: BNSlatt = 'P_c'    #triclinic fix
             phase['SGData']['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
             G2spc.ApplyBNSlatt(phase['SGData'],phase['SGData']['BNSlattsym'])
         phase['SGData']['SpnFlp'] = G2spc.GenMagOps(phase['SGData'])[1]

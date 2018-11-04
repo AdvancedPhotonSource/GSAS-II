@@ -81,9 +81,10 @@ class TableParser(HTML.HTMLParser):
             self.beg = True
         elif tag == 'pre':
             self.in_pre = False
-            self.MVs.append(self.MV.replace('\n',' '))
-#            print('MV:')
-#            print(self.MV)
+            MV = self.MV.split()
+            MV = ['[[%s,%s,%s],[%s,%s,%s],[%s,%s,%s]]'%(MV[0],MV[4],MV[8],MV[1],MV[5],MV[9],MV[2],MV[6],MV[10]),'[%s.,%s.,%s.]'%(MV[3],MV[7],MV[11])]
+            self.MVs.append(MV)
+#            print('MV:',self.MV)
         elif tag == 'sub':
             self.in_sub = False
             
@@ -143,7 +144,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
-        return None
+        return None,None
     if r.status_code == 200:
         print('request OK')
         page = r.text
@@ -151,13 +152,14 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
     else:
         page = ''
         print('request failed. Reason=',r.reason)
-        return None
+        return None,None
     r.close()
 
     p = TableParser()
     p.feed(page)
-    result = list(zip(p.SPGPs,p.BNSs,p.MVs))
-    return result
+    nItms = len(p.MVs)
+    result = list(zip(p.SPGPs,p.BNSs,p.MVs,range(nItms),nItms*[[],],nItms*['[]',]))
+    return result,range(nItms)
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 
@@ -228,23 +230,26 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
 
     p = TableParser()
     p.feed(page)
-    result = list(zip(p.SPGPs,p.MVs))
-    return result
+    nItms = len(p.MVs)
+    result = list(zip(p.SPGPs,p.MVs,range(nItms),range(nItms),nItms*[0,]))
+    return result,range(nItms)
 
 def test():
     SGData = G2spc.SpcGroup('p -3 m 1')[1]
-    results = GetNonStdSubgroupsmag(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
+    results,baseList = GetNonStdSubgroupsmag(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     if results:
-        for spgp,bns,mv in results:
-            print('Space group:',spgp, 'BNS:',bns)
-            print('MV')
-            print(mv)
-    results = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
+        for [spgp,mv,bns,gid,altList,supList] in results:
+            if gid in baseList:
+                print('Space group:',spgp, 'BNS:',bns)
+                print('MV')
+                print(mv)
+    results,baseList = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     if results:
-        for spgp,mv in results:
-            print('Space group:',spgp)
-            print('MV')
-            print(mv)
+        for [spgp,mv,gid,altList,supList] in results:
+            if gid in baseList:
+                print('Space group:',spgp)
+                print('MV')
+                print(mv)
         
 
 if __name__ == '__main__':

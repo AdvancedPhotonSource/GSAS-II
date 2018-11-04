@@ -1378,19 +1378,20 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #                constraints['Phase'].append([IndpCon]+DepConsDict[Usi]+[0.0,None,'c'])
             
         #how do I do Uij's for most Trans?
-    As = ['A0','A1','A2','A3','A4','A5']
-    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
-    DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
-    for iA,Aid in enumerate(Aids):
-        GT = np.zeros((3,3))
-        if abs(nAcof[iA]) > 1.e-8:
-            GT[Aid[0],Aid[1]] = 1
-            nGT = G2lat.prodMGMT(GT,Trans)
-            nAT = G2lat.Gmat2A(nGT)
-            for ia,nA in enumerate(nAT):
-                if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
-                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
-                    DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
+#unfortunately, this doesn't always work!
+#    As = ['A0','A1','A2','A3','A4','A5']
+#    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
+#    DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
+#    for iA,Aid in enumerate(Aids):
+#        GT = np.zeros((3,3))
+#        if abs(nAcof[iA]) > 1.e-8:
+#            GT[Aid[0],Aid[1]] = 1.
+#            nGT = G2lat.prodMGMT(GT,Trans)
+#            nAT = G2lat.Gmat2A(nGT)
+#            for ia,nA in enumerate(nAT):
+#                if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
+#                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
+#                    DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
     conStrings = []
     for iA,Asi in enumerate(As):
         parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])

@@ -1701,7 +1701,8 @@ def SSChoice(SGData):
             '3m1':['(00g)'],
             '31m':['(00g)','(1/31/3g)'],
             '6/m':['(00g)',],
-            '6/mmm':['(00g)',]}
+            '6/mmm':['(00g)',],
+            'm3':['',],'m3m':['',]}
             
     laueTS = {'-1':['',],
             '2/m':['','s','0s','ss','s0'],
@@ -1712,7 +1713,8 @@ def SSChoice(SGData):
             '3m1':['','t0','0s','t00','0s0'],
             '31m':['','t00','0ss'],
             '6/m':['','h','t','s','s0'],
-            '6/mmm':['','h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s','ss00','0ss0','0s0s']}
+            '6/mmm':['','h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
+            'm3':['',],'m3m':['',]}
     laue = SGData['SGLaue']
     SSChoice = []
     for ax in laueSS[laue]:
@@ -2838,11 +2840,32 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         delt6 = np.eye(6)*0.001
         dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
         dMTP = []
-        CSI = [[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
+        CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
+        print(siteSym)
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
-        elif siteSym in ['-1',]:
+        elif siteSym in ['-1','mmm',]:
             CSI = 3*[[0,0,0],]+[[1,0,0],[2,0,0],[3,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
+        elif siteSym in ['4(z)','422(z)']:
+            CSI[0][0][0] = CSI[0][4][1] = 1
+            CSI[1][0][0] = 1.0
+            CSI[1][4][1] = -1.0
+        elif siteSym in ['-4m2(z)','422(z)',]:
+            CSI[0][5][0] = 1
+            CSI[1][5][0] = 1.0
+        elif siteSym in ['-32(100)',]:
+            CSI[0][2][0] = 1
+            CSI[1][2][0] = 1.0
+        elif siteSym in ['3',]:
+            CSI[0][0][0] = CSI[0][3][0] = CSI[0][4][0] = 1
+            CSI[1][0][0] = -np.sqrt(3.0)
+            CSI[1][3][0] = 2.0
+            CSI[1][4][0] = 1.0
+        elif siteSym in ['622','2(100)',]:
+            CSI[0][0][0] = CSI[0][1][0] = CSI[0][3][0] = 1
+            CSI[1][0][0] = 1.0
+            CSI[1][1][0] = 2.0
+            CSI[1][3][0] = np.sqrt(3.0)
         else:
               #3x6x12 modulated moment array (M,Spos,tau)& force positive
             CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
@@ -2859,9 +2882,13 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 dMT[:,:3,:] *= (ssdet*sdet)            # modify the sin component
                 dMTP.append(dMT)
                 for i in range(3):
-                    if not np.allclose(dM[i,i,:],-dMT[i,i,:]):
+                    if 'm(' in siteSym and not np.allclose(dM[i,i,:],-dMT[i,i,:]):
                         msc[i] = 0
-                    if not np.allclose(dM[i,i+3,:],-dMT[i,i+3,:]):
+                    elif '2(' in siteSym and not np.allclose(dM[i,i,:],dMT[i,i,:]):
+                        msc[i] = 0
+                    if 'm(' in siteSym and not np.allclose(dM[i,i+3,:],-dMT[i,i+3,:]):
+                        msc[i+3] = 0
+                    elif '2(' in siteSym and not np.allclose(dM[i,i+3,:],dMT[i,i+3,:]):
                         msc[i+3] = 0
                 if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                     msc[3:6] = 0
@@ -2883,6 +2910,8 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                     else:
                         CSI[1][3:] = [0.,0.,0.],[0.,0.,0.],[0.,0.,0.]
                 if '4/mmm' in laue:
+                    if siteSym in ['4/mmm(z)',]:
+                        CSI = 3*[[0,0,0],]+[[0,0,0],[0,0,0],[1,0,0]],3*[[0.,0.,0.],]+3*[[1.,0.,0.],]
                     if np.any(dtau%.5) and '1/2' in SSGData['modSymb']:
                         if '(xy)' in siteSym:
                             CSI[0] = [[1,0,0],[1,0,0],[2,0,0], [1,0,0],[1,0,0],[2,0,0]]

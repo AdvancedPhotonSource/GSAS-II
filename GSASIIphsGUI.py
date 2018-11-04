@@ -2526,20 +2526,24 @@ def UpdatePhaseData(G2frame,Item,data):
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
         UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
         magData = UCdata[5]
+        baseList = UCdata[0][16]
         magKeep = []
         magIds = []
         magchoices = []
         ifMag = False
-        for mid,magdata in enumerate(magData):
+        itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magData)]
+        phaseDict = dict(zip(itemList,magData))
+        for im,mid in enumerate(baseList):
+            magdata = phaseDict[mid]
             if magdata['Keep']:
                 if 'magAtms' in magdata:
                     ifMag = True
-                magdata['No.'] = mid+1
+                magdata['No.'] = im+1
                 trans = G2spc.Trans2Text(magdata['Trans'])
                 vec = G2spc.Latt2text([magdata['Uvec'],])
                 magKeep.append(magdata)
                 magIds.append(mid)
-                magchoices.append('(%d) %s; (%s) + (%s)'%(mid+1,magdata['Name'],trans,vec))
+                magchoices.append('(%d) %s; (%s) + (%s)'%(im+1,magdata['Name'],trans,vec))
         if not len(magKeep):
             G2frame.ErrorDialog('Subgroup/magnetic phase selection error','No magnetic phases found; be sure to "Keep" some')
             return

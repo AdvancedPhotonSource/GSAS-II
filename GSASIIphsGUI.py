@@ -2526,7 +2526,10 @@ def UpdatePhaseData(G2frame,Item,data):
         UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List')
         UCdata = list(G2frame.GPXtree.GetItemPyData(UnitCellsId))
         magData = UCdata[5]
-        baseList = UCdata[0][16]
+        if len(UCdata[0]) < 17:     #old version of k-SUBGROUPSMAG
+            baseList = range(1,len(magData)+1)
+        else:
+            baseList = UCdata[0][16]
         magKeep = []
         magIds = []
         magchoices = []

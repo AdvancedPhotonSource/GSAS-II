@@ -83,21 +83,85 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ################################################################################
 
 class SubCellsDialog(wx.Dialog):
-    def __init__(self,parent,title,items,phaseDict):
+    def __init__(self,parent,title,controls,SGData,items,phaseDict):
         wx.Dialog.__init__(self,parent,-1,title,
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = None
+        self.controls = controls
+        self.SGData = SGData         #for parent phase
         self.items = items
         self.phaseDict = phaseDict
         
         self.Draw()
     
     def Draw(self):
+        
+        def RefreshGrid(event):
+            r,c =  event.GetRow(),event.GetCol()
+            br = self.items[r]
+            phase = self.phaseDict[br]
+            rLab = magDisplay.GetRowLabelValue(r)
+            pname = '(%s) %s'%(rLab,phase['Name'])
+            if c == 0:
+                mSGData = phase['SGData']
+                text,table = G2spc.SGPrint(mSGData,AddInv=True)
+                if 'magAtms' in phase:
+                    msg = 'Magnetic space group information'
+                    text[0] = ' Magnetic Space Group: '+mSGData['MagSpGrp']
+                    text[3] = ' The magnetic lattice point group is '+mSGData['MagPtGp']
+                    OprNames,SpnFlp = G2spc.GenMagOps(mSGData)
+                    G2G.SGMagSpinBox(self.panel,msg,text,table,mSGData['SGCen'],OprNames,
+                        mSGData['SpnFlp'],False).Show()
+                else:
+                    msg = 'Space Group Information'
+                    G2G.SGMessageBox(self.panel,msg,text,table).Show()
+            elif c == 1:
+                maxequiv = phase['maxequiv']
+                mSGData = phase['SGData']
+                Uvec = phase['Uvec']
+                Trans = phase['Trans']
+                ifMag = False
+                if 'magAtms' in phase:
+                    ifMag = True
+                    allmom = phase.get('allmom',False)
+                    magAtms = phase.get('magAtms','')
+                    mAtoms = TestMagAtoms(phase,magAtms,self.SGData,Uvec,Trans,allmom,maxequiv)
+                else:
+                    mAtoms = TestAtoms(phase,self.controls[15],self.SGData,Uvec,Trans,maxequiv)
+                Atms = []
+                AtCods = []
+                atMxyz = []
+                for ia,atom in enumerate(mAtoms):
+                    atom[0] += '_%d'%ia
+                    SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[2:5],mSGData)
+                    Atms.append(atom[:2]+['',]+atom[2:5])
+                    AtCods.append('1')
+                    if 'magAtms' in phase:
+                        MagSytSym = G2spc.MagSytSym(SytSym,dupDir,mSGData)
+                        CSI = G2spc.GetCSpqinel(mSGData['SpnFlp'],dupDir)
+                        atMxyz.append([MagSytSym,CSI[0]])
+                    else:
+                        CSI = G2spc.GetCSxinel(SytSym)
+                        atMxyz.append([SytSym,CSI[0]])
+                G2phsG.UseMagAtomDialog(self.panel,pname,Atms,AtCods,atMxyz,ifMag=ifMag,ifOK=True).Show()
+            elif c in [2,3]:
+                if c == 2:
+                    title = 'Conjugacy list for '+pname
+                    items = phase['altList']
+                    
+                elif c == 3:
+                    title = 'Super groups list list for '+pname
+                    items = phase['supList']
+                    if not items[0]:
+                        wx.MessageBox(pname+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
+                        return
+                SubCellsDialog(self.panel,title,self.controls,self.SGData,items,self.phaseDict).Show()
+        
         if self.panel: self.panel.Destroy()
         self.panel = wx.Panel(self)
         rowLabels = [str(i+1) for i in range(len(self.items))]
-        colLabels = ['Space Gp','Try','Keep','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
-        Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
+        colLabels = ['Space Gp','Uniq','nConj','nSup','Trans','Vec','a','b','c','alpha','beta','gamma','Volume']
+        Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+[wg.GRID_VALUE_FLOAT+':10,2']
         table = []
         for ip in self.items:
@@ -112,21 +176,14 @@ class SubCellsDialog(wx.Dialog):
             cell  = list(phase['Cell'])
             trans = G2spc.Trans2Text(phase['Trans'])
             vec = G2spc.Latt2text([phase['Uvec'],])
-            row = [phase['Name'],phase['Use'],phase['Keep'],natms,nConj,nSup,trans,vec]+cell
+            row = [phase['Name'],natms,nConj,nSup,trans,vec]+cell
             table.append(row)
         CellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         magDisplay = G2G.GSGrid(self.panel)
         magDisplay.SetTable(CellsTable, True)
-#        magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshMagCellsGrid)
-#        magDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK,OnRefreshKeep)
+        magDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshGrid)
         magDisplay.AutoSizeColumns(False)
-        for r in range(magDisplay.GetNumberRows()):
-            for c in range(magDisplay.GetNumberCols()):
-                if c in [1,2]:
-                    magDisplay.SetReadOnly(r,c,isReadOnly=False)
-                else:
-                    magDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(magDisplay,0,WACV)
         
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -141,6 +198,7 @@ class SubCellsDialog(wx.Dialog):
         self.panel.Fit()
         self.Fit()
 
+                
     def OnOk(self,event):
         parent = self.GetParent()
         parent.Raise()
@@ -510,6 +568,61 @@ def CopySelectedHistItems(G2frame):
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Sample Parameters')
                 ).update(copy.deepcopy(copyDict))
                          
+def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=100,maximal=False):
+    found = False
+    anymom = False
+    phase['Keep'] = False
+    if not magAtms:
+        phase['Keep'] = True
+        return []
+    invTrans = nl.inv(Trans)
+    atCodes = []
+    Phase = {'General':{'AtomPtrs':[2,1],'SGData':copy.deepcopy(phase['SGData'])},'Atoms':[]}
+    for matm in magAtms:
+        XYZ = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
+        xyzs = [xyz[0] for xyz in XYZ]
+        atCodes += len(xyzs)*['1',]
+        xyzs,atCodes = G2lat.ExpandCell(xyzs,atCodes,0,Trans)
+        for ix,x in enumerate(xyzs):
+            xyz = G2lat.TransformXYZ(x-Uvec,invTrans.T,np.zeros(3))%1.
+            Phase['Atoms'].append(matm[:2]+list(xyz))
+            SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
+            CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
+            if any(CSI[0]):     
+                anymom = True
+            if allmom:
+                if not any(CSI[0]):
+                    phase['Keep'] = False
+                    found = True
+    uAtms = G2lat.GetUnique(Phase,atCodes)[0]
+    natm = len(uAtms)
+    if anymom and natm <= maxequiv and not found:
+        phase['Keep'] = True
+        if maximal and phase['supList'][0]:
+            phase['Keep'] = False
+    return uAtms
+
+def TestAtoms(phase,magAtms,SGData,Uvec,Trans,maxequiv=100,maximal=False):
+    phase['Keep'] = True
+    invTrans = nl.inv(Trans)
+    atCodes = []
+    Phase = {'General':{'AtomPtrs':[2,1],'SGData':copy.deepcopy(phase['SGData'])},'Atoms':[]}
+    for matm in magAtms:
+        XYZ = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
+        xyzs = [xyz[0] for xyz in XYZ]
+        atCodes += len(xyzs)*['1',]
+        xyzs,atCodes = G2lat.ExpandCell(xyzs,atCodes,0,Trans)
+        for ix,x in enumerate(xyzs):
+            xyz = G2lat.TransformXYZ(x-Uvec,invTrans.T,np.zeros(3))%1.
+            Phase['Atoms'].append(matm[:2]+list(xyz))
+    uAtms = G2lat.GetUnique(Phase,atCodes)[0]
+    natm = len(uAtms)
+    if natm > maxequiv: #too many allowed atoms found
+        phase['Keep'] = False
+    if maximal and phase['supList'][0]:
+        phase['Keep'] = False
+    return uAtms
+
 ################################################################################
 #####  Powder Peaks
 ################################################################################           
@@ -3475,14 +3588,16 @@ def UpdateUnitCellsGrid(G2frame, data):
     def RefreshMagCellsGrid(event):
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         r,c =  event.GetRow(),event.GetCol()
+        rLab = magDisplay.GetRowLabelValue(r)
         br = baseList[r]
         phase = phaseDict[br]
+        pname = '(%s) %s'%(rLab,phase['Name'])
         if magcells:
             if c == 0:
                 mSGData = phase['SGData']
                 text,table = G2spc.SGPrint(mSGData,AddInv=True)
                 if 'magAtms' in phase:
-                    msg = 'Magnetic space group information for '+phase['Name']
+                    msg = 'Magnetic space group information'
                     text[0] = ' Magnetic Space Group: '+mSGData['MagSpGrp']
                     text[3] = ' The magnetic lattice point group is '+mSGData['MagPtGp']
                     OprNames,SpnFlp = G2spc.GenMagOps(mSGData)
@@ -3513,7 +3628,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 magDisplay.ForceRefresh()
             elif c ==3:
                 maxequiv = magcells[0].get('maxequiv',100)
-                pname = '(%d) %s'%(br,phase['Name'])
                 mSGData = phase['SGData']
                 Uvec = phase['Uvec']
                 Trans = phase['Trans']
@@ -3544,17 +3658,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             elif c in [4,5]:
                 if 'altList' not in phase: return
                 if c == 4:
-                    title = 'Conjugacy list for '+phase['Name']
+                    title = 'Conjugacy list for '+pname
                     items = phase['altList']
                     
                 elif c == 5:
-                    title = 'Super groups list list for '+phase['Name']
+                    title = 'Super groups list for '+pname
                     items = phase['supList']
                     if not items[0]:
-                        wx.MessageBox(phase['Name']+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
+                        wx.MessageBox(pname+' is a maximal subgroup',caption='Super group is parent',style=wx.ICON_INFORMATION)
                         return
                     
-                SubCellsDialog(G2frame,title,items,phaseDict).ShowModal()
+                SubCellsDialog(G2frame,title,controls,SGData,items,phaseDict).ShowModal()
                 
             data = [controls,bravais,cells,dminx,ssopt,magcells]
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
@@ -3707,61 +3821,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
-    def TestMagAtoms(phase,magAtms,SGData,Uvec,Trans,allmom,maxequiv=100,maximal=False):
-        found = False
-        anymom = False
-        phase['Keep'] = False
-        if not magAtms:
-            phase['Keep'] = True
-            return []
-        invTrans = nl.inv(Trans)
-        atCodes = []
-        Phase = {'General':{'AtomPtrs':[2,1],'SGData':copy.deepcopy(phase['SGData'])},'Atoms':[]}
-        for matm in magAtms:
-            XYZ = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
-            xyzs = [xyz[0] for xyz in XYZ]
-            atCodes += len(xyzs)*['1',]
-            xyzs,atCodes = G2lat.ExpandCell(xyzs,atCodes,0,Trans)
-            for ix,x in enumerate(xyzs):
-                xyz = G2lat.TransformXYZ(x-Uvec,invTrans.T,np.zeros(3))%1.
-                Phase['Atoms'].append(matm[:2]+list(xyz))
-                SytSym,Mul,Nop,dupDir = G2spc.SytSym(xyz,phase['SGData'])
-                CSI = G2spc.GetCSpqinel(phase['SGData']['SpnFlp'],dupDir)
-                if any(CSI[0]):     
-                    anymom = True
-                if allmom:
-                    if not any(CSI[0]):
-                        phase['Keep'] = False
-                        found = True
-        uAtms = G2lat.GetUnique(Phase,atCodes)[0]
-        natm = len(uAtms)
-        if anymom and natm <= maxequiv and not found:
-            phase['Keep'] = True
-            if maximal and phase['supList'][0]:
-                phase['Keep'] = False
-        return uAtms
-
-    def TestAtoms(phase,magAtms,SGData,Uvec,Trans,maxequiv=100,maximal=False):
-        phase['Keep'] = True
-        invTrans = nl.inv(Trans)
-        atCodes = []
-        Phase = {'General':{'AtomPtrs':[2,1],'SGData':copy.deepcopy(phase['SGData'])},'Atoms':[]}
-        for matm in magAtms:
-            XYZ = G2spc.GenAtom(matm[3:6],SGData,False,Move=True)
-            xyzs = [xyz[0] for xyz in XYZ]
-            atCodes += len(xyzs)*['1',]
-            xyzs,atCodes = G2lat.ExpandCell(xyzs,atCodes,0,Trans)
-            for ix,x in enumerate(xyzs):
-                xyz = G2lat.TransformXYZ(x-Uvec,invTrans.T,np.zeros(3))%1.
-                Phase['Atoms'].append(matm[:2]+list(xyz))
-        uAtms = G2lat.GetUnique(Phase,atCodes)[0]
-        natm = len(uAtms)
-        if natm > maxequiv: #too many allowed atoms found
-            phase['Keep'] = False
-        if maximal and phase['supList'][0]:
-            phase['Keep'] = False
-        return uAtms
-
     def OnRunSubs(event):
         import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroupsMag.Enable(False)

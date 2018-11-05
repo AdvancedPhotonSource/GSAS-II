@@ -5148,7 +5148,11 @@ tutorialIndex = (
     ['CWInstDemo', 'FindProfParamCW.htm',  'Determining Starting Profile Parameters from a Standard',
      '''This shows how to determine profile parameters by fitting individual peaks
         with data collected on a standard using a lab diffractometer.'''],
-     
+    ['FPAfit', 'FPAfit.htm',  'Determining Profile Parameters with Fundamental Parameters',
+     '''This shows how to determine profile parameters by fitting 
+     peaks that are computed using the NIST Fundamental Parameters Python
+     code. 
+     Input is formulated to use FPA values similar to those in Topas.'''],      
     ['TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a Neutron TOF diffractometer',
      '''This uses the fitted positions of all visible peaks in a pattern of NIST SRM 660b La11B6 
      (a=4.15689Å) obtained in a multiple single peak fit. The positions are compared to those expected from the 

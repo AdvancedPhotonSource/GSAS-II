@@ -5,12 +5,12 @@
 
 Perform lattice-related computations
 
-Note that *g* is the reciprocal lattice tensor, and *G* is its inverse,
+Note that *G* is the reciprocal lattice tensor, and *g* is its inverse,
 :math:`G = g^{-1}`, where 
 
   .. math::
 
-   G = \\left( \\begin{matrix}
+   g = \\left( \\begin{matrix}
    a^2 & a b\\cos\gamma & a c\\cos\\beta \\\\
    a b\\cos\\gamma & b^2 & b c \cos\\alpha \\\\
    a c\\cos\\beta &  b c \\cos\\alpha & c^2

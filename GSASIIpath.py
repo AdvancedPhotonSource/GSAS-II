@@ -694,13 +694,13 @@ def exceptHook(*args):
     frame = inspect.getinnerframes(args[2])[-1][0]
     msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}\n'.format(frame)
     savehook = sys.excepthook # save the exception hook
-    try:
-        InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
-    except: # use a different call for IPython 5
+    try: # try IPython 5 call 1st
         class c(object): pass
         pseudomod = c() # create something that acts like a module
         pseudomod.__dict__ = frame.f_locals
         InteractiveShellEmbed(banner1=msg)(module=pseudomod,global_ns=frame.f_globals)
+    except:
+        InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
     sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def DoNothing():

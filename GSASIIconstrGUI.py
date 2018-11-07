@@ -1378,20 +1378,36 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #                constraints['Phase'].append([IndpCon]+DepConsDict[Usi]+[0.0,None,'c'])
             
         #how do I do Uij's for most Trans?
+        
 #unfortunately, this doesn't always work!
 #    As = ['A0','A1','A2','A3','A4','A5']
 #    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
 #    DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
+#    T = Trans
+##Symbolic code:
+#    '''
+#         T00**2*a0  T01**2*a1 T02**2*a2 T00*T01*a3    T00*T02*a4    T01*T02*a5 
+#         T10**2*a0  T11**2*a1 T12**2*a2 T10*T11*a3    T10*T12*a4    T11*T12*a5 
+#         T20**2*a0  T21**2*a1 T22**2*a2 T20*T21*a3    T20*T22*a4    T21*T22*a5 
+#         2*T00*T10*a0      2*T01*T11*a1     2*T02*T12*a2     (T00*T11 + T01*T10)*a3      (T00*T12 + T02*T10)*a4      (T01*T12 + T02*T11)*a5 
+#         2*T00*T20*a0      2*T01*T21*a1     2*T02*T22*a2     (T00*T21 + T01*T20)*a3      (T00*T22 + T02*T20)*a4      (T01*T22 + T02*T21)*a5 
+#         2*T10*T20*a0      2*T11*T21*a1     2*T12*T22*a2     (T10*T21 + T11*T20)*a3      (T10*T22 + T12*T20)*a4      (T11*T22 + T12*T21)*a5 
+#    '''
+#    conMat = [
+#        [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
+#        [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
+#        [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
+#        [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
+#        [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
+#        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]]
+#    
 #    for iA,Aid in enumerate(Aids):
-#        GT = np.zeros((3,3))
 #        if abs(nAcof[iA]) > 1.e-8:
-#            GT[Aid[0],Aid[1]] = 1.
-#            nGT = G2lat.prodMGMT(GT,Trans)
-#            nAT = G2lat.Gmat2A(nGT)
-#            for ia,nA in enumerate(nAT):
-#                if abs(nA) > 1.e-8 and abs(nAcof[ia]) > 1.e-8:
+#            for ia in [0,1,2,3,4,5]:
+#                cA = conMat[ia][iA]
+#                if abs(cA) > 1.e-8:
 #                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
-#                    DepConsDict[Aid[2]].append([nA,G2obj.G2VarObj(parm)])
+#                    DepConsDict[Aid[2]].append([cA,G2obj.G2VarObj(parm)])
 #    conStrings = []
 #    for iA,Asi in enumerate(As):
 #        parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
@@ -1409,6 +1425,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #            for Dep in DepConsDict[Asi]:
 #                Dep[0] *= -1
 #            constraints['Phase'].append([IndpCon]+DepConsDict[Asi]+[0.0,None,'c'])
+            
     for hId,hist in enumerate(UseList):    #HAP - seems OK
         ohapkey = '%d:%d:'%(opId,hId)
         nhapkey = '%d:%d:'%(npId,hId)

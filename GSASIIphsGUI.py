@@ -2624,7 +2624,7 @@ def UpdatePhaseData(G2frame,Item,data):
         newPhase['Drawing'] = []
         if ifMag: 
             G2cnstG.TransConstraints(G2frame,data,newPhase,magchoice['Trans'],vvec,atCodes)     #data is old phase
-            G2frame.newGPXfile = phaseName+'.gpx'
+            G2frame.newGPXfile = phaseName.replace('.','_')+'.gpx'          #'.' in file names is a bad idea
             UCdata[5] = []      #clear away other mag choices from chem phase in new project
             G2frame.GPXtree.SetItemPyData(UnitCellsId,UCdata)
             G2frame.OnFileSaveas(event)

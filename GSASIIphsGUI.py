@@ -1607,9 +1607,10 @@ def UpdatePhaseData(G2frame,Item,data):
                                 G2frame.phaseDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
                                 Id = wx.NewId()
                                 TabSelectionIdDict[Id] = 'Wave Data'
-                        else:
-                            if 'Wave Data' in pages:
-                                G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
+# deleting page now causes Mac crash, postpone until page is redrawn
+#                        else:
+#                            if 'Wave Data' in pages:
+#                                G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
                         wx.CallAfter(UpdateGeneral)
                 else:
                     if generalData['Type'] == 'magnetic':
@@ -1991,8 +1992,14 @@ def UpdatePhaseData(G2frame,Item,data):
             return magSizer
             
         def ModulatedSizer(name):
-            
+            def showSSG(General,msg,text,table,refresh):
+                'Show the symmetry information, redraw window if needed'
+                dlg = G2G.SGMessageBox(General,msg,text,table)
+                dlg.ShowModal()
+                dlg.Destroy()
+                if refresh: UpdateGeneral()
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
+                'Respond to selection of a modulation group'
                 event.Skip()
                 try:
                     SSymbol = superGp.GetValue()
@@ -2011,15 +2018,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     generalData['SSGData'] = SSGData
                     generalData['SuperSg'] = SSymbol
                     msg = 'Superspace Group Information'
-                    G2G.SGMessageBox(General,msg,text,table).Show()
+                    wx.CallLater(100,showSSG,General,msg,text,table,refresh)
                 else:
+                    # needed in case someone manually enters an invalid SG?
                     text = [E+'\nSuperspace Group set to previous']
                     superGp.SetValue(generalData['SuperSg'])
                     msg = 'Superspace Group Error'
                     Style = wx.ICON_EXCLAMATION
                     Text = '\n'.join(text)
                     wx.MessageBox(Text,caption=msg,style=Style)
-                if refresh: wx.CallAfter(UpdateGeneral)                
+                    if refresh: wx.CallAfter(UpdateGeneral)                
                             
             def OnVecRef(event):
                 generalData['SuperVec'][1] = Ref.GetValue()
@@ -2042,8 +2050,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 if SGData['SGGray']:
                     Choice = [G2spc.fixGray(SGData,item) for item in Choice]
             if len(Choice):
-                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
-                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
+                # removed code that allows entries to be typed in
+                # because Bind to EVT_TEXT_ENTER caused two calls to OnSuperGp
+#                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+#                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
+                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.CB_READONLY)
                 superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
             else:
                 superGp = wx.StaticText(General,label=generalData['SuperSg'])
@@ -2370,6 +2381,11 @@ def UpdatePhaseData(G2frame,Item,data):
         phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
         SetupGeneral()
         generalData = data['General']
+        # remove the Wave Data tab when present and not needed
+        if not generalData['Modulated']:
+            pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
+            if 'Wave Data' in pages:
+                G2frame.phaseDisplay.DeletePage(pages.index('Wave Data'))
         Map = generalData['Map']
         Flip = generalData['Flip']
         MCSAdata = generalData['MCSA controls']  

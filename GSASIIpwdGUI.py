@@ -3043,7 +3043,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnSSopt(event):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             SSopt.SetValue(False)
-            G2frame.ErrorDialog('Cubic lattice', 'Superlattice not allowed for a cubic lattice')
+            G2frame.ErrorDialog('Cubic lattice',
+                                'Incommensurate superlattice not possible with a cubic lattice')
             return
         ssopt['Use'] = SSopt.GetValue()
         if 'ssSymb' not in ssopt:
@@ -4139,7 +4140,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         zeroVar.SetValue(controls[0])
         zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
         littleSizer.Add(zeroVar,0,WACV)
-    SSopt = wx.CheckBox(G2frame.dataWindow,label="Super lattice?")
+    SSopt = wx.CheckBox(G2frame.dataWindow,label="Modulated?")
     SSopt.SetValue(ssopt.get('Use',False))
     SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
     littleSizer.Add(SSopt,0,WACV)

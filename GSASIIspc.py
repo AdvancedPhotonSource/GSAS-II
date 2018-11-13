@@ -533,7 +533,7 @@ def TextOps(text,table,reverse=False):
             OpText.append(txt.replace(' ','').lower())
     return OpText
 
-def TextGen(SGData,reverse=False):
+def TextGen(SGData,reverse=False):      #does not always work correctly - not used anyway
     GenSym,GenFlg,BNSsym = GetGenSym(SGData)
     SGData['GenSym'] = GenSym
     SGData['GenFlg'] = GenFlg

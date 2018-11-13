@@ -194,7 +194,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
                'super':'','tipog':'gmag','wyckoffstrain':''}
     text,table = G2spc.SGPrint(SGData)
     OpList = G2spc.TextOps(text,table,reverse=True)
-#    GenList = G2spc.TextGen(SGData,reverse=True)
+#    OpList = G2spc.TextGen(SGData,reverse=True)
     for item in OpList:
         item += '\n'
     sym = ""

@@ -1992,18 +1992,20 @@ def UpdatePhaseData(G2frame,Item,data):
             return magSizer
             
         def ModulatedSizer(name):
+            
             def showSSG(General,msg,text,table,refresh):
                 'Show the symmetry information, redraw window if needed'
                 dlg = G2G.SGMessageBox(General,msg,text,table)
                 dlg.ShowModal()
                 dlg.Destroy()
                 if refresh: UpdateGeneral()
+                
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 'Respond to selection of a modulation group'
                 event.Skip()
+                refresh = True
                 try:
                     SSymbol = superGp.GetValue()
-                    refresh = True
                 except AttributeError:
                     SSymbol = superGp.GetLabel()
                     refresh = False
@@ -2020,7 +2022,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     msg = 'Superspace Group Information'
                     wx.CallLater(100,showSSG,General,msg,text,table,refresh)
                 else:
-                    # needed in case someone manually enters an invalid SG?
+                    # needed in case someone manually enters an invalid SSG?
                     text = [E+'\nSuperspace Group set to previous']
                     superGp.SetValue(generalData['SuperSg'])
                     msg = 'Superspace Group Error'
@@ -2050,12 +2052,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 if SGData['SGGray']:
                     Choice = [G2spc.fixGray(SGData,item) for item in Choice]
             if len(Choice):
-                # removed code that allows entries to be typed in
-                # because Bind to EVT_TEXT_ENTER caused two calls to OnSuperGp
-#                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
-#                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
-                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.CB_READONLY)
-                superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+                i,j= wx.__version__.split('.')[0:2]
+                if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:      #since this seems to fail on a Mac!
+                    superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.CB_READONLY)
+                    superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+                else:
+                    superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+                    superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+                    superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
             else:
                 superGp = wx.StaticText(General,label=generalData['SuperSg'])
             modSizer.Add(superGp,0,WACV)

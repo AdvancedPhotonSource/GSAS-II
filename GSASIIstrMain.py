@@ -415,7 +415,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         G2mv.InitVars()
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
-        msg = G2mv.EvaluateMultipliers(constDict,parmDict)
+        msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
         if msg:
             return False,'Unable to interpret multiplier(s): '+msg
         try:

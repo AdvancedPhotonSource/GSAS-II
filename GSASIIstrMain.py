@@ -419,7 +419,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         if msg:
             return False,'Unable to interpret multiplier(s): '+msg
         try:
-            G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
+            groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
 #            if GSASIIpath.GetConfigValue('debug'): print("DBG_"+
 #                G2mv.VarRemapShow(varyList,True))
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)

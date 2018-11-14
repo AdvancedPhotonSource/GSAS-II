@@ -1005,6 +1005,7 @@ def GenerateConstraints(varyList,constrDict,fixedList,parmDict=None,SeqHist=None
         print('Constraints were reclassified to avoid conflicts, as below:')
         print (VarRemapShow(varyList,True))
         print(60*'=')
+    return groups,parmlist # saved for sequential fits
     
 def _setVarLists(dropVarList):
     '''Make list of dependent and independent variables (after dropping unused vars in dropVarList)

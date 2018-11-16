@@ -1304,11 +1304,11 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         elif SGLaue == '2/m':
             if iA in [0,1,2]:
                 parm = '%d::A%s'%(pId,iA)
-            elif iA == 3 and SGUniq == 'a':
+            elif iA == 3 and SGUniq == 'c':
                 parm = '%d::A%s'%(pId,iA)
             elif iA == 4 and SGUniq == 'b':
                 parm = '%d::A%s'%(pId,iA)
-            elif iA == 5 and SGUniq == 'c':
+            elif iA == 5 and SGUniq == 'a':
                 parm = '%d::A%s'%(pId,iA)
             else:
                 parm = None            

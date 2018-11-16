@@ -1271,20 +1271,49 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     NB: A = [G11,G22,G33,2*G12,2*G13,2*G23]
     '''
     
-    def SetUniqAj(pId,Aname,SGLaue):
-        if SGLaue in ['4/m','4/mmm'] and iA in [0,1]:
-            parm = '%d::%s'%(pId,'A0')
-        elif SGLaue in ['m3','m3m'] and iA in [0,1,2]:
-            parm = '%d::%s'%(pId,'A0')
-        elif SGLaue in ['6/m','6/mmm','3m1', '31m', '3'] and iA in [0,1,3]:
-            parm = '%d::%s'%(pId,'A0')
+    def SetUniqAj(pId,iA,SGData):
+        SGLaue = SGData['SGLaue']
+        SGUniq = SGData['SGUniq']
+        if SGLaue in ['m3','m3m']:
+            if iA in [0,1,2]:
+                parm = '%d::%s'%(pId,'A0')
+            else:
+                parm = None
+        elif SGLaue in ['4/m','4/mmm']:
+            if iA in [0,1]:
+                parm = '%d::%s'%(pId,'A0')
+            elif iA == 2:
+                parm = '%d::%s'%(pId,'A2')
+            else:
+                parm = None
+        elif SGLaue in ['6/m','6/mmm','3m1', '31m', '3']:
+            if iA in [0,1,3]:
+                parm = '%d::%s'%(pId,'A0')
+            else:
+                parm = None
         elif SGLaue in ['3R', '3mR']:
             if ia in [0,1,2]:
                 parm = '%d::%s'%(pId,'A0')
             else:
                 parm = '%d::%s'%(pId,'A3')
+        elif SGLaue in ['mmm',]:
+            if iA in [0,1,2]:
+                parm = '%d::A%s'%(pId,iA)
+            else:
+                parm = None
+        elif SGLaue == '2/m':
+            if iA in [0,1,2]:
+                parm = '%d::A%s'%(pId,iA)
+            elif iA == 3 and SGUniq == 'a':
+                parm = '%d::A%s'%(pId,iA)
+            elif iA == 4 and SGUniq == 'b':
+                parm = '%d::A%s'%(pId,iA)
+            elif iA == 5 and SGUniq == 'c':
+                parm = '%d::A%s'%(pId,iA)
+            else:
+                parm = None            
         else:
-            parm = '%d::%s'%(pId,Aname)
+            parm = '%d::A%s'%(pId,iA)
         return parm
     
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
@@ -1406,11 +1435,11 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
 #            for ia in [0,1,2,3,4,5]:
 #                cA = conMat[ia][iA]
 #                if abs(cA) > 1.e-8:
-#                    parm = SetUniqAj(npId,As[ia],nSGData['SGLaue'])
+#                    parm = SetUniqAj(npId,ia,nSGData)
 #                    DepConsDict[Aid[2]].append([cA,G2obj.G2VarObj(parm)])
 #    conStrings = []
 #    for iA,Asi in enumerate(As):
-#        parm = SetUniqAj(opId,Asi,oSGData['SGLaue'])
+#        parm = SetUniqAj(opId,iA,oSGData)
 #        parmDict[parm] = oAcof[iA]
 #        varyList.append(parm)
 #        IndpCon = [1.0,G2obj.G2VarObj(parm)]

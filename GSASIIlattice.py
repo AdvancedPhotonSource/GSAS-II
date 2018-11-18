@@ -448,7 +448,7 @@ def FindNonstandard(controls,Phase):
             NTrans = np.inner(Mats,Trans.T)
             return Nresult,Uvec,NTrans
     return None
-        
+
 def makeBilbaoPhase(result,uvec,trans,ifMag=False):
     phase = {}
     phase['Name'] = result[0].strip()

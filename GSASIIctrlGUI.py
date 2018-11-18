@@ -3222,27 +3222,27 @@ class SGMagSpinBox(wx.Dialog):
         cents = [0,]
         if len(Cents) > 1:
             cents = self.text[-1].split(';')
-        lentable = len(self.table)
         for line in self.text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
             if 'equivalent' in line:
                 break
         ncol = self.table[0].count(',')+2
-        nBlk = 0
         nG = 1
+        j = 0
         if self.ifGray:
             nG = 2
         for ng in range(nG):
+            if ng:
+                mainSizer.Add(wx.StaticText(self.panel,label="      for (0,0,0)+1'"),0,WACV)
             for ic,cent in enumerate(cents):
                 Cent = np.array(Cents[ic])
                 if ic:
                     if cent: cent = cent.strip(' (').strip(')+\n')
                     label = '      for (%s)+'%(cent)
-                    if ng or self.spins[nBlk*lentable] < 0:     #test for gray operators
+                    if ng:     #test for gray operators
                         label += "1'"
                     mainSizer.Add(wx.StaticText(self.panel,label=label),0,WACV)
                 tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
-                j = 0
                 for item in self.table:
                     if ')' not in item:
                         continue
@@ -3258,13 +3258,13 @@ class SGMagSpinBox(wx.Dialog):
                             tableSizer.Add(text,0,WACV)
                     text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
                     try:
-                        if self.spins[j+nBlk*lentable] < 0:
+                        if self.spins[j] < 0:
                             text.SetForegroundColour('Red')
                             item += ',-1'
                         else:
                             item += ',+1'
                     except IndexError:
-                        print(self.spins,j,ic,lentable,self.names[j%Nnames])
+                        print(self.spins,j,self.names[j%Nnames])
                         item += ',+1'
                     M,T,S = G2spc.MagText2MTS(item.split(')')[1].replace(' ',''),CIF=False)
                     T = (T+Cent)%1.
@@ -3278,7 +3278,6 @@ class SGMagSpinBox(wx.Dialog):
                     if not j%2:
                         tableSizer.Add((20,0))
                     j += 1
-                nBlk += 1
                 mainSizer.Add(tableSizer,0,WACV)
             
             

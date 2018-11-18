@@ -187,13 +187,16 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     sspgrp = sspgrp.split('(')
                     sspgrp[1] = "("+sspgrp[1]
                     SpGrp = sspgrp[0]
+                    if "1'" in SpGrp:       #nonmagnetics can't be gray
+                        SpGrp = SpGrp.replace("1'",'')
+                        sspgrp[1] = sspgrp[1][:-1]  #take off extra 's'
                     SpGrp = G2spc.StandardizeSpcName(SpGrp)
                     self.Phase['General']['Type'] = 'nuclear'
                 if not SpGrp:
                     print (sspgrp)
                     self.warnings += 'Space group name '+sspgrp[0]+sspgrp[1]+' not recognized by GSAS-II'
                     return False
-                SuperSg = sspgrp[1].replace('\\','')
+                SuperSg = sspgrp[1].replace('\\','').replace(',','')
                 SuperVec = [[0,0,.1],False,4]
             else:   #not incommensurate
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
@@ -592,11 +595,11 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.MPhase['General']['Name'] = name.strip()+' mag'
                 self.MPhase['General']['Super'] = Super
                 if Super:
-                    if self.MPhase['General']['SGData']['SGGray']:
-                        SuperSg += 's'
                     self.MPhase['General']['Modulated'] = True
                     self.MPhase['General']['SuperVec'] = SuperVec
                     self.MPhase['General']['SuperSg'] = SuperSg
+                    if self.MPhase['General']['SGData']['SGGray']:
+                        self.MPhase['General']['SuperSg'] += 's'
                 if 'mcif' not in filename:
                     self.Phase = copy.deepcopy(self.MPhase)
                     del self.MPhase

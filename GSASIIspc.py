@@ -407,7 +407,9 @@ def SGPrint(SGData,AddInv=False):
         Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
     SGText = []
     SGText.append(' Space Group: '+SGData['SpGrp'])
-    if SGData.get('SGGray',False): SGText[-1] += " 1'"
+    if SGData.get('SGGray',False): 
+        SGText[-1] += " 1'"
+        Mult //= 2
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -1637,8 +1639,8 @@ def SSpcGroup(SGData,SSymbol):
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
         return '(3+1) superlattices not defined for rhombohedral settings - use hexagonal setting',None
-    if SGData['SGGray'] and SSymbol[-1] == 's':
-        SSymbol = SSymbol[:-1]
+#    if SGData['SGGray'] and SSymbol[-1] == 's':
+#        SSymbol = SSymbol[:-1]
     try:
         modsym,gensym = splitSSsym(SSymbol)
     except ValueError:
@@ -1690,35 +1692,75 @@ def SSChoice(SGData):
     '''
     Gets the unique set of possible super space groups for a given space group
     '''
-    laueSS = {'-1':['(abg)',],
-            '2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
-            'mmm':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
-                   '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
-                   '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
-            '4/m':['(00g)','(1/21/2g)'],
-            '4/mmm':['(00g)','(1/21/2g)'],
-            '3':['(00g)','(1/31/3g)'],
-            '3m1':['(00g)'],
-            '31m':['(00g)','(1/31/3g)'],
-            '6/m':['(00g)',],
-            '6/mmm':['(00g)',],
-            'm3':['',],'m3m':['',]}
+    ptgpSS = {'1':['(abg)',],'-1':['(abg)',],
+                   
+        '2':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+        'm':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+        '2/m':['(a0g)','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)'],
+        
+        '222':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+               '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+        'mm2':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+               '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+        'm2m':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+               '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+        '2mm':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+               '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+        'mmm':['(00g)','(1/20g)','(01/2g)','(1/21/2g)','(10g)','(01g)',
+               '(a00)','(a1/20)','(a01/2)','(a1/21/2)','(a10)','(a01)',
+               '(0b0)','(1/2b0)','(0b1/2)','(1/2b1/2)','(1b0)','(0b1)',],
+               
+        '4':['(00g)','(1/21/2g)'],'4mm':['(00g)','(1/21/2g)'],
+        '4/m':['(00g)','(1/21/2g)'],
+        '422':['(00g)','(1/21/2g)'],'-4m2':['(00g)','(1/21/2g)'],'-42m':['(00g)','(1/21/2g)'],
+        '4/mmm':['(00g)','(1/21/2g)'],
+        
+        '3':['(00g)','(1/31/3g)'],
+        '32':['(00g)'],'3m':['(00g)'],
+        '321':['(00g)'],'3m1':['(00g)'],
+        '312':['(00g)','(1/31/3g)'],'31m':['(00g)','(1/31/3g)'],
+        
+        '6':['(00g)',],'6/m':['(00g)',],'-62m':['(00g)',],'-6m2':['(00g)',],
+        '622':['(00g)',],'6/mmm':['(00g)',],'6mm':['(00g)',],
+        
+        '23':['',],'m3':['',],'432':['',],'-43m':['',],'m3m':['',]}
             
-    laueTS = {'-1':['',],
-            '2/m':['','s','0s','ss','s0'],
-            'mmm':['','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
-            '4/m':['','q','s','s0',],
-            '4/mmm':['','q00','s00','s0s','ss0','0ss','qq0','qqs','0q0','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
-            '3':['','t'],
-            '3m1':['','t0','0s','t00','0s0'],
-            '31m':['','t00','0ss'],
-            '6/m':['','h','t','s','s0'],
-            '6/mmm':['','h00','t00','s00','ss0','0ss','s0s','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
-            'm3':['',],'m3m':['',]}
-    laue = SGData['SGLaue']
+    ptgpTS = {'1':['0',],'-1':['0',],
+              
+        '2':['0','s'],'m':['0','s'],
+        '2/m':['00','0s','ss','s0'],
+        
+        '222':['000','s00','0s0','00s',],
+        'mm2':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+        'm2m':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+        '2mm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+        'mmm':['000','s00','0s0','00s','ss0','s0s','0ss','q00','0q0','00q','0qq','q0q','qq0'],
+        
+        '4':['0','q','s'],'4mm':['000','q00','s00','s0s','ss0','0ss','qq0','qqs'],
+        '4/m':['00','s0'],'-4m2':['000','0s0','0q0'],'-42m':['000','00s'],
+        '422':['000','q00','s00','s0s','ss0','0ss','qq0','qqs','0q0'],
+        '4/mmm':['0000','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
+        
+        '3':['0','t'],
+        '32':['00','t0'],'3m':['00','0s'],
+        '321':['000','t00'],'3m1':['000','0s0'],
+        '312':['000','t00'],'31m':['000','00s'],
+        
+        '6':['0','h','t','s'],
+        '6/m':['00','s0'],'-62m':['000','00s'],'-6m2':['000','0s0'],
+        '622':['000','h00','t00','s00',],'6mm':['000','ss0','s0s','0ss',],
+        '6/mmm':['0000','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
+        
+        '23':['',],'m3':['',],'432':['',],'-43m':['',],'m3m':['',]}
+    
+    ptgp = SGData['SGPtGrp']
     SSChoice = []
-    for ax in laueSS[laue]:
-        for sx in laueTS[laue]:
+    for ax in ptgpSS[ptgp]:
+        for sx in ptgpTS[ptgp]:
             SSChoice.append(ax+sx)                
     ssChoice = []
     ssHash = []
@@ -1731,6 +1773,19 @@ def SSChoice(SGData):
                 ssChoice.append(item)
     return ssChoice
 
+def fixSSymb(ssSymb,SGData):
+    sgPtGp = SGData['SGPtGrp']
+    ssSymb += ' '
+    if ssSymb.rfind('0000 ') > 0:
+        ssSymb = ssSymb.replace('0000 ','')
+    elif ssSymb.rfind('000 ') > 0 and not sgPtGp in ['4/mmm','6/mmm']:
+        ssSymb = ssSymb.replace('000 ','')
+    elif ssSymb.rfind('00 ') > 0:
+        ssSymb = ssSymb.replace('00 ','')
+    elif ssSymb.rfind('0 ') > 0:
+        ssSymb = ssSymb.replace('0 ','')
+    return ssSymb
+        
 def fixGray(SGData,SSymbol):
     modsym,gensym = SSymbol.replace(' ','').split(')')
     modsym += ')'
@@ -1800,9 +1855,20 @@ def SSGPrint(SGData,SSGData,AddInv=False):
         SSGText - list of strings with the superspace group details
         SGTable - list of strings for each of the operations
     '''
-    Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
+    nCen = len(SSGData['SSGCen'])
+    Mult = nCen*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
+    if SGData.get('SGFixed',False):
+        Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])
+    SSsymb = SSGData['SSpGrp']
+    if SGData.get('SGGray',False):
+        Mult //= 2
+    else:
+        if "1'" in SSsymb:
+            nCen //= 2
+            Mult //= 2
+            SSsymb = SSsymb.replace("1'",'')[:-1]
     SSGText = []
-    SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
+    SSGText.append(' Superspace Group: '+SSsymb)
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -1826,7 +1892,7 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     SSGText.append(' ')
     if len(SSGData['SSGCen']) > 1:
         SSGText.append(' The equivalent positions are:')
-        SSGText.append(' ('+SSLatt2text(SSGData['SSGCen'])+')+\n')
+        SSGText.append(' ('+SSLatt2text(SSGData['SSGCen'][:nCen])+')+\n')
     else:
         SSGText.append(' The equivalent positions are:\n')
     SSGTable = []
@@ -2219,7 +2285,7 @@ def checkSSextc(HKL,SSGData):
     HKLS = np.array([HKL,-HKL])     #Freidel's Law
     DHKL = np.reshape(np.inner(HKLS,OpM)-HKL,(-1,4))
     PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
-    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
+    for dhkl,phkl in list(zip(DHKL,PHKL))[1:]:    #skip identity
         if dhkl.any():
             continue
         else:
@@ -2841,7 +2907,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         dM = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(Mxyz)[:,nxs,nxs]
         dMTP = []
         CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
-        print(siteSym)
         if siteSym == '1':
             CSI = [[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],6*[[1.,0.,0.],]
         elif siteSym in ['-1','mmm',]:

@@ -3003,7 +3003,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
-        dmin = G2lat.Pos2dsp(Inst,Limits[1])
+        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[1]))
     else:
         difC = Inst['difC'][1]
         dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[0]))
@@ -3227,22 +3227,23 @@ def UpdateUnitCellsGrid(G2frame, data):
         spc = controls[13]
         SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
         Symb = SGData['SpGrp']
+        M20 = X20 = 0.
         if ssopt.get('Use',False):
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+            if SSGData is None:
+                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'][:-1])[1]     #skip trailing 's' for mag.
             Symb = SSGData['SSpGrp']
             Vec = ssopt['ModVec']
             maxH = ssopt['maxH']
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
-            peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
-            M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
+            if len(peaks[0]):            
+                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
+                M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
             if len(peaks[0]):
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
                 M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
-            else:
-                M20 = X20 = 0.
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
         G2frame.HKL = np.array(G2frame.HKL)
         if len(G2frame.HKL):
             print (' new M20,X20: %.2f %d, fraction found: %.3f for %s'  \
@@ -3311,19 +3312,41 @@ def UpdateUnitCellsGrid(G2frame, data):
         Phases = []
         item, cookie = G2frame.GPXtree.GetFirstChild(pId)
         while item:
-            Phases.append(G2frame.GPXtree.GetItemText(item))
-            item, cookie = G2frame.GPXtree.GetNextChild(pId, cookie)    
+            pName = G2frame.GPXtree.GetItemText(item)
+            Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,pName))
+            if not Phase['General']['SGData'].get('SGFixed',False):
+                Phases.append(G2frame.GPXtree.GetItemText(item))
+            item, cookie = G2frame.GPXtree.GetNextChild(pId, cookie)
+        if not len(Phases):
+                wx.MessageBox('NB: Magnetic phases from mcif files are not suitable for this purpose,\n because of space group symbol - operators mismatches',
+                    caption='No usable space groups',style=wx.ICON_EXCLAMATION)
+                return            
         pNum = G2G.ItemSelector(Phases,G2frame,'Select phase',header='Phase')
         if pNum is None: return
         Phase = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,Phases[pNum]))
         Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible phases
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
+        if Phase['General']['Type'] == 'nuclear' and 'MagSpGrp' in SGData:
+            SGData = G2spc.SpcGroup(SGData['SpGrp'])[1]
+        G2frame.dataWindow.RunSubGroups.Enable(True)
+        if 'SuperSg' in Phase['General'] or SGData.get('SGGray',False):
+            ssopt.update({'SGData':SGData,'ssSymb':Phase['General']['SuperSg'],'ModVec':Phase['General']['SuperVec'][0],'Use':True,'maxH':1})
+            ssopt['ssSymb'] = ssopt['ssSymb'].replace(',','')
+            ssSym = ssopt['ssSymb']
+            if SGData['SGGray']:
+                ssSym = ssSym[:-1]
+            if ssSym not in G2spc.SSChoice(SGData):
+                ssSym = ssSym.split(')')[0]+')000'
+                ssopt['ssSymb'] = ssSym
+                wx.MessageBox('Super space group '+SGData['SpGrp']+ssopt['ssSymb']+' not valid;\n It is set to '+ssSym,
+                    caption='Unusable super space group',style=wx.ICON_EXCLAMATION)
+            G2frame.dataWindow.RunSubGroups.Enable(False)
         SpGrp = SGData['SpGrp']
         if 'mono' in SGData['SGSys']:
             SpGrp = G2spc.fixMono(SpGrp)
             if SpGrp == None:
-                wx.MessageBox('Unusable space group',caption='Monoclinic '+SGData['SpGrp']+' not usable here',style=wx.ICON_EXCLAMATION)
+                wx.MessageBox('Monoclinic '+SGData['SpGrp']+' not usable here',caption='Unusable space group',style=wx.ICON_EXCLAMATION)
                 return
         controls[13] = SpGrp
         controls[4] = 1
@@ -3336,8 +3359,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[15] = [atom[:cx+3] for atom in Phase['Atoms']]
         if 'N' in Inst['Type'][0]:
             if not ssopt.get('Use',False):
-                G2frame.dataWindow.RunSubGroupsMag.Enable(True)
-        G2frame.dataWindow.RunSubGroups.Enable(True)
+                G2frame.dataWindow.RunSubGroups.Enable(True)
+        data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(None)
@@ -4228,7 +4251,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = G2spc.SpcGroup(SpSg)[1]
         ssChoice = G2spc.SSChoice(SGData)
         if ssopt['ssSymb'] not in ssChoice:
-            ssopt['ssSymb'] = ssChoice[0]
+            ssopt['ssSymb'] = ssopt['ssSymb'][:-1]
         ssSizer = wx.BoxSizer(wx.HORIZONTAL)
         ssSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
         selMG = wx.ComboBox(G2frame.dataWindow,value=ssopt['ssSymb'],

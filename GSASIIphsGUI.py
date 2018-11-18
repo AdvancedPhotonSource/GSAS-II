@@ -1993,17 +1993,23 @@ def UpdatePhaseData(G2frame,Item,data):
             
         def ModulatedSizer(name):
             
-            def showSSG(msg,text,table):
-                'Show the symmetry information, redraw window after'
-                dlg = G2G.SGMessageBox(General,msg,text,table)
-                dlg.CenterOnParent()
-                dlg.ShowModal()
-                dlg.Destroy()
-                UpdateGeneral()
-                
+#            def showSSG(msg,text,table):
+#                'Show the symmetry information, redraw window after'
+#                dlg = G2G.SGMessageBox(General,msg,text,table)
+#                dlg.CenterOnParent()
+#                dlg.ShowModal()
+#                dlg.Destroy()
+#                UpdateGeneral()
+#                
             def OnSuperEnter(event):
                 'Close dialog after enter is pressed'
                 event.GetEventObject().Parent.EndModal(wx.ID_OK)
+                
+            def OnShowSOps(event):
+                SSGData = generalData['SSGData']
+                text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
+                msg = 'Superspace Group Information'
+                G2G.SGMessageBox(General,msg,text,table).ShowModal()
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 'Respond to selection of a modulation group'
@@ -2055,17 +2061,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     Vec = generalData['SuperVec'][0]     #(3+1) only
                     modSymb = SSGData['modSymb']
                     generalData['SuperVec'][0] = G2spc.SSGModCheck(Vec,modSymb)[0]
-                    text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
                     generalData['SSGData'] = SSGData
                     generalData['SuperSg'] = SSymbol
-                    msg = 'Superspace Group Information'
-                    wx.CallAfter(showSSG,msg,text,table)
-                    # N.B. showSSG calls UpdateGeneral
+                    OnShowSOps(event)
                 else:
                     # needed in case someone manually enters an invalid SSG?
                     Text = '\n'.join([E+'\nSuperspace Group entry ignored'])
                     G2G.G2MessageBox(parent,Text,'Superspace Group Error')
-                    wx.CallAfter(UpdateGeneral)
+                wx.CallAfter(UpdateGeneral)
                     
             def OnVecRef(event):
                 generalData['SuperVec'][1] = Ref.GetValue()
@@ -2097,7 +2100,7 @@ def UpdatePhaseData(G2frame,Item,data):
             modSizer.Add(superGp,0,WACV)
             modSizer.Add((5,5),0)
             showOps = wx.Button(General,label='Show ops.')
-            showOps.Bind(wx.EVT_BUTTON,OnSuperGp)
+            showOps.Bind(wx.EVT_BUTTON,OnShowSOps)
             modSizer.Add(showOps,0,WACV)
             if PWDR:
                 modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)

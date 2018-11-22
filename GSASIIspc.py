@@ -409,7 +409,7 @@ def SGPrint(SGData,AddInv=False):
     SGText.append(' Space Group: '+SGData['SpGrp'])
     if SGData.get('SGGray',False): 
         SGText[-1] += " 1'"
-        Mult //= 2
+        if SGData.get('SGFixed',False): Mult //= 2
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -521,6 +521,7 @@ def TextOps(text,table,reverse=False):
     OpsM = []
     OpsT = []
     for item in table:
+        if 'for' in item: continue
         M,T = Text2MT(item.split(')')[1].replace(' ',''),CIF=True)
         OpsM.append(M)
         OpsT.append(T)
@@ -531,7 +532,7 @@ def TextOps(text,table,reverse=False):
         OpsT = np.concatenate((OpsT,-OpsT%1.))
     for cent in Cent:
         for iop,opM in enumerate(list(OpsM)):
-            txt = MT2text([opM,(OpsT[iop]+cent)%1.],reverse)
+            txt = MT2text([opM,(OpsT[iop]+cent[:3])%1.],reverse)
             OpText.append(txt.replace(' ','').lower())
     return OpText
 
@@ -1580,6 +1581,7 @@ def SSpcGroup(SGData,SSymbol):
             SSGOps[2][1][3] = genQ[1]
         elif SGData['SGPtGrp'] in ['622',]: #OK
             for i,j in enumerate([1,8,9]):
+#            for i,j in enumerate([2,3,8]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
@@ -1634,7 +1636,7 @@ def SSpcGroup(SGData,SSymbol):
                     gensym = 'ss0'
         return gensym
                             
-    Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
+    Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':-1./6,'a':0.,'b':0.,'g':0.}
     if SGData['SGLaue'] in ['m3','m3m']:
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
@@ -1650,6 +1652,8 @@ def SSpcGroup(SGData,SSymbol):
     if SGData['SGLaue'] in ['2/m','mmm']:
         SSGKl = fixMonoOrtho()
     Ngen = len(gensym)
+    if SGData.get('SGGray',False):
+        Ngen -= 1
     if len(gensym) and Ngen != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
     gensym = specialGen(gensym[:Ngen],modsym)
@@ -1814,7 +1818,12 @@ def splitSSsym(SSymbol):
     '''
     Splits supersymmetry symbol into two lists of strings
     '''
-    modsym,gensym = SSymbol.replace(' ','').split(')')
+    mssym = SSymbol.replace(' ','').split(')')
+    if len(mssym) > 1:
+        modsym,gensym = mssym
+    else:
+        modsym = mssym[0]
+        gensym = ''
     modsym = modsym.replace(',','')
     if "1'" in modsym:
         gensym = gensym[:-1]
@@ -1861,9 +1870,9 @@ def SSGPrint(SGData,SSGData,AddInv=False):
         Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])
     SSsymb = SSGData['SSpGrp']
     if SGData.get('SGGray',False):
-        Mult //= 2
+        if SGData.get('SGFixed',False): Mult //= 2
     else:
-        if "1'" in SSsymb:
+        if "1'" in SSsymb:  #leftover in nonmag phase in mcif file
             nCen //= 2
             Mult //= 2
             SSsymb = SSsymb.replace("1'",'')[:-1]

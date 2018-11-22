@@ -1550,6 +1550,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     Text = '\n'.join(text)
                     wx.MessageBox(Text,caption=msg,style=wx.ICON_EXCLAMATION)
                 else:
+                    if "1'" in SpcGp:
+                        generalData['Type'] = 'magnetic'
+                        generalData['Modulated'] = True
                     if generalData['Type'] == 'magnetic':
                         Nops = len(SGData['SGOps'])*len(SGData['SGCen'])
                         if SGData['SGInv']:

@@ -3135,11 +3135,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         brav = bravSel.GetString(bravSel.GetSelection())
         controls[5] = brav
         controls[13] = SPGlist[brav][0]       
+        ssopt['Use'] = False
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
         
     def OnSpcSel(event):
         controls[13] = spcSel.GetString(spcSel.GetSelection())
         ssopt['SGData'] = G2spc.SpcGroup(controls[13])[1]
+        ssopt['Use'] = False
         G2frame.dataWindow.RefineCell.Enable(True)
         OnHklShow(event)
         wx.CallLater(100,UpdateUnitCellsGrid,G2frame,data)
@@ -3228,7 +3230,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = ssopt.get('SGData',G2spc.SpcGroup(spc)[1])
         Symb = SGData['SpGrp']
         M20 = X20 = 0.
-        if ssopt.get('Use',False):
+        if ssopt.get('Use',False) and ssopt.get('ssSymb',''):
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
             if SSGData is None:
                 SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'][:-1])[1]     #skip trailing 's' for mag.
@@ -3302,7 +3304,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
 
     def LoadUnitCell(event):
-        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+        data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
+        if len(data) < 5:
+            data.append({})
+        controls,bravais,cells,dminx,ssopt = data[:5]
         magcells = []           #clear away old mag cells list (if any)
         controls = controls[:14]+[['0','0','0',' ',' ',' '],[],]
         data = controls,bravais,cells,dminx,ssopt,magcells
@@ -3327,6 +3333,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         Phase['magPhases'] = G2frame.GPXtree.GetItemText(G2frame.PatternId)    #use as reference for recovering possible phases
         Cell = Phase['General']['Cell']
         SGData = Phase['General']['SGData']
+        if 'SGGray' not in SGData:
+            SGData['SGGray'] = False
         if Phase['General']['Type'] == 'nuclear' and 'MagSpGrp' in SGData:
             SGData = G2spc.SpcGroup(SGData['SpGrp'])[1]
         G2frame.dataWindow.RunSubGroups.Enable(True)
@@ -3334,7 +3342,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt.update({'SGData':SGData,'ssSymb':Phase['General']['SuperSg'],'ModVec':Phase['General']['SuperVec'][0],'Use':True,'maxH':1})
             ssopt['ssSymb'] = ssopt['ssSymb'].replace(',','')
             ssSym = ssopt['ssSymb']
-            if SGData['SGGray']:
+            if SGData.get('SGGray',False):
                 ssSym = ssSym[:-1]
             if ssSym not in G2spc.SSChoice(SGData):
                 ssSym = ssSym.split(')')[0]+')000'
@@ -3342,6 +3350,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 wx.MessageBox('Super space group '+SGData['SpGrp']+ssopt['ssSymb']+' not valid;\n It is set to '+ssSym,
                     caption='Unusable super space group',style=wx.ICON_EXCLAMATION)
             G2frame.dataWindow.RunSubGroups.Enable(False)
+        ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         SpGrp = SGData['SpGrp']
         if 'mono' in SGData['SGSys']:
             SpGrp = G2spc.fixMono(SpGrp)

@@ -16,11 +16,11 @@ A library of GUI controls for reuse throughout GSAS-II, as indexed below
 ================================  =================================================================
 Class or function name             Description
 ================================  =================================================================
-:class:`ValidatedTxtCtrl`          A text control with a built-in call back routine to set dict
-                                   or list elements. Optionally validates input as float, int or
-                                   for strings non-blank. Value is set when focus changes
 :class:`EnumSelector`              A combo box with a built-in call back routine that
                                    automatically sets a dict or list entry.
+:class:'DisAglDialog'              Distance/Angle Controls input dialog. 
+:class:`FlagSetDialog`             Dialog that provides a table of items along with a
+                                   checkbox for each. 
 :class:`G2ChoiceButton`            A customized wx.Choice that automatically initializes to
                                    the initial value and saves the choice directly into a dict
                                    or list value. Optionally calls function when a
@@ -29,58 +29,61 @@ Class or function name             Description
                                    the initial value and saves the choice directly into a dict
                                    or list value. Optionally calls function when a
                                    choice is selected
-:func:`CallScrolledMultiEditor`    Routine for editing many dict- or list-contained items.
-                                   using the :class:`ScrolledMultiEditor` dialog
-:class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
-                                   with validation. Results are placed in dict or list.
+:class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
+                                   columns may be ignored.
+:class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
 :class:`G2MultiChoiceDialog`       Dialog similar to wx.MultiChoiceDialog, but provides
                                    a filter to select choices and buttons to make selection
                                    of multiple items more simple.
 :class:`G2SingleChoiceDialog`      Dialog similar to wx.SingleChoiceDialog, but provides
                                    a filter to help search through choices.
-:class:`FlagSetDialog`             Dialog that provides a table of items along with a
-                                   checkbox for each. 
-:class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
-                                   optional range validation.
+:class:`HelpButton`                Creates a button labeled with a "?" that when pressed
+                                   displays help text in a modal message window.
+:class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
+                                   is used for the 2nd, 3rd,... columns. 
 :class:`MultiDataDialog`           Dialog to obtain multiple data values from user, 
                                    with optional range validation; items can be float, str or bool
-:class:`SingleStringDialog`        Dialog to obtain a single string value from user, 
-                                   with optional an optional default value.
-:class:`MultiStringDialog`         Dialog to obtain multiple string values from user, 
-                                   with a description for each value and optional
-                                   defaults.
-:class:`SingleIntDialog`           Dialog to obtain a single integer value from user,
-                                   with optional range validation.
 :class:`MultiIntegerDialog`        Dialog to obtain multiple integer values from user, 
                                    with a description for each value and optional
                                    defaults.
-:class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
-                                   is used for the 2nd, 3rd,... columns. 
-:class:`G2ColumnIDDialog`          A dialog for matching column data to desired items; some
-                                   columns may be ignored.
-:class:`G2HistoDataDialog`         A dialog for global edits to histogram data globally
+:class:`MultiStringDialog`         Dialog to obtain multiple string values from user, 
+                                   with a description for each value and optional
+                                   defaults.
 :class:`OrderBox`                  Creates a wx.Panel with scrollbars where items can be
                                    ordered into columns.
-:class:`HelpButton`                Creates a button labeled with a "?" that when pressed
-                                   displays help text in a modal message window.
+:class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
+                                   with validation. Results are placed in dict or list.
+:class:'SGMagSpinBox'               Special version of MessageBox that displays magnetic spin text
+:class:'SGMessageBox'              Special version of MessageBox that displays space group & 
+                                   super space group text in two blocks
+:class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
+                                   optional range validation.
+:class:`SingleIntDialog`           Dialog to obtain a single integer value from user,
+                                   with optional range validation.
+:class:`SingleStringDialog`        Dialog to obtain a single string value from user, 
+                                   with optional an optional default value.
+:class:`ValidatedTxtCtrl`          A text control with a built-in call back routine to set dict
+                                   or list elements. Optionally validates input as float, int or
+                                   for strings non-blank. Value is set when focus changes
+:func:`CallScrolledMultiEditor`    Routine for editing many dict- or list-contained items.
+                                   using the :class:`ScrolledMultiEditor` dialog
+:func:`Define_wxId`                Create a unique wx.Id symbol in _initMenus in :mod:`GSASIIdataGUI`.
+                                   Such symbols are needed when the menu item is defined in a 
+                                   different location from the wx.Bind that links the menu item 
+                                   to a function. This function allows all the menu Ids to be
+                                   defined as the menus are created in one place and then can be 
+                                   used in Bind elsewhere in the code.
 :func:`G2MessageBox`               Displays text typically used for errors or warnings. 
-:func:`HorizontalLine`             Places a line in a Frame or Dialog to separate sections.
-:func:`SelectEdit1Var`             Select a variable from a list, then edit it and select
-                                   histograms to copy it to.
-:func:`ItemSelector`               Select a single item or multiple items from list of choices.
-                                   Creates and then destroys a wx.Dialog and returns the
-                                   selections(s).
 :func:`GetItemOrder`               Creates a dialog for ordering items into columns
 :func:`GetImportFile`              Gets one ore more file from the appropriate import
                                    directory, which can be overridden. Arguments follow those
                                    of :func:`wx.FileDialog`
-:func:`Define_wxId`                Create a unique wx.Id symbol that is global to this
-                                   module (:mod:`GSASIIctrlGUI`). Such symbols are needed
-                                   when the menu item is defined in a different location
-                                   from the wx.Bind that links the menu item to a function.
-                                   This function allows menu Ids to be
-                                   defined where they are first used rather than be placed
-                                   yet a third location somewhere in this module.
+:func:`HorizontalLine`             Places a line in a Frame or Dialog to separate sections.
+:func:`ItemSelector`               Select a single item or multiple items from list of choices.
+                                   Creates and then destroys a wx.Dialog and returns the
+                                   selections(s).
+:func:`SelectEdit1Var`             Select a variable from a list, then edit it and select
+                                   histograms to copy it to.
 :func:`askSaveFile`                Get a file name from user
 :func:`askSaveDirectory`           Get a directory name from user
 ================================  =================================================================

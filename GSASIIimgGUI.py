@@ -3128,7 +3128,7 @@ class AutoIntFrame(wx.Frame):
                 if not PDFid: continue
                 PDFdata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(
                     G2frame,PDFid, 'PDF Controls'))
-                PDFdata.update(self.pdfControls)
+                PDFdata.update(copy.deepcopy(self.pdfControls))
                 if ElList: PDFdata['ElList'] = ElList # override with formula from comments, if present
                 PDFdata['Sample']['Name'] = pwdr
                 # compute PDF

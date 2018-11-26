@@ -5609,7 +5609,11 @@ def UpdateComments(G2frame,data):
             lines += line.decode('latin-1').rstrip()+'\n'
         else:
             lines += line.rstrip()+'\n'
-    text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lines)
+    try:
+        text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,lines)
+    except:
+        text = wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
+                                 G2obj.StripUnicode(lines))
     G2frame.dataWindow.GetSizer().Add(text,1,wx.ALL|wx.EXPAND)
 
             

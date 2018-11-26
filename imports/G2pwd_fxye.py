@@ -15,6 +15,7 @@ that are defined for GSAS.
 '''
 from __future__ import division, print_function
 import os.path as ospath
+import platform
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
@@ -39,7 +40,10 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         'Validrate by checking to see if the file has BANK lines & count them'
         #print 'ContentsValidator: '+self.formatName
         nBanks= 0
-        fp = open(filename,'r')
+        if '2' in platform.python_version_tuple()[0]:
+            fp = open(filename,'Ur')
+        else:
+            fp = open(filename,'r',encoding='latin-1')
         fname = ospath.basename(fp.name)
         for i,line in enumerate(fp):
             self.GSAS = True
@@ -272,7 +276,10 @@ class GSAS_ReaderClass(G2obj.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
-        fp = open(filename,'Ur')        #needs the 'U' to maintain py 2.7 compatibility
+        if '2' in platform.python_version_tuple()[0]:
+            fp = open(filename,'Ur')
+        else:
+            fp = open(filename,'r',encoding='latin-1')
         # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')

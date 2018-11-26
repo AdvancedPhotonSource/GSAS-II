@@ -1580,11 +1580,10 @@ def SSpcGroup(SGData,SSymbol):
             SSGOps[1][1][3] = genQ[0]
             SSGOps[2][1][3] = genQ[1]
         elif SGData['SGPtGrp'] in ['622',]: #OK
-            for i,j in enumerate([1,8,9]):
-#            for i,j in enumerate([2,3,8]):
+            for i,j in enumerate([1,9,8]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
-                    SSGOps[j][1][3] = genQ[i]
+                    SSGOps[j][1][3] = -genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
             
         elif SGData['SGPtGrp'] in ['6mm','-62m','-6m2',]: #OK

@@ -2513,7 +2513,10 @@ def UpdatePhaseData(G2frame,Item,data):
                     if '_' in BNSlatt:
                         SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
                         G2spc.ApplyBNSlatt(SGData,SGData['BNSlattsym'])
-                    SGData['SpnFlp'] = G2spc.GenMagOps(SGData)[1]
+                    if SGData['SGGray']:
+                        if SGData['SGInv']:
+                            SGData['SpnFlp'] = np.concatenate((SGData['SpnFlp'],SGData['SpnFlp']))
+                        SGData['SpnFlp'] = np.concatenate((SGData['SpnFlp'],-1*SGData['SpnFlp']))
                     SGData['MagSpGrp'] = G2spc.MagSGSym(SGData)
                     if not '_' in BNSlatt:
                         SGData['SGSpin'] = G2spc.GetSGSpin(SGData,SGData['MagSpGrp'])
@@ -2544,6 +2547,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 if ifMag:
                     atMxyz = []                    
                     for atom in Atoms:
+                        if data['General']['Super']:
+                            atom += [{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
                         SytSym,Mul,Nop,dupDir = G2spc.SytSym(atom[3:6],SGData)
                         CSI = G2spc.GetCSpqinel(SGData['SpnFlp'],dupDir)
                         MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)

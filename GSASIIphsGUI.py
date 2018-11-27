@@ -764,12 +764,14 @@ class RotationDialog(wx.Dialog):
         mainSizer.Add(MatSizer)
         rotationBox = wx.BoxSizer(wx.HORIZONTAL)
         rotationBox.Add(wx.StaticText(self.panel,label=' Rotation angle: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
         rotangle = wx.TextCtrl(self.panel,value='%5.3f'%(self.rotAngle),
             size=(50,25),style=wx.TE_PROCESS_ENTER)
         rotangle.Bind(wx.EVT_TEXT_ENTER,OnRotAngle)
         rotangle.Bind(wx.EVT_KILL_FOCUS,OnRotAngle)
         rotationBox.Add(rotangle,0,WACV)
         rotationBox.Add(wx.StaticText(self.panel,label=' about vector: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
         rotvec = wx.TextCtrl(self.panel,value='%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]),
             size=(100,25),style=wx.TE_PROCESS_ENTER)
         rotvec.Bind(wx.EVT_TEXT_ENTER,OnRotVec)
@@ -895,6 +897,7 @@ class DIFFaXcontrols(wx.Dialog):
             mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '),0,WACV)
             parmRange =  wx.BoxSizer(wx.HORIZONTAL)
             numChoice = [str(i+1) for i in range(10)]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             parmrange = wx.TextCtrl(self.panel,value='%.3f %.3f'%(self.parmRange[0],self.parmRange[1]),
                 style=wx.TE_PROCESS_ENTER)
             parmrange.Bind(wx.EVT_TEXT_ENTER,OnParmRange)
@@ -1325,7 +1328,7 @@ def UpdatePhaseData(G2frame,Item,data):
             for atom in atomData:
 #                if 'SS1' not in atom:
 #                    atom += [[],[],{'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}]
-                if 'waveType' in atom[-1]['SS1']:
+                if isinstance(atom[-1],dict) and 'waveType' in atom[-1]['SS1']:
                     waveType = atom[-1]['SS1']['waveType']
                     for parm in ['Sfrac','Spos','Sadp','Smag']:
                         if len(atom[-1]['SS1'][parm]):
@@ -1645,6 +1648,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             NameTxt = wx.TextCtrl(General,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
             NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
             NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
@@ -2019,8 +2023,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 Choice = []
                 if not SGData['SGFixed']:
                     Choice = G2spc.SSChoice(SGData)
-                    if SGData['SGGray']:
-                        Choice = [G2spc.fixGray(SGData,item) for item in Choice]
                 if len(Choice) == 0: return
                 #parent = event.GetEventObject().GetTopLevelParent()
                 parent = General
@@ -2031,6 +2033,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                             ),0,wx.ALIGN_CENTER)
                 
                 sizer.Add((10,10))
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 superGp = wx.ComboBox(dlg,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperEnter)
                 sizer.Add(superGp)
@@ -2091,8 +2094,6 @@ def UpdatePhaseData(G2frame,Item,data):
             Choice = []
             if not SGData['SGFixed']:
                 Choice = G2spc.SSChoice(SGData)
-                if SGData['SGGray']:
-                    Choice = [G2spc.fixGray(SGData,item) for item in Choice]
             if len(Choice):
                 val = generalData['SuperSg']
                 if val.strip() == "": val = Choice[0]
@@ -2290,6 +2291,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Flip['testHKL'] += [[1,1,1],[0,2,0],[1,2,3]]
             HKL = Flip['testHKL']
             for ih,hkl in enumerate(Flip['testHKL']):                
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 hkl = wx.TextCtrl(General,value='%3d %3d %3d'%(HKL[ih][0],HKL[ih][1],HKL[ih][2]),
                     style=wx.TE_PROCESS_ENTER,name='hkl%d'%(ih))
                 hkl.Bind(wx.EVT_TEXT_ENTER,OnTestHKL)        
@@ -4198,6 +4200,7 @@ def UpdatePhaseData(G2frame,Item,data):
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(layerData,label=txt),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 cellVal = wx.TextCtrl(layerData,value=(fmt%(cell[Id+1])),
                     style=wx.TE_PROCESS_ENTER)
                 cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
@@ -4334,6 +4337,7 @@ def UpdatePhaseData(G2frame,Item,data):
             layerSizer = wx.BoxSizer(wx.VERTICAL)
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)            
             nameSizer.Add(wx.StaticText(layerData,label=' Layer name: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
             layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)        
             layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
@@ -4496,6 +4500,7 @@ def UpdatePhaseData(G2frame,Item,data):
             plotSizer.Add(wx.StaticText(layerData,label=Str[:-1]),0,WACV)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(layerData,label=' Enter sequence of layers to plot:'),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             plotSeq = wx.TextCtrl(layerData,value = '',style=wx.TE_PROCESS_ENTER)
             plotSeq.Bind(wx.EVT_TEXT_ENTER,OnPlotSeq)        
             plotSeq.Bind(wx.EVT_KILL_FOCUS,OnPlotSeq)
@@ -4601,6 +4606,7 @@ def UpdatePhaseData(G2frame,Item,data):
             topLine.Add(stackType,0,WACV)
             if Layers['Stacking'][0] == 'recursive':
                 topLine.Add(wx.StaticText(layerData,label=' number of layers (<1022 or "infinite"): '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 numLayers = wx.TextCtrl(layerData,value=data['Layers']['Stacking'][1],style=wx.TE_PROCESS_ENTER)
                 numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
                 numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
@@ -4628,6 +4634,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     stackSizer.Add(stackList,0,wx.ALL|wx.EXPAND|WACV,8)
                 else:   #random
                     topLine.Add(wx.StaticText(layerData,label=' Length of random sequence: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                     numRan = wx.TextCtrl(layerData,value=Layers['Stacking'][2],style=wx.TE_PROCESS_ENTER)
                     numRan.Bind(wx.EVT_TEXT_ENTER,OnNumRan)        
                     numRan.Bind(wx.EVT_KILL_FOCUS,OnNumRan)
@@ -5099,6 +5106,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                         for ival,val in enumerate(wave[0]):
                             if np.any(CSI[0][ival]):
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                                 waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                                 waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
@@ -6286,6 +6294,7 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(backColor,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             viewDir = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
@@ -6302,6 +6311,7 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(showABC,0,WACV)
             lineSizer.Add(wx.StaticText(drawOptions,-1,' View Point:'),0,WACV)
             VP = drawingData['viewPoint'][0]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             viewPoint = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
             G2frame.phaseDisplay.viewPoint = viewPoint
@@ -6384,6 +6394,7 @@ def UpdatePhaseData(G2frame,Item,data):
             planeSizer1 = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
             H = drawingData['Plane'][0]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             plane = wx.TextCtrl(drawOptions,value='%3d %3d %3d'%(H[0],H[1],H[2]),
                 style=wx.TE_PROCESS_ENTER)
             plane.Bind(wx.EVT_TEXT_ENTER,OnPlane)
@@ -6766,10 +6777,12 @@ def UpdatePhaseData(G2frame,Item,data):
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             pfVal = wx.TextCtrl(Texture,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
         else:
             PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,WACV)
             PX = textureData['PFxyz']
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
@@ -7282,6 +7295,7 @@ def UpdatePhaseData(G2frame,Item,data):
             topSizer.Add(Ocheck,0,WACV)
             topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
             for ix,x in enumerate(Orien):
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
                 orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
                 orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
@@ -8054,6 +8068,7 @@ def UpdatePhaseData(G2frame,Item,data):
             for ix,item in enumerate(['x','y','z']):
                 atomsizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -8127,6 +8142,7 @@ def UpdatePhaseData(G2frame,Item,data):
             for ix,item in enumerate(['x','y','z']):
                 rbsizer1.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -8136,11 +8152,13 @@ def UpdatePhaseData(G2frame,Item,data):
             rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oa: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             angVal = wx.TextCtrl(G2frame.MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
             rbsizer2.Add(angVal,0,WACV)
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             vecVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
             vecVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             vecVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
@@ -8156,6 +8174,7 @@ def UpdatePhaseData(G2frame,Item,data):
             rbsizer2.Add(orvar,0,WACV)
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,' Range: Oa: '),0,WACV)
             Rge = model['Ori'][2]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             angRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
             Indx[angRange.GetId()] = [model,'Ori',0]
             angRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -8164,6 +8183,7 @@ def UpdatePhaseData(G2frame,Item,data):
             rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
             for io,item in enumerate(['Oi','Oj','Ok']):
                 rmin,rmax = Rge[io+1]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                 vecRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[vecRange.GetId()] = [model,'Ori',io+1]
                 vecRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -8188,6 +8208,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         rbsizer3.Add(torVal,0,WACV)
                         rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                         rmin,rmax = model['Tor'][2][it]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
                         torRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                         Indx[torRange.GetId()] = [model,'Tor',it]
                         torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
@@ -8240,12 +8261,14 @@ def UpdatePhaseData(G2frame,Item,data):
             poSizer.Add(poVal,0,WACV)
             poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
             rmin,rmax = POData['Coef'][2]
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             poRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
             poRange.Bind(wx.EVT_TEXT_ENTER,OnPORange)
             poRange.Bind(wx.EVT_KILL_FOCUS,OnPORange)
             poSizer.Add(poRange,0,WACV)                       
             poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Unique axis, H K L: '),0,WACV)
             h,k,l = POData['axis']
+#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
             poAxis = wx.TextCtrl(G2frame.MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)

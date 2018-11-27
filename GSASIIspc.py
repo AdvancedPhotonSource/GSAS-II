@@ -1003,7 +1003,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     magSym[1] += "'"
         SGData['MagPtGp'] = ''.join(magPtGp)
     elif SGLaue in ['3','3m1','31m']:   #ok 
-        Ptsym = list(SGLaue)
+        Ptsym = list(SGPtGrp)
         if len(GenSym) == 1:    #all ok
             id = 2
             if (len(magSym) == 4) and (magSym[2] == '1'):
@@ -1662,7 +1662,7 @@ def SSpcGroup(SGData,SSymbol):
     SSgSpc = SGData['SpGrp']+SSymbol
     if SGData['SGGray']:
         SSgSpc = SSgSpc.replace('('," 1'(")
-        SSgSpc += 's'
+#        SSgSpc += 's'
     SSGData = {'SSpGrp':SSgSpc,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
     SSCen = np.zeros((len(SGData['SGCen']),4))
     for icen,cen in enumerate(SGData['SGCen']):
@@ -1722,10 +1722,10 @@ def SSChoice(SGData):
         '422':['(00g)','(1/21/2g)'],'-4m2':['(00g)','(1/21/2g)'],'-42m':['(00g)','(1/21/2g)'],
         '4/mmm':['(00g)','(1/21/2g)'],
         
-        '3':['(00g)','(1/31/3g)'],
-        '32':['(00g)'],'3m':['(00g)'],
-        '321':['(00g)'],'3m1':['(00g)'],
-        '312':['(00g)','(1/31/3g)'],'31m':['(00g)','(1/31/3g)'],
+        '3':['(00g)','(1/31/3g)'],'-3':['(00g)','(1/31/3g)'],
+        '32':['(00g)'],'3m':['(00g)'],'-3m':['(00g)'],
+        '321':['(00g)'],'3m1':['(00g)'],'-3m1':['(00g)'],
+        '312':['(00g)','(1/31/3g)'],'31m':['(00g)','(1/31/3g)'],'-31m':['(00g)','(1/31/3g)'],
         
         '6':['(00g)',],'6/m':['(00g)',],'-62m':['(00g)',],'-6m2':['(00g)',],
         '622':['(00g)',],'6/mmm':['(00g)',],'6mm':['(00g)',],
@@ -1748,10 +1748,10 @@ def SSChoice(SGData):
         '422':['000','q00','s00','s0s','ss0','0ss','qq0','qqs','0q0'],
         '4/mmm':['0000','s0s0','00ss','s00s','ss00','0ss0','0s0s'],
         
-        '3':['0','t'],
-        '32':['00','t0'],'3m':['00','0s'],
-        '321':['000','t00'],'3m1':['000','0s0'],
-        '312':['000','t00'],'31m':['000','00s'],
+        '3':['0','t'],'-3':['0','t'],
+        '32':['00','t0'],'3m':['00','0s'],'-3m':['00','0s'],
+        '321':['000','t00'],'3m1':['000','0s0'],'-3m1':['000','0s0'],
+        '312':['000','t00'],'31m':['000','00s'],'-31m':['000','00s'],
         
         '6':['0','h','t','s'],
         '6/m':['00','s0'],'-62m':['000','00s'],'-6m2':['000','0s0'],
@@ -1764,7 +1764,8 @@ def SSChoice(SGData):
     SSChoice = []
     for ax in ptgpSS[ptgp]:
         for sx in ptgpTS[ptgp]:
-            SSChoice.append(ax+sx)                
+            SSChoice.append(ax+sx)
+            if SGData['SGGray']: SSChoice[-1] += 's'
     ssChoice = []
     ssHash = []
     for item in SSChoice:
@@ -1775,44 +1776,7 @@ def SSChoice(SGData):
                 ssHash.append(sshash)
                 ssChoice.append(item)
     return ssChoice
-
-def fixSSymb(ssSymb,SGData):
-    sgPtGp = SGData['SGPtGrp']
-    ssSymb += ' '
-    if ssSymb.rfind('0000 ') > 0:
-        ssSymb = ssSymb.replace('0000 ','')
-    elif ssSymb.rfind('000 ') > 0 and not sgPtGp in ['4/mmm','6/mmm']:
-        ssSymb = ssSymb.replace('000 ','')
-    elif ssSymb.rfind('00 ') > 0:
-        ssSymb = ssSymb.replace('00 ','')
-    elif ssSymb.rfind('0 ') > 0:
-        ssSymb = ssSymb.replace('0 ','')
-    return ssSymb
-        
-def fixGray(SGData,SSymbol):
-    modsym,gensym = SSymbol.replace(' ','').split(')')
-    modsym += ')'
-    sgPtGp = SGData['SGPtGrp']
-    if gensym:
-        if sgPtGp in ['1','2','m','3','4','6'] and len(gensym) == 1:
-            gensym += 's'
-        elif sgPtGp in ['2/m','4/m','6/m'] and len(gensym) == 2:
-            gensym += 's'
-        elif sgPtGp in ['4/mmm','6/mmm'] and len(gensym) == 4:
-            gensym += 's'
-        elif len(gensym) == 3:
-            gensym += 's'
-    else:
-        if sgPtGp in ['1','2','m','3','4','6']:
-            gensym += '0s'
-        elif sgPtGp in ['2/m','4/m','6/m']:
-            gensym += '00s'
-        elif sgPtGp in ['4/mmm','6/mmm']:
-            gensym += '0000s'
-        else:
-            gensym += '000s'
-    return modsym+gensym
-            
+           
 def splitSSsym(SSymbol):
     '''
     Splits supersymmetry symbol into two lists of strings

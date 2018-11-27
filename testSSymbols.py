@@ -87,7 +87,6 @@ class testSSymbols(wx.Frame):
             SpGrp = Data['SGData']['SpGrp']
             if Data['SGData']['SGGray']: SpGrp += " 1'"
             print('Try: %s%s'%(Data['SGData']['SpGrp'],SSymbol))
-            if Data['SGData']['SGGray']: SSymbol = SSymbol[:-1]
             E,SSGData = G2spc.SSpcGroup(Data['SGData'],SSymbol)
             if SSGData:
                 text,table = G2spc.SSGPrint(Data['SGData'],SSGData)
@@ -123,9 +122,7 @@ class testSSymbols(wx.Frame):
         mainSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(wx.StaticText(self.testSSPanel,label=' Superspace group: '+SpGrp),0,WACV)
         ssChoice = G2spc.SSChoice(Data['SGData'])
-        if Data['SGData']['SGGray']: ssChoice = [G2spc.fixGray(Data['SGData'],item) for item in ssChoice]
         ssSym = Data['SuperSg']
-        if Data['SGData']['SGGray']: ssSym = G2spc.fixGray(SGData,ssSym)
         if ssChoice:
             superGp = wx.ComboBox(self.testSSPanel,value=ssSym,choices=ssChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
             superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)

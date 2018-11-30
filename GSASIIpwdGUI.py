@@ -3003,10 +3003,12 @@ def UpdateUnitCellsGrid(G2frame, data):
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
-        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[1]))
+#        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[1]))
+        dmin = G2lat.Pos2dsp(Inst,Limits[1])
     else:
         difC = Inst['difC'][1]
-        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[0]))
+#        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[0]))
+        dmin = G2lat.Pos2dsp(Inst,Limits[0])
     
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])

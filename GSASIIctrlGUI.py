@@ -3142,12 +3142,13 @@ class SGMessageBox(wx.Dialog):
     ''' Special version of MessageBox that displays space group & super space group text
     in two blocks
     '''
-    def __init__(self,parent,title,text,table,):
+    def __init__(self,parent,title,text,table,spins=[],):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.text = text
         self.table = table
         self.panel = wx.Panel(self)
+        self.spins = spins
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
         for line in text:
@@ -3166,9 +3167,12 @@ class SGMessageBox(wx.Dialog):
             flds = flds.replace(' ','').split(',')
             for i,fld in enumerate(flds):
                 if i < ncol-1:
-                    tableSizer.Add(wx.StaticText(self.panel,label='%s, '%(fld)),0,WACV|wx.ALIGN_RIGHT)
+                    text = wx.StaticText(self.panel,label='%s, '%(fld))
                 else:
-                    tableSizer.Add(wx.StaticText(self.panel,label='%s'%(fld)),0,WACV|wx.ALIGN_RIGHT)
+                    text = wx.StaticText(self.panel,label='%s'%(fld))
+                if len(self.spins) and self.spins[j] < 0:
+                    text.SetForegroundColour('Red')
+                tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
             if not j%2:
                 tableSizer.Add((20,0))
             j += 1
@@ -3255,10 +3259,9 @@ class SGMagSpinBox(wx.Dialog):
                     for i,fld in enumerate(flds):
                         if i < ncol-1:
                             text = wx.StaticText(self.panel,label='%s, '%(fld))
-                            tableSizer.Add(text,0,WACV)
                         else:
                             text = wx.StaticText(self.panel,label='%s '%(fld))
-                            tableSizer.Add(text,0,WACV)
+                        tableSizer.Add(text,0,WACV)
                     text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j%Nnames]))
                     try:
                         if self.spins[j] < 0:

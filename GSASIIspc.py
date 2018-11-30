@@ -2919,13 +2919,9 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 dMT[:,:3,:] *= (ssdet*sdet)            # modify the sin component
                 dMTP.append(dMT)
                 for i in range(3):
-                    if 'm(' in siteSym and not np.allclose(dM[i,i,:],-dMT[i,i,:]):
+                    if not np.allclose(dM[i,i,:],sdet*dMT[i,i,:]):
                         msc[i] = 0
-                    elif '2(' in siteSym and not np.allclose(dM[i,i,:],dMT[i,i,:]):
-                        msc[i] = 0
-                    if 'm(' in siteSym and not np.allclose(dM[i,i+3,:],-dMT[i,i+3,:]):
-                        msc[i+3] = 0
-                    elif '2(' in siteSym and not np.allclose(dM[i,i+3,:],dMT[i,i+3,:]):
+                    if not np.allclose(dM[i,i+3,:],sdet*dMT[i,i+3,:]):
                         msc[i+3] = 0
                 if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                     msc[3:6] = 0

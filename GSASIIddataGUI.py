@@ -834,6 +834,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj = event.GetEventObject()
             if not UseList[G2frame.hist]['LeBail']:
                 UseList[G2frame.hist]['newLeBail'] = True
+                Obj.SetLabel('Do new LeBail extraction?')
             UseList[G2frame.hist]['LeBail'] = Obj.GetValue()
 
         def OnResetSize(event):
@@ -891,7 +892,10 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         useData.SetValue(UseList[G2frame.hist]['Use'])
         useBox.Add(useData,0,WACV)
         if not generalData['doPawley'] and 'PWDR' in G2frame.hist[:4]:
-            lebail = wx.CheckBox(DData,wx.ID_ANY,label='Do LeBail extraction?')
+            lbLabel = 'Redo LeBail extraction?   '
+            if UseList[G2frame.hist]['newLeBail']:
+                lbLabel = 'Do new LeBail extraction?'
+            lebail = wx.CheckBox(DData,wx.ID_ANY,label=lbLabel)
             lebail.Bind(wx.EVT_CHECKBOX, OnLeBail)
             lebail.SetValue(UseList[G2frame.hist]['LeBail'])
             useBox.Add(lebail,0,WACV)

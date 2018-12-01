@@ -396,10 +396,7 @@ def GetHistsLikeSelected(G2frame):
     :param wx.Frame G2frame: pointer to main GSAS-II data tree
     '''
     histList = []
-    inst,inst2 = G2frame.GPXtree.GetItemPyData(
-        G2gd.GetGPXtreeItemId(
-            G2frame,G2frame.PatternId, 'Instrument Parameters')
-        )
+    inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
     hType = inst['Type'][0]
     if 'Lam1' in inst:
         hLam = 2
@@ -407,10 +404,7 @@ def GetHistsLikeSelected(G2frame):
         hLam = 1
     else:
         hLam = 0
-    sample = G2frame.GPXtree.GetItemPyData(
-        G2gd.GetGPXtreeItemId(
-            G2frame,G2frame.PatternId, 'Sample Parameters')
-        )
+    sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
     hGeom = sample.get('Type')
     hstName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     hPrefix = hstName.split()[0]+' '

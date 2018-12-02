@@ -401,6 +401,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         else:
             SeqResult['varyList'] = list(set(SeqResult['varyList']+saveVaryList))
         parmDict = {}
+        parmDict.update(rbDict)
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)

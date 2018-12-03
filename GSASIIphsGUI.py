@@ -2000,18 +2000,6 @@ def UpdatePhaseData(G2frame,Item,data):
             
         def ModulatedSizer(name):
             
-#            def showSSG(msg,text,table):
-#                'Show the symmetry information, redraw window after'
-#                dlg = G2G.SGMessageBox(General,msg,text,table)
-#                dlg.CenterOnParent()
-#                dlg.ShowModal()
-#                dlg.Destroy()
-#                UpdateGeneral()
-#                
-            def OnSuperEnter(event):
-                'Close dialog after enter is pressed'
-                event.GetEventObject().Parent.EndModal(wx.ID_OK)
-                
             def OnShowSOps(event):
                 SSGData = generalData['SSGData']
                 text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
@@ -2020,22 +2008,14 @@ def UpdatePhaseData(G2frame,Item,data):
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 'Respond to selection of a modulation group'
-                Choice = []
-                if not SGData['SGFixed']:
-                    Choice = G2spc.SSChoice(SGData)
-                if len(Choice) == 0: return
-                #parent = event.GetEventObject().GetTopLevelParent()
-                parent = General
-                dlg = wx.Dialog(parent,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                wx.BeginBusyCursor()
+                Choice = G2spc.SSChoice(SGData)
+                wx.EndBusyCursor()
+                dlg = wx.Dialog(General,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
                 sizer = wx.BoxSizer(wx.VERTICAL)
-                sizer.Add(wx.StaticText(dlg,wx.ID_OK,
-                            'Select or enter a modulation group'
-                                            ),0,wx.ALIGN_CENTER)
-                
+                sizer.Add(wx.StaticText(dlg,wx.ID_OK,'Select or enter a modulation group'),0,wx.ALIGN_CENTER)
                 sizer.Add((10,10))
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
-                superGp = wx.ComboBox(dlg,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
-                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperEnter)
+                superGp = wx.ComboBox(dlg,value=generalData['SuperSg'],choices=Choice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
                 sizer.Add(superGp)
                 sizer.Add((10,10))
                 btnsizer = wx.StdDialogButtonSizer()
@@ -2073,7 +2053,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 else:
                     # needed in case someone manually enters an invalid SSG?
                     Text = '\n'.join([E+'\nSuperspace Group entry ignored'])
-                    G2G.G2MessageBox(parent,Text,'Superspace Group Error')
+                    G2G.G2MessageBox(General,Text,'Superspace Group Error')
                 wx.CallAfter(UpdateGeneral)
                     
             def OnVecRef(event):
@@ -2091,12 +2071,8 @@ def UpdatePhaseData(G2frame,Item,data):
             if SGData['SGGray']:
                 SpGrp += " 1'"
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
-            Choice = []
             if not SGData['SGFixed']:
-                Choice = G2spc.SSChoice(SGData)
-            if len(Choice):
                 val = generalData['SuperSg']
-                if val.strip() == "": val = Choice[0]
                 superGp = wx.Button(General,wx.ID_ANY,val,size=(100,-1))
                 superGp.Bind(wx.EVT_BUTTON,OnSuperGp)
             else:

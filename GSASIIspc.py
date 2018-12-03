@@ -1436,7 +1436,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[1][0][3,i] = -SSGKl[0]
         elif SGData['SGPtGrp'] == '2/m':    #OK
             SSGOps[1][0][3,3] = SSGKl[1]
-            if gensym:
+            if 's' in gensym:
                 SSGOps[1][1][3] = 0.5
             for i in iFrac:
                 SSGOps[1][0][3,i] = SSGKl[0]
@@ -2890,7 +2890,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         elif siteSym in ['-4m2(z)','422(z)',]:
             CSI[0][5][0] = 1
             CSI[1][5][0] = 1.0
-        elif siteSym in ['-32(100)',]:
+        elif siteSym in ['-32(100)','-3',]:
             CSI[0][2][0] = 1
             CSI[1][2][0] = 1.0
         elif siteSym in ['3',]:
@@ -2898,7 +2898,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
             CSI[1][0][0] = -np.sqrt(3.0)
             CSI[1][3][0] = 2.0
             CSI[1][4][0] = 1.0
-        elif siteSym in ['622','2(100)',]:
+        elif siteSym in ['622','2(100)','32(100)',]:
             CSI[0][0][0] = CSI[0][1][0] = CSI[0][3][0] = 1
             CSI[1][0][0] = 1.0
             CSI[1][1][0] = 2.0

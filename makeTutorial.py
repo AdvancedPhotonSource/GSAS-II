@@ -105,4 +105,6 @@ if __name__ == '__main__':
     print('</UL>\n<A name=prereq>* Indented tutorials require the previous unindented tutorial as a prerequisite',file=out)
     print('<h3>Tutorials with video-recorded examples</H3>', file=out)
     print(videolist, file=out)
+    print("<P>The video tutorials are also <A href=https://pan.baidu.com/s/1C1jq1amfuVmcY2n91cQcsg> mirrored in China</A></P>",
+                  file=out)
     out.close()

@@ -2352,9 +2352,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if Phases[phase]['General']['Type'] != 'magnetic':
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
-                if phase in Histogram['Reflection Lists'] and 'RefList' not in Histogram['Reflection Lists'][phase] and hapData['LeBail']:
+                if phase in Histogram['Reflection Lists'] and 'RefList' not in Histogram['Reflection Lists'][phase] and hapData.get('LeBail',False):
                     hapData['newLeBail'] = True
-                if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData['LeBail'] and hapData['newLeBail'])):
+                if resetRefList and (not hapDict[pfx+'LeBail'] or (hapData.get('LeBail',False) and hapData['newLeBail'])):
                     if hapData.get('LeBail',True):         #stop regeneating reflections for LeBail
                         hapData['newLeBail'] = False
                     refList = []

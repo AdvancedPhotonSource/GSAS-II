@@ -2543,9 +2543,9 @@ def OpsfromStringOps(A,SGData,SSGData):
     iC = 1
     if Ax[0] < 0:
         iC = -1
-    Ax[0] = abs(Ax[0])
-    nA = Ax[0]%100-1
-    nC = Ax[0]//100
+    iAx = abs(Ax[0])
+    nA = iAx%100-1
+    nC = iAx//100
     unit = [0,0,0]
     if len(Ax) > 1:
         unit = eval('['+Ax[1]+']')

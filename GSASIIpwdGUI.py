@@ -3364,7 +3364,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[15] = [atom[:cx+3] for atom in Phase['Atoms']]
         if 'N' in Inst['Type'][0]:
             if not ssopt.get('Use',False):
-                G2frame.dataWindow.RunSubGroups.Enable(True)
+                G2frame.dataWindow.RunSubGroupsMag.Enable(True)
+#                G2frame.dataWindow.RunSubGroups.Enable(True)
         data = controls,bravais,cells,dminx,ssopt,magcells
         G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         G2frame.dataWindow.RefineCell.Enable(True)

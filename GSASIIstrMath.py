@@ -944,6 +944,8 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     :param dict SGData: space group info. dictionary output from SpcGroup
     :param dict calcControls:
     :param dict ParmDict:
+        
+    :returns: copy of new refList - used in calculating numerical derivatives
 
     '''        
     g = nl.inv(G)
@@ -1061,7 +1063,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     return copy.deepcopy(refDict['RefList'])
 
 def MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
-    '''Compute magnetic structure factor derivatives numerically on blocks of reflections - for powders/nontwins only
+    '''Compute magnetic structure factor derivatives numerically - for powders/nontwins only
     input:
     
     :param dict refDict: where
@@ -1078,7 +1080,7 @@ def MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     '''
     
     trefDict = copy.deepcopy(refDict)
-    dM = 0.0001
+    dM = 1.e-6
     dFdvDict = {}
     for parm in parmDict:
         if 'AM' in parm:
@@ -3786,8 +3788,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
         if len(TwinLaw) > 1:
             dFdvDict = StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
         else:   #correct!!
-            if Phase['General']['Type'] == 'magnetic':  #is this going to work for single crystal mag data?
-                dFdvDict = MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+            if Phase['General']['Type'] == 'magnetic': 
+                dFdvDict = MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
+                dFdvDict.update(MagStructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict))
             else:
                 dFdvDict = StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
     ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)

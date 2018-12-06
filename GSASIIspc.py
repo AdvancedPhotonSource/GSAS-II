@@ -3559,7 +3559,8 @@ def ApplyStringOpsMom(A,SGData,Mom):
         newMom = -np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
     else:
         newMom = np.inner(Mom,M).T*nl.det(M)*SGData['SpnFlp'][NA+nC]
-#        print(len(SGOps),Ax[0],iAx,nC,nA,NA,SGData['SpnFlp'][NA],Mom,newMom)
+#        print(len(SGOps),Ax[0],iAx,nC,nA,NA,MT2text([M,T]).replace(' ',''),SGData['SpnFlp'][NA],Mom,newMom)
+#    print(Mom,newMom,MT2text([M,T]),)
     return newMom
         
 def StringOpsProd(A,B,SGData):

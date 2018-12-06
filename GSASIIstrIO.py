@@ -2394,7 +2394,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             if ext and 'N' in inst['Type'][0] and  'MagSpGrp' in SGData:
                                 ext = G2spc.checkMagextc([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
-                            if ext:# and not useExt:
+                            if ext and not useExt:
                                 continue
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)

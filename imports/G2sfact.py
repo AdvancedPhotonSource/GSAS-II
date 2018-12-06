@@ -565,15 +565,15 @@ class NT_JANA2K_ReaderClass(G2obj.ImportStructFactor):
             self.UpdateParameters(Type='SNT',Wave=None) # histogram type
         return True
 
-class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
-    'Routines to import neutron TOF F**2, sig(F**2) reflections from a ISIS int file'
+class NIST_hb3a_INT_ReaderClass(G2obj.ImportStructFactor):
+    'Routines to import neutron CW F**2, sig(F**2) reflections from a NIST hb3a int file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = u'Neutron ISIS SXD TOF HKL F2'
-            longFormatName = u'Neutron ISIS SXD TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+            formatName = u'Neutron NIST hb3a  CW HKL F2'
+            longFormatName = u'Neutron NIST hb3a  CW HKL [hkl, Fo2, sig(Fo2),...] 5 column Structure factor text file'
         else:
-            formatName = u'Neutron ISIS SXD TOF HKL F\u00b2'
-            longFormatName = u'Neutron ISIS SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            formatName = u'Neutron NIST hb3a  CW HKL F\u00b2'
+            longFormatName = u'Neutron NIST hb3a  CW HKL [hkl, Fo\u00b2, sig(Fo\u00b2),...] 5 column Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
@@ -582,19 +582,13 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
 
     def ContentsValidator(self, filename):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
-        oldNo = -1
         fp = open(filename,'r')
         for line,S in enumerate(fp):
             if not S:   #empty line terminates read
                 break
             if S[0] == '#': continue       #ignore comments, if any
-            if S[0] == '(': continue        #ignore format line
-            bankNo = S.split()[5]
-            if bankNo != oldNo:
-                self.Banks.append({'RefDict':{'RefList':[],}})
-                oldNo = bankNo
         fp.seek(0)
-        valid = ColumnValidator(self, fp,nCol=8)
+        valid = ColumnValidator(self, fp,nCol=5)
         fp.close()
         return valid
 
@@ -604,33 +598,19 @@ class ISIS_SXD_INT_ReaderClass(G2obj.ImportStructFactor):
         for line,S in enumerate(fp):
             self.errors = '  Error reading line '+str(line+1)
             if S[0] == '#': continue       #ignore comments, if any
-            if S[0] == '(': continue        #ignore the format line
             data = S.split()
-            h,k,l,Fo,sigFo,bN,wave,x,x,tbar = data[:10]                   
+            h,k,l,Fo,sigFo = data                   
             h,k,l = [int(h),int(k),int(l)]
             if not any([h,k,l]):
                 break
             Fo = float(Fo)
             sigFo = float(sigFo)
-            wave = float(wave)
-            tbar = float(tbar)
-            if len(self.Banks):
-                self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
-            else:
             # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+            self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0])
         fp.close()
-        if len(self.Banks):
-            self.UpdateParameters(Type='SNT',Wave=None) # histogram type
-            for Bank in self.Banks:
-                Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])
-                Bank['RefDict']['Type'] = 'SNT'                    
-                Bank['RefDict']['Super'] = 0
-        else:
-            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
-            self.RefDict['Type'] = 'SNT'
-            self.RefDict['Super'] = 0
-            self.errors = 'Error after reading reflections (unexpected!)'
-            self.UpdateParameters(Type='SNT',Wave=None) # histogram type
+        self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+        self.RefDict['Type'] = 'SNC'
+        self.RefDict['Super'] = 0
+        self.errors = 'Error after reading reflections (unexpected!)'
+        self.UpdateParameters(Type='SNC',Wave=None) # histogram type
         return True
-

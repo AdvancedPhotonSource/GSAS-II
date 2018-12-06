@@ -3098,7 +3098,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'histType'] = Inst['Type'][0]
             if 'X' in Inst['Type'][0]:
                 histDict[pfx+'Lam'] = Inst['Lam'][1]
-                controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
+                controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']
+            elif 'NC' in Inst['Type'][0]:                   
+                histDict[pfx+'Lam'] = Inst['Lam'][1]
     return histVary,histDict,controlDict
     
 def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None):

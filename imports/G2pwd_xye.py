@@ -77,14 +77,18 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         begin = False
                 else:
                     if2theta = True
+                    if  i == 0 and 'xydata' in S.lower():
+                        continue   # fullprof header
                     if gotCcomment and S.find('*/') > -1:
                         begin = False
                         continue
                     if S.strip().startswith('/*'):
                         gotCcomment = True
                         continue   
-                    if S[0] in ["'",'#']:
+                    if S[0] in ["'",'#','!']:
                         continue       #ignore comments, if any
+                    elif S.startswith('TITLE'):
+                        continue
                     else:
                         begin = False
                 # valid line to read? 
@@ -121,6 +125,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
             self.errors = 'Error reading line: '+str(i+1)
             # or a block of comments delimited by /* and */
             # or (GSAS style) each line can begin with '#'
+            # or WinPLOTR style, a '!'
             if begin:
                 if self.Chi or self.Wave:
                     if i < 4:
@@ -136,9 +141,14 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                         self.comments.append(S[:-1])
                         gotCcomment = True
                         continue   
-                    if S[0] in ["'",'#']:
+                    if S[0] in ["'",'#','!']:
                         self.comments.append(S[:-1])
                         continue       #ignore comments, if any
+                    elif  i == 0 and 'xydata' in S.lower():
+                        continue   # fullprof header
+                    elif S.startswith('TITLE'):
+                        self.comments = [S]
+                        continue
                     else:
                         begin = False
             # valid line to read

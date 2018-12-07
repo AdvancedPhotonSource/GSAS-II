@@ -1428,7 +1428,11 @@ class GSASII(wx.Frame):
                     dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                    return self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
+                    inst1,inst2 = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
+                    if rd.instdict.get('wave'):
+                        inst1['Lam'][0] = rd.instdict.get('wave')
+                        inst1['Lam'][1] = rd.instdict.get('wave')
+                    return [inst1,inst2]
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]

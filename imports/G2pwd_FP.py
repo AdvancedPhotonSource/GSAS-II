@@ -20,7 +20,7 @@ import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1620 $")
-class xye_ReaderClass(G2obj.ImportPowderData):
+class fp_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a FullProf 1-10 column .dat file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -39,7 +39,7 @@ class xye_ReaderClass(G2obj.ImportPowderData):
         self.GSAS = False
         fp = open(filename,'r')
         for i,S in enumerate(fp):
-            if i > 1000: break
+            if i > 100: break
             if begin:
                 if gotCcomment and S.find('*/') > -1:
                     begin = False
@@ -64,8 +64,9 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     self.errors += '  '+str(S)
                 else: 
                     self.errors += '  (binary)'
-                fp.close()
-                return False
+                if i > 2:
+                    fp.close()
+                    return False
         fp.close()
         return True # no errors encountered
 
@@ -100,14 +101,23 @@ class xye_ReaderClass(G2obj.ImportPowderData):
                     begin = False
             # valid line to read
             if not steps:
-                vals = S.split(None,4)
-                if len(vals) >= 3:
-                    steps = True
-                    start = float(vals[0])
-                    step = float(vals[1])
-                    stop = float(vals[2])
-                    if len(vals) > 3:
-                        self.comments.append(vals[3][:-1])
+                vals = S.replace(',',' ').split(None,4)
+                if 'lambda' in S:
+                    self.instdict['wave'] = float(vals[1])
+                    continue
+                elif len(vals) >= 3:
+                    try:
+                        steps = True
+                        start = float(vals[0])
+                        step = float(vals[1])
+                        stop = float(vals[2])
+                        if len(vals) > 3:
+                            self.comments.append(vals[3][:-1])
+                    except:
+                        print('Skipping line ',S)
+                    continue
+                elif i<3:
+                    print('Skipping header line ',S)
                     continue
             vals = S.split()    #data strings
             try:

@@ -39,7 +39,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         self.GSAS = False
         fp = open(filename,'r')
         for i,S in enumerate(fp):
-            if i > 100: break
+            if i > 50: break
             if begin:
                 if gotCcomment and S.find('*/') > -1:
                     begin = False
@@ -55,7 +55,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
             vals = S.split()
             try:    #look for start,step,stop card
                 for j,val in enumerate(vals):
-                    num = float(val)
+                    float(val)
                     if j == 2:
                         break
             except ValueError:
@@ -83,8 +83,11 @@ class fp_ReaderClass(G2obj.ImportPowderData):
         fp = open(filename,'r')
         for i,S in enumerate(fp):
             self.errors = 'Error reading line: '+str(i+1)
-            # or a block of comments delimited by /* and */
-            # or (GSAS style) each line can begin with '#' or '!'
+            # Allow a block of comments delimited by /* and */
+            # or (GSAS style) each comment line can begin with '#' or '!'
+            if S.lstrip()[0] in ["'",'#','!',]:
+                self.comments.append(S[:-1])
+                continue       # store comments, if any
             if begin:
                 if gotCcomment and S.find('*/') > -1:
                     self.comments.append(S[:-1])
@@ -94,12 +97,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                     self.comments.append(S[:-1])
                     gotCcomment = True
                     continue   
-                if S.lstrip()[0] in ["'",'#','!',]:
-                    self.comments.append(S[:-1])
-                    continue       #ignore comments, if any
-                else:
-                    begin = False
-            # valid line to read
+            # look for a line with start, steps etc. in 1st 4 lines
             if not steps:
                 vals = S.replace(',',' ').split(None,4)
                 if 'lambda' in S:
@@ -107,10 +105,11 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                     continue
                 elif len(vals) >= 3:
                     try:
-                        steps = True
                         start = float(vals[0])
                         step = float(vals[1])
                         stop = float(vals[2])
+                        steps = True
+                        begin = False
                         if len(vals) > 3:
                             self.comments.append(vals[3][:-1])
                     except:
@@ -119,6 +118,7 @@ class fp_ReaderClass(G2obj.ImportPowderData):
                 elif i<3:
                     print('Skipping header line ',S)
                     continue
+            # should be a valid line to read
             vals = S.split()    #data strings
             try:
                 for j in range(len(vals)):

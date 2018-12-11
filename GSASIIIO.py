@@ -349,7 +349,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['outChannels'] = 2250
         Data['outAzimuths'] = 1
         Data['centerAzm'] = False
-        Data['fullIntegrate'] = True
+        Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)
         Data['setRings'] = False
         Data['background image'] = ['',-1.0]                            
         Data['dark image'] = ['',-1.0]

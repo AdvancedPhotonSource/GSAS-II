@@ -6187,7 +6187,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     elif 'Itth' in  str(item) or 'Otth' in str(item):
                         Page.SetToolTipString('%8.3f deg'%(tth))
                     elif 'linescan' in str(item):
-                        Data['linescan'][1] = azm                        
+                        Data['linescan'][1] = azm
+                        G2frame.scanazm.SetValue(azm)
                         Page.SetToolTipString('%6.1f deg'%(azm))
             else:
                 xcent,ycent = Data['center']

@@ -167,6 +167,9 @@ Movie_fps = 10
 Movie_time = 5
 ''' Specifices time in sec for one modulation loop; larger number will give more frames for same fps'
 '''
+fullIntegrate = True
+''' If True then full image integration is default; False otherwise
+'''
 
 Multiprocessing_cores = 0
 ''' Specifies the number of cores to use when performing multicore computing. A number less

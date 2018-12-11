@@ -1489,6 +1489,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     
 def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt):
     '''
+    Compute Fourier modulation derivatives
     H: array ops X hklt proj to hkl
     HP: array ops X hklt proj to hkl
     Hij: array 2pi^2[a*^2h^2 b*^2k^2 c*^2l^2 a*b*hk a*c*hl b*c*kl] of projected hklm to hkl space
@@ -1512,6 +1513,7 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
         HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x ngl
         HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x ngl
         HbH = np.exp(-np.sum(HuH,axis=-2)) # ops x atoms x ngl; sum waves - OK vs Modulation version
+#        part1 = -np.exp(-HuH)*Fmod[nxs,:,nxs,:]    #ops x atoms x waves x ngl
         part1 = -np.exp(-HuH)*Fmod    #ops x atoms x waves x ngl
         dUdAu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(SCtauU[0]),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x ngl x 6sinUij
         dUdBu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(SCtauU[1]),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x ngl x 6cosUij
@@ -1526,24 +1528,18 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     dHdXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[0],-1,-2)[nxs,:,:,:,:]    #ops x atoms x sine waves x ngl x xyz
     dHdXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[1],-1,-2)[nxs,:,:,:,:]    #ditto - cos waves
 # ops x atoms x waves x 2xyz - real part - good
+#    dGdMxCa = -np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+#    dGdMxCb = -np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxCa = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
 # ops x atoms x waves x 2xyz - imag part - good
+#    dGdMxSa = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+#    dGdMxSb = np.sum((Fmod[nxs,:,:]*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
-# ZigZag/Block waves - problems here?
-    dHdXZt = -twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[2],-1,-2)[nxs,:,:,:,:]          #ops x atoms x ngl x 2(ZigZag/Block Tminmax)
-    dHdXZx = twopi*HP[:,nxs,nxs,:]*np.swapaxes(SCtauX[3],-1,-2)[nxs,:,:,:]          #ops x atoms x ngl x 3(ZigZag/Block XYZmax)
-    dGdMzCt = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXZt*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-    dGdMzCx = -np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.sin(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
-    dGdMzC = np.concatenate((np.sum(dGdMzCt,axis=-1),dGdMzCx),axis=-1)
-    dGdMzSt = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXZt*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-    dGdMzSx = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
-    dGdMzS = np.concatenate((np.sum(dGdMzSt,axis=-1),dGdMzSx),axis=-1)
-#    GSASIIpath.IPyBreak()
-    return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS],[dGdMzC,dGdMzS]
+    return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     
 def ModulationDerv2(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt):
     '''
@@ -1706,7 +1702,7 @@ def ApplyModulation(data,tau):
                 for i,spos in enumerate(Spos[1:]):
                     if waveType in ['ZigZag','Block'] and not i:
                         Tminmax = spos[0][:2]
-                        XYZmax = np.array(spos[0][2:])
+                        XYZmax = np.array(spos[0][2:5])
                         if waveType == 'Block':
                             wave = np.array(posBlock([tauT,],Tminmax,XYZmax))[0]
                         elif waveType == 'ZigZag':

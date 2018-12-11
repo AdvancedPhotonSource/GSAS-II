@@ -4912,13 +4912,13 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
-        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5,'Crenel':2,'SawTooth':3}
+        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5,'Crenel':2}
         posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
         adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
         fracNames = ['Fsin','Fcos','Fzero','Fwid']
-        waveTypes = {'Sfrac':['Fourier','Crenel'],'Spos':['Fourier','ZigZag','Block','SawTooth'],'Sadp':['Fourier',],'Smag':['Fourier',]}
+        waveTypes = {'Sfrac':['Fourier','Crenel'],'Spos':['Fourier','ZigZag','Block',],'Sadp':['Fourier',],'Smag':['Fourier',]}
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         Indx = {}
         waveData = G2frame.waveData
@@ -4948,7 +4948,6 @@ def UpdatePhaseData(G2frame,Item,data):
             RepaintAtomInfo()
             
         def RepaintAtomInfo(Scroll=0):
-#            mainSizer.Detach(G2frame.bottomSizer)
             G2frame.bottomSizer.Clear(True)
             G2frame.bottomSizer = ShowAtomInfo()
             mainSizer.Add(G2frame.bottomSizer)
@@ -4960,7 +4959,9 @@ def UpdatePhaseData(G2frame,Item,data):
             
         def ShowAtomInfo():
             
+            global mapSel       #so it can be seen below in OnWavePlot
             def AtomSizer(atom):
+                global mapSel
                 
                 def OnShowWave(event):
                     Obj = event.GetEventObject()
@@ -5000,28 +5001,12 @@ def UpdatePhaseData(G2frame,Item,data):
                     item = Indx[Obj.GetId()]
                     nt = numVals[Stype]
                     if not len(atm[-1]['SS1'][item]):
-                        if waveTyp in ['ZigZag','Block','Crenel','SawTooth']:
+                        if waveTyp in ['ZigZag','Block','Crenel']:
                             nt = numVals[waveTyp]                        
                         atm[-1]['SS1'][item] = [0,]
                         atm[-1]['SS1'][item][0] = waveType.GetValue()
                     atm[-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
-                    
-                def OnWaveVal(event):
-                    event.Skip()
-                    Obj = event.GetEventObject()
-                    item,iwave,ival = Indx[Obj.GetId()]
-                    try:
-                        val = float(Obj.GetValue())
-                        if waveTyp in ['ZigZag','Block'] and ival < 2 and not iwave:
-                            if ival == 1: #Tmax
-                                val = min(1.0,max(0.0,val))
-                            elif ival == 0: #Tmin
-                                val = max(-1.,min(val,atm[-1]['SS1'][item][1][0][ival]))
-                    except ValueError:
-                        val = atm[-1]['SS1'][item][iwave+1][0][ival]
-                    Obj.SetValue('%.5f'%val)
-                    atm[-1]['SS1'][item][iwave+1][0][ival] = val
                     
                 def OnRefWave(event):
                     Obj = event.GetEventObject()
@@ -5032,7 +5017,15 @@ def UpdatePhaseData(G2frame,Item,data):
                     Obj = event.GetEventObject()
                     item,iwave = Indx[Obj.GetId()]
                     del atm[-1]['SS1'][item][iwave+1]
-                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))                
+                    if len(atm[-1]['SS1'][item]) == 1:
+                        atm[-1]['SS1'][item][0] = ''
+                    wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
+                    
+                def OnWavePlot(invalid,value,tc):
+                    if len(D4Map['rho']):
+                        Ax = mapSel.GetValue()
+                        if Ax:
+                            G2plt.ModulationPlot(G2frame,data,atm,Ax)
                 
                 waveTyp,waveBlk = 'Fourier',[]
                 if len(wavedata):
@@ -5055,13 +5048,14 @@ def UpdatePhaseData(G2frame,Item,data):
                     nx = 0
                     for iwave,wave in enumerate(waveBlk):
                         if not iwave:
-                            if waveTyp in ['ZigZag','Block','SawTooth','Crenel']:
+                            if waveTyp in ['ZigZag','Block','Crenel']:
                                 nx = 1
                             CSI = G2spc.GetSSfxuinel(waveTyp,Stype,1,xyz,SGData,SSGData)[0]
                         else:
                             CSI = G2spc.GetSSfxuinel('Fourier',Stype,iwave+1-nx,xyz,SGData,SSGData)[0]
                         waveName = 'Fourier'
                         if Stype == 'Sfrac':
+                            nterm = 2
                             if 'Crenel' in waveTyp and not iwave:
                                 waveName = 'Crenel'
                                 names = Names[2:]
@@ -5069,24 +5063,30 @@ def UpdatePhaseData(G2frame,Item,data):
                                 names = Names[:2]
                             Waves = wx.FlexGridSizer(0,4,5,5)
                         elif Stype == 'Spos':
+                            nterm = 6
                             if waveTyp in ['ZigZag','Block'] and not iwave:
+                                nterm = 5
                                 names = Names[6:]
                                 Waves = wx.FlexGridSizer(0,7,5,5)
                                 waveName = waveTyp
                             else:
                                 names = Names[:6]
                                 Waves = wx.FlexGridSizer(0,8,5,5)
-                        else:
+                        elif Stype == 'Sadp':
+                            nterm = 12
+                            names = Names
+                            Waves = wx.FlexGridSizer(0,8,5,5)
+                        elif Stype == 'Smag':
+                            nterm = 6
                             names = Names
                             Waves = wx.FlexGridSizer(0,8,5,5)
                         waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
-                        for ival,val in enumerate(wave[0]):
+                        for ival in range(nterm):
+                            val = wave[0][ival]
                             if np.any(CSI[0][ival]):
-#            Zstep = G2G.ValidatedTxtCtrl(drawOptions,drawingData,'Zstep',nDig=(10,2),min=0.01,max=4.0)
-                                waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
-                                waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
-                                waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
-                                Indx[waveVal.GetId()] = [Stype,iwave,ival]
+                                minmax = [-0.2,0.2]
+                                if waveTyp in ['ZigZag','Block'] and ival < 2: minmax = [0.,2.]
+                                waveVal = G2G.ValidatedTxtCtrl(waveData,wave[0],ival,nDig=(10,5),min=minmax[0],max=minmax[1],OnLeave=OnWavePlot)
                             else:
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
                                 waveVal.SetBackgroundColour(VERY_LIGHT_GREY)

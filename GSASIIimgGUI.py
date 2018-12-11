@@ -777,8 +777,17 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 Page.canvas.draw_idle()
                 
         def OnLineScan(event):
-            Azm = (data['LRazimuth'][1]+data['LRazimuth'][0])/2.
-            data['linescan'] = [linescan.GetValue(),Azm]
+            data['linescan'][0] = linescan.GetValue()
+            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+            G2plt.PlotExposedImage(G2frame,event=event)
+            
+        def OnNewLineScan(invalid,value,tc):
+            G2plt.PlotExposedImage(G2frame,event=None)
+            
+        def OnMoveAzm(event):
+            data['linescan'][1] += float(azmSpin.GetValue())
+            data['linescan'][1] = data['linescan'][1]%360.
+            G2frame.scanazm.SetValue(data['linescan'][1])
             G2plt.PlotExposedImage(G2frame,event=event)
 
         mplv = mpl.__version__.split('.')
@@ -826,11 +835,24 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             scaleSel.SetSelection(len(scaleChoices)-1)
         scaleSel.Bind(wx.EVT_CHOICE,OnAutoSet)
         autoSizer.Add(scaleSel,0,WACV)
-        linescan = wx.CheckBox(G2frame.dataWindow,label=' Show line scan')
+        if data['linescan'][0]:
+            linescan = wx.CheckBox(G2frame.dataWindow,label=' Show line scan at azm = ')
+        else:
+            linescan = wx.CheckBox(G2frame.dataWindow,label=' Show line scan')
         linescan.Bind(wx.EVT_CHECKBOX,OnLineScan)
         linescan.SetValue(data['linescan'][0])
         autoSizer.Add((5,0),0)
         autoSizer.Add(linescan,0,WACV)
+        if data['linescan'][0]:
+            G2frame.scanazm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['linescan'],1,min=0.,
+            max=360.,OnLeave=OnNewLineScan)
+            autoSizer.Add(G2frame.scanazm,0,WACV)
+            azmSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
+            azmSpin.SetValue(0)
+            azmSpin.SetRange(-1,1)
+            azmSpin.Bind(wx.EVT_SPIN, OnMoveAzm)
+            autoSizer.Add(azmSpin,0,WACV)
+
         maxSizer.Add(autoSizer)
         return maxSizer
         

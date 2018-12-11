@@ -1713,7 +1713,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             AtomSS = at[-1]['SS1']
             for Stype in ['Sfrac','Spos','Sadp','Smag']:
                 Waves = AtomSS[Stype]
-                if len(Waves):
+                if len(Waves) > 1:
                     waveType = Waves[0]
                 else:
                     continue

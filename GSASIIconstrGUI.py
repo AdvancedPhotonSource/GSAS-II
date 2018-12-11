@@ -171,7 +171,7 @@ def UpdateConstraints(G2frame,data):
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol','isMag',]
+    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
     globalList = list(rbDict.keys())
     globalList.sort()
     try:

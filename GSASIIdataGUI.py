@@ -4990,7 +4990,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # PWDR & SASD
         G2G.Define_wxId('wxID_PWDANALYSIS','wxID_PWDCOPY','wxID_PLOTCTRLCOPY','wxID_MERGEHKL',
-            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT',)            
+            'wxID_PWDHKLPLOT', 'wxID_PWD3DHKLPLOT','wxID_3DALLHKLPLOT','wxID_1DHKLSTICKPLOT',)            
         self.PWDRMenu = wx.MenuBar()
         self.PrefillDataMenu(self.PWDRMenu)
         self.ErrorAnal = wx.Menu(title='')
@@ -5011,6 +5011,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
         self.ErrorAnal.Append(G2G.wxID_PWDANALYSIS,'Error Analysis','Error analysis on single crystal data')
         self.ErrorAnal.Append(G2G.wxID_MERGEHKL,'Merge HKLs','Transform & merge HKLF data to new histogram')
+        self.ErrorAnal.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs from single crystal data in 1D')
         self.ErrorAnal.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from single crystal data in 3D')
         self.ErrorAnal.Append(G2G.wxID_3DALLHKLPLOT,'Plot all 3D HKLs','Plot HKLs from all single crystal data in 3D')
         self.ErrorAnal.Append(G2G.wxID_PWDCOPY,'Copy params','Copy of HKLF parameters')
@@ -5173,8 +5174,9 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ReflEdit = wx.Menu(title='')
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
         self.SelectPhase = self.ReflEdit.Append(G2G.wxID_SELECTPHASE,'Select phase','Select phase for reflection list')
-        self.ReflEdit.Append(G2G.wxID_PWDHKLPLOT,'Plot HKLs','Plot HKLs from powder pattern')
-        self.ReflEdit.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs from powder pattern in 3D')
+        self.ReflEdit.Append(G2G.wxID_1DHKLSTICKPLOT,'Plot 1D HKLs','Plot of HKLs in 1D')
+        self.ReflEdit.Append(G2G.wxID_PWDHKLPLOT,'Plot HKLs','Plot HKLs in 2D')
+        self.ReflEdit.Append(G2G.wxID_PWD3DHKLPLOT,'Plot 3D HKLs','Plot HKLs in 3D')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters
@@ -7317,6 +7319,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.GPXtree.SetItemPyData(GetGPXtreeItemId(G2frame,item,'Limits'),
             [(Tmin,Tmax),[Tmin,Tmax]])
         wx.CallAfter(UpdatePWHKPlot,G2frame,kind,item) # redisplay data screen
+        
+    def OnPlot1DHKL(event):
+        refList = data[1]['RefList']
+        G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
 
     def OnPlot3DHKL(event):
         refList = data[1]['RefList']
@@ -7512,6 +7518,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         SetDataMenuBar(G2frame,G2frame.dataWindow.HKLFMenu)
         G2frame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=G2G.wxID_PWDANALYSIS)
         G2frame.Bind(wx.EVT_MENU, OnMergeHKL, id=G2G.wxID_MERGEHKL)
+        G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=G2G.wxID_3DALLHKLPLOT)
     

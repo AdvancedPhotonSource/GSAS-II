@@ -2819,6 +2819,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 return Uij
 
             r,c =  event.GetRow(),event.GetCol()
+            replot = True
             if r >= 0 and c >= 0:
                 ci = colLabels.index('I/A')
                 ID = atomData[r][ci+8]
@@ -2879,6 +2880,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 elif Atoms.GetColLabelValue(c) == 'refine':
                     ci = colLabels.index('I/A')
                     atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][ci+8],''),'')
+                    replot = False
                 elif Atoms.GetColLabelValue(c) in ['Mx','My','Mz']:
                     value = atomData[r][c]
                     cx = colLabels.index('x')
@@ -2889,7 +2891,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     for i in range(3):
                         if iM == CSI[0][i]:
                             atomData[r][i+colLabels.index('Mx')] = value*CSI[1][i]
-                if 'Atoms' in data['Drawing']:
+                if 'Atoms' in data['Drawing'] and replot:
                     ci = colLabels.index('I/A')
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                     G2plt.PlotStructure(G2frame,data)

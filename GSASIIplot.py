@@ -23,6 +23,7 @@ plotting routine               action
 :func:`PlotCovariance`        Show covariance terms in 2D 
 :func:`PlotStructure`         Crystal structure plotting with balls, sticks, lines,
                               ellipsoids, polyhedra and magnetic moments
+:func:'Plot1DSngl'            1D stick plots of structure factors                              
 :func:`PlotSngl`              Structure factor plotting
 :func:`Plot3DSngl`            3D Structure factor plotting
 :func:`PlotDeltSig`           Normal probability plot (powder or single crystal)
@@ -1067,6 +1068,90 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
         Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
         Page.canvas.draw()
+        
+################################################################################
+##### Plot1DSngl
+################################################################################
+def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
+    '''1D Structure factor plotting package - displays reflections as sticks proportional
+        to F, F**2, etc. as requested
+    '''
+    from matplotlib.collections import LineCollection
+    print('1D stick plot - TBD')
+    global xylim
+    def OnKeyPress(event):
+#        if event.key == 'u':
+#            if Page.Offset[1] < 100.:
+#                Page.Offset[1] += 1.
+#        elif event.key == 'd':
+#            if Page.Offset[1] > 0.:
+#                Page.Offset[1] -= 1.
+#        elif event.key == 'l':
+#            Page.Offset[0] -= 1.
+#        elif event.key == 'r':
+#            Page.Offset[0] += 1.
+#        elif event.key == 'o':
+#            Page.Offset = [0,0]
+#        elif event.key == 's':
+#            if len(XY):
+#                G2IO.XYsave(G2frame,XY,labelX,labelY,names)
+#            if len(XY2):
+#                G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
+##        else:
+##            return
+        Draw()
+
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+                
+    def Draw():
+        global xylim
+        Plot.clear()
+        Plot.set_title(Title)
+        Plot.set_xlabel(r'd-spacing',fontsize=14)
+        Plot.set_ylabel(r'Fsq',fontsize=14)
+        colors=['b','r','g','c','m','k']
+        Page.keyPress = OnKeyPress
+        
+        X = hklRef.T[4+Super]
+        Y = hklRef.T[8+Super]
+        Z = hklRef.T[9+Super]
+        Plot.plot([X,X],[np.zeros_like(X),Y],color=colors[0])
+        Plot.plot([X,X],[np.zeros_like(X),Z],color=colors[1])
+        Plot.plot([X,X],[np.zeros_like(X),Y-Z],color=colors[2])
+        
+        if not newPlot:
+            Page.toolbar.push_current()
+            Plot.set_xlim(xylim[0])
+            Plot.set_ylim(xylim[1])
+            xylim = []
+            Page.toolbar.push_current()
+            Page.toolbar.draw()
+            Page.canvas.draw()
+        else:
+            Page.canvas.draw()
+
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
+    Page.Offset = [0,0]
+    if not new:
+        if not newPlot:
+            xylim = lim
+    else:
+        newPlot = True
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.Offset = [0,0]
+    
+    Page.Choice = (' key press','f: plot Fhkl','s: plot F^2hkl','d: d-spacing plot','q: q plot')
+    Draw()
+    
         
 ################################################################################
 ##### Plot3DSngl
@@ -2363,9 +2448,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     for b in Page.bindings:
         Page.canvas.mpl_disconnect(b)
     Page.bindings = []
-    Page.bindings.append(
-        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-    )
+    Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
     if 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         refColors=['b','r','c','g','m','k']

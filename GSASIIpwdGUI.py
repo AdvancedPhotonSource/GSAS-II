@@ -4403,6 +4403,26 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     dMin = 0.05
     if 'UsrReject' in Controls:
         dMin = Controls['UsrReject'].get('MinD',0.05)
+
+    def OnPlot1DHKL(event):
+        phaseName = G2frame.RefList
+        if phaseName not in ['Unknown',]:
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
+            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+        else:
+            Super = 0
+        if 'list' in str(type(data)):   #single crystal data is 2 dict in list
+            refList = data[1]['RefList']
+        else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
+            if 'RefList' in data[phaseName]:
+                refList = np.array(data[phaseName]['RefList'])
+            else:
+                wx.MessageBox('No reflection list - do Refine first',caption='Reflection plotting')
+                return
+        G2plt.Plot1DSngl(G2frame,newPlot=True,hklRef=refList,Super=Super,Title=phaseName)
+
     def OnPlotHKL(event):
         '''Plots a layer of reflections
         '''
@@ -4621,10 +4641,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ReflMenu)
     if HKLF:
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.dataWindow.SelectPhase.Enable(False)
     else:
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2G.wxID_SELECTPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnPlot1DHKL, id=G2G.wxID_1DHKLSTICKPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2G.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2G.wxID_PWD3DHKLPLOT)
         G2frame.dataWindow.SelectPhase.Enable(False)

@@ -1076,56 +1076,78 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     '''1D Structure factor plotting package - displays reflections as sticks proportional
         to F, F**2, etc. as requested
     '''
-    from matplotlib.collections import LineCollection
-    print('1D stick plot - TBD')
-    global xylim
+    global xylim,X
     def OnKeyPress(event):
-#        if event.key == 'u':
-#            if Page.Offset[1] < 100.:
-#                Page.Offset[1] += 1.
-#        elif event.key == 'd':
-#            if Page.Offset[1] > 0.:
-#                Page.Offset[1] -= 1.
-#        elif event.key == 'l':
-#            Page.Offset[0] -= 1.
-#        elif event.key == 'r':
-#            Page.Offset[0] += 1.
-#        elif event.key == 'o':
-#            Page.Offset = [0,0]
-#        elif event.key == 's':
-#            if len(XY):
-#                G2IO.XYsave(G2frame,XY,labelX,labelY,names)
-#            if len(XY2):
-#                G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
-##        else:
-##            return
+        if event.key == 'd':
+            Page.xaxis = 'd'
+        elif event.key == 'q':
+            Page.xaxis = 'q'
+        elif event.key == 's':
+            Page.yaxis = 's'
+        elif event.key == 'f':
+            Page.yaxis = 'f'
         Draw()
 
     def OnMotion(event):
+        global X
         xpos = event.xdata
+        limx = Plot.get_xlim()
         if xpos:                                        #avoid out of frame mouse position
+            Xpos = xpos
+            if Page.xaxis == 'q':
+                dT = np.fabs(2.*np.pi/limx[0]-2.*np.pi/limx[1])/100.
+                Xpos = 2.*np.pi/xpos
+                found = hklRef[np.where(np.fabs(hklRef.T[4+Super]-Xpos) < dT/2.)]
+            else:
+                dT = np.fabs(limx[1]-limx[0])/100.
+                found = hklRef[np.where(np.fabs(hklRef.T[4+Super]-xpos) < dT/2.)]
+            s = ''
+            if len(found):
+                if Super:   #SS reflections
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
+                    n = 4
+                else:
+                    fmt = "{:.0f},{:.0f},{:.0f}"
+                    n = 3
+                for i,hkl in enumerate(found):
+                    if i >= 3:
+                        s += '\n...'
+                        break
+                    if s: s += '\n'
+                    s += fmt.format(*hkl[:n])
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('d =%9.3f F^2 =%9.3f'%(Xpos,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+            Page.SetToolTipString(s)
                 
     def Draw():
         global xylim
         Plot.clear()
         Plot.set_title(Title)
-        Plot.set_xlabel(r'd-spacing',fontsize=14)
-        Plot.set_ylabel(r'Fsq',fontsize=14)
+        Plot.set_xlabel(r'd, '+Angstr,fontsize=14)
+        Plot.set_ylabel(r'F'+super2,fontsize=14)
         colors=['b','r','g','c','m','k']
         Page.keyPress = OnKeyPress
         
-        X = hklRef.T[4+Super]
-        Y = hklRef.T[8+Super]
-        Z = hklRef.T[9+Super]
+        if Page.xaxis == 'q':
+            Plot.set_xlabel(r'q, '+Angstr+Pwrm1,fontsize=14)
+            X = 2.*np.pi/hklRef.T[4+Super]
+        else:            
+            X = hklRef.T[4+Super]
+        if Page.yaxis == 'f':
+            Plot.set_ylabel(r'F',fontsize=14)
+            Y = np.sqrt(hklRef.T[8+Super])
+            Z = np.sqrt(hklRef.T[9+Super])
+        else:            
+            Y = hklRef.T[8+Super]
+            Z = hklRef.T[9+Super]
+        Ymax = np.max(Y)
         Plot.plot([X,X],[np.zeros_like(X),Y],color=colors[0])
         Plot.plot([X,X],[np.zeros_like(X),Z],color=colors[1])
-        Plot.plot([X,X],[np.zeros_like(X),Y-Z],color=colors[2])
+        Plot.plot([X,X],[np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.],color=colors[2])
         
         if not newPlot:
             Page.toolbar.push_current()
@@ -1145,6 +1167,8 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             xylim = lim
     else:
         newPlot = True
+        Page.xaxis = 'd'
+        Page.yaxis = 's'
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]

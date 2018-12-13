@@ -1078,14 +1078,10 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     '''
     global xylim,X
     def OnKeyPress(event):
-        if event.key == 'd':
-            Page.xaxis = 'd'
-        elif event.key == 'q':
-            Page.xaxis = 'q'
-        elif event.key == 's':
-            Page.yaxis = 's'
+        if event.key == 'q':
+            Page.qaxis = not Page.qaxis
         elif event.key == 'f':
-            Page.yaxis = 'f'
+            Page.faxis = not Page.faxis
         Draw()
 
     def OnMotion(event):
@@ -1094,7 +1090,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         limx = Plot.get_xlim()
         if xpos:                                        #avoid out of frame mouse position
             Xpos = xpos
-            if Page.xaxis == 'q':
+            if Page.qaxis:
                 dT = np.fabs(2.*np.pi/limx[0]-2.*np.pi/limx[1])/100.
                 Xpos = 2.*np.pi/xpos
                 found = hklRef[np.where(np.fabs(hklRef.T[4+Super]-Xpos) < dT/2.)]
@@ -1132,24 +1128,39 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         colors=['b','r','g','c','m','k']
         Page.keyPress = OnKeyPress
         
-        if Page.xaxis == 'q':
+        if Page.qaxis:
             Plot.set_xlabel(r'q, '+Angstr+Pwrm1,fontsize=14)
             X = 2.*np.pi/hklRef.T[4+Super]
         else:            
             X = hklRef.T[4+Super]
-        if Page.yaxis == 'f':
+        if Page.faxis:
             Plot.set_ylabel(r'F',fontsize=14)
-            Y = np.sqrt(hklRef.T[8+Super])
+            Y = np.nan_to_num(np.sqrt(hklRef.T[8+Super]))
             Z = np.sqrt(hklRef.T[9+Super])
         else:            
             Y = hklRef.T[8+Super]
             Z = hklRef.T[9+Super]
         Ymax = np.max(Y)
-        Plot.plot([X,X],[np.zeros_like(X),Y],color=colors[0])
-        Plot.plot([X,X],[np.zeros_like(X),Z],color=colors[1])
-        Plot.plot([X,X],[np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.],color=colors[2])
         
+        XY = np.vstack((X,X,np.zeros_like(X),Y)).reshape((2,2,-1)).T
+        XZ = np.vstack((X,X,np.zeros_like(X),Z)).reshape((2,2,-1)).T
+        XD = np.vstack((X,X,np.zeros_like(X)-Ymax/10.,Y-Z-Ymax/10.)).reshape((2,2,-1)).T
+        lines = mplC.LineCollection(XY,color=colors[0])
+        Plot.add_collection(lines)
+        lines = mplC.LineCollection(XZ,color=colors[1])
+        Plot.add_collection(lines)
+        lines = mplC.LineCollection(XD,color=colors[2])
+        Plot.add_collection(lines)
+        xylim = np.array([[np.min(X),np.max(X)],[np.min(Y-Z-Ymax/10.),np.max(np.concatenate((Y,Z)))]])
+        dxylim = np.array([xylim[0][1]-xylim[0][0],xylim[1][1]-xylim[1][0]])/20.
+        xylim[0,0] -= dxylim[0]
+        xylim[0,1] += dxylim[0]
+        xylim[1,0] -= dxylim[1]
+        xylim[1,1] += dxylim[1]
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
         if not newPlot:
+            print('not newPlot')
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])
             Plot.set_ylim(xylim[1])
@@ -1167,13 +1178,13 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             xylim = lim
     else:
         newPlot = True
-        Page.xaxis = 'd'
-        Page.yaxis = 's'
+        Page.qaxis = False
+        Page.faxis = False
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
-    Page.Choice = (' key press','f: plot Fhkl','s: plot F^2hkl','d: d-spacing plot','q: q plot')
+    Page.Choice = (' key press','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
     Draw()
     
         

@@ -637,16 +637,14 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
         'U11cos:':USSdata[6],'U22cos:':USSdata[7],'U33cos:':USSdata[8],'U12cos:':USSdata[9],'U13cos:':USSdata[10],'U23cos:':USSdata[11],
         'MXsin:':MSSdata[0],'MYsin:':MSSdata[1],'MZsin:':MSSdata[2],'MXcos:':MSSdata[3],'MYcos:':MSSdata[4],'MZcos:':MSSdata[5]}
     for iatm in range(Natoms):
-        for kind in ['F','P','A','M']:
-            wavetype = []
-            wavetype += [parmDict.get(pfx+kind+'waveType:'+str(iatm),''),]
-            waveTypes.append(wavetype)
+        wavetype = [parmDict.get(pfx+kind+'waveType:'+str(iatm),'') for kind in ['F','P','A','M']]
+        waveTypes.append(wavetype)
         for key in keys:
             for m in range(Nwave[key[0]]):
                 parm = pfx+key+str(iatm)+':%d'%(m)
                 if parm in parmDict:
                     keys[key][m][iatm] = parmDict[parm]
-    return np.array(waveTypes),FSSdata,XSSdata,USSdata,MSSdata
+    return waveTypes,FSSdata,XSSdata,USSdata,MSSdata
     
 def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Compute structure factors for all h,k,l for phase
@@ -1695,7 +1693,7 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             np.sum(TwinFr*np.sum(TwMask[nxs,:,:]*fbs,axis=0)**2,axis=-1)                 #Fc sum over twins
         refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
         iBeg += blkSize
-    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
+#    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
 
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
@@ -1936,16 +1934,18 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
     '''
 
     trefDict = copy.deepcopy(refDict)
-    dM = 1.e-6
+    dM = 1.e-4
     dFdvDict = {}
     for parm in parmDict:
+        if parm == '0':
+            continue
         if parm.split(':')[2] in ['Tmin','Tmax','Xmax','Ymax','Zmax','Fzero','Fwid',]:
             parmDict[parm] += dM
             prefList = SStructureFactor(trefDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             parmDict[parm] -= 2*dM
             mrefList = SStructureFactor(trefDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             parmDict[parm] += dM
-            dFdvDict[parm] = (prefList[:,9]-mrefList[:,9])/(2.*dM)
+            dFdvDict[parm] = (prefList[:,9+im]-mrefList[:,9+im])/(2.*dM)
     return dFdvDict
     
 def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):

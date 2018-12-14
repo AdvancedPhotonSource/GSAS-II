@@ -277,7 +277,7 @@ def Refine(GPXfile,dlg=None,makeBack=True):
 #        return False,Msg.msg
 
 #for testing purposes!!!
-    if DEBUG and IfOK:
+    if DEBUG:   # and IfOK:
 #needs: values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup
         fl = open(ospath.splitext(GPXfile)[0]+'.testDeriv','wb')
         cPickle.dump(result[0],fl,1)

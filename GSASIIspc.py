@@ -2583,11 +2583,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         B = CB[nxs,nxs,:]*pcos[:,:,nxs]
         return A+B    
 
-    def posSawtooth(tau,Toff,slopes):
-        Tau = (tau-Toff)%1.
-        A = slopes[:,nxs]*Tau
-        return A
-    
     def posZigZag(tau,Tmm,XYZmax):
         DT = Tmm[1]-Tmm[0]
         slopeUp = 2.*XYZmax/DT
@@ -2664,8 +2659,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         if 'Fourier' in waveType:
             dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,nxs,nxs]
               #3x6x12 modulated position array (X,Spos,tau)& force positive
-        elif waveType == 'Sawtooth':
-            dX = posSawtooth(tau,delt4[0],delt4[1:])
         elif waveType in ['ZigZag','Block']:
             if waveType == 'ZigZag':
                 dX = posZigZag(tau,delt5[:2],delt5[2:])
@@ -2679,9 +2672,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         else:
             if 'Fourier' in waveType:
                 CSI = [np.zeros((6,3),dtype='i'),np.zeros((6,3))]
-            elif waveType == 'Sawtooth':
-                CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0]]),
-                    np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
             elif waveType in ['ZigZag','Block']:
                 CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0]]),
                     np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
@@ -2694,8 +2684,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                 xsc = np.ones(6,dtype='i')
                 if 'Fourier' in waveType:
                     dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,nxs,nxs]
-                elif waveType == 'Sawtooth':
-                    dXT = posSawtooth(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,nxs,nxs]
                 elif waveType == 'ZigZag':
                     dXT = posZigZag(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,nxs,nxs]
                 elif waveType == 'Block':
@@ -2749,6 +2737,10 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                                 CSI[0][:2] = [[12,0,0],[12,0,0]]
                                 CSI[1][:2] = [[1.,0,0],[mul,0,0]]
                                 xsc[:2] = 0
+                else:
+                    for i in range(3):
+                        if not np.allclose(dX[:,i],dXT[i,:,i]):
+                            xsc[i] = 0
                 XSC &= xsc
                 if debug: print (SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,xsc)
             if waveType == 'Fourier':

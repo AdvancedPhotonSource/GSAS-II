@@ -7042,7 +7042,7 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','Fix FXU']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU']
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []

@@ -140,6 +140,9 @@ def UpdateImageData(G2frame,data):
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,4),
         min=0.,max=1.,typeHint=float),0,WACV)
     mainSizer.Add(distSizer,0)
+    if 'samplechangerpos' not in data:
+        data['samplechangerpos'] = 0.0
+    mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample changer position %.2f mm'%data['samplechangerpos']),0,WACV)
 
 ################################################################################
 ##### Image Controls
@@ -221,6 +224,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     vals.append(Data.get('setdist',Data['distance']))
                     varyList.append('setdist')
                     sigList.append(None)
+                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
+                    varyList.append('chgrpos')
+                    sigList.append(None)
+                    
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
                         'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = Names                
@@ -340,6 +347,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Data['range'][0] = oldData['range'][0]
                     Data['size'] = oldData['size']
                     Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
+                    Data['samplechangerpos'] = oldData.get('samplechangerpos',0.0)
                     Data['ring'] = []
                     Data['rings'] = []
                     Data['ellipses'] = []

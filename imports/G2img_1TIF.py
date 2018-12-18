@@ -99,6 +99,7 @@ def GetTifData(filename):
     wavelength = None
     distance = None
     polarization = None
+    samplechangerpos = None
     try:
         Meta = open(filename+'.metadata','Ur')
         head = Meta.readlines()
@@ -115,6 +116,8 @@ def GetTifData(filename):
                     distance = float(line.split('=')[1])
                 elif 'polarization' == keyword.lower():
                     polarization = float(line.split('=')[1])
+                elif 'samplechangercoordinate' == keyword.lower():
+                    samplechangerpos = float(line.split('=')[1])
             except:
                 print('error reading metadata: '+line)
         Meta.close()
@@ -364,7 +367,8 @@ def GetTifData(filename):
     wavelength = (not wavelength) and 0.10 or wavelength
     distance = (not distance) and 100.0 or distance
     polarization = (not polarization) and 0.99 or polarization
+    samplechangerpos = (not samplechangerpos) and 0.0 or samplechangerpos
     data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy,
-            'setdist':distance,'PolaVal':[polarization,False]}
+            'setdist':distance,'PolaVal':[polarization,False],'samplechangerpos':samplechangerpos}
     File.close()    
     return head,data,Npix,image

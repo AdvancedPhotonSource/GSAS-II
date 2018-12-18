@@ -525,6 +525,11 @@ class GSASII(wx.Frame):
         self.Refine.append(item)
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
 
+        item = parent.Append(wx.ID_ANY,'&Run Fprime','X-ray resonant scattering')
+        self.Bind(wx.EVT_MENU, self.OnRunFprime, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Run Absorb','x-ray absorption')
+        self.Bind(wx.EVT_MENU, self.OnRunAbsorb, id=item.GetId())
+
 #        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
 #            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
 #                text='tree test')
@@ -4624,6 +4629,16 @@ class GSASII(wx.Frame):
 #            self.SeqTblHideList = []
         else:
             self.ErrorDialog('Sequential refinement error',Msg)
+            
+    def OnRunFprime(self,event):
+        import fprime
+        self.fprime = fprime.Fprime(None)
+        self.fprime.Show()
+        
+    def OnRunAbsorb(self,event):
+        import Absorb
+        self.absorb = Absorb.Absorb(None)
+        self.absorb.Show()
         
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
         'Display an error message'

@@ -2587,7 +2587,7 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         DT = Tmm[1]-Tmm[0]
         slopeUp = 2.*XYZmax/DT
         slopeDn = 2.*XYZmax/(1.-DT)
-        A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
+        A = np.array([np.where(0. < t-(Tmm[0])%1. <= DT,-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
         return A
 
     def posBlock(tau,Tmm,XYZmax):
@@ -2653,7 +2653,6 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
         return CSI,dF,dFTP
         
     def DoXYZ():
-        delt4 = np.ones(4)*0.001
         delt5 = np.ones(5)*0.001
         delt6 = np.eye(6)*0.001
         if 'Fourier' in waveType:

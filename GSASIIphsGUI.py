@@ -5020,7 +5020,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     item,iwave = Indx[Obj.GetId()]
                     del atm[-1]['SS1'][item][iwave+1]
                     if len(atm[-1]['SS1'][item]) == 1:
-                        atm[-1]['SS1'][item][0] = ''
+                        atm[-1]['SS1'][item][0] = 'Fourier'
                     wx.CallAfter(RepaintAtomInfo,G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     
                 def OnWavePlot(invalid,value,tc):
@@ -5087,7 +5087,11 @@ def UpdatePhaseData(G2frame,Item,data):
                             val = wave[0][ival]
                             if np.any(CSI[0][ival]):
                                 minmax = [-0.2,0.2]
-                                if waveTyp in ['ZigZag','Block'] and ival < 2: minmax = [0.,2.]
+                                if waveTyp in ['ZigZag','Block'] and not iwave and ival < 2:
+                                    if not ival:
+                                        minmax = [0.,2.]
+                                    else:
+                                        minmax = [wave[0][0],1.0+wave[0][0]]
                                 waveVal = G2G.ValidatedTxtCtrl(waveData,wave[0],ival,nDig=(10,5),min=minmax[0],max=minmax[1],OnLeave=OnWavePlot)
                             else:
                                 waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)

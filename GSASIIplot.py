@@ -1077,6 +1077,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         to F, F**2, etc. as requested
     '''
     global xylim,X
+    Name = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     def OnKeyPress(event):
         if event.key == 'q':
             Page.qaxis = not Page.qaxis
@@ -1116,7 +1117,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
             try:
                 G2frame.G2plotNB.status.SetStatusText('d =%9.3f F^2 =%9.3f'%(Xpos,ypos),1)                   
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+Name+' pattern first',1)
             Page.SetToolTipString(s)
                 
     def Draw():
@@ -1171,7 +1172,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         else:
             Page.canvas.draw()
 
-    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title+Name,'mpl')
     Page.Offset = [0,0]
     if not new:
         if not newPlot:
@@ -5678,7 +5679,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         for i,spos in enumerate(Spos[1:]):
             if waveType in ['ZigZag','Block'] and not i:
                 Tminmax = spos[0][:2]
-                XYZmax = np.array(spos[0][2:])
+                XYZmax = np.array(spos[0][2:5])
                 if waveType == 'Block':
                     wave = G2mth.posBlock(tau,Tminmax,XYZmax).T
                 elif waveType == 'ZigZag':
@@ -5686,7 +5687,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
+                wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
     if mapData['Flip']:
         Title = 'Charge flip'
     else:

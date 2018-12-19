@@ -1413,6 +1413,7 @@ def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     
 def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     '''
+    Only for Fourier waves for fraction, position & adp (probably not used for magnetism)
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
@@ -1435,16 +1436,16 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     ZtauXx = np.zeros((Ax.shape[0],3,ngl))               #atoms x XYZmax x ngl
     for iatm in range(Ax.shape[0]):
         nx = 0
-        if 'ZigZag' in waveTypes[iatm]:
-            nx = 1
-            Tmm = Ax[iatm][0][:2]                        
-            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
-            ZtauXt[iatm],ZtauXx[iatm] = posZigZagDerv(glTau,Tmm,XYZmax)
-        elif 'Block' in waveTypes[iatm]:
-            nx = 1
-            Tmm = Ax[iatm][0][:2]                        
-            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
-            ZtauXt[iatm],ZtauXx[iatm] = posBlockDerv(glTau,Tmm,XYZmax)
+#        if 'ZigZag' in waveTypes[iatm]:
+#            nx = 1
+#            Tmm = Ax[iatm][0][:2]                        
+#            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
+#            ZtauXt[iatm],ZtauXx[iatm] = posZigZagDerv(glTau,Tmm,XYZmax)
+#        elif 'Block' in waveTypes[iatm]:
+#            nx = 1
+#            Tmm = Ax[iatm][0][:2]                        
+#            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
+#            ZtauXt[iatm],ZtauXx[iatm] = posBlockDerv(glTau,Tmm,XYZmax)
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
         if nx:    
             StauX[iatm][:-nx] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X ngl
@@ -1452,7 +1453,6 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         else:
             StauX[iatm] = np.ones_like(Ax)[iatm,:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X ngl
             CtauX[iatm] = np.ones_like(Bx)[iatm,:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
-#    GSASIIpath.IPyBreak()
     if nWaves[0]:
         tauF = np.arange(1.,nWaves[0]+1)[:,nxs]*glTau  #Fwaves x ngl
         StauF = np.ones_like(Af)[:,:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
@@ -1608,30 +1608,30 @@ def posZigZag(T,Tmm,Xmax):
     DT = Tmm[1]-Tmm[0]
     Su = 2.*Xmax/DT
     Sd = 2.*Xmax/(1.-DT)
-    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-Xmax+Su*((t-Tmm[0])%1.),Xmax-Sd*((t-Tmm[1])%1.)) for t in T])
+    A = np.array([np.where(  0.< (t-Tmm[0])%1. <= DT, -Xmax+Su*((t-Tmm[0])%1.), Xmax-Sd*((t-Tmm[1])%1.)) for t in T])
     return A
     
-def posZigZagDerv(T,Tmm,Xmax):
-    DT = Tmm[1]-Tmm[0]
-    Su = 2.*Xmax/DT
-    Sd = 2.*Xmax/(1.-DT)
-    dAdT = np.zeros((2,3,len(T)))
-    dAdT[0] = np.array([np.where(Tmm[0] < t <= Tmm[1],Su*(t-Tmm[0]-1)/DT,-Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
-    dAdT[1] = np.array([np.where(Tmm[0] < t <= Tmm[1],-Su*(t-Tmm[0])/DT,Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
-    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1.+2.*(t-Tmm[0])/DT,1.-2.*(t-Tmm[1])%1./DT) for t in T])
-    return dAdT,dAdX
+#def posZigZagDerv(T,Tmm,Xmax):
+#    DT = Tmm[1]-Tmm[0]
+#    Su = 2.*Xmax/DT
+#    Sd = 2.*Xmax/(1.-DT)
+#    dAdT = np.zeros((2,3,len(T)))
+#    dAdT[0] = np.array([np.where(Tmm[0] < t <= Tmm[1],Su*(t-Tmm[0]-1)/DT,-Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
+#    dAdT[1] = np.array([np.where(Tmm[0] < t <= Tmm[1],-Su*(t-Tmm[0])/DT,Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
+#    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1.+2.*(t-Tmm[0])/DT,1.-2.*(t-Tmm[1])%1./DT) for t in T])
+#    return dAdT,dAdX
 
 def posBlock(T,Tmm,Xmax):
     A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-Xmax,Xmax) for t in T])
     return A
     
-def posBlockDerv(T,Tmm,Xmax):
-    dAdT = np.zeros((2,3,len(T)))
-    ind = np.searchsorted(T,Tmm)
-    dAdT[0,:,ind[0]] = -Xmax/len(T)
-    dAdT[1,:,ind[1]] = Xmax/len(T)
-    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t <= Tmm[1],-1.,1.) for t in T])  #OK
-    return dAdT,dAdX
+#def posBlockDerv(T,Tmm,Xmax):
+#    dAdT = np.zeros((2,3,len(T)))
+#    ind = np.searchsorted(T,Tmm)
+#    dAdT[0,:,ind[0]] = -Xmax/len(T)
+#    dAdT[1,:,ind[1]] = Xmax/len(T)
+#    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t <= Tmm[1],-1.,1.) for t in T])  #OK
+#    return dAdT,dAdX
     
 def fracCrenel(tau,Toff,Twid):
     Tau = (tau-Toff)%1.

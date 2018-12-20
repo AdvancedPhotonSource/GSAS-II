@@ -5088,7 +5088,7 @@ def UpdatePhaseData(G2frame,Item,data):
                             val = wave[0][ival]
                             if np.any(CSI[0][ival]):
                                 minmax = [-0.2,0.2]
-                                if waveTyp in ['ZigZag','Block'] and not iwave and ival < 2:
+                                if waveTyp in ['ZigZag','Block','Crenel'] and not iwave and ival < 2:
                                     if not ival:
                                         minmax = [0.,2.]
                                     else:

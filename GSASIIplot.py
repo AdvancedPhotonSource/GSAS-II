@@ -5687,7 +5687,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-                wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))     #does all the Fourier terms together
     if mapData['Flip']:
         Title = 'Charge flip'
     else:

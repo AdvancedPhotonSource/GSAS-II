@@ -4275,7 +4275,7 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnNameChange(event):
                 event.Skip()
                 Layer['Name'] = layerName.GetValue()                
-                wx.CallAfter(UpdateLayerData)
+                wx.CallLater(100,UpdateLayerData)
                 
             def OnAddAtom(event):
                 Layer['Atoms'].append(['Unk','Unk',0.,0.,0.,1.,0.01])
@@ -4310,7 +4310,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnSameAs(event):
                 Layer['SameAs'] = sameas.GetValue()
-                wx.CallAfter(UpdateLayerData)
+                wx.CallLater(100,UpdateLayerData)
                     
             layerSizer = wx.BoxSizer(wx.VERTICAL)
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)            
@@ -4319,6 +4319,7 @@ def UpdatePhaseData(G2frame,Item,data):
             layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
             layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)        
             layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
+            layerName.Bind(wx.EVT_LEAVE_WINDOW,OnNameChange)
             nameSizer.Add(layerName,0,WACV)
             if il:
                 nameSizer.Add(wx.StaticText(layerData,label=' Same as: '),0,WACV)

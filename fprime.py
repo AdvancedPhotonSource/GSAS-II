@@ -232,13 +232,17 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def OnFPRIMEExitMenu(self, event):
         pylab.close('all')
         self.Close()
+        self.Destroy()
 
     def OnFPRIMENewMenu(self, event):
         ElList = []
         for Elem in self.Elems: ElList.append(Elem[0])
         PE = G2elemGUI.PickElements(self,ElList)
         if PE.ShowModal() == wx.ID_OK:
-            for El in PE.Elem:
+            Elems = PE.Elem
+        PE.Destroy()
+        if Elems:
+            for El in Elems:
                 ElemSym = El.strip().upper()
                 if ElemSym not in ElList:
                     FormFactors = G2elem.GetFormFactorCoeff(ElemSym)
@@ -252,7 +256,6 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Delete.Enable(True)
             self.CalcFPPS()
             self.SetWaveEnergy(self.Wave)
-        PE.Destroy()
             
     def OnFPRIMEDeleteMenu(self, event):
         if len(self.Elems):
@@ -363,7 +366,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             ax.axvline(x=self.Kev/Wave,picker=3,color='black')
         ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
-            legend = ax.legend(loc='best')
+            ax.legend(loc='best')
         bx = self.fplot.add_subplot(212)
         self.fplot.subplots_adjust(hspace=0.25)
         bx.clear()
@@ -413,7 +416,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             bx.plot(Xp,ffop,Color+'--',label=Els+" f")
             bx.plot(Xp,ffp,Color,label=Els+" f+f'")
         if self.Elems:
-            legend = bx.legend(loc='best')
+            bx.legend(loc='best')
         bx.set_ylim(0.0,Ymax+1.0)
         
         if newPlot:
@@ -456,10 +459,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             else:
                 Wave = self.Kev/xpos               
             self.SetWaveEnergy(Wave)
-            
 
     def SetWaveEnergy(self,Wave):
-        Gkmu = unichr(0x3bc)
         self.Wave = Wave
         self.Energy = self.Kev/self.Wave
         self.Energy = round(self.Energy,4)

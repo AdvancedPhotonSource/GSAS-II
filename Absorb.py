@@ -322,16 +322,20 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def OnExitMenu(self, event):
         pylab.close('all')
         self.Close()
+        self.Destroy()
 
     def OnNewMenu(self, event):
         ElList = []
         for Elem in self.Elems: ElList.append(Elem[0])
         PE = G2elemGUI.PickElements(self,ElList)
         if PE.ShowModal() == wx.ID_OK:
-            for El in PE.Elem:
+            Elem = PE.Elem
+        PE.Destroy()
+        if Elem:
+            for El in Elem:
                 ElemSym = El.strip().upper()
                 if ElemSym not in ElList:
-                    atomData = G2elem.GetAtomInfo(ElemSym)
+                    atomData = G2elem.GetAtomInfo(ElemSym.capitalize())
                     FormFactors = G2elem.GetFormFactorCoeff(ElemSym)
                     for FormFac in FormFactors:
                         FormSym = FormFac['Symbol'].strip()
@@ -345,7 +349,6 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.panel.Destroy()
             self.DrawPanel()
             self.SetWaveEnergy(self.Wave)
-        PE.Destroy()
             
     def OnDeleteMenu(self, event):
         if len(self.Elems):
@@ -603,8 +606,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         ax.axhline(y=5.0,color='r')
         ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
-            legend = ax.legend(loc='best')
-        
+            ax.legend(loc='best')
         if newPlot:
             newPlot = False
             pylab.show()

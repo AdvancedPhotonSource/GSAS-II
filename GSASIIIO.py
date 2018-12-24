@@ -565,7 +565,7 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
 
-objectScanIgnore = [int,bool,float,str,np.float64,np.int32,np.int64,np.ndarray,G2obj.G2VarObj]
+objectScanIgnore = [int,bool,float,str,np.float64,np.int32,np.int64,np.ndarray,G2obj.G2VarObj,G2obj.ExpressionObj]
 try:
     objectScanIgnore += [ma.MaskedArray] # fails in doc builds
 except AttributeError:

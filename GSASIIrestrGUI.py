@@ -30,6 +30,9 @@ import GSASIIplot as G2plt
 import GSASIIdata as G2data
 import GSASIIctrlGUI as G2G
 import GSASIIphsGUI as G2phsGUI
+import GSASIIobj as G2obj
+import GSASIIconstrGUI as G2cnstG
+import GSASIIexprGUI as G2exG
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -150,8 +153,21 @@ def UpdateRestraints(G2frame,data,phaseName):
                     G2plt.PlotRama(G2frame,phaseName,rama,ramaName,Names,np.array(PhiPsi),ramaCoeff)
             finally:
                 dlg.Destroy()
-            
+
+    def SetupParmDict(G2frame):
+        '''Creates a parameter dict with variable names as keys and 
+        numerical values (only)
+        '''
+        G2cnstG.CheckAllScalePhaseFractions(G2frame)
+        try:
+            parmDict,varyList = G2frame.MakeLSParmDict()
+        except:
+            print('Error retrieving parameters')
+            return {}
+        return {i:parmDict[i][0] for i in parmDict}
+        
     def OnAddRestraint(event):
+        '''Adds a restraint depending on which tab is currently displayed'''
         page = G2frame.restrBook.GetSelection()
         if 'Bond' in G2frame.restrBook.GetPageText(page):
             AddBondRestraint(restrData['Bond'])
@@ -163,6 +179,15 @@ def UpdateRestraints(G2frame,data,phaseName):
             AddChemCompRestraint(restrData['ChemComp'])
         elif 'Texture' in G2frame.restrBook.GetPageText(page):
             AddTextureRestraint(restrData['Texture'])
+        elif 'General' in G2frame.restrBook.GetPageText(page):
+            parmDict = SetupParmDict(G2frame)
+            dlg = G2exG.ExpressionDialog(G2frame,parmDict,
+                           header="Create a restraint expression",
+                           fit=False,wildCard=G2frame.testSeqRefineMode())
+            restobj = dlg.Show(True)
+            if restobj:
+                restrData['General'].append([restobj,0.0,1.0])
+                wx.CallAfter(UpdateGeneralRestr,restrData['General'])
             
     def OnAddAARestraint(event):
         page = G2frame.restrBook.GetSelection()
@@ -1829,6 +1854,81 @@ def UpdateRestraints(G2frame,data,phaseName):
             mainSizer.Add(wx.StaticText(TextureRestr,-1,'No texture restraints for this phase'),0,)
         G2phsGUI.SetPhaseWindow(TextureRestr,mainSizer,Scroll=0)
             
+    def UpdateGeneralRestr(generalRestData):
+        '''Display any generalized restraint expressions'''
+        def OnEditGenRestraint(event):
+            '''Edit a restraint expression'''
+            n = event.GetEventObject().index
+            parmDict = SetupParmDict(G2frame)
+            dlg = G2exG.ExpressionDialog(G2frame,parmDict,
+                            exprObj=generalRestData[n][0],
+                            header="Edit a restraint expression",
+                            fit=False,wildCard=G2frame.testSeqRefineMode())
+            restobj = dlg.Show(True)
+            if restobj:
+                generalRestData[n][0] = restobj
+                wx.CallAfter(UpdateGeneralRestr,restrData['General'])
+        def OnDelGenRestraint(event):
+            '''Delete a restraint expression'''
+            n = event.GetEventObject().index
+            del generalRestData[n]
+            wx.CallAfter(UpdateGeneralRestr,restrData['General'])
+            
+        if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'(not implemented yet)'))
+        btn = wx.Button(GeneralRestr, wx.ID_ANY,"Add restraint")
+        btn.Bind(wx.EVT_BUTTON,OnAddRestraint)
+        mainSizer.Add(btn,0,wx.ALIGN_CENTER)
+        mainSizer.Add((5,5),0)
+        if generalRestData:
+            parmDict = SetupParmDict(G2frame)
+            GridSiz = wx.FlexGridSizer(0,7,10,2)
+            for lbl in ('expression','target\nvalue','current\nvalue','weight'):
+                GridSiz.Add(
+                    wx.StaticText(GeneralRestr,wx.ID_ANY,lbl,style=wx.CENTER),
+                    0,wx.ALIGN_CENTER)
+            GridSiz.Add((-1,-1))
+            GridSiz.Add((-1,-1))
+            GridSiz.Add(
+                    wx.StaticText(GeneralRestr,wx.ID_ANY,'Variables',style=wx.CENTER),
+                    0,wx.ALIGN_CENTER)
+            for i,rest in enumerate(generalRestData):
+                txt = rest[0].expression
+                if len(txt) > 50:
+                    txt = txt[:47]+'... '
+                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
+                GridSiz.Add(
+                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,1,nDig=(10,2),typeHint=float)
+                    )
+                # evaluate the expression
+                try:
+                    calcobj = G2obj.ExpressionCalcObj(rest[0])
+                    calcobj.SetupCalc(parmDict)
+                    txt = '{:f}'.format(calcobj.EvalExpression())
+                except:
+                    txt = '(error)'
+                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
+                GridSiz.Add(
+                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,2,nDig=(10,1),typeHint=float)
+                    )
+                btn = wx.Button(GeneralRestr, wx.ID_ANY,"Edit",size=(40,-1))
+                btn.index = i
+                btn.Bind(wx.EVT_BUTTON,OnEditGenRestraint)
+                GridSiz.Add(btn)
+                btn = wx.Button(GeneralRestr, wx.ID_ANY,"Delete",size=(60,-1))
+                btn.index = i
+                btn.Bind(wx.EVT_BUTTON,OnDelGenRestraint)
+                GridSiz.Add(btn)
+                txt = str(rest[0].assgnVars)[1:-1].replace("'","")
+                if len(txt) > 50:
+                    txt = txt[:47]+'...'
+                GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
+            mainSizer.Add(GridSiz)
+        G2phsGUI.SetPhaseWindow(GeneralRestr,mainSizer,Scroll=0)
+
+    
     def OnPageChanged(event):
         page = event.GetSelection()
         #G2frame.restrBook.SetSize(G2frame.dataWindow.GetClientSize())    #TODO -almost right
@@ -1890,6 +1990,11 @@ def UpdateRestraints(G2frame,data,phaseName):
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,True)
             textureRestData = restrData['Texture']
             UpdateTextureRestr(textureRestData)
+        elif text == 'General':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,False)
+            UpdateGeneralRestr(restrData['General'])
         event.Skip()
 
 #    def RaisePage(event):
@@ -1946,6 +2051,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         restrData['Texture'] = {'wtFactor':1.0,'HKLs':[],'Use':True}
     if 'ChemComp' not in restrData:
         restrData['ChemComp'] = {'wtFactor':1.0,'Sites':[],'Use':True}
+    if 'General' not in restrData: restrData['General'] = []
     General = phasedata['General']
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)
@@ -2020,6 +2126,12 @@ def UpdateRestraints(G2frame,data,phaseName):
     ChemCompRestr = wx.ScrolledWindow(G2frame.restrBook)
     G2frame.restrBook.AddPage(ChemCompRestr,txt)
     Pages.append(txt)
+    
+    if GSASIIpath.GetConfigValue('debug'):
+        txt = 'General'
+        GeneralRestr = wx.ScrolledWindow(G2frame.restrBook)
+        G2frame.restrBook.AddPage(GeneralRestr,txt)
+        Pages.append(txt)
     
     if General['SH Texture']['Order']:
         txt = 'Texture'

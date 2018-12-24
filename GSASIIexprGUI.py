@@ -106,14 +106,14 @@ class ExpressionDialog(wx.Dialog):
     :param dict parmDict: a dict with defined parameters and their values. Each value
       may be a list with parameter values and a refine flag or may just contain
       the parameter value (non-float/int values in dict are ignored)
-    :param str exprObj: a :class:`GSASIIobj.ExpressionObj` object with an expression and
+    :param exprObj: a :class:`GSASIIobj.ExpressionObj` object with an expression and
       label assignments or None (default)
     :param str wintitle: String placed on title bar of dialog; 
       defaults to "Expression Editor"
     :param str header: String placed at top of dialog to tell the user
       what they will do here; default is "Enter restraint expression here"
     :param bool fit: determines if the expression will be used in fitting (default=True).
-      If set to False, and refinement flags are not shown
+      If set to False, refinement flags are not shown
       and Free parameters are not offered as an assignment option.
     :param str VarLabel: an optional variable label to include before the expression
       input. Ignored if None (default)

@@ -3531,8 +3531,8 @@ def getPowderProfileDervMP(args):
                 corr2 = 0.
                 if refl[9+im]:             
                     corr = dervDict['int']/refl[9+im]
-                    #if Ka2 and iFin2-iBeg2:
-                    #    corr2 = dervDict2['int']/refl[9+im]
+                    if Ka2 and iFin2-iBeg2:
+                        corr2 = dervDict2['int']/refl[9+im]
                 for name in nonatomvarylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
                     if Ka2 and iFin2-iBeg2:

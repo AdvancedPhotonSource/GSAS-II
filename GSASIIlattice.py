@@ -1343,6 +1343,9 @@ def GenPfHKLs(nMax,SGData,A):
 
 def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'
+    ifMag = False
+    if 'MagSpGrp' in SGData:
+        ifMag = True
     HKLs = []
     vec = np.array(Vec)
     vstar = np.sqrt(calc_rDsq(vec,A))     #find extra needed for -n SS reflections
@@ -1361,7 +1364,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
                 d = 1./np.sqrt(calc_rDsq(H,A))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
-                    if G2spc.checkSSLaue([h,k,l,dH],SGData,SSGData) and G2spc.checkSSextc(HKLM,SSGData):
+                    if (G2spc.checkSSLaue([h,k,l,dH],SGData,SSGData) and G2spc.checkSSextc(HKLM,SSGData)) or ifMag:
                         HKLs.append([h,k,l,dH,d])    
     return HKLs
     

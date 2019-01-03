@@ -7401,7 +7401,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         finally:
             dlg.Destroy()
         Super = data[1]['Super']
-        refList,badRefs = G2lat.transposeHKLF(Trans,Super,refList)
+        isup = 0
+        if Super:
+            isup = 1
+        refList,badRefs = G2lat.transposeHKLF(Trans,isup,refList)
         if len(badRefs):    #do I want to list badRefs?
             G2frame.ErrorDialog('Failed transformation','Matrix yields fractional hkl indices')
             return

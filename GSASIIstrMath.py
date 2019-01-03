@@ -849,8 +849,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         occ = Mdata*Fdata/len(SGT)
         biso = -SQfactor*Uisodata[:,nxs]
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT),axis=1).T
-        HbH = np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
-        Tuij = np.where(HbH<1.,np.exp(-HbH),1.0).T
+        HbH = -np.sum(Uniq.T*np.swapaxes(np.inner(bij,Uniq),2,-1),axis=1)
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/len(SGMT)
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])      #Nref*Nops,3,3
         Hij = np.reshape(np.array([G2lat.UijtoU6(uij) for uij in Hij]),(-1,len(SGT),6))     #Nref,Nops,6
@@ -1496,7 +1496,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
             FP = np.repeat(FP.T,Uniq.shape[1],axis=0)
             FPP = np.repeat(FPP.T,Uniq.shape[1],axis=0)
-        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),Uniq.shape[1])
+        Bab = 0.
+        if phfx+'BabA' in parmDict:
+            Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),Uniq.shape[1])
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,Uniq.shape[1],axis=0)
         phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))-Phi[:,:,nxs])
@@ -1507,6 +1509,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         HbH = -np.sum(UniqP[:,:,nxs,:]*np.inner(UniqP[:,:,:],bij),axis=-1)  #use hklt proj to hkl
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x refBlk x sym X atoms
+        fams = np.zeros(32)
+        fbms = np.zeros(32)
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
@@ -1515,42 +1520,36 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 mphase = np.hstack((phase,-phase))
             else:
                 mphase = phase 
-            mphase = np.array([mphase+twopi*np.inner(cen,H)[:,nxs,nxs] for cen in SGData['SGCen']])
+            mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs] for cen in SGData['SGCen']])
             mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto
-            HM = np.inner(Bmat,H)                             #put into cartesian space
+            HM = np.inner(Bmat,HP.T)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
             eDotK = np.sum(HM[:,:,nxs,nxs]*Gdata[:,nxs,:,:],axis=0)
             Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Gdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
             fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
             fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-            fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
-            fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
-            refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
-            refl.T[7] = np.copy(refl.T[9])                
-            refl.T[10] = 0.0    #atan2d(fbs[0],fas[0]) - what is phase for mag refl?
+            fagm = fam*GfpuA[0]-fbm*GfpuA[1]   #real; 2 x refBlk x sym x atoms
+            fbgm = fbm*GfpuA[0]+fam*GfpuA[1]
+            fams = np.sum(np.sum(fagm,axis=-1),axis=-1)                          #xyz,Nref
+            fbms = np.sum(np.sum(fbgm,axis=-1),axis=-1)                          #ditto
 
 
+        if 'T' in calcControls[hfx+'histType']:
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
+            fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
         else:
-            if 'T' in calcControls[hfx+'histType']:
-                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
-                fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-            else:
-                fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
-                fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-            GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x refBlk x sym X atoms
-            fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
-            fbg = fb*GfpuA[0]+fa*GfpuA[1]
-            fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
-            fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
-            if 'P' in calcControls[hfx+'histType']:
-                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
-                refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
-            else:
-                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
-                refl.T[8] = np.copy(refl.T[10])                
-                refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
+            fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+        fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
+        fbg = fb*GfpuA[0]+fa*GfpuA[1]
+        fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
+        fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
+        refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2+np.sum(fams,axis=0)**2+np.sum(fbms,axis=0)**2    #square of sums
+        refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+        if 'P' not in calcControls[hfx+'histType']:
+            refl.T[8] = np.copy(refl.T[10])                
         iBeg += blkSize
 #    print ('nRef %d time %.4f\r'%(nRef,time.time()-time0))
     return copy.deepcopy(refDict['RefList'])
@@ -1772,8 +1771,10 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         HP = H[:3]+modQ*H[3:]            #projected hklm to hkl
         SQ = 1./(2.*refl[4+im])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
-        dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
-        Bab = parmDict[phfx+'BabA']*dBabdA
+        Bab = 0.0
+        if phfx+'BabA' in parmDict:
+            dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
+            Bab = parmDict[phfx+'BabA']*dBabdA
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = refDict['FF']['FF'][iref].T[Tindx]
         Uniq = np.inner(H,SSGMT)
@@ -1863,8 +1864,9 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dFdGf[iref] = 2.*(SA*dfadGf[0]+SB*dfbdGf[1])      #array(nRef,natom,nwave,2)
             dFdGx[iref] = 2.*(SA*dfadGx[0]+SB*dfbdGx[1])      #array(nRef,natom,nwave,6)
             dFdGu[iref] = 2.*(SA*dfadGu[0]+SB*dfbdGu[1])      #array(nRef,natom,nwave,12)
-        dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
-            2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        if phfx+'BabA' in parmDict:
+            dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
+                2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
         if not iref%100 :
             print (' %d derivative time %.4f\r'%(iref,time.time()-time0),end='')

@@ -43,8 +43,8 @@ ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 def create(parent):
     return testDeriv(parent)
     
-[wxID_FILEEXIT, wxID_FILEOPEN, wxID_MAKEPLOTS,
-] = [wx.NewId() for _init_coll_File_Items in range(3)]
+[wxID_FILEEXIT, wxID_FILEOPEN, wxID_MAKEPLOTS, wxID_CLEARSEL,
+] = [wx.NewId() for _init_coll_File_Items in range(4)]
 
 def FileDlgFixExt(dlg,file):            #this is needed to fix a problem in linux wx.FileDialog
     ext = dlg.GetWildcard().split('|')[2*dlg.GetFilterIndex()+1].strip('*')
@@ -61,10 +61,12 @@ class testDeriv(wx.Frame):
         self.File = wx.Menu(title='')
         self.File.Append(wxID_FILEOPEN,'Open testDeriv file','Open testDeriv')
         self.File.Append(wxID_MAKEPLOTS,'Make plots','Make derivative plots')
+        self.File.Append(wxID_CLEARSEL,'Clear selections')
         self.File.Append(wxID_FILEEXIT,'Exit','Exit from testDeriv')
-        self.Bind(wx.EVT_MENU, self.OnTestRead, id=wxID_FILEOPEN)
+        self.Bind(wx.EVT_MENU,self.OnTestRead, id=wxID_FILEOPEN)
         self.Bind(wx.EVT_MENU,self.OnMakePlots,id=wxID_MAKEPLOTS)
-        self.Bind(wx.EVT_MENU, self.OnFileExit, id=wxID_FILEEXIT)
+        self.Bind(wx.EVT_MENU,self.ClearSelect,id=wxID_CLEARSEL)
+        self.Bind(wx.EVT_MENU,self.OnFileExit, id=wxID_FILEEXIT)
         self.testDerivMenu.Append(menu=self.File, title='File')
         self.SetMenuBar(self.testDerivMenu)
         self.testDerivPanel = wx.ScrolledWindow(self)        
@@ -94,6 +96,10 @@ class testDeriv(wx.Frame):
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()
         self.Close()
+        
+    def ClearSelect(self,event):
+        self.use = [False for i in range(len(self.names))]
+        self.UpdateControls(event)
 
     def OnTestRead(self,event):
         dlg = wx.FileDialog(self, 'Open *.testDeriv file',defaultFile='*.testDeriv',
@@ -127,8 +133,12 @@ class testDeriv(wx.Frame):
             self.varylist = cPickle.load(file,encoding='Latin-1')
             self.calcControls = cPickle.load(file,encoding='Latin-1')
             self.pawleyLookup = cPickle.load(file,encoding='Latin-1')
-        self.use = [False for i in range(len(self.varylist+self.depVarList))]
-        self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.varylist+self.depVarList]
+        self.names = self.varylist+self.depVarList
+        self.use = [False for i in range(len(self.names))]
+        self.delt = [max(abs(self.parmDict[name])*0.0001,1e-6) for name in self.names]
+        for iname,name in enumerate(self.names):
+            if name.split(':')[-1] in ['Shift','DisplaceX','DisplaceY',]:
+                self.delt[iname] = 0.1
         file.close()
         msg = G2mv.EvaluateMultipliers(self.constrDict,self.parmDict)
         if msg:
@@ -158,12 +168,11 @@ class testDeriv(wx.Frame):
         
         self.testDerivPanel.DestroyChildren()
         ObjInd = {}
-        varylist = self.varylist
-        depVarList = self.depVarList
+        names = self.names
         use = self.use
         delt = self.delt
         mainSizer = wx.FlexGridSizer(0,8,5,5)
-        for id,[ck,name,d] in enumerate(zip(use,varylist+depVarList,delt)):
+        for id,[ck,name,d] in enumerate(zip(use,names,delt)):
             useVal = wx.CheckBox(self.testDerivPanel,label=name)
             useVal.SetValue(ck)
             ObjInd[useVal.GetId()] = id
@@ -201,13 +210,17 @@ class testDeriv(wx.Frame):
             
         def test2(name,delt,doProfile):
             Title = 'derivatives test for '+name
-            varyList = self.varylist+self.depVarList
+            names = self.names
             hplot = self.plotNB.add(Title).gca()
             if doProfile:
                 pr = cProfile.Profile()
                 pr.enable()
+            #regenerate minimization fxn
+            G2stMth.errRefine(self.values,self.HistoPhases,
+                self.parmDict,self.varylist,self.calcControls,
+                self.pawleyLookup,None)
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
-                varyList,self.calcControls,self.pawleyLookup,None)
+                names,self.calcControls,self.pawleyLookup,None)
             if doProfile:
                 pr.disable()
                 s = StringIO.StringIO()
@@ -216,18 +229,18 @@ class testDeriv(wx.Frame):
                 ps.print_stats("GSASII",.5)
                 print('Profiler of '+name+' derivative calculation; top 50% of routines:')
                 print(s.getvalue())
-            M2 = dMdV[varyList.index(name)]
+            M2 = dMdV[names.index(name)]
             hplot.plot(M2,'b',label='analytic deriv')
-            mmin = np.min(dMdV[varyList.index(name)])
-            mmax = np.max(dMdV[varyList.index(name)])
+            mmin = np.min(dMdV[names.index(name)])
+            mmax = np.max(dMdV[names.index(name)])
             print('parameter:',name,self.parmDict[name],delt,mmin,mmax)
             if name in self.varylist:
                 self.values[self.varylist.index(name)] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
+                    names,self.calcControls,self.pawleyLookup,None)
                 self.values[self.varylist.index(name)] += 2.*delt
                 M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
+                    names,self.calcControls,self.pawleyLookup,None)
                 self.values[self.varylist.index(name)] -= delt
             elif name in self.depVarList:   #in depVarList
                 if 'dA' in name:
@@ -235,10 +248,10 @@ class testDeriv(wx.Frame):
                     delt *= -1
                 self.parmDict[name] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
+                    names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] += 2.*delt
                 M1 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
-                    varyList,self.calcControls,self.pawleyLookup,None)
+                    names,self.calcControls,self.pawleyLookup,None)
                 self.parmDict[name] -= delt    
             Mn = (M1-M0)/(2.*abs(delt))
             hplot.plot(Mn,'r',label='numeric deriv')

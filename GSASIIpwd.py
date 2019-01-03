@@ -1063,6 +1063,9 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     HKL = G2lat.GenHLaue(dvec,SGData,A)        
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
     SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
+    ifMag = False
+    if 'MagSpGrp' in SGData:
+        ifMag = True
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
         if not ext and d >= dmin:
@@ -1074,7 +1077,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                 d = float(1/np.sqrt(G2lat.calc_rDsq(H,A)))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
-                    if G2spc.checkSSextc(HKLM,SSGData):
+                    if G2spc.checkSSextc(HKLM,SSGData) or ifMag:
                         HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
     return G2lat.sortHKLd(HKLs,True,True,True)
 

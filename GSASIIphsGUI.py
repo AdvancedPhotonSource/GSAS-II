@@ -1341,6 +1341,8 @@ def UpdatePhaseData(G2frame,Item,data):
                                     wType = waveType
                             atom[-1]['SS1'][parm] = [wType,]+list(atom[-1]['SS1'][parm])
                     del atom[-1]['SS1']['waveType']
+        else:
+            generalData['Super'] = 0
         if 'Modulated' not in generalData:
             generalData['Modulated'] = False
         if 'HydIds' not in generalData:
@@ -1596,7 +1598,7 @@ def UpdatePhaseData(G2frame,Item,data):
                                 generalData['SuperSg'] = SetDefaultSSsymbol()
                             generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                             if 'SuperVec' not in generalData:
-                                generalData['Super'] = 1
+                                generalData['Super'] = True
                                 generalData['SuperVec'] = [[0.,0.,0.],False,4]
                                 generalData['SSGData'] = {}
                             if '4DmapData' not in generalData:
@@ -5088,6 +5090,8 @@ def UpdatePhaseData(G2frame,Item,data):
                             val = wave[0][ival]
                             if np.any(CSI[0][ival]):
                                 minmax = [-0.2,0.2]
+                                if Stype == 'Smag':
+                                    minmax = [-20.,20.]
                                 if waveTyp in ['ZigZag','Block','Crenel'] and not iwave and ival < 2:
                                     if not ival:
                                         minmax = [0.,2.]

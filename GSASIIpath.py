@@ -761,7 +761,7 @@ if os.path.exists(os.path.expanduser('~/.G2local/')):
         print("*"*75)
 
 BinaryPathLoaded = False
-def SetBinaryPath(printInfo=False):
+def SetBinaryPath(printInfo=False, loadBinary=True):
     '''
     Add location of GSAS-II shared libraries (binaries: .so or .pyd files) to path
     
@@ -809,6 +809,8 @@ def SetBinaryPath(printInfo=False):
         if printInfo:
             print('GSAS-II binary directory: {}'.format(binpath))
         BinaryPathLoaded = True
+    elif not loadBinary:
+        raise Exception
     else:                                                  # try loading them 
         if printInfo:
             print('Attempting to download GSAS-II binary files...')

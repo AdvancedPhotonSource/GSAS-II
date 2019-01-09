@@ -1345,7 +1345,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     else:
         Umod = 1.0
     if nWaves[3]:
-        tauM = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
+        tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
         MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X ngl
         MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
         Mmod = np.sum(MmodA+MmodB,axis=1)                #atoms X 3 X ngl; sum waves
@@ -1358,6 +1358,7 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt):
     '''
     H: array nRefBlk x ops X hklt
     HP: array nRefBlk x ops X hklt proj to hkl
+    nWaves: list number of waves for frac, pos, uij & mag
     Fmod: array 2 x atoms x waves    (sin,cos terms)
     Xmod: array atoms X 3 X ngl
     Umod: array atoms x 3x3 x ngl
@@ -1365,7 +1366,7 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt):
     glTau,glWt: arrays Gauss-Lorentzian pos & wts
     '''
     
-    if nWaves[2]:
+    if nWaves[2]:       #uij (adp) waves
         if len(HP.shape) > 2:
             HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
         else:

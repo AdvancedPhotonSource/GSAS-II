@@ -3489,7 +3489,7 @@ class GSASII(wx.Frame):
 #                        pth = G2G.GetExportPath(self)
                         dlg = wx.FileDialog(self, 'Choose sum image filename', pth,outname.split('IMG ')[1], 
                             'G2img files (*.G2img)|*.G2img', 
-                            wx.SAVE|wx.FD_OVERWRITE_PROMPT)
+                            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
                         if dlg.ShowModal() == wx.ID_OK:
                             newimagefile = dlg.GetPath()
                             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)

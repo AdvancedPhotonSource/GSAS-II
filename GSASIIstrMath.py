@@ -1488,7 +1488,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Uniq = np.inner(H.T,SSGMT)
         UniqP = np.inner(HP.T,SGMT)
         Phi = np.inner(H.T,SSGT)
-        if SGInv:   #if centro - expand HKL sets
+        if SGInv and not SGData['SGFixed']:   #if centro - expand HKL sets
             Uniq = np.hstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,-Phi))
             UniqP = np.hstack((UniqP,-UniqP))
@@ -1519,11 +1519,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
-            if SGData['SGInv'] and not SGData['SGFixed']:
-                mphase = np.hstack((phase,-phase))
-            else:
-                mphase = phase 
-            mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs] for cen in SGData['SGCen']])
+            mphase = np.array([phase+twopi*np.inner(cen,HP.T)[:,nxs,nxs] for cen in SGData['SGCen']])
             mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
             sinm = np.sin(mphase)                               #ditto - match magstrfc.for
             cosm = np.cos(mphase)                               #ditto

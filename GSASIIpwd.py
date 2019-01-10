@@ -652,7 +652,7 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     return widths,fmin,fmax
     
 def getFWHM(pos,Inst):
-    '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
+    '''Compute total FWHM from Thompson, Cox & Hastings (1987) , J. Appl. Cryst. 20, 79-83
     via getgamFW(g,s).
     
     :param pos: float peak position in deg 2-theta or tof in musec
@@ -665,15 +665,19 @@ def getFWHM(pos,Inst):
     sigTOF = lambda dsp,S0,S1,S2,Sq: np.sqrt(S0+S1*dsp**2+S2*dsp**4+Sq*dsp)
     gam = lambda Th,X,Y,Z: Z+X/cosd(Th)+Y*tand(Th)
     gamTOF = lambda dsp,X,Y,Z: Z+X*dsp+Y*dsp**2
+    alpTOF = lambda dsp,alp: alp/dsp
+    betTOF = lambda dsp,bet0,bet1,betq: bet0+bet1/dsp**4+betq/dsp**2
     if 'C' in Inst['Type'][0]:
         s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
         g = gam(pos/2.,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
         return getgamFW(g,s)/100.  #returns FWHM in deg
     else:
         dsp = pos/Inst['difC'][0]
+        alp = alpTOF(dsp,Inst['alpha'][0])
+        bet = betTOF(dsp,Inst['beta-0'][0],Inst['beta-1'][0],Inst['beta-q'][0])
         s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
         g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1],Inst['Z'][1])
-        return getgamFW(g,s)
+        return getgamFW(g,s)+np.log(2.0)*(alp+bet)/(alp*bet)
     
 def getgamFW(g,s):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83

@@ -4007,9 +4007,9 @@ class GSASII(wx.Frame):
                                 sig = np.sqrt(peak[8])
                                 gam = peak[10]
                                 esddsp = G2lat.Pos2dsp(Inst,esds['pos'])
-                                FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-TOF from Gam(peak)
+                                FWHM = G2pwd.getgamFW(gam,sig) +(peak[4]+peak[6])*np.log(2.)/(peak[4]*peak[6])     #to get delta-TOF from Gam(peak)
                                 file.write("%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
+                                    (peak[0],dsp,esddsp,peak[2],peak[4],peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
                                 #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
                                 esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}

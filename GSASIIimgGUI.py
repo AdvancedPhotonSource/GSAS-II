@@ -140,7 +140,7 @@ def UpdateImageData(G2frame,data):
     distSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['PolaVal'],0,nDig=(10,4),
         min=0.,max=1.,typeHint=float),0,WACV)
     mainSizer.Add(distSizer,0)
-    if 'samplechangerpos' not in data:
+    if 'samplechangerpos' not in data or data['samplechangerpos'] is None:
         data['samplechangerpos'] = 0.0
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label='Sample changer position %.2f mm'%data['samplechangerpos']),0,WACV)
 

@@ -3195,11 +3195,11 @@ class GSASII(wx.Frame):
                 self.dataGridSizer.Add(ScaleAll,0,wx.LEFT,10)
                 if self.dataType == 'PWDR':
                     self.dataGridSizer.Add(self.Avg,0,wx.RIGHT,10)
-                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,' Result name: '+self.dataType),1,
+                self.dataGridSizer.Add(wx.StaticText(self.panel,-1,' Result type: '+self.dataType),1,
                     wx.LEFT|wx.ALIGN_CENTER_VERTICAL,1)
-                self.name = G2G.ValidatedTxtCtrl(self.panel,self.data,-1,size=wx.Size(300,20))
-                self.dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
             mainSizer.Add(self.dataGridSizer,0,wx.EXPAND)
+            self.name = G2G.ValidatedTxtCtrl(self.panel,self.data,-1,size=wx.Size(300,20))
+            mainSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
             self.OkBtn = wx.Button(self.panel,-1,"Ok")
             self.OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
             cancelBtn = wx.Button(self.panel,-1,"Cancel")
@@ -3242,10 +3242,16 @@ class GSASII(wx.Frame):
                 self.selectData = ChoiceList
                 self.selectVals = ChoiceVals
             else:
-                self.selectData = copy.copy(self.data[:-1])
+#                self.selectData = copy.copy(self.data[:-1])
                 self.selectVals = len(self.data)*[0.0,]
             wx.CallAfter(self.Draw)
             
+        def GetData(self):
+            if self.dataType == 'PWDR':
+                return self.selectData+[self.data[-1],],self.result
+            else:
+                return self.selectData+[self.data[-1],],self.selectVals
+                        
         def onChar(self,event):
             'Respond to keyboard events in the Filter box'
             self.filterVal = self.filterBox.GetValue()
@@ -3286,7 +3292,7 @@ class GSASII(wx.Frame):
                     v = 1./w
                     if lenX:
                         if lenX != len(x):
-                            self.ErrorDialog('Data length error','Data to be summed must have same number of points'+
+                            self.GetParent().ErrorDialog('Data length error','Data to be summed must have same number of points'+
                                 '\nExpected:'+str(lenX)+
                                 '\nFound:   '+str(len(x))+'\nfor '+name)
                             self.OnCancel(event)
@@ -3294,7 +3300,7 @@ class GSASII(wx.Frame):
                         lenX = len(x)
                     if Xminmax[1]:
                         if Xminmax != [x[0],x[-1]]:
-                            self.ErrorDialog('Data range error','Data to be summed must span same range'+
+                            self.GetParent().ErrorDialog('Data range error','Data to be summed must span same range'+
                                 '\nExpected:'+str(Xminmax[0])+' '+str(Xminmax[1])+
                                 '\nFound:   '+str(x[0])+' '+str(x[-1])+'\nfor '+name)
                             self.OnCancel(event)
@@ -3343,12 +3349,6 @@ class GSASII(wx.Frame):
             parent.Raise()
             self.EndModal(wx.ID_CANCEL)              
             
-        def GetData(self):
-            if self.dataType == 'PWDR':
-                return self.selectData+[self.data[-1],],self.result
-            else:
-                return self.selectData+[self.data[-1],],self.selectVals
-                        
     def OnPwdrSum(self,event):
         'Sum or Average together powder data(?)'
         TextList = []
@@ -3445,11 +3445,11 @@ class GSASII(wx.Frame):
                     result,scales = dlg.GetData()
                     First = True
                     Found = False
-                    for i,name in enumerate(result[:-1]):
-                        scale = scales[i]
+                    for name,scale in zip(result,scales):
                         if scale:
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
+                            i = TextList.index(name)
                             Npix,imagefile,imagetag = DataList[i]
                             imagefile = G2IO.GetCheckImageFile(self,IdList[i])[1]
                             image = G2IO.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)

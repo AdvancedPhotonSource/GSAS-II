@@ -831,8 +831,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                 s1 += '\n    '
                 macrostrain = False
                 for i in range(len(names)):
-                    name = phfx+name[i]
-                    sig = self.sigDict.get(name,-0.009)
+                    name = phfx+names[i]
+                    sig = self.sigDict.get(name,-0.000009)
                     s1 += G2mth.ValEsd(hstrain[0][i],sig)+', '
                     if hstrain[0][i]: macrostrain = True
                 if macrostrain:

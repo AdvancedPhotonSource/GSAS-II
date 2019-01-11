@@ -186,7 +186,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                            fit=False,wildCard=G2frame.testSeqRefineMode())
             restobj = dlg.Show(True)
             if restobj:
-                restrData['General'].append([restobj,0.0,1.0])
+                restrData['General']['General'].append([restobj,0.0,1.0])
                 wx.CallAfter(UpdateGeneralRestr,restrData['General'])
             
     def OnAddAARestraint(event):
@@ -1861,31 +1861,42 @@ def UpdateRestraints(G2frame,data,phaseName):
             n = event.GetEventObject().index
             parmDict = SetupParmDict(G2frame)
             dlg = G2exG.ExpressionDialog(G2frame,parmDict,
-                            exprObj=generalRestData[n][0],
+                            exprObj=generalRestData['General'][n][0],
                             header="Edit a restraint expression",
                             fit=False,wildCard=G2frame.testSeqRefineMode())
             restobj = dlg.Show(True)
             if restobj:
-                generalRestData[n][0] = restobj
+                generalRestData['General'][n][0] = restobj
                 wx.CallAfter(UpdateGeneralRestr,restrData['General'])
         def OnDelGenRestraint(event):
             '''Delete a restraint expression'''
             n = event.GetEventObject().index
-            del generalRestData[n]
+            del generalRestData['General'][n]
             wx.CallAfter(UpdateGeneralRestr,restrData['General'])
             
         if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'(not implemented yet)'))
+        hSizer = wx.BoxSizer(wx.HORIZONTAL)
+        hSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'(not implemented yet)'))
+        hSizer.Add((5,5),0)
+        hSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'Weight factor: '))
+        hSizer.Add(
+                    G2G.ValidatedTxtCtrl(GeneralRestr,generalRestData,
+                                'wtFactor',nDig=(10,1),typeHint=float)
+                    )
+        btn = G2G.G2CheckBox(GeneralRestr,'Use?',generalRestData,'Use')
+        hSizer.Add(btn)
+        hSizer.Add((5,5),0)
         btn = wx.Button(GeneralRestr, wx.ID_ANY,"Add restraint")
         btn.Bind(wx.EVT_BUTTON,OnAddRestraint)
-        mainSizer.Add(btn,0,wx.ALIGN_CENTER)
+        hSizer.Add(btn,0,wx.ALIGN_CENTER|wx.EXPAND|wx.ALL)
+        mainSizer.Add(hSizer,0)
         mainSizer.Add((5,5),0)
-        if generalRestData:
+        if generalRestData['General']:
             parmDict = SetupParmDict(G2frame)
             GridSiz = wx.FlexGridSizer(0,7,10,2)
-            for lbl in ('expression','target\nvalue','current\nvalue','weight'):
+            for lbl in ('expression','target\nvalue','current\nvalue','esd'):
                 GridSiz.Add(
                     wx.StaticText(GeneralRestr,wx.ID_ANY,lbl,style=wx.CENTER),
                     0,wx.ALIGN_CENTER)
@@ -1894,7 +1905,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             GridSiz.Add(
                     wx.StaticText(GeneralRestr,wx.ID_ANY,'Variables',style=wx.CENTER),
                     0,wx.ALIGN_CENTER)
-            for i,rest in enumerate(generalRestData):
+            for i,rest in enumerate(generalRestData['General']):
                 txt = rest[0].expression
                 if len(txt) > 50:
                     txt = txt[:47]+'... '
@@ -1994,6 +2005,7 @@ def UpdateRestraints(G2frame,data,phaseName):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RestraintMenu)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTRAINTADD,True)
             G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESRCHANGEVAL,False)
+            G2frame.dataWindow.RestraintEdit.Enable(G2G.wxID_RESTCHANGEESD,False)
             UpdateGeneralRestr(restrData['General'])
         event.Skip()
 
@@ -2051,7 +2063,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         restrData['Texture'] = {'wtFactor':1.0,'HKLs':[],'Use':True}
     if 'ChemComp' not in restrData:
         restrData['ChemComp'] = {'wtFactor':1.0,'Sites':[],'Use':True}
-    if 'General' not in restrData: restrData['General'] = []
+    if 'General' not in restrData:
+        restrData['General'] = {'wtFactor':1.0,'General':[], 'Use':True}
     General = phasedata['General']
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)

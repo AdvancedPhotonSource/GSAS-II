@@ -3511,7 +3511,7 @@ class ShowLSParms(wx.Dialog):
                 self.scrolledSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             self.scrolledSizer.Add(wx.StaticText(self.panel,wx.ID_ANY,str(name)))
             if name in self.varyList:
-                self.scrolledSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinemnt flag setting?
+                self.scrolledSizer.Add(wx.StaticText(self.panel,label='R',size=(50,-1)))   #TODO? maybe a checkbox for one stop refinement flag setting?
             elif name in self.fullVaryList:
                 self.scrolledSizer.Add(wx.StaticText(self.panel,label='C',size=(50,-1)))
                 explainRefine = True

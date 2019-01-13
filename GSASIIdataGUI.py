@@ -551,23 +551,32 @@ class GSASII(wx.Frame):
 
     def testSeqRefineMode(self):
         '''Returns the list of histograms included in a sequential refinement or
-        an empty list if a standard (non-sequential) refinement. 
+        an empty list if a standard (non-sequential) refinement.
+        Also sets Menu item status depending on mode
         '''
         cId = GetGPXtreeItemId(self,self.root, 'Controls')
         if cId:
             controls = self.GPXtree.GetItemPyData(cId)
             seqSetting = controls.get('Seq Data',[])
-            if seqSetting:
-                for item in self.Refine:
-                    item.SetText('Se&quential refine')
-            else:
-                for item in self.Refine:
-                    item.SetText('&Refine')
-            return seqSetting
+        else:
+            seqSetting = None
+            
+        if seqSetting:
+            for item in self.Refine:
+                item.SetText('Se&quential refine')
+            seqMode = True
         else:
             for item in self.Refine:
                 item.SetText('&Refine')
-            return None
+            seqMode = False
+        for menu in self.ExportSeq:
+            for item in menu.GetMenuItems():
+                menu.Enable(item.Id,seqMode)
+        for menu in self.ExportNonSeq:
+            for item in menu.GetMenuItems():
+                menu.Enable(item.Id,not seqMode)
+        return seqSetting
+
         
     def PreviewFile(self,filename):
         'confirm we have the right file'
@@ -2517,7 +2526,8 @@ class GSASII(wx.Frame):
         # set up the top-level menus
         projectmenu = wx.Menu()
         item = menu.AppendSubMenu(projectmenu,'Entire project as','Export entire project')
-
+        self.ExportNonSeq.append(projectmenu)
+        
         phasemenu = wx.Menu()
         item = menu.AppendSubMenu(phasemenu,'Phase as','Export phase or sometimes phases')
 
@@ -2533,6 +2543,14 @@ class GSASII(wx.Frame):
         mapmenu = wx.Menu()
         item = menu.AppendSubMenu(mapmenu,'Maps as','Export density map(s)')
 
+        # sequential exports are handled differently; N.B. enabled in testSeqRefineMode
+        seqPhasemenu = wx.Menu()
+        item = menu.AppendSubMenu(seqPhasemenu,'Sequential phases','Export phases from sequential fit')
+        self.ExportSeq.append(seqPhasemenu)
+        seqHistmenu = wx.Menu()
+        item = menu.AppendSubMenu(seqHistmenu,'Sequential histograms','Export histograms from sequential fit')
+        self.ExportSeq.append(seqHistmenu)
+        
         # find all the exporter files
         if not self.exporterlist: # this only needs to be done once
             self.exporterlist = G2fil.LoadExportRoutines(self)
@@ -2561,6 +2579,30 @@ class GSASII(wx.Frame):
                 item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
+            for lbl,submenu in (('Phase',seqPhasemenu),
+                        ('Powder',seqHistmenu),
+                        ):
+                if lbl.lower() in obj.exporttype:
+                    try:
+                        obj.Writer
+                    except AttributeError:
+                        continue
+                    # define a unique event handler for this menu item
+                    def seqMenuItemEventHandler(event,obj=obj,typ=lbl):
+                        'This handler has the needed exporter/type embedded'
+                        # lookup sequential table
+                        Id = GetGPXtreeItemId(self,self.root,'Sequential results')
+                        if not Id:
+                            print('Error in Seq seqMenuItemEventHandler for ',typ,'without Seq Res table')
+                            return
+                        data = self.GPXtree.GetItemPyData(Id)
+                        G2IO.ExportSequential(self,data,obj,typ)
+                    if 'mode' in inspect.getargspec(obj.Writer)[0]:
+                        item = submenu.Append(wx.ID_ANY,obj.formatName,obj.longFormatName)
+                        self.Bind(wx.EVT_MENU, seqMenuItemEventHandler, item)
+                        #                    self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
+                        # Bind is in UpdateSeqResults
+
         item = imagemenu.Append(wx.ID_ANY,'Multiple image controls and masks',
             'Export image controls and masks for multiple images')
         self.Bind(wx.EVT_MENU, self.OnSaveMultipleImg, id=item.GetId())
@@ -2694,6 +2736,8 @@ class GSASII(wx.Frame):
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
         self.Refine = []
+        self.ExportSeq = []
+        self.ExportNonSeq = []
         #self.ExportPattern = []
         self.ExportPeakList = []
         self.ExportHKL = []
@@ -4976,7 +5020,10 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialPfit.Append(G2G.wxID_DOPARFIT,'Fit to equation(s)','Perform a parametric minimization')
         # fill sequential Export menu
         # for an exporter to be used for sequential exports, it must have a Writer method and
-        # that Writer method must offer a mode argument. 
+        # that Writer method must offer a mode argument.
+        #============================================================
+        # N.B. this largely duplicates menu items now in Export
+        #============================================================
         self.SeqExportLookup = {}
         self.SequentialEx = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
@@ -6660,6 +6707,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         vals = G2frame.dataWindow.SeqExportLookup.get(event.GetId())
         if vals is None:
             print('Error: Id not found. This should not happen!')
+            return
         G2IO.ExportSequential(G2frame,data,*vals)
 
     def onSelectSeqVars(event):

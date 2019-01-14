@@ -569,12 +569,10 @@ class GSASII(wx.Frame):
             for item in self.Refine:
                 item.SetText('&Refine')
             seqMode = False
-        for menu in self.ExportSeq:
-            for item in menu.GetMenuItems():
-                menu.Enable(item.Id,seqMode)
-        for menu in self.ExportNonSeq:
-            for item in menu.GetMenuItems():
-                menu.Enable(item.Id,not seqMode)
+        for menu,Id in self.ExportSeq:
+            menu.Enable(Id,seqMode)
+        for menu,Id in self.ExportNonSeq:
+            menu.Enable(Id,not seqMode)
         return seqSetting
 
         
@@ -2526,7 +2524,7 @@ class GSASII(wx.Frame):
         # set up the top-level menus
         projectmenu = wx.Menu()
         item = menu.AppendSubMenu(projectmenu,'Entire project as','Export entire project')
-        self.ExportNonSeq.append(projectmenu)
+        self.ExportNonSeq.append([menu,item.Id])
         
         phasemenu = wx.Menu()
         item = menu.AppendSubMenu(phasemenu,'Phase as','Export phase or sometimes phases')
@@ -2546,10 +2544,10 @@ class GSASII(wx.Frame):
         # sequential exports are handled differently; N.B. enabled in testSeqRefineMode
         seqPhasemenu = wx.Menu()
         item = menu.AppendSubMenu(seqPhasemenu,'Sequential phases','Export phases from sequential fit')
-        self.ExportSeq.append(seqPhasemenu)
+        self.ExportSeq.append([menu,item.Id])
         seqHistmenu = wx.Menu()
         item = menu.AppendSubMenu(seqHistmenu,'Sequential histograms','Export histograms from sequential fit')
-        self.ExportSeq.append(seqHistmenu)
+        self.ExportSeq.append([menu,item.Id])
         
         # find all the exporter files
         if not self.exporterlist: # this only needs to be done once

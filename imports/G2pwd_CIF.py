@@ -334,7 +334,11 @@ class CIFpwdReader(G2obj.ImportPowderData):
             else:
                 w,e = cif.get_number_with_esd(val)
                 if w: wl.append(w)
-            if wl: self.instdict['wave'] = wl
+            if wl: 
+                if len(wl) > 1:
+                    self.instdict['wave'] = wl
+                else:
+                    self.instdict['wave'] = wl[0]
         if cf[blk].get('_diffrn_ambient_temperature'):
             val = cf[blk]['_diffrn_ambient_temperature']
             w,e = cif.get_number_with_esd(val)

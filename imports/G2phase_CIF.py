@@ -190,7 +190,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                     if "1'" in SpGrp:       #nonmagnetics can't be gray
                         SpGrp = SpGrp.replace("1'",'')
                         sspgrp[1] = sspgrp[1][:-1]  #take off extra 's'
-                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
+#                    SpGrp = G2spc.StandardizeSpcName(SpGrp)
                     self.Phase['General']['Type'] = 'nuclear'
                 if not SpGrp:
                     print (sspgrp)

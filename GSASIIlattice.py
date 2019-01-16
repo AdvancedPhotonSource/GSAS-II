@@ -1095,9 +1095,10 @@ def GenHBravais(dmin,Bravais,A):
             * 10 B orthorhombic
             * 11 C orthorhombic
             * 12 P orthorhombic
-            * 13 C monoclinic
-            * 14 P monoclinic
-            * 15 P triclinic
+            * 13 I monoclinic
+            * 14 C monoclinic
+            * 15 P monoclinic
+            * 16 P triclinic
             
     :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
     :return: HKL unique d list of [h,k,l,d,-1] sorted with largest d first
@@ -1107,9 +1108,9 @@ def GenHBravais(dmin,Bravais,A):
         Cent = 'A'
     elif Bravais in [10,]:
         Cent = 'B'
-    elif Bravais in [11,13]:
+    elif Bravais in [11,14]:
         Cent = 'C'
-    elif Bravais in [1,5,8]:
+    elif Bravais in [1,5,8,13]:
         Cent = 'I'
     elif Bravais in [0,7]:
         Cent = 'F'
@@ -1120,7 +1121,7 @@ def GenHBravais(dmin,Bravais,A):
     Hmax = MaxIndex(dmin,A)
     dminsq = 1./(dmin**2)
     HKL = []
-    if Bravais == 15:                       #triclinic
+    if Bravais == 16:                       #triclinic
         for l in range(-Hmax[2],Hmax[2]+1):
             for k in range(-Hmax[1],Hmax[1]+1):
                 hmin = 0
@@ -1131,7 +1132,7 @@ def GenHBravais(dmin,Bravais,A):
                     rdsq = calc_rDsq(H,A)
                     if 0 < rdsq <= dminsq:
                         HKL.append([h,k,l,rdsq2d(rdsq,6),-1])
-    elif Bravais in [13,14]:                #monoclinic - b unique
+    elif Bravais in [13,14,15]:                #monoclinic - b unique
         Hmax = SwapIndx(2,Hmax)
         for h in range(Hmax[0]+1):
             for k in range(-Hmax[1],Hmax[1]+1):

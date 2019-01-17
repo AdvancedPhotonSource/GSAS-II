@@ -912,7 +912,7 @@ def UpdateConstraints(G2frame,data):
                             else:
                                 eqString[-1] += ' - '
                                 m = abs(m)
-                        eqString[-1] += '%.3f*%s '%(m,var)
+                        eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     if '_Explain' in data:
@@ -936,12 +936,14 @@ def UpdateConstraints(G2frame,data):
                         var = str(term[1])
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
+                        m = term[0]
                         if eqString[-1] != '':
                             if term[0] > 0:
                                 eqString[-1] += ' + '
                             else:
                                 eqString[-1] += ' - '
-                        eqString[-1] += '%.3f*%s '%(abs(term[0]),var)
+                                m = -term[0]
+                        eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     typeString = 'CONST'
@@ -960,15 +962,15 @@ def UpdateConstraints(G2frame,data):
                         elif eqString[-1] != '':
                             eqString[-1] += ' = '
                         if normval/term[0] == 1:
-                            eqString[-1] += '%s'% var
+                            eqString[-1] += '{:}'.format(var)
                         else:
-                            eqString[-1] += '%.3f*%s'%(normval/term[0],var)
+                            eqString[-1] += '{:g}*{:} '.format(normval/term[0],var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     if normval/indepterm[0] == 1:
-                        eqString[-1] += ' = %s'% str(indepterm[1])
+                        eqString[-1] += ' = {:} '.format(indepterm[1])
                     else:
-                        eqString[-1] += ' = %.3f*%s'%(normval/indepterm[0],str(indepterm[1]))
+                        eqString[-1] += ' = {:g}*{:} '.format(normval/indepterm[0],str(indepterm[1]))
                     typeString = 'EQUIV'
                 else:
                     print ('Unexpected constraint'+item)
@@ -1013,10 +1015,10 @@ def UpdateConstraints(G2frame,data):
         Id,name = Indx[Obj.GetId()]
         del data[name][Id]
         allcons = FindAllCons(data)     #should I call CheckChangedConstraint() instead?
-        if not len(allcons): return
-        CheckConstraints(allcons)
+        if len(allcons):
+            CheckConstraints(allcons)
         wx.CallAfter(OnPageChanged,None)
-        
+
     def OnConstEdit(event):
         '''Called to edit an individual contraint in response to a
         click on its Edit button
@@ -1331,14 +1333,13 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
     if not item:
+        print('Error: no constraints in Data Tree')
         return
     constraints = G2frame.GPXtree.GetItemPyData(item)
     parmDict = {}
     varyList = []
     xnames = ['dAx','dAy','dAz']
-#    invTrans = nl.inv(Trans)
-#    Us = ['AU11','AU22','AU33','AU12','AU13','AU23']
-#    Uids = [[0,0,'AU11'],[1,1,'AU22'],[2,2,'AU33'],[0,1,'AU12'],[0,2,'AU13'],[1,2,'AU23']]
+    # constraints on matching atom params between phases
     for ia,code in enumerate(atCodes):
         atom = nAtoms[ia]
         if not ia and atom[cia] == 'A':
@@ -1376,7 +1377,9 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = [1.0,G2obj.G2VarObj('%d::%s:%s'%(opId,name,iat))]
             constraints['Phase'].append([DepCons,IndpCon,None,None,'e'])
-        
+            
+        # unfinished Anisotropic constraint generation
+#        Uids = [[0,0,'AU11'],[1,1,'AU22'],[2,2,'AU33'],[0,1,'AU12'],[0,2,'AU13'],[1,2,'AU23']]
 #        DepConsDict = dict(zip(Us,[[],[],[],[],[],[]]))
 #        for iu,Uid in enumerate(Uids):
 #            UMT = np.zeros((3,3))
@@ -1408,53 +1411,63 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             
         #how do I do Uij's for most Trans?
         
-#unfortunately, this doesn't always work!
-#    As = ['A0','A1','A2','A3','A4','A5']
-#    Aids = [[0,0,'A0'],[1,1,'A1'],[2,2,'A2'],[0,1,'A3'],[0,2,'A4'],[1,2,'A5']]
-#    DepConsDict = dict(zip(As,[[],[],[],[],[],[]]))
-#    T = Trans
-##Symbolic code:
-#    '''
+    T = nl.inv(Trans)
+    conMat = [
+        [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
+        [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
+        [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
+        [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
+        [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
+        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]]
+    # Gnew = conMat * A: 
 #         T00**2*a0  T01**2*a1 T02**2*a2 T00*T01*a3    T00*T02*a4    T01*T02*a5 
 #         T10**2*a0  T11**2*a1 T12**2*a2 T10*T11*a3    T10*T12*a4    T11*T12*a5 
 #         T20**2*a0  T21**2*a1 T22**2*a2 T20*T21*a3    T20*T22*a4    T21*T22*a5 
 #         2*T00*T10*a0      2*T01*T11*a1     2*T02*T12*a2     (T00*T11 + T01*T10)*a3      (T00*T12 + T02*T10)*a4      (T01*T12 + T02*T11)*a5 
 #         2*T00*T20*a0      2*T01*T21*a1     2*T02*T22*a2     (T00*T21 + T01*T20)*a3      (T00*T22 + T02*T20)*a4      (T01*T22 + T02*T21)*a5 
 #         2*T10*T20*a0      2*T11*T21*a1     2*T12*T22*a2     (T10*T21 + T11*T20)*a3      (T10*T22 + T12*T20)*a4      (T11*T22 + T12*T21)*a5 
-#    '''
-#    conMat = [
-#        [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
-#        [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
-#        [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
-#        [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
-#        [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
-#        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]]
-#    
-#    for iA,Aid in enumerate(Aids):
-#        if abs(nAcof[iA]) > 1.e-8:
-#            for ia in [0,1,2,3,4,5]:
-#                cA = conMat[ia][iA]
-#                if abs(cA) > 1.e-8:
-#                    parm = SetUniqAj(npId,ia,nSGData)
-#                    DepConsDict[Aid[2]].append([cA,G2obj.G2VarObj(parm)])
-#    conStrings = []
-#    for iA,Asi in enumerate(As):
-#        parm = SetUniqAj(opId,iA,oSGData)
-#        parmDict[parm] = oAcof[iA]
-#        varyList.append(parm)
-#        IndpCon = [1.0,G2obj.G2VarObj(parm)]
-#        conStr = str([IndpCon,DepConsDict[Asi]])
-#        if conStr in conStrings:
-#            continue
-#        conStrings.append(conStr)
-#        if len(DepConsDict[Asi]) == 1:
-#            if DepConsDict[Asi][0]:
-#                constraints['Phase'].append([IndpCon,DepConsDict[Asi][0],None,None,'e'])
-#        elif len(DepConsDict[Asi]) > 1:        
-#            for Dep in DepConsDict[Asi]:
-#                Dep[0] *= -1
-#            constraints['Phase'].append([IndpCon]+DepConsDict[Asi]+[0.0,None,'c'])
+    # Generated as symbolic code using:
+    # import sym
+    # A0, A1, A2, A3, A4, A5 = sym.symbols('A0, A1, A2, A3, A4, A5') 
+    # G = sym.Matrix([ [A0,    A3/2.,  A4/2.], [A3/2.,  A1,    A5/2.], [A4/2., A5/2.,    A2]])
+    # transformation matrix
+    # T00, T10, T20, T01, T11, T21, T02, T12, T22 = sym.symbols('T00, T10, T20, T01, T11, T21, T02, T12, T22') 
+    # Tr = sym.Matrix([ [T00, T10, T20], [T01, T11, T21], [T02, T12, T22],]) 
+    # Gnew = (Tr.T*G)*Tr
+    
+    for iAnew,Asi in enumerate(['A0','A1','A2','A3','A4','A5']): # loop through A[i] for new cell
+        Nparm = str(npId) + '::' + Asi
+        if Nparm != SetUniqAj(npId,iAnew,nSGData): continue # skip if already constrainted
+        multDict = {}
+        for iAorg in range(6):
+            cA = conMat[iAorg][iAnew] # coeff for A[i] in constraint matrix
+            if abs(cA) < 1.e-8: continue
+            parm = SetUniqAj(opId,iAorg,oSGData) # translate to unique A[i] in original cell
+            if not parm: continue
+            # sum coeff
+            if parm in multDict:
+                multDict[parm] += cA
+            else:
+                multDict[parm] = cA
+        # any non-zero multipliers?
+        maxMult = 0
+        for i in multDict:
+            maxMult = max(maxMult,abs(multDict[i]))
+        if maxMult <= 0: continue
             
+        # create constraint (if needed) or equivalence
+        if len(multDict) == 1:
+            key = list(multDict.keys())[0]
+            constr = [[multDict[key],G2obj.G2VarObj(Nparm)],
+                          [1.0,G2obj.G2VarObj(key)],None,None,'e']
+        else:
+            constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
+        for key in multDict:
+            constr += [[multDict[key],G2obj.G2VarObj(key)]]
+        constr += [0.0,None,'c']
+        constraints['Phase'] += [constr]
+    
+    # constraints on HAP Scale, etc.
     for hId,hist in enumerate(UseList):    #HAP - seems OK
         ohapkey = '%d:%d:'%(opId,hId)
         nhapkey = '%d:%d:'%(npId,hId)

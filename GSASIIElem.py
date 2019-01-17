@@ -21,6 +21,8 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 import atmdata
 import GSASIImath as G2mth
+import ElementTable as ET
+
 
 getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
 def GetFormFactorCoeff(El):
@@ -162,7 +164,6 @@ def CheckElement(El):
     :returns: True if the element is found
 
     '''
-    import ElementTable as ET
     Elements = []
     for elem in ET.ElTable:
         Elements.append(elem[0][0])
@@ -187,7 +188,6 @@ def FixValence(El):
     
 def GetAtomInfo(El,ifMag=False):
     'reads element information from atmdata.py'
-    import ElementTable as ET
     Elem = ET.ElTable
     if ifMag:
         Elem = ET.MagElTable

@@ -20,6 +20,7 @@ import GSASIIobj as G2obj
 import GSASIIIO as G2IO
 import CifFile as cif # PyCifRW from James Hester
 import GSASIIpath
+asind = lambda x: 180.*np.arcsin(x)/np.pi
 GSASIIpath.SetVersionNumber("$Revision$")
 
 class CIFpwdReader(G2obj.ImportPowderData):
@@ -55,7 +56,7 @@ class CIFpwdReader(G2obj.ImportPowderData):
             #'_pd_proc_d_spacing',
             #'_pd_proc_energy_incident',
             #'_pd_proc_energy_detection',
-            #'_pd_proc_recip_len_q',
+            '_pd_proc_recip_len_q',
             #'_pd_proc_wavelength',
         )
         intDataItems = ( # intensity axis data names
@@ -225,8 +226,38 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 return False
             xi,yi,sui,modi = res
 
-        # now read in the values
-        # x-values
+            # now read in the values
+            # x-values
+            self.powderentry[0] = filename
+            #self.powderentry[1] = pos # bank offset (N/A here)
+            #self.powderentry[2] = 1 # xye file only has one bank
+            self.idstring = os.path.basename(filename) + ': ' + blk
+            if cf[blk].get('_diffrn_radiation_probe'):
+                if cf[blk]['_diffrn_radiation_probe'] == 'neutron':
+                    self.instdict['type'] = 'PNC'
+                    #if cf[blk].get('_pd_meas_time_of_flight'): self.instdict['type'] = 'PNT' # not supported yet
+                else:
+                    self.instdict['type'] = 'PXC'
+            if cf[blk].get('_diffrn_radiation_wavelength'):
+                val = cf[blk]['_diffrn_radiation_wavelength']
+                wl = []
+                if type(val) is list:
+                    for v in val:
+                        w,e = cif.get_number_with_esd(v)
+                        if w: wl.append(w)
+                else:
+                    w,e = cif.get_number_with_esd(val)
+                    if w: wl.append(w)
+                if wl: 
+                    if len(wl) > 1:
+                        self.instdict['wave'] = wl
+                    else:
+                        self.instdict['wave'] = wl[0]
+            if cf[blk].get('_diffrn_ambient_temperature'):
+                val = cf[blk]['_diffrn_ambient_temperature']
+                w,e = cif.get_number_with_esd(val)
+                if w: 
+                    self.Sample['Temperature'] = w
         xcf = xch[xi]
         if type(xcf) is tuple:
             vals = [float(cf[blk][ixi]) for ixi in xcf]
@@ -240,6 +271,9 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 else:
                     vl.append(v)
             x = np.array(vl)
+            if 'recip_len_q' in xcf and 'wave' in self.instdict:
+                wl = self.instdict['wave']
+                x = 2.*asind(wl*x/(4.*np.pi))
         # y-values
         ycf = ych[yi]
         vl = []
@@ -314,34 +348,4 @@ class CIFpwdReader(G2obj.ImportPowderData):
                 np.zeros(N), # calc. background (zero)
                 np.zeros(N), # obs-calc profiles
             ]
-        self.powderentry[0] = filename
-        #self.powderentry[1] = pos # bank offset (N/A here)
-        #self.powderentry[2] = 1 # xye file only has one bank
-        self.idstring = os.path.basename(filename) + ': ' + blk
-        if cf[blk].get('_diffrn_radiation_probe'):
-            if cf[blk]['_diffrn_radiation_probe'] == 'neutron':
-                self.instdict['type'] = 'PNC'
-                #if cf[blk].get('_pd_meas_time_of_flight'): self.instdict['type'] = 'PNT' # not supported yet
-            else:
-                self.instdict['type'] = 'PXC'
-        if cf[blk].get('_diffrn_radiation_wavelength'):
-            val = cf[blk]['_diffrn_radiation_wavelength']
-            wl = []
-            if type(val) is list:
-                for v in val:
-                    w,e = cif.get_number_with_esd(v)
-                    if w: wl.append(w)
-            else:
-                w,e = cif.get_number_with_esd(val)
-                if w: wl.append(w)
-            if wl: 
-                if len(wl) > 1:
-                    self.instdict['wave'] = wl
-                else:
-                    self.instdict['wave'] = wl[0]
-        if cf[blk].get('_diffrn_ambient_temperature'):
-            val = cf[blk]['_diffrn_ambient_temperature']
-            w,e = cif.get_number_with_esd(val)
-            if w: 
-                self.Sample['Temperature'] = w
         return True

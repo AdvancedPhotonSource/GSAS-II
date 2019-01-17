@@ -3334,6 +3334,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if Phase['General']['Type'] == 'nuclear' and 'MagSpGrp' in SGData:
             SGData = G2spc.SpcGroup(SGData['SpGrp'])[1]
         G2frame.dataWindow.RunSubGroups.Enable(True)
+        ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         if 'SuperSg' in Phase['General'] or SGData.get('SGGray',False):
             ssopt.update({'SGData':SGData,'ssSymb':Phase['General']['SuperSg'],'ModVec':Phase['General']['SuperVec'][0],'Use':True,'maxH':1})
             ssopt['ssSymb'] = ssopt['ssSymb'].replace(',','')
@@ -3346,7 +3347,6 @@ def UpdateUnitCellsGrid(G2frame, data):
                 wx.MessageBox('Super space group '+SGData['SpGrp']+ssopt['ssSymb']+' not valid;\n It is set to '+ssSym,
                     caption='Unusable super space group',style=wx.ICON_EXCLAMATION)
             G2frame.dataWindow.RunSubGroups.Enable(False)
-        ssopt.update({'Use':False,'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         SpGrp = SGData['SpGrp']
         if 'mono' in SGData['SGSys']:
             SpGrp = G2spc.fixMono(SpGrp)

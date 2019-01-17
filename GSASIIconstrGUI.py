@@ -1462,9 +1462,9 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
                           [1.0,G2obj.G2VarObj(key)],None,None,'e']
         else:
             constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
-        for key in multDict:
-            constr += [[multDict[key],G2obj.G2VarObj(key)]]
-        constr += [0.0,None,'c']
+            for key in multDict:
+                constr += [[multDict[key],G2obj.G2VarObj(key)]]
+            constr += [0.0,None,'c']
         constraints['Phase'] += [constr]
     
     # constraints on HAP Scale, etc.

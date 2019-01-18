@@ -583,7 +583,6 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
         values.append(Z)
     result = so.leastsq(errFitZSS,values,Dfun=dervFitZSS,full_output=True,ftol=1.e-6,
         args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Z,Zref))
-    print(result)
     A = Values2A(ibrav,result[0])
     Vec = Values2Vec(ibrav,V,Vref,result[0])
     if Zref:

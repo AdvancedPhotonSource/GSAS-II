@@ -3427,7 +3427,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
-        controls[13] = SPGlist[controls[5]][0]       
+#        if not controls[13]: controls[13] = SPGlist[controls[5]][0]    #don't know if this is needed?   
         SGData = G2spc.SpcGroup(controls[13])[1]
         if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
             if ssopt.get('Use',False):

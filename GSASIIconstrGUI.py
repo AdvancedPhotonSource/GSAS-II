@@ -130,110 +130,6 @@ def UpdateConstraints(G2frame,data):
     '''Called when Constraints tree item is selected.
     Displays the constraints in the data window
     '''
-    if not data:
-        data.update({'Hist':[],'HAP':[],'Phase':[],'Global':[]})       #empty dict - fill it
-    if 'Global' not in data:                                            #patch
-        data['Global'] = []
-    # DEBUG code ########################################
-    #import GSASIIconstrGUI
-    #reload(GSASIIconstrGUI)
-    #reload(G2obj)
-    #reload(G2stIO)
-    #import GSASIIstrMain
-    #reload(GSASIIstrMain)    
-    #reload(G2mv)
-    #reload(G2gd)
-    ###################################################
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    if not len(Phases) or not len(Histograms):
-        dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
-            'No phases or histograms')
-        dlg.CenterOnParent()
-        dlg.ShowModal()
-        dlg.Destroy()
-        return
-    G2obj.IndexAllIds(Histograms,Phases)
-    ##################################################################################
-    # patch: convert old-style (str) variables in constraints to G2VarObj objects
-    for key,value in data.items():
-        if key.startswith('_'): continue
-        j = 0
-        for cons in value:
-            #print cons             # DEBUG
-            for i in range(len(cons[:-3])):
-                if type(cons[i][1]) is str:
-                    cons[i][1] = G2obj.G2VarObj(cons[i][1])
-                    j += 1
-        if j:
-            print (str(key) + ': '+str(j)+' variable(s) as strings converted to objects')
-    ##################################################################################
-    rigidbodyDict = G2frame.GPXtree.GetItemPyData(
-        G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
-    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
-    globalList = list(rbDict.keys())
-    globalList.sort()
-    try:
-        AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
-    except KeyError:
-        G2frame.ErrorDialog('Constraint Error','Constraints cannot be set until a cycle of least squares'+
-                            ' has been run.\nWe suggest you refine a scale factor.')
-        return
-
-    # create a list of the phase variables
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,MFtable,maxSSwave = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
-    phaseList = []
-    for item in phaseDict:
-        if item.split(':')[2] not in badPhaseParms:
-            phaseList.append(item)
-    phaseList.sort()
-    phaseAtNames = {}
-    phaseAtTypes = {}
-    TypeList = []
-    for item in phaseList:
-        Split = item.split(':')
-        if Split[2][:2] in ['AU','Af','dA','AM']:
-            Id = int(Split[0])
-            phaseAtNames[item] = AtomDict[Id][int(Split[3])][0]
-            phaseAtTypes[item] = AtomDict[Id][int(Split[3])][1]
-            if phaseAtTypes[item] not in TypeList:
-                TypeList.append(phaseAtTypes[item])
-        else:
-            phaseAtNames[item] = ''
-            phaseAtTypes[item] = ''
-             
-    # create a list of the hist*phase variables
-    seqList = G2frame.testSeqRefineMode()
-    if seqList: # for sequential refinement, only process 1st histgram in list
-        histDict = {seqList[0]:Histograms[seqList[0]]}
-    else:
-        histDict = Histograms
-    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
-    hapList = sorted([i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)])
-    if seqList: # convert histogram # to wildcard
-        wildList = [] # list of variables with "*" for histogram number
-        for i in hapList:
-            s = i.split(':')
-            if s[1] == "": continue
-            s[1] = '*'
-            sj = ':'.join(s)
-            if sj not in wildList: wildList.append(sj)
-        hapList = wildList
-    histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
-    histList = list(histDict.keys())
-    histList.sort()
-    if seqList: # convert histogram # to wildcard
-        wildList = [] # list of variables with "*" for histogram number
-        for i in histList:
-            s = i.split(':')
-            if s[1] == "": continue
-            s[1] = '*'
-            sj = ':'.join(s)
-            if sj not in wildList: wildList.append(sj)
-        histList = wildList        
-    Indx = {}
-    G2frame.Page = [0,'phs']
         
     def FindEquivVarb(name,nameList):
         'Creates a list of variables appropriate to constrain with name'
@@ -503,20 +399,18 @@ def UpdateConstraints(G2frame,data):
             dlg.Destroy()
         return []
     
-    def FindAllCons(data):
-        ''' Find all constraints
-        '''
-        allcons = []
-        for key in data:
-            if key.startswith('_'): continue
-            allcons += data[key]
-        return allcons
-        
-    def CheckConstraints(constraintSet):
-        '''Check for errors in a set of constraints. Constraints based on symmetry (etc.)
+    def ConstraintsLoad(data,newcons=[]):
+        '''Load all constraints. Constraints based on symmetry (etc.)
         are generated by running :func:`GSASIIstrIO.GetPhaseData`.
         '''
-        G2mv.InitVars()    
+        G2mv.InitVars()
+        #Find all constraints
+        constraintSet = []
+        for key in data:
+            if key.startswith('_'): continue
+            constraintSet += data[key]
+        if newcons:
+            constraintSet = constraintSet + newcons
         constDictList,fixedList,ignored = G2stIO.ProcessConstraints(constraintSet)
         # generate symmetry constraints to check for conflicts
         rigidbodyDict = G2frame.GPXtree.GetItemPyData(   
@@ -525,9 +419,23 @@ def UpdateConstraints(G2frame,data):
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+        return constDictList,phaseDict,fixedList
+            
+    def ConstraintsCheck(data,newcons=[]):
+        '''Load constraints & check them for errors. Since error checking
+        can cause changes in constraints in case of repairable conflicts
+        between equivalences, reload the constraints again after the check.
+        This could probably be done more effectively, but only reloading when
+        needed, but the reload should be quick.
+        '''
+        constDictList,phaseDict,fixedList = ConstraintsLoad(data,newcons)
         msg = G2mv.EvaluateMultipliers(constDictList,phaseDict)
-        if msg: return 'Unable to interpret multiplier(s): '+msg
-        return G2mv.CheckConstraints('',constDictList,fixedList)
+        if msg:
+            return 'Unable to interpret multiplier(s): '+msg,''
+        res = G2mv.CheckConstraints('',constDictList,fixedList)
+        # reload constraints in case any were merged in MoveConfEquiv
+        ConstraintsLoad(data,newcons)
+        return res
 
     def CheckAddedConstraint(newcons):
         '''Check a new constraint that has just been input.
@@ -539,18 +447,13 @@ def UpdateConstraints(G2frame,data):
         :returns: True if constraint should be added
         '''
         
-        allcons1 = FindAllCons(data)
-        allcons = allcons1[:]
-        allcons += newcons
-        if not len(allcons): return True
-        errmsg,warnmsg = CheckConstraints(allcons)
+        errmsg,warnmsg = ConstraintsCheck(data,newcons)
         if errmsg:
             G2frame.ErrorDialog('Constraint Error',
                 'Error with newly added constraint:\n'+errmsg+
                 '\nIgnoring newly added constraint',parent=G2frame)
-            # Note no multiplier formulas in GUI, skipping EvaluateMultipliers  
             # reset error status
-            errmsg,warnmsg = CheckConstraints(allcons1)
+            errmsg,warnmsg = ConstraintsCheck(data)
             if errmsg:
                 print (errmsg)
                 print (G2mv.VarRemapShow([],True))
@@ -568,16 +471,13 @@ def UpdateConstraints(G2frame,data):
         
         :returns: True if the edit should be retained
         '''
-        allcons = FindAllCons(data)
-        if not len(allcons): return True
-        # Note no multiplier formulas in GUI, skipping EvaluateMultipliers  
-        errmsg,warnmsg = CheckConstraints(allcons)
+        errmsg,warnmsg = ConstraintsCheck(data)
         if errmsg:
             G2frame.ErrorDialog('Constraint Error',
                 'Error after editing constraint:\n'+errmsg+
                 '\nDiscarding last constraint edit',parent=G2frame)
             # reset error status
-            errmsg,warnmsg = CheckConstraints(allcons)
+            errmsg,warnmsg = ConstraintsCheck(data)
             if errmsg:
                 print (errmsg)
                 print (G2mv.VarRemapShow([],True))
@@ -891,7 +791,7 @@ def UpdateConstraints(G2frame,data):
                 varMean = G2obj.fmtVarDescr(var)
                 eqString[-1] =  var +'   '
                 helptext = "Prevents variable:\n"+ var + " ("+ varMean + ")\nfrom being changed"
-            elif isinstance(item[-1],str): # not true on original-style (2011?) constraints
+            elif item[-1] == 'f' or item[-1] == 'e' or item[-1] == 'c': # not true on original-style (2011?) constraints
                 constEdit = wx.Button(pageDisplay,wx.ID_ANY,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
                 constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)            # edit button
@@ -1014,9 +914,7 @@ def UpdateConstraints(G2frame,data):
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
         del data[name][Id]
-        allcons = FindAllCons(data)     #should I call CheckChangedConstraint() instead?
-        if len(allcons):
-            CheckConstraints(allcons)
+        ConstraintsLoad(data)
         wx.CallAfter(OnPageChanged,None)
 
     def OnConstEdit(event):
@@ -1152,8 +1050,114 @@ def UpdateConstraints(G2frame,data):
             print('Unexpected event in RaisePage')
 
     def SetStatusLine(text):
-        G2frame.GetStatusBar().SetStatusText(text,1)                                      
-        
+        G2frame.GetStatusBar().SetStatusText(text,1)
+
+    # UpdateConstraints execution starts here
+    if not data:
+        data.update({'Hist':[],'HAP':[],'Phase':[],'Global':[]})       #empty dict - fill it
+    if 'Global' not in data:                                            #patch
+        data['Global'] = []
+    # DEBUG code ########################################
+    #import GSASIIconstrGUI
+    #reload(GSASIIconstrGUI)
+    #reload(G2obj)
+    #reload(G2stIO)
+    #import GSASIIstrMain
+    #reload(GSASIIstrMain)    
+    #reload(G2mv)
+    #reload(G2gd)
+    ###################################################
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    if not len(Phases) or not len(Histograms):
+        dlg = wx.MessageDialog(G2frame,'You need both phases and histograms to see Constraints',
+            'No phases or histograms')
+        dlg.CenterOnParent()
+        dlg.ShowModal()
+        dlg.Destroy()
+        return
+    G2obj.IndexAllIds(Histograms,Phases)
+    ##################################################################################
+    # patch: convert old-style (str) variables in constraints to G2VarObj objects
+    for key,value in data.items():
+        if key.startswith('_'): continue
+        j = 0
+        for cons in value:
+            #print cons             # DEBUG
+            for i in range(len(cons[:-3])):
+                if type(cons[i][1]) is str:
+                    cons[i][1] = G2obj.G2VarObj(cons[i][1])
+                    j += 1
+        if j:
+            print (str(key) + ': '+str(j)+' variable(s) as strings converted to objects')
+    ##################################################################################
+    rigidbodyDict = G2frame.GPXtree.GetItemPyData(
+        G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+    rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
+    rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
+    globalList = list(rbDict.keys())
+    globalList.sort()
+    try:
+        AtomDict = dict([Phases[phase]['pId'],Phases[phase]['Atoms']] for phase in Phases)
+    except KeyError:
+        G2frame.ErrorDialog('Constraint Error','Constraints cannot be set until a cycle of least squares'+
+                            ' has been run.\nWe suggest you refine a scale factor.')
+        return
+
+    # create a list of the phase variables
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,MFtable,maxSSwave = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
+    phaseList = []
+    for item in phaseDict:
+        if item.split(':')[2] not in badPhaseParms:
+            phaseList.append(item)
+    phaseList.sort()
+    phaseAtNames = {}
+    phaseAtTypes = {}
+    TypeList = []
+    for item in phaseList:
+        Split = item.split(':')
+        if Split[2][:2] in ['AU','Af','dA','AM']:
+            Id = int(Split[0])
+            phaseAtNames[item] = AtomDict[Id][int(Split[3])][0]
+            phaseAtTypes[item] = AtomDict[Id][int(Split[3])][1]
+            if phaseAtTypes[item] not in TypeList:
+                TypeList.append(phaseAtTypes[item])
+        else:
+            phaseAtNames[item] = ''
+            phaseAtTypes[item] = ''
+             
+    # create a list of the hist*phase variables
+    seqList = G2frame.testSeqRefineMode()
+    if seqList: # for sequential refinement, only process 1st histgram in list
+        histDict = {seqList[0]:Histograms[seqList[0]]}
+    else:
+        histDict = Histograms
+    hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,histDict,Print=False,resetRefList=False)
+    hapList = sorted([i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)])
+    if seqList: # convert histogram # to wildcard
+        wildList = [] # list of variables with "*" for histogram number
+        for i in hapList:
+            s = i.split(':')
+            if s[1] == "": continue
+            s[1] = '*'
+            sj = ':'.join(s)
+            if sj not in wildList: wildList.append(sj)
+        hapList = wildList
+    histVary,histDict,controlDict = G2stIO.GetHistogramData(histDict,Print=False)
+    histList = list(histDict.keys())
+    histList.sort()
+    if seqList: # convert histogram # to wildcard
+        wildList = [] # list of variables with "*" for histogram number
+        for i in histList:
+            s = i.split(':')
+            if s[1] == "": continue
+            s[1] = '*'
+            sj = ':'.join(s)
+            if sj not in wildList: wildList.append(sj)
+        histList = wildList        
+    Indx = {}
+    G2frame.Page = [0,'phs']
+    
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.ConstraintMenu)
     SetStatusLine('')
     
@@ -1189,9 +1193,7 @@ def UpdateConstraints(G2frame,data):
     wx.CallAfter(OnPageChanged,None)
     G2frame.constr.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
-    allcons = FindAllCons(data)
-    if not len(allcons): return
-    errmsg,warnmsg = CheckConstraints(allcons)
+    errmsg,warnmsg = ConstraintsCheck(data)
     if errmsg:
         G2frame.ErrorDialog('Constraint Error',
                             'Error in constraints:\n'+errmsg+'\nCheck console output for more information',
@@ -1200,7 +1202,7 @@ def UpdateConstraints(G2frame,data):
         print (G2mv.VarRemapShow([],True))
     elif warnmsg:
         print ('Unexpected contraint warning:\n'+warnmsg)
-
+        
 ################################################################################
 # check scale & phase fractions, create constraint if needed
 ################################################################################
@@ -1291,6 +1293,8 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         elif SGLaue in ['6/m','6/mmm','3m1', '31m', '3']:
             if iA in [0,1,3]:
                 parm = '%d::%s'%(pId,'A0')
+            elif iA == 2:
+                parm = '%d::%s'%(pId,'A2')
             else:
                 parm = None
         elif SGLaue in ['3R', '3mR']:
@@ -1458,8 +1462,10 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         # create constraint (if needed) or equivalence
         if len(multDict) == 1:
             key = list(multDict.keys())[0]
-            constr = [[multDict[key],G2obj.G2VarObj(Nparm)],
-                          [1.0,G2obj.G2VarObj(key)],None,None,'e']
+            constr = [
+                [1.0,G2obj.G2VarObj(key)],
+                [multDict[key],G2obj.G2VarObj(Nparm)],
+                None,None,'e']
         else:
             constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
             for key in multDict:

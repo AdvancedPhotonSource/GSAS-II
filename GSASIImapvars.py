@@ -1583,7 +1583,7 @@ def GetSymEquiv():
                     s1 += str(v)
                     if m != 1:
                         s1 += " / " + str(m[0])
-                    symout.append(s1+s2)
+                symout.append(s1+s2)
                 continue
             else:
                 s = '  %s = ' % mv

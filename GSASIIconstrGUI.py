@@ -1325,23 +1325,19 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
-    nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
-    
     opId = oldPhase['pId']
     npId = newPhase['pId']
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
     nAtoms = newPhase['Atoms']
     oSGData = oldPhase['General']['SGData']
     nSGData = newPhase['General']['SGData']
-    oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
-    nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
+    #oAcof = G2lat.cell2A(oldPhase['General']['Cell'][1:7])
+    #nAcof = G2lat.cell2A(newPhase['General']['Cell'][1:7])
     item = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Constraints')
     if not item:
         print('Error: no constraints in Data Tree')
         return
     constraints = G2frame.GPXtree.GetItemPyData(item)
-    parmDict = {}
-    varyList = []
     xnames = ['dAx','dAy','dAz']
     # constraints on matching atom params between phases
     for ia,code in enumerate(atCodes):
@@ -1415,14 +1411,15 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
             
         #how do I do Uij's for most Trans?
         
-    T = nl.inv(Trans)
+    T = nl.inv(Trans).T
     conMat = [
         [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
         [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],
         [T[2,0]**2,T[2,1]**2,T[2,2]**2,T[2,0]*T[2,1],T[2,0]*T[2,2],T[2,1]*T[2,2]],
         [2.*T[0,0]*T[1,0],2.*T[0,1]*T[1,1],2.*T[0,2]*T[1,2],T[0,0]*T[1,1]+T[0,1]*T[1,0],T[0,0]*T[1,2]+T[0,2]*T[1,0],T[0,1]*T[1,2]+T[0,2]*T[1,1]],
         [2.*T[0,0]*T[2,0],2.*T[0,1]*T[2,1],2.*T[0,2]*T[2,2],T[0,0]*T[2,1]+T[0,1]*T[2,0],T[0,0]*T[2,2]+T[0,2]*T[2,0],T[0,1]*T[2,2]+T[0,2]*T[2,1]],
-        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]]
+        [2.*T[1,0]*T[2,0],2.*T[1,1]*T[2,1],2.*T[1,2]*T[2,2],T[1,0]*T[2,1]+T[1,1]*T[2,0],T[1,0]*T[2,2]+T[1,2]*T[2,0],T[1,1]*T[2,2]+T[1,2]*T[2,1]]
+        ]
     # Gnew = conMat * A: 
 #         T00**2*a0  T01**2*a1 T02**2*a2 T00*T01*a3    T00*T02*a4    T01*T02*a5 
 #         T10**2*a0  T11**2*a1 T12**2*a2 T10*T11*a3    T10*T12*a4    T11*T12*a5 
@@ -1444,7 +1441,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         if Nparm != SetUniqAj(npId,iAnew,nSGData): continue # skip if already constrainted
         multDict = {}
         for iAorg in range(6):
-            cA = conMat[iAorg][iAnew] # coeff for A[i] in constraint matrix
+            cA = conMat[iAnew][iAorg] # coeff for A[i] in constraint matrix
             if abs(cA) < 1.e-8: continue
             parm = SetUniqAj(opId,iAorg,oSGData) # translate to unique A[i] in original cell
             if not parm: continue

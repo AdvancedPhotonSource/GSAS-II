@@ -696,7 +696,9 @@ def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
             G2mv.StoreEquivalence(item,eqvDict[item])
                     
 def cellVary(pfx,SGData): 
-    'needs a doc string'
+    '''Creates equivalences for a phase based on the Laue class.
+    Returns a list of A tensor terms that are non-zero.
+    '''
     if SGData['SGLaue'] in ['-1',]:
         return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     elif SGData['SGLaue'] in ['2/m',]:

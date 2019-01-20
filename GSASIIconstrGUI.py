@@ -812,7 +812,10 @@ def UpdateConstraints(G2frame,data):
                             else:
                                 eqString[-1] += ' - '
                                 m = abs(m)
-                        eqString[-1] += '{:g}*{:} '.format(m,var)
+                        if m == 1:
+                            eqString[-1] += '{:} '.format(var)
+                        else:
+                            eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     if '_Explain' in data:
@@ -843,7 +846,10 @@ def UpdateConstraints(G2frame,data):
                             else:
                                 eqString[-1] += ' - '
                                 m = -term[0]
-                        eqString[-1] += '{:g}*{:} '.format(m,var)
+                        if m == 1:
+                            eqString[-1] += '{:} '.format(var)
+                        else:
+                            eqString[-1] += '{:g}*{:} '.format(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     typeString = 'CONST'

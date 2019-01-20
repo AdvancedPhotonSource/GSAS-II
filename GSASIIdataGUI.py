@@ -3835,10 +3835,10 @@ class GSASII(wx.Frame):
         self.GPXtree.Expand(self.root)
         self.HKL = []
         item, cookie = self.GPXtree.GetFirstChild(self.root)
-        while item and not Id:
+        while item:
             name = self.GPXtree.GetItemText(item)
             if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD','REFD']:
-                Id = item
+                if not Id: Id = item
             elif name == "Phases":
                 phaseId = item
             elif name == 'Controls':

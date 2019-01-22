@@ -2090,6 +2090,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 PrintMomentsAndSig(General,Atoms,atomsSig)
             if General.get('Modulated',False):
                 PrintWavesAndSig(General,Atoms,wavesSig)
+                
+            density = G2mth.getDensity(General)[0]
+            pFile.write('\n Density: %f.4 g/cm**3\n'%density)
             
         
         textureData = General['SH Texture']    

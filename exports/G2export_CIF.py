@@ -1227,6 +1227,10 @@ class ExportCIF(G2IO.ExportBaseclass):
                 else:
                     txt = G2mth.ValEsd(val,min(defsig,prevsig),True)
                 WriteCIFitem(self.fp, '_cell_'+lbl,txt)
+                
+            density = G2mth.getDensity(phasedict['General'])[0]
+            WriteCIFitem(self.fp, '_exptl_crystal_density_diffrn',
+                    G2mth.ValEsd(density,-0.001))                    
 
             WriteCIFitem(self.fp, '_symmetry_cell_setting',
                          phasedict['General']['SGData']['SGSys'])

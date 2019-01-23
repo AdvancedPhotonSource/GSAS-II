@@ -839,6 +839,53 @@ class GSASIItoolbar(Toolbar):
                                      'Key not in menu')
                     return
             dlg.Destroy()
+
+    # these routines are not currently in use, but there are probably good
+    # places in the graphics to disable the zoom/pan to release the mouse bind
+    #
+    # use as Page.canvas.toolbar.reset_zoompan()
+    #
+    def get_zoompan(self):
+        """Return "ZOOM" if Zoom is active, , "PAN" if Pan is active,
+        or None if neither
+        """
+        return self._active
+
+    def reset_zoompan(self):
+        '''Turns off Zoom or Pan mode, if on. Ignored if neither is set
+        '''
+        if self._active == 'ZOOM':
+            self._active = None
+            if self._idPress is not None:
+                self._idPress = self.canvas.mpl_disconnect(self._idPress)
+                self.mode = ''
+
+            if self._idRelease is not None:
+                self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+                self.mode = ''
+            self.canvas.widgetlock.release(self)
+            if hasattr(self,'_NTB2_ZOOM'):
+                self.ToggleTool(self._NTB2_ZOOM, False)
+            elif hasattr(self,'wx_ids'):
+                self.ToggleTool(self.wx_ids['Zoom'], False)
+            else:
+                print('Unable to reset Zoom button, please report this with matplotlib version')
+        elif self._active == 'PAN':
+            self._active = None
+            if self._idPress is not None:
+                self._idPress = self.canvas.mpl_disconnect(self._idPress)
+                self.mode = ''
+
+            if self._idRelease is not None:
+                self._idRelease = self.canvas.mpl_disconnect(self._idRelease)
+                self.mode = ''
+            self.canvas.widgetlock.release(self)
+            if hasattr(self,'_NTB2_PAN'):
+                self.ToggleTool(self._NTB2_PAN, False)
+            elif hasattr(self,'wx_ids'):
+                self.ToggleTool(self.wx_ids['Pan'], False)
+            else:
+                print('Unable to reset Pan button, please report this with matplotlib version')
             
 ################################################################################
 ##### PlotSngl

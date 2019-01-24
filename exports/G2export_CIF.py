@@ -1150,14 +1150,7 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             # loop over interatomic distances for this phase
             WriteCIFitem(self.fp, '\n# MOLECULAR GEOMETRY')
-            WriteCIFitem(self.fp, 'loop_' +
-                         '\n   _geom_bond_atom_site_label_1' +
-                         '\n   _geom_bond_atom_site_label_2' +
-                         '\n   _geom_bond_distance' +
-                         '\n   _geom_bond_site_symmetry_1' +
-                         '\n   _geom_bond_site_symmetry_2' +
-                         '\n   _geom_bond_publ_flag')
-
+            First = True
             for i in sorted(AtomLabels.keys()):
                 Dist = DistArray[i]
                 for D in Dist:
@@ -1173,19 +1166,19 @@ class ExportCIF(G2IO.ExportBaseclass):
                         line += " no"
                     else:
                         line += " yes"
+                    if First:
+                        First = False
+                        WriteCIFitem(self.fp, 'loop_' +
+                         '\n   _geom_bond_atom_site_label_1' +
+                         '\n   _geom_bond_atom_site_label_2' +
+                         '\n   _geom_bond_distance' +
+                         '\n   _geom_bond_site_symmetry_1' +
+                         '\n   _geom_bond_site_symmetry_2' +
+                         '\n   _geom_bond_publ_flag')
                     WriteCIFitem(self.fp, line)
 
             # loop over interatomic angles for this phase
-            WriteCIFitem(self.fp, '\nloop_' +
-                         '\n   _geom_angle_atom_site_label_1' +
-                         '\n   _geom_angle_atom_site_label_2' +
-                         '\n   _geom_angle_atom_site_label_3' +
-                         '\n   _geom_angle' +
-                         '\n   _geom_angle_site_symmetry_1' +
-                         '\n   _geom_angle_site_symmetry_2' +
-                         '\n   _geom_angle_site_symmetry_3' +
-                         '\n   _geom_angle_publ_flag')
-
+            First = True
             for i in sorted(AtomLabels.keys()):
                 Dist = DistArray[i]
                 for k,j,tup in AngArray[i]:
@@ -1207,6 +1200,17 @@ class ExportCIF(G2IO.ExportBaseclass):
                         line += " no"
                     else:
                         line += " yes"
+                    if First:
+                        First = False
+                        WriteCIFitem(self.fp, '\nloop_' +
+                         '\n   _geom_angle_atom_site_label_1' +
+                         '\n   _geom_angle_atom_site_label_2' +
+                         '\n   _geom_angle_atom_site_label_3' +
+                         '\n   _geom_angle' +
+                         '\n   _geom_angle_site_symmetry_1' +
+                         '\n   _geom_angle_site_symmetry_2' +
+                         '\n   _geom_angle_site_symmetry_3' +
+                         '\n   _geom_angle_publ_flag')
                     WriteCIFitem(self.fp, line)
 
         def WritePhaseInfo(phasenam,hist=None):

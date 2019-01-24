@@ -1915,12 +1915,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 BNSlatt = Obj.GetValue()
                 SGData = generalData['SGData']
                 SpcGrp = SGData['SpGrp']
+                if SGData['SGGray']:
+                    SpcGrp += " 1'"
                 SGErr,SGData = G2spc.SpcGroup(SpcGrp)
                 if '_' in BNSlatt:
                     SGData['BNSlattsym'] = [BNSlatt,BNSsym[BNSlatt]]
                 else:
                     SGData['BNSlattsym'] = [SGData['SGLatt'],[0.,0.,0.]]
-                SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])
+                SGData['SGSpin'] = [1,]*len(SGData['SGSpin'])   #set to all black
                 GenSym,GenFlg = G2spc.GetGenSym(SGData)[:2]
                 SGData['GenSym'] = GenSym
                 SGData['GenFlg'] = GenFlg
@@ -1957,7 +1959,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 spinSizer.Add(wx.StaticText(General,label=' Magnetic phase from mcif file; no change in spin inversion allowed'),0,WACV)
                 OprNames = G2spc.GenMagOps(SGData)[0]
             else:
-                if not len(GenSym) or SGData['SGGray']:
+                if not len(GenSym): # or SGData['SGGray']:
                     spinSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                     OprNames,SpnFlp = G2spc.GenMagOps(SGData)                    
                 else:
@@ -2004,7 +2006,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
             def OnShowSOps(event):
                 SSGData = generalData['SSGData']
-                text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
+                text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,True)
                 msg = 'Superspace Group Information'
                 G2G.SGMessageBox(General,msg,text,table).ShowModal()
             
@@ -2072,6 +2074,8 @@ def UpdatePhaseData(G2frame,Item,data):
             SpGrp = SGData['SpGrp']
             if SGData['SGGray']:
                 SpGrp += " 1'"
+            if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:
+                SpGrp = SGData['BNSlattsym'][0]+SpGrp[1:]
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
             if not SGData['SGFixed']:
                 val = generalData['SuperSg']

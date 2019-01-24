@@ -1529,14 +1529,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             eDotK = np.sum(HM[:,:,nxs,nxs,nxs]*Kdata[:,nxs,:,:,:],axis=0)
             Q = HM[:,:,nxs,nxs,nxs]*eDotK[nxs,:,:,:,:]-Kdata[:,nxs,:,:,:] #Mxyz,Nref,Nop,Ntau,Natm
             
-            fam = Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]    #ditto
-            fbm = Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]    #ditto
+            fam = Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs]    #ditto
+            fbm = Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs]    #ditto
             
             fams = np.sum(np.sum(fam,axis=2),axis=-1)                          #xyz,Nref,ntau
             fbms = np.sum(np.sum(fbm,axis=2),axis=-1)                          #ditto
             
-            fams = np.sum(np.sum(fams**2,axis=0)*glWt[nxs,:],axis=-1)
-            fbms = np.sum(np.sum(fbms**2,axis=0)*glWt[nxs,:],axis=-1)
+            fams = np.sum(np.sum(fams,axis=0)**2,axis=-1)
+            fbms = np.sum(np.sum(fbms,axis=0)**2,axis=-1)
 
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])

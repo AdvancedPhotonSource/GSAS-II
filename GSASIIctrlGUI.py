@@ -3236,13 +3236,16 @@ class SGMagSpinBox(wx.Dialog):
         ncol = self.table[0].count(',')+2
         nG = 1
         j = 0
-        if self.ifGray:
-            nG = 2
         for ng in range(nG):
             if ng:
                 mainSizer.Add(wx.StaticText(self.panel,label="      for (0,0,0)+1'"),0,WACV)
+                j = 0
             for ic,cent in enumerate(cents):
-                Cent = np.array(Cents[ic])
+                Cent = np.zeros(3)
+                if cent:
+                    cent = cent.strip(' (').strip(')+\n')
+                    Cent = np.array(eval(cent)[:3])
+#                Cent = np.array(Cents[ic])
                 if ic:
                     if cent: cent = cent.strip(' (').strip(')+\n')
                     label = '      for (%s)+'%(cent)

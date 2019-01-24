@@ -3419,9 +3419,6 @@ def UpdateUnitCellsGrid(G2frame, data):
              
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
-        if not len(peaks[0]):
-            G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
-            return        
         print (' Refine cell')
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
@@ -4100,7 +4097,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     if peaks:
         G2frame.dataWindow.IndexPeaks.Enable(True)
     G2frame.dataWindow.RefineCell.Enable(False)
-    if controls[12] > 1.0:                               #if a "real" volume (i.e. not default)
+    if controls[12] > 1.0 and len(peaks[0]):             #if a "real" volume (i.e. not default) and peaks
         G2frame.dataWindow.RefineCell.Enable(True)    
     G2frame.dataWindow.CopyCell.Enable(False)
     G2frame.dataWindow.MakeNewPhase.Enable(False)        

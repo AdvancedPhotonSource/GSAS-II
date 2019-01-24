@@ -844,6 +844,11 @@ def GetGenSym(SGData):
             
     elif 'R' in SGData['SGLatt']:
         BNSsym = {'R_I':[0,0,.5]}
+        
+    if SGData['SGGray']:
+        for bns in BNSsym:
+            BNSsym[bns].append(0.5)
+            
     return UsymOp,OprFlg,BNSsym
 
 def ApplyBNSlatt(SGData,BNSlatt):
@@ -877,7 +882,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
     else:
         return Tmat
     SGData['SGSpin'].append(-1)
-    C = SGCen+A
+    C = SGCen+A[:3]
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat
         
@@ -1277,7 +1282,7 @@ def GenMagOps(SGData):
     Ncv = len(SGData['SGCen'])
     sgOp = [M for M,T in SGData['SGOps']]
     oprName = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
-    if SGData['SGInv'] and not SGData['SGFixed'] and not SGData['SGGray']:
+    if SGData['SGInv'] and not SGData['SGFixed']:
         Nsym *= 2
         sgOp += [-M for M,T in SGData['SGOps']]
         oprName += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
@@ -1294,15 +1299,11 @@ def GenMagOps(SGData):
         SpnFlp = np.ones(Nsym,dtype=np.int)
         GenFlg = SGData.get('GenFlg',[0])
         Ngen = len(SGData['SGGen'])
-    #    print ('GenFlg:',SGData['GenFlg'])
-    #    print ('GenSym:',SGData['GenSym'])
         Nfl = len(GenFlg)
         for ieqv in range(Nsym):
             for iunq in range(Nfl):
                 if SGData['SGGen'][ieqv%Ngen] & GenFlg[iunq]:
                     SpnFlp[ieqv] *= FlpSpn[iunq]
-    #        print ('\nMagSpGrp:',SGData['MagSpGrp'],Ncv)
-    #        print ('FlpSpn:',Nfl,FlpSpn)
         for incv in range(Ncv):
             if incv:
                 try:
@@ -1313,10 +1314,6 @@ def GenMagOps(SGData):
     detM = [nl.det(M) for M in sgOp]
     MagMom = SpnFlp*np.array(Ncv*detM)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
-#        print ('SgOps:',OprNames)
-#        print ('SGGen:',SGData['SGGen'])
-#        print ('SpnFlp:',SpnFlp)
-#        print ('MagMom:',MagMom)
     return OprNames,SpnFlp
     
 def GetOpNum(Opr,SGData):
@@ -1640,8 +1637,6 @@ def SSpcGroup(SGData,SSymbol):
         return '(3+1) superlattices not defined for cubic space groups',None
     elif SGData['SGLaue'] in ['3R','3mR']:
         return '(3+1) superlattices not defined for rhombohedral settings - use hexagonal setting',None
-#    if SGData['SGGray'] and SSymbol[-1] == 's':
-#        SSymbol = SSymbol[:-1]
     try:
         modsym,gensym = splitSSsym(SSymbol)
     except ValueError:
@@ -1662,12 +1657,10 @@ def SSpcGroup(SGData,SSymbol):
     SSgSpc = SGData['SpGrp']+SSymbol
     if SGData['SGGray']:
         SSgSpc = SSgSpc.replace('('," 1'(")
-#        SSgSpc += 's'
     SSGData = {'SSpGrp':SSgSpc,'modQ':modQ,'modSymb':modsym,'SSGKl':SSGKl}
     SSCen = np.zeros((len(SGData['SGCen']),4))
     for icen,cen in enumerate(SGData['SGCen']):
         SSCen[icen,0:3] = cen
-    SSCen[0] = np.zeros(4)
     SSGData['SSGCen'] = SSCen
     SSGData['SSGOps'] = []
     for iop,op in enumerate(SGData['SGOps']):
@@ -1832,6 +1825,8 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     if SGData.get('SGFixed',False):
         Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])
     SSsymb = SSGData['SSpGrp']
+    if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:
+        SSsymb = SGData['BNSlattsym'][0]+SSsymb[1:]
     if SGData.get('SGGray',False):
         if SGData.get('SGFixed',False): Mult //= 2
     else:
@@ -1873,12 +1868,7 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     if AddInv and SGData['SGInv']:
         for i,Opr in enumerate(SSGData['SSGOps']):
             IOpr = [-Opr[0],-Opr[1]]
-            SSGTable.append('(%2d) %s'%(i+1,SSMT2text(IOpr)))        
-    if SGData['SGGray']:
-        SSGTable.append("     for 1'")
-        for i,Opr in enumerate(SSGData['SSGOps']):
-            Opr2 = [Opr[0],Opr[1]+np.array([0,0,0,.5])]
-            SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr2)))
+            SSGTable.append('(%2d) %s'%(i+1+len(SSGData['SSGOps']),SSMT2text(IOpr)))        
     return SSGText,SSGTable
     
 def SSGModCheck(Vec,modSymb,newMod=True):
@@ -3541,7 +3531,10 @@ def ApplyStringOpsMom(A,SGData,Mom):
     Ax[0] = int(Ax[0])
     iAx = abs(Ax[0])
     nA = iAx%100-1
-    nC = len(SGOps)*(iAx//100)
+    if SGData['SGInv'] and not SGData['SGFixed']:
+        nC = 2*len(SGOps)*(iAx//100)
+    else:
+        nC = len(SGOps)*(iAx//100)
     NA = nA
     if Ax[0] < 0:
         NA += len(SGOps)

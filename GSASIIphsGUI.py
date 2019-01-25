@@ -9142,12 +9142,11 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.BeginBusyCursor()
             try:
                 peaks,mags,dzeros,dcents = G2mth.SearchMap(generalData,drawingData)
-                if 'N' in mapData['Type']:      #look for negatives in neutron maps
-                    npeaks,nmags,ndzeros,ndcents = G2mth.SearchMap(generalData,drawingData,Neg=True)
-                    peaks = np.concatenate((peaks,npeaks))
-                    mags = np.concatenate((mags,nmags))
-                    dzeros = np.concatenate((dzeros,ndzeros))
-                    dcents = np.concatenate((dcents,ndcents))
+                npeaks,nmags,ndzeros,ndcents = G2mth.SearchMap(generalData,drawingData,Neg=True)
+                peaks = np.concatenate((peaks,npeaks))
+                mags = np.concatenate((mags,nmags))
+                dzeros = np.concatenate((dzeros,ndzeros))
+                dcents = np.concatenate((dcents,ndcents))
             finally:
                 wx.EndBusyCursor()
             if len(peaks):

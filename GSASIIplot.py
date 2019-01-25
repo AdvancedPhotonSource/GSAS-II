@@ -1232,7 +1232,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
-    Page.Choice = (' key press','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
+    Page.Choice = (' key press','g: toggle grid','f: toggle Fhkl/F^2hkl plot','q: toggle q/d plot')
     Draw()
     
         
@@ -1882,6 +1882,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.Cmin -= (G2frame.Cmax - G2frame.Cmin)/5.
             elif Page.plotStyle['Offset'][0] > -100.:
                 Page.plotStyle['Offset'][0] -= 10.
+        elif event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 'l' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
@@ -2558,26 +2560,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.tickDict = {}
     DifLine = ['']
     if G2frame.Contour:
-        Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
+        Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max','g: toggle grid',
             'i: interpolation method','s: color scheme','c: contour off','t: temperature for y-axis')
     else:
         if Page.plotStyle['logPlot']:
             if 'PWDR' in plottype:
                 if G2frame.SinglePlot:
-                    Page.Choice = (' key press','n: log(I) off',
+                    Page.Choice = (' key press','n: log(I) off','g: toggle grid',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
                             'm: toggle multidata plot','+: toggle selection')
                 else:
-                    Page.Choice = (' key press','n: log(I) off',
+                    Page.Choice = (' key press','n: log(I) off','g: toggle grid',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot','f: select data',
                         'm: toggle multidata plot','+: toggle selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
+                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on','g: toggle grid',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
                 else:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
+                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on','g: toggle grid',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
         else:
@@ -2585,18 +2587,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press',
                         'b: toggle subtract background','n: log(I) on','s: toggle sqrt plot','c: contour on',
-                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot',
+                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','g: toggle grid',
                         'w: toggle (Io-Ic)/sig plot','+: no selection')
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x','o: reset offset',
-                        'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot',
+                        'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot','g: toggle grid',
                         'm: toggle multidata plot','w: toggle (Io-Ic)/sig plot','f: select data','s: color scheme','+: no selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
+                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars','g: toggle grid',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
                 else:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
+                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars','g: toggle grid',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
     if 'PWDR' in plottype and G2frame.SinglePlot and not (
@@ -4192,6 +4194,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             dlg.Destroy()
         elif event.key == 't' and not G2frame.Contour:
             G2frame.Legend = not G2frame.Legend
+        elif event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         PlotISFG(G2frame,data,newPlot=newPlot,plotType=plotType)
         
     def OnMotion(event):
@@ -4294,12 +4298,12 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     if Peaks == None:
         if G2frame.Contour:
             Page.Choice = (' key press','d: lower contour max','u: raise contour max',
-                'D: lower contour min','U: raise contour min','o: reset to default',
+                'D: lower contour min','U: raise contour min','o: reset to default','g: toggle grid',
                 'i: interpolation method','s: color scheme','c: contour off','f: select data',
                 )
         else:
             Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x',
-                'o: reset offset','t: toggle legend','c: contour on','w: toggle waterfall colors (slow!)',
+                'o: reset offset','t: toggle legend','c: contour on','g: toggle grid','w: toggle waterfall colors (slow!)',
                 'm: toggle multiplot','s: color scheme','f: select data' )
         Page.keyPress = OnPlotKeyPress
     else:
@@ -4604,8 +4608,8 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 G2IO.XYsave(G2frame,XY,labelX,labelY,names)
             if len(XY2):
                 G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
-#        else:
-#            return
+        elif event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         Draw()
 
     def OnMotion(event):
@@ -4681,7 +4685,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     
     if lines:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
-            'u: offset up','o: reset offset','s: save data as csv file')
+            'u: offset up','o: reset offset','g: toggle grid','s: save data as csv file')
     else:
         Page.Choice = None
     Draw()
@@ -4714,6 +4718,9 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         elif event.key == 'o':
             G2frame.Cmax = 1.0
             
+        elif event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+
         elif event.key == 'i':
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -4772,7 +4779,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Page.canvas.mpl_connect('button_press_event',OnPress)
     
     Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
-        'i: interpolation method','s: color scheme')
+        'g: toggle grid','i: interpolation method','s: color scheme')
     Page.keyPress = OnKeyPress
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar

@@ -391,6 +391,7 @@ class G2PlotMpl(_tabPlotWin):
     def __init__(self,parent,id=-1,dpi=None,publish=None,**kwargs):
         _tabPlotWin.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
+        mpl.rcParams['axes.grid'] = False
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(5,6))
         self.canvas = Canvas(self,-1,self.figure)
         self.toolbar = GSASIItoolbar(self.canvas,publish=publish)

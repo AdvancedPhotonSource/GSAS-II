@@ -70,8 +70,8 @@ def WriteCIFitem(fp, name, value=''):
         if "\n" in value or len(value)> 70:
             if name.strip():
                 fp.write(name+'\n')
-            fp.write('; '+value+'\n')
-            fp.write('; '+'\n')
+            fp.write(';\n'+value+'\n')
+            fp.write(';'+'\n')
         elif " " in value:
             if len(name)+len(value) > 65:
                 fp.write(name + '\n   ' + '"' + str(value) + '"'+'\n')
@@ -752,15 +752,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                 size = hapData['Size']
                 mustrain = hapData['Mustrain']
                 hstrain = hapData['HStrain']
-                if len(self.powderDict) > 1:
-                    if s:
-                        s += '\n'
-                    else:
-                        s += '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
-                    s += '  Parameters for histogram #'+str(hId)+' '+str(histogram)+'\n'
-                else:
-                    s += '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
-
+                if s: s += '\n'
+                if len(self.powderDict) > 1: # if one histogram, no ambiguity
+                    s += '  Parameters for histogram #{:} {:} & phase {:}\n'.format(
+                        str(hId),str(histogram),phasenam)
+                s += '  Crystallite size in microns with "%s" model:\n  '%(size[0])
                 names = ['Size;i','Size;mx']
                 if 'uniax' in size[0]:
                     names = ['Size;i','Size;a','Size;mx']
@@ -786,7 +782,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(size[1][i],sig)+', '
                         i = 2    #skip the aniso value
-                s += '\n  Mustrain model "%s" for %s (10^6^)\n  '%(mustrain[0],phasenam)
+                s += '\n  Microstrain, "%s" model (10^6^ * delta Q/Q)\n  '%(mustrain[0])
                 names = ['Mustrain;i','Mustrain;mx']
                 if 'uniax' in mustrain[0]:
                     names = ['Mustrain;i','Mustrain;a','Mustrain;mx']
@@ -1466,9 +1462,10 @@ class ExportCIF(G2IO.ExportBaseclass):
             #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_min',TEXT(1:10))
             #CALL WRVAL(IUCIF,'_gsas_exptl_extinct_corr_T_max',TEXT(11:20))
 
-            if not oneblock:                 # instrumental profile terms go here
-                WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
-                    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
+            # code removed because it is causing duplication in histogram block 1/26/19 BHT 
+            #if not oneblock:                 # instrumental profile terms go here
+            #    WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
+            #        FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
 
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
@@ -2297,7 +2294,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
             WritePhaseInfo(phasenam)
-            if hist.startswith("PWDR"):
+            if hist.startswith("PWDR"):  # this is invoked for single-block CIFs
                 # preferred orientation
                 SH = FormatSH(phasenam)
                 MD = FormatHAPpo(phasenam)
@@ -2307,10 +2304,11 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', SH + MD)
                 else:
                     WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', 'none')
-                    # report profile, since one-block: include both histogram and phase info
+                # report profile, since one-block: include both histogram and phase info (N.B. there is only 1 of each)
                 WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',
                     FormatInstProfile(histblk["Instrument Parameters"],histblk['hId'])
                     +'\n'+FormatPhaseProfile(phasenam))
+
                 histblk = self.Histograms[hist]["Sample Parameters"]
                 writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
                 WritePowderData(hist)
@@ -2404,7 +2402,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', SH + MD)
                     else:
                         WriteCIFitem(self.fp, '_pd_proc_ls_pref_orient_corr', 'none')
-                # report sample profile terms
+                # report sample profile terms for all histograms with current phase
                 PP = FormatPhaseProfile(phasenam)
                 if PP:
                     WriteCIFitem(self.fp, '_pd_proc_ls_profile_function',PP)

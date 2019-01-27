@@ -302,7 +302,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 ################################################################################
 
 def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
-    'Needs a doc string'
+    'Compute user-supplied and built-in restraint functions'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pNames = []
     pVals = []
@@ -326,7 +326,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
         phaseRest = restraintDict[phase]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
             ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs'],]
+            ['ChemComp','Sites'],['Texture','HKLs'],['General','General'],]
         for name,rest in names:
             pWsum[name] = 0.
             pWnum[name] = 0
@@ -334,7 +334,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                 continue
             itemRest = phaseRest[name]
             if itemRest[rest] and itemRest['Use']:
-                wt = itemRest['wtFactor']
+                wt = itemRest.get('wtFactor',1.)
                 if name in ['Bond','Angle','Plane','Chiral']:
                     for i,[indx,ops,obs,esd] in enumerate(itemRest[rest]):
                         pNames.append(str(pId)+':'+name+':'+str(i))
@@ -404,6 +404,16 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                 pWt.append(wt/esd2**2)
                                 pWsum[name] += wt*(Z2/esd2)**2
                                 pWnum[name] += 1
+                elif name == 'General':
+                    for i,(eq,obs,esd) in enumerate(itemRest[rest]):
+                        pNames.append(str(pId)+':'+name+':'+str(i))
+                        calcobj = G2obj.ExpressionCalcObj(eq)
+                        calcobj.SetupCalc(parmDict)
+                        calc = calcobj.EvalExpression()
+                        pVals.append(obs-calc)
+                        pWt.append(wt/esd**2)                    
+                        pWsum[name] += wt*((obs-calc)/esd)**2
+                        pWnum[name] += 1
         
     for phase in Phases:
         name = 'SH-Pref.Ori.'
@@ -457,9 +467,29 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
     return pNames,pVals,pWt,pWsum,pWnum
     
 def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
-    'Needs a doc string'
+    '''Compute derivatives on user-supplied and built-in restraint 
+    (penalty) functions
+
+    where pNames is list of restraint labels
+
+    returns pDerv with partial derivatives by variable# in varList and 
+       restraint# in pNames (pDerv[variable#][restraint#])
+    '''
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
+    for pName in pNames: # loop over restraints
+        if 'General' == pName.split(':')[1]:
+            # initialize for General restraint(s) here
+            GeneralInit = True
+            parmDict0 = parmDict.copy()
+            # setup steps for each parameter
+            stepDict = {}
+            for parm in varyList:
+                if parm.split(':')[2].startswith('dA'):
+                    stepDict[parm] = 1e-5
+                elif True:
+                    stepDict[parm] = 1e-4
+            break
     for phase in Phases:
 #        if phase not in restraintDict:
 #            continue
@@ -483,7 +513,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
             'Chiral':'Volumes','Torsion':'Torsions','Rama':'Ramas',
             'ChemComp':'Sites','Texture':'HKLs'}
         lasthkl = np.array([0,0,0])
-        for ip,pName in enumerate(pNames):
+        for ip,pName in enumerate(pNames): # loop over restraints
             pnames = pName.split(':')
             if pId == int(pnames[0]):
                 name = pnames[1]
@@ -545,6 +575,48 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                             Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
                             dNames += [str(pId)+'::'+SHname]
                             deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
+                elif name == 'General':
+                    deriv = []
+                    dNames = []
+                    eq,obs,esd = itemRest[name][id]
+                    calcobj = G2obj.ExpressionCalcObj(eq)
+                    parmlist = list(eq.assgnVars.values()) # parameters used in this expression
+                    for parm in parmlist: # expand list if any parms are determined by constraints
+                        if parm in G2mv.dependentVars:
+                            parmlist += G2mv.independentVars
+                            break
+                    for ind,var in enumerate(varyList):
+                        drv = 0
+                        if var in parmlist:
+                            step = stepDict.get(var,1e-5)
+                            calc = []
+                            # apply step to parameter
+                            oneparm = True
+                            for s in -step,2*step:
+                                parmDict[var] += s
+                                # extend shift if needed to other parameters
+                                if var in G2mv.independentVars:
+                                    G2mv.Dict2Map(parmDict,[])
+                                    oneparm = False
+                                elif var in G2mv.dependentVars:
+                                    G2mv.Map2Dict(parmDict,[])
+                                    oneparm = False
+                                if 'RB' in var:
+                                    ApplyRBModels(parmDict,Phases,rigidbodyDict)
+# test
+                                    oneparm = False
+                                calcobj.SetupCalc(parmDict)
+                                calc.append(calcobj.EvalExpression())
+                            drv = (calc[1]-calc[0])*.5/step
+                            # restore the dict
+                            if oneparm:
+                                parmDict[var] = parmDict0[var]
+                            else:
+                                parmDict = parmDict0.copy()
+                        else:
+                            drv = 0
+                        pDerv[ind][ip] = drv
+                # Add derivatives into matrix, if needed
                 for dName,drv in zip(dNames,deriv):
                     try:
                         ind = varyList.index(dName)
@@ -820,7 +892,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
-    time0 = time.time()
+#    time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
     blkSize = 32       #no. of reflections in a block - optimized for speed
@@ -1472,7 +1544,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
         for iel,El in enumerate(refDict['FF']['El']):
             refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
-    time0 = time.time()
+#    time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
@@ -1624,7 +1696,7 @@ def SStructureFactorTw(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             refDict['FF']['FF'] = np.zeros((nRef,len(dat)))
             for iel,El in enumerate(refDict['FF']['El']):
                 refDict['FF']['FF'].T[iel] = G2el.ScatFac(FFtables[El],SQ)
-    time0 = time.time()
+#    time0 = time.time()
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:

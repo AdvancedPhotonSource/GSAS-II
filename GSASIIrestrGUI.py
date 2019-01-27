@@ -1878,8 +1878,6 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
-        hSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'(not implemented yet)'))
-        hSizer.Add((5,5),0)
         hSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'Weight factor: '))
         hSizer.Add(
                     G2G.ValidatedTxtCtrl(GeneralRestr,generalRestData,
@@ -1906,7 +1904,8 @@ def UpdateRestraints(G2frame,data,phaseName):
                     wx.StaticText(GeneralRestr,wx.ID_ANY,'Variables',style=wx.CENTER),
                     0,wx.ALIGN_CENTER)
             for i,rest in enumerate(generalRestData['General']):
-                txt = rest[0].expression
+                eq = rest[0]
+                txt = eq.expression
                 if len(txt) > 50:
                     txt = txt[:47]+'... '
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
@@ -1917,9 +1916,9 @@ def UpdateRestraints(G2frame,data,phaseName):
                 try:
                     calcobj = G2obj.ExpressionCalcObj(rest[0])
                     calcobj.SetupCalc(parmDict)
-                    txt = '{:f}'.format(calcobj.EvalExpression())
+                    txt = ' {:f} '.format(calcobj.EvalExpression())
                 except:
-                    txt = '(error)'
+                    txt = ' (error) '
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
                 GridSiz.Add(
                     G2G.ValidatedTxtCtrl(GeneralRestr,rest,2,nDig=(10,1),typeHint=float)
@@ -1932,7 +1931,10 @@ def UpdateRestraints(G2frame,data,phaseName):
                 btn.index = i
                 btn.Bind(wx.EVT_BUTTON,OnDelGenRestraint)
                 GridSiz.Add(btn)
-                txt = str(rest[0].assgnVars)[1:-1].replace("'","")
+                txt = ''
+                for i in eq.assgnVars:
+                    if txt: txt += '; '
+                    txt += str(i) + '=' + str(eq.assgnVars[i])
                 if len(txt) > 50:
                     txt = txt[:47]+'...'
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
@@ -2140,11 +2142,10 @@ def UpdateRestraints(G2frame,data,phaseName):
     G2frame.restrBook.AddPage(ChemCompRestr,txt)
     Pages.append(txt)
     
-    if GSASIIpath.GetConfigValue('debug'):
-        txt = 'General'
-        GeneralRestr = wx.ScrolledWindow(G2frame.restrBook)
-        G2frame.restrBook.AddPage(GeneralRestr,txt)
-        Pages.append(txt)
+    txt = 'General'
+    GeneralRestr = wx.ScrolledWindow(G2frame.restrBook)
+    G2frame.restrBook.AddPage(GeneralRestr,txt)
+    Pages.append(txt)
     
     if General['SH Texture']['Order']:
         txt = 'Texture'

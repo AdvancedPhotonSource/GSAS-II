@@ -2682,7 +2682,7 @@ class ExpressionCalcObj(object):
 
     def UpdateDict(self,parmDict):
         '''Update the dict for the expression with values in a dict
-        :param list parmDict: a dict of values some of which may be in use here
+        :param dict parmDict: a dict of values, items not in use are ignored
         '''
         if self.eObj.expression.startswith('Dist') or self.eObj.expression.startswith('Angle'):
             self.parmDict = parmDict

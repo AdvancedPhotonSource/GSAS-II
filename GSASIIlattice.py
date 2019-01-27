@@ -589,19 +589,20 @@ def Gmat2AB(G):
        * B (= inverse of A) for Cartesian to crystal transformation (B*X = np.inner(B,X) = x)
 
     """
-    cellstar = Gmat2cell(G)
+#    cellstar = Gmat2cell(G)
     g = nl.inv(G)
     cell = Gmat2cell(g)
-    A = np.zeros(shape=(3,3))
-    # from Giacovazzo (Fundamentals 2nd Ed.) p.75
-    A[0][0] = cell[0]                # a
-    A[0][1] = cell[1]*cosd(cell[5])  # b cos(gamma)
-    A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
-    A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
-    A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
-    A[2][2] = 1./cellstar[2]         # 1/c*
-    B = nl.inv(A)
-    return A,B
+#    A = np.zeros(shape=(3,3))
+    return cell2AB(cell)
+#    # from Giacovazzo (Fundamentals 2nd Ed.) p.75
+#    A[0][0] = cell[0]                # a
+#    A[0][1] = cell[1]*cosd(cell[5])  # b cos(gamma)
+#    A[0][2] = cell[2]*cosd(cell[4])  # c cos(beta)
+#    A[1][1] = cell[1]*sind(cell[5])  # b sin(gamma)
+#    A[1][2] = -cell[2]*cosd(cellstar[3])*sind(cell[4]) # - c cos(alpha*) sin(beta)
+#    A[2][2] = 1./cellstar[2]         # 1/c*
+#    B = nl.inv(A)
+#    return A,B
     
 def cell2AB(cell):
     """Computes orthogonalization matrix from unit cell constants

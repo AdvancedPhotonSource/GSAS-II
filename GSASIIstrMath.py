@@ -975,14 +975,13 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return
     Mag = np.array([np.sqrt(np.inner(mag,np.inner(mag,Ginv))) for mag in Gdata.T])
-    Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
+    Gdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2)).T            #apply sym. ops.
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering--> [Mxyz,nops,natms]
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    VGi = np.sqrt(nl.det(Ginv))
-    Kdata = np.inner(Gdata.T,uAmat).T*VGi/Mag     #Cartesian unit vectors
+    Kdata = np.inner(Gdata.T,uAmat.T).T/Mag     #Cartesian unit vectors
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -1129,7 +1128,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     Mag = np.array([np.sqrt(np.inner(mag,np.inner(mag,Ginv))) for mag in Gdata.T])
     Gones = np.ones_like(Gdata)
-    Gdata = np.inner(Gdata.T,SGMT).T            #apply sym. ops.
+    Gdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2)).T            #apply sym. ops.
     Gones = np.inner(Gones.T,SGMT).T
     if SGData['SGInv'] and not SGData['SGFixed']:
         Gdata = np.hstack((Gdata,-Gdata))       #inversion if any
@@ -1139,8 +1138,7 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gones = SGData['MagMom'][nxs,:,nxs]*Gones   #flip vectors according to spin flip
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    VGi = np.sqrt(nl.det(Ginv))
-    Kdata = np.inner(Gdata.T,uAmat).T*VGi/Mag       #make unit vectors in Cartesian space
+    Kdata = np.inner(Gdata.T,uAmat.T).T/Mag     #Cartesian unit vectors
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
@@ -1416,7 +1414,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ainv = np.sqrt(np.diag(g))
     GS = G/np.outer(ast,ast)
     Ginv = g/np.outer(ainv,ainv)
-    VGi = np.sqrt(nl.det(Ginv))
     uAmat = G2lat.Gmat2AB(GS)[0]
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
@@ -1441,14 +1438,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
 
     if parmDict[pfx+'isMag']:       #TODO: fix the math
-        GSdata = Gdata[:,nxs,:]+Mmod.T 
-        GSdata = np.inner(GSdata.T,SGMT).T            #apply sym. ops.
+        GSdata = Gdata[:,nxs,:]+Mmod.T                  #Mxyz,Ntau,nAtm 
+        GSdata = np.inner(GSdata.T,np.swapaxes(SGMT,1,2)).T            #apply sym. ops.
         if SGData['SGInv'] and not SGData['SGFixed']:
             GSdata = np.hstack((GSdata,-GSdata))       #inversion if any
         GSdata = np.hstack([GSdata for icen in range(Ncen)])        #dup over cell centering
         GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
         SMag = np.sqrt(np.sum((np.inner(GSdata.T,Ginv)*GSdata.T),axis=-1)).T
-        Kdata = np.inner(GSdata.T,uAmat).T*VGi/SMag[nxs,:,:,:]     #Cartesian unit vectors = 0.9626 for hexagonal???
+        Kdata = np.inner(Gdata.T,uAmat.T).T/SMag[nxs,:,:,:]     #Cartesian unit vectors
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:

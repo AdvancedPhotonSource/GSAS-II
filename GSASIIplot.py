@@ -5039,6 +5039,11 @@ def PlotPeakWidths(G2frame,PatternName=None):
             ypos = event.ydata
             G2frame.G2plotNB.status.SetStatusText('q =%.3f%s %sq/q =%.4f'%(xpos,Angstr+Pwrm1,GkDelta,ypos),1)                   
             
+    def OnKeyPress(event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+        wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
+
     if PatternName:
         G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
     PatternId = G2frame.PatternId
@@ -5067,18 +5072,20 @@ def PlotPeakWidths(G2frame,PatternName=None):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
-    Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = (' key press','g: toggle grid',)
+    Page.keyPress = OnKeyPress    
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
             xylim = lim
+    else:
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
     # save information needed to reload from tree and redraw
     G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,
-            PlotPeakWidths,(G2frame,G2frame.GPXtree.GetItemText(G2frame.PatternId))
-            )
+            PlotPeakWidths,(G2frame,G2frame.GPXtree.GetItemText(G2frame.PatternId)))
 
     TreeItemText = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     G2frame.G2plotNB.status.SetStatusText('histogram: '+TreeItemText,1)
-    Page.Choice = None
     Page.SetToolTipString('')
     X = []
     Y = []

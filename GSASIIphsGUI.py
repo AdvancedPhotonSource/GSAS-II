@@ -8955,6 +8955,28 @@ def UpdatePhaseData(G2frame,Item,data):
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
         
+    def OnPeaksSave(event):
+        if 'Map Peaks' in data:
+            mapPeaks = data['Map Peaks']
+            pfName = PhaseName+'_peaks.csv'
+            pfFile = ''
+            pth = G2G.GetExportPath(G2frame)
+            dlg = wx.FileDialog(G2frame, 'Choose map peaks file name', pth, pfName, 
+                'csv (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    pfFile = dlg.GetPath()
+            finally:
+                dlg.Destroy()
+                
+            if pfFile:
+                pf = open(pfFile,'w')
+                pf.write('"%s"\n'%(PhaseName))
+                pf.write(' mag, x, y, z, dzero, dcent \n')
+                for peak in mapPeaks:
+                    pf.write(' %.4f, %.4f, %.4f, %.4f, %.4f, %.4f \n'%(peak[0],peak[1],peak[2],peak[3],peak[4],peak[5]))
+                pf.close()
+        
     def OnPeaksDelete(event):
         if 'Map Peaks' in data:
             mapPeaks = data['Map Peaks']
@@ -9483,6 +9505,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnShowBonds, id=G2G.wxID_SHOWBONDS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2G.wxID_FINDEQVPEAKS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2G.wxID_PEAKSUNIQUE)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksSave, id=G2G.wxID_PEAKSSAVE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
         # MC/SA

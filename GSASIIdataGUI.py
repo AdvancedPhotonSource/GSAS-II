@@ -5597,7 +5597,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
             
         # Phase / Map peaks tab
-        G2G.Define_wxId('wxID_PEAKSMOVE', 'wxID_PEAKSCLEAR','wxID_PEAKSUNIQUE', 'wxID_PEAKSDELETE',
+        G2G.Define_wxId('wxID_PEAKSMOVE', 'wxID_PEAKSCLEAR','wxID_PEAKSUNIQUE', 'wxID_PEAKSDELETE','wxID_PEAKSSAVE',
             'wxID_PEAKSDA','wxID_PEAKSDISTVP', 'wxID_PEAKSVIEWPT', 'wxID_FINDEQVPEAKS', 'wxID_SHOWBONDS',)
         self.MapPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MapPeaksMenu)
@@ -5611,6 +5611,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSDA,'Calc dist/ang','Calculate distance or angle for selection')
         self.MapPeaksEdit.Append(G2G.wxID_FINDEQVPEAKS,'Equivalent peaks','Find equivalent peaks')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSUNIQUE,'Unique peaks','Select unique set')
+        self.MapPeaksEdit.Append(G2G.wxID_PEAKSSAVE,'Save peaks','Save peaks to csv file')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSDELETE,'Delete peaks','Delete selected peaks')
         self.MapPeaksEdit.Append(G2G.wxID_PEAKSCLEAR,'Clear peaks','Clear the map peak list')
         self.PostfillDataMenu()

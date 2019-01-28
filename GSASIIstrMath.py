@@ -1053,7 +1053,9 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering--> [Mxyz,nops,natms]
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    Kdata = np.inner(Gdata.T,uAmat.T).T/Mag     #Cartesian unit vectors
+    Kdata = np.inner(Gdata.T,uAmat).T     #Cartesian unit vectors
+    Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)
+    Kdata /= Kmean
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -1210,7 +1212,9 @@ def MagStructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip
     Gones = SGData['MagMom'][nxs,:,nxs]*Gones   #flip vectors according to spin flip
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    Kdata = np.inner(Gdata.T,uAmat.T).T/Mag     #Cartesian unit vectors
+    Kdata = np.inner(Gdata.T,uAmat).T     #Cartesian unit vectors
+    Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)
+    Kdata /= Kmean
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
@@ -1517,7 +1521,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.hstack([GSdata for icen in range(Ncen)])        #dup over cell centering
         GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
         SMag = np.sqrt(np.sum((np.inner(GSdata.T,Ginv)*GSdata.T),axis=-1)).T
-        Kdata = np.inner(Gdata.T,uAmat.T).T/SMag[nxs,:,:,:]     #Cartesian unit vectors
+        Kdata = np.inner(GSdata.T,uAmat).T     #Cartesian unit vectors
+        Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)    #normalization --> unit vectors
+        Kdata /= Kmean      #mxyz,nops,ntau,natm
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:

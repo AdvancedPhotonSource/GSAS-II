@@ -2500,11 +2500,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
                             if 'bool' in str(type(twin[0])):
-                                pFile.write(' Nonmerohedral twin fr.: %5.3f Inv? %s Refine?\n'%
-                                    (hapDict[pfx+'TwinFr:'+str(it)],str(controlDict[pfx+'TwinInv'][it])),Twins[0][1][1]) 
+                                pFile.write(' Nonmerohedral twin fr.: %5.3f Inv? %s Refine? %s\n'%
+                                    (hapDict[pfx+'TwinFr:'+str(it)],str(controlDict[pfx+'TwinInv'][it]),str(Twins[0][1][1])))
                             else:
                                 pFile.write(' Twin law: %s Twin fr.: %5.3f Refine? %s\n'%
-                                    (str(twin[0]).replace('\n',','),hapDict[pfx+'TwinFr:'+str(it)],Twins[0][1][1]))
+                                    (str(twin[0]).replace('\n',','),hapDict[pfx+'TwinFr:'+str(it)],str(Twins[0][1][1])))
                         
                 Histogram['Reflection Lists'] = phase       
                 

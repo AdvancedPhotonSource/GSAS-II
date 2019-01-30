@@ -4544,16 +4544,22 @@ class GSASII(wx.Frame):
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
-                    self.GPXtree.DeleteChildren(self.root)
-                    self.HKL = []
-                    G2IO.ProjFileOpen(self,False)
-                    self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
-                    self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items       
-                    self.ResetPlots()
+                    wx.CallAfter(self.reloadFromGPX)
             finally:
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
+
+    def reloadFromGPX(self):
+        '''Deletes current data tree & reloads it from GPX file (after a 
+        refinemnt.) Done after events are completed to avoid crashes.
+        '''
+        self.GPXtree.DeleteChildren(self.root)
+        self.HKL = []
+        G2IO.ProjFileOpen(self,False)
+        self.TreeItemDelete = False  # tree has been repopulated; ignore previous deletions
+        self.GPXtree.RestoreExposedItems() # reset exposed/hidden tree items
+        self.ResetPlots()        
         
     def SaveTreeSetting(self):
         'Save the current selected tree item by name (since the id will change)'

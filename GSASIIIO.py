@@ -575,7 +575,10 @@ if '2' in platform.python_version_tuple()[0]:
     objectScanIgnore += [unicode,long,]
     
 def objectScan(data,tag,indexStack=[]):
-    '''Scan an object looking for unexpected data types'''
+    '''Recursively scan an object looking for unexpected data types.
+    This is used in debug mode to scan .gpx files for objects we did not
+    intend to be there.
+    '''
     if type(data) is list or type(data) is tuple:
         for i in range(len(data)):
             objectScan(data[i],tag,indexStack+[i])

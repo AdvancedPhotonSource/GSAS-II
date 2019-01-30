@@ -485,10 +485,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
             # setup steps for each parameter
             stepDict = {}
             for parm in varyList:
-                if parm.split(':')[2].startswith('dA'):
-                    stepDict[parm] = 1e-5
-                elif True:
-                    stepDict[parm] = 1e-4
+                stepDict[parm] = G2obj.getVarStep(parm,parmDict)
             break
     for phase in Phases:
 #        if phase not in restraintDict:

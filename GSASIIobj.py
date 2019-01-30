@@ -1011,16 +1011,23 @@ ShortHistNames = {}
 version of the histogram name. Keyed by the histogram sequential index.
 '''
 
-VarDesc = {}
-''' This dictionary lists descriptions for GSAS-II variables,
-as set in :func:`CompileVarDesc`. See that function for a description
-for how keys and values are written.
-'''
+#VarDesc = {}  # removed 1/30/19 BHT as no longer needed (I think)
+#''' This dictionary lists descriptions for GSAS-II variables,
+#as set in :func:`CompileVarDesc`. See that function for a description
+#for how keys and values are written.
+#'''
 
 reVarDesc = {}
-''' This dictionary lists descriptions for GSAS-II variables with
-the same values as :attr:`VarDesc` except that keys have been compiled as
-regular expressions. Initialized in :func:`CompileVarDesc`.
+''' This dictionary lists descriptions for GSAS-II variables where
+keys are compiled regular expressions that will match the name portion
+of a parameter name. Initialized in :func:`CompileVarDesc`.
+'''
+
+reVarStep = {}
+''' This dictionary lists the preferred step size for numerical 
+derivative computation w/r to a GSAS-II variable. Keys are compiled 
+regular expressions and values are the step size for that parameter. 
+Initialized in :func:`CompileVarDesc`.
 '''
 # create a default space group object for P1; N.B. fails when building documentation
 try:
@@ -1308,7 +1315,7 @@ def VarDescr(varname):
       (phase, histogram, etc.) and meaning describes what the variable does.
     '''
 
-    # special handling for parameter names without a colons
+    # special handling for parameter names without a colon
     # for now, assume self-defining
     if varname.find(':') == -1:
         return "Global",varname
@@ -1411,13 +1418,14 @@ def getVarDescr(varname):
     return l
 
 def CompileVarDesc():
-    '''Set the values in the variable description lookup table (:attr:`VarDesc`)
-    into :attr:`reVarDesc`. This is called in :func:`getDescr` so the initialization
-    is always done before use.
+    '''Set the values in the variable lookup tables 
+    (:attr:`reVarDesc` and :attr:`reVarStep`).
+    This is called in :func:`getDescr` and :func:`getVarStep` so this
+    initialization is always done before use.
 
     Note that keys may contain regular expressions, where '[xyz]'
-    matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range of values).
-    '.*' matches any string. For example::
+    matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range 
+    of values). '.*' matches any string. For example::
 
     'AUiso':'Atomic isotropic displacement parameter',
 
@@ -1441,14 +1449,14 @@ def CompileVarDesc():
         # ambiguous, alas:
         'Scale' : 'Phase or Histogram scale factor',
         # Phase vars (p::<var>)
-        'A([0-5])' : 'Reciprocal metric tensor component \\1',
+        'A([0-5])' : ('Reciprocal metric tensor component \\1',1e-5),
         '[vV]ol' : 'Unit cell volume', # probably an error that both upper and lower case are used
         # Atom vars (p::<var>:a)
-        'dA([xyz])$' : 'change to atomic coordinate, \\1',
+        'dA([xyz])$' : ('change to atomic coordinate, \\1',1e-6),
         'A([xyz])$' : '\\1 fractional atomic coordinate',
-        'AUiso':'Atomic isotropic displacement parameter',
-        'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
-        'Afrac': 'Atomic site fraction parameter',
+        'AUiso':('Atomic isotropic displacement parameter',1e-4),
+        'AU([123][123])':('Atomic anisotropic displacement parameter U\\1',1e-4),
+        'Afrac': ('Atomic site fraction parameter',1e-5),
         'Amul': 'Atomic site multiplicity value',
         'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Hist & Phase (HAP) vars (p:h:<var>)
@@ -1471,13 +1479,13 @@ def CompileVarDesc():
         'TwinFr' : 'Twin fraction',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
-        'Displace([XY])' : 'Debye-Scherrer sample displacement \\1',
-        'Lam' : 'Wavelength',
-        'I\(L2\)\/I\(L1\)' : 'Ka2/Ka1 intensity ratio',
-        'Polariz\.' : 'Polarization correction',
-        'SH/L' : 'FCJ peak asymmetry correction',
-        '([UVW])$' : 'Gaussian instrument broadening \\1',
-        '([XYZ])$' : 'Cauchy instrument broadening \\1',
+        'Displace([XY])' : ('Debye-Scherrer sample displacement \\1',0.1),
+        'Lam' : ('Wavelength',1e-6),
+        'I\(L2\)\/I\(L1\)' : ('Ka2/Ka1 intensity ratio',0.001),
+        'Polariz\.' : ('Polarization correction',1e-3),
+        'SH/L' : ('FCJ peak asymmetry correction',1e-4),
+        '([UVW])$' : ('Gaussian instrument broadening \\1',1e-5),
+        '([XYZ])$' : ('Cauchy instrument broadening \\1',1e-5),
         'Zero' : 'Debye-Scherrer zero correction',
         'Shift' : 'Bragg-Brentano sample displ.',
         'SurfRoughA' : 'Bragg-Brenano surface roughness A',
@@ -1549,8 +1557,13 @@ def CompileVarDesc():
         'dif[ABC]':'TOF to d-space calibration',
         'C\([0-9]*,[0-9]*\)' : 'spherical harmonics preferred orientation coef.',
         }.items():
-        VarDesc[key] = value
-        reVarDesc[re.compile(key)] = value
+        if len(value) == 2:
+            #VarDesc[key] = value[0]
+            reVarDesc[re.compile(key)] = value[0]
+            reVarStep[re.compile(key)] = value[1]
+        else:
+            #VarDesc[key] = value
+            reVarDesc[re.compile(key)] = value
 
 def removeNonRefined(parmList):
     '''Remove items from variable list that are not refined and should not 
@@ -1585,6 +1598,30 @@ def getDescr(name):
             reVarDesc[key]
             return m.expand(reVarDesc[key])
     return None
+
+def getVarStep(name,parmDict=None):
+    '''Return a step size for computing the derivative of a GSAS-II variable
+
+    :param str name: A complete variable name (with colons, :)
+    :param dict parmDict: A dict with parameter values or None (default)
+
+    :returns: a float that should be an appropriate step size, either from 
+      the value supplied in :func:`CompileVarDesc` or based on the value for 
+      name in parmDict, if supplied. If not found or the value is zero, 
+      a default value of 1e-5 is used. If parmDict is None (default) and 
+      no value is provided in :func:`CompileVarDesc`, then None is returned.
+    '''
+    CompileVarDesc() # compile the regular expressions, if needed
+    for key in reVarStep:
+        m = key.match(name)
+        if m:
+            return reVarStep[key]
+    if parmDict is None: return None
+    val = parmDict.get(key,0.0)
+    if abs(val) > 0.05:
+        return abs(val)/1000.
+    else:
+        return 1e-5
 
 def GenWildCard(varlist):
     '''Generate wildcard versions of G2 variables. These introduce '*'
@@ -2743,6 +2780,7 @@ def HowDidIgetHere(wherecalledonly=False):
         for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip().rstrip())
         print (70*'*')
 
+# Note that this is GUI code and should be moved at somepoint
 def CreatePDFitems(G2frame,PWDRtree,ElList,Qlimits,numAtm=1,FltBkg=0,PDFnames=[]):
     '''Create and initialize a new set of PDF tree entries
 
@@ -2827,6 +2865,11 @@ class ShowTiming(object):
 #%%
 
 if __name__ == "__main__":
+    # test variable descriptions
+    for var in '0::Afrac:*',':1:Scale','1::dAx:0','::undefined':
+        v = var.split(':')[2]
+        print(var+':\t', getDescr(v),getVarStep(v))
+    import sys; sys.exit()
     # test equation evaluation
     def showEQ(calcobj):
         print (50*'=')

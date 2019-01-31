@@ -376,9 +376,7 @@ def GSASIImain():
         application.SetAppDisplayName('GSAS-II')
     except:
         pass
-    #application.GetTopWindow().dataWindow.SendSizeEvent()
-    #application.GetTopWindow().treePanel.SendSizeEvent()
-    #application.GetTopWindow().SendSizeEvent() 
+    #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
     application.MainLoop()
 
@@ -390,7 +388,7 @@ class GSASIIGUI(wx.App):
     '''
     def OnInit(self):
         '''Called automatically when the app is created.'''
-        knownVersions = ['2.7','3.6','3.7']
+        knownVersions = ['2.7','3.6','3.7','3.8']
         if platform.python_version()[:3] not in knownVersions: 
             dlg = wx.MessageDialog(None, 
                 'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
@@ -404,8 +402,20 @@ class GSASIIGUI(wx.App):
         self.SetTopWindow(self.main)
         # save the current package versions
         self.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
-        
+        if np.__version__ == '1.16.0':
+            wx.CallLater(100,self.warnNumpyVersion)
         return True
+    def warnNumpyVersion(self):
+        dlg = wx.MessageDialog(self.main,
+                'version '+ np.__version__ +
+                ' of numpy produces .gpx files that are not compatible with older versions: please upgrade or downgrade numpy to avoid this version',
+                'numpy Warning',wx.OK)
+        try:
+            dlg.CenterOnParent()
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+    
     # def MacOpenFile(self, filename):
     #     '''Called on Mac every time a file is dropped on the app when it is running,
     #     treat this like a File/Open project menu action.

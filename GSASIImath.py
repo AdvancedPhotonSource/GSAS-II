@@ -1348,13 +1348,14 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
         MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X ngl
         MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
-        Mmod = np.sum(MmodA+MmodB,axis=1)                #atoms X 3 X ngl; sum waves
-        Mmod = np.swapaxes(Mmod,1,2)
+        Mmod = np.array([MmodB,MmodA])
+        Mmod = np.sum(Mmod,axis=2)                #atoms X 3 X ngl; sum waves
+        Mmod = np.swapaxes(Mmod,1,-1)       #ReIm,mxyz,Ntau,Natm
     else:
         Mmod = 1.0
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
         
-def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt):
+def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''
     H: array nRefBlk x ops X hklt
     HP: array nRefBlk x ops X hklt proj to hkl
@@ -1362,7 +1363,6 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt):
     Fmod: array 2 x atoms x waves    (sin,cos terms)
     Xmod: array atoms X 3 X ngl
     Umod: array atoms x 3x3 x ngl
-    Mmod: array atoms X 3 X ngl         #TODO: add mag moment modulation math
     glTau,glWt: arrays Gauss-Lorentzian pos & wts
     '''
     
@@ -1412,7 +1412,7 @@ def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
+def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     '''
     Only for Fourier waves for fraction, position & adp (probably not used for magnetism)
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -1428,9 +1428,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
-    Am = np.array(MSSdata[:3]).T   #...cos pos mods x waves x atoms
-    Bm = np.array(MSSdata[3:]).T   #...cos pos mods
-    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1],Am.shape[1]] 
+    nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1]] 
     StauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))    #atoms x waves x 3 x ngl
     CtauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
     ZtauXt = np.zeros((Ax.shape[0],2,3,ngl))               #atoms x Tminmax x 3 x ngl
@@ -1469,18 +1467,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         CtauU = 1.0
         UmodA = 0.
         UmodB = 0.
-    if nWaves[3]:
-        tauM = np.arange(1.,nWaves[2]+1)[:,nxs]*glTau     #Uwaves x ngl
-        StauM = np.ones_like(Am)[:,:,:,nxs]*np.sin(twopi*tauM)[nxs,:,nxs,:]   #also dMmodA/dAm
-        CtauM = np.ones_like(Bm)[:,:,:,nxs]*np.cos(twopi*tauM)[nxs,:,nxs,:]   #also dMmodB/dBm
-        MmodA = Am[:,:,:,nxs]*StauM #atoms x waves x 3x3 x ngl
-        MmodB = Bm[:,:,:,nxs]*CtauM #ditto
-    else:
-        StauM = 1.0
-        CtauM = 1.0
-        MmodA = 0.
-        MmodB = 0.
-    return waveShapes,[StauF,CtauF],[StauX,CtauX,ZtauXt,ZtauXx],[StauU,CtauU],UmodA+UmodB,[StauM,CtauM],MmodA+MmodB
+    return waveShapes,[StauF,CtauF],[StauX,CtauX,ZtauXt,ZtauXx],[StauU,CtauU],UmodA+UmodB
     
 def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt):
     '''

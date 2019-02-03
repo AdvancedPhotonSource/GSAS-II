@@ -1107,7 +1107,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
         fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
         fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*Mag[nxs,nxs,:,:]    #ditto
-        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #xyz,Nref
+        fams = np.sum(np.sum(fam,axis=-1),axis=-1)                          #Mxyz,Nref
         fbms = np.sum(np.sum(fbm,axis=-1),axis=-1)                          #ditto
         refl.T[9] = np.sum(fams**2,axis=0)+np.sum(fbms**2,axis=0)
         refl.T[7] = np.copy(refl.T[9])                
@@ -1507,20 +1507,20 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if not Xdata.size:          #no atoms in phase!
         return
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
 
     if parmDict[pfx+'isMag']:       #TODO: fix the math
-        GSdata = Gdata[:,nxs,:]+Mmod.T                  #Mxyz,Ntau,nAtm 
-        GSdata = np.inner(GSdata.T,np.swapaxes(SGMT,1,2)).T            #apply sym. ops.
+        GSdata = Gdata[nxs,nxs,:,:]+Mmod    #ReIm,ntau,Mxyz,Natm 
+        GSdata = np.inner(np.swapaxes(GSdata,2,3),np.swapaxes(SGMT,1,2)).T  #apply sym. ops.--> Mxyz,Nops,Natm,Ntau,ReIm
         if SGData['SGInv'] and not SGData['SGFixed']:
             GSdata = np.hstack((GSdata,-GSdata))       #inversion if any
         GSdata = np.hstack([GSdata for icen in range(Ncen)])        #dup over cell centering
-        GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
-        SMag = np.sqrt(np.sum((np.inner(GSdata.T,Ginv)*GSdata.T),axis=-1)).T
+        GSdata = SGData['MagMom'][nxs,:,nxs,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
+        SMag = np.sqrt(np.sum((np.inner(GSdata.T,Ginv)*GSdata.T),axis=-1)).T    #Nops,Natm,Ntau,ReIm
         Kdata = np.inner(GSdata.T,uAmat).T     #Cartesian unit vectors
-        Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)    #normalization --> unit vectors
-        Kdata /= Kmean      #mxyz,nops,ntau,natm
+        Kmean = np.mean(np.sqrt(np.sum(np.sum(Kdata**2,axis=0),axis=-1)),axis=0)    #normalization --> unit vectors
+        Kdata /= Kmean.T      #mxyz,nops,natm,ntau,ReIm
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1584,38 +1584,75 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         HbH = -np.sum(UniqP[:,:,nxs,:]*np.inner(UniqP[:,:,:],bij),axis=-1)  #use hklt proj to hkl
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
-        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x refBlk x sym X atoms
-        fams = 0.
-        fbms = 0.
-
-        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
-            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
-            mphase = np.array([phase+twopi*np.inner(cen,HP.T)[:,nxs,nxs] for cen in SGData['SGCen']])
-            mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
-            sinm = np.sin(mphase)                               #ditto - match magstrfc.for
-            cosm = np.cos(mphase)                               #ditto
-            
-            HM = np.inner(Bmat,HP.T)                             #put into cartesian space
-            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-            eDotK = np.sum(HM[:,:,nxs,nxs,nxs]*Kdata[:,nxs,:,:,:],axis=0)
-            Q = HM[:,:,nxs,nxs,nxs]*eDotK[nxs,:,:,:,:]-Kdata[:,nxs,:,:,:] #Mxyz,Nref,Nop,Ntau,Natm
-            
-            fam = Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs]    #ditto
-            fbm = Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs]    #ditto
-            
-            fams = np.sum(np.sum(fam,axis=2),axis=-1)                          #xyz,Nref,ntau
-            fbms = np.sum(np.sum(fbm,axis=2),axis=-1)                          #ditto
-            
-            fams = np.sum(np.sum(fams,axis=0)**2,axis=-1)
-            fbms = np.sum(np.sum(fbms,axis=0)**2,axis=-1)
-
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
         else:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
             fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+        fams = 0.
+        fbms = 0.
+
+        if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
+            MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
+            D = twopi*H.T[:,3:]*glTau[nxs,:]
+            mphase = phase[:,:,nxs,:]+D[:,nxs,:,nxs]
+            mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs,nxs] for cen in SGData['SGCen']])
+            mphase = np.concatenate(mphase,axis=1)    #remove extra axis; Nref,Nop,Natm
+            sinm = np.swapaxes(np.sin(mphase),2,3)    #--> Nref,Nop,Natm,Ntau
+            cosm = np.swapaxes(np.cos(mphase),2,3)                               #ditto
+            
+            HM = np.inner(Bmat,HP.T)                             #put into cartesian space
+            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
+            eDotK = np.sum(HM[:,:,nxs,nxs,nxs,nxs]*Kdata[:,nxs,:,:,:,:],axis=0)
+            Q = HM[:,:,nxs,nxs,nxs,nxs]*eDotK[nxs,:,:,:,:,:]-Kdata[:,nxs,:,:,:,:] #Mxyz,Nref,Nop,Natm,Ntau,ReIm
+
+#flawed but "close"            
+            fam = (Q*TMcorr[nxs,:,nxs,:,nxs,nxs]*cosm[nxs,:,:,:,:,nxs]*SMag[nxs,nxs,:,:,:,:]).T   #Mxyz,Nref,Nop,Natm,Ntau,ReIm
+            fbm = (Q*TMcorr[nxs,:,nxs,:,nxs,nxs]*sinm[nxs,:,:,:,:,nxs]*SMag[nxs,nxs,:,:,:,:]).T  #--> ReIm,Ntau,Natm,Nop,Nref,Mxyzditto 
+            
+            famg = (fam[0]*fbm[0]-fam[1]*fbm[1]).T          #--> Mxyz,Nref,Nop,Natm,Ntau
+            fbmg = (fam[0]*fbm[1]+fam[1]*fbm[1]).T
+            
+            fams = np.sum(np.sum(famg,axis=2),axis=2)      #xyz,Nref,ntau; sum ops & atoms
+            fbms = np.sum(np.sum(fbmg,axis=2),axis=2)      #ditto
+            
+            fams = np.sum(np.sum(fams**2,axis=0)*glWt,axis=-1)
+            fbms = np.sum(np.sum(fbms**2,axis=0)*glWt,axis=-1)
+
+#why doesn't this work?
+            
+#            fam = Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]    #RI,Mxyz,Nref,Nop,Ntau,Natm
+#            fbm = Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,:,nxs,:]*SMag[nxs,nxs,:,:,:]    #ditto 
+#            
+#            famg = fa[:,nxs,:,:,nxs,:]*fam[nxs,:,:,:,:]-fb[:,nxs,:,:,nxs,:]*fbm[nxs,:,:,:,:]
+#            fbmg = fb[:,nxs,:,:,nxs,:]*fam[nxs,:,:,:,:]+fa[:,nxs,:,:,nxs,:]*fbm[nxs,:,:,:,:]
+#            
+#            fams = np.sum(np.sum(famg,axis=3),axis=-1)     #RI,xyz,Nref,ntau
+#            fbms = np.sum(np.sum(fbmg,axis=3),axis=-1)     #ditto
+#            
+#            fams = np.sum(np.sum(np.sum(fams**2,axis=0),axis=0)*glWt[nxs,nxs,nxs,:],axis=-1)
+#            fbms = np.sum(np.sum(np.sum(fbms**2,axis=0),axis=0)*glWt[nxs,nxs,nxs,:],axis=-1)
+
+#or this
+
+#            fam = TMcorr[:,nxs,:]*cosm    #ditto
+#            fbm = TMcorr[:,nxs,:]*sinm    #ditto
+#
+#            cosQ = np.sum(np.cos(twopi*Q)*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs],axis=3)            
+#            sinQ = np.sum(np.sin(twopi*Q)*SMag[nxs,nxs,:,:,:]*glWt[nxs,nxs,nxs,:,nxs],axis=3) 
+#            
+#            fagm = fam[nxs,:,:,:]*cosQ-fbm[nxs,:,:,:]*sinQ
+#            fbgm = fbm[nxs,:,:,:]*cosQ+fam[nxs,:,:,:]*sinQ
+#            
+#            fams = np.sum(np.sum(fagm,axis=-1),axis=-1)                          #xyz,Nref,ntau
+#            fbms = np.sum(np.sum(fbgm,axis=-1),axis=-1)                          #ditto
+#            
+#            fams = np.sum(fams**2,axis=0)
+#            fbms = np.sum(fbms**2,axis=0)
+
         fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
         fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
@@ -1804,7 +1841,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
-    waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)[:5]
+    waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1869,7 +1906,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
-        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x sym X atoms
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x sym X atoms
         dGdf,dGdx,dGdu = G2mth.ModulationDerv(Uniq,UniqP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt)
         # GfpuA is 2 x ops x atoms
         # derivs are: ops x atoms x waves x 2,6,12, or 5 parms as [real,imag] parts
@@ -2048,8 +2085,8 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
         return {}
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)
-    waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)[:5]
+    ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)     #NB: Mmod is ReIm,Mxyz,Ntau,Natm
+    waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -2121,7 +2158,7 @@ def SStructureFactorDervTw(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parm
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
-        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x sym X atoms
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x sym X atoms
         dGdf,dGdx,dGdu,dGdz = G2mth.ModulationDerv(Uniq,UniqP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt)
         # GfpuA is 2 x ops x atoms
         # derivs are: ops x atoms x waves x 2,6,12, or 5 parms as [real,imag] parts

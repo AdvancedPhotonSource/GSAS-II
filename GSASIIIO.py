@@ -603,16 +603,16 @@ def ProjFileOpen(G2frame,showProvenance=True):
                str(G2frame.GSASprojectfile))
         return
     LastSavedUsing = None
-    file = open(G2frame.GSASprojectfile,'rb')
+    filep = open(G2frame.GSASprojectfile,'rb')
     if showProvenance: print ('loading from file: '+G2frame.GSASprojectfile)
     wx.BeginBusyCursor()
     try:
         while True:
             try:
                 if '2' in platform.python_version_tuple()[0]:
-                    data = cPickle.load(file)
+                    data = cPickle.load(filep)
                 else:
-                    data = cPickle.load(file,encoding='latin-1')
+                    data = cPickle.load(filep,encoding='latin-1')
             except EOFError:
                 break
             datum = data[0]
@@ -666,7 +666,6 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
-        file.close()
         if LastSavedUsing:
             print('GPX load successful. Last saved with GSAS-II revision '+LastSavedUsing)
         else:
@@ -682,6 +681,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             caption="Load Error",style=wx.ICON_ERROR | wx.OK | wx.STAY_ON_TOP)
         msg.ShowModal()
     finally:
+        filep.close()
         wx.EndBusyCursor()
         G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
     G2frame.SetTitleByGPX()

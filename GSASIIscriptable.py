@@ -956,7 +956,7 @@ class G2ImportException(Exception):
 class G2ScriptException(Exception):
     pass
 
-def import_generic(filename, readerlist, fmthint=None):
+def import_generic(filename, readerlist, fmthint=None, bank=None):
     """Attempt to import a filename, using a list of reader objects.
 
     Returns the first reader object which worked."""
@@ -978,17 +978,20 @@ def import_generic(filename, readerlist, fmthint=None):
         for rd in primaryReaders + secondaryReaders:
             # Initialize reader
             rd.selections = []
+            if bank is None:
+                rd.selections = []
+            else:
+                rd.selections = [bank-1]
             rd.dnames = []
             rd.ReInitialize()
             # Rewind file
             rd.errors = ""
             if not rd.ContentsValidator(filename):
                 # Report error
-                pass
+                print("Warning: File {} has a validation error, continuing".format(filename))
             if len(rd.selections) > 1:
-                # Select data?
-                # GSASII.py:543
-                raise G2ImportException("Not sure what data to select")
+                raise G2ImportException("File {} has {} banks. Specify which bank to read with databank param."
+                                .format(filename,len(rd.selections)))
 
             block = 0
             rdbuffer = {}
@@ -1012,13 +1015,17 @@ def import_generic(filename, readerlist, fmthint=None):
                 if rd.warnings:
                     print("Read warning by", rd.formatName, "reader:",
                           rd.warnings, file=sys.stderr)
+                elif bank is None:
+                    print("{} read by Reader {}"
+                              .format(filename,rd.formatName))
                 else:
-                    print("{} read by Reader {}\n".format(filename,rd.formatName))                    
+                    print("{} block # {} read by Reader {}"
+                              .format(filename,bank,rd.formatName))
                 return rd_list
     raise G2ImportException("No reader could read file: " + filename)
 
 
-def load_iprms(instfile, reader):
+def load_iprms(instfile, reader, bank=None):
     """Loads instrument parameters from a file, and edits the
     given reader.
 
@@ -1029,9 +1036,10 @@ def load_iprms(instfile, reader):
 
     if ext.lower() == '.instprm':
         # New GSAS File, load appropriately
+        # this likely needs some work as there can now be more than one bank
         with open(instfile) as f:
             lines = f.readlines()
-        bank = reader.powderentry[2]
+        bank = reader.powderentry[2] # this may not be the right entry to use
         numbanks = reader.numbanks
         iparms = G2fil.ReadPowderInstprm(lines, bank, numbanks, reader)
 
@@ -1049,16 +1057,27 @@ def load_iprms(instfile, reader):
                 continue
             Iparm[line[:12]] = line[12:-1]
     ibanks = int(Iparm.get('INS   BANK  ', '1').strip())
-    if ibanks == 1:
+    if bank is not None:
+        # pull out requested bank # bank from the data, and change the bank to 1
+        Iparm,IparmC = {},Iparm
+        for key in IparmC:
+            if 'INS' not in key[:3]: continue   #skip around rubbish lines in some old iparm
+            if key[4:6] == "  ":
+                Iparm[key] = IparmC[key]
+            elif int(key[4:6].strip()) == bank:
+                Iparm[key[:4]+' 1'+key[6:]] = IparmC[key]            
+        reader.instbank = bank
+    elif ibanks == 1:
         reader.instbank = 1
-        reader.powderentry[2] = 1
-        reader.instfile = instfile
-        reader.instmsg = instfile + ' bank ' + str(reader.instbank)
-        return G2fil.SetPowderInstParms(Iparm, reader)
-    # TODO handle >1 banks
-    raise NotImplementedError("Check GSASIIfiles.py: ReadPowderInstprm")
+    else: 
+        raise G2ImportException("Instrument parameter file has {} banks, select one with instbank param."
+                                    .format(ibanks))
+    reader.powderentry[2] = 1
+    reader.instfile = instfile
+    reader.instmsg = instfile + ' bank ' + str(reader.instbank)
+    return G2fil.SetPowderInstParms(Iparm, reader)
 
-def load_pwd_from_reader(reader, instprm, existingnames=[]):
+def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     """Loads powder data from a reader object, and assembles it into a GSASII data tree.
 
     :returns: (name, tree) - 2-tuple of the histogram name (str), and data
@@ -1071,8 +1090,8 @@ def load_pwd_from_reader(reader, instprm, existingnames=[]):
     try:
         Iparm1, Iparm2 = instprm
     except ValueError:
-        Iparm1, Iparm2 = load_iprms(instprm, reader)
-
+        Iparm1, Iparm2 = load_iprms(instprm, reader, bank=bank)
+        print('Instrument parameters read:',reader.instmsg)
     Ymin = np.min(reader.powderdata[1])
     Ymax = np.max(reader.powderdata[1])
     valuesdict = {'wtFactor': 1.0,
@@ -1299,7 +1318,8 @@ class G2Project(G2ObjectWrapper):
             raise AttributeError("No file name to save to")
         SaveDictToProjFile(self.data, self.names, self.filename)
 
-    def add_powder_histogram(self, datafile, iparams, phases=[], fmthint=None):
+    def add_powder_histogram(self, datafile, iparams, phases=[], fmthint=None,
+                                 databank=None, instbank=None):
         """Loads a powder data histogram into the project.
 
         Automatically checks for an instrument parameter file, or one can be
@@ -1314,6 +1334,17 @@ class G2Project(G2ObjectWrapper):
           supplied string will be tried as importers. If not specified, all
           importers consistent with the file extension will be tried
           (equivalent to "guess format" in menu).
+        :param int databank: Specifies a dataset number to read, if file contains 
+          more than set of data. This should be 1 to read the first bank in 
+          the file (etc.) regardless of the number on the Bank line, etc.
+          Default is None which means there should only be one dataset in the 
+          file. 
+        :param int instbank: Specifies an instrument parameter set to read, if 
+          the instrument parameter file contains more than set of parameters. 
+          This will match the INS # in an GSAS type file so it will typically 
+          be 1 to read the first parameter set in the file (etc.) 
+          Default is None which means there should only be one parameter set 
+          in the file.
 
         :returns: A :class:`G2PwdrData` object representing
             the histogram
@@ -1321,10 +1352,10 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
         iparams = os.path.abspath(os.path.expanduser(iparams))
-        pwdrreaders = import_generic(datafile, PwdrDataReaders,fmthint=fmthint)
+        pwdrreaders = import_generic(datafile, PwdrDataReaders,fmthint=fmthint,bank=databank)
         histname, new_names, pwdrdata = load_pwd_from_reader(
                                           pwdrreaders[0], iparams,
-                                          [h.name for h in self.histograms()])
+                                          [h.name for h in self.histograms()],bank=instbank)
         if histname in self.data:
             print("Warning - redefining histogram", histname)
         elif self.names[-1][0] == 'Phases':

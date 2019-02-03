@@ -595,6 +595,8 @@ def objectScan(data,tag,indexStack=[]):
             s += "[{}]".format(i)
         #print(s,data.__class__.__name__) # loses full name of class
         print(s,type(data))
+        global unexpectedObject
+        unexpectedObject = True
     
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
@@ -618,7 +620,12 @@ def ProjFileOpen(G2frame,showProvenance=True):
             datum = data[0]
             # scan the GPX file for unexpected objects
             if GSASIIpath.GetConfigValue('debug'):
-                objectScan(data,datum[0])
+                global unexpectedObject
+                unexpectedObject = False               
+                objectScan(data,'tree item "{}" entry '.format(datum[0]))
+                #if unexpectedObject:
+                #    print(datum[0])
+                #    GSASIIpath.IPyBreak()
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
             if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present

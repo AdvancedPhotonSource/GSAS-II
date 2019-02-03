@@ -5457,14 +5457,18 @@ class OpenTutorial(wx.Dialog):
     def UpdateDownloaded(self,event):
         'Find the downloaded tutorials and run an svn update on them'
         updated = 0
+        wx.BeginBusyCursor()
         for i in tutorialCatalog:
             if not os.path.exists(os.path.join(self.tutorialPath,i[0],i[1])): continue
             print('Updating '+i[0])
             GSASIIpath.svnUpdateDir(os.path.join(self.tutorialPath,i[0]))
-            updated += 0
+            updated += 1
+        wx.EndBusyCursor()
         if not updated:
             G2MessageBox(self,'Warning, you have no downloaded tutorials','None Downloaded')
-        self.EndModal(wx.ID_OK)
+        else:
+            G2MessageBox(self,'{} updates completed'.format(updated),'Updates done')
+        #self.EndModal(wx.ID_OK)
         
     def DownloadAll(self,event):
         'Download or update all tutorials'

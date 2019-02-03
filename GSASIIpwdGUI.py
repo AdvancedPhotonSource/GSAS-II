@@ -4070,8 +4070,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space group if missing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
-    if len(controls) < 17:
-        controls.append(range(1,len(magcells)+1))
+    if len(controls) < 15:
+        controls.append(list(range(1,len(magcells)+1)))
     if len(bravais) < 16:
         bravais += [0,0,]
     if len(bravais) < 17:

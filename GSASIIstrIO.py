@@ -48,6 +48,40 @@ def cPickleLoad(fp):
     else:
        return cPickle.load(fp,encoding='latin-1')
 
+def GetFullGPX(GPXfile):
+    ''' Returns complete contents of GSASII gpx file
+
+    :param str GPXfile: full .gpx file name
+    :returns: Project,nameList, where
+
+      * Project (dict) is a representation of gpx file following the GSAS-II tree structure
+        for each item: key = tree name (e.g. 'Controls','Restraints',etc.), data is dict
+        data dict = {'data':item data whch may be list, dict or None,'subitems':subdata (if any)}
+      * nameList (list) has names of main tree entries & subentries used to reconstruct project file
+    '''
+    fp = open(GPXfile,'rb')
+    Project = {}
+    nameList = []
+    try:
+        while True:
+            try:
+                data = cPickleLoad(fp)
+            except EOFError:
+                break
+            datum = data[0]
+            Project[datum[0]] = {'data':datum[1]}
+            nameList.append([datum[0],])
+            for datus in data[1:]:
+                Project[datum[0]][datus[0]] = datus[1]
+                nameList[-1].append(datus[0])
+        # print('project load successful')
+    except Exception as msg:
+        print('Read Error:',msg)
+        raise Exception("Error reading file "+str(GPXfile)+". This is not a GSAS-II .gpx file")
+    finally:
+        fp.close()
+    return Project,nameList
+    
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
 

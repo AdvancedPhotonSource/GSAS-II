@@ -570,6 +570,7 @@ GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these m
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
+import GSASIIstrIO as G2strIO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 
@@ -619,62 +620,44 @@ def LoadDictFromProjFile(ProjFile):
     Example for fap.gpx::
 
       Project = {                 #NB:dict order is not tree order
-        u'Phases':{'data':None,'fap':{phase dict}},
-        u'PWDR FAP.XRA Bank 1':{'data':[histogram data list],'Comments':comments,'Limits':limits, etc},
-        u'Rigid bodies':{'data': {rigid body dict}},
-        u'Covariance':{'data':{covariance data dict}},
-        u'Controls':{'data':{controls data dict}},
-        u'Notebook':{'data':[notebook list]},
-        u'Restraints':{'data':{restraint data dict}},
-        u'Constraints':{'data':{constraint data dict}}]
+        'Phases':{'data':None,'fap':{phase dict}},
+        'PWDR FAP.XRA Bank 1':{'data':[histogram data list],'Comments':comments,'Limits':limits, etc},
+        'Rigid bodies':{'data': {rigid body dict}},
+        'Covariance':{'data':{covariance data dict}},
+        'Controls':{'data':{controls data dict}},
+        'Notebook':{'data':[notebook list]},
+        'Restraints':{'data':{restraint data dict}},
+        'Constraints':{'data':{constraint data dict}}]
         }
       nameList = [                #NB: reproduces tree order
-        [u'Notebook',],
-        [u'Controls',],
-        [u'Covariance',],
-        [u'Constraints',],
-        [u'Restraints',],
-        [u'Rigid bodies',],
-        [u'PWDR FAP.XRA Bank 1',
-             u'Comments',
-             u'Limits',
-             u'Background',
-             u'Instrument Parameters',
-             u'Sample Parameters',
-             u'Peak List',
-             u'Index Peak List',
-             u'Unit Cells List',
-             u'Reflection Lists'],
-        [u'Phases', u'fap']
+        ['Notebook',],
+        ['Controls',],
+        ['Covariance',],
+        ['Constraints',],
+        ['Restraints',],
+        ['Rigid bodies',],
+        ['PWDR FAP.XRA Bank 1',
+             'Comments',
+             'Limits',
+             'Background',
+             'Instrument Parameters',
+             'Sample Parameters',
+             'Peak List',
+             'Index Peak List',
+             'Unit Cells List',
+             'Reflection Lists'],
+        ['Phases', 'fap']
         ]
     '''
     # Let IOError be thrown if file does not exist
-    # if not ospath.exists(ProjFile):
-    #     print ('\n*** Error attempt to open project file that does not exist:\n   '+
-    #         str(ProjFile))
-    #     return
-    file = open(ProjFile,'rb')
-    # print('loading from file: {}'.format(ProjFile))
-    Project = {}
-    nameList = []
+    if not ospath.exists(ProjFile):
+        print ('\n*** Error attempt to open project file that does not exist: \n    {}'.
+                   format(ProjFile))
+        raise IOError('GPX file {} does not exist'.format(ProjFile))
     try:
-        while True:
-            try:
-                data = cPickle.load(file)
-            except EOFError:
-                break
-            datum = data[0]
-            Project[datum[0]] = {'data':datum[1]}
-            nameList.append([datum[0],])
-            for datus in data[1:]:
-                Project[datum[0]][datus[0]] = datus[1]
-                nameList[-1].append(datus[0])
-        file.close()
-        # print('project load successful')
-    except:
-        raise IOError("Error reading file "+str(ProjFile)+". This is not a GSAS-II .gpx file")
-    finally:
-        file.close()
+        Project, nameList = G2strIO.GetFullGPX(ProjFile)
+    except Exception as msg:
+        raise IOError(msg)
     return Project,nameList
 
 def SaveDictToProjFile(Project,nameList,ProjFile):
@@ -1035,16 +1018,15 @@ def load_iprms(instfile, reader, bank=None):
     ext = os.path.splitext(instfile)[1]
 
     if ext.lower() == '.instprm':
-        # New GSAS File, load appropriately
-        # this likely needs some work as there can now be more than one bank
+        # New GSAS File, load appropriate bank
         with open(instfile) as f:
             lines = f.readlines()
-        bank = reader.powderentry[2] # this may not be the right entry to use
+        if bank is None: 
+            bank = reader.powderentry[2] 
         numbanks = reader.numbanks
         iparms = G2fil.ReadPowderInstprm(lines, bank, numbanks, reader)
-
         reader.instfile = instfile
-        reader.instmsg = 'GSAS-II file' + instfile
+        reader.instmsg = '{} (G2 fmt) bank {}'.format(instfile,bank)
         return iparms
     elif ext.lower() not in ('.prm', '.inst', '.ins'):
         raise ValueError('Expected .prm file, found: ', instfile)
@@ -1074,7 +1056,7 @@ def load_iprms(instfile, reader, bank=None):
                                     .format(ibanks))
     reader.powderentry[2] = 1
     reader.instfile = instfile
-    reader.instmsg = instfile + ' bank ' + str(reader.instbank)
+    reader.instmsg = '{} bank {}'.format(instfile,reader.instbank)
     return G2fil.SetPowderInstParms(Iparm, reader)
 
 def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):

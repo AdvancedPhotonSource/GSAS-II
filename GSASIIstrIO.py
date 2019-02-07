@@ -2015,10 +2015,11 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 namstr = '  names :'
                 ptstr =  '  values:'
                 sigstr = '  esds  :'
-                for var in ['mV0','mV1','mV2']:
+                for iv,var in enumerate(['mV0','mV1','mV2']):
                     namstr += '%12s'%(pfx+var)
                     ptstr += '%12.6f'%(parmDict[pfx+var])
                     if pfx+var in sigDict:
+                        Vec[iv] = parmDict[pfx+var]
                         sigstr += '%12.6f'%(sigDict[pfx+var])
                     else:
                         sigstr += 12*' '
@@ -2411,7 +2412,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 if 'C' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,1.0,1.0,1.0])
                                         #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
 #                                        Uniq.append(uniq)
 #                                        Phi.append(phi)
@@ -2419,7 +2420,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
                                         wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                         # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                         #TODO - if tabulated put alp & bet in here
 #                                        Uniq.append(uniq)
@@ -2438,7 +2439,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,1.0,1.0,1.0])
                                     #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
 #                                    Uniq.append(uniq)
 #                                    Phi.append(phi)
@@ -2446,7 +2447,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 pos = G2lat.Dsp2pos(inst,d)
                                 if limits[0] < pos < limits[1]:
                                     wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,100., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,1., 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
 #                                    Uniq.append(uniq)
 #                                    Phi.append(phi)

@@ -814,7 +814,7 @@ class GSASII(wx.Frame):
                             if rd.sumfile:
                                 rd.readfilename = rd.sumfile
                             # Load generic metadata, as configured
-                            G2IO.GetColumnMetadata(rd)
+                            G2fil.GetColumnMetadata(rd)
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
                             rd_list.append(True) # save a stub the result before it is written over
                             del rd.Image
@@ -3075,7 +3075,7 @@ class GSASII(wx.Frame):
                     
     def OnColMetaTest(self,event):
         'Test the .par/.*lbls pair for contents'
-        G2IO.testColumnMetadata(self)
+        G2imG.testColumnMetadata(self)
                 
     def OnPowderFPA(self,event):
         'Perform FPA simulation/peak fitting'

@@ -422,3 +422,324 @@ def LoadExportRoutines(parent, traceback=False):
             if fp:
                 fp.close()
     return exporterlist
+
+def readColMetadata(imagefile):
+    '''Reads image metadata from a column-oriented metadata table
+    (1-ID style .par file). Called by :func:`GetColumnMetadata`
+    
+    The .par file has any number of columns separated by spaces.
+    The directory for the file must be specified in
+    Config variable ``Column_Metadata_directory``.
+    As an index to the .par file a second "label file" must be specified with the
+    same file root name as the .par file but the extension must be .XXX_lbls (where
+    .XXX is the extension of the image) or if that is not present extension
+    .lbls. 
+
+    :param str imagefile: the full name of the image file (with extension, directory optional)
+
+    :returns: a dict with parameter values. Named parameters will have the type based on
+       the specified Python function, named columns will be character strings
+    
+    The contents of the label file will look like this::
+    
+        # define keywords
+        filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34
+        distance: float | 75
+        wavelength:lambda keV: 12.398425/float(keV)|9
+        pixelSize:lambda x: [74.8, 74.8]|0
+        ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4
+        Temperature: float|53
+        FreePrm2: int | 34 | Free Parm2 Label
+        # define other variables
+        0:day
+        1:month
+        2:date
+        3:time
+        4:year
+        7:I_ring
+
+    This file contains three types of lines in any order.
+     * Named parameters are evaluated with user-supplied Python code (see
+       subsequent information). Specific named parameters are used 
+       to determine values that are used for image interpretation (see table,
+       below). Any others are copied to the Comments subsection of the Image
+       tree item. 
+     * Column labels are defined with a column number (integer) followed by
+       a colon (:) and a label to be assigned to that column. All labeled
+       columns are copied to the Image's Comments subsection.
+     * Comments are any line that does not contain a colon.
+
+    Note that columns are numbered starting at zero. 
+
+    Any named parameter may be defined provided it is not a valid integer,
+    but the named parameters in the table have special meanings, as descibed.
+    The parameter name is followed by a colon. After the colon, specify
+    Python code that defines or specifies a function that will be called to
+    generate a value for that parameter.
+
+    Note that several keywords, if defined in the Comments, will be found and
+    placed in the appropriate section of the powder histogram(s)'s Sample
+    Parameters after an integration: ``Temperature``,``Pressure``,``Time``,
+    ``FreePrm1``,``FreePrm2``,``FreePrm3``,``Omega``,``Chi``, and ``Phi``. 
+
+    After the Python code, supply a vertical bar (|) and then a list of one
+    more more columns that will be supplied as arguments to that function.
+
+    Note that the labels for the three FreePrm items can be changed by
+    including that label as a third item with an additional vertical bar. Labels
+    will be ignored for any other named parameters. 
+    
+    The examples above are discussed here:
+
+    ``filename:lambda x,y: "{}_{:0>6}".format(x,y)|33,34``
+        Here the function to be used is defined with a lambda statement::
+        
+          lambda x,y: "{}_{:0>6}".format(x,y)
+
+        This function will use the format function to create a file name from the
+        contents of columns 33 and 34. The first parameter (x, col. 33) is inserted directly into
+        the file name, followed by a underscore (_), followed by the second parameter (y, col. 34),
+        which will be left-padded with zeros to six characters (format directive ``:0>6``).
+
+        When there will be more than one image generated per line in the .par file, an alternate way to
+        generate list of file names takes into account the number of images generated::
+
+          lambda x,y,z: ["{}_{:0>6}".format(x,int(y)+i) for i in range(int(z))]
+
+        Here a third parameter is used to specify the number of images generated, where
+        the image number is incremented for each image.
+          
+    ``distance: float | 75``
+        Here the contents of column 75 will be converted to a floating point number
+        by calling float on it. Note that the spaces here are ignored.
+        
+    ``wavelength:lambda keV: 12.398425/float(keV)|9``
+        Here we define an algebraic expression to convert an energy in keV to a
+        wavelength and pass the contents of column 9 as that input energy
+        
+    ``pixelSize:lambda x: [74.8, 74.8]|0``
+        In this case the pixel size is a constant (a list of two numbers). The first
+        column is passed as an argument as at least one argument is required, but that
+        value is not used in the expression.
+
+    ``ISOlikeDate: lambda dow,m,d,t,y:"{}-{}-{}T{} ({})".format(y,m,d,t,dow)|0,1,2,3,4``
+        This example defines a parameter that takes items in the first five columns
+        and formats them in a different way. This parameter is not one of the pre-defined
+        parameter names below. Some external code could be used to change the month string
+        (argument ``m``) to a integer from 1 to 12.
+        
+    ``FreePrm2: int | 34 | Free Parm2 Label``
+        In this example, the contents of column 34 will be converted to an integer and
+        placed as the second free-named parameter in the Sample Parameters after an
+        integration. The label for this parameter will be changed to "Free Parm2 Label".
+            
+    **Pre-defined parameter names**
+    
+    =============  =========  ========  =====================================================
+     keyword       required    type      Description
+    =============  =========  ========  =====================================================
+       filename    yes         str or   generates the file name prefix for the matching image
+                               list     file (MyImage001 for file /tmp/MyImage001.tif) or
+                                        a list of file names. 
+     polarization  no         float     generates the polarization expected based on the
+                                        monochromator angle, defaults to 0.99.
+       center      no         list of   generates the approximate beam center on the detector
+                              2 floats  in mm, such as [204.8, 204.8].
+       distance    yes        float     generates the distance from the sample to the detector
+                                        in mm
+       pixelSize   no         list of   generates the size of the pixels in microns such as
+                              2 floats  [200.0, 200.0]. 
+       wavelength  yes        float     generates the wavelength in Angstroms
+    =============  =========  ========  =====================================================
+    
+    '''
+    dir,fil = os.path.split(os.path.abspath(imagefile))
+    imageName,ext = os.path.splitext(fil)
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
+    parfiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
+    if len(parfiles) == 0:
+        print('Sorry, No Column metadata (.par) file found in '+
+              GSASIIpath.GetConfigValue('Column_Metadata_directory'))
+        return {}
+    for parFil in parfiles: # loop over all .par files (hope just 1) in image dir until image is found
+        parRoot = os.path.splitext(parFil)[0]
+        for e in (ext+'_lbls','.lbls'):
+            if os.path.exists(parRoot+e):
+                lblFil = parRoot+e
+                break
+        else:
+            print('Warning: No labels definitions found for '+parFil)
+            continue
+        labels,lbldict,keyCols,keyExp,errors = readColMetadataLabels(lblFil)
+        if errors:
+            print('Errors in labels file '+lblFil)
+            for i in errors: print('  '+i)
+            continue
+        else:
+            print('Read '+lblFil)
+        # scan through each line in this .par file, looking for the matching image rootname
+        fp = open(parFil,'Ur')
+        for iline,line in enumerate(fp):
+            items = line.strip().split(' ')
+            nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+            if type(nameList) is str:
+                if nameList != imageName: continue
+                name = nameList
+            else:
+                for name in nameList:
+                    if name == imageName: break # got a match
+                else:
+                    continue
+            # parse the line and finish
+            metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp)
+            metadata['par file'] = parFil
+            metadata['lbls file'] = lblFil
+            print("Metadata read from {} line {}".format(parFil,iline+1))
+            fp.close()
+            return metadata
+        else:
+            print("Image {} not found in {}".format(imageName,parFil))
+            fp.close()
+            continue
+        fp.close()
+    else:
+        print("Warning: No .par metadata for image {}".format(imageName))
+        return {}
+
+def readColMetadataLabels(lblFil):
+    '''Read the .*lbls file and setup for metadata assignments
+    '''
+    lbldict = {}
+    keyExp = {}
+    keyCols = {}
+    labels = {}
+    errors = []
+    fp = open(lblFil,'Ur')         # read column labels
+    for iline,line in enumerate(fp): # read label definitions
+        line = line.strip()
+        if not line or line[0] == '#': continue # comments
+        items = line.split(':')
+        if len(items) < 2: continue # lines with no colon are also comments
+        # does this line a definition for a named parameter?
+        key = items[0]
+        try: 
+            int(key)
+        except ValueError: # try as named parameter since not a valid number
+            items = line.split(':',1)[1].split('|')
+            try:
+                f = eval(items[0]) # compile the expression
+                if not callable(f):
+                    errors += ['Expression "{}" for key {} is not a function (line {})'.
+                           format(items[0],key,iline)]
+                    continue
+                keyExp[key] = f
+            except Exception as msg:
+                errors += ['Expression "{}" for key {} is not valid (line {})'.
+                           format(items[0],key,iline)]
+                errors += [str(msg)]
+                continue
+            keyCols[key] = [int(i) for i in items[1].strip().split(',')]
+            if key.lower().startswith('freeprm') and len(items) > 2:
+                labels[key] = items[2]
+            continue
+        if len(items) == 2: # simple column definition
+            lbldict[int(items[0])] = items[1]
+    fp.close()
+    if 'filename' not in keyExp:
+        errors += ["File {} is invalid. No valid filename expression.".format(lblFil)]
+    return labels,lbldict,keyCols,keyExp,errors
+
+def evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,ShowError=False):
+    '''Evaluate the metadata for a line in the .par file
+    '''
+    metadata = {lbldict[j]:items[j] for j in lbldict}
+    named = {}
+    for key in keyExp:
+        try:
+            res = keyExp[key](*[items[j] for j in keyCols[key]])
+        except:
+            if ShowError:
+                res = "*** error ***"
+            else:
+                continue
+        named[key] = res
+    metadata.update(named)
+    for lbl in labels: # add labels for FreePrm's
+        metadata['label_'+lbl[4:].lower()] = labels[lbl]
+    return metadata
+
+def GetColumnMetadata(reader):
+    '''Add metadata to an image from a column-type metadata file
+    using :func:`readColMetadata`
+    
+    :param reader: a reader object from reading an image
+    
+    '''
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
+    parParms = readColMetadata(reader.readfilename)
+    if not parParms: return # check for read failure
+    specialKeys = ('filename',"polarization", "center", "distance", "pixelSize", "wavelength",)
+    reader.Comments = ['Metadata from {} assigned by {}'.format(parParms['par file'],parParms['lbls file'])]
+    for key in parParms:
+        if key in specialKeys+('par file','lbls file'): continue
+        reader.Comments += ["{} = {}".format(key,parParms[key])]
+    if "polarization" in parParms:
+        reader.Data['PolaVal'][0] = parParms["polarization"]
+    else:
+        reader.Data['PolaVal'][0] = 0.99
+    if "center" in parParms:
+        reader.Data['center'] = parParms["center"]
+    if "pixelSize" in parParms:
+        reader.Data['pixelSize'] = parParms["pixelSize"]
+    if "wavelength" in parParms:
+        reader.Data['wavelength'] = parParms['wavelength']
+    else:
+        print('Error: wavelength not defined in {}'.format(parParms['lbls file']))
+    if "distance" in parParms:
+        reader.Data['distance'] = parParms['distance']
+        reader.Data['setdist'] = parParms['distance']
+    else:
+        print('Error: distance not defined in {}'.format(parParms['lbls file']))
+
+def LoadControls(Slines,data):
+    'Read values from a .imctrl (Image Controls) file'
+    cntlList = ['color','wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
+        'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
+        'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','setdist',
+        'PolaVal','SampleAbs','dark image','background image','twoth']
+    save = {}
+    for S in Slines:
+        if S[0] == '#':
+            continue
+        [key,val] = S.strip().split(':',1)
+        if key in ['type','calibrant','binType','SampleShape','color',]:    #strings
+            save[key] = val
+        elif key in ['varyList',]:
+            save[key] = eval(val)   #dictionary
+        elif key in ['rotation']:
+            save[key] = float(val)
+        elif key in ['center',]:
+            if ',' in val:
+                save[key] = eval(val)
+            else:
+                vals = val.strip('[] ').split()
+                save[key] = [float(vals[0]),float(vals[1])] 
+        elif key in cntlList:
+            save[key] = eval(val)
+    data.update(save)
+
+def WriteControls(filename,data):
+    'Write current values to a .imctrl (Image Controls) file'
+    File = open(filename,'w')
+    keys = ['type','color','wavelength','calibrant','distance','center','Oblique',
+            'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
+            'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
+            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
+            'binType','SampleShape','PolaVal','SampleAbs','dark image','background image',
+            'twoth']
+    for key in keys:
+        if key not in data:     #uncalibrated!
+            continue
+        File.write(key+':'+str(data[key])+'\n')
+    File.close()
+    

@@ -10,6 +10,12 @@
 *GSASIIstrIO: structure I/O routines*
 -------------------------------------
 
+Contains routines for reading from GPX files and printing to the .LST file. 
+Used for refinements and in G2scriptable. 
+
+Should not contain any wxpython references as this should be able to be used
+in non-GUI settings. 
+
 '''
 from __future__ import division, print_function
 import platform
@@ -49,14 +55,15 @@ def cPickleLoad(fp):
        return cPickle.load(fp,encoding='latin-1')
 
 def GetFullGPX(GPXfile):
-    ''' Returns complete contents of GSASII gpx file
+    ''' Returns complete contents of GSASII gpx file. 
+    Used in :func:`GSASIIscriptable.LoadDictFromProjFile`.
 
     :param str GPXfile: full .gpx file name
     :returns: Project,nameList, where
 
-      * Project (dict) is a representation of gpx file following the GSAS-II tree structure
-        for each item: key = tree name (e.g. 'Controls','Restraints',etc.), data is dict
-        data dict = {'data':item data whch may be list, dict or None,'subitems':subdata (if any)}
+      * Project (dict) is a representation of gpx file following the GSAS-II 
+        tree structure for each item: key = tree name (e.g. 'Controls', 
+        'Restraints', etc.), data is dict 
       * nameList (list) has names of main tree entries & subentries used to reconstruct project file
     '''
     fp = open(GPXfile,'rb')

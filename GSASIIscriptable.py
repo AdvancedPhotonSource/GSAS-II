@@ -570,41 +570,37 @@ GSASIIpath.SetBinaryPath(True)  # for now, this is needed before some of these m
 import GSASIIobj as G2obj
 import GSASIIpwd as G2pwd
 import GSASIIstrMain as G2strMain
+#import GSASIIIO as G2IO
 import GSASIIstrIO as G2strIO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
+import GSASIIfiles as G2fil
 
-
-# Delay imports to not slow down small scripts
-G2fil = None
-PwdrDataReaders = []
-PhaseReaders = []
+# Delay imports to not slow down small scripts that don't need them
+Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
+'''Readers by reader type'''
 exportersByExtension = {}
 '''Specifies the list of extensions that are supported for Powder data export'''
 
 def LoadG2fil():
     """Delay importing this module, it is slow"""
-    global G2fil
-    if G2fil is None:
-        import GSASIIfiles
-        G2fil = GSASIIfiles
-        global PwdrDataReaders
-        global PhaseReaders
-        PwdrDataReaders = G2fil.LoadImportRoutines("pwd", "Powder_Data")
-        PhaseReaders = G2fil.LoadImportRoutines("phase", "Phase")
-        AllExporters = G2fil.LoadExportRoutines(None)
-        global exportersByExtension
-        exportersByExtension = {}
-        for obj in AllExporters:
-            try:
-                obj.Writer
-            except AttributeError:
-                continue
-            for typ in obj.exporttype:
-                if typ not in exportersByExtension:
-                    exportersByExtension[typ] = {obj.extension:obj}
-                else:
-                    exportersByExtension[typ][obj.extension] = obj
+    if len(Readers['Pwdr']) > 0: return
+    # initialize imports
+    Readers['Pwdr'] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
+    Readers['Phase'] = G2fil.LoadImportRoutines("phase", "Phase")
+    Readers['Image'] = G2fil.LoadImportRoutines("img", "Image")
+
+    # initialize exports
+    for obj in exportersByExtension:
+        try:
+            obj.Writer
+        except AttributeError:
+            continue
+        for typ in obj.exporttype:
+            if typ not in exportersByExtension:
+                exportersByExtension[typ] = {obj.extension:obj}
+            else:
+                exportersByExtension[typ][obj.extension] = obj
 
 def LoadDictFromProjFile(ProjFile):
     '''Read a GSAS-II project file and load items to dictionary
@@ -1197,9 +1193,8 @@ class G2ObjectWrapper(object):
         return self.data.items()
 
 
-class G2Project(G2ObjectWrapper):
-    """
-    Represents an entire GSAS-II project.
+class G2Project(G2ObjectWrapper):    
+    """Represents an entire GSAS-II project.
 
     :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
             creates an empty project.
@@ -1334,7 +1329,7 @@ class G2Project(G2ObjectWrapper):
         LoadG2fil()
         datafile = os.path.abspath(os.path.expanduser(datafile))
         iparams = os.path.abspath(os.path.expanduser(iparams))
-        pwdrreaders = import_generic(datafile, PwdrDataReaders,fmthint=fmthint,bank=databank)
+        pwdrreaders = import_generic(datafile, Readers['Pwdr'],fmthint=fmthint,bank=databank)
         histname, new_names, pwdrdata = load_pwd_from_reader(
                                           pwdrreaders[0], iparams,
                                           [h.name for h in self.histograms()],bank=instbank)
@@ -1444,7 +1439,7 @@ class G2Project(G2ObjectWrapper):
         :param str phasefile: The CIF file from which to import the phase.
         :param str phasename: The name of the new phase, or None for the default
         :param list histograms: The names of the histograms to associate with
-            this phase. Use proj.Histograms() to add to all histograms.
+            this phase. Use proj.histograms() to add to all histograms.
         :param str fmthint: If specified, only importers where the format name
           (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
@@ -1459,7 +1454,7 @@ class G2Project(G2ObjectWrapper):
         phasefile = os.path.abspath(os.path.expanduser(phasefile))
 
         # TODO handle multiple phases in a file
-        phasereaders = import_generic(phasefile, PhaseReaders, fmthint=fmthint)
+        phasereaders = import_generic(phasefile, Readers['Phase'], fmthint=fmthint)
         phasereader = phasereaders[0]
         
         phasename = phasename or phasereader.Phase['General']['Name']
@@ -1576,7 +1571,7 @@ class G2Project(G2ObjectWrapper):
             :meth:`G2Project.histograms`
             :meth:`G2Project.phase`
             :meth:`G2Project.phases`
-            """
+        """
         if isinstance(histname, G2PwdrData):
             if histname.proj == self:
                 return histname
@@ -1592,21 +1587,32 @@ class G2Project(G2ObjectWrapper):
             if histogram.id == histname or histogram.ranId == histname:
                 return histogram
 
-    def histograms(self):
-        """Return a list of all histograms, as
-        :class:`G2PwdrData` objects
+    def histograms(self, typ=None):
+        """Return a list of all histograms, as :class:`G2PwdrData` objects
+
+        For now this only finds Powder/Single Xtal histograms, since that is all that is
+        currently implemented in this module.
+
+        :param ste typ: The prefix (type) the histogram such as 'PWDR '. If None
+          (the default) all known histograms types are found. 
+        :returns: a list of objects
 
         .. seealso::
-            :meth:`G2Project.histograms`
+            :meth:`G2Project.histogram`
             :meth:`G2Project.phase`
             :meth:`G2Project.phases`
-            """
+        """
         output = []
         # loop through each tree entry. If it is more than one level (more than one item in the
-        # list of names) then it must be a histogram, unless labeled Phases or Restraints
-        for obj in self.names:
-            if len(obj) > 1 and obj[0] != u'Phases' and obj[0] != u'Restraints':
-                output.append(self.histogram(obj[0]))
+        # list of names). then it must be a histogram, unless labeled Phases or Restraints
+        if typ is None:
+            for obj in self.names:
+                if obj[0].startswith('PWDR ') or obj[0].startswith('HKLF '): 
+                    output.append(self.histogram(obj[0]))
+        else:
+            for obj in self.names:
+                if len(obj) > 1 and obj[0].startswith(typ): 
+                    output.append(self.histogram(obj[0]))
         return output
 
     def phase(self, phasename):
@@ -1657,6 +1663,52 @@ class G2Project(G2ObjectWrapper):
                 return [self.phase(p) for p in obj[1:]]
         return []
 
+    def _images(self):
+        """Returns a list of all the phases in the project.
+        """
+        return [i[0] for i in self.names if i[0].startswith('IMG ')]
+    
+    def image(self, imageRef):
+        """
+        Gives an object representing the specified image in this project.
+
+        :param str imageRef: A reference to the desired image. Either the Image 
+          tree name (str), the image's index (int) or
+          a image object (:class:`G2Image`)
+        :returns: A :class:`G2Image` object
+        :raises: KeyError
+
+        .. seealso::
+            :meth:`G2Project.images`
+            """
+        if isinstance(imageRef, G2Image):
+            if imageRef.proj == self:
+                return imageRef
+            else:
+                raise Exception("Image {} not in current selected project".format(imageRef.name))
+        if imageRef in self._images():
+            return G2Image(self.data[imageRef], imageRef, self)
+
+        try:
+            # imageRef should be an index
+            num = int(imageRef)
+            imageRef = self._images()[num] 
+            return G2Image(self.data[imageRef], imageRef, self)
+        except ValueError:
+            raise Exception("imageRef {} not an object, name or image index in current selected project"
+                                .format(imageRef))
+        except IndexError:
+            raise Exception("imageRef {} out of range (max={}) in current selected project"
+                                .format(imageRef,len(self._images())-1))
+            
+    def images(self):
+        """
+        Returns a list of all the images in the project.
+
+        :returns: A list of :class:`G2Image` objects
+        """
+        return [G2Image(self.data[i],i,self) for i in self._images()]
+    
     def update_ids(self):
         """Makes sure all phases and histograms have proper hId and pId"""
         # Translated from GetUsedHistogramsAndPhasesfromTree,
@@ -1951,6 +2003,123 @@ class G2Project(G2ObjectWrapper):
 
         return G2obj.G2VarObj(phase, hist, varname, atomId)
 
+    def add_image(self, imagefile, fmthint=None, defaultImage=None):
+        """Load an image into a project
+
+        :param str imagefile: The image file to read, a filename.
+        :param str fmthint: If specified, only importers where the format name
+          (reader.formatName, as shown in Import menu) contains the
+          supplied string will be tried as importers. If not specified, all
+          importers consistent with the file extension will be tried
+          (equivalent to "guess format" in menu).
+        :param str defaultImage: The name of an image to use as a default for 
+          setting parameters for the image file to read. 
+
+        :returns: a list of G2Image object for the added image(s) [this routine 
+          has not yet been tested with files with multiple images...]
+        """
+        LoadG2fil()
+        imagefile = os.path.abspath(os.path.expanduser(imagefile))
+        readers = import_generic(imagefile, Readers['Image'], fmthint=fmthint)
+        objlist = []
+        for rd in readers:
+            if rd.SciPy:        #was default read by scipy; needs 1 time fixes
+                print('TODO: Image {} read by SciPy. Parameters likely need editing'.format(imagefile))
+                #see this: G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,imagefile)
+                rd.SciPy = False
+            rd.readfilename = imagefile
+            if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
+                rd.Data['ImageTag'] = None
+            else:
+                rd.Data['ImageTag'] = rd.repeatcount
+            rd.Data['formatName'] = rd.formatName
+            if rd.sumfile:
+                rd.readfilename = rd.sumfile
+            # Load generic metadata, as configured
+            G2fil.GetColumnMetadata(rd)
+            # Code from G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
+            Imax = np.amax(rd.Image)
+            ImgNames = [i[0] for i in self.names if i[0].startswith('IMG ')]
+            TreeLbl = 'IMG '+os.path.basename(imagefile)
+            ImageTag = rd.Data.get('ImageTag')
+            if ImageTag:
+                TreeLbl += ' #'+'%04d'%(ImageTag)
+                imageInfo = (imagefile,ImageTag)
+            else:
+                imageInfo = imagefile
+            TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
+            # MT dict to contain image info
+            ImgDict = {}
+            ImgDict['data'] = [rd.Npix,imageInfo]
+            ImgDict['Comments'] = rd.Comments
+            if defaultImage:
+                if isinstance(defaultImage, G2Image):
+                    if defaultImage.proj == self:
+                        defaultImage = self.data[defaultImage.name]['data']
+                    else:
+                        raise Exception("Image {} not in current selected project".format(defaultImage.name))
+                elif defaultImage in self._images():
+                    defaultImage = self.data[defaultImage]['data']
+                else:
+                    defaultImage = None
+            Data = rd.Data
+            if defaultImage:
+                Data = copy.copy(defaultImage)
+                Data['showLines'] = True
+                Data['ring'] = []
+                Data['rings'] = []
+                Data['cutoff'] = 10.
+                Data['pixLimit'] = 20
+                Data['edgemin'] = 100000000
+                Data['calibdmin'] = 0.5
+                Data['calibskip'] = 0
+                Data['ellipses'] = []
+                Data['calibrant'] = ''
+                Data['GonioAngles'] = [0.,0.,0.]
+                Data['DetDepthRef'] = False
+            else:
+                Data['type'] = 'PWDR'
+                Data['color'] = GSASIIpath.GetConfigValue('Contour_color','Paired')
+                if 'tilt' not in Data:          #defaults if not preset in e.g. Bruker importer
+                    Data['tilt'] = 0.0
+                    Data['rotation'] = 0.0
+                    Data['pixLimit'] = 20
+                    Data['calibdmin'] = 0.5
+                    Data['cutoff'] = 10.
+                Data['showLines'] = False
+                Data['calibskip'] = 0
+                Data['ring'] = []
+                Data['rings'] = []
+                Data['edgemin'] = 100000000
+                Data['ellipses'] = []
+                Data['GonioAngles'] = [0.,0.,0.]
+                Data['DetDepth'] = 0.
+                Data['DetDepthRef'] = False
+                Data['calibrant'] = ''
+                Data['IOtth'] = [5.0,50.0]
+                Data['LRazimuth'] = [0.,180.]
+                Data['azmthOff'] = 0.0
+                Data['outChannels'] = 2250
+                Data['outAzimuths'] = 1
+                Data['centerAzm'] = False
+                Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)
+                Data['setRings'] = False
+                Data['background image'] = ['',-1.0]                            
+                Data['dark image'] = ['',-1.0]
+                Data['Flat Bkg'] = 0.0
+                Data['Oblique'] = [0.5,False]
+            Data['setDefault'] = False
+            Data['range'] = [(0,Imax),[0,Imax]]
+            ImgDict['Image Controls'] = Data
+            ImgDict['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],
+                                'Frames':[],'Thresholds':[(0,Imax),[0,Imax]]}
+            ImgDict['Stress/Strain']  = {'Type':'True','d-zero':[],'Sample phi':0.0,
+                                             'Sample z':0.0,'Sample load':0.0}
+            self.names.append([TreeName]+['Comments','Image Controls','Masks','Stress/Strain'])
+            self.data[TreeName] = ImgDict
+            del rd.Image
+            objlist.append(G2Image(self.data[TreeName], TreeName, self))
+        return objlist
 
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Has convenient accessors via @property.
@@ -2940,6 +3109,149 @@ class G2Phase(G2ObjectWrapper):
                 else:
                     print(u'Unknown HAP key: '+key)
 
+class G2Image(G2ObjectWrapper):
+    """Wrapper for an IMG tree entry, containing an image and various metadata.
+    """
+    # parameters in 
+    ControlList = {
+        'int': ['calibskip', 'pixLimit', 'edgemin', 'outChannels',
+                    'outAzimuths'],
+        'float': ['cutoff', 'setdist', 'wavelength', 'Flat Bkg',
+                      'azmthOff', 'tilt', 'calibdmin', 'rotation',
+                      'distance', 'DetDepth'],
+        'bool': ['setRings', 'setDefault', 'centerAzm', 'fullIntegrate',
+                     'DetDepthRef', 'showLines'],
+        'str': ['SampleShape', 'binType', 'formatName', 'color',
+                    'type', 'calibrant'],
+        'list': ['GonioAngles', 'IOtth', 'LRazimuth', 'Oblique', 'PolaVal',
+                   'SampleAbs', 'center', 'ellipses', 'linescan',
+                    'pixelSize', 'range', 'ring', 'rings', 'size', ],
+        'dict': ['varylist'],
+#        'image': ['background image', 'dark image', 'Gain map'],
+        }
+    '''Defines the items known to exist in the Image Controls tree section 
+    and their data types.
+    '''
+
+    def __init__(self, data, name, proj):
+        self.data = data
+        self.name = name
+        self.proj = proj
+
+    def setControl(self,arg,value):
+        '''Set an Image Controls parameter in the current image.
+        If the parameter is not found an exception is raised.
+
+        :param str arg: the name of a parameter (dict entry) in the 
+          image. The parameter must be found in :data:`ControlList`
+          or an exception is raised.
+        :param value: the value to set the parameter. The value is 
+          cast as the appropriate type from :data:`ControlList`.
+        '''
+        for typ in self.ControlList:
+            if arg in self.ControlList[typ]: break
+        else:
+            raise Exception('arg {} not defined in G2Image.setControl'
+                                .format(arg))
+        try:
+            if typ == 'int':
+                self.data['Image Controls'][arg] = int(value)
+            elif typ == 'float':
+                self.data['Image Controls'][arg] = float(value)
+            elif typ == 'bool':
+                self.data['Image Controls'][arg] = bool(value)
+            elif typ == 'str':
+                self.data['Image Controls'][arg] = str(value)
+            elif typ == 'list':
+                self.data['Image Controls'][arg] = list(value)
+            elif typ == 'dict':
+                self.data['Image Controls'][arg] = dict(value)
+            else:
+                raise Exception('Unknown type {} for arg {} in  G2Image.setControl'
+                                    .format(typ,arg))
+        except:
+            raise Exception('Error formatting value {} as type {} for arg {} in  G2Image.setControl'
+                                    .format(value,typ,arg))
+
+    def getControl(self,arg):
+        '''Return an Image Controls parameter in the current image.
+        If the parameter is not found an exception is raised.
+
+        :param str arg: the name of a parameter (dict entry) in the 
+          image. 
+        :returns: the value as a int, float, list,...
+        '''
+        if arg in self.data['Image Controls']:
+            return self.data['Image Controls'][arg]
+        raise Exception('arg {} not defined in G2Image.getControl'.format(arg))
+
+    def findControl(self,arg):
+        '''Finds the Image Controls parameter(s) in the current image
+        that match the string in arg.
+
+          Example: findControl('calib') will return 
+          [['calibskip', 'int'], ['calibdmin', 'float'], ['calibrant', 'str']]
+
+        :param str arg: a string containing part of the name of a 
+          parameter (dict entry) in the image's Image Controls. 
+        :returns: a list of matching entries in form 
+          [['item','type'], ['item','type'],...] where each 'item' string 
+          contains the sting in arg.
+        '''
+        matchList = []
+        for typ in self.ControlList:
+            for item in self.ControlList[typ]:
+                if arg in item:
+                    matchList.append([item,typ])
+        return matchList
+
+    def setControlFile(self,typ,imageRef,mult=None):
+        '''Set a image to be used as a background/dark/gain map image
+
+        :param str typ: specifies image type, which must be one of:
+           'background image', 'dark image', 'gain map'; N.B. only the first
+           four characters must be specified and case is ignored.
+        :param imageRef: 
+        :param float mult:
+        '''
+#        'image': ['background image', 'dark image', 'Gain map'],
+        if 'back' in typ.lower():
+            key = 'background image'
+            mult = float(mult)
+        elif 'dark' in typ.lower():
+            key = 'dark image'
+            mult = float(mult)
+        elif 'gain' in typ.lower():
+            #key = 'Gain map'
+            if mult is not None:
+                print('Ignoring multiplier for Gain map')
+            mult = None
+        else:
+            raise Exception("Invalid typ {} for setControlFile".format(typ))
+        imgNam = self.proj.image(imageRef).name
+        if mult is None:
+            self.data['Image Controls']['Gain map'] = imgNam
+        else:
+            self.data['Image Controls'][key] = [imgNam,mult]
+
+    def loadControls(self,filename):
+        '''load controls from a .imctrl file
+        :param str filename: specifies a file to be read, which should end 
+          with .imctrl
+        '''
+        File = open(filename,'r')
+        Slines = File.readlines()
+        File.close()
+        G2fil.LoadControls(Slines,self.data['Image Controls'])
+        print('file {} read into {}'.format(filename,self.name))
+
+    def saveControls(self,filename):
+        '''write current controls values to a .imctrl file
+        :param str filename: specifies a file to write, which should end 
+          with .imctrl
+        '''
+        G2fil.WriteControls(filename,self.data['Image Controls'])
+        print('file {} written from {}'.format(filename,self.name))
 
 ##########################
 # Command Line Interface #

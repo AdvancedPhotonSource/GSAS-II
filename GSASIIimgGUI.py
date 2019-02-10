@@ -35,6 +35,7 @@ import GSASIIElem as G2elem
 import GSASIIpwdGUI as G2pdG
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
+import GSASIIfiles as G2fil
 import GSASIIdataGUI as G2gd
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
@@ -409,23 +410,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 filename = dlg.GetPath()
                 # make sure extension is .imctrl
                 filename = os.path.splitext(filename)[0]+'.imctrl'
-                WriteControls(filename,data)
+                G2fil.WriteControls(filename,data)
         finally:
             dlg.Destroy()
-
-    def WriteControls(filename,data):
-        File = open(filename,'w')
-        keys = ['type','color','wavelength','calibrant','distance','center','Oblique',
-            'tilt','rotation','azmthOff','fullIntegrate','LRazimuth','setdist',
-            'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
-            'binType','SampleShape','PolaVal','SampleAbs','dark image','background image',
-            'twoth']
-        for key in keys:
-            if key not in data:     #uncalibrated!
-                continue
-            File.write(key+':'+str(data[key])+'\n')
-        File.close()
         
     def OnSaveMultiControls(event):
         '''Save controls from multiple images
@@ -472,38 +459,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                                     os.path.splitext(os.path.split(imagefile)[1])[0]
                                     + '.imctrl')
             print('writing '+filename)
-            WriteControls(filename,data)
-            
-    def LoadControls(Slines,data):
-        cntlList = ['color','wavelength','distance','tilt','invert_x','invert_y','type','Oblique',
-            'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList','setdist',
-            'PolaVal','SampleAbs','dark image','background image','twoth']
-        save = {}
-        for S in Slines:
-            if S[0] == '#':
-                continue
-            [key,val] = S.strip().split(':',1)
-            if key in ['type','calibrant','binType','SampleShape','color',]:    #strings
-                save[key] = val
-            elif key in ['varyList',]:
-                save[key] = eval(val)   #dictionary
-            elif key in ['rotation']:
-                save[key] = float(val)
-            elif key in ['center',]:
-                if ',' in val:
-                    save[key] = eval(val)
-                else:
-                    vals = val.strip('[] ').split()
-                    save[key] = [float(vals[0]),float(vals[1])] 
-            elif key in cntlList:
-                save[key] = eval(val)
-        data.update(save)
-        # next line removed. Previous updates tree contents. The next
-        # makes a copy of data, puts it into tree and "disconnects" data
-        # from tree contents (later changes to data are lost!)
-        #G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
-        
+            G2fil.WriteControls(filename,data)
             
     def OnLoadControls(event):
         pth = G2G.GetImportPath(G2frame)
@@ -516,7 +472,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 File = open(filename,'r')
                 Slines = File.readlines()
                 File.close()
-                LoadControls(Slines,data)
+                G2fil.LoadControls(Slines,data)
         finally:
             dlg.Destroy()
         G2frame.ImageZ = GetImageZ(G2frame,data)
@@ -561,7 +517,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,Names[image])
                     imctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                     Slines = controlsDict[imctrls['twoth']]
-                    LoadControls(Slines,imctrls)
+                    G2fil.LoadControls(Slines,imctrls)
         finally:
             dlg.Destroy()
         
@@ -3549,3 +3505,168 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             self.FillList(parms)
 # Autointegration end
 ###########################################################################
+
+def testColumnMetadata(G2frame):
+    '''Test the column-oriented metadata parsing, as implemented at 1-ID, by showing results
+    when using a .par and .lbls pair.
+    
+     * Select a .par file, if more than one in selected dir.
+     * Select the .*lbls file, if more than one matching .par file. 
+     * Parse the .lbls file, showing errors if encountered; loop until errors are fixed.
+     * Search for an image or a line in the .par file and show the results when interpreted
+     
+    See :func:`GSASIIfiles.readColMetadata` for more details.
+    '''
+    if not GSASIIpath.GetConfigValue('Column_Metadata_directory'):
+        G2G.G2MessageBox(G2frame,'The configuration option for I-ID Metadata is not set.\n'+
+                         'Please use the File/Preferences menu to set Column_Metadata_directory',
+                         'Warning')
+        return
+    parFiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
+    if not parFiles: 
+        G2G.G2MessageBox(G2frame,'No .par files found in directory {}. '
+                         .format(GSASIIpath.GetConfigValue('Column_Metadata_directory'))+
+                         '\nThis is set by config variable Column_Metadata_directory '+
+                         '(Set in File/Preferences menu).',
+                         'Warning')
+        return
+    parList = []
+    for parFile in parFiles:
+        lblList = []
+        parRoot = os.path.splitext(parFile)[0]
+        for f in glob.glob(parRoot+'.*lbls'):
+            if os.path.exists(f): lblList.append(f)
+        if not len(lblList):
+            continue
+        parList.append(parFile)
+    if len(parList) == 0:
+        G2G.G2MessageBox(G2frame,'No .lbls or .EXT_lbls file found for .par file(s) in directory {}. '
+                         .format(GSASIIpath.GetConfigValue('Column_Metadata_directory'))+
+                         '\nThis is set by config variable Column_Metadata_directory '+
+                         '(Set in File/Preferences menu).',
+                         'Warning')
+        return
+    elif len(parList) == 1:
+        parFile = parList[0]
+    else:
+        dlg = G2G.G2SingleChoiceDialog(G2frame,
+                'More than 1 .par file found. (Better if only 1!). Choose the one to test in '+
+                GSASIIpath.GetConfigValue('Column_Metadata_directory'),
+                'Choose .par file', [os.path.split(i)[1] for i in parList])
+        if dlg.ShowModal() == wx.ID_OK:
+            parFile = parList[dlg.GetSelection()]
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+    # got .par file; now work on .*lbls file
+    lblList = []
+    parRoot = os.path.splitext(parFile)[0]
+    for f in glob.glob(parRoot+'.*lbls'):
+        if os.path.exists(f): lblList.append(f)
+    if not len(lblList):
+        raise Exception('How did this happen! No .*lbls files for '+parFile)
+    elif len(lblList) == 1:
+        lblFile = lblList[0]
+    else:
+        dlg = G2G.G2SingleChoiceDialog(G2frame,
+                'Select label file for .par file '+parFile,
+                'Choose label file', [os.path.split(i)[1] for i in lblList])
+        if dlg.ShowModal() == wx.ID_OK:
+            lblFile = lblList[dlg.GetSelection()]
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+    # parse the labels file
+    errors = True
+    while errors:
+        labels,lbldict,keyCols,keyExp,errors = G2fil.readColMetadataLabels(lblFile)
+        if errors:
+            t = "Error reading file "+lblFile
+            for l in errors:
+                t += '\n'
+                t += l
+            t += "\n\nPlease edit the file and press OK (or Cancel to quit)"
+            dlg = wx.MessageDialog(G2frame,message=t,
+                caption="Read Error",style=wx.ICON_ERROR| wx.OK|wx.STAY_ON_TOP|wx.CANCEL)
+            if dlg.ShowModal() != wx.ID_OK: return            
+    # request a line number, read that line
+    dlg = G2G.SingleStringDialog(G2frame,'Read what',
+                                 'Enter a line number or an image file name (-1=last line)',
+                                 '-1',size=(400,-1))
+    if dlg.Show():
+        fileorline = dlg.GetValue()
+        dlg.Destroy()
+    else:
+        dlg.Destroy()
+        return
+    # and report the generated key pairs in metadata dict
+    linenum = None
+    try:
+        linenum = int(fileorline)
+    except:
+        imageName = os.path.splitext(os.path.split(fileorline)[1])[0]
+
+    fp = open(parFile,'Ur')
+    for iline,line in enumerate(fp):
+        if linenum is not None:
+            if iline == linenum:
+                items = line.strip().split(' ')
+                n = "Line {}".format(iline)
+                break
+            else:
+                continue
+        else:
+            items = line.strip().split(' ')
+            nameList = keyExp['filename'](*[items[j] for j in keyCols['filename']])
+            if type(nameList) is str:
+                if nameList != imageName: continue
+                name = nameList
+                break
+            else:
+                for name in nameList:
+                    print (name,name == imageName)
+                    if name == imageName:
+                        n = "Image {} found in line {}".format(imageName,iline)
+                        break # got a match
+                else:
+                    continue
+                break
+    else:
+        if linenum is not None:
+            n = "Line {}".format(iline)
+        else:
+            n = "Image {} not found. Reporting line {}".format(imageName,iline)
+        items = line.strip().split(' ')
+    fp.close()
+    metadata = G2fil.evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp,True)
+    title = "Results: ("+n+")"
+    t = ['Files: '+parFile,lblFile,' ']
+    n = ["Named parameters:"]
+    l = ['',"Labeled columns:"]
+    for key in sorted(metadata):
+        if key == "filename" or key.startswith('label_prm'): continue
+        if key in keyCols:
+            n += ["  {} = {}".format(key,metadata[key])]
+        elif key in lbldict.values():
+            l += ["  {} = {}".format(key,metadata[key])]
+        else:
+            t += ["** Unexpected:  {}".format(key,metadata[key])]
+    if type(metadata['filename']) is str:
+        l += ["","Filename: "+ metadata['filename']]
+    else:
+        l += ["","Filename(s): "]
+        for i,j in enumerate(metadata['filename']):
+            if i: l[-1] += ', '
+            l[-1] += j
+    t += n + l + ['','Unused columns:']
+    usedCols = list(lbldict.keys())
+    for i in keyCols.values(): usedCols += i
+    for i in range(len(items)):
+        if i in usedCols: continue
+        t += ["  {}: {}".format(i,items[i])]
+    dlg = G2G.G2SingleChoiceDialog(None,title,'Column metadata parse results',t,
+                                   monoFont=True,filterBox=False,size=(400,600),
+                                   style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE|wx.OK)
+    dlg.ShowModal()

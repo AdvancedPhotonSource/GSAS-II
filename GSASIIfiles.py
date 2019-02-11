@@ -742,4 +742,86 @@ def WriteControls(filename,data):
             continue
         File.write(key+':'+str(data[key])+'\n')
     File.close()
-    
+
+def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
+    '''Read a single image with an image importer. This is called to 
+    reread an image after it has already been imported, so it is not 
+    necessary to reload metadata.
+
+    Based on :func:`GetImageData.GetImageData` which this can replace
+    where imageOnly=True
+
+    :param list ImageReaderlist: list of Reader objects for images
+    :param str imagefile: name of image file
+    :param int/str ImageTag: specifies a particular image to be read from a file.
+      First image is read if None (default).
+    :param str formatName: the image reader formatName
+
+    :returns: an image as a numpy array
+    '''
+    # determine which formats are compatible with this file
+    primaryReaders = []
+    secondaryReaders = []
+    for rd in ImageReaderlist:
+        flag = rd.ExtensionValidator(imagefile)
+        if flag is None: 
+            secondaryReaders.append(rd)
+        elif flag:
+            if not FormatName:
+                primaryReaders.append(rd)
+            elif FormatName == rd.formatName:
+                primaryReaders.append(rd)
+    if len(secondaryReaders) + len(primaryReaders) == 0:
+        print('Error: No matching format for file '+imagefile)
+        raise Exception('No image read')
+    errorReport = ''
+    if not imagefile:
+        return
+    for rd in primaryReaders+secondaryReaders:
+        rd.ReInitialize() # purge anything from a previous read
+        rd.errors = "" # clear out any old errors
+        if not rd.ContentsValidator(imagefile): # rejected on cursory check
+            errorReport += "\n  "+rd.formatName + ' validator error'
+            if rd.errors: 
+                errorReport += ': '+rd.errors
+                continue
+        flag = rd.Reader(imagefile,None,blocknum=ImageTag)
+        if flag: # this read succeeded
+            if rd.Image is None:
+                raise Exception('No image read. Strange!')
+            if GSASIIpath.GetConfigValue('Transpose'):
+                print ('Transposing Image!')
+                rd.Image = rd.Image.T
+            #rd.readfilename = imagefile
+            return rd.Image
+    else:
+        print('Error reading file '+imagefile)
+        print('Error messages(s)\n'+errorReport)
+        raise Exception('No image read')
+
+def readMasks(filename,masks,ignoreThreshold):
+    '''Read a GSAS-II masks file'''
+    File = open(filename,'r')
+    save = {}
+    oldThreshold = masks['Thresholds'][0]
+    S = File.readline()
+    while S:
+        if S[0] == '#':
+            S = File.readline()
+            continue
+        [key,val] = S.strip().split(':',1)
+        if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
+            if ignoreThreshold and key == 'Thresholds':
+                S = File.readline() 
+                continue
+            save[key] = eval(val)
+            if key == 'Thresholds':
+                save[key][0] = oldThreshold
+                save[key][1][1] = min(oldThreshold[1],save[key][1][1])
+        S = File.readline()
+    File.close()
+    masks.update(save)
+    # CleanupMasks
+    for key in ['Points','Rings','Arcs','Polygons']:
+        masks[key] = masks.get(key,[])
+        masks[key] = [i for i in masks[key] if len(i)]

@@ -575,6 +575,7 @@ import GSASIIstrIO as G2strIO
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem
 import GSASIIfiles as G2fil
+import GSASIIimage as G2img
 
 # Delay imports to not slow down small scripts that don't need them
 Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
@@ -583,7 +584,7 @@ exportersByExtension = {}
 '''Specifies the list of extensions that are supported for Powder data export'''
 
 def LoadG2fil():
-    """Delay importing this module, it is slow"""
+    """Setup GSAS-II importers. Delay importing this module, it is slow"""
     if len(Readers['Pwdr']) > 0: return
     # initialize imports
     Readers['Pwdr'] = G2fil.LoadImportRoutines("pwd", "Powder_Data")
@@ -1159,6 +1160,67 @@ def _deep_copy_into(from_, into):
         else:
             into[:] = from_
 
+def GetCorrImage(ImageReaderlist,proj,imageRef):
+    '''Gets image & applies dark, background & flat background corrections.
+    based on :func:`GSASIIimgGUI.GetImageZ`
+
+    :param list ImageReaderlist: list of Reader objects for images
+    :param object ImageReaderlist: list of Reader objects for images
+    :param imageRef: A reference to the desired image. Either the Image 
+      tree name (str), the image's index (int) or
+      a image object (:class:`G2Image`)
+
+    :return: array sumImg: corrected image for background/dark/flat back
+    '''
+    ImgObj = proj.image(imageRef)
+    Controls = ImgObj.data['Image Controls']
+    formatName = Controls.get('formatName','')
+    imagefile = ImgObj.data['data'][1]
+    ImageTag = None # fix this for multiimage files
+    sumImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+    if sumImg is None:
+        return []
+    darkImg = False
+    if 'dark image' in Controls:
+        darkImg,darkScale = Controls['dark image']
+        if darkImg:
+            dImgObj = proj.image(darkImg)
+            formatName = dImgObj.data['Image Controls'].get('formatName','')
+            imagefile = dImgObj.data['data'][1]
+            ImageTag = None # fix this for multiimage files
+            darkImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            if darkImg is None:
+                raise Exception('Error reading dark image {}'.format(imagefile))
+            sumImg += np.array(darkImage*darkScale,dtype='int32')
+    if 'background image' in Controls:
+        backImg,backScale = Controls['background image']            
+        if backImg:     #ignores any transmission effect in the background image
+            bImgObj = proj.image(backImg)
+            formatName = bImgObj.data['Image Controls'].get('formatName','')
+            imagefile = bImgObj.data['data'][1]
+            ImageTag = None # fix this for multiimage files
+            backImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            if backImage is None:
+                raise Exception('Error reading background image {}'.format(imagefile))
+            if darkImg:
+                backImage += np.array(darkImage*darkScale/backScale,dtype='int32')
+            else:
+                sumImg += np.array(backImage*backScale,dtype='int32')
+    if 'Gain map' in Controls:
+        gainMap = Controls['Gain map']
+        if gainMap:
+            gImgObj = proj.image(gainMap)
+            formatName = gImgObj.data['Image Controls'].get('formatName','')
+            imagefile = gImgObj.data['data'][1]
+            ImageTag = None # fix this for multiimage files
+            GMimage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            if GMimage is None:
+                raise Exception('Error reading Gain map image {}'.format(imagefile))
+            sumImg = sumImg*GMimage/1000
+    sumImg -= int(Controls.get('Flat Bkg',0))
+    Imax = np.max(sumImg)
+    Controls['range'] = [(0,Imax),[0,Imax]]
+    return np.asarray(sumImg,dtype='int32')
 
 class G2ObjectWrapper(object):
     """Base class for all GSAS-II object wrappers.
@@ -3122,16 +3184,17 @@ class G2Image(G2ObjectWrapper):
         'bool': ['setRings', 'setDefault', 'centerAzm', 'fullIntegrate',
                      'DetDepthRef', 'showLines'],
         'str': ['SampleShape', 'binType', 'formatName', 'color',
-                    'type', 'calibrant'],
+                    'type', ],
         'list': ['GonioAngles', 'IOtth', 'LRazimuth', 'Oblique', 'PolaVal',
                    'SampleAbs', 'center', 'ellipses', 'linescan',
                     'pixelSize', 'range', 'ring', 'rings', 'size', ],
         'dict': ['varylist'],
-#        'image': ['background image', 'dark image', 'Gain map'],
         }
     '''Defines the items known to exist in the Image Controls tree section 
     and their data types.
     '''
+    # special handling: 'background image', 'dark image', 'Gain map',
+    #   'calibrant'
 
     def __init__(self, data, name, proj):
         self.data = data
@@ -3205,16 +3268,32 @@ class G2Image(G2ObjectWrapper):
                     matchList.append([item,typ])
         return matchList
 
+    def setCalibrant(self,calib):
+        '''Set a calibrant for the current image
+
+        :param str calib: specifies a calibrant name which must be one of
+          the entries in file ImageCalibrants.py. This is validated.
+        '''
+        import ImageCalibrants as calFile
+        if calib in calFile.Calibrants.keys():
+            self.data['Image Controls']['calibrant'] = calib
+            return
+        print('Calibrant {} is not valid. Valid calibrants'.format(calib))
+        for i in calFile.Calibrants.keys():
+            if i: print('\t"{}"'.format(i))
+        
     def setControlFile(self,typ,imageRef,mult=None):
         '''Set a image to be used as a background/dark/gain map image
 
         :param str typ: specifies image type, which must be one of:
            'background image', 'dark image', 'gain map'; N.B. only the first
            four characters must be specified and case is ignored.
-        :param imageRef: 
-        :param float mult:
+        :param imageRef: A reference to the desired image. Either the Image 
+          tree name (str), the image's index (int) or
+          a image object (:class:`G2Image`)
+        :param float mult: a multiplier to be applied to the image (not used 
+          for 'Gain map'; required for 'background image', 'dark image'
         '''
-#        'image': ['background image', 'dark image', 'Gain map'],
         if 'back' in typ.lower():
             key = 'background image'
             mult = float(mult)
@@ -3236,6 +3315,7 @@ class G2Image(G2ObjectWrapper):
 
     def loadControls(self,filename):
         '''load controls from a .imctrl file
+
         :param str filename: specifies a file to be read, which should end 
           with .imctrl
         '''
@@ -3247,12 +3327,29 @@ class G2Image(G2ObjectWrapper):
 
     def saveControls(self,filename):
         '''write current controls values to a .imctrl file
+
         :param str filename: specifies a file to write, which should end 
           with .imctrl
         '''
         G2fil.WriteControls(filename,self.data['Image Controls'])
         print('file {} written from {}'.format(filename,self.name))
 
+    def loadMasks(self,filename,ignoreThreshold=False):
+        '''load masks from a .immask file
+
+        :param str filename: specifies a file to be read, which should end 
+          with .immask
+        :param bool ignoreThreshold: If True, masks are loaded with
+          threshold masks. Default is False which means any Thresholds 
+          in the file are ignored.
+        '''
+        G2fil.readMasks(filename,self.data['Masks'],ignoreThreshold)
+        print('file {} read into {}'.format(filename,self.name))
+        
+    def Recalibrate(self):
+        ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
+        G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
+        
 ##########################
 # Command Line Interface #
 ##########################

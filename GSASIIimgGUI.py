@@ -191,7 +191,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         G2frame.ifGetRing = True
                 
     def OnRecalibrate(event):
-        G2img.ImageRecalibrate(G2frame,data,masks)
+        G2img.ImageRecalibrate(G2frame,G2frame.ImageZ,data,masks)
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
     def OnRecalibAll(event):
@@ -216,7 +216,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Data['setRings'] = True
                     Mid = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')
                     Masks = G2frame.GPXtree.GetItemPyData(Mid)
-                    vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(G2frame,Data,Masks)
+                    vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(
+                        G2frame,G2frame.ImageZ,Data,Masks)
                     sigList = list(sigList)
                     if 'dist' not in varyList:
                         vals.append(parmDict['dist'])
@@ -1435,27 +1436,7 @@ def UpdateMasks(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                File = open(filename,'r')
-                save = {}
-                oldThreshold = data['Thresholds'][0]
-                S = File.readline()
-                while S:
-                    if S[0] == '#':
-                        S = File.readline()
-                        continue
-                    [key,val] = S.strip().split(':',1)
-                    if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
-                        if ignoreThreshold and key == 'Thresholds':
-                            S = File.readline() 
-                            continue
-                        save[key] = eval(val)
-                        if key == 'Thresholds':
-                            save[key][0] = oldThreshold
-                            save[key][1][1] = min(oldThreshold[1],save[key][1][1])
-                    S = File.readline()
-                File.close()
-                data.update(save)
-                CleanupMasks(data)
+                G2fil.readMasks(filename,data,ignoreThreshold)
                 wx.CallAfter(UpdateMasks,G2frame,data)
                 G2plt.PlotExposedImage(G2frame,event=event)                
         finally:

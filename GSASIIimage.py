@@ -539,9 +539,15 @@ def MakeFrameMask(data,frame):
                 tam[iBeg:iFin,jBeg:jFin] = True
     return tam.T
     
-def ImageRecalibrate(G2frame,data,masks):
+def ImageRecalibrate(G2frame,ImageZ,data,masks):
     '''Called to repeat the calibration on an image, usually called after
     calibration is done initially to improve the fit.
+
+    :param G2frame: The top-level GSAS-II frame or None, to skip plotting
+    :param np.Array ImageZ: the image to calibrate
+    :param dict data: the Controls dict for the image
+    :param dict masks: a dict with masks
+    :returns: a list containing vals,varyList,sigList,parmDict
     '''
     import ImageCalibrants as calFile
     print ('Image recalibration:')
@@ -579,7 +585,7 @@ def ImageRecalibrate(G2frame,data,masks):
     Found = False
     wave = data['wavelength']
     frame = masks['Frames']
-    tam = ma.make_mask_none(G2frame.ImageZ.shape)
+    tam = ma.make_mask_none(ImageZ.shape)
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
@@ -590,7 +596,7 @@ def ImageRecalibrate(G2frame,data,masks):
             print ('next line is a hyperbola - search stopped')
             break
         ellipse = GetEllipse(dsp,data)
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(G2frame.ImageZ,mask=tam))[0]
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
         if Ring:
             if iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -620,7 +626,8 @@ def ImageRecalibrate(G2frame,data,masks):
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     print ('calibration time = %.3f'%(time.time()-time0))
-    G2plt.PlotImage(G2frame,newImage=True)        
+    if G2frame:
+        G2plt.PlotImage(G2frame,newImage=True)        
     return [vals,varyList,sigList,parmDict]
             
 def ImageCalibrate(G2frame,data):

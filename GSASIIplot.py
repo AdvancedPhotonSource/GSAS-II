@@ -1990,6 +1990,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
+        mode = Page.toolbar._active
+        if mode == 'PAN':
+            Page.Cursor = wx.Cursor(wx.CURSOR_SIZING)
+        elif mode == 'ZOOM':
+            Page.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
+        else:
+            Page.Cursor = wx.Cursor(wx.CURSOR_CROSS)
+            
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(Temps),ytics,-1)

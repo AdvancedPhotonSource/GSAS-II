@@ -1295,7 +1295,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     
     Mast: array orthogonalization matrix for Uij
     '''
-    ngl = 32
+    ngl = 36                    #selected for integer steps for 1/6,1/4,1/3...
     glTau,glWt = pwd.pygauleg(0.,1.,ngl)         #get Gauss-Legendre intervals & weights
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
@@ -1348,9 +1348,8 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         tauM = np.arange(1.,nWaves[3]+1-nx)[:,nxs]*glTau  #Mwaves x ngl
         MmodA = Am[:,:,:,nxs]*np.sin(twopi*tauM[nxs,:,nxs,:]) #atoms X waves X 3 X ngl
         MmodB = Bm[:,:,:,nxs]*np.cos(twopi*tauM[nxs,:,nxs,:]) #ditto
-        Mmod = np.array([MmodB,MmodA])
-        Mmod = np.sum(Mmod,axis=2)                #atoms X 3 X ngl; sum waves
-        Mmod = np.swapaxes(Mmod,1,-1)       #ReIm,mxyz,Ntau,Natm
+        Mmod = np.sum(MmodA+MmodB,axis=1)
+        Mmod = np.swapaxes(Mmod,1,2)    #Mxyz,Ntau,Natm
     else:
         Mmod = 1.0
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt

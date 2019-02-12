@@ -1849,29 +1849,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Page.plotStyle['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
-            if G2frame.SinglePlot:  #toggle sqrt plot
-                Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
-                if Page.plotStyle['sqrtPlot']:
-                    Page.plotStyle['logPlot'] = False
-                Ymax = max(Pattern[1][1])
-                if Page.plotStyle['sqrtPlot']:
-                    Page.plotStyle['delOffset'] = .002*np.sqrt(Ymax)
-                    Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
-                    Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
-                else:
-                    Page.plotStyle['delOffset'] = .02*Ymax
-                    Page.plotStyle['refOffset'] = -0.1*Ymax
-                    Page.plotStyle['refDelt'] = .1*Ymax
-            else:   #select color scheme for multiplots & contour plots
-                choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
-                choice.sort()
-                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    G2frame.ContourColor = choice[sel]
-                else:
-                    G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
-                dlg.Destroy()
+            Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
+            if Page.plotStyle['sqrtPlot']:
+                Page.plotStyle['logPlot'] = False
+            Ymax = max(Pattern[1][1])
+            if Page.plotStyle['sqrtPlot']:
+                Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
+                Page.plotStyle['refOffset'] = -0.1*np.sqrt(Ymax)
+                Page.plotStyle['refDelt'] = .1*np.sqrt(Ymax)
+            else:
+                Page.plotStyle['delOffset'] = .02*Ymax
+                Page.plotStyle['refOffset'] = -0.1*Ymax
+                Page.plotStyle['refDelt'] = .1*Ymax
+            newPlot = True
+        elif event.key == 'S' and 'PWDR' in plottype:
+            choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.ContourColor = choice[sel]
+            else:
+                G2frame.ContourColor = GSASIIpath.GetConfigValue('Contour_color','Paired')
+            dlg.Destroy()
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
@@ -1956,7 +1956,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['qPlot'] = False
                 newPlot = True      
         elif event.key == 'm':
-            Page.plotStyle['sqrtPlot'] = False
+#            Page.plotStyle['sqrtPlot'] = False
             if not G2frame.Contour:                
                 G2frame.SinglePlot = not G2frame.SinglePlot                
             G2frame.Contour = False
@@ -1994,7 +1994,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     KeyItem[1]()
                     break
         else:
-            print('no binding for key',event.key)
+            #print('no binding for key',event.key)
             #GSASIIpath.IPyBreak()
             return
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
@@ -2509,9 +2509,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or \
             'PWDR' in G2frame.GPXtree.GetItemText(PickId)) and xpos:
             Id = G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists')
-#            GSASIIpath.IPyBreak()
             if Id:     
-                #Phases = G2frame.GPXtree.GetItemPyData(Id)
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
                     data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
@@ -2573,7 +2571,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     DifLine = ['']
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max','g: toggle grid',
-            'i: interpolation method','s: color scheme','c: contour off','t: temperature for y-axis')
+            'i: interpolation method','S: color scheme','c: contour off','t: temperature for y-axis','s: toggle sqrt plot')
     else:
         if Page.plotStyle['logPlot']:
             if 'PWDR' in plottype:
@@ -2604,7 +2602,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x','o: reset offset',
                         'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot','g: toggle grid',
-                        'm: toggle multidata plot','w: toggle (Io-Ic)/sig plot','f: select data','s: color scheme','+: no selection')
+                        'm: toggle multidata plot','w: toggle (Io-Ic)/sig plot','s: toggle sqrt plot','f: select data','S: color scheme','+: no selection')
             elif plottype in ['SASD','REFD']:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars','g: toggle grid',
@@ -2697,6 +2695,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     offsetY = Page.plotStyle['Offset'][0]
     if Page.plotStyle['logPlot']:
         Title = 'log('+Title+')'
+    elif Page.plotStyle['sqrtPlot']:
+        Title = r'$\sqrt{I}$ for '+Title
+        Ymax = np.sqrt(Ymax)
     if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
     elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
@@ -2787,9 +2788,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
             magLineList = data[0].get('Magnification',[])
-            if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']
-                ) or ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']
-                ): # reversed regions relative to data order
+            if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
+                ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
                 tcorner = 1
                 tpos = 1.0
                 halign = 'right'
@@ -2833,7 +2833,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             if Page.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))
+                Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))+bxye+NoffY*Ymax/100.0
                 np.seterr(invalid=olderr['invalid'])
             elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):

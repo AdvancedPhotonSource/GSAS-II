@@ -892,11 +892,20 @@ class GSASIItoolbar(Toolbar):
 def SetCursor(page):
     mode = page.toolbar._active
     if mode == 'PAN':
-        page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
+        if 'phoenix' in wx.version():
+            page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
+        else:
+            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_SIZING))
     elif mode == 'ZOOM':
-        page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
+        if 'phoenix' in wx.version():
+            page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
+        else:
+            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
     else:
-        page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
+        if 'phoenix' in wx.version():
+            page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
+        else:
+            page.canvas.SetCursor(wx.StockCursor(wx.CURSOR_CROSS))
             
 ################################################################################
 ##### PlotSngl

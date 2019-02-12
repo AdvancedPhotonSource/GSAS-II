@@ -841,6 +841,7 @@ class GSASIItoolbar(Toolbar):
                     return
             dlg.Destroy()
 
+
     # these routines are not currently in use, but there are probably good
     # places in the graphics to disable the zoom/pan to release the mouse bind
     #
@@ -887,6 +888,15 @@ class GSASIItoolbar(Toolbar):
                 self.ToggleTool(self.wx_ids['Pan'], False)
             else:
                 print('Unable to reset Pan button, please report this with matplotlib version')
+                
+def SetCursor(page):
+    mode = page.toolbar._active
+    if mode == 'PAN':
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_SIZING)
+    elif mode == 'ZOOM':
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
+    else:
+        page.canvas.Cursor = wx.Cursor(wx.CURSOR_CROSS)
             
 ################################################################################
 ##### PlotSngl
@@ -1161,7 +1171,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
                     if s: s += '\n'
                     s += fmt.format(*hkl[:n])
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('d =%9.3f F^2 =%9.3f'%(Xpos,ypos),1)                   
             except TypeError:
@@ -1990,14 +2000,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
-        mode = Page.toolbar._active
-        if mode == 'PAN':
-            Page.Cursor = wx.Cursor(wx.CURSOR_SIZING)
-        elif mode == 'ZOOM':
-            Page.Cursor = wx.Cursor(wx.CURSOR_MAGNIFIER)
-        else:
-            Page.Cursor = wx.Cursor(wx.CURSOR_CROSS)
-            
+        
+        SetCursor(Page)
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(Temps),ytics,-1)
@@ -2006,7 +2010,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         xpos = event.xdata
         if xpos is None: return  #avoid out of frame mouse position
         ypos = event.ydata
-        Page.canvas.SetCursor(wx.CROSS_CURSOR)
         try:
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters')
             if not Id: return
@@ -4211,7 +4214,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 if G2frame.Contour:
                     G2frame.G2plotNB.status.SetStatusText('R =%.3fA pattern ID =%5d'%(xpos,int(ypos)),1)
@@ -4501,7 +4504,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)                   
             except TypeError:
@@ -4625,7 +4628,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
             except TypeError:
@@ -4761,7 +4764,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
             if Ymin<ypos<Ymax:
                 Xwd = Xmax-Xmin
                 Ywd = Ymax-Ymin
-                Page.canvas.SetCursor(wx.CROSS_CURSOR)
+                SetCursor(Page)
                 ix = int(Nxy[0]*(xpos-Xmin)/Xwd)
                 iy = int(Nxy[1]*(ypos-Ymin)/Ywd)
                 try:
@@ -4841,7 +4844,7 @@ def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=N
                 resName = resNames[int(xpos+.5)-1]
             else:
                 resName = ''
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 if 0 <= xpos < len(resNames):
                     G2frame.G2plotNB.status.SetStatusText('Residue: %s score: %.2f'%(resName,ypos),1)
@@ -4899,7 +4902,7 @@ def PlotStrain(G2frame,data,newPlot=False):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(ypos,xpos),1)                   
             except TypeError:
@@ -4953,7 +4956,7 @@ def PlotSASDSizeDist(G2frame):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('diameter =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
             except TypeError:
@@ -4993,7 +4996,7 @@ def PlotPowderLines(G2frame):
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f '%(xpos,),1)
             if G2frame.PickId and G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
@@ -5696,7 +5699,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             ypos = event.ydata
             ix = int(round(xpos*10))
             iy = int(round((Slab.shape[0]-1)*(ypos+0.5-Off*0.005)))
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             try:
                 G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f %s=%9.3f'%(xpos,GkDelta+Ax,ypos,Gkrho,Slab[iy,ix]/8.),1)                   
 #                GSASIIpath.IPyBreak()                  
@@ -6358,7 +6361,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         sizexy = Data['size']
         if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
             Page.SetToolTipString('%8.2f %8.2fmm'%(event.xdata,event.ydata))
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            SetCursor(Page)
             item = G2frame.itemPicked
             pixelSize = Data['pixelSize']
             scalex = 1000./pixelSize[0]         #microns --> 1/mm
@@ -7312,7 +7315,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
             
     def OnMotion(event):
         Page.SetToolTipString('')
-        Page.canvas.SetCursor(wx.CROSS_CURSOR)
+        SetCursor(Page)
         azm = event.ydata
         tth = event.xdata
         if azm and tth:
@@ -7367,7 +7370,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
             
     def OnMotion(event):
         Page.SetToolTipString('')
-        Page.canvas.SetCursor(wx.CROSS_CURSOR)
+        SetCursor(Page)
         azm = event.xdata
         tth = event.ydata
         if azm and tth:

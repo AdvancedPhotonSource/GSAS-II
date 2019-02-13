@@ -1895,7 +1895,7 @@ def SetDefaultSample():
 ######################################################################
 class ImportBaseclass(object):
     '''Defines a base class for the reading of input files (diffraction
-    data, coordinates,...). See :ref:`Writing a Import Routine<Import_routines>`
+    data, coordinates,...). See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use a subclass of this class.
     '''
     class ImportException(Exception):

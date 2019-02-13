@@ -15,10 +15,10 @@ was an unnecessary choice; this could be done from the class used.)
 This list may not include all currently defined formats, since modules
 may be loaded from anywhere in the path. 
 
+.. _import_routines: 
+
 Writing an Import Routine
 --------------------------
-
-.. _Import_routines:
 
 When writing a import routine, one should create a new class derived
 from :class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`

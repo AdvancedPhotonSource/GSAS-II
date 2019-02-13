@@ -30,13 +30,13 @@ All GSASIIscriptable scripts will need to create a :class:`G2Project` object
 either for a new GSAS-II project or to read in an existing project (.gpx) file. The most commonly used routines in this object are:
 
     :meth:`G2Project.add_powder_histogram`
-       Used to read in powder diffraction data to a project file.
+       Used to read in powder diffraction data into a project file.
 
     :meth:`G2Project.add_simulated_powder_histogram`
        Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
 
     :meth:`G2Project.add_image`
-       Reads in an image to a project.
+       Reads in an image into a project.
 
     :meth:`G2Project.add_phase`
        Adds a phase to a project

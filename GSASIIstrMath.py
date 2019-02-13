@@ -1521,8 +1521,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         
         GSdata = GSdata[:,:,nxs,:]+np.swapaxes(MSmod,0,1)         #Natm,Nops,Ntau,Mxyz
         GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
-        
-        Kdata = np.inner(GSdata,uAmat).T     #Cartesian unit vectors
+        mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])
+        mXYZ = np.array(np.inner(mXYZ,modQ)*ngl,dtype=int)
+        RGSdata = np.array([[np.roll(GSdata[i,j],mXYZ[i,j],0) for j in range(mXYZ.shape[1])] for i in range(mXYZ.shape[0])])
+        Kdata = np.inner(RGSdata,uAmat).T     #Cartesian unit vectors
         SMag = np.sqrt(np.sum(Kdata**2,axis=0))
         Kdata /= SMag      #mxyz,ntau,nops,natm
 
@@ -1606,12 +1608,11 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fam = (Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])   #Mxyz,Nref,Ntau,Nop,Natm
             fbm = (Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])
             
-            fas = np.sum(np.sum(fam,axis=-1),axis=-1)      #xyz,Nref,ntau; sum ops & atoms
-            fbs = np.sum(np.sum(fbm,axis=-1),axis=-1)      #ditto
+            fas = np.sum(np.sum(fam,axis=-1)**2,axis=-1)      #xyz,Nref,ntau; sum ops & atoms
+            fbs = np.sum(np.sum(fbm,axis=-1)**2,axis=-1)      #ditto
             
-            refl.T[10] = np.sum(np.sum(fas**2,axis=0)*glWt[nxs,nxs,:],axis=-1)+     \
-                np.sum(np.sum(fbs**2,axis=0)*glWt[nxs,nxs,:],axis=-1)    #square of sums
-            refl.T[11] = atan2d(fbs[:,0],fas[:,0])  #ignore f' & f"
+            refl.T[10] = np.sum(np.sum(fas,axis=0)/ngl,axis=-1)+np.sum(np.sum(fbs,axis=0)/ngl,axis=-1)    #square of sums
+#            refl.T[11] = mphase[:,0,0]  #ignore f' & f"
             
         else:
             GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms

@@ -6408,21 +6408,16 @@ def UpdatePDFGrid(G2frame,data):
                 data[fileKey][itemKey] = value
                 data[fileKey]['Mult'] = GetExposure(value)
                 ResetFlatBkg()
-                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                 
             def OnMoveMult(event):
                 data[key]['Mult'] += multSpin.GetValue()*0.01
                 mult.SetValue(data[key]['Mult'])
                 multSpin.SetValue(0)
-#                ResetFlatBkg()
-                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                             
             def OnMult(invalid,value,tc):
                 if invalid: return
-#                ResetFlatBkg()
-                wx.CallLater(100,UpdatePDFGrid,G2frame,data)
                 wx.CallAfter(OnComputePDF,None)
                 
             def OnRefMult(event):

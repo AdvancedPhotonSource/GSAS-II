@@ -154,10 +154,10 @@ selecting amongst one or more datasets (and perhaps phases) or data items for
 ``Reader()`` routines that may encounter more than one set of information
 in a file. 
 
+.. _ContentsValidator:  
+
 ContentsValidator()
 ~~~~~~~~~~~~~~~~~~~~
-
-.. _ContentsValidator:
 
 Defining a ``ContentsValidator`` method is optional, but is usually a
 good idea, particularly if the file extension is not a reliable
@@ -300,10 +300,9 @@ Image Import Routines
 -----------------------------------------------------
 Image import routines are classes derived from
 :class:`GSASIIIO.ImportImage`. 
-See :ref:`Writing a Import Routine<Import_Routines>` for general
-information on importers and 
-:ref:`the ImportImage docstring<Image_import_routines>`
-for what a reader should define. 
+See :ref:`Writing a Import Routine<import_routines>` for general
+information on importers and the :class:`GSASIIobj.ImportImage` for
+information on what class variables a reader should set. 
 Image importers must be found in files named `G2img*.py` that are in the Python path
 and the class must override the ``__init__`` method and add a
 ``Reader`` method.

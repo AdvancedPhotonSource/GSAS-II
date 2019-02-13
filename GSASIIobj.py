@@ -2024,8 +2024,9 @@ class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
     Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase`.
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPhase` and in 
+    :func:`GSASIIscriptable.import_generic`.
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
 
     '''
@@ -2047,7 +2048,7 @@ class ImportStructFactor(ImportBaseclass):
     methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
     :meth:`Reader`.
 
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use import classes in general. The specifics
     for reading a structure factor histogram require that
     the ``Reader()`` routine in the import
@@ -2102,8 +2103,9 @@ class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.
 
     Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
-    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder`.
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    in :meth:`GSASIIdataGUI.GSASII.OnImportPowder` and in 
+    :func:`GSASIIscriptable.import_generic`.
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,
@@ -2145,7 +2147,7 @@ class ImportPowderData(ImportBaseclass):
 ######################################################################
 class ImportSmallAngleData(ImportBaseclass):
     '''Defines a base class for the reading of files with small angle data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
@@ -2179,7 +2181,7 @@ class ImportSmallAngleData(ImportBaseclass):
 ######################################################################
 class ImportReflectometryData(ImportBaseclass):
     '''Defines a base class for the reading of files with reflectometry data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
@@ -2213,7 +2215,7 @@ class ImportReflectometryData(ImportBaseclass):
 ######################################################################
 class ImportPDFData(ImportBaseclass):
     '''Defines a base class for the reading of files with PDF G(R) data.
-    See :ref:`Writing a Import Routine<Import_Routines>`
+    See :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use this class.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
@@ -2247,13 +2249,12 @@ class ImportImage(ImportBaseclass):
         which in turn calls :meth:`GSASIIdataGUI.GSASII.OnImportGeneric`. That calls
         methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
         :meth:`Reader`. This returns a list of reader objects for each read image.
+        Also used in :func:`GSASIIscriptable.import_generic`.
 
       * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
         directly into the data tree.
 
       * Images are reloaded with :func:`GSASIIIO.GetImageData`.
-
-    .. _Image_import_routines:
 
     When reading an image, the ``Reader()`` routine in the ImportImage class
     should set:
@@ -2280,7 +2281,7 @@ class ImportImage(ImportBaseclass):
       * :attr:`repeatcount`: set to the number of the image.
 
     Note that the above is initialized with :meth:`InitParameters`.
-    (Also see :ref:`Writing a Import Routine<Import_Routines>`
+    (Also see :ref:`Writing a Import Routine<import_routines>`
     for an explanation on how to use import classes in general.)
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],

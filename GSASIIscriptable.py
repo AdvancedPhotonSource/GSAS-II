@@ -14,60 +14,71 @@
 *GSASIIscriptable: Scripting Interface*
 =======================================
 
-Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files.
-This file specifies several wrapper classes around GSAS-II data representations.
-They all inherit from :class:`G2ObjectWrapper`. The chief class is :class:`G2Project`,
-which represents an entire GSAS-II project and provides several methods to access
-phases, powder histograms, and execute Rietveld refinements. These routines can be
-accessed in two ways: 
-the :ref:`CommandlineInterface` provides access a number of features without writing
-Python scripts of from the :ref:`API`, which allows much more versatile access from
-within Python. 
+Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files
+without use of the graphical user interface (GUI). This module defines wrapper classes around 
+many types of GSAS-II data representations, including :class:`G2Project`,
+:class:`G2AtomRecord`, :class:`G2PwdrData`, :class:`G2Phase` and :class:`G2Image`. 
+They all inherit from :class:`G2ObjectWrapper`. 
 
+GSASIIscriptable offers two ways to use some of GSAS-II's capabilities
+without use of the graphical user interface: through Python scripts that 
+call the :ref:`API` or via shell/batch commands that use
+the :ref:`CommandlineInterface`, which provides access a number of features without writing
+Python scripts. 
 
-=====================
-Overview
-=====================
-The most commonly used routines are:
+All GSASIIscriptable scripts will need to create a :class:`G2Project` object 
+either for a new GSAS-II project or to read in an existing project (.gpx) file. The most commonly used routines in this object are:
 
-:class:`G2Project`
-   Always needed: used to create a new project (.gpx) file or read in an existing one.
+    :meth:`G2Project.add_powder_histogram`
+       Used to read in powder diffraction data to a project file.
 
-:meth:`G2Project.add_powder_histogram`
-   Used to read in powder diffraction data to a project file.
+    :meth:`G2Project.add_simulated_powder_histogram`
+       Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
 
-:meth:`G2Project.add_simulated_powder_histogram`
-   Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
+    :meth:`G2Project.add_image`
+       Reads in an image to a project.
 
-:meth:`G2Project.save`
-   Writes the current project to disk.
+    :meth:`G2Project.add_phase`
+       Adds a phase to a project
 
-:meth:`G2Project.do_refinements`
-   This is passed a list of dictionaries, where each dict defines a refinement step.
-   Passing a list with a single empty dict initiates a refinement with the current
-   parameters and flags.
-   
-:meth:`G2Project.set_refinement`
-   This is passed a single dict which is used to set parameters and flags.
-   These actions can be performed also in :meth:`G2Project.do_refinements`. 
+    :meth:`G2Project.histograms`
+       Provides a list of histograms in the current project, as :class:`G2PwdrData` objects
 
-Refinement dicts
-   A refinement dict sets up a single refinement step
-   (as used in :meth:`G2Project.do_refinements` and described in
-   :ref:`Project_dicts`). 
-   It specifies parameter & refinement flag changes, which are usually followed by a refinement and
-   optionally by calls to locally-defined Python functions. The keys used in these dicts are
-   defined in the :ref:`Refinement_recipe` table, below.
+    :meth:`G2Project.phases`
+       Provides a list of phases defined in the current project, as :class:`G2Phase` objects
 
-There are several ways to set parameters project using different level objects, as is 
-are described in sections below, but the simplest way to access parameters and flags
-in a project is to use the above routines. 
+    :meth:`G2Project.images`
+       Provides a list of images in the current project, as :class:`G2Image` objects
+
+    :meth:`G2Project.save`
+       Writes the current project to disk.
+
+    :meth:`G2Project.do_refinements`
+       This is passed a list of dictionaries, where each dict defines a refinement step.
+       Passing a list with a single empty dict initiates a refinement with the current
+       parameters and flags. A refinement dict sets up a single refinement step 
+       (as described in :ref:`Project_dicts`). 
+       It specifies parameter & refinement flag changes, which are usually followed by a 
+       refinement run and optionally by calls to locally-defined Python functions. 
+       The keys used in these refinement dicts are defined in the :ref:`Refinement_recipe` 
+       table, below.
+
+    :meth:`G2Project.set_refinement`
+       This is passed a single dict which is used to set parameters and flags.
+       These actions can be performed also in :meth:`G2Project.do_refinements`. 
+
+Images, powder histograms, phases and within phases, atoms, all have their own objects and provide
+methods for getting and changing settings associated with them. See the classes, 
+:class:`G2PwdrData`, :class:`G2Phase` and :class:`G2Image` for more information. 
+
+.. _Refinement_dicts:
 
 =====================
 Refinement parameters
 =====================
-The most complex part of scripting GSAS-II comes in setting up the input to control refinements, which is
-described here. 
+The most complex part of scripting GSAS-II refinements 
+comes in setting up the input to control refinements. This input is
+described immediately below. 
 
 .. _Project_dicts:
 
@@ -528,16 +539,14 @@ GSASIIscriptable Application Layer (API)
 ============================================================
 
 The large number of classes and modules in this module are described below.
-Most commonly a script will create a G2Project object using :class:`G2Project` and then
-perform actions such as
-adding a histogram (method :meth:`G2Project.add_powder_histogram`),
+A script will have one or more G2Project objects using :class:`G2Project` and then
+perform actions such as adding a histogram (method :meth:`G2Project.add_powder_histogram`),
 adding a phase (method :meth:`G2Project.add_phase`),
 or setting parameters and performing a refinement
 (method :meth:`G2Project.do_refinements`).
 
-In some cases, it may be easier to use
-methods inside :class:`G2PwdrData` or :class:`G2Phase` or these objects 
-may offer more options.
+To change settings within hitograms, images and phases, one usually needs to use
+methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`. 
 
 ---------------------------------------------------------------
 Complete Documentation: All classes and functions
@@ -3173,8 +3182,20 @@ class G2Phase(G2ObjectWrapper):
 
 class G2Image(G2ObjectWrapper):
     """Wrapper for an IMG tree entry, containing an image and various metadata.
+
+    Example:
+
+    >>> gpx = G2sc.G2Project(filename='itest.gpx')
+    >>> img2 = gpx.add_image(idata,fmthint="TIF")
+    >>> img2[0].loadControls('stdSettings.imctrl')
+    >>> img2[0].setCalibrant('Si    SRM640c')
+    >>> img2[0].loadMasks('stdMasks.immask')
+    >>> img2[0].Recalibrate()
+    >>> img2[0].setControl('outAzimuths',3)
+    >>> pwdrList = img2[0].Integrate()
+
     """
-    # parameters in 
+    # parameters in that can be accessed via setControl
     ControlList = {
         'int': ['calibskip', 'pixLimit', 'edgemin', 'outChannels',
                     'outAzimuths'],
@@ -3191,11 +3212,14 @@ class G2Image(G2ObjectWrapper):
         'dict': ['varylist'],
         }
     '''Defines the items known to exist in the Image Controls tree section 
-    and their data types.
-    '''
-    # special handling: 'background image', 'dark image', 'Gain map',
-    #   'calibrant'
-
+    and the item's data types. A few are not included 
+    ('background image', 'dark image', 'Gain map', and 'calibrant') because
+    these items have special set routines,
+    where references to entries are checked to make sure their values are
+    correct.
+    ''' 
+    # this may need future attention
+        
     def __init__(self, data, name, proj):
         self.data = data
         self.name = name
@@ -3252,8 +3276,10 @@ class G2Image(G2ObjectWrapper):
         '''Finds the Image Controls parameter(s) in the current image
         that match the string in arg.
 
-          Example: findControl('calib') will return 
-          [['calibskip', 'int'], ['calibdmin', 'float'], ['calibrant', 'str']]
+            Example: 
+
+            >>> findControl('calib')
+            [['calibskip', 'int'], ['calibdmin', 'float'], ['calibrant', 'str']]
 
         :param str arg: a string containing part of the name of a 
           parameter (dict entry) in the image's Image Controls. 
@@ -3347,9 +3373,171 @@ class G2Image(G2ObjectWrapper):
         print('file {} read into {}'.format(filename,self.name))
         
     def Recalibrate(self):
+        '''Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate 
+        menu command). Note that for this to work properly, the calibration 
+        coefficients (center, wavelength, ditance & tilts) must be fairly close.
+        This may produce a better result if run more than once.
+        '''
         ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
         G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
-        
+
+    def Integrate(self,name=None):
+        '''Invokes an image integration (same as Image Controls/Integration/Integrate
+        menu command). All parameters will have previously been set with Image Controls
+        so no input is needed here. Note that if integration is performed on an 
+        image more than once, histogram entries may be overwritten. Use the name
+        parameter to prevent this if desired. 
+
+        :param str name: base name for created histogram(s). If None (default), 
+          the histogram name is taken from the image name. 
+        :returns: a list of created histogram (:class:`G2PwdrData`) objects.
+        '''
+        ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
+        # do integration
+        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'])
+        # code from here on based on G2IO.SaveIntegration, but places results in the current
+        # project rather than tree
+        X = Xvals[:-1]
+        N = len(X)
+
+        data = self.data['Image Controls']
+        Comments = self.data['Comments']
+        # make name from image, unless overridden
+        if name:
+            if not name.startswith(data['type']+' '):
+                name = data['type']+' '+name
+        else:
+            name = self.name.replace('IMG ',data['type']+' ')
+        if 'PWDR' in name:
+            if 'target' in data:
+                names = ['Type','Lam1','Lam2','I(L2)/I(L1)','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                codes = [0 for i in range(14)]
+            else:
+                names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','Z','SH/L','Azimuth'] 
+                codes = [0 for i in range(12)]
+        elif 'SASD' in name:
+            names = ['Type','Lam','Zero','Azimuth'] 
+            codes = [0 for i in range(4)]
+            X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
+        Xminmax = [X[0],X[-1]]
+        Azms = []
+        dazm = 0.
+        if data['fullIntegrate'] and data['outAzimuths'] == 1:
+            Azms = [45.0,]                              #a poor man's average?
+        else:
+            for i,azm in enumerate(azms[:-1]):
+                if azm > 360. and azms[i+1] > 360.:
+                    Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
+                else:    
+                    Azms.append(G2img.meanAzm(azm,azms[i+1]))
+            dazm = np.min(np.abs(np.diff(azms)))/2.
+        # pull out integration results and make histograms for each
+        IntgOutList = []
+        for i,azm in enumerate(azms[:-1]):
+            Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
+            # MT dict to contain histogram
+            HistDict = {}
+            histItems = [Aname]
+            Sample = G2obj.SetDefaultSample()       #set as Debye-Scherrer
+            Sample['Gonio. radius'] = data['distance']
+            Sample['Omega'] = data['GonioAngles'][0]
+            Sample['Chi'] = data['GonioAngles'][1]
+            Sample['Phi'] = data['GonioAngles'][2]
+            Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
+            polariz = 0.99    #set default polarization for synchrotron radiation!
+            for item in Comments:
+                if 'polariz' in item:
+                    try:
+                        polariz = float(item.split('=')[1])
+                    except:
+                        polariz = 0.99
+                for key in ('Temperature','Pressure','Time','FreePrm1','FreePrm2','FreePrm3','Omega',
+                    'Chi','Phi'):
+                    if key.lower() in item.lower():
+                        try:
+                            Sample[key] = float(item.split('=')[1])
+                        except:
+                            pass
+                if 'label_prm' in item.lower():
+                    for num in ('1','2','3'):
+                        if 'label_prm'+num in item.lower():
+                            Controls['FreePrm'+num] = item.split('=')[1].strip()
+            if 'PWDR' in Aname:
+                if 'target' in data:    #from lab x-ray 2D imaging data
+                    wave1,wave2 = waves[data['target']]
+                    parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
+                else:
+                    parms = ['PXC',data['wavelength'],0.0,polariz,1.0,-0.10,0.4,0.30,1.0,0.0,0.0001,Azms[i]]
+            elif 'SASD' in Aname:
+                Sample['Trans'] = data['SampleAbs'][0]
+                parms = ['LXC',data['wavelength'],0.0,Azms[i]]
+            Y = ints[i]
+            Ymin = np.min(Y)
+            Ymax = np.max(Y)
+            W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
+            section = 'Comments'
+            histItems += [section]
+            HistDict[section] = Comments
+            section = 'Limits'
+            histItems += [section]
+            HistDict[section] = copy.deepcopy([tuple(Xminmax),Xminmax])
+            if 'PWDR' in Aname:
+                section = 'Background'
+                histItems += [section]
+                HistDict[section] = [['chebyschev',1,3,1.0,0.0,0.0],
+                    {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}]
+            inst = [dict(zip(names,zip(parms,parms,codes))),{}]
+            for item in inst[0]:
+                inst[0][item] = list(inst[0][item])
+            section = 'Instrument Parameters'
+            histItems += [section]
+            HistDict[section] = inst
+            if 'PWDR' in Aname:
+                section = 'Sample Parameters'
+                histItems += [section]
+                HistDict[section] = Sample
+                section = 'Peak List'
+                histItems += [section]
+                HistDict[section] = {'sigDict':{},'peaks':[]}
+                section = 'Index Peak List'
+                histItems += [section]
+                HistDict[section] = [[],[]]
+                section = 'Unit Cells List'
+                histItems += [section]
+                HistDict[section] = []
+                section = 'Reflection Lists'
+                histItems += [section]
+                HistDict[section] = {}
+            elif 'SASD' in Aname:             
+                section = 'Substances'
+                histItems += [section]
+                HistDict[section] = G2pdG.SetDefaultSubstances()  # this needs to be moved
+                section = 'Sample Parameters'
+                histItems += [section]
+                HistDict[section] = Sample
+                section = 'Models'
+                histItems += [section]
+                HistDict[section] = G2pdG.SetDefaultSASDModel() # this needs to be moved
+            valuesdict = {
+                'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
+                'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
+            # if Aname is already in the project replace it
+            for j in self.proj.names:
+                if j[0] == Aname: 
+                    print('Replacing "{}" in project'.format(Aname))
+                    break
+            else:
+                print('Adding "{}" to project'.format(Aname))
+                self.proj.names.append([Aname]+
+                        [u'Comments',u'Limits',u'Background',u'Instrument Parameters',
+                         u'Sample Parameters', u'Peak List', u'Index Peak List',
+                         u'Unit Cells List', u'Reflection Lists'])
+            HistDict['data'] = [valuesdict,
+                    [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]]
+            self.proj.data[Aname] = HistDict
+            IntgOutList.append(self.proj.histogram(Aname))
+        return IntgOutList
+
 ##########################
 # Command Line Interface #
 ##########################

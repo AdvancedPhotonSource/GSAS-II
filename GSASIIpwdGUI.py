@@ -6418,6 +6418,7 @@ def UpdatePDFGrid(G2frame,data):
                             
             def OnMult(invalid,value,tc):
                 if invalid: return
+                ResetFlatBkg()
                 wx.CallAfter(OnComputePDF,None)
                 
             def OnRefMult(event):
@@ -6496,6 +6497,7 @@ def UpdatePDFGrid(G2frame,data):
                     Cmin += CBmin*data['Container Bkg.']['Mult']
                 Smin += Cmul*Cmin
             data['Flat Bkg'] = max(0,Smin)
+            G2frame.flatBkg.SetValue(data['Flat Bkg'])
                             
         PDFfileSizer = wx.BoxSizer(wx.VERTICAL)
         PDFfileSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' PDF data files: '),0,WACV)
@@ -6618,7 +6620,7 @@ def UpdatePDFGrid(G2frame,data):
         
         def OnFlatSpin(event):
             data['Flat Bkg'] += flatSpin.GetValue()*0.01*data['IofQmin']
-            flatBkg.SetValue(data['Flat Bkg'])
+            G2frame.flatBkg.SetValue(data['Flat Bkg'])
             flatSpin.SetValue(0)        
             wx.CallAfter(OnComputePDF,None)
                 
@@ -6678,9 +6680,9 @@ def UpdatePDFGrid(G2frame,data):
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
             sqBox.Add(obliqCoeff,0)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Flat Bkg.: '),0,WACV)
-        flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),min=0,
+        G2frame.flatBkg = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Flat Bkg',nDig=(10,0),min=0,
                 typeHint=float,OnLeave=AfterChangeNoRefresh)
-        sqBox.Add(flatBkg,0)
+        sqBox.Add(G2frame.flatBkg,0)
         flatSpin = wx.SpinButton(G2frame.dataWindow,style=wx.SP_VERTICAL,size=wx.Size(20,25))
         flatSpin.SetRange(-1,1)
         flatSpin.SetValue(0)

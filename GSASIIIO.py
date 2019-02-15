@@ -1342,6 +1342,7 @@ class ExportBaseclass(object):
         self.Phases = {}
         self.Histograms = {}
         self.powderDict = {}
+        self.sasdDict = {}
         self.xtalDict = {}
         self.parmDict = {}
         self.sigDict = {}
@@ -1477,6 +1478,26 @@ class ExportBaseclass(object):
                 numselected = len(self.histnam)
             else:
                 choices = sorted(self.powderDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame)
+                if hnum is None: return True
+                self.histnam = [choices[hnum]]
+                numselected = len(self.histnam)
+        elif self.currentExportType == 'sasd':
+            if len(self.sasdDict) == 0:
+                self.G2frame.ErrorDialog(
+                    'Empty project',
+                    'Project does not contain any small angle data.')
+                return True
+            elif len(self.sasdDict) == 1:
+                self.histnam = self.sasdDict.values()
+            elif self.multiple:
+                choices = sorted(self.sasdDict.values())
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
+                if not hnum: return True
+                self.histnam = [choices[i] for i in hnum]
+                numselected = len(self.histnam)
+            else:
+                choices = sorted(self.sasdDict.values())
                 hnum = G2G.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
@@ -1654,6 +1675,7 @@ class ExportBaseclass(object):
         '''
         self.OverallParms = {}
         self.powderDict = {}
+        self.sasdDict = {}
         self.xtalDict = {}
         self.Phases = {}
         self.Histograms = {}
@@ -1679,6 +1701,8 @@ class ExportBaseclass(object):
             histType = 'PWDR'
         elif self.currentExportType == 'image':
             histType = 'IMG'
+        elif self.currentExportType == 'sasd':
+            histType = 'SASD'
 
         if histType: # Loading just one kind of tree entry
             item, cookie = self.G2frame.GPXtree.GetFirstChild(self.G2frame.root)
@@ -1711,6 +1735,8 @@ class ExportBaseclass(object):
                     d = self.powderDict
                 elif hist.startswith("HKLF"): 
                     d = self.xtalDict
+                elif hist.startswith("SASD"):
+                    d = self.sasdDict
                 else:
                     return                    
                 i = self.Histograms[hist].get('hId')
@@ -1736,6 +1762,8 @@ class ExportBaseclass(object):
                 self.powderDict[i] = hist
             elif hist.startswith("HKLF"): 
                 self.xtalDict[i] = hist
+            elif hist.startswith("SASD"):
+                self.sasdDict[i] = hist
 
     def dumpTree(self,mode='type'):
         '''Print out information on the data tree dicts loaded in loadTree.

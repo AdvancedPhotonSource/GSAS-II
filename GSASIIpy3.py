@@ -110,7 +110,7 @@ def FormatValue(val,maxdigits=None):
         fmt = "{" + (":{:d}.{:d}f".format(digits[0],decimals))+"}"
     else: # in range where g formatting should do what I want
         # used? 
-        decimals = digits[0] - 1
+        decimals = digits[0] - 6
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     try:
         return fmt.format(float(val)).strip()

@@ -353,6 +353,83 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         self.CloseFile()
         print(hist+' reflections written to file '+self.fullpath)
 
+class ExportSASDCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file for a small angle data set
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'CSV file',
+            extension='.csv',
+            longFormatName = 'Export small angle data as comma-separated (csv) file'
+            )
+        self.exporttype = ['sasd']
+        #self.multiple = False # only allow one histogram to be selected
+        self.multiple = True
+
+    def Writer(self,TreeName,filename=None):
+        self.OpenFile(filename)
+        histblk = self.Histograms[TreeName]
+        if len(self.Histograms[TreeName]['Models']['Size']['Distribution']):
+            self.Write('"Size Distribution"')
+            Distr = np.array(self.Histograms[TreeName]['Models']['Size']['Distribution'])
+            WriteList(self,("bin_pos","bin_width","bin_value"))
+            digitList = 2*((13,3),)+((13,4,'g'),)
+            for bindata in Distr.T:
+                line = ""
+                for val,digits in zip(bindata,digitList):
+                    if line: line += ','
+                    line += G2py3.FormatValue(val,digits)
+                self.Write(line)            
+        self.Write('"Small angle data"')
+        Parms = self.Histograms[TreeName]['Instrument Parameters'][0]
+        for parm in Parms:
+            if parm in ['Type','Source',]:
+                line = '"Instparm: %s","%s"'%(parm,Parms[parm][0])
+            elif parm in ['Lam',]:
+                line = '"Instparm: %s",%10.6f'%(parm,Parms[parm][1])
+            else:
+                line = '"Instparm: %s",%10.2f'%(parm,Parms[parm][1])
+            self.Write(line)
+        WriteList(self,("q","y_obs","y_sig","y_calc","y_bkg"))
+        digitList = 5*((13,5,'g'),)
+        for vallist in zip(histblk['Data'][0],
+                       histblk['Data'][1],
+                       1./np.sqrt(histblk['Data'][2]),
+                       histblk['Data'][3],
+                       histblk['Data'][4],
+                       ):
+            line = ""
+            for val,digits in zip(vallist,digitList):
+                if line: line += ','
+                line += G2py3.FormatValue(val,digits)
+            self.Write(line)
+        self.CloseFile()
+        
+    def Exporter(self,event=None):
+        '''Export a set of small angle data as a csv file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        if self.ExportSelect( # set export parameters
+            AskFile='single' # get a file name/directory to save in
+            ): return
+        filenamelist = []
+        for hist in self.histnam:
+            if len(self.histnam) == 1:
+                name = self.filename
+            else:    # multiple files: create a unique name from the histogram
+                name = self.MakePWDRfilename(hist)
+            fileroot = os.path.splitext(G2obj.MakeUniqueLabel(name,filenamelist))[0]
+            # create the file
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            self.Writer(hist)
+            print('Histogram '+hist+' written to file '+self.fullpath)
+
 class ExportSingleCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
 

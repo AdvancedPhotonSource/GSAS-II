@@ -2550,6 +2550,9 @@ class GSASII(wx.Frame):
 
         mapmenu = wx.Menu()
         item = menu.AppendSubMenu(mapmenu,'Maps as','Export density map(s)')
+        
+        sasdmenu = wx.Menu()
+        item = menu.AppendSubMenu(sasdmenu,'Small angle data as','Export small angle histogram(s)')
 
         # sequential exports are handled differently; N.B. enabled in testSeqRefineMode
         seqPhasemenu = wx.Menu()
@@ -2579,6 +2582,8 @@ class GSASII(wx.Frame):
                     submenu = imagemenu
                 elif typ == "map":
                     submenu = mapmenu
+                elif typ == "sasd":
+                    submenu = sasdmenu
                 # elif typ == "pdf":
                 #     submenu = pdfmenu
                 else:
@@ -5043,7 +5048,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
         for lbl,txt in (('Phase','Export selected phase(s)'),
                         ('Project','Export entire sequential fit'),
-                        ('Powder','Export selected powder histogram(s)')
+                        ('Powder','Export selected powder histogram(s)'),
+                        ('sasd','Export selected small angle histogram(s)')
                         ):
             objlist = []
             for obj in self.parent.GetTopLevelParent().exporterlist:

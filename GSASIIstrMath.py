@@ -1608,10 +1608,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fam = (Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])   #Mxyz,Nref,Ntau,Nop,Natm
             fbm = (Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])
             
-            fas = np.sum(np.sum(fam,axis=-1)**2,axis=-1)      #xyz,Nref,ntau; sum ops & atoms
-            fbs = np.sum(np.sum(fbm,axis=-1)**2,axis=-1)      #ditto
+            fas = np.sum(np.sum(fam,axis=-1),axis=-1)/ngl      #xyz,Nref,ntau; sum ops & atoms
+            fbs = np.sum(np.sum(fbm,axis=-1),axis=-1)/ngl      #ditto
             
-            refl.T[10] = np.sum(np.sum(fas,axis=0)/ngl,axis=-1)+np.sum(np.sum(fbs,axis=0)/ngl,axis=-1)    #square of sums
+            refl.T[10] = np.sum(np.sum(fas,axis=-1),axis=0)**2+np.sum(np.sum(fbs,axis=-1),axis=0)**2    #square of sums
 #            refl.T[11] = mphase[:,0,0]  #ignore f' & f"
             
         else:

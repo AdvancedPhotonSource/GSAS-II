@@ -4981,7 +4981,7 @@ def PlotSASDSizeDist(G2frame):
     Bins,Dbins,BinMag = data['Size']['Distribution']
     Plot.set_title('Size Distribution')
     Plot.set_xlabel(r'$D, \AA$',fontsize=14)
-    Plot.set_ylabel(r'$Volume distribution f(D)$',fontsize=14)
+    Plot.set_ylabel(r'$Volume\ distribution,\ f(D)$',fontsize=14)
     if data['Size']['logBins']:
         Plot.set_xscale("log",nonposx='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])

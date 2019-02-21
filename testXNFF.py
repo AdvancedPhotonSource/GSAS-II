@@ -19,6 +19,12 @@ import GSASIIElemGUI as G2elG
 import atmdata
 WACV = wx.ALIGN_CENTER_VERTICAL
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 def create(parent):
     return testXNFF(parent)
     

@@ -40,6 +40,11 @@ import GSASIImapvars as G2mv
 import pytexture as ptx
 ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
+try:
+    wx.NewId
+except AttributeError:
+    wx.NewId = wx.NewIdRef
+
 def create(parent):
     return testDeriv(parent)
     

@@ -34,6 +34,12 @@ import GSASIIobj as G2obj
 import GSASIIconstrGUI as G2cnstG
 import GSASIIexprGUI as G2exG
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 TabSelectionIdDict = {}

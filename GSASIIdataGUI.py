@@ -72,6 +72,12 @@ import GSASIIstrMain as G2stMn
 import defaultIparms as dI
 import GSASIIfpaGUI as G2fpa
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)

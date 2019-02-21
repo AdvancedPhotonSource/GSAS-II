@@ -6,7 +6,12 @@ GSASIIpath.SetBinaryPath()
 import GSASIIspc as G2spc
 import GSASIIctrlGUI as G2G
 
-    
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 [wxID_FILEEXIT, 
 ] = [wx.NewId() for _init_coll_File_Items in range(1)]
 WACV = wx.ALIGN_CENTER_VERTICAL

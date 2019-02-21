@@ -29,6 +29,12 @@ npcosd = lambda x: np.cos(x*np.pi/180.)
 npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 def create(parent):
     return scanCCD(parent)
     

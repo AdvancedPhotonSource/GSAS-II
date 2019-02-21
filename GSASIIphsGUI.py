@@ -60,6 +60,12 @@ import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)

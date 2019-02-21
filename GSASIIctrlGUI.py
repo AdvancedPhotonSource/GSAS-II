@@ -166,6 +166,12 @@ except:
     # Don't depend on GUI
     pass
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 ################################################################################
 #### Fixed definitions for wx Ids 
 ################################################################################

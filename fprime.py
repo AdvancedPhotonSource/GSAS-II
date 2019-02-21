@@ -16,6 +16,12 @@ GSASIIpath.SetVersionNumber("$Revision: 3765 $")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 
+try:
+    wx.NewIdRef
+    wx.NewId = wx.NewIdRef
+except AttributeError:
+    pass
+
 if '2' in platform.python_version_tuple()[0]:
     Gkmu = unichr(0x3bc)
     Gktheta = unichr(0x3b8)

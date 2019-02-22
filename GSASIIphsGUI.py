@@ -7769,7 +7769,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add((5,5),0)
                 if Torsions:                    
                     rbSeq = RBData['Residue'][rbId]['rbSeq']
-                    TorSizer = wx.FlexGridSizer(0,4)
+                    TorSizer = wx.FlexGridSizer(0,4,5,5)
                     TorSizer.AddGrowableCol(1,1)
                     for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
                         torName = ''

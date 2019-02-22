@@ -1606,6 +1606,7 @@ def UpdateRigidBodies(G2frame,data):
         UpdateVectorRB()
         
     def AddResidueRB(event):
+        global rbId
         AtInfo = data['Residue']['AtInfo']
         macro = getMacroFile('rigid body')
         if not macro:
@@ -1653,6 +1654,7 @@ def UpdateRigidBodies(G2frame,data):
         UpdateResidueRB()
         
     def ImportResidueRB():
+        global rbId
         AtInfo = data['Residue']['AtInfo']
         text,ext = getTextFile()
         if not text:

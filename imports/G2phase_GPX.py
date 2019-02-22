@@ -20,7 +20,7 @@ import sys
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
-    import _pickle as cPickle
+    import pickle as cPickle
 import random as ran
 import GSASIIobj as G2obj
 import GSASIIIO as G2IO

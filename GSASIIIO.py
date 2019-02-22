@@ -37,7 +37,7 @@ import platform
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
-    import _pickle as cPickle
+    import pickle as cPickle
 import sys
 import re
 import glob

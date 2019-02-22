@@ -634,6 +634,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             s = ''
             for histogram in sorted(phasedict['Histograms']):
                 if histogram.startswith("HKLF"): continue # powder only
+                if not self.Phases[phasenam]['Histograms'][histogram]['Use']: continue
                 Histogram = self.Histograms.get(histogram)
                 if not Histogram: continue
                 hapData = phasedict['Histograms'][histogram]

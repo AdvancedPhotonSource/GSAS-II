@@ -29,7 +29,11 @@ import inspect
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
-    import _pickle as cPickle
+    try:
+        import _pickle as cPickle
+    except:
+        print('Warning: failed to import the optimized Py3 pickle (_pickle)')
+        import pickle as cPickle
 import numpy as np
 import numpy.ma as ma
 import matplotlib as mpl

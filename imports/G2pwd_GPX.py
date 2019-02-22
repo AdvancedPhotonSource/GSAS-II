@@ -17,7 +17,7 @@ import platform
 if '2' in platform.python_version_tuple()[0]:
     import cPickle
 else:
-    import _pickle as cPickle
+    import pickle as cPickle
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath

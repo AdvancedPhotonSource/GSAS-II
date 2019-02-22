@@ -126,7 +126,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     if '2' in platform.python_version_tuple()[0]:
         import cPickle
     else:
-        import _pickle as cPickle
+        import pickle as cPickle
     import time
     more = False
     time0 = time.time()

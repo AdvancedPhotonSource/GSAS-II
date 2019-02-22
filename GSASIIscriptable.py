@@ -562,7 +562,7 @@ if '2' in platform.python_version_tuple()[0]:
     import cPickle
     strtypes = (str,unicode)
 else:
-    import _pickle as cPickle
+    import pickle as cPickle
     strtypes = (str,bytes)
 import imp
 import copy
@@ -3209,7 +3209,7 @@ class G2Image(G2ObjectWrapper):
         'list': ['GonioAngles', 'IOtth', 'LRazimuth', 'Oblique', 'PolaVal',
                    'SampleAbs', 'center', 'ellipses', 'linescan',
                     'pixelSize', 'range', 'ring', 'rings', 'size', ],
-        'dict': ['varylist'],
+        'dict': ['varyList'],
         }
     '''Defines the items known to exist in the Image Controls tree section 
     and the item's data types. A few are not included 
@@ -3270,6 +3270,7 @@ class G2Image(G2ObjectWrapper):
         '''
         if arg in self.data['Image Controls']:
             return self.data['Image Controls'][arg]
+        print(self.findControl(''))
         raise Exception('arg {} not defined in G2Image.getControl'.format(arg))
 
     def findControl(self,arg):
@@ -3372,12 +3373,54 @@ class G2Image(G2ObjectWrapper):
         G2fil.readMasks(filename,self.data['Masks'],ignoreThreshold)
         print('file {} read into {}'.format(filename,self.name))
         
+    def getVary(self,*args):
+        '''Return the refinement flag(s) for Image Controls parameter(s)
+        in the current image.
+        If the parameter is not found, an exception is raised.
+
+        :param str arg: the name of a refinement parameter in the 
+          varyList for the image. The name should be one of 
+          'dep', 'det-X', 'det-Y', 'dist', 'phi', 'tilt', or 'wave'
+        :param str arg1: the name of a parameter (dict entry) as before,
+          optional
+
+
+        :returns: a list of bool value(s)
+        '''
+        res = []
+        for arg in args:
+            if arg in self.data['Image Controls']['varyList']:
+                res.append(self.data['Image Controls']['varyList'][arg])
+            else:
+                raise Exception('arg {} not defined in G2Image.getVary'.format(arg))
+        return res
+    
+    def setVary(self,arg,value):
+        '''Set a refinement flag for Image Controls parameter in the 
+        current image.
+        If the parameter is not found an exception is raised.
+
+        :param str arg: the name of a refinement parameter in the 
+          varyList for the image. The name should be one of 
+          'dep', 'det-X', 'det-Y', 'dist', 'phi', 'tilt', or 'wave'
+        :param str arg: the name of a parameter (dict entry) in the 
+          image. The parameter must be found in :data:`ControlList`
+          or an exception is raised.
+        :param value: the value to set the parameter. The value is 
+          cast as the appropriate type from :data:`ControlList`.
+        '''
+        if arg in self.data['Image Controls']['varyList']:
+            self.data['Image Controls']['varyList'][arg] = bool(value)
+        else:
+            raise Exception('arg {} not defined in G2Image.setVary'.format(arg))
+
     def Recalibrate(self):
         '''Invokes a recalibration fit (same as Image Controls/Calibration/Recalibrate 
         menu command). Note that for this to work properly, the calibration 
         coefficients (center, wavelength, ditance & tilts) must be fairly close.
         This may produce a better result if run more than once.
         '''
+        LoadG2fil()
         ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
         G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
 

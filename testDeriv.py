@@ -27,7 +27,7 @@ if '2' in platform.python_version_tuple()[0]:
     import cPickle
     import StringIO
 else:
-    import _pickle as cPickle
+    import pickle as cPickle
     import io as StringIO
 import cProfile,pstats
 import wx

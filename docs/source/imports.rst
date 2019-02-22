@@ -3,17 +3,23 @@
 
 Imports are implemented by deriving a class from 
 :class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
-:class:`GSASIIobj.ImportPowderData`
-or :class:`GSASIIIO.ImportPowderData` (which are in turn 
+:class:`GSASIIobj.ImportPowderData` ,
+:class:`GSASIIobj.ImportSmallAngleData`,  
+:class:`GSASIIobj.ImportReflectometryData`,  
+:class:`GSASIIobj.ImportPDFData`,  
+or :class:`GSASIIobj.ImportImage` (which are in turn 
 derived from :class:`GSASIIobj.ImportBaseclass`)
 to implement import of 
 a phase, a single crystal or a powder dataset, respectively. 
 Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`, etc.) are used to
 determine which menu an import routine should be placed into. (N.B. this
-was an unnecessary choice; this could be done from the class used.)
+naming was an unnecessary choice; importer types could be determined
+from the base class.)
 
-This list may not include all currently defined formats, since modules
-may be loaded from anywhere in the path. 
+Most importers are listed below by type (provided this documentation is
+up to date), but note that since modules
+may be loaded from anywhere in the path, your installation could have
+locally-defined importers as well.
 
 .. _import_routines: 
 
@@ -21,15 +27,17 @@ Writing an Import Routine
 --------------------------
 
 When writing a import routine, one should create a new class derived
-from :class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`
-or :class:`GSASIIIO.ImportPowderData`. As described below, 
+from
+:class:`GSASIIobj.ImportPhase`, :class:`GSASIIobj.ImportStructFactor`,
+:class:`GSASIIobj.ImportPowderData` ,
+:class:`GSASIIobj.ImportSmallAngleData`,  
+:class:`GSASIIobj.ImportReflectometryData`,  
+:class:`GSASIIobj.ImportPDFData`,  
+or :class:`GSASIIobj.ImportImage`. As described below, 
 all these classes will implement
 an ``__init__()`` and a ``Reader()`` method, and most will supply a 
 ``ContentsValidator()`` method, too.
-See the :class:`~GSASIIIO.ImportPhase`,
-:class:`~GSASIIIO.ImportStructFactor`,
-:class:`~GSASIIIO.ImportPowderData`
-or :class:`~GSASIIIO.ImportImage` class documentation 
+See the appropriate class documentation 
 for details on what values each type of ``Reader()`` should set. 
 
 __init__()
@@ -111,7 +119,7 @@ read successfully. Optionally, use `self.warnings` to indicate any
 problems. 
 
 If the file cannot be read,  the ``Reader`` routine should
-return False or raise an :class:`GSASIIIO.ImportBaseclass.ImportException`
+return False or raise an :class:`GSASIIobj.ImportBaseclass.ImportException`
 exception. (Why either? Sometimes an exception is the easiest way to
 bail out of a called routine.) Place text in `self.errors` and/or use:: 
 
@@ -172,7 +180,7 @@ This routine is passed a single argument:
   the file and is points to the beginning of the file when ContentsValidator is
   called. 
 
-Note that :meth:`GSASIIIO.ImportBaseclass.CIFValidator` is a ContentsValidator
+Note that :meth:`GSASIIobj.ImportBaseclass.CIFValidator` is a ContentsValidator
 for validating CIF files. 
 
 
@@ -299,7 +307,7 @@ The distributed routines are:
 Image Import Routines
 -----------------------------------------------------
 Image import routines are classes derived from
-:class:`GSASIIIO.ImportImage`. 
+:class:`GSASIIobj.ImportImage`. 
 See :ref:`Writing a Import Routine<import_routines>` for general
 information on importers and the :class:`GSASIIobj.ImportImage` for
 information on what class variables a reader should set. 
@@ -339,6 +347,9 @@ The distributed routines are:
 .. automodule:: G2img_HDF5
     :members: 
 
+.. automodule:: G2img_SFRM
+    :members: 
+       
 PDF Import Routines
 -----------------------------------------------------
 PDF import routines are classes derived from

@@ -1661,7 +1661,11 @@ def SSpcGroup(SGData,SSymbol):
     SSCen = np.zeros((len(SGData['SGCen']),4))
     for icen,cen in enumerate(SGData['SGCen']):
         SSCen[icen,0:3] = cen
-    SSGData['SSGCen'] = SSCen
+    if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:
+        Ncen = len(SGData['SGCen'])
+        for icen in range(Ncen//2,Ncen):
+            SSCen[icen,3] = 0.5
+    SSGData['SSGCen'] = SSCen%1.
     SSGData['SSGOps'] = []
     for iop,op in enumerate(SGData['SGOps']):
         T = np.zeros(4)

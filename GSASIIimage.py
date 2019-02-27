@@ -228,7 +228,7 @@ def ImageLocalMax(image,w,Xpix,Ypix):
     else:
         return 0,0,0,0      
     
-def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
+def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image,mul=1):
     'Needs a doc string'
     def ellipseC():
         'compute estimate of ellipse circumference'
@@ -244,7 +244,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     cphi = cosd(phi-90.)        #convert to major axis rotation
     sphi = sind(phi-90.)
     ring = []
-    C = int(ellipseC())         #ring circumference
+    C = int(ellipseC())*mul         #ring circumference in mm
     azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
@@ -1128,11 +1128,11 @@ def IntStrSta(Image,StrSta,Controls):
         Ring,R = MakeStrStaRing(ring,Image,StaControls)
         if len(Ring):
             ellipse = FitEllipse(R['ImxyObs'].T)
-            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image,5)
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
-            print (' %s %.3f %s %.3f'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint))))
+            print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(zip(ringazm,ringint)).T)
     return RingsAI
     

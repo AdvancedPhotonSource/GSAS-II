@@ -1482,11 +1482,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     '''
     phfx = pfx.split(':')[0]+hfx
-    g = nl.inv(G)
     ast = np.sqrt(np.diag(G))
-    ainv = np.sqrt(np.diag(g))
     GS = G/np.outer(ast,ast)
-    Ginv = g/np.outer(ainv,ainv)
     uAmat = G2lat.Gmat2AB(GS)[0]
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
@@ -1495,6 +1492,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    SSCen = SSGData['SSGCen']
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     MFtables = calcControls['MFtables']
@@ -1510,23 +1508,29 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast)      #NB: Mmod is ReIm,Mxyz,Ntau,Natm
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
 
-    if parmDict[pfx+'isMag']:       #TODO: fix the math
+    if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
-        MSmod = np.array([np.roll(Mmod,int(ngl*ssgt[3]),2) for ssgt in SSGT])   #Nops,Natm,Ntau,Mxyz
+        MSmod = np.array([np.roll(Mmod+Gdata.T[:,nxs,:],-int(round(ngl*ssgt[3])),2) for ssgt in SSGT])   #Nops,Natm,Ntau,Mxyz
         if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
             GSdata = np.hstack((GSdata,-GSdata))      
             MSmod = np.vstack((MSmod,-MSmod))
-        GSdata = np.hstack([GSdata for icen in range(Ncen)])        #dup over cell centering
-        MSmod = np.vstack([MSmod for icen in range(Ncen)])        #dup over cell centering - right??
+        GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
+        MSmod = np.vstack([np.roll(MSmod,-int(round(ngl*cen[3])),2) for cen in SSCen])        #dup over cell centering - right??
         
-        GSdata = GSdata[:,:,nxs,:]+np.swapaxes(MSmod,0,1)         #Natm,Nops,Ntau,Mxyz
-        GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
-        mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])
-        mXYZ = np.array(np.inner(mXYZ,modQ)*ngl,dtype=int)
-        RGSdata = np.array([[np.roll(GSdata[i,j],mXYZ[i,j],0) for j in range(mXYZ.shape[1])] for i in range(mXYZ.shape[0])])
-        Kdata = np.inner(RGSdata,uAmat).T     #Cartesian unit vectors
-        SMag = np.sqrt(np.sum(Kdata**2,axis=0))
-        Kdata /= SMag      #mxyz,ntau,nops,natm
+#another try - keep MSmod separated & calc Kdata without modulation
+        GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
+        Kdata = np.inner(GSdata,uAmat).T     #Cartesian unit vectors
+        SMag = np.sqrt(np.sum(Kdata**2,axis=0))     #magnitude of fixed part of moment
+        Kdata /= SMag      #mxyz,nops,natm- unit Cart. vector for fixed component of moment
+        
+# GSMdata has modulation        
+        GSMdata = np.swapaxes(MSmod,0,1)         #Natm,Nops,Ntau,Mxyz
+        mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1.
+        mXYZ = np.array(np.rint(ngl*np.inner(mXYZ,modQ)),dtype=int)
+        RGSdata = np.array([[np.roll(GSMdata[i,j],-mXYZ[i,j],0) for j in range(mXYZ.shape[1])] for i in range(mXYZ.shape[0])])
+        KMdata = np.inner(RGSdata,uAmat).T     #Cartesian unit vectors
+        SMMag = np.sqrt(np.sum(KMdata**2,axis=0))
+        KMdata /= SMMag      #mxyz,ntau,nops,natm
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1602,16 +1606,24 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             
             HM = np.inner(Bmat,HP.T)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-            eDotK = np.sum(HM[:,:,nxs,nxs,nxs]*Kdata[:,nxs,:,:,:],axis=0)
-            Q = HM[:,:,nxs,nxs,nxs]*eDotK[nxs,:,:,:,:]-Kdata[:,nxs,:,:,:] #Mxyz,Nref,Ntau,Nop,Natm
+#            eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
+            eDotKM = np.sum(HM[:,:,nxs,nxs,nxs]*KMdata[:,nxs,:,:,:],axis=0)
+#            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm
+            QM = HM[:,:,nxs,nxs,nxs]*eDotKM[nxs,:,:,:,:]-KMdata[:,nxs,:,:,:] #Mxyz,Nref,Nop,Natm
 
-            fam = (Q*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])   #Mxyz,Nref,Ntau,Nop,Natm
-            fbm = (Q*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,nxs,:,:]*SMag[nxs,nxs,:,:,:])
+#            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*SMag[nxs,nxs,:,:]  #Mxyz,Nref,Nop,Natm
+#            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*SMag[nxs,nxs,:,:]
             
-            fas = np.sum(np.sum(fam,axis=-1),axis=-1)/ngl      #xyz,Nref,ntau; sum ops & atoms
-            fbs = np.sum(np.sum(fbm,axis=-1),axis=-1)/ngl      #ditto
+            fam = QM*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,nxs,:,:]*SMMag[nxs,nxs,:,:,:]/2.    #Mxyz,Nref,Ntau,Nops,Natm
+            fbm = QM*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,nxs,:,:]*SMMag[nxs,nxs,:,:,:]/2.
             
-            refl.T[10] = np.sum(np.sum(fas,axis=-1),axis=0)**2+np.sum(np.sum(fbs,axis=-1),axis=0)**2    #square of sums
+            fams = np.sum(fam**2,axis=2)/ngl
+            fbms = np.sum(fbm**2,axis=2)/ngl
+            
+            fas = np.sum(np.sum(fams,axis=-1),axis=-1)      #xyz,Nref; sum ops & atoms
+            fbs = np.sum(np.sum(fbms,axis=-1),axis=-1)
+            
+            refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
 #            refl.T[11] = mphase[:,0,0]  #ignore f' & f"
             
         else:

@@ -4454,15 +4454,15 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Plots the reflections in 3D
         '''
         phaseName = G2frame.RefList
+        Super = 0
+        SuperVec = []
         if phaseName not in ['Unknown',]:
             pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
             phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
             General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
-            Super = General.get('Super',0)
-            SuperVec = General.get('SuperVec',[])
-        else:
-            Super = 0
-            SuperVec = []       
+            if General.get('Modulated',False):
+                Super = 1
+                SuperVec = General['SuperVec']
         if 'list' in str(type(data)):   #single crystal data is 2 dict in list
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
@@ -4486,15 +4486,15 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Returns a wx.grid table (G2G.Table) containing a list of all reflections
         for a phase.        
         '''
+        Super = 0
         if phaseName not in ['Unknown',]:
             pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
             phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
             if not phaseId:         #phase deleted 
                 return None
             General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
-            Super = General.get('Super',0)
-        else:
-            Super = 0
+            if General.get('Modulated',False):
+                Super = 1
         rowLabels = []
         if HKLF:
             refList = data[1]['RefList']

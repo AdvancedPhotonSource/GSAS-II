@@ -1606,24 +1606,27 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             
             HM = np.inner(Bmat,HP.T)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-#            eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
+            
+            eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)            
+            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm
+            fam0 = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*SMag[nxs,nxs,:,:]  #Mxyz,Nref,Nop,Natm
+            fbm0 = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*SMag[nxs,nxs,:,:]
+            
             eDotKM = np.sum(HM[:,:,nxs,nxs,nxs]*KMdata[:,nxs,:,:,:],axis=0)
-#            Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #Mxyz,Nref,Nop,Natm
-            QM = HM[:,:,nxs,nxs,nxs]*eDotKM[nxs,:,:,:,:]-KMdata[:,nxs,:,:,:] #Mxyz,Nref,Nop,Natm
+            QM = HM[:,:,nxs,nxs,nxs]*eDotKM[nxs,:,:,:,:]-KMdata[:,nxs,:,:,:] #Mxyz,Nref,ntau,Nop,Natm
+            sinQM = np.sin(twopi*QM)*SMMag[nxs,nxs,:,:,:]    #Mxyz,Nref,Ntau,Nop,Natm
+            cosQM = np.cos(twopi*QM)*SMMag[nxs,nxs,:,:,:]
 
-#            fam = Q*TMcorr[nxs,:,nxs,:]*cosm[nxs,:,:,:]*SMag[nxs,nxs,:,:]  #Mxyz,Nref,Nop,Natm
-#            fbm = Q*TMcorr[nxs,:,nxs,:]*sinm[nxs,:,:,:]*SMag[nxs,nxs,:,:]
+            fam = TMcorr[:,nxs,:]*cosm    #Nref,Nops,Natm
+            fbm = TMcorr[:,nxs,:]*sinm
             
-            fam = QM*TMcorr[nxs,:,nxs,nxs,:]*cosm[nxs,:,nxs,:,:]*SMMag[nxs,nxs,:,:,:]/2.    #Mxyz,Nref,Ntau,Nops,Natm
-            fbm = QM*TMcorr[nxs,:,nxs,nxs,:]*sinm[nxs,:,nxs,:,:]*SMMag[nxs,nxs,:,:,:]/2.
+            famg = fam[nxs,:,nxs,:,:]*cosQM-fbm[nxs,:,nxs,:,:]*sinQM
+            fbmg = fbm[nxs,:,nxs,:,:]*cosQM+fam[nxs,:,nxs,:,:]*sinQM
+                        
+            fas = np.sum(np.sum(famg,axis=-1)**2,axis=-1)      #xyz,Nref; sum ops & atoms
+            fbs = np.sum(np.sum(fbmg,axis=-1)**2,axis=-1)
             
-            fams = np.sum(fam**2,axis=2)/ngl
-            fbms = np.sum(fbm**2,axis=2)/ngl
-            
-            fas = np.sum(np.sum(fams,axis=-1),axis=-1)      #xyz,Nref; sum ops & atoms
-            fbs = np.sum(np.sum(fbms,axis=-1),axis=-1)
-            
-            refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
+            refl.T[10] = 0.25*np.sum(np.sum(fas,axis=0)+np.sum(fbs,axis=0),axis=-1)/ngl    #square of sums
 #            refl.T[11] = mphase[:,0,0]  #ignore f' & f"
             
         else:

@@ -2321,7 +2321,69 @@ class G2PwdrData(G2ObjectWrapper):
         for this histogram.
         '''
         return self.data['Sample Parameters']
-    
+
+    @property
+    def Background(self):
+        '''Provides a list with with the Background parameters
+        for this histogram.
+
+        :returns: list containing a list and dict with background values
+        '''
+        return self.data['Background']
+
+    def add_back_peak(self,pos,int,sig,gam,refflags=[]):
+        '''Adds a background peak to the Background parameters
+        
+        :param float pos: position of peak, a 2theta or TOF value
+        :param float int: integrated intensity of background peak, usually large
+        :param float sig: Gaussian width of background peak, usually large
+        :param float gam: Lorentzian width of background peak, usually unused (small)
+        :param list refflags: a list of 1 to 4 boolean refinement flags for 
+            pos,int,sig & gam, respectively (use [0,1] to refine int only). 
+            Defaults to [] which means nothing is refined. 
+        '''
+        if 'peaksList' not in self.Background[1]:
+            self.Background[1]['peaksList'] = []
+        flags = 4*[False]
+        for i,f in enumerate(refflags):
+            if i>3: break
+            flags[i] = bool(f)
+        bpk = []
+        for i,j in zip((pos,int,sig,gam),flags):
+            bpk += [float(i),j]
+        self.Background[1]['peaksList'].append(bpk)
+        self.Background[1]['nPeaks'] = len(self.Background[1]['peaksList'])
+
+    def del_back_peak(self,peaknum):
+        '''Removes a background peak from the Background parameters
+        
+        :param int peaknum: the number of the peak (starting from 0)
+        '''
+        npks = self.Background[1].get('nPeaks',0)
+        if peaknum >= npks:
+            raise Exception('peak {} not found in histogram {}'.format(peaknum,self.name))
+        del self.Background[1]['peaksList'][peaknum]
+        self.Background[1]['nPeaks'] = len(self.Background[1]['peaksList'])
+        
+    def ref_back_peak(self,peaknum,refflags=[]):
+        '''Sets refinement flag for a background peak
+        
+        :param int peaknum: the number of the peak (starting from 0)
+        :param list refflags: a list of 1 to 4 boolean refinement flags for 
+            pos,int,sig & gam, respectively. If a flag is not specified
+            it defaults to False (use [0,1] to refine int only). 
+            Defaults to [] which means nothing is refined. 
+        '''
+        npks = self.Background[1].get('nPeaks',0)
+        if peaknum >= npks:
+            raise Exception('peak {} not found in histogram {}'.format(peaknum,self.name))
+        flags = 4*[False]
+        for i,f in enumerate(refflags):
+            if i>3: break
+            flags[i] = bool(f)
+        for i,f in enumerate(flags):
+            self.Background[1]['peaksList'][peaknum][2*i+1] = f
+                    
     @property
     def id(self):
         self.proj.update_ids()
@@ -3238,6 +3300,7 @@ class G2Image(G2ObjectWrapper):
         for typ in self.ControlList:
             if arg in self.ControlList[typ]: break
         else:
+            print('Allowed args:\n',[nam for nam,typ in self.findControl('')])
             raise Exception('arg {} not defined in G2Image.setControl'
                                 .format(arg))
         try:
@@ -3273,9 +3336,10 @@ class G2Image(G2ObjectWrapper):
         print(self.findControl(''))
         raise Exception('arg {} not defined in G2Image.getControl'.format(arg))
 
-    def findControl(self,arg):
+    def findControl(self,arg=''):
         '''Finds the Image Controls parameter(s) in the current image
-        that match the string in arg.
+        that match the string in arg. Default is '' which returns all 
+        parameters.
 
             Example: 
 

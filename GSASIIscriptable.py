@@ -8,77 +8,174 @@
 # $Id$
 ########### SVN repository information ###################
 #
-# TODO: integrate 2d data based on a model
-#
 """
 *GSASIIscriptable: Scripting Interface*
 =======================================
 
-Routines for reading, writing, modifying and creating GSAS-II project (.gpx) files
-without use of the graphical user interface (GUI). This module defines wrapper classes around 
-many types of GSAS-II data representations, including :class:`G2Project`,
-:class:`G2AtomRecord`, :class:`G2PwdrData`, :class:`G2Phase` and :class:`G2Image`. 
-They all inherit from :class:`G2ObjectWrapper`. 
+Routines to use an increasing amount of GSAS-II's capabilities from scripts, 
+without use of the graphical user interface (GUI). GSASIIscriptable can create and access
+GSAS-II project (.gpx) files and can directly perform image handling and refinements.  
+The module defines wrapper classes (inheriting from :class:`G2ObjectWrapper`) for a growing number 
+of data tree items.
 
-GSASIIscriptable offers two ways to use some of GSAS-II's capabilities
-without use of the graphical user interface: through Python scripts that 
-call the :ref:`API` or via shell/batch commands that use
-the :ref:`CommandlineInterface`, which provides access a number of features without writing
-Python scripts. 
+GSASIIscriptable can be used in two ways. It offers a command-line mode 
+(see :ref:`CommandlineInterface`) that 
+provides access a number of features without writing Python scripts 
+via shell/batch commands. The more powerful mode of GSASIIscriptable is 
+use is through Python scripts that 
+call the module's application interface (API), see API summary that follows or the :ref:`API` 
+section.
 
-All GSASIIscriptable scripts will need to create a :class:`G2Project` object 
-either for a new GSAS-II project or to read in an existing project (.gpx) file. The most commonly used routines in this object are:
+==================================================
+Application Interface (API) Summary
+==================================================
+This section of the documentation provides an overview to API, with full documentation 
+in the :ref:`API` section. The typical API use will be with a Python script, such as this:
 
-    :meth:`G2Project.add_powder_histogram`
-       Used to read in powder diffraction data into a project file.
+.. code-block::  python
 
-    :meth:`G2Project.add_simulated_powder_histogram`
-       Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
+    from __future__ import division, print_function
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
+    import GSASIIscriptable as G2sc
+    datadir = "/Users/Scratch/"
+    gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
+    gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
+    pardict = {'set': {'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev', 'refine': True,
+                                      'peaks':[[0,True]]}}}
+    gpx.set_refinement(pardict)
 
-    :meth:`G2Project.add_image`
-       Reads in an image into a project.
+Most functionallity is provided via the objects and methods described in this section. 
 
-    :meth:`G2Project.add_phase`
-       Adds a phase to a project
+---------------------
+:class:`G2Project`
+---------------------
 
-    :meth:`G2Project.histograms`
-       Provides a list of histograms in the current project, as :class:`G2PwdrData` objects
+  All GSASIIscriptable scripts will need to create a :class:`G2Project` object 
+  either for a new GSAS-II project or to read in an existing project (.gpx) file. 
+  The most commonly used routines in this object are:
 
-    :meth:`G2Project.phases`
-       Provides a list of phases defined in the current project, as :class:`G2Phase` objects
+.. tabularcolumns:: |l|p{3.5in}|
 
-    :meth:`G2Project.images`
-       Provides a list of images in the current project, as :class:`G2Image` objects
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2Project.save`                                Writes the current project to disk.
 
-    :meth:`G2Project.save`
-       Writes the current project to disk.
+:meth:`G2Project.add_powder_histogram`                Used to read in powder diffraction data into a project file.
 
-    :meth:`G2Project.do_refinements`
-       This is passed a list of dictionaries, where each dict defines a refinement step.
-       Passing a list with a single empty dict initiates a refinement with the current
-       parameters and flags. A refinement dict sets up a single refinement step 
-       (as described in :ref:`Project_dicts`). 
-       It specifies parameter & refinement flag changes, which are usually followed by a 
-       refinement run and optionally by calls to locally-defined Python functions. 
-       The keys used in these refinement dicts are defined in the :ref:`Refinement_recipe` 
-       table, below.
+:meth:`G2Project.add_simulated_powder_histogram`      Defines a "dummy" powder diffraction data that will be simulated after a refinement step.
 
-    :meth:`G2Project.set_refinement`
-       This is passed a single dict which is used to set parameters and flags.
-       These actions can be performed also in :meth:`G2Project.do_refinements`. 
+:meth:`G2Project.add_image`                           Reads in an image into a project.
 
-Images, powder histograms, phases and within phases, atoms, all have their own objects and provide
-methods for getting and changing settings associated with them. See the classes, 
-:class:`G2PwdrData`, :class:`G2Phase` and :class:`G2Image` for more information. 
+:meth:`G2Project.add_phase`                           Adds a phase to a project
+
+:meth:`G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`G2PwdrData` objects
+
+:meth:`G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`G2Phase` objects
+
+:meth:`G2Project.images`                              Provides a list of images in the current project, as :class:`G2Image` objects
+
+:meth:`G2Project.do_refinements`                      This is passed a list of dictionaries, where each dict defines a refinement step. 
+                                                      Passing a list with a single empty dict initiates a refinement with the current
+                                                      parameters and flags. A refinement dict sets up a single refinement step 
+                                                      (as described in :ref:`Project_dicts`). Also see :ref:`Refinement_recipe`.
+
+:meth:`G2Project.set_refinement`                      This is passed a single dict which is used to set parameters and flags.
+                                                      These actions can be performed also in :meth:`G2Project.do_refinements`. 
+==================================================    ===============================================================================================================
+
+---------------------
+:class:`G2Phase`
+---------------------
+
+  Another common object in GSASIIscriptable scripts is :class:`G2Phase`, used to encapsulate each phase in a project, with commonly used methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2Phase.set_refinements`                       Provides a mechanism to set values and refinement flags for the phase. See the :ref:`Phase_parameters_table` 
+                                                      for more details. This information also can be supplied within a call to :meth:`G2Project.do_refinements` 
+                                                      or :meth:`G2Project.set_refinement`.
+:meth:`G2Phase.clear_refinements`                     Unsets refinement flags for the phase. 
+:meth:`G2Phase.set_HAP_refinements`                   Provides a mechanism to set values and refinement flags for parameters specific to both this phase and 
+                                                      one of its histograms. See the :ref:`HAP_parameters_table`. This information also can be supplied within 
+                                                      a call to :meth:`G2Project.do_refinements` or :meth:`G2Project.set_refinement`.
+:meth:`G2Phase.clear_HAP_refinements`                 Clears refinement flags specific to both this phase and one of its histograms.
+:meth:`G2Phase.getHAPvalues`                          Returns values of parameters specific to both this phase and one of its histograms.
+:meth:`G2Phase.atoms`                                 Returns a list of atoms in the phase
+:meth:`G2Phase.atom`                                  Returns an atom from its label 
+:meth:`G2Phase.histograms`                            Returns a list of histograms linked to the phase
+:meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
+:meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
+==================================================    ===============================================================================================================
+
+---------------------
+:class:`G2PwdrData`
+---------------------
+
+  Another common object in GSASIIscriptable scripts is :class:`G2PwdrData`, which encapsulate each powder diffraction histogram in a project, with commonly used methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2PwdrData.set_refinements`                    Provides a mechanism to set values and refinement flags for the powder histogram. See the 
+                                                      :ref:`Histogram_parameters_table` for details.  
+:meth:`G2PwdrData.clear_refinements`                  Unsets refinement flags for the the powder histogram.
+:meth:`G2PwdrData.residuals`                          Reports R-factors etc. for the the powder histogram (also see :meth:`G2PwdrData.get_wR` 
+:meth:`G2PwdrData.add_back_peak`                      Adds a background peak to the histogram. Also see :meth:`G2PwdrData.del_back_peak` and 
+                                                      :meth:`G2PwdrData.ref_back_peak`.
+:meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
+:meth:`G2PwdrData.getdata`                            Provides access to the diffraction data associated with the histogram.
+:meth:`G2PwdrData.Export`                             Writes the diffraction data into a file 
+==================================================    ===============================================================================================================
+
+---------------------
+:class:`G2Image`
+---------------------
+
+  When working with images, there will be a :class:`G2Image` object for each image (also see :meth:`G2Project.add_image`  and :meth:`G2Project.images`).
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2Image.Recalibrate`                           Invokes a recalibration fit starting from the current Image Controls calibration coefficients.
+:meth:`G2Image.Integrate`                             Invokes an image integration All parameters Image Controls will have previously been set.
+:meth:`G2Image.setControl`                            Set an Image Controls parameter in the current image.
+:meth:`G2Image.getControl`                            Return an Image Controls parameter in the current image.
+:meth:`G2Image.findControl`                           Get the names of Image Controls parameters.
+:meth:`G2Image.loadControls`                          Load controls from a .imctrl file (also see :meth:`G2Image.saveControls`).
+:meth:`G2Image.loadMasks`                             Load masks from a .immask file.
+:meth:`G2Image.setVary`                               Set a refinement flag for Image Controls parameter in the current image. (Also see :meth:`G2Image.getVary`)
+:meth:`G2Image.setCalibrant`                          Set a calibrant type (or show choices) for the current image.
+:meth:`G2Image.setControlFile`                        Set a image to be used as a background/dark/gain map image.
+==================================================    ===============================================================================================================
+
+----------------------
+:class:`G2AtomRecord`
+----------------------
+
+  When working with phases, :class:`G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
+  used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
+  refinement_flags, occupancy and uiso can be used to set values. See the class docs and source code.
 
 .. _Refinement_dicts:
 
 =====================
 Refinement parameters
 =====================
-The most complex part of scripting GSAS-II refinements 
-comes in setting up the input to control refinements. This input is
-described immediately below. 
+While scripts can be written that setup refinements by changing individual parameters 
+through calls to the methods associated with objects that wrap each data tree item, 
+many of these actions can be combined into fairly complex dict structures to conduct refinement
+steps. Use of these dicts is required with the :ref:`CommandlineInterface`. This section of the 
+documentation describes these dicts. 
 
 .. _Project_dicts:
 
@@ -88,7 +185,7 @@ Project-level Parameter Dict
 
 As noted below (:ref:`Refinement_parameters_kinds`), there are three types of refinement parameters,
 which can be accessed individually by the objects that encapsulate individual phases and histograms
-but it will be usually simplest to create a composite dictionary
+but it will often be simplest to create a composite dictionary
 that is used at the project-level. A dict is created with keys
 "set" and "clear" that can be supplied to :meth:`G2Project.set_refinement`
 (or :meth:`G2Project.do_refinements`, see :ref:`Refinement_recipe` below) that will
@@ -107,7 +204,8 @@ As an example:
 
     pardict = {'set': { 'Limits': [0.8, 12.0],
                        'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True}},
+                       'Background': {'type': 'chebyschev', 'refine': True,
+                                      'peaks':[[0,True],[1,1,1]] }},
               'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
     my_project.set_refinement(pardict)
     
@@ -131,9 +229,11 @@ As an example, this code performs the same actions as in the example in the sect
               'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
     my_project.do_refinements([pardict])
 
-However, in addition to setting a number of parameters, this example will perform a refinement as well.
-If more than one dict is specified in the list, as is done in this example,
-two refinement steps will be performed:
+However, in addition to setting a number of parameters, this example will perform a refinement as well,
+after setting the parameters. More than one refinement can be performed by including more 
+than one dict in the list. 
+
+In this example, two refinement steps will be performed:
 
 .. code-block::  python
 
@@ -141,7 +241,7 @@ two refinement steps will be performed:
 
 
 The keys defined in the following table
-may be used in a dict supplied to :meth:`G2Project.do_refinements`. Note that now keys ``histograms``
+may be used in a dict supplied to :meth:`G2Project.do_refinements`. Note that keys ``histograms``
 and ``phases`` are used to limit actions to specific sets of parameters within the project. 
 
 ========== ============================================================================
@@ -207,8 +307,8 @@ An example that performs a series of refinement steps follows:
     my_project.do_refinements(reflist)
     
 
-In this example, a separate refinement step will be performed for each dict in the list (since
-"skip" is not included). 
+In this example, a separate refinement step will be performed for each dict in the list. The keyword 
+"skip" can be used to specify a dict that should not include a refinement. 
 Note that in the second from last refinement step, parameters are both set and cleared. 
    
 .. _Refinement_parameters_kinds:
@@ -319,6 +419,12 @@ Background                                  Sample background. If value is a boo
 \                     fit fixed points      If True, triggers a fit to the fixed points to
                                             be calculated. It is calculated when this key is
                                             detected, regardless of calls to refine.
+                      peaks                 Specifies a set of flags for refining 
+                                            background peaks as a nested list. There may
+                                            be an item for each defined background peak
+                                            (or fewer) and each item is a list with the flag 
+                                            values for pos,int,sig & gam (fewer than 4 values 
+                                            are allowed). 
 
 Instrument Parameters                       As in Sample Paramters, provide as a **list** of
                                             subkeys to
@@ -535,7 +641,7 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 .. _API:
 
 ============================================================
-GSASIIscriptable Application Layer (API)
+API: Complete Documentation
 ============================================================
 
 The large number of classes and modules in this module are described below.
@@ -545,12 +651,9 @@ adding a phase (method :meth:`G2Project.add_phase`),
 or setting parameters and performing a refinement
 (method :meth:`G2Project.do_refinements`).
 
-To change settings within hitograms, images and phases, one usually needs to use
+To change settings within histograms, images and phases, one usually needs to use
 methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`. 
 
----------------------------------------------------------------
-Complete Documentation: All classes and functions
----------------------------------------------------------------
 """
 from __future__ import division, print_function
 import argparse
@@ -1171,7 +1274,7 @@ def _deep_copy_into(from_, into):
 
 def GetCorrImage(ImageReaderlist,proj,imageRef):
     '''Gets image & applies dark, background & flat background corrections.
-    based on :func:`GSASIIimgGUI.GetImageZ`
+    based on :func:`GSASIIimgGUI.GetImageZ`. Likely for internal use only.
 
     :param list ImageReaderlist: list of Reader objects for images
     :param object ImageReaderlist: list of Reader objects for images
@@ -2222,14 +2325,20 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def label(self):
+        '''Get the associated atom's label
+        '''
         return self.data[self.ct-1]
 
     @property
     def type(self):
+        '''Get the associated atom's type
+        '''
         return self.data[self.ct]
 
     @property
     def refinement_flags(self):
+        '''Get or set refinement flags for the associated atom
+        '''
         return self.data[self.ct+1]
 
     @refinement_flags.setter
@@ -2242,10 +2351,14 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def coordinates(self):
+        '''Get the associated atom's coordinates
+        '''
         return tuple(self.data[self.cx:self.cx+3])
 
     @property
     def occupancy(self):
+        '''Get or set the associated atom's occupancy fraction
+        '''
         return self.data[self.cx+3]
 
     @occupancy.setter
@@ -2254,15 +2367,21 @@ class G2AtomRecord(G2ObjectWrapper):
 
     @property
     def ranId(self):
+        '''Get the associated atom's Random Id number
+        '''
         return self.data[self.cia+8]
 
     @property
     def adp_flag(self):
+        '''Get the associated atom's iso/aniso setting, 'I' or 'A'
+        '''
         # Either 'I' or 'A'
         return self.data[self.cia]
 
     @property
     def uiso(self):
+        '''Get or set the associated atom's Uiso or Uaniso value(s)
+        '''
         if self.adp_flag == 'I':
             return self.data[self.cia+1]
         else:
@@ -2526,7 +2645,7 @@ class G2PwdrData(G2ObjectWrapper):
         return self['data'][0].get('wR')
 
     def set_refinements(self, refs):
-        """Sets the refinement parameter 'key' to the specification 'value'
+        """Sets the histogram refinement parameter 'key' to the specification 'value'
 
         :param dict refs: A dictionary of the parameters to be set. See
                           :ref:`Histogram_parameters_table` for a description of
@@ -2583,6 +2702,9 @@ class G2PwdrData(G2ObjectWrapper):
                                             for a, b in value['FixedPoints']]
                 if value.get('fit fixed points', False):
                     do_fit_fixed_points = True
+                if 'peaks' in value:
+                    for i,flags in enumerate(value['peaks']):
+                        self.ref_back_peak(i,flags)
 
             elif key == 'Instrument Parameters':
                 instrument, secondary = self.data['Instrument Parameters']
@@ -2627,6 +2749,9 @@ class G2PwdrData(G2ObjectWrapper):
                 if 'FixedPoints' in value:
                     if 'FixedPoints' in peaks:
                         del peaks['FixedPoints']
+                if 'peaks' in value:
+                    for i in range(len(self.Background[1]['peaksList'])):
+                        self.ref_back_peak(i,[])
             elif key == 'Instrument Parameters':
                 instrument, secondary = self.data['Instrument Parameters']
                 for iparam in value:
@@ -3363,7 +3488,8 @@ class G2Image(G2ObjectWrapper):
         '''Set a calibrant for the current image
 
         :param str calib: specifies a calibrant name which must be one of
-          the entries in file ImageCalibrants.py. This is validated.
+          the entries in file ImageCalibrants.py. This is validated and
+          an error provides a list of valid choices.
         '''
         import ImageCalibrants as calFile
         if calib in calFile.Calibrants.keys():

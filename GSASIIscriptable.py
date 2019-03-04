@@ -1561,6 +1561,7 @@ class G2Project(G2ObjectWrapper):
         rd.powderentry[0] = '' # no filename
         rd.powderentry[2] = 1 # only one bank
         rd.comments.append('This is a dummy dataset for powder pattern simulation')
+        rd.idstring = histname
         #Iparm1, Iparm2 = load_iprms(iparams, rd)
         if Tmax < Tmin:
             Tmin,Tmax = Tmax,Tmin
@@ -1585,7 +1586,6 @@ class G2Project(G2ObjectWrapper):
             ]
         Tmin = rd.powderdata[0][0]
         Tmax = rd.powderdata[0][-1]
-        rd.idstring = histname
         histname, new_names, pwdrdata = load_pwd_from_reader(rd, iparams,
                                                             [h.name for h in self.histograms()])
         if histname in self.data:

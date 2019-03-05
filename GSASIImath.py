@@ -1354,6 +1354,18 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     else:
         Mmod = 1.0
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
+
+def MagMod(XYZ,modQ,MSSdata):
+    Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
+    Bm = np.array(MSSdata[3:]).T   #...cos pos mods
+    nWaves = Am.shape[1]
+    MmodA = 0.
+    MmodB = 0.
+    if nWaves:
+        modind = np.arange(nWaves)+1.
+        MmodA = np.sum(Am[:,nxs,:,:]*np.sin(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2) #natm,Nops,Mxyz
+        MmodB = np.sum(Bm[:,nxs,:,:]*np.cos(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2)
+    return np.swapaxes(MmodA,0,1),np.swapaxes(MmodB,0,1)    #Nops,Natm,Mxyz
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

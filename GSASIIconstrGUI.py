@@ -149,6 +149,10 @@ def UpdateConstraints(G2frame,data):
             namelist = ['D11','D22','D33','D12','D13','D23']
         elif 'Tm' in name:
             namelist = ['Tmin','Tmax']
+        elif 'MX' in name or 'MY' in name or 'MZ' in name:
+            namelist = ['MXcos','MYcos','MZcos','MXsin','MYsin','MZsin']
+        elif 'mV' in name:
+            namelist = ['mV0','mV1','mV2']
         elif 'RB' in name:
             rbfx = 'RB'+items[2][2]
             if 'T' in name and 'Tr' not in name:
@@ -1100,7 +1104,7 @@ def UpdateConstraints(G2frame,data):
         G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
-    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
+    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','AwaveType','FwaveType','PwaveType','MwaveType','Vol','isMag',]
     globalList = list(rbDict.keys())
     globalList.sort()
     try:

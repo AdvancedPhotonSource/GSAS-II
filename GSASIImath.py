@@ -1363,8 +1363,8 @@ def MagMod(XYZ,modQ,MSSdata):
     MmodB = 0.
     if nWaves:
         modind = np.arange(nWaves)+1.
-        MmodA = np.sum(Am[:,nxs,:,:]*np.sin(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2) #natm,Nops,Mxyz
-        MmodB = np.sum(Bm[:,nxs,:,:]*np.cos(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2)
+        MmodA = np.sum(Bm[:,nxs,:,:]*np.cos(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2) #natm,Nops,Mxyz
+        MmodB = np.sum(Am[:,nxs,:,:]*np.sin(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]),axis=2)
     return np.swapaxes(MmodA,0,1),np.swapaxes(MmodB,0,1)    #Nops,Natm,Mxyz
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):

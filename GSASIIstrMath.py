@@ -1518,7 +1518,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Im sin/Re cos,Nops,Natm,Mxyz
+        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Mxyz
+        MmodA = np.inner(MmodA,uAmat.T)                   #make cartesian
+        MmodB = np.inner(MmodB,uAmat.T)
         
 
     FF = np.zeros(len(Tdata))
@@ -1595,12 +1597,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                       
             HM = np.inner(Bmat,HP.T)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-            
-            fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]
+                       
+            fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
             fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
                        
-            fam = TMcorr[:,nxs,:,nxs]*(MmodB[nxs,:,:,:]*cosm[:,:,:,nxs]-np.sign(H[3])[:,nxs,nxs,nxs]*MmodA[nxs,:,:,:]*sinm[:,:,:,nxs]) #Nref,Nops,Natm,Mxyz
-            fbm = TMcorr[:,nxs,:,nxs]*(MmodB[nxs,:,:,:]*sinm[:,:,:,nxs]+np.sign(H[3])[:,nxs,nxs,nxs]*MmodA[nxs,:,:,:]*cosm[:,:,:,nxs])
+            fam = TMcorr[:,nxs,:,nxs]*SGData['SpnFlp'][nxs,:,nxs,nxs]*(MmodA[nxs,:,:,:]*cosm[:,:,:,nxs]-np.sign(H[3])[:,nxs,nxs,nxs]*MmodB[nxs,:,:,:]*sinm[:,:,:,nxs])/2.
+            fbm = TMcorr[:,nxs,:,nxs]*SGData['SpnFlp'][nxs,:,nxs,nxs]*(MmodA[nxs,:,:,:]*sinm[:,:,:,nxs]+np.sign(H[3])[:,nxs,nxs,nxs]*MmodB[nxs,:,:,:]*cosm[:,:,:,nxs])/2.
                        
             famq = np.sum(np.sum(fam,axis=-2),axis=-2)      #Nref,Mxyz; sum ops & atoms
             fbmq = np.sum(np.sum(fbm,axis=-2),axis=-2)
@@ -1608,7 +1610,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             famq0 = np.sum(np.sum(fam0,axis=-2),axis=-2)
             fbmq0 = np.sum(np.sum(fbm0,axis=-2),axis=-2)
             
-            fas = np.sum(famq,axis=-1)**2-np.sum(HM.T*famq,axis=-1)**2
+            fas = np.sum(famq,axis=-1)**2-np.sum(HM.T*famq,axis=-1)**2      #mag intensity calc F^2-(e.F)^2
             fbs = np.sum(fbmq,axis=-1)**2-np.sum(HM.T*fbmq,axis=-1)**2
                         
             fas0 = np.sum(famq0,axis=-1)**2-np.sum(HM.T*famq0,axis=-1)**2

@@ -1431,7 +1431,6 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
 #            dfbdba = np.zeros_like(dfadba)
         SA = fas[0]+fas[1]
         SB = fbs[0]+fbs[1]
-#        GSASIIpath.IPyBreak()
         dFdfr[iBeg:iFin] = ((2.*TwMask*SA)[:,:,nxs]*dfadfr+(2.*TwMask*SB)[:,:,nxs]*dfbdfr)*Mdata[nxs,nxs,:]/len(SGMT)
         dFdx[iBeg:iFin] = (2.*TwMask*SA)[:,:,nxs,nxs]*dfadx+(2.*TwMask*SB)[:,:,nxs,nxs]*dfbdx
         dFdui[iBeg:iFin] = (2.*TwMask*SA)[:,:,nxs]*dfadui+(2.*TwMask*SB)[:,:,nxs]*dfbdui
@@ -1443,7 +1442,6 @@ def StructureFactorDervTw2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
 #        dFdbab[iBeg:iFin] = fas[0,:,nxs]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
 #            fbs[0,:,nxs]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         iBeg += blkSize
-#        GSASIIpath.IPyBreak()
     print (' %d derivative time %.4f\r'%(len(refDict['RefList']),time.time()-time0))
     #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):     #these all OK
@@ -1516,6 +1514,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
         GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
         GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
+        GSdata = np.inner(GSdata,uAmat.T)
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
         MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Mxyz
@@ -3294,7 +3293,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     if badPeak:
         print ('ouch #4 bad profile coefficients yield negative peak width; some reflections skipped')
     if GSASIIpath.GetConfigValue('Show_timing',False):
-        print ('getPowderProfile t=%.3f'%time.time()-starttime)
+        print ('getPowderProfile t=%.3f'%(time.time()-starttime))
     return yc,yb
     
 def getPowderProfileDervMP(args):
@@ -3859,7 +3858,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
-            if GSASIIpath.GetConfigValue('Show_timing',False): print ('getPowderProfileDerv t=%.3f'%time.time()-starttime)
+            if GSASIIpath.GetConfigValue('Show_timing',False): print ('getPowderProfileDerv t=%.3f'%(time.time()-starttime))
             Wt = ma.sqrt(W[xB:xF])[nxs,:]
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt

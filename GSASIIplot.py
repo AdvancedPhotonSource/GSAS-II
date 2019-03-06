@@ -108,6 +108,7 @@ Note that the plot toolbar is customized with :class:`GSASIItoolbar`
 '''
 from __future__ import division, print_function
 import platform
+import time
 import copy
 import math
 import sys
@@ -192,6 +193,8 @@ else:
     Pwrm1 = chr(0x207b)+chr(0x0b9)
 nxs = np.newaxis
 plotDebug = False
+timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
+
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
 _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
@@ -2660,18 +2663,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Title = Pattern[-1]
     else:     #G2frame.selection   
         Title = os.path.split(G2frame.GSASprojectfile)[1]
-        PlotList = []
-        ParmList = []
-        SampleList = []
-        Temps = []
         if G2frame.selections is None:
             choices = G2gd.GetGPXtreeDataNames(G2frame,plotType)
         else:
             choices = G2frame.selections
+        PlotList = []
+        ParmList = []
+        SampleList = []
+        Temps = []
+        time0 = time.time()
         for item in choices:
             id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
             Pattern = G2frame.GPXtree.GetItemPyData(id)
-#            Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(id))
             if len(Pattern) < 3:                    # put name on end if needed
                 Pattern.append(G2frame.GPXtree.GetItemText(id))
             if 'Offset' not in Page.plotStyle:     #plot offset data
@@ -2687,6 +2690,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 id, 'Sample Parameters')))
             Temps.append('%.1fK'%SampleList[-1]['Temperature'])
+        if timeDebug:
+            print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
@@ -2760,6 +2765,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         ContourY = []
         Nseq = 0
     Nmax = len(PlotList)-1
+    time0 = time.time()
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         Sample = SampleList[N]
@@ -3039,6 +3045,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #    if not G2frame.SinglePlot and not G2frame.Contour:
 #        axcb = mpl.colorbar.ColorbarBase(N)
 #        axcb.set_label('PDF number')
+    if timeDebug:
+        print('plot fill time: %.3f'%(time.time()-time0))
     if not magLineList:
         Plot.set_title(Title)
 
@@ -3097,6 +3105,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.legend(handles[::2],legends[::2],title='Phases',loc='best')    #skip every other one
             
     if G2frame.Contour:
+        time0 = time.time()
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
@@ -3106,6 +3115,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             ylabs = [Temps[int(i)] for i in ytics[:-1]]
             imgAx.set_yticklabels(ylabs)
         Page.figure.colorbar(Img)
+        if timeDebug:
+            print('Contour display time: %.3f'%(time.time()-time0))
     else:
         G2frame.Lines = Lines
         G2frame.MagLines = magMarkers

@@ -367,7 +367,7 @@ and :func:`G2PwdrData.clear_refinements`. As an example,
 
    hist.set_refinements({"Background": {"no.coeffs": 3, "refine": True},
                          "Sample Parameters": ["Scale"],
-                         "Limits": [10000, 40000]})
+                         "Limits": [10, 400]})
 
 With :meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
 ``set``, ``clear``, or ``once``. Values will be set for all histograms, unless the ``histograms``
@@ -379,7 +379,7 @@ key is used to define specific histograms. As an example:
       {'set': {
           'Background': {'no.coeffs': 3, 'refine': True},
           'Sample Parameters': ['Scale'],
-          'Limits': [10000, 40000]},
+          'Limits': [10, 400]},
       'histograms': [1,2]}
                             ])
 
@@ -3163,11 +3163,19 @@ class G2Phase(G2ObjectWrapper):
 
         :returns: None
         """
+        if not self.data['Histograms']:
+            print("Error likely: Phase {} has no linked histograms".format(self.name))
+            return
+            
         if histograms == 'all':
             histograms = self.data['Histograms'].values()
         else:
-            histograms = [self.data['Histograms'][h.name] for h in histograms]
+            histograms = [self.data['Histograms'][h.name] for h in histograms
+                          if h.name in self.data['Histograms']]
 
+        if not histograms:
+            print("Skipping HAP set for phase {}, no selected histograms".format(self.name))
+            return
         for key, val in refs.items():
             for h in histograms:
                 if key == 'Babinet':
@@ -3322,7 +3330,8 @@ class G2Phase(G2ObjectWrapper):
         if histograms == 'all':
             histograms = self.data['Histograms'].values()
         else:
-            histograms = [self.data['Histograms'][h.name] for h in histograms]
+            histograms = [self.data['Histograms'][h.name] for h in histograms
+                          if h.name in self.data['Histograms']]
 
         for key, val in refs.items():
             for h in histograms:

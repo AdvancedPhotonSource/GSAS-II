@@ -6192,6 +6192,12 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         label = 'Sequential refinement'
     else:
         label = 'Parametric fit #'+str(fitnum+1)
+#    def PublishPlot(event):
+#        print('Page=',Page)
+#        print('Plot=',Plot)
+#        GSASIIpath.IPyBreak()
+#    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl',
+#                                    publish=PublishPlot)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl')
     if not new:
         if not Page.IsShown():

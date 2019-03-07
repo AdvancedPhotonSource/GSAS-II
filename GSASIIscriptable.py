@@ -367,7 +367,7 @@ and :func:`G2PwdrData.clear_refinements`. As an example,
 
    hist.set_refinements({"Background": {"no.coeffs": 3, "refine": True},
                          "Sample Parameters": ["Scale"],
-                         "Limits": [10, 400]})
+                         "Limits": [10000, 40000]})
 
 With :meth:`G2Project.do_refinements`, these parameters should be placed inside a dict with a key
 ``set``, ``clear``, or ``once``. Values will be set for all histograms, unless the ``histograms``
@@ -379,7 +379,7 @@ key is used to define specific histograms. As an example:
       {'set': {
           'Background': {'no.coeffs': 3, 'refine': True},
           'Sample Parameters': ['Scale'],
-          'Limits': [10, 400]},
+          'Limits': [10000, 40000]},
       'histograms': [1,2]}
                             ])
 
@@ -1192,6 +1192,9 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
                   'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
                   'Yminmax': [Ymin, Ymax]}
     reader.Sample['ranId'] = valuesdict['ranId']
+    if 'T' in Iparm1['Type'][0]:
+        if not reader.clockWd and reader.GSAS:
+            reader.powderdata[0] *= 100.        #put back the CW centideg correction
 
     # Ending keys:
     # [u'Reflection Lists',

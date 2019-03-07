@@ -960,7 +960,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']
-    numChans = data['outChannels']
+    numChans = (data['outChannels']//4)*4
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     if '2-theta' in data.get('binType','2-theta'):
         lutth = LUtth                

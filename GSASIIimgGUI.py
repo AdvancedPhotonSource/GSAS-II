@@ -893,6 +893,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 
         def OnNumOutAzms(invalid,value,tc):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=tc.event)
+            
+        def OnNumOutBins(invalid,value,tc):
+            data['outChannels'] = (data['outChannels']//4)*4
+            outChan.SetValue(data['outChannels'])
         
         def OnOblique(event):
             data['Oblique'][1] = not data['Oblique'][1]
@@ -978,7 +982,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,min=10)
+        outChan = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outChannels',typeHint=int,min=10,OnLeave=OnNumOutBins)
         littleSizer.Add(outChan,0,WACV)
         outAzim = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'outAzimuths',nDig=(10,4),min=1,typeHint=int,OnLeave=OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)

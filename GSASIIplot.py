@@ -2645,7 +2645,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Lines = []
     exclLines = []
     if G2frame.SinglePlot and PatternId:
-#        Pattern = copy.deepcopy(G2frame.GPXtree.GetItemPyData(PatternId))
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
@@ -2673,10 +2672,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Temps = []
         time0 = time.time()
         for item in choices:
-            id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
-            Pattern = G2frame.GPXtree.GetItemPyData(id)
+            pid = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
+            Pattern = G2frame.GPXtree.GetItemPyData(pid)
             if len(Pattern) < 3:                    # put name on end if needed
-                Pattern.append(G2frame.GPXtree.GetItemText(id))
+                Pattern.append(G2frame.GPXtree.GetItemText(pid))
             if 'Offset' not in Page.plotStyle:     #plot offset data
                 Ymax = max(Pattern[1][1])
                 Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
@@ -2686,9 +2685,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0])
             PlotList.append(Pattern)
             ParmList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
-                id,'Instrument Parameters'))[0])
+                pid,'Instrument Parameters'))[0])
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
-                id, 'Sample Parameters')))
+                pid, 'Sample Parameters')))
             Temps.append('%.1fK'%SampleList[-1]['Temperature'])
         if timeDebug:
             print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))

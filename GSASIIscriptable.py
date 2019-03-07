@@ -788,6 +788,7 @@ def SaveDictToProjFile(Project,nameList,ProjFile):
             cPickle.dump(data,file,1)
     finally:
         file.close()
+    print('gpx file saved as %s'%ProjFile)
 
 # def ImportPowder(reader,filename):
 #     '''Use a reader to import a powder diffraction data file
@@ -3637,9 +3638,10 @@ class G2Image(G2ObjectWrapper):
           the histogram name is taken from the image name. 
         :returns: a list of created histogram (:class:`G2PwdrData`) objects.
         '''
+        blkSize = 1024   #this seems to be optimal; will break in polymask if >1024
         ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
         # do integration
-        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'])
+        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'],blkSize=blkSize)
         # code from here on based on G2IO.SaveIntegration, but places results in the current
         # project rather than tree
         X = Xvals[:-1]

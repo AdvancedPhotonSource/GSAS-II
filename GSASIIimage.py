@@ -566,6 +566,9 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         return []    
     skip = data['calibskip']
     dmin = data['calibdmin']
+    if data['calibrant'] not in calFile.Calibrants:
+        print(' %s not in local copy of image calibrants file'%data['calibrant'])
+        return []
     Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
     HKL = []
     for bravais,sg,cell in zip(Bravais,SGs,Cells):
@@ -875,7 +878,7 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
     tam = ma.make_mask_none((nI*nJ))
     if frame:
         tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
-            tay,len(frame),frame,tamp)[:nI*nJ])-True)
+            tay,len(frame),frame,tamp)[:nI*nJ])^True)
     polygons = masks['Polygons']
     for polygon in polygons:
         if polygon:
@@ -952,7 +955,7 @@ def MakeUseMask(data,masks,blkSize=128):
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
-    print ('Begin image integration')
+    print ('Begin image integration; image range: %d %d'%(np.min(image),np.max(image)))
     CancelPressed = False
     LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
@@ -1025,7 +1028,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             times[3] += time.time()-t0
-#            del tax; del tay; del taz; del tad; del tabs
+#            print('done block %d %d %d %d %d %d %d %d'%(iBlk,iBeg,iFin,jBlk,jBeg,jFin,np.min(Block),np.max(Block)))
     print('End integration loops')
     t0 = time.time()
 #    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])

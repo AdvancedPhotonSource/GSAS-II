@@ -216,8 +216,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Data['setRings'] = True
                     Mid = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')
                     Masks = G2frame.GPXtree.GetItemPyData(Mid)
-                    vals,varyList,sigList,parmDict = G2img.ImageRecalibrate(
-                        G2frame,G2frame.ImageZ,Data,Masks)
+                    result = G2img.ImageRecalibrate(G2frame,G2frame.ImageZ,Data,Masks)
+                    if not len(result):
+                        print('calibrant missing from local image calibrants files')
+                        return
+                    vals,varyList,sigList,parmDict = result
                     sigList = list(sigList)
                     if 'dist' not in varyList:
                         vals.append(parmDict['dist'])

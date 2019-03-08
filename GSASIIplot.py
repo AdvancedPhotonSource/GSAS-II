@@ -2644,6 +2644,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         colors = ['b','g','r','c','m','k']
     Lines = []
     exclLines = []
+    time0 = time.time()
     if G2frame.SinglePlot and PatternId:
         Pattern = G2frame.GPXtree.GetItemPyData(PatternId)
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
@@ -2670,7 +2671,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         ParmList = []
         SampleList = []
         Temps = []
-        time0 = time.time()
         for item in choices:
             pid = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
             Pattern = G2frame.GPXtree.GetItemPyData(pid)
@@ -2689,12 +2689,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             SampleList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 pid, 'Sample Parameters')))
             Temps.append('%.1fK'%SampleList[-1]['Temperature'])
-        if timeDebug:
-            print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))
         if not G2frame.Contour:
             PlotList.reverse()
             ParmList.reverse()
             SampleList.reverse()
+    if timeDebug:
+        print('plot build time: %.3f for %dx%d patterns'%(time.time()-time0,len(PlotList[0][1][1]),len(PlotList)))
     lenX = 0
     Ymax = None
     for ip,Pattern in enumerate(PlotList):

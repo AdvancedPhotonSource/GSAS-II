@@ -2671,8 +2671,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         ParmList = []
         SampleList = []
         Temps = []
-        for item in choices:
-            pid = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, item)
+        # loop through tree looking for matching histograms to plot
+        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        while id:
+            name = G2frame.GPXtree.GetItemText(id)
+            pid = id
+            id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+            if name not in choices: continue
             Pattern = G2frame.GPXtree.GetItemPyData(pid)
             if len(Pattern) < 3:                    # put name on end if needed
                 Pattern.append(G2frame.GPXtree.GetItemText(pid))

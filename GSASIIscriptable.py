@@ -1276,9 +1276,10 @@ def _deep_copy_into(from_, into):
         else:
             into[:] = from_
 
-def GetCorrImage(ImageReaderlist,proj,imageRef):
+def _getCorrImage(ImageReaderlist,proj,imageRef):
     '''Gets image & applies dark, background & flat background corrections.
-    based on :func:`GSASIIimgGUI.GetImageZ`. Likely for internal use only.
+    based on :func:`GSASIIimgGUI.GetImageZ`. Expected to be for internal
+    use only.
 
     :param list ImageReaderlist: list of Reader objects for images
     :param object ImageReaderlist: list of Reader objects for images
@@ -1858,7 +1859,7 @@ class G2Project(G2ObjectWrapper):
 
         .. seealso::
             :meth:`G2Project.images`
-            """
+        """
         if isinstance(imageRef, G2Image):
             if imageRef.proj == self:
                 return imageRef
@@ -3381,21 +3382,41 @@ class G2Phase(G2ObjectWrapper):
                     print(u'Unknown HAP key: '+key)
 
 class G2Image(G2ObjectWrapper):
-    """Wrapper for an IMG tree entry, containing an image and various metadata.
+    """Wrapper for an IMG tree entry, containing an image and various metadata. 
+    Note that in a GSASIIscriptable script, instances of G2Image will be created by 
+    calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`, not via calls 
+    to :meth:`G2Image.__init__`.
 
-    Example:
+    Example use of G2Image:
 
     >>> gpx = G2sc.G2Project(filename='itest.gpx')
-    >>> img2 = gpx.add_image(idata,fmthint="TIF")
-    >>> img2[0].loadControls('stdSettings.imctrl')
-    >>> img2[0].setCalibrant('Si    SRM640c')
-    >>> img2[0].loadMasks('stdMasks.immask')
-    >>> img2[0].Recalibrate()
-    >>> img2[0].setControl('outAzimuths',3)
-    >>> pwdrList = img2[0].Integrate()
+    >>> imlst = gpx.add_image(idata,fmthint="TIF")
+    >>> imlst[0].loadControls('stdSettings.imctrl')
+    >>> imlst[0].setCalibrant('Si    SRM640c')
+    >>> imlst[0].loadMasks('stdMasks.immask')
+    >>> imlst[0].Recalibrate()
+    >>> imlst[0].setControl('outAzimuths',3)
+    >>> pwdrList = imlst[0].Integrate()
+
+
+    Sample script using an image:    
+
+.. code-block::  python
+
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    datadir = "/tmp/V4343_IntegrationError/"
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+
+    gpx = G2sc.G2Project(filename=PathWrap('inttest.gpx'))
+    imlst = gpx.add_image(PathWrap('Si_free_dc800_1-00000.tif'),fmthint="TIF")
+    imlst[0].loadControls(PathWrap('Si_free_dc800_1-00000.imctrl'))
+    pwdrList = imlst[0].Integrate()
+    gpx.save()
 
     """
-    # parameters in that can be accessed via setControl
+    # parameters in that can be accessed via setControl. This may need future attention
     ControlList = {
         'int': ['calibskip', 'pixLimit', 'edgemin', 'outChannels',
                     'outAzimuths'],
@@ -3412,13 +3433,12 @@ class G2Image(G2ObjectWrapper):
         'dict': ['varyList'],
         }
     '''Defines the items known to exist in the Image Controls tree section 
-    and the item's data types. A few are not included 
+    and the item's data types. A few are not included here
     ('background image', 'dark image', 'Gain map', and 'calibrant') because
     these items have special set routines,
     where references to entries are checked to make sure their values are
     correct.
     ''' 
-    # this may need future attention
         
     def __init__(self, data, name, proj):
         self.data = data
@@ -3624,7 +3644,7 @@ class G2Image(G2ObjectWrapper):
         This may produce a better result if run more than once.
         '''
         LoadG2fil()
-        ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
+        ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
 
     def Integrate(self,name=None):
@@ -3639,7 +3659,7 @@ class G2Image(G2ObjectWrapper):
         :returns: a list of created histogram (:class:`G2PwdrData`) objects.
         '''
         blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
-        ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
+        ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         # do integration
         ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'],blkSize=blkSize)
         # code from here on based on G2IO.SaveIntegration, but places results in the current

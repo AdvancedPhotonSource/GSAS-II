@@ -2277,7 +2277,7 @@ class G2Project(G2ObjectWrapper):
                 Data['IOtth'] = [5.0,50.0]
                 Data['LRazimuth'] = [0.,180.]
                 Data['azmthOff'] = 0.0
-                Data['outChannels'] = 2250
+                Data['outChannels'] = 2500
                 Data['outAzimuths'] = 1
                 Data['centerAzm'] = False
                 Data['fullIntegrate'] = GSASIIpath.GetConfigValue('fullIntegrate',True)

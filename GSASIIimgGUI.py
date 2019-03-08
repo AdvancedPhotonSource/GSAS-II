@@ -148,7 +148,7 @@ def UpdateImageData(G2frame,data):
 ################################################################################
 ##### Image Controls
 ################################################################################                    
-blkSize = 1024   #this seems to be optimal; will break in polymask if >1024
+blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
 def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly=False):
     '''Shows and handles the controls on the "Image Controls"
     data tree entry
@@ -309,7 +309,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                             print(' Use new image controls; new xy -> th,azm time %.3f'%(time.time()-t0))
                         Masks = G2frame.GPXtree.GetItemPyData(
                             G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
-                        Mhash = hash(str(Masks))
+                        Mhash = copy.deepcopy(Masks)
+                        Mhash.pop('Thresholds')
+                        Mhash = hash(str(Mhash))
                         if  Mhash != oldMhash:
                             t0 = time.time()
                             useMask = G2img.MakeUseMask(Data,Masks,blkSize)
@@ -3157,7 +3159,9 @@ class AutoIntFrame(wx.Frame):
                 print(' Use new image controls; xy->th,azm mtime: %.3f'%(time.time()-t0))
             Mask = G2frame.GPXtree.GetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,imgId, 'Masks'))
-            Mhash = hash(str(Mask))
+            Mhash = copy.deepcopy(Mask)
+            Mhash.pop('Thresholds')
+            Mhash = hash(str(Mhash))
             if  Mhash != oldMhash:
                 t0 = time.time()
                 self.useMask = G2img.MakeUseMask(Data,Mask,blkSize)

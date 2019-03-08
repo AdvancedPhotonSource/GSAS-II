@@ -3638,7 +3638,7 @@ class G2Image(G2ObjectWrapper):
           the histogram name is taken from the image name. 
         :returns: a list of created histogram (:class:`G2PwdrData`) objects.
         '''
-        blkSize = 1024   #this seems to be optimal; will break in polymask if >1024
+        blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
         ImageZ = GetCorrImage(Readers['Image'],self.proj,self)
         # do integration
         ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'],blkSize=blkSize)

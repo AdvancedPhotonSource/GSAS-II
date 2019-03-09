@@ -207,8 +207,8 @@ class SphereEnclosure(wx.Dialog):
         
         def OnAtomType(event):
             Obj = event.GetEventObject()
-            id = Ind[Obj.GetId()]
-            self.atomTypes[id][1] = Obj.GetValue()
+            Id = Ind[Obj.GetId()]
+            self.atomTypes[Id][1] = Obj.GetValue()
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -219,8 +219,8 @@ class SphereEnclosure(wx.Dialog):
         if len(self.indx):
             topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at atoms: '),0,WACV)
             cx,ct,cs = self.Drawing['atomPtrs'][:3]
-            for id in self.indx:
-                atom = self.Drawing['Atoms'][id]
+            for Id in self.indx:
+                atom = self.Drawing['Atoms'][Id]
                 self.centers.append(atom[cx:cx+3])
                 atoms.append('%s(%s)'%(atom[ct-1],atom[cs-1]))
             topSizer.Add(wx.ComboBox(self.panel,choices=atoms,value=atoms[0],
@@ -2239,11 +2239,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 name = Obj.GetName()
                 try:
                     vals = Obj.GetValue().split()
-                    id = int(name.split('hkl')[1])
+                    Id = int(name.split('hkl')[1])
                     HKL = [int(val) for val in vals]
-                    Flip['testHKL'][id] = HKL
+                    Flip['testHKL'][Id] = HKL
                 except ValueError:
-                    HKL = Flip['testHKL'][id]
+                    HKL = Flip['testHKL'][Id]
                 Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
             refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
@@ -4204,8 +4204,8 @@ def UpdatePhaseData(G2frame,Item,data):
         def WidthSizer():
             
             def OnRefWidth(event):
-                id = Indx[event.GetEventObject()]
-                Layers['Width'][1][id] = not Layers['Width'][1][id]
+                Id = Indx[event.GetEventObject()]
+                Layers['Width'][1][Id] = not Layers['Width'][1][Id]
             
             Labels = ['a','b']
             flags = Layers['Width'][1]
@@ -6055,8 +6055,8 @@ def UpdatePhaseData(G2frame,Item,data):
         for i in indx:
             atom = atomDData[i]
             xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
-            id = G2mth.FindAtomIndexByIDs(atomData,cid,[atom[cid],],False)[0]
-            Oxyz.append([id,]+atomData[id][cx+1:cx+4])
+            Id = G2mth.FindAtomIndexByIDs(atomData,cid,[atom[cid],],False)[0]
+            Oxyz.append([Id,]+atomData[Id][cx+1:cx+4])
         DATData['Datoms'] = xyz
         DATData['Oatoms'] = Oxyz
         generalData = data['General']
@@ -6906,8 +6906,8 @@ def UpdatePhaseData(G2frame,Item,data):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     sel = dlg.GetSelections()
-                    for id,item in enumerate(G2frame.dataWindow.HistsInPhase):
-                        if id in sel:
+                    for Id,item in enumerate(G2frame.dataWindow.HistsInPhase):
+                        if Id in sel:
                             data['Histograms'][item]['Use'] = True
                         else:
                             data['Histograms'][item]['Use'] = False                        
@@ -7190,8 +7190,8 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.CallAfter(FillRigidBodyGrid,True)
             if val != 'None':
                 cia = data['General']['AtomPtrs'][3]
-                for i,id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[id]][cia] = Ttype
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cia] = Ttype
             G2plt.PlotStructure(G2frame,data)
             
         def ThermDataSizer(RBObj,rbType):
@@ -7200,11 +7200,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 Cart = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[1]
                 Uout = G2mth.UpdateRBUIJ(Bmat,Cart,RBObj)
                 cia = data['General']['AtomPtrs'][3]
-                for i,id in enumerate(RBObj['Ids']):
+                for i,Id in enumerate(RBObj['Ids']):
                     if Uout[i][0] == 'I':
-                        data['Atoms'][AtLookUp[id]][cia+1] = Uout[i][1]
+                        data['Atoms'][AtLookUp[Id]][cia+1] = Uout[i][1]
                     else:
-                        data['Atoms'][AtLookUp[id]][cia+2:cia+8] = Uout[i][2:8]
+                        data['Atoms'][AtLookUp[Id]][cia+2:cia+8] = Uout[i][2:8]
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnTLSRef(event):
@@ -7243,8 +7243,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnOrigX(invalid,value,tc):
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                for i,id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
                 G2plt.PlotStructure(G2frame,data)
@@ -7268,8 +7268,8 @@ def UpdatePhaseData(G2frame,Item,data):
                         raise ValueError
                     RBObj['Orient'][0] = Q
                     newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,rbType)[0]
-                    for i,id in enumerate(RBObj['Ids']):
-                        data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                    for i,Id in enumerate(RBObj['Ids']):
+                        data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                     data['Drawing']['Atoms'] = []
                     UpdateDrawAtoms(atomStyle)
                     G2plt.PlotStructure(G2frame,data)
@@ -7314,8 +7314,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnTorsion(invalid,value,tc):
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
-                for i,id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
                 data['Drawing']['Atoms'] = []
                 UpdateDrawAtoms(atomStyle)
                 drawAtoms.ClearSelection()
@@ -7553,14 +7553,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 for xyz in newXYZ:
                     dist = G2mth.GetXYZDist(xyz,oldXYZ,Amat)
                     dmax = max(dmax,np.min(dist))
-                    id = np.argmin(dist)
-                    Id = atomData[id][-1]
+                    pid = np.argmin(dist)
+                    Id = atomData[pid][-1]
                     if Id in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
-                        dist[id] = 100.
+                        dist[pid] = 100.
                         id =  np.argmin(dist)
-                        Id = atomData[id][-1]
+                        Id = atomData[pid][-1]
                     Ids.append(Id)
-                    atomData[id][cx:cx+3] = xyz
+                    atomData[pid][cx:cx+3] = xyz
                 if dmax > 1.0:
                     print ('**** WARNING - some atoms not found or misidentified ****')
                     print ('****           check torsion angles & try again      ****')
@@ -7912,8 +7912,8 @@ def UpdatePhaseData(G2frame,Item,data):
             data['RBModels']['Residue'] = RBObjs
             for RBObj in RBObjs:
                 newXYZ = G2mth.UpdateRBXYZ(Bmat,RBObj,RBData,'Residue')[0]
-                for i,id in enumerate(RBObj['Ids']):
-                    data['Atoms'][AtLookUp[id]][cx:cx+3] = newXYZ[i]
+                for i,Id in enumerate(RBObj['Ids']):
+                    data['Atoms'][AtLookUp[Id]][cx:cx+3] = newXYZ[i]
         finally:
             wx.EndBusyCursor()
         wx.CallAfter(FillRigidBodyGrid,True)
@@ -7943,8 +7943,8 @@ def UpdatePhaseData(G2frame,Item,data):
             for rbObj in RBObjs:
                 rbObj['ThermalMotion'][0] = parm
                 if parm != 'None':
-                    for i,id in enumerate(rbObj['Ids']):
-                        data['Atoms'][AtLookUp[id]][cia] = Ttype
+                    for i,Id in enumerate(rbObj['Ids']):
+                        data['Atoms'][AtLookUp[Id]][cia] = Ttype
         dlg.Destroy()
         wx.CallAfter(FillRigidBodyGrid,True)
 
@@ -9457,8 +9457,8 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,True)
         else:
             G2frame.dataWindow.AtomEdit.Enable(G2G.wxID_UPDATEHATOM,False)
-        for id in G2frame.dataWindow.ReImportMenuId:     #loop over submenu items
-            G2frame.Bind(wx.EVT_MENU, OnReImport, id=id)
+        for Id in G2frame.dataWindow.ReImportMenuId:     #loop over submenu items
+            G2frame.Bind(wx.EVT_MENU, OnReImport, id=Id)
         # Wave Data
         if data['General']['Modulated']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.WavesData)

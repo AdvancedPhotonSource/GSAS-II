@@ -379,12 +379,12 @@ def SetDefaultSubstances():
 
 def GetFileList(G2frame,fileType):
     fileList = []
-    id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-    while id:
-        name = G2frame.GPXtree.GetItemText(id)
+    Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+    while Id:
+        name = G2frame.GPXtree.GetItemText(Id)
         if fileType in name.split()[0]:
             fileList.append(name)
-        id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
     return fileList
         
 def GetHistsLikeSelected(G2frame):
@@ -1644,12 +1644,12 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         excl.Add(wx.StaticText(G2frame.dataWindow,label=' From: '),0,WACV)
         excl.Add(wx.StaticText(G2frame.dataWindow,label=' To: '),0,WACV)
         excl.Add(wx.StaticText(G2frame.dataWindow,label=' Delete?: '),0,WACV)
-        for id,item in enumerate(data[2:]):
+        for Id,item in enumerate(data[2:]):
             for i in [0,1]:
                 excl.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,item,i,  \
                     min=data[0][0],max=data[0][1],nDig=(10,4),typeHint=float,OnLeave=AfterChange))
             delExcl = wx.CheckBox(G2frame.dataWindow,label='')
-            Indx[delExcl.GetId()] = id
+            Indx[delExcl.GetId()] = Id
             delExcl.Bind(wx.EVT_CHECKBOX,OnDelExcl)
             excl.Add(delExcl,0,WACV)
         return excl
@@ -2626,13 +2626,13 @@ def UpdateSampleGrid(G2frame,data):
             
     def OnMaterial(event):
         Obj = event.GetEventObject()
-        id = Info[Obj.GetId()]
-        data['Materials'][id]['Name'] = Obj.GetValue()
+        Id = Info[Obj.GetId()]
+        data['Materials'][Id]['Name'] = Obj.GetValue()
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
         
     def OnVolFrac(invalid,value,tc):
-        id = Info[tc.GetId()]
-        data['Materials'][not id][key] = 1.-value
+        Id = Info[tc.GetId()]
+        data['Materials'][not Id][key] = 1.-value
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     def OnCopy1Val(event):
@@ -2646,12 +2646,12 @@ def UpdateSampleGrid(G2frame,data):
         is ignored) and the values are then set to this value, if it can be converted
         to a float.
         '''
-        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-        while id:
-            name = G2frame.GPXtree.GetItemText(id)
+        Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        while Id:
+            name = G2frame.GPXtree.GetItemText(Id)
             if 'PWDR' in name:
-                Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'Comments'))
-                Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'Sample Parameters'))
+                Comments = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Comments'))
+                Sample =   G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Sample Parameters'))
                 for i,item in enumerate(Comments):
                     itemSp = item.split('=')
                     if value.lower() == itemSp[0].lower():
@@ -2660,7 +2660,7 @@ def UpdateSampleGrid(G2frame,data):
                         except:
                             print('"{}" has an invalid value in Comments from {}'
                                   .format(item.strip(),name))
-            id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+            Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         wx.CallLater(100,UpdateSampleGrid,G2frame,data)
         
         
@@ -2804,11 +2804,11 @@ def UpdateSampleGrid(G2frame,data):
         subSizer = wx.FlexGridSizer(0,4,5,5)
         Substances = G2frame.GPXtree.GetItemPyData(
             G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Substances'))
-        for id,item in enumerate(data['Materials']):
+        for Id,item in enumerate(data['Materials']):
             subSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Material: '),0,WACV)
             matsel = wx.ComboBox(G2frame.dataWindow,value=item['Name'],choices=list(Substances['Substances'].keys()),
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Info[matsel.GetId()] = id
+            Info[matsel.GetId()] = Id
             matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
             subSizer.Add(matsel,0,WACV)
             subSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Volume fraction: '),0,WACV)
@@ -2821,8 +2821,8 @@ def UpdateSampleGrid(G2frame,data):
                 print('ERROR - missing substance: '+item['Name'])
                 material = Substances['Substances']['vacuum']
             mu += item['VolFrac']*material.get('XAbsorption',0.)
-            rho[id] = material['Scatt density']
-            anomrho[id] = material.get('XAnom density',0.)
+            rho[Id] = material['Scatt density']
+            anomrho[Id] = material.get('XAnom density',0.)
         data['Contrast'] = [(rho[1]-rho[0])**2,(anomrho[1]-anomrho[0])**2]
         mainSizer.Add(subSizer,0)
         conSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6751,8 +6751,8 @@ def UpdatePDFGrid(G2frame,data):
             newName = grName.GetValue()
             if newName:
                 data['delt-G(R)'] = copy.deepcopy(data['G(R)'])
-                id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,newName)
-                pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,newName)
+                pId = G2gd.GetGPXtreeItemId(G2frame,Id,'PDF Controls')
                 subData = G2frame.GPXtree.GetItemPyData(pId)['G(R)']
                 if subData[1][0][-1] != data['G(R)'][1][0][-1]:
                     G2frame.ErrorDialog('delt-G(R) Error',' G(R) for '+newName+' not same R range')
@@ -6766,8 +6766,8 @@ def UpdatePDFGrid(G2frame,data):
                 
         def OnMult(invalid,value,tc):
             if invalid: return
-            id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['diffGRname'])
-            pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['diffGRname'])
+            pId = G2gd.GetGPXtreeItemId(G2frame,Id,'PDF Controls')
             subData = G2frame.GPXtree.GetItemPyData(pId)['G(R)']
             data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-data['diffMult']*subData[1][1]])
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
@@ -6809,8 +6809,8 @@ def UpdatePDFGrid(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 PDFlist = [TextList[i] for i in dlg.GetSelections()]
                 for item in PDFlist:
-                    id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
-                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Controls'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'PDF Controls'))
                     if od['value_1']:
                         olddata['Sample Bkg.']['Refine'] = data['Sample Bkg.']['Refine']    #only one flag
                     elif od['value_2']:
@@ -6819,7 +6819,7 @@ def UpdatePDFGrid(G2frame,data):
                         sample = olddata['Sample']
                         olddata.update(copy.deepcopy(data))
                         olddata['Sample'] = sample
-                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Controls'),olddata)
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'PDF Controls'),olddata)
                 G2frame.GetStatusBar().SetStatusText('PDF controls copied',1)
         finally:
             dlg.Destroy()
@@ -6920,16 +6920,16 @@ def UpdatePDFGrid(G2frame,data):
         print('Calculating PDFs...')
         choices = []
         if G2frame.GPXtree.GetCount():
-            id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-            while id:
-                Name = G2frame.GPXtree.GetItemText(id)
+            Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while Id:
+                Name = G2frame.GPXtree.GetItemText(Id)
                 if Name.startswith('PDF '):
-                    Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls'))
+                    Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'PDF Controls'))
                     if not Data['ElList']:
                         print('  No chemical formula for {}'.format(Name))
                     else:
                         choices.append(Name)
-                id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+                Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         if not choices:
             print('  No PDFs to compute\n')
             return
@@ -6950,18 +6950,18 @@ def UpdatePDFGrid(G2frame,data):
         pgbar = wx.ProgressDialog('Compute PDF','PDFs done: 0',len(Names)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         notConverged = 0
-        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
         N = 0
         try:
-            while id:
-                Name = G2frame.GPXtree.GetItemText(id)
+            while Id:
+                Name = G2frame.GPXtree.GetItemText(Id)
                 if Name in Names:
                     N += 1
                     msg = 'PDFs done: {} of {}'.format(N-1,len(Names))
                     if not pgbar.Update(N,msg)[0]:
                         pgbar.Destroy()
                         break
-                    pId = G2gd.GetGPXtreeItemId(G2frame,id,'PDF Controls')
+                    pId = G2gd.GetGPXtreeItemId(G2frame,Id,'PDF Controls')
                     Data = G2frame.GPXtree.GetItemPyData(pId)
                     print('  Computing {}'.format(Name))
                     computePDF(G2frame,Data)
@@ -6969,7 +6969,7 @@ def UpdatePDFGrid(G2frame,data):
                         notConverged += not OptimizePDF(G2frame,Data,maxCycles=10)
                     computePDF(G2frame,Data)
                     G2frame.GPXtree.SetItemPyData(pId,Data)
-                id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+                Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
         finally:
             pgbar.Destroy()
         if od['value_1']:
@@ -7155,15 +7155,15 @@ def UpdatePDFPeaks(G2frame,peaks,data):
             if dlg.ShowModal() == wx.ID_OK:
                 PDFlist = [TextList[i] for i in dlg.GetSelections()]
                 for item in PDFlist:
-                    id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
-                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Peaks'))
+                    Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'PDF Peaks'))
                     if od['value_1']:
                         olddata['Background'][2] = peaks['Background'][2]
                         for ip,peak in enumerate(olddata['Peaks']):
                             peak[3] = peaks['Peaks'][ip][3]
                     else:
                         olddata.update(copy.deepcopy(peaks))
-                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id, 'PDF Peaks'),olddata)
+                    G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'PDF Peaks'),olddata)
                 G2frame.GetStatusBar().SetStatusText('PDF peaks copied',1)
         finally:
             dlg.Destroy()

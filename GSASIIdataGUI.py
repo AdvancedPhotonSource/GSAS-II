@@ -3163,8 +3163,8 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             ncols = len(data)/40+1
             dataGridSizer = wx.FlexGridSizer(cols=ncols,hgap=2,vgap=2)
-            for id,item in enumerate(self.data):
-                ckbox = wx.CheckBox(panel,id,item[1])
+            for Id,item in enumerate(self.data):
+                ckbox = wx.CheckBox(panel,Id,item[1])
                 ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
                 dataGridSizer.Add(ckbox,0,wx.LEFT,10)
             mainSizer.Add(dataGridSizer,0,wx.EXPAND)
@@ -3185,8 +3185,8 @@ class GSASII(wx.Frame):
             self.Fit()
         
         def OnCopyChange(self,event):
-            id = event.GetId()
-            self.data[id][0] = self.FindWindowById(id).GetValue()        
+            Id = event.GetId()
+            self.data[Id][0] = self.FindWindowById(Id).GetValue()        
             
         def OnOk(self,event):
             parent = self.GetParent()
@@ -3247,10 +3247,10 @@ class GSASII(wx.Frame):
             self.dataGridSizer.Add(topSizer,1,wx.RIGHT|wx.BOTTOM|wx.EXPAND,1)
             self.dataGridSizer.Add((-1,10))
             self.dataGridSizer.Add((-1,10))
-            for id,item in enumerate(self.selectData):
+            for Id,item in enumerate(self.selectData):
                 name = wx.TextCtrl(self.panel,-1,item,size=wx.Size(300,20))
                 name.SetEditable(False)
-                scale = G2G.ValidatedTxtCtrl(self.panel,self.selectVals,id,nDig=(10,3),typeHint=float)
+                scale = G2G.ValidatedTxtCtrl(self.panel,self.selectVals,Id,nDig=(10,3),typeHint=float)
                 self.dataGridSizer.Add(scale,0,wx.LEFT,10)
                 self.dataGridSizer.Add(name,0,wx.RIGHT,10)
             if self.dataType:
@@ -3337,8 +3337,8 @@ class GSASII(wx.Frame):
             else:
                 dlg.Destroy()
                 return
-            for id,item in enumerate(self.selectData):
-                self.selectVals[id] = val
+            for Id,item in enumerate(self.selectData):
+                self.selectVals[Id] = val
             wx.CallAfter(self.Draw)
             
         def OnTest(self,event):
@@ -3351,8 +3351,8 @@ class GSASII(wx.Frame):
             for i,item in enumerate(self.selectData):
                 name = item
                 scale = self.selectVals[i]
-                id = self.data.index(name)
-                data = self.dataList[id]
+                Id = self.data.index(name)
+                data = self.dataList[Id]
                 if scale:
                     x,y,w,yc,yb,yd = data   #numpy arrays!
                     XY.append([x,scale*y])
@@ -3704,15 +3704,15 @@ class GSASII(wx.Frame):
         'Appears unused. Note routine of same name in GSASIIpwdGUI'
         fileList = []
         Source = ''
-        id, cookie = self.GPXtree.GetFirstChild(self.root)
-        while id:
-            name = self.GPXtree.GetItemText(id)
+        Id, cookie = self.GPXtree.GetFirstChild(self.root)
+        while Id:
+            name = self.GPXtree.GetItemText(Id)
             if fileType in name:
-                if id == skip:
+                if Id == skip:
                     Source = name
                 else:
-                    fileList.append([False,name,id])
-            id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+                    fileList.append([False,name,Id])
+            Id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if skip:
             return fileList,Source
         else:
@@ -4174,17 +4174,17 @@ class GSASII(wx.Frame):
         Qlimits = []
         Names = []
         if self.GPXtree.GetCount():
-            id, cookie = self.GPXtree.GetFirstChild(self.root)
-            while id:
-                name = self.GPXtree.GetItemText(id)
+            Id, cookie = self.GPXtree.GetFirstChild(self.root)
+            while Id:
+                name = self.GPXtree.GetItemText(Id)
                 Names.append(name)
                 if 'PWDR' in name:
                     TextList.append(name)
-                    Data = self.GPXtree.GetItemPyData(id)[1]
+                    Data = self.GPXtree.GetItemPyData(Id)[1]
                     pwdrMin = np.min(Data[1])
-                    Comments = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,id,'Comments'))
-                    Parms = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,id,'Instrument Parameters'))[0]
-                    fullLimits = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,id,'Limits'))[0]
+                    Comments = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Comments'))
+                    Parms = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Instrument Parameters'))[0]
+                    fullLimits = self.GPXtree.GetItemPyData(GetGPXtreeItemId(self,Id,'Limits'))[0]
                     if 'C' in Parms['Type'][0]:
                         wave = G2mth.getWave(Parms)
                         qMax = tth2q(fullLimits[1],wave)
@@ -4932,14 +4932,14 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PrefillDataMenu(self.ConstraintMenu)
         self.ConstraintTab = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintTab, title='Select tab')
-        for id,txt in (
+        for Id,txt in (
                 (G2G.wxID_CONSPHASE,'Phase'),
                 (G2G.wxID_CONSHAP,'Histogram/Phase'),
                 (G2G.wxID_CONSHIST,'Histogram'),
                 (G2G.wxID_CONSGLOBAL,'Global'),
                 (G2G.wxID_CONSSYM,'Sym-Generated'),
                 ):
-            self.ConstraintTab.Append(id,txt,'Select '+txt+' constraint editing tab')
+            self.ConstraintTab.Append(Id,txt,'Select '+txt+' constraint editing tab')
         self.ConstraintEdit = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit Constr.') # renamed from Edit due to Mac adding extra items to menu
         self.ConstraintEdit.Append(G2G.wxID_HOLDADD,'Add hold','Prevent refinement of parameter values')

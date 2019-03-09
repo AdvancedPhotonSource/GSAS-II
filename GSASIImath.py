@@ -500,8 +500,8 @@ def GetAtomsById(atomData,atomLookUp,IdList):
     
     '''
     atoms = []
-    for id in IdList:
-        atoms.append(atomData[atomLookUp[id]])
+    for Id in IdList:
+        atoms.append(atomData[atomLookUp[Id]])
     return atoms
     
 def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
@@ -519,11 +519,11 @@ def GetAtomItemsById(atomData,atomLookUp,IdList,itemLoc,numItems=1):
     Items = []
     if not isinstance(IdList,list):
         IdList = [IdList,]
-    for id in IdList:
+    for Id in IdList:
         if numItems == 1:
-            Items.append(atomData[atomLookUp[id]][itemLoc])
+            Items.append(atomData[atomLookUp[Id]][itemLoc])
         else:
-            Items.append(atomData[atomLookUp[id]][itemLoc:itemLoc+numItems])
+            Items.append(atomData[atomLookUp[Id]][itemLoc:itemLoc+numItems])
     return Items
     
 def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):

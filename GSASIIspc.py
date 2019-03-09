@@ -920,10 +920,10 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
             SGData['MagPtGp'] += "'"
     elif SGLaue in ['2/m','4/m','6/m']: #all ok
         Uniq = {'a':1,'b':2,'c':3,'':1}
-        id = [0,1]
+        Id = [0,1]
         if len(magSym) > 2:
-            id = [0,Uniq[SGData['SGUniq']]]
-        sym = magSym[id[1]].split('/')
+            Id = [0,Uniq[SGData['SGUniq']]]
+        sym = magSym[Id[1]].split('/')
         Ptsym = SGLaue.split('/')
         if len(GenSym) == 3:
             for i in [0,1,2]:
@@ -936,7 +936,7 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
                     sym[i] += "'"
                     Ptsym[i] += "'"
         SGData['MagPtGp'] = '/'.join(Ptsym)
-        magSym[id[1]] = '/'.join(sym)
+        magSym[Id[1]] = '/'.join(sym)
     elif SGPtGrp in ['mmm','mm2','m2m','2mm','222']:
         SGData['MagPtGp'] = ''
         for i in [0,1,2]:
@@ -1010,15 +1010,15 @@ def MagSGSym(SGData):       #needs to use SGPtGrp not SGLaue!
     elif SGLaue in ['3','3m1','31m']:   #ok 
         Ptsym = list(SGPtGrp)
         if len(GenSym) == 1:    #all ok
-            id = 2
+            Id = 2
             if (len(magSym) == 4) and (magSym[2] == '1'):
-                id = 3
+                Id = 3
             if '3' in GenSym[0]:
-                id = 1
-            magSym[id].strip("'")
+                Id = 1
+            magSym[Id].strip("'")
             if SpnFlp[1] < 0:
-                magSym[id] += "'"
-                Ptsym[id-1] += "'"
+                magSym[Id] += "'"
+                Ptsym[Id-1] += "'"
         elif len(GenSym) == 2:
             if 'R' in GenSym[1]:
                 magSym[-1].strip("'")

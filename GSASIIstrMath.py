@@ -519,10 +519,10 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     continue
                 elif 'SH-' in pName:
                     continue
-                id = int(pnames[2]) 
+                Id = int(pnames[2]) 
                 itemRest = phaseRest[name]
                 if name in ['Bond','Angle','Plane','Chiral']:
-                    indx,ops,obs,esd = itemRest[names[name]][id]
+                    indx,ops,obs,esd = itemRest[names[name]][Id]
                     dNames = []
                     for ind in indx:
                         dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
@@ -537,7 +537,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                         deriv = G2mth.getRestDeriv(G2mth.getRestChiral,XYZ,Amat,ops,SGData)
                 elif name in ['Torsion','Rama']:
                     coffDict = itemRest['Coeff']
-                    indx,ops,cofName,esd = itemRest[names[name]][id]
+                    indx,ops,cofName,esd = itemRest[names[name]][Id]
                     dNames = []
                     for ind in indx:
                         dNames += [str(pId)+'::dA'+Xname+':'+str(AtLookup[ind]) for Xname in ['x','y','z']]
@@ -547,7 +547,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     else:
                         deriv = G2mth.getRamaDeriv(XYZ,Amat,coffDict[cofName])
                 elif name == 'ChemComp':
-                    indx,factors,obs,esd = itemRest[names[name]][id]
+                    indx,factors,obs,esd = itemRest[names[name]][Id]
                     dNames = []
                     for ind in indx:
                         dNames += [str(pId)+'::Afrac:'+str(AtLookup[ind])]
@@ -556,7 +556,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                 elif 'Texture' in name:
                     deriv = []
                     dNames = []
-                    hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][id]
+                    hkl,grid,esd1,ifesd2,esd2 = itemRest[names[name]][Id]
                     hkl = np.array(hkl)
                     if np.any(lasthkl-hkl):
                         phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
@@ -575,7 +575,7 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                 elif name == 'General':
                     deriv = []
                     dNames = []
-                    eq,obs,esd = itemRest[name][id]
+                    eq,obs,esd = itemRest[name][Id]
                     calcobj = G2obj.ExpressionCalcObj(eq)
                     parmlist = list(eq.assgnVars.values()) # parameters used in this expression
                     for parm in parmlist: # expand list if any parms are determined by constraints
@@ -3347,18 +3347,18 @@ def getPowderProfileDervMP(args):
     names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
     for name in varylist:
         if prc == 0 and 'Debye' in name:
-            id = int(name.split(';')[-1])
+            Id = int(name.split(';')[-1])
             parm = name[:int(name.rindex(';'))]
             ip = names.index(parm)
-            dMdv[varylist.index(name)] += dMddb[3*id+ip]
+            dMdv[varylist.index(name)] += dMddb[3*Id+ip]
     names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
     for name in varylist:
         if prc == 0 and 'BkPk' in name:
-            parm,id = name.split(';')
-            id = int(id)
+            parm,Id = name.split(';')
+            Id = int(Id)
             if parm in names:
                 ip = names.index(parm)
-                dMdv[varylist.index(name)] += dMdpk[4*id+ip]
+                dMdv[varylist.index(name)] += dMdpk[4*Id+ip]
     cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!

@@ -1201,14 +1201,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
             Names = []
             Items = []
             if G2frame.GPXtree.GetCount():
-                id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-                while id:
-                    name = G2frame.GPXtree.GetItemText(id)
+                Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+                while Id:
+                    name = G2frame.GPXtree.GetItemText(Id)
                     if 'IMG' in name:
-                        ctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'Image Controls'))
+                        ctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                         Names.append(name)
                         Items.append(ctrls['GonioAngles'])
-                    id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+                    Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                 if len(Names) == 1:
                     G2frame.ErrorDialog('Nothing for global editing','There must be more than one "IMG" pattern')
                     return
@@ -1216,14 +1216,14 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     'Edit data',['Omega','Chi','Phi'],['%.2f','%.2f','%.2f'],Names,Items)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
-                        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-                        while id:
-                            name = G2frame.GPXtree.GetItemText(id)
+                        Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+                        while Id:
+                            name = G2frame.GPXtree.GetItemText(Id)
                             if 'IMG' in name:
-                                ctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,id,'Image Controls'))
+                                ctrls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                                 vals = Items[Names.index(name)]
                                 ctrls['GonioAngles'] = vals
-                            id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+                            Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
                 finally:
                     dlg.Destroy()
                     G2frame.GPXtree.SelectItem(G2frame.PickId)
@@ -3004,11 +3004,11 @@ class AutoIntFrame(wx.Frame):
                 print(msg)
                 return True
             fileList = []
-            id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.GPXtree.GetItemText(id)
+            Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while Id:
+                name = G2frame.GPXtree.GetItemText(Id)
                 if name.startswith('PWDR '): fileList.append(name)
-                id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+                Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
             if not fileList:
                 print(msg)
                 print('No PWDR entries to select')

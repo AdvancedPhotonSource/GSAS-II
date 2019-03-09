@@ -322,14 +322,14 @@ class DeleteElement(wx.Dialog):
         i = 0
         Elem = []
         for Elem in choice:
-            self.ElButton(id=-1,name=Elem,pos=wx.Point(16+i*24, 16))
+            self.ElButton(name=Elem,pos=wx.Point(16+i*24, 16))
             i+=1
               
     def __init__(self, parent,choice):
         DeleteElement.El = ' '
         self._init_ctrls(parent,choice)
 
-    def ElButton(self, id, name, pos):
+    def ElButton(self, name, pos):
         'Needs a doc string'
         White = wx.Colour(255, 255, 255)
         El = wscs.ColourSelect(label=name, parent=self, colour = White,

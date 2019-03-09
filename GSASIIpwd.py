@@ -1204,15 +1204,15 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
     names = ['DebyeA','DebyeR','DebyeU']
     for name in varyList:
         if 'Debye' in name:
-            parm,id = name.split(';')
+            parm,Id = name.split(';')
             ip = names.index(parm)
-            dMdv[varyList.index(name)] = dMddb[3*int(id)+ip]
+            dMdv[varyList.index(name)] = dMddb[3*int(Id)+ip]
     names = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
     for name in varyList:
         if 'BkPk' in name:
-            parm,id = name.split(';')
+            parm,Id = name.split(';')
             ip = names.index(parm)
-            dMdv[varyList.index(name)] = dMdpk[4*int(id)+ip]
+            dMdv[varyList.index(name)] = dMdpk[4*int(Id)+ip]
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
     if 'C' in dataType:

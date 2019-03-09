@@ -1981,8 +1981,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.selections = []
                 select = dlg.GetSelections()
                 if select:
-                    for id in select:
-                        G2frame.selections.append(choices[id])
+                    for Id in select:
+                        G2frame.selections.append(choices[Id])
                 else:
                     G2frame.selections = None
             dlg.Destroy()
@@ -2476,16 +2476,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if  lineNo in [0,1] or lineNo in exclLines:
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 limits = G2frame.GPXtree.GetItemPyData(LimitId)
-                id = lineNo//2+1
+                Id = lineNo//2+1
                 id2 = lineNo%2
                 if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
-                    limits[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
+                    limits[Id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                 elif Page.plotStyle['dPlot'] and 'PWDR' in plottype:
-                    limits[id][id2] = G2lat.Dsp2pos(Parms,xpos)
+                    limits[Id][id2] = G2lat.Dsp2pos(Parms,xpos)
                 else:
-                    limits[id][id2] = xpos
-                if id > 1 and limits[id][0] > limits[id][1]:
-                        limits[id].reverse()
+                    limits[Id][id2] = xpos
+                if Id > 1 and limits[Id][0] > limits[Id][1]:
+                        limits[Id].reverse()
                 limits[1][0] = min(max(limits[0][0],limits[1][0]),limits[1][1])
                 limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
                 if G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Limits':
@@ -2672,11 +2672,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         SampleList = []
         Temps = []
         # loop through tree looking for matching histograms to plot
-        id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
-        while id:
-            name = G2frame.GPXtree.GetItemText(id)
-            pid = id
-            id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        Id, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+        while Id:
+            name = G2frame.GPXtree.GetItemText(Id)
+            pid = Id
+            Id, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
             if name not in choices: continue
             Pattern = G2frame.GPXtree.GetItemPyData(pid)
             if len(Pattern) < 3:                    # put name on end if needed
@@ -4202,8 +4202,8 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                 G2frame.PDFselections = []
                 select = dlg.GetSelections()
                 if select:
-                    for id in select:
-                        G2frame.PDFselections.append(choices[id])
+                    for Id in select:
+                        G2frame.PDFselections.append(choices[Id])
                 else:
                     G2frame.PDFselections = None
             dlg.Destroy()
@@ -7812,8 +7812,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                     try:
                         Indx.remove(i)
                         ClearSelectedAtoms()
-                        for id in Indx:
-                            SetSelectedAtoms(id,Add)
+                        for Id in Indx:
+                            SetSelectedAtoms(Id,Add)
                     except:
                         SetSelectedAtoms(i,Add)
         else:
@@ -7827,8 +7827,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                     try:
                         Indx.remove(i)
                         ClearSelectedAtoms()
-                        for id in Indx:
-                            SetSelectedAtoms(id,Add)
+                        for Id in Indx:
+                            SetSelectedAtoms(Id,Add)
                     except:
                         SetSelectedAtoms(i,Add)
                                        

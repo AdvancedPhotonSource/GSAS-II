@@ -610,9 +610,11 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
     
 def GetSeqResult(GPXfile):
     '''
-    Needs doc string
+    Returns the sequential results table information from a GPX file.
+    Called at the beginning of :meth:`GSASIIstrMain.SeqRefine`
     
     :param str GPXfile: full .gpx file name
+    :returns: a dict containing the sequential results table
     '''
     fl = open(GPXfile,'rb')
     SeqResult = {}
@@ -629,8 +631,10 @@ def GetSeqResult(GPXfile):
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
-    Needs doc string
-    
+    Places the sequential results information into a GPX file
+    after a refinement has been completed. 
+    Called at the end of :meth:`GSASIIstrMain.SeqRefine`
+
     :param str GPXfile: full .gpx file name
     '''
     GPXback = GPXBackup(GPXfile)

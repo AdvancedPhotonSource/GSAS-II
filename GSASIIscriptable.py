@@ -46,7 +46,47 @@ in the :ref:`API` section. The typical API use will be with a Python script, suc
                                       'peaks':[[0,True]]}}}
     gpx.set_refinement(pardict)
 
-Most functionallity is provided via the objects and methods described in this section. 
+GSASIIscriptable can be used to setup and start sequential refinements. This script 
+is used to take the single-dataset fit at the end of Step 1 of the 
+`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`
+and turn off refinement flags, add histograms and setup the sequential fit, which is then run:
+
+.. code-block::  python
+
+    import os,sys,glob
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    datadir = os.path.expanduser("~/Scratch/SeqTut2019Mar")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    # load and rename project
+    gpx = G2sc.G2Project(PathWrap('7Konly.gpx'))
+    gpx.save(PathWrap('SeqRef.gpx'))
+    # turn off some variables; turn on Dijs
+    for p in gpx.phases():
+        p.set_refinements({"Cell": False})
+    gpx.phase(0).set_HAP_refinements(
+        {'Scale': False,
+         "Size": {'type':'isotropic', 'refine': False},
+         "Mustrain": {'type':'uniaxial', 'refine': False},
+         "HStrain":True,})
+    gpx.phase(1).set_HAP_refinements({'Scale': False})
+    gpx.histogram(0).clear_refinements({'Background':False,
+                     'Sample Parameters':['DisplaceX'],})
+    gpx.histogram(0).ref_back_peak(0,[])
+    gpx.phase(1).set_HAP_refinements({"HStrain":(1,1,1,0)})
+    for fil in sorted(glob.glob(PathWrap('*.fxye'))): # load in remaining fxye files
+        if '00' in fil: continue
+        gpx.add_powder_histogram(fil, PathWrap('OH_00.prm'), fmthint="GSAS powder",phases='all')
+    # copy HAP values, background, instrument params. & limits, not sample params. 
+    gpx.copyHistParms(0,'all',['b','i','l']) 
+    for p in gpx.phases(): p.copyHAPvalues(0,'all')
+    # setup and launch sequential fit
+    gpx.set_Controls('sequential',gpx.histograms())
+    gpx.set_Controls('cycles',10)
+    gpx.set_Controls('seqCopy',True)
+    gpx.refine()  
+
+Most functionality is provided via the objects and methods described in this section. 
 
 ---------------------
 :class:`G2Project`
@@ -97,20 +137,23 @@ method                                                Use
 ==================================================    ===============================================================================================================
 method                                                Use
 ==================================================    ===============================================================================================================
-:meth:`G2Phase.set_refinements`                       Provides a mechanism to set values and refinement flags for the phase. See the :ref:`Phase_parameters_table` 
+:meth:`G2Phase.set_refinements`                       Provides a mechanism to set values and refinement flags for the phase. See :ref:`Phase_parameters_table` 
                                                       for more details. This information also can be supplied within a call to :meth:`G2Project.do_refinements` 
                                                       or :meth:`G2Project.set_refinement`.
 :meth:`G2Phase.clear_refinements`                     Unsets refinement flags for the phase. 
 :meth:`G2Phase.set_HAP_refinements`                   Provides a mechanism to set values and refinement flags for parameters specific to both this phase and 
-                                                      one of its histograms. See the :ref:`HAP_parameters_table`. This information also can be supplied within 
+                                                      one of its histograms. See :ref:`HAP_parameters_table`. This information also can be supplied within 
                                                       a call to :meth:`G2Project.do_refinements` or :meth:`G2Project.set_refinement`.
 :meth:`G2Phase.clear_HAP_refinements`                 Clears refinement flags specific to both this phase and one of its histograms.
 :meth:`G2Phase.getHAPvalues`                          Returns values of parameters specific to both this phase and one of its histograms.
+:meth:`G2Phase.copyHAPvalues`                         Copies HAP settings between from one phase/histogram and to other histograms in same phase.
 :meth:`G2Phase.atoms`                                 Returns a list of atoms in the phase
 :meth:`G2Phase.atom`                                  Returns an atom from its label 
 :meth:`G2Phase.histograms`                            Returns a list of histograms linked to the phase
 :meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
 :meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
+:meth:`G2Phase.set_Controls`                          Set overall GSAS-II control settings such as number of cycles and to set up a sequential
+                                                      fit. (Also see :meth:`G2Phase.get_Controls` to read values.)
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -124,10 +167,10 @@ method                                                Use
 ==================================================    ===============================================================================================================
 method                                                Use
 ==================================================    ===============================================================================================================
-:meth:`G2PwdrData.set_refinements`                    Provides a mechanism to set values and refinement flags for the powder histogram. See the 
+:meth:`G2PwdrData.set_refinements`                    Provides a mechanism to set values and refinement flags for the powder histogram. See 
                                                       :ref:`Histogram_parameters_table` for details.  
 :meth:`G2PwdrData.clear_refinements`                  Unsets refinement flags for the the powder histogram.
-:meth:`G2PwdrData.residuals`                          Reports R-factors etc. for the the powder histogram (also see :meth:`G2PwdrData.get_wR` 
+:meth:`G2PwdrData.residuals`                          Reports R-factors etc. for the the powder histogram (also see :meth:`G2PwdrData.get_wR`) 
 :meth:`G2PwdrData.add_back_peak`                      Adds a background peak to the histogram. Also see :meth:`G2PwdrData.del_back_peak` and 
                                                       :meth:`G2PwdrData.ref_back_peak`.
 :meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
@@ -164,7 +207,7 @@ method                                                Use
 
   When working with phases, :class:`G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
   used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
-  refinement_flags, occupancy and uiso can be used to set values. See the class docs and source code.
+  refinement_flags, occupancy and uiso can be used to set values. See the :class:`G2AtomRecord` docs and source code.
 
 .. _Refinement_dicts:
 
@@ -407,10 +450,14 @@ Sample Parameters                           Should be provided as a **list** of 
 \                     DisplaceY             Sample displacement along the Y direction
 \                     Scale                 Histogram Scale factor
 
-Background                                  Sample background. If value is a boolean,
-                                            the background's 'refine' parameter is set
-                                            to the given boolean. Usually should be a
-                                            dictionary with any of the following keys:
+Background                                  Sample background. Value will be a dict or 
+                                            a boolean. If True or False, the refine 
+                                            parameter for background is set to that.
+                                            Note that background peaks are not handled
+                                            via this; see 
+                                            :meth:`G2PwdrData.ref_back_peak` instead.
+                                            When value is a dict,
+                                            supply any of the following keys:
 \                     type                  The background model, e.g. 'chebyschev'
 \                     refine                The value of the refine flag, boolean
 \                     no. coeffs            Number of coefficients to use, integer
@@ -495,12 +542,16 @@ Babinet                                Should be a **list** of the following
 \               BabA
 \               BabU
 Extinction                             Boolean, True to refine.
-HStrain                                Boolean, True to refine all appropriate
-                                       $D_ij$ terms.
+HStrain                                Boolean or list/tuple, True to refine all 
+                                       appropriate D\ :sub:`ij` terms or False
+                                       to not refine any. If a list/tuple, will
+                                       be a set of True & False values for each 
+                                       D\ :sub:`ij` term; number of items must 
+                                       match number of terms.
 Mustrain
 \               type                   Mustrain model. One of 'isotropic',
-                                       'uniaxial', or 'generalized'. Should always
-                                       be specified.
+                                       'uniaxial', or 'generalized'. **Should always
+                                       be included when Mustrain is used.**
 \              direction               For uniaxial only. A list of three
                                        integers,
                                        the [hkl] direction of the axis.
@@ -512,8 +563,8 @@ Mustrain
                                        boolean sets both axial and equatorial.
 Size                                   
 \               type                   Size broadening model. One of 'isotropic',
-                                       'uniaxial', or 'ellipsoid'. Should always
-                                       be specified.
+                                       'uniaxial', or 'ellipsoid'. **Should always
+                                       be specified when Size is used.**
 \              direction               For uniaxial only. A list of three
                                        integers,
                                        the [hkl] direction of the axis.
@@ -597,13 +648,12 @@ will usually be done with a command such as::
 
        python <path/>GSASIIscriptable.py <subcommand> <file.gpx> <options>
 
-    The following subcommands are defined:
+The following subcommands are defined:
 
         * create, see :func:`create`
         * add, see :func:`add`
         * dump, see :func:`dump`
         * refine, see :func:`refine`
-        * seqrefine, see :func:`seqrefine`
         * export, :func:`export`
         * browse, see :func:`IPyBrowse`
         
@@ -1240,7 +1290,6 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
 
     return HistName, [HistName] + names, output_dict
 
-
 def _deep_copy_into(from_, into):
     """Helper function for reloading .gpx file. See G2Project.reload()
 
@@ -1484,7 +1533,9 @@ class G2Project(G2ObjectWrapper):
 
         :param str datafile: The powder data file to read, a filename.
         :param str iparams: The instrument parameters file, a filename.
-        :param list phases: Phases to link to the new histogram
+        :param list phases: A list of phases to link to the new histogram,
+           phases can be references by object, name, rId or number.
+           Alternately, use 'all' to link to all phases in the project. 
         :param str fmthint: If specified, only importers where the format name
           (reader.formatName, as shown in Import menu) contains the
           supplied string will be tried as importers. If not specified, all
@@ -1521,6 +1572,8 @@ class G2Project(G2ObjectWrapper):
         self.data[histname] = pwdrdata
         self.update_ids()
 
+        if phases == 'all':
+            phases = self.phases()
         for phase in phases:
             phase = self.phase(phase)
             self.link_histogram_phase(histname, phase)
@@ -1692,8 +1745,8 @@ class G2Project(G2ObjectWrapper):
 
         .. seealso::
 
-            :meth:`G2Project.histogram`
-            :meth:`G2Project.phase`"""
+            :meth:`~G2Project.histogram`
+            :meth:`~G2Project.phase`"""
         hist = self.histogram(histogram)
         phase = self.phase(phase)
 
@@ -1718,7 +1771,6 @@ class G2Project(G2ObjectWrapper):
         else:
             raise RuntimeError("Unexpected histogram" + hist.name)
 
-
     def reload(self):
         """Reload self from self.filename"""
         data, names = LoadDictFromProjFile(self.filename)
@@ -1729,15 +1781,44 @@ class G2Project(G2ObjectWrapper):
         _deep_copy_into(from_=data, into=self.data)
 
     def refine(self, newfile=None, printFile=None, makeBack=False):
-        # TODO migrate to RefineCore
-        # G2strMain.RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
-	#      calcControls,pawleyLookup,ifPrint,printFile,dlg)
-        # index_ids will automatically save the project
-        self.index_ids()
-        # TODO G2strMain does not properly use printFile
-        G2strMain.Refine(self.filename, makeBack=makeBack)
-        # Reload yourself
-        self.reload()
+        '''Invoke a refinement for the project. The project is written to
+        the currently selected gpx file and then either a single or sequential refinement 
+        is performed depending on the setting of 'Seq Data' in Controls
+        (set in :meth:`get_Controls`). 
+        '''
+        seqSetting = self.data['Controls']['data'].get('Seq Data',[])
+        if not seqSetting:
+            self.index_ids()    # index_ids will automatically save the project
+            # TODO: migrate to RefineCore G2strMain does not properly use printFile
+            # G2strMain.RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
+            #      calcControls,pawleyLookup,ifPrint,printFile,dlg)
+            G2strMain.Refine(self.filename, makeBack=makeBack)
+        else:
+            self._seqrefine()
+        self.reload() # get file from GPX
+
+    def _seqrefine(self):
+        '''Perform a sequential refinement.
+        '''
+
+        self.data['Controls']['data']['ShowCell'] = True
+        # add to tree item to project, if not present
+        if 'Sequential results' not in self.data:
+            self.data['Sequential results'] = {'data':{}}
+            self.names.append(['Sequential results'])
+        self.index_ids()    # index_ids will automatically save the project
+        #GSASIIpath.IPyBreak_base()
+
+        # check that constraints are OK
+        errmsg, warnmsg = G2strIO.ReadCheckConstraints(self.filename)
+        if errmsg:
+            print('Refinement error',errmsg)
+            raise Exception('Constraint error')
+        if warnmsg:
+            print(u'Conflict between refinment flag settings and constraints:\n'+
+                  warnmsg+u'\nRefinement not possible')
+            raise Exception('Constraint error')
+        OK,Msg = G2strMain.SeqRefine(self.filename,None)
 
     def histogram(self, histname):
         """Returns the histogram named histname, or None if it does not exist.
@@ -1747,13 +1828,15 @@ class G2Project(G2ObjectWrapper):
             the histogram does not exist
 
         .. seealso::
-            :meth:`G2Project.histograms`
-            :meth:`G2Project.phase`
-            :meth:`G2Project.phases`
+            :meth:`~G2Project.histograms`
+            :meth:`~G2Project.phase`
+            :meth:`~G2Project.phases`
         """
         if isinstance(histname, G2PwdrData):
             if histname.proj == self:
                 return histname
+            else:
+                raise Exception('Histogram object (G2PwdrData) is not in current project')
         if histname in self.data:
             return G2PwdrData(self.data[histname], self)
         try:
@@ -1777,9 +1860,9 @@ class G2Project(G2ObjectWrapper):
         :returns: a list of objects
 
         .. seealso::
-            :meth:`G2Project.histogram`
-            :meth:`G2Project.phase`
-            :meth:`G2Project.phases`
+            :meth:`~G2Project.histogram`
+            :meth:`~G2Project.phase`
+            :meth:`~G2Project.phases`
         """
         output = []
         # loop through each tree entry. If it is more than one level (more than one item in the
@@ -1805,9 +1888,9 @@ class G2Project(G2ObjectWrapper):
         :raises: KeyError
 
         .. seealso::
-            :meth:`G2Project.histograms`
-            :meth:`G2Project.phase`
-            :meth:`G2Project.phases`
+            :meth:`~G2Project.histograms`
+            :meth:`~G2Project.phase`
+            :meth:`~G2Project.phases`
             """
         if isinstance(phasename, G2Phase):
             if phasename.proj == self:
@@ -1833,9 +1916,9 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2Phase` objects
 
         .. seealso::
-            :meth:`G2Project.histogram`
-            :meth:`G2Project.histograms`
-            :meth:`G2Project.phase`
+            :meth:`~G2Project.histogram`
+            :meth:`~G2Project.histograms`
+            :meth:`~G2Project.phase`
             """
         for obj in self.names:
             if obj[0] == 'Phases':
@@ -1858,7 +1941,7 @@ class G2Project(G2ObjectWrapper):
         :raises: KeyError
 
         .. seealso::
-            :meth:`G2Project.images`
+            :meth:`~G2Project.images`
         """
         if isinstance(imageRef, G2Image):
             if imageRef.proj == self:
@@ -2055,14 +2138,6 @@ class G2Project(G2ObjectWrapper):
         else:
             phases = [phase]
 
-        # TODO: HAP parameters:
-        #   Babinet
-        #   Extinction
-        #   HStrain
-        #   Mustrain
-        #   Pref. Ori
-        #   Size
-
         pwdr_set = {}
         phase_set = {}
         hap_set = {}
@@ -2106,7 +2181,6 @@ class G2Project(G2ObjectWrapper):
             phase.clear_HAP_refinements(hap_clear, hists)
 
     def index_ids(self):
-        import GSASIIstrIO as G2strIO
         self.save()
         return G2strIO.GetUsedHistogramsAndPhases(self.filename)
 
@@ -2140,7 +2214,7 @@ class G2Project(G2ObjectWrapper):
 
     def make_var_obj(self, phase=None, hist=None, varname=None, atomId=None,
                      reloadIdx=True):
-        """Wrapper to create a G2VarObj. Takes either a string representaiton ("p:h:name:a")
+        """Wrapper to create a G2VarObj. Takes either a string representation ("p:h:name:a")
         or individual names of phase, histogram, varname, and atomId.
 
         Automatically converts string phase, hist, or atom names into the ID required
@@ -2299,7 +2373,115 @@ class G2Project(G2ObjectWrapper):
             del rd.Image
             objlist.append(G2Image(self.data[TreeName], TreeName, self))
         return objlist
+    
+    def get_Controls(self, control):
+        '''Return project controls settings
 
+        :param str control: the item to be returned. See below for allowed values.
+        :returns: The value for the control.
+
+        Allowed values for parameter control:
+
+            * cycles: the maximum number of cycles (returns int)
+            * sequential: the histograms used for a sequential refinement as a list
+              of histogram names or an empty list when in non-sequential mode. 
+            * seqCopy: returns True or False. True indicates that results from 
+              each sequential fit are used as the starting point for the next
+              histogram.
+            * Anything else returns the value in the Controls dict, if present. An 
+              exception is raised if the control value is not present. 
+
+        .. seealso::
+            :meth:`set_Controls`
+        '''
+        if control == 'cycles':
+            return self.data['Controls']['data']['max cyc']
+        elif control == 'sequential':
+            return self.data['Controls']['data']['Seq Data']
+        elif control in self.data['Controls']['data']:
+            return self.data['Controls']['data'][control]
+        elif control == 'seqCopy':
+            self.data['Controls']['data']['Copy2Next'] = bool(value)
+        else:
+            print('Defined Controls:',self.data['Controls']['data'].keys())
+            raise Exception('{} is an invalid control value'.format(control))
+        
+    def set_Controls(self, control, value):
+        '''Set project controls
+
+        :param str control: the item to be set. See below for allowed values. 
+        :param value: the value to be set.
+
+        Allowed values for parameter control:
+
+            * cycles: sets the maximum number of cycles (value must be int)
+            * sequential: sets the histograms to be used for a sequential refinement. 
+              Use an empty list to turn off sequential fitting. 
+              The values in the list may be the name of the histogram (a str), or 
+              a ranId or index (int values), see :meth:`histogram`.
+            * seqCopy: when True, the results from each sequential fit are used as
+              the starting point for the next. After each fit is is set to False. 
+              Ignored for non-sequential fits. 
+
+        .. seealso::
+            :meth:`get_Controls`
+        '''
+        if control == 'cycles':
+            self.data['Controls']['data']['max cyc'] = int(value)
+        elif control == 'seqCopy':
+            self.data['Controls']['data']['Copy2Next'] = bool(value)
+        elif control == 'sequential':
+            histlist = []
+            for i,j in enumerate(value):
+                h = self.histogram(j)
+                if h:
+                    histlist.append(h.name)
+                else:
+                    raise Exception('item #{} ({}) is an invalid histogram value'
+                                        .format(i,j))
+            self.data['Controls']['data']['Seq Data'] = histlist
+        else:
+            raise Exception('{} is an invalid control value'.format(control))
+        
+    def copyHistParms(self,sourcehist,targethistlist='all',modelist='all'):
+        '''Copy histogram information from one histogram to others
+
+        :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
+            a histogram name or the index number of the histogram
+        :param list targethistlist: a list of histograms where each item in the
+            list can be a histogram object (:class:`G2PwdrData`), 
+            a histogram name or the index number of the histogram.
+            if the string 'all' (default value), then all histograms in 
+            the project are used. 
+        :param list modelist: May be a list of sections to copy, which may 
+           include 'Background', 'Instrument Parameters', 'Limits' and 
+           'Sample Parameters' (items may be shortened to uniqueness and
+           capitalization is ignored, so ['b','i','L','s'] will work.)
+           The default value, 'all' causes the listed sections to 
+
+        '''
+        sections = ('Background','Instrument Parameters','Limits',
+                        'Sample Parameters')
+        hist_in = self.histogram(sourcehist)
+        if not hist_in:
+            raise Exception('{} is not a valid histogram'.format(sourcehist))
+        if targethistlist == "all":
+            targethistlist = self.histograms()
+        if 'all' in modelist:
+            copysections = sections
+        else:
+            copysections = set()
+            for s in sections:
+                for m in modelist:
+                    if s.lower().startswith(m.lower()):
+                        copysections.add(s)
+        for h in targethistlist:
+            hist_out = self.histogram(h)
+            if not hist_out:
+                raise Exception('{} is not a valid histogram'.format(h))
+            for key in copysections: 
+                hist_out[key] = copy.deepcopy(hist_in[key])
+        
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Has convenient accessors via @property.
 
@@ -2399,7 +2581,6 @@ class G2AtomRecord(G2ObjectWrapper):
         else:
             assert len(value) == 6
             self.data[self.cia+2:self.cia+8] = [float(v) for v in value]
-
 
 class G2PwdrData(G2ObjectWrapper):
     """Wraps a Powder Data Histogram."""
@@ -2650,10 +2831,10 @@ class G2PwdrData(G2ObjectWrapper):
         return self['data'][0].get('wR')
 
     def set_refinements(self, refs):
-        """Sets the histogram refinement parameter 'key' to the specification 'value'
+        """Sets the histogram refinement parameter 'key' to the specification 'value'.
 
-        :param dict refs: A dictionary of the parameters to be set. See
-                          :ref:`Histogram_parameters_table` for a description of
+        :param dict refs: A dictionary of the parameters to be set. See the 
+                          :ref:`Histogram_parameters_table` table for a description of
                           what these dictionaries should be.
 
         :returns: None
@@ -2733,7 +2914,9 @@ class G2PwdrData(G2ObjectWrapper):
     def clear_refinements(self, refs):
         """Clears the refinement parameter 'key' and its associated value.
 
-        :param dict refs: A dictionary of parameters to clear."""
+        :param dict refs: A dictionary of parameters to clear.
+          See the :ref:`Histogram_parameters_table` table for what can be specified. 
+        """
         for key, value in refs.items():
             if key == 'Limits':
                 old_limits, cur_limits = self.data['Limits']
@@ -2925,12 +3108,12 @@ class G2Phase(G2ObjectWrapper):
                 return G2AtomRecord(atom, ptrs, self.proj)
 
     def atoms(self):
-        """Returns a list of atoms present in the phase.
+        """Returns a list of atoms present in the current phase.
 
         :returns: A list of :class:`G2AtomRecord` objects.
 
         .. seealso::
-            :meth:`G2Phase.atom`
+            :meth:`~G2Phase.atom`
             :class:`G2AtomRecord`
         """
         ptrs = self.data['General']['AtomPtrs']
@@ -2941,6 +3124,8 @@ class G2Phase(G2ObjectWrapper):
         return output
 
     def histograms(self):
+        '''Returns a list of histogram names associated with the current phase.
+        '''
         output = []
         for hname in self.data.get('Histograms', {}).keys():
             output.append(self.proj.histogram(hname))
@@ -2965,7 +3150,7 @@ class G2Phase(G2ObjectWrapper):
         :returns: a dict
 
         .. seealso::
-           :meth:`G2Phase.get_cell_and_esd`
+           :meth:`~G2Phase.get_cell_and_esd`
 
         """
         cell = self.data['General']['Cell']
@@ -2981,11 +3166,10 @@ class G2Phase(G2ObjectWrapper):
         :returns: a tuple of two dictionaries
 
         .. seealso::
-           :meth:`G2Phase.get_cell`
+           :meth:`~G2Phase.get_cell`
 
         """
         # translated from GSASIIstrIO.ExportBaseclass.GetCell
-        import GSASIIstrIO as G2stIO
         import GSASIIlattice as G2lat
         import GSASIImapvars as G2mv
         try:
@@ -3003,8 +3187,8 @@ class G2Phase(G2ObjectWrapper):
                                                   covDict['varyList'],
                                                   parmDict))
 
-            A, sigA = G2stIO.cellFill(pfx, sgdata, parmDict, sigDict)
-            cellSig = G2stIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
+            A, sigA = G2strIO.cellFill(pfx, sgdata, parmDict, sigDict)
+            cellSig = G2strIO.getCellEsd(pfx, sgdata, A, self.proj['Covariance']['data'])
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             cellDict, cellSigDict = {}, {}
             for i, key in enumerate(['length_a', 'length_b', 'length_c',
@@ -3101,10 +3285,10 @@ class G2Phase(G2ObjectWrapper):
 
 
     def set_refinements(self, refs):
-        """Sets the refinement parameter 'key' to the specification 'value'
+        """Sets the phase refinement parameter 'key' to the specification 'value'
 
-        :param dict refs: A dictionary of the parameters to be set. See
-                          :ref:`Phase_parameters_table` for a description of
+        :param dict refs: A dictionary of the parameters to be set. See the
+                          :ref:`Phase_parameters_table` table for a description of
                           this dictionary.
 
         :returns: None"""
@@ -3135,7 +3319,9 @@ class G2Phase(G2ObjectWrapper):
     def clear_refinements(self, refs):
         """Clears a given set of parameters.
 
-        :param dict refs: The parameters to clear"""
+        :param dict refs: The parameters to clear.
+          See the :ref:`Phase_parameters_table` table for what can be specified. 
+        """
         for key, value in refs.items():
             if key == "Cell":
                 self.data['General']['Cell'][0] = False
@@ -3157,10 +3343,10 @@ class G2Phase(G2ObjectWrapper):
 
     def set_HAP_refinements(self, refs, histograms='all'):
         """Sets the given HAP refinement parameters between this phase and
-        the given histograms
+        the given histograms.
 
         :param dict refs: A dictionary of the parameters to be set. See
-                          :ref:`HAP_parameters_table` for a description of this
+                          the :ref:`HAP_parameters_table` table for a description of this
                           dictionary.
         :param histograms: Either 'all' (default) or a list of the histograms
             whose HAP parameters will be set with this phase. Histogram and phase
@@ -3182,127 +3368,146 @@ class G2Phase(G2ObjectWrapper):
             print("Skipping HAP set for phase {}, no selected histograms".format(self.name))
             return
         for key, val in refs.items():
-            for h in histograms:
-                if key == 'Babinet':
-                    try:
-                        sets = list(val)
-                    except ValueError:
-                        sets = ['BabA', 'BabU']
-                    for param in sets:
-                        if param not in ['BabA', 'BabU']:
-                            raise ValueError("Not sure what to do with" + param)
-                        for hist in histograms:
-                            hist['Babinet'][param][1] = True
-                elif key == 'Extinction':
+            if key == 'Babinet':
+                try:
+                    sets = list(val)
+                except ValueError:
+                    sets = ['BabA', 'BabU']
+                for param in sets:
+                    if param not in ['BabA', 'BabU']:
+                        raise ValueError("Not sure what to do with" + param)
                     for h in histograms:
-                        h['Extinction'][1] = bool(val)
-                elif key == 'HStrain':
+                        h['Babinet'][param][1] = True
+            elif key == 'Extinction':
+                for h in histograms:
+                    h['Extinction'][1] = bool(val)
+            elif key == 'HStrain':
+                if isinstance(val,list) or isinstance(val,tuple):
+                    for h in histograms:
+                        if len(h['HStrain'][1]) != len(val):
+                            raise Exception('Need {} HStrain terms for phase {}'
+                                .format(len(h['HStrain'][1]),self.name))
+                        for i,v in enumerate(val):
+                            h['HStrain'][1][i] = bool(v)
+                else:
                     for h in histograms:
                         h['HStrain'][1] = [bool(val) for p in h['HStrain'][1]]
-                elif key == 'Mustrain':
-                    for h in histograms:
-                        mustrain = h['Mustrain']
-                        newType = None
-                        direction = None
-                        if isinstance(val, strtypes):
-                            if val in ['isotropic', 'uniaxial', 'generalized']:
-                                newType = val
-                            else:
-                                raise ValueError("Not a Mustrain type: " + val)
-                        elif isinstance(val, dict):
-                            newType = val.get('type', None)
-                            direction = val.get('direction', None)
+            elif key == 'Mustrain':
+                for h in histograms:
+                    mustrain = h['Mustrain']
+                    newType = None
+                    direction = None
+                    if isinstance(val, strtypes):
+                        if val in ['isotropic', 'uniaxial', 'generalized']:
+                            newType = val
+                        else:
+                            raise ValueError("Not a Mustrain type: " + val)
+                    elif isinstance(val, dict):
+                        newType = val.get('type', None)
+                        direction = val.get('direction', None)
 
-                        if newType:
-                            mustrain[0] = newType
-                            if newType == 'isotropic':
-                                mustrain[2][0] = True == val.get('refine',False)
-                                mustrain[5] = [False for p in mustrain[4]]
-                            elif newType == 'uniaxial':
-                                if 'refine' in val:
-                                    mustrain[2][0] = False
-                                    types = val['refine']
-                                    if isinstance(types, strtypes):
-                                        types = [types]
-                                    elif isinstance(types, bool):
-                                        mustrain[2][1] = types
-                                        mustrain[2][2] = types
-                                        types = []
-                                    else:
-                                        raise ValueError("Not sure what to do with: "
-                                                         + str(types))
-                                else:
+                    if newType:
+                        mustrain[0] = newType
+                        if newType == 'isotropic':
+                            mustrain[2][0] = True == val.get('refine',False)
+                            mustrain[5] = [False for p in mustrain[4]]
+                        elif newType == 'uniaxial':
+                            if 'refine' in val:
+                                mustrain[2][0] = False
+                                types = val['refine']
+                                if isinstance(types, strtypes):
+                                    types = [types]
+                                elif isinstance(types, bool):
+                                    mustrain[2][1] = types
+                                    mustrain[2][2] = types
                                     types = []
-
-                                for unitype in types:
-                                    if unitype == 'equatorial':
-                                        mustrain[2][0] = True
-                                    elif unitype == 'axial':
-                                        mustrain[2][1] = True
-                                    else:
-                                        msg = 'Invalid uniaxial mustrain type'
-                                        raise ValueError(msg + ': ' + unitype)
-                            else:  # newtype == 'generalized'
-                                mustrain[2] = [False for p in mustrain[1]]
-                                if 'refine' in val:
-                                    mustrain[5] = [True == val['refine']]*len(mustrain[5])
-
-                        if direction:
-                            if len(direction) != 3:
-                                raise ValueError("Expected hkl, found", direction)
-                            direction = [int(n) for n in direction]
-                            mustrain[3] = direction
-                elif key == 'Size':
-                    newSize = None
-                    if 'value' in val:
-                        newSize = float(val['value'])
-                    for h in histograms:
-                        size = h['Size']
-                        newType = None
-                        direction = None
-                        if isinstance(val, strtypes):
-                            if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
-                                newType = val
+                                else:
+                                    raise ValueError("Not sure what to do with: "
+                                                     + str(types))
                             else:
-                                raise ValueError("Not a valid Size type: " + val)
-                        elif isinstance(val, dict):
-                            newType = val.get('type', None)
-                            direction = val.get('direction', None)
+                                types = []
 
-                        if newType:
-                            size[0] = newType
-                            refine = True == val.get('refine')
-                            if newType == 'isotropic' and refine is not None:
-                                size[2][0] = bool(refine)
-                                if newSize: size[1][0] = newSize
-                            elif newType == 'uniaxial' and refine is not None:
-                                size[2][1] = bool(refine)
-                                size[2][2] = bool(refine)
-                                if newSize: size[1][1] = size[1][2] =newSize
-                            elif newType == 'ellipsoidal' and refine is not None:
-                                size[5] = [bool(refine) for p in size[5]]
-                                if newSize: size[4] = [newSize for p in size[4]]
+                            for unitype in types:
+                                if unitype == 'equatorial':
+                                    mustrain[2][0] = True
+                                elif unitype == 'axial':
+                                    mustrain[2][1] = True
+                                else:
+                                    msg = 'Invalid uniaxial mustrain type'
+                                    raise ValueError(msg + ': ' + unitype)
+                        else:  # newtype == 'generalized'
+                            mustrain[2] = [False for p in mustrain[1]]
+                            if 'refine' in val:
+                                mustrain[5] = [True == val['refine']]*len(mustrain[5])
 
-                        if direction:
-                            if len(direction) != 3:
-                                raise ValueError("Expected hkl, found", direction)
-                            direction = [int(n) for n in direction]
-                            size[3] = direction
-                elif key == 'Pref.Ori.':
-                    for h in histograms:
-                        h['Pref.Ori.'][2] = bool(val)
-                elif key == 'Show':
-                    for h in histograms:
-                        h['Show'] = bool(val)
-                elif key == 'Use':
-                    for h in histograms:
-                        h['Use'] = bool(val)
-                elif key == 'Scale':
-                    for h in histograms:
-                        h['Scale'][1] = bool(val)
-                else:
-                    print(u'Unknown HAP key: '+key)
+                    if direction:
+                        if len(direction) != 3:
+                            raise ValueError("Expected hkl, found", direction)
+                        direction = [int(n) for n in direction]
+                        mustrain[3] = direction
+            elif key == 'Size':
+                newSize = None
+                if 'value' in val:
+                    newSize = float(val['value'])
+                for h in histograms:
+                    size = h['Size']
+                    newType = None
+                    direction = None
+                    if isinstance(val, strtypes):
+                        if val in ['isotropic', 'uniaxial', 'ellipsoidal']:
+                            newType = val
+                        else:
+                            raise ValueError("Not a valid Size type: " + val)
+                    elif isinstance(val, dict):
+                        newType = val.get('type', None)
+                        direction = val.get('direction', None)
 
+                    if newType:
+                        size[0] = newType
+                        refine = True == val.get('refine')
+                        if newType == 'isotropic' and refine is not None:
+                            size[2][0] = bool(refine)
+                            if newSize: size[1][0] = newSize
+                        elif newType == 'uniaxial' and refine is not None:
+                            size[2][1] = bool(refine)
+                            size[2][2] = bool(refine)
+                            if newSize: size[1][1] = size[1][2] =newSize
+                        elif newType == 'ellipsoidal' and refine is not None:
+                            size[5] = [bool(refine) for p in size[5]]
+                            if newSize: size[4] = [newSize for p in size[4]]
+
+                    if direction:
+                        if len(direction) != 3:
+                            raise ValueError("Expected hkl, found", direction)
+                        direction = [int(n) for n in direction]
+                        size[3] = direction
+            elif key == 'Pref.Ori.':
+                for h in histograms:
+                    h['Pref.Ori.'][2] = bool(val)
+            elif key == 'Show':
+                for h in histograms:
+                    h['Show'] = bool(val)
+            elif key == 'Use':
+                for h in histograms:
+                    h['Use'] = bool(val)
+            elif key == 'Scale':
+                for h in histograms:
+                    h['Scale'][1] = bool(val)
+            else:
+                print(u'Unknown HAP key: '+key)
+
+    def _decodeHist(self,hist):
+        '''Convert a histogram reference to a histogram name string
+        '''
+        if isinstance(hist, G2PwdrData):
+            return hist.name
+        elif hist in self.data['Histograms']:
+            return hist
+        elif type(hist) is int:
+            return self.proj.histograms()[hist].name
+        else:
+            raise G2ScriptException("Invalid histogram reference: "+str(hist))
+        
     def getHAPvalues(self, histname):
         """Returns a dict with HAP values for the selected histogram
 
@@ -3311,21 +3516,46 @@ class G2Phase(G2ObjectWrapper):
 
         :returns: HAP value dict
         """
-        if isinstance(histname, G2PwdrData):
-            histname = histname.name
-        elif histname in self.data['Histograms']:
-            pass
-        elif type(histname) is int:
-            histname = self.proj.histograms()[histname].name
-        else:
-            raise G2ScriptException("Invalid histogram reference: "+str(histname))
-        return self.data['Histograms'][histname]
+        return self.data['Histograms'][self._decodeHist(histname)]
+
+    def copyHAPvalues(self, sourcehist, targethistlist, skip=[]):
+        """Returns a dict with HAP values for the selected histogram
+
+        :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
+            a histogram name or the index number of the histogram
+        :param list targethistlist: a list of histograms where each item in the
+            list can be a histogram object (:class:`G2PwdrData`), 
+            a histogram name or the index number of the histogram.
+            if the string 'all', then all histograms in the phase are used.
+        :param list skip: items in the HAP dict that should not be 
+            copied. The default is an empty list, which causes all items
+            to be copied. To see a list of items in the dict, use
+            :meth:`getHAPvalues` or use an invalid item, such as '?'.
+        """
+        sourcehist = self._decodeHist(sourcehist)
+        if targethistlist == 'all':
+            targethistlist = list(self.data['Histograms'].keys())
+        
+        copydict = copy.deepcopy(self.data['Histograms'][sourcehist])
+        for item in skip:
+            if item in copydict:
+                del copydict[item]
+            else:
+                print('items in HAP dict are: {}'.format(
+                    list(self.data['Histograms'][sourcehist])))
+                raise Exception('HAP dict entry {} invalid'.format(item))
+        for h in targethistlist:
+            h = self._decodeHist(h)
+            self.data['Histograms'][h].update(copydict)
+            
+        #GSASIIpath.IPyBreak_base()
                     
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and
-        the given histograms
+        the given histograms.
 
         :param dict refs: A dictionary of the parameters to be cleared.
+            See the the :ref:`HAP_parameters_table` table for what can be specified. 
         :param histograms: Either 'all' (default) or a list of the histograms
             whose HAP parameters will be cleared with this phase. Histogram and
             phase must already be associated
@@ -4024,12 +4254,6 @@ optional arguments::
         proj.do_refinements(refs['refinements'])
 
 
-commandhelp["seqrefine"] = "Not implemented. Placeholder for eventual sequential refinement implementation"
-def seqrefine(args):
-    """Future implementation for the seqrefine command-line subcommand """
-    raise NotImplementedError("seqrefine is not yet implemented")
-
-
 commandhelp["export"] = "Export phase as CIF"
 def export(args):
     """Implements the export command-line subcommand: Exports phase as CIF::
@@ -4136,7 +4360,6 @@ subcommands = {"create":
                                       default=None,
                                       nargs='?')]),
 
-               "seqrefine": (seqrefine, []),
                "export": (export, [_args_kwargs('gpxfile',
                                                 help='the project file from which to export'),
                                    _args_kwargs('phase', help='identifier of phase to export'),
@@ -4157,7 +4380,6 @@ def main():
         * add, see :func:`add`
         * dump, see :func:`dump`
         * refine, see :func:`refine`
-        * seqrefine, see :func:`seqrefine`
         * export, :func:`export`
         * browse, see :func:`IPyBrowse`
 
@@ -4166,7 +4388,6 @@ def main():
         :func:`add`
         :func:`dump`
         :func:`refine`
-        :func:`seqrefine`
         :func:`export`
         :func:`IPyBrowse`
     '''

@@ -1514,12 +1514,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
         GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
         GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
-        GSdata = np.inner(GSdata,uAmat.T)
+        GSdata = np.inner(GSdata,uAmat.T)   #--> cartesian
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Mxyz
-        MmodA = np.inner(MmodA,uAmat.T)                   #make cartesian
-        MmodB = np.inner(MmodB,uAmat.T)
+#        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Mxyz
+#        MmodA = np.inner(MmodA,uAmat.T)*SGData['SpnFlp']                   #make cartesian
+#        MmodB = np.inner(MmodB,uAmat.T)*SGData['SpnFlp']
+        MmodA = np.array(MSSdata[3:]).T         #cos Natm,Nwave,Mxyz
+        MmodB = np.array(MSSdata[:3]).T         #sin 
         
 
     FF = np.zeros(len(Tdata))
@@ -1552,6 +1554,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     iBeg = 0
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
+        mRef = iFin-iBeg
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:4]                          #array(blkSize,4)
         HP = H[:3]+modQ[:,nxs]*H[3:]            #projected hklm to hkl
@@ -1594,27 +1597,28 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
                       
-            HM = np.inner(Bmat,HP.T)                             #put into cartesian space
-            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-                       
+            HM = np.inner(Bmat,HP.T)                            #put into cartesian space
+            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
+#for fixed moments --> m=0 reflections                       
             fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
-            fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]
+            fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]    
                        
-            fam = TMcorr[:,nxs,:,nxs]*SGData['SpnFlp'][nxs,:,nxs,nxs]*(MmodA[nxs,:,:,:]*cosm[:,:,:,nxs]-np.sign(H[3])[:,nxs,nxs,nxs]*MmodB[nxs,:,:,:]*sinm[:,:,:,nxs])/2.
-            fbm = TMcorr[:,nxs,:,nxs]*SGData['SpnFlp'][nxs,:,nxs,nxs]*(MmodA[nxs,:,:,:]*sinm[:,:,:,nxs]+np.sign(H[3])[:,nxs,nxs,nxs]*MmodB[nxs,:,:,:]*cosm[:,:,:,nxs])/2.
+            famq0 = np.sum(np.sum(fam0,axis=-2),axis=-2)        #Nref,Mxyz; sum ops & atoms
+            fbmq0 = np.sum(np.sum(fbm0,axis=-2),axis=-2)
+            
+            fas0 = np.sum(famq0,axis=-1)**2-np.sum(HM.T*famq0,axis=-1)**2   #mag intensity calc F^2-(e.F)^2
+            fbs0 = np.sum(fbmq0,axis=-1)**2-np.sum(HM.T*fbmq0,axis=-1)**2
+#for modulated moments --> m != 0 reflections
+            M = np.array(np.abs(H[3]),dtype=np.int)-1
+            fam = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[nxs,:,M[i],:]*cosm[i,:,:,nxs]-np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[nxs,:,M[i],:]*sinm[i,:,:,nxs]),0.) for i in range(mRef)])
+            fbm = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[nxs,:,M[i],:]*sinm[i,:,:,nxs]+np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[nxs,:,M[i],:]*cosm[i,:,:,nxs]),0.) for i in range(mRef)])
                        
             famq = np.sum(np.sum(fam,axis=-2),axis=-2)      #Nref,Mxyz; sum ops & atoms
             fbmq = np.sum(np.sum(fbm,axis=-2),axis=-2)
             
-            famq0 = np.sum(np.sum(fam0,axis=-2),axis=-2)
-            fbmq0 = np.sum(np.sum(fbm0,axis=-2),axis=-2)
-            
             fas = np.sum(famq,axis=-1)**2-np.sum(HM.T*famq,axis=-1)**2      #mag intensity calc F^2-(e.F)^2
             fbs = np.sum(fbmq,axis=-1)**2-np.sum(HM.T*fbmq,axis=-1)**2
                         
-            fas0 = np.sum(famq0,axis=-1)**2-np.sum(HM.T*famq0,axis=-1)**2
-            fbs0 = np.sum(fbmq0,axis=-1)**2-np.sum(HM.T*fbmq0,axis=-1)**2
-
             refl.T[10] = np.where(H[3],fas+fbs,fas0+fbs0)
             refl.T[11] = np.where(H[3],atan2d(fas,fbs),atan2d(fas0,fbs0))
             

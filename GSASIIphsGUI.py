@@ -3164,7 +3164,7 @@ def UpdatePhaseData(G2frame,Item,data):
         Elem = 'H'
         if data['General']['Type'] == 'magnetic':
             Elem = 'Fe'
-        AtomAdd(0,0,0,El=Elem)
+        AtomAdd(0.,0.,0.,El=Elem)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
         if data['Drawing']:
@@ -3179,7 +3179,7 @@ def UpdatePhaseData(G2frame,Item,data):
             x,y,z = drawData['viewPoint'][0]
             AtomAdd(x,y,z,El=Elem)
         except:
-            AtomAdd(0,0,0,El=Elem)
+            AtomAdd(0.,0.,0.,El=Elem)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
         data['Drawing']['Atoms'] = []
@@ -3219,7 +3219,7 @@ def UpdatePhaseData(G2frame,Item,data):
         '''
         indx = GetSelectedAtoms()
         for a in reversed(sorted(indx)):
-            AtomInsert(a,0,0,0)
+            AtomInsert(a,0.,0.,0.)
         event.StopPropagation()
         FillAtomsGrid(Atoms)
         data['Drawing']['Atoms'] = []
@@ -3443,20 +3443,20 @@ def UpdatePhaseData(G2frame,Item,data):
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         atId = ran.randint(0,sys.maxsize)
         if generalData['Type'] == 'macromolecular':
-            atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
+            atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
             if generalData['Modulated']:
-                atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0.,'I',0.01,0,0,0,0,0,0,atId,[],[],
                     {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
             else:
-                atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+                atomData.insert(indx,[Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             SetupGeneral()
         elif generalData['Type'] == 'magnetic':
             if generalData['Modulated']:
-                atomData.insert(indx,[Name,El,'',x,y,z,1,0.,0.,0.,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                atomData.insert(indx,[Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
                     {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
             else:
-                atomData.insert(indx,[Name,El,'',x,y,z,1,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+                atomData.insert(indx,[Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)

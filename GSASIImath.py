@@ -1356,17 +1356,17 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
 
 def MagMod(XYZ,modQ,MSSdata):
-    Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
-    Bm = np.array(MSSdata[3:]).T   #...cos pos mods
+    Bm = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
+    Am = np.array(MSSdata[3:]).T   #...cos pos mods
     nWaves = Am.shape[1]
-    MmodA = 0.
-    MmodB = 0.
+    MmodA = 0; MmodB = 0
     if nWaves:
         modind = np.arange(nWaves)+1.
-        phase = twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:]
-        MmodA = np.sum(Bm[:,nxs,:,:]*np.cos(phase),axis=2) #natm,Nops,Mxyz
-        MmodB = np.sum(Am[:,nxs,:,:]*np.sin(phase),axis=2)
-    return np.swapaxes(MmodA,0,1),np.swapaxes(MmodB,0,1)    #Nops,Natm,Mxyz
+        phase = np.sum(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:],axis=-1)
+        phase = np.swapaxes(phase,0,1)  #Nops,Natm,Nwave
+        MmodA = Am[nxs,:,:,:]*np.cos(phase[:,:,:,nxs])-Bm[nxs,:,:,:]*np.sin(phase[:,:,:,nxs])
+        MmodB = Am[nxs,:,:,:]*np.sin(phase[:,:,:,nxs])+Bm[nxs,:,:,:]*np.cos(phase[:,:,:,nxs])
+    return MmodA,MmodB    #cos & sin Nops,Natm,Nwaves,Mxyz
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

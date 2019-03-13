@@ -1517,13 +1517,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.inner(GSdata,uAmat.T)   #--> cartesian
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-#        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Mxyz
-#        MmodA = np.inner(MmodA,uAmat.T)*SGData['SpnFlp']                   #make cartesian
-#        MmodB = np.inner(MmodB,uAmat.T)*SGData['SpnFlp']
-        MmodA = np.array(MSSdata[3:]).T         #cos Natm,Nwave,Mxyz
-        MmodB = np.array(MSSdata[:3]).T         #sin 
+        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
+        MmodA = np.inner(MmodA,uAmat.T)         #*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #make cartesian * apply det(ops)
+        MmodB = np.inner(MmodB,uAmat.T)         #*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
         
-
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -1610,11 +1607,11 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbs0 = np.sum(fbmq0,axis=-1)**2-np.sum(HM.T*fbmq0,axis=-1)**2
 #for modulated moments --> m != 0 reflections
             M = np.array(np.abs(H[3]),dtype=np.int)-1
-            fam = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[nxs,:,M[i],:]*cosm[i,:,:,nxs]-np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[nxs,:,M[i],:]*sinm[i,:,:,nxs]),0.) for i in range(mRef)])
-            fbm = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[nxs,:,M[i],:]*sinm[i,:,:,nxs]+np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[nxs,:,M[i],:]*cosm[i,:,:,nxs]),0.) for i in range(mRef)])
+            fam = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[:,:,M[i],:]*cosm[i,:,:,nxs]-np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[:,:,M[i],:]*sinm[i,:,:,nxs]),0.) for i in range(mRef)])
+            fbm = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[:,:,M[i],:]*sinm[i,:,:,nxs]+np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[:,:,M[i],:]*cosm[i,:,:,nxs]),0.) for i in range(mRef)])
                        
-            famq = np.sum(np.sum(fam,axis=-2),axis=-2)      #Nref,Mxyz; sum ops & atoms
-            fbmq = np.sum(np.sum(fbm,axis=-2),axis=-2)
+            famq = np.sum(np.sum(fam/2.,axis=-2),axis=-2)      #Nref,Mxyz; sum ops & atoms
+            fbmq = np.sum(np.sum(fbm/2.,axis=-2),axis=-2)
             
             fas = np.sum(famq,axis=-1)**2-np.sum(HM.T*famq,axis=-1)**2      #mag intensity calc F^2-(e.F)^2
             fbs = np.sum(fbmq,axis=-1)**2-np.sum(HM.T*fbmq,axis=-1)**2

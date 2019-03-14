@@ -4606,8 +4606,12 @@ def GetConfigValsDocs():
     import config_example
     import ast
     fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
-    with open(fname, 'r') as f:
-        fstr = f.read()
+    if '3' in platform.python_version_tuple()[0]: 
+        with open(fname, 'r',encoding='utf-8') as f:
+            fstr = f.read()
+    else:
+        with open(fname, 'r') as f:
+            fstr = f.read()
     fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
     if not fstr.endswith('\n'):
         fstr += '\n'

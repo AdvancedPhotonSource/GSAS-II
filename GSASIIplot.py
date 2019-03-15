@@ -4022,9 +4022,9 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
             else:
                 uselbl = lbl
             if lbl[1:] == 'zero':
-                art = ax0.axhline(0.,color=c,
+                art = [ax0.axhline(0.,color=c,
                      lw=lineWid,label=uselbl,ls=l.get_ls(),
-                     marker=marker,ms=siz,mew=mew)
+                     marker=marker,ms=siz,mew=mew)]
             else:
                 art = ax0.plot(l.get_xdata(),l.get_ydata(),color=c,
                      lw=lineWid,label=uselbl,ls=l.get_ls(),

@@ -1517,9 +1517,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.inner(GSdata,uAmat.T)   #--> cartesian
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
-        MmodA = np.inner(MmodA,uAmat.T)         #*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #make cartesian * apply det(ops)
-        MmodB = np.inner(MmodB,uAmat.T)         #*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
+        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata,SSGData)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
+        MmodA = np.inner(MmodA,uAmat.T)*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #make cartesian * apply det(ops)
+        MmodB = np.inner(MmodB,uAmat.T)*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
         
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:

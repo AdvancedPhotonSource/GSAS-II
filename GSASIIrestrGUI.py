@@ -1900,7 +1900,7 @@ def UpdateRestraints(G2frame,data,phaseName):
         if generalRestData['General']:
             parmDict = SetupParmDict(G2frame)
             GridSiz = wx.FlexGridSizer(0,7,10,2)
-            for lbl in ('expression','target\nvalue','current\nvalue','esd'):
+            for lbl in ('expression =','target\nvalue','current\nvalue','esd'):
                 GridSiz.Add(
                     wx.StaticText(GeneralRestr,wx.ID_ANY,lbl,style=wx.CENTER),
                     0,wx.ALIGN_CENTER)
@@ -1911,12 +1911,12 @@ def UpdateRestraints(G2frame,data,phaseName):
                     0,wx.ALIGN_CENTER)
             for i,rest in enumerate(generalRestData['General']):
                 eq = rest[0]
-                txt = eq.expression
+                txt = eq.expression+' ='
                 if len(txt) > 50:
                     txt = txt[:47]+'... '
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
                 GridSiz.Add(
-                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,1,nDig=(10,2),typeHint=float)
+                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,1,nDig=(10,3,'g'),typeHint=float)
                     )
                 # evaluate the expression
                 try:
@@ -1927,7 +1927,7 @@ def UpdateRestraints(G2frame,data,phaseName):
                     txt = ' (error) '
                 GridSiz.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,txt))
                 GridSiz.Add(
-                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,2,nDig=(10,1),typeHint=float)
+                    G2G.ValidatedTxtCtrl(GeneralRestr,rest,2,nDig=(10,3,'g'),typeHint=float)
                     )
                 btn = wx.Button(GeneralRestr, wx.ID_ANY,"Edit",size=(40,-1))
                 btn.index = i

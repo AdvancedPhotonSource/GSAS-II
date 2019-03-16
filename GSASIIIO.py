@@ -599,6 +599,12 @@ def objectScan(data,tag,indexStack=[]):
         global unexpectedObject
         unexpectedObject = True
     
+def cPickleLoad(fp):
+    if '2' in platform.python_version_tuple()[0]:
+        return cPickle.load(fp)
+    else:
+       return cPickle.load(fp,encoding='latin-1')
+
 def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
     if not os.path.exists(G2frame.GSASprojectfile):
@@ -608,14 +614,50 @@ def ProjFileOpen(G2frame,showProvenance=True):
     LastSavedUsing = None
     filep = open(G2frame.GSASprojectfile,'rb')
     if showProvenance: print ('loading from file: '+G2frame.GSASprojectfile)
+    GPXphase = os.path.splitext(G2frame.GSASprojectfile)[0]+'.seqPhase'
+    GPXhist = os.path.splitext(G2frame.GSASprojectfile)[0]+'.seqHist'
+    hist = None
+    tmpHistIndex = {}
+    updateFromSeq = False
+    if os.path.exists(GPXphase) and os.path.exists(GPXhist):
+        dlg = wx.MessageDialog(G2frame,
+            'Load results from crashed sequential fit?\nNo deletes the files!', 'Recover partial sequential fit?', wx.YES | wx.NO | wx.CANCEL)
+        dlg.CenterOnParent()
+        try:
+            result = dlg.ShowModal()
+            if result == wx.ID_OK:
+                updateFromSeq = True
+                fp = open(GPXphase,'rb')
+                data = cPickleLoad(fp) # first block in file should be Phases
+                if data[0][0] != 'Phases':
+                    raise Exception('Unexpected block in {} file. How did this happen?'
+                            .format(GPXphase))
+                Phases = {}
+                for name,vals in data[1:]:
+                    Phases[name] = vals
+                name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
+                name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+                fp.close()
+                # index the histogram updates
+                hist = open(GPXhist,'rb')
+                try:
+                    while True:
+                        loc = hist.tell()
+                        datum = cPickleLoad(hist)[0]
+                        tmpHistIndex[datum[0]] = loc
+                except EOFError:
+                    pass
+            elif result != wx.ID_CANCEL:
+                #print('deleting .seqXXXX files')
+                os.remove(GPXphase)
+                os.remove(GPXhist)
+        finally:
+            dlg.Destroy()
     wx.BeginBusyCursor()
     try:
         while True:
             try:
-                if '2' in platform.python_version_tuple()[0]:
-                    data = cPickle.load(filep)
-                else:
-                    data = cPickle.load(filep,encoding='latin-1')
+                data = cPickleLoad(filep)
             except EOFError:
                 break
             datum = data[0]
@@ -628,6 +670,22 @@ def ProjFileOpen(G2frame,showProvenance=True):
                 #    print(datum[0])
                 #    GSASIIpath.IPyBreak()
             Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=datum[0])
+            if updateFromSeq and datum[0] == 'Phases':
+                for pdata in data[1:]:
+                    if pdata[0] in Phases:
+                        pdata[1].update(Phases[pdata[0]])
+            elif updateFromSeq and datum[0] == 'Covariance':
+                data[0][1] = CovData
+            elif updateFromSeq and datum[0] == 'Rigid bodies':
+                data[0][1] = RigidBodies
+            elif updateFromSeq and datum[0] in tmpHistIndex:
+                hist.seek(tmpHistIndex[datum[0]])
+                hdata = cPickleLoad(hist)
+                xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
+                hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
+                for j,(name,val) in enumerate(data[1:]):
+                    if name not in xferItems: continue
+                    data[j+1][1] = hdata[hItems[name]][1]
             if datum[0].startswith('PWDR'):                
                 if 'ranId' not in datum[1][0]: # patch: add random Id if not present
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxsize)
@@ -692,6 +750,11 @@ def ProjFileOpen(G2frame,showProvenance=True):
         filep.close()
         wx.EndBusyCursor()
         G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
+    if hist:
+        hist.close()
+        #print('deleting .seqXXXX files')
+        os.remove(GPXphase)
+        os.remove(GPXhist)
     G2frame.SetTitleByGPX()
     
 def ProjFileSave(G2frame):

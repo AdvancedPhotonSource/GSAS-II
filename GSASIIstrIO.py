@@ -48,11 +48,21 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
 
+#===============================================================================
+# Support for GPX file reading
+#===============================================================================
 def cPickleLoad(fp):
     if '2' in platform.python_version_tuple()[0]:
         return cPickle.load(fp)
     else:
        return cPickle.load(fp,encoding='latin-1')
+
+gpxIndex = {}; gpxNamelist = []; gpxSize = -1
+'''Global variables used in :func:`IndexGPX` to see if file has changed 
+(gpxSize) and to index where to find each 1st-level tree item in the file.
+'''
+tmpHistIndex = {}
+'Global variable used to index contents of .seqHist file'
 
 def GetFullGPX(GPXfile):
     ''' Returns complete contents of GSASII gpx file. 
@@ -66,28 +76,54 @@ def GetFullGPX(GPXfile):
         'Restraints', etc.), data is dict 
       * nameList (list) has names of main tree entries & subentries used to reconstruct project file
     '''
+    return IndexGPX(GPXfile,read=True)
+
+def IndexGPX(GPXfile,read=False):
+    '''Create an index to a GPX file, optionally the file into memory.
+    The byte size of the GPX file is saved. If this routine is called 
+    again, and if this size does not change, indexing is not repeated
+    since it is assumed the file has not changed (this can be overriden
+    by setting read=True). 
+
+    :param str GPXfile: full .gpx file name
+    :returns: Project,nameList if read=, where
+
+      * Project (dict) is a representation of gpx file following the GSAS-II 
+        tree structure for each item: key = tree name (e.g. 'Controls', 
+        'Restraints', etc.), data is dict 
+      * nameList (list) has names of main tree entries & subentries used to reconstruct project file
+    '''
+    global gpxSize
+    if gpxSize == os.path.getsize(GPXfile) and not read:
+        return
+    global gpxIndex
+    gpxIndex = {}
+    global gpxNamelist
+    gpxNamelist = []
+    if GSASIIpath.GetConfigValue('debug'): print("DBG: Indexing GPX file")
+    gpxSize = os.path.getsize(GPXfile)
     fp = open(GPXfile,'rb')
     Project = {}
-    nameList = []
     try:
         while True:
-            try:
-                data = cPickleLoad(fp)
-            except EOFError:
-                break
+            pos = fp.tell()
+            data = cPickleLoad(fp)
             datum = data[0]
-            Project[datum[0]] = {'data':datum[1]}
-            nameList.append([datum[0],])
+            gpxIndex[datum[0]] = pos
+            if read: Project[datum[0]] = {'data':datum[1]}
+            gpxNamelist.append([datum[0],])
             for datus in data[1:]:
-                Project[datum[0]][datus[0]] = datus[1]
-                nameList[-1].append(datus[0])
+                if read: Project[datum[0]][datus[0]] = datus[1]
+                gpxNamelist[-1].append(datus[0])
         # print('project load successful')
+    except EOFError:
+        pass
     except Exception as msg:
         print('Read Error:',msg)
         raise Exception("Error reading file "+str(GPXfile)+". This is not a GSAS-II .gpx file")
     finally:
         fp.close()
-    return Project,nameList
+    if read: return Project,gpxNamelist   
     
 def GetControls(GPXfile):
     ''' Returns dictionary of control items found in GSASII gpx file
@@ -96,43 +132,40 @@ def GetControls(GPXfile):
     :return: dictionary of control items
     '''
     Controls = copy.copy(G2obj.DefaultControls)
-    fl = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Controls':
-            Controls.update(datum[1])
-    fl.close()
+    IndexGPX(GPXfile)
+    pos = gpxIndex.get('Controls')
+    if pos is None:
+        print('Warning: Controls not found in gpx file {}'.format(GPXfile))
+        return Controls
+    fp = open(GPXfile,'rb')
+    fp.seek(pos)
+    datum = cPickleLoad(fp)[0]
+    fp.close()
+    Controls.update(datum[1])
     return Controls
-    
+
 def GetConstraints(GPXfile):
     '''Read the constraints from the GPX file and interpret them
 
     called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
     and :func:`GSASIIstrMain.SeqRefine`. 
     '''
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Constraints':
-            constList = []
-            for item in datum[1]:
-                if item.startswith('_'): continue
-                constList += datum[1][item]
-            fl.close()
-            constDict,fixedList,ignored = ProcessConstraints(constList)
-            if ignored:
-                print ('%d Constraints were rejected. Was a constrained phase, histogram or atom deleted?'%ignored)
-            return constDict,fixedList
+    pos = gpxIndex.get('Constraints')
+    if pos is None:
+        raise Exception("No constraints in GPX file")
+    fl.seek(pos)
+    datum = cPickleLoad(fl)[0]
     fl.close()
-    raise Exception("No constraints in GPX file")
+    constList = []
+    for item in datum[1]:
+        if item.startswith('_'): continue
+        constList += datum[1][item]
+    constDict,fixedList,ignored = ProcessConstraints(constList)
+    if ignored:
+        print ('{} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
+    return constDict,fixedList
     
 def ProcessConstraints(constList):
     """Interpret the constraints in the constList input into a dictionary, etc.
@@ -225,9 +258,7 @@ def ProcessConstraints(constList):
 def ReadCheckConstraints(GPXfile, seqHist=None):
     '''Load constraints and related info and return any error or warning messages
     This is done from the GPX file rather than the tree.
-    This is called before a refinement is launched (OnRefine and OnSeqRefine), 
-    where the tree could be used.
-    
+
     :param dict seqHist: defines a specific histogram to be loaded for a sequential
        refinement, if None (default) all are loaded.
     '''
@@ -246,7 +277,7 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
         GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
-    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=True)
+    hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False,resetRefList=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
     msg = G2mv.EvaluateMultipliers(constrDict,phaseDict,hapDict,histDict)
@@ -281,32 +312,28 @@ def GetRestraints(GPXfile):
     '''Read the restraints from the GPX file.
     Throws an exception if not found in the .GPX file
     '''
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Restraints':
-            restraintDict = datum[1]
+    pos = gpxIndex.get('Restraints')
+    if pos is None:
+        raise Exception("No Restraints in GPX file")
+    fl.seek(pos)
+    datum = cPickleLoad(fl)[0]
     fl.close()
-    return restraintDict
+    return datum[1]
     
 def GetRigidBodies(GPXfile):
     '''Read the rigid body models from the GPX file
     '''
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Rigid bodies':
-            rigidbodyDict = datum[1]
+    pos = gpxIndex.get('Rigid bodies')
+    if pos is None:
+        raise Exception("No Rigid bodies in GPX file")
+    fl.seek(pos)
+    datum = cPickleLoad(fl)[0]
     fl.close()
-    return rigidbodyDict
+    return datum[1]
         
 def GetFprime(controlDict,Histograms):
     'Needs a doc string'
@@ -347,40 +374,35 @@ def GetPhaseNames(GPXfile):
     :param str GPXfile: full .gpx file name
     :return: list of phase names
     '''
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
-    PhaseNames = []
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if 'Phases' == datum[0]:
-            for datus in data[1:]:
-                PhaseNames.append(datus[0])
+    pos = gpxIndex.get('Phases')
+    if pos is None:
+        raise Exception("No Phases in GPX file")
+    fl.seek(pos)
+    data = cPickleLoad(fl)
     fl.close()
-    return PhaseNames
+    return [datus[0] for datus in data[1:]]
 
 def GetAllPhaseData(GPXfile,PhaseName):
     ''' Returns the entire dictionary for PhaseName from GSASII gpx file
 
     :param str GPXfile: full .gpx file name
     :param str PhaseName: phase name
-    :return: phase dictionary
+    :return: phase dictionary or None if PhaseName is not present
     '''        
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if 'Phases' == datum[0]:
-            for datus in data[1:]:
-                if datus[0] == PhaseName:
-                    break
+    pos = gpxIndex.get('Phases')
+    if pos is None:
+        raise Exception("No Phases in GPX file")
+    fl.seek(pos)
+    data = cPickleLoad(fl)
     fl.close()
-    return datus[1]
+
+    for datus in data[1:]:
+        if datus[0] == PhaseName:
+            return datus[1]
     
 def GetHistograms(GPXfile,hNames):
     """ Returns a dictionary of histograms found in GSASII gpx file
@@ -390,72 +412,63 @@ def GetHistograms(GPXfile,hNames):
     :return: dictionary of histograms (types = PWDR & HKLF)
 
     """
+    IndexGPX(GPXfile)
     fl = open(GPXfile,'rb')
     Histograms = {}
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
+    for hist in hNames:
+        pos = gpxIndex.get(hist)
+        if pos is None:
+            raise Exception("Histogram {} not found in GPX file".format(hist))
+        fl.seek(pos)
+        data = cPickleLoad(fl)
         datum = data[0]
-        hist = datum[0]
-        if hist in hNames:
-            if 'PWDR' in hist[:4]:
-                PWDRdata = {}
-                PWDRdata.update(datum[1][0])        #weight factor
-                PWDRdata['Data'] = ma.array(ma.getdata(datum[1][1]))          #masked powder data arrays/clear previous masks
-                PWDRdata[data[2][0]] = data[2][1]       #Limits & excluded regions (if any)
-                PWDRdata[data[3][0]] = data[3][1]       #Background
-                PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
-                PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
-                try:
-                    PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
-                except IndexError:
-                    PWDRdata['Reflection Lists'] = {}
-                PWDRdata['Residuals'] = {}
-    
-                Histograms[hist] = PWDRdata
-            elif 'HKLF' in hist[:4]:
-                HKLFdata = {}
-                HKLFdata.update(datum[1][0])        #weight factor
+        if 'PWDR' in hist[:4]:
+            PWDRdata = {}
+            PWDRdata.update(datum[1][0])        #weight factor
+            PWDRdata['Data'] = ma.array(ma.getdata(datum[1][1]))          #masked powder data arrays/clear previous masks
+            PWDRdata[data[2][0]] = data[2][1]       #Limits & excluded regions (if any)
+            PWDRdata[data[3][0]] = data[3][1]       #Background
+            PWDRdata[data[4][0]] = data[4][1]       #Instrument parameters
+            PWDRdata[data[5][0]] = data[5][1]       #Sample parameters
+            try:
+               PWDRdata[data[9][0]] = data[9][1]       #Reflection lists might be missing
+            except IndexError:
+                PWDRdata['Reflection Lists'] = {}
+            PWDRdata['Residuals'] = {}
+            Histograms[hist] = PWDRdata
+        elif 'HKLF' in hist[:4]:
+            HKLFdata = {}
+            HKLFdata.update(datum[1][0])        #weight factor
 #patch
-                if 'list' in str(type(datum[1][1])):
-                #if isinstance(datum[1][1],list):
-                    RefData = {'RefList':[],'FF':{}}
-                    for ref in datum[1][1]:
-                        RefData['RefList'].append(ref[:11]+[ref[13],])
-                    RefData['RefList'] = np.array(RefData['RefList'])
-                    datum[1][1] = RefData
+            if 'list' in str(type(datum[1][1])):
+            #if isinstance(datum[1][1],list):
+                RefData = {'RefList':[],'FF':{}}
+                for ref in datum[1][1]:
+                    RefData['RefList'].append(ref[:11]+[ref[13],])
+                RefData['RefList'] = np.array(RefData['RefList'])
+                datum[1][1] = RefData
 #end patch
-                datum[1][1]['FF'] = {}
-                HKLFdata['Data'] = datum[1][1]
-                HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
-                HKLFdata['Reflection Lists'] = None
-                HKLFdata['Residuals'] = {}
-                Histograms[hist] = HKLFdata           
+            datum[1][1]['FF'] = {}
+            HKLFdata['Data'] = datum[1][1]
+            HKLFdata[data[1][0]] = data[1][1]       #Instrument parameters
+            HKLFdata['Reflection Lists'] = None
+            HKLFdata['Residuals'] = {}
+            Histograms[hist] = HKLFdata           
     fl.close()
     return Histograms
     
-def GetHistogramNames(GPXfile,hType):
-    """ Returns a list of histogram names found in GSASII gpx file
+def GetHistogramNames(GPXfile,hTypes):
+    """ Returns a list of histogram names found in a GSAS-II .gpx file that
+    match specifed histogram types. Names are returned in the order they 
+    appear in the file.
 
     :param str GPXfile: full .gpx file name
-    :param str hType: list of histogram types
+    :param str hTypes: list of histogram types
     :return: list of histogram names (types = PWDR & HKLF)
 
     """
-    fl = open(GPXfile,'rb')
-    HistogramNames = []
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0][:4] in hType:
-            HistogramNames.append(datum[0])
-    fl.close()
-    return HistogramNames
+    IndexGPX(GPXfile)
+    return [n[0] for n in gpxNamelist if n[0][:4] in hTypes]
     
 def GetUsedHistogramsAndPhases(GPXfile):
     ''' Returns all histograms that are found in any phase
@@ -528,7 +541,7 @@ def getBackupName(GPXfile,makeBack):
         
 def GPXBackup(GPXfile,makeBack=True):
     '''
-    makes a backup of the current .gpx file (?)
+    makes a backup of the specified .gpx file
     
     :param str GPXfile: full .gpx file name
     :param bool makeBack: if True (default), the backup is written to
@@ -552,7 +565,7 @@ def GPXBackup(GPXfile,makeBack=True):
 def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,makeBack=True):
     ''' Updates gpxfile from all histograms that are found in any phase
     and any phase that used a histogram. Also updates rigid body definitions.
-
+    This is used for non-sequential fits, but not for sequential fitting.
 
     :param str GPXfile: full .gpx file name
     :param dict Histograms: dictionary of histograms as {name:data,...}
@@ -616,18 +629,105 @@ def GetSeqResult(GPXfile):
     :param str GPXfile: full .gpx file name
     :returns: a dict containing the sequential results table
     '''
+    IndexGPX(GPXfile)
+    pos = gpxIndex.get('Sequential results')
+    if pos is None:
+        return {}
     fl = open(GPXfile,'rb')
-    SeqResult = {}
-    while True:
-        try:
-            data = cPickleLoad(fl)
-        except EOFError:
-            break
-        datum = data[0]
-        if datum[0] == 'Sequential results':
-            SeqResult = datum[1]
+    fl.seek(pos)
+    datum = cPickleLoad(fl)[0]
     fl.close()
-    return SeqResult
+    return datum[1]
+    
+def SetupSeqSavePhases(GPXfile):
+    '''Initialize the files used to save intermediate results from 
+    sequential fits.
+    '''
+    IndexGPX(GPXfile)
+    # load initial Phase results from GPX
+    fl = open(GPXfile,'rb')
+    pos = gpxIndex.get('Phases')
+    if pos is None:
+        raise Exception("No Phases in GPX file")
+    fl.seek(pos)
+    data = cPickleLoad(fl)
+    fl.close()
+    # create GPX-like file to store latest Phase info; init with start vals
+    GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
+    fp = open(GPXphase,'wb')
+    cPickle.dump(data,fp,1)
+    fp.close()
+    # create empty file for histogram info
+    tmpHistIndex.clear()
+    GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
+    fp = open(GPXhist,'wb')
+    fp.close()
+
+def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData):
+    '''
+    Save phase and histogram information into "pseudo-gpx" files. The phase
+    information is overwritten each time this is called, but histogram information is 
+    appended after each sequential step.
+
+    :param str GPXfile: full .gpx file name
+    :param dict Histograms: dictionary of histograms as {name:data,...}
+    :param dict Phases: dictionary of phases that use histograms
+    :param dict RigidBodies: dictionary of rigid bodies
+    :param dict CovData: dictionary of refined variables, varyList, & covariance matrix
+    '''
+                        
+    import distutils.file_util as dfu
+    
+    GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
+    fp = open(GPXphase,'rb')
+    data = cPickleLoad(fp) # first block in file should be Phases
+    if data[0][0] != 'Phases':
+        raise Exception('Unexpected block in {} file. How did this happen?'
+                            .format(GPXphase))
+    fp.close()
+    # update previous phase info
+    for datum in data[1:]: 
+        if datum[0] in Phases:
+            datum[1].update(Phases[datum[0]])
+    # save latest Phase/refinement info
+    fp = open(GPXphase,'wb')
+    cPickle.dump(data,fp,1)
+    cPickle.dump([['Covariance',CovData]],fp,1)
+    cPickle.dump([['Rigid bodies',RigidBodies]],fp,1)
+    fp.close()
+    # create an entry that looks like a PWDR tree item
+    for key in Histograms:
+        if key.startswith('PWDR '):
+            break
+    else:
+        raise Exception('No PWDR entry in Histogram dict!')
+    histname = key
+    hist = copy.deepcopy(Histograms[key])
+    xfer_dict = {'Index Peak List': [[], []],
+                   'Comments': [],
+                   'Unit Cells List': [],
+                   'Peak List': {'peaks': [], 'sigDict': {}},
+                   }
+    histData = hist['Data']
+    del hist['Data']
+    for key in ('Limits','Background','Instrument Parameters',
+                    'Sample Parameters','Reflection Lists'):
+        xfer_dict[key] = hist[key]
+        del hist[key]
+    # xform into a gpx-type entry
+    data = []
+    data.append([histname,[hist,histData,histname]])        
+    for key in ['Comments','Limits','Background','Instrument Parameters',
+             'Sample Parameters','Peak List','Index Peak List',
+             'Unit Cells List','Reflection Lists']:
+        data.append([key,xfer_dict[key]])
+    # append histogram to histogram info
+    GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
+    fp = open(GPXhist,'ab')
+    tmpHistIndex[histname] = fp.tell()
+    cPickle.dump(data,fp,1)
+    fp.close()
+    return    
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
@@ -640,6 +740,20 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     GPXback = GPXBackup(GPXfile)
     print ('Read from file:'+GPXback)
     print ('Save to file  :'+GPXfile)
+    GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
+    fp = open(GPXphase,'rb')
+    data = cPickleLoad(fp) # first block in file should be Phases
+    if data[0][0] != 'Phases':
+        raise Exception('Unexpected block in {} file. How did this happen?'
+                            .format(GPXphase))
+    Phases = {}
+    for name,vals in data[1:]:
+        Phases[name] = vals
+    name,CovData = cPickleLoad(fp)[0] # 2nd block in file should be Covariance
+    name,RigidBodies = cPickleLoad(fp)[0] # 3rd block in file should be Rigid Bodies
+    fp.close()
+    GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
+    hist = open(GPXhist,'rb')
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
@@ -650,23 +764,42 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         datum = data[0]
         if datum[0] == 'Sequential results':
             data[0][1] = SeqResult
-        # reset the Copy Next flag, since it should not be needed twice in a row
-        if datum[0] == 'Controls':
+        elif datum[0] == 'Phases':
+            for pdata in data[1:]:
+                if pdata[0] in Phases:
+                    pdata[1].update(Phases[pdata[0]])
+        elif datum[0] == 'Covariance':
+            data[0][1] = CovData
+        elif datum[0] == 'Rigid bodies':
+            data[0][1] = RigidBodies
+        elif datum[0] == 'Controls': # reset the Copy Next flag after a sequential fit
             data[0][1]['Copy2Next'] = False
-        try:
-            histogram = Histograms[datum[0]]
-            data[0][1][1] = list(histogram['Data'])
-            for datus in data[1:]:
-                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
-                    datus[1] = histogram[datus[0]]
-        except KeyError:
-            pass
-                                
+        elif datum[0] in tmpHistIndex:
+            hist.seek(tmpHistIndex[datum[0]])
+            hdata = cPickleLoad(hist)
+            xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
+            hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
+            for j,(name,val) in enumerate(data[1:]):
+                if name not in xferItems: continue
+                data[j+1][1] = hdata[hItems[name]][1]
+            # old code update from Histograms array
+            #histogram = Histograms[datum[0]]
+            #data[0][1][1] = list(histogram['Data'])
+            #for datus in data[1:]:
+            #    if datus[0] in 
+            #        datus[1] = histogram[datus[0]]
         cPickle.dump(data,outfile,1)
     infile.close()
     outfile.close()
-    print ('GPX file save successful')
-                        
+    # clean up tmp files
+    tmpHistIndex.clear()
+    os.remove(GPXphase)
+    os.remove(GPXhist)
+    print ('GPX file merge completed')
+
+#==============================================================================
+# Refinement routines
+#==============================================================================
 def ShowBanner(pFile=None):
     'Print authorship, copyright and citation notice'
     pFile.write(80*'*'+'\n')

@@ -363,6 +363,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
     makeBack = True
     Histo = {}
     NewparmDict = {}
+    G2stIO.SetupSeqSavePhases(GPXfile)
     for ihst,histogram in enumerate(histNames):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         print('\nRefining with '+str(histogram))
@@ -414,16 +415,8 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         #reload(G2mv) # debug
-        if GSASIIpath.GetConfigValue('Show_timing'):
-            t2 = time.time()
-            print("#1 show time {:.2f} sec.".format(t2-t1))
-            t1 = t2
         G2mv.InitVars()
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
-        if GSASIIpath.GetConfigValue('Show_timing'):
-            t2 = time.time()
-            print("#2 show time {:.2f} sec.".format(t2-t1))
-            t1 = t2
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
         if msg:
@@ -483,25 +476,12 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         ifSeq = True
         printFile.write('\n Refinement results for histogram: %s\n'%histogram)
         printFile.write(135*'-'+'\n')
-        if GSASIIpath.GetConfigValue('Show_timing'):
-            t2 = time.time()
-            print("#3 show time {:.2f} sec.".format(t2-t1))
-            t1 = t2
         if True:
 #        try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg)
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#4a show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
             if PlotFunction:
                 PlotFunction(G2frame,Histo[histogram]['Data'],histogram)
-
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#4b show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
             print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2']))
             # add the uncertainties into the esd dictionary (sigDict)
@@ -524,31 +504,11 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
                 'constraintInfo':constraintInfo,
                 'parmDict':parmDict}
             SeqResult[histogram] = histRefData
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#4c show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#5a show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
-    #        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+#            G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#5b show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
             G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile)
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#5c show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
-            G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,makeBack)
-            if GSASIIpath.GetConfigValue('Show_timing'):
-                t2 = time.time()
-                print("#5d show time {:.2f} sec.".format(t2-t1))
-                t1 = t2
+            G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData)
             makeBack = False
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
@@ -569,7 +529,7 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
 #            return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
-            print("#6 show time {:.2f} sec.".format(t2-t1))
+            print("Fit step time {:.2f} sec.".format(t2-t1))
             t1 = t2
     SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)

@@ -3815,6 +3815,7 @@ class GSASII(wx.Frame):
                 pth = self.LastGPXdir
             else:
                 pth = '.'
+            #if GSASIIpath.GetConfigValue('debug'): print('debug: open from '+pth)
             dlg = wx.FileDialog(self, 'Choose GSAS-II project file', pth, 
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN)
             try:
@@ -3833,6 +3834,7 @@ class GSASII(wx.Frame):
 
         if not filename:
             GetGPX()
+            filename = self.GSASprojectfile
         else:
             try:
                 self.GSASprojectfile = os.path.splitext(filename)[0]+u'.gpx'
@@ -3877,9 +3879,7 @@ class GSASII(wx.Frame):
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
-#            self.GPXtree.SelectItem(Id)
         elif phaseId:
-#            self.GPXtree.SelectItem(phaseId)
             SelectDataTreeItem(self,phaseId)
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
@@ -4359,9 +4359,33 @@ class GSASII(wx.Frame):
                 name = self.GPXtree.GetItemText(item)
                 if name[:4] in hType:
                     HistogramNames.append(name)        
-                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)                
-
+                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         return HistogramNames
+    
+    def GetHistogramNamesID(self,hType):
+        """ Returns a list of histogram names found in the GSASII data tree
+        and a lookup table of their Id values. Should replace GetHistogramNames
+        since that will not be much faster (and there may be real speed gains from
+        caching the Ids rather than keep searching for them). 
+
+        N.B routine :func:`GSASIIstrIO.GetHistogramNames` also exists to
+        get same info, but from GPX file.
+        
+        :param str hType: list of histogram types
+        :return: list of histogram names and a dict of histogram Ids 
+           keyed by histogram name.
+        """
+        HistogramNames = []
+        HistogramIds = {}
+        if self.GPXtree.GetCount():
+            item, cookie = self.GPXtree.GetFirstChild(self.root)
+            while item:
+                name = self.GPXtree.GetItemText(item)
+                if name[:4] in hType:
+                    HistogramNames.append(name)        
+                    HistogramIds[name] = item
+                item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        return HistogramNames,HistogramIds
                     
     def GetUsedHistogramsAndPhasesfromTree(self):
         ''' Returns all histograms that are found in any phase
@@ -4380,7 +4404,7 @@ class GSASII(wx.Frame):
         Phases = {}
         phaseNames = self.GetPhaseNames()
         phaseData = self.GetPhaseData()
-        histoList = self.GetHistogramNames(['PWDR','HKLF'])
+        histoList,histIdList = self.GetHistogramNamesID(['PWDR','HKLF'])
 
         for phase in phaseData:
             Phase = phaseData[phase]
@@ -4393,7 +4417,7 @@ class GSASII(wx.Frame):
                     if Phase['Histograms'][hist]['Use'] and phase not in Phases:
                         Phases[phase] = Phase
                     if hist not in Histograms and Phase['Histograms'][hist]['Use']:
-                        item = GetGPXtreeItemId(self,self.root,hist)
+                        item = histIdList[hist]
                         if item:
                             if 'PWDR' in hist[:4]: 
                                 Histograms[hist] = self.GetPWDRdatafromTree(item)
@@ -4512,22 +4536,10 @@ class GSASII(wx.Frame):
         '''Perform a refinement or a sequential refinement (depending on controls setting)
         Called from the Calculate/Refine menu.
         '''
-        G2cnstG.CheckAllScalePhaseFractions(self)
         if self.testSeqRefineMode():
             self.OnSeqRefine(event)
             return
-        # Id = GetGPXtreeItemId(self,self.root,'Sequential results')
-        # if Id:
-        #     dlg = wx.MessageDialog(
-        #         self,
-        #         'Your last refinement was sequential. Continue with "Refine", removing previous sequential results?',
-        #         'Remove sequential results?',wx.OK|wx.CANCEL)
-        #     if dlg.ShowModal() == wx.ID_OK:
-        #         self.GPXtree.Delete(Id)
-        #         dlg.Destroy()
-        #     else:
-        #         dlg.Destroy()
-        #         return
+        G2cnstG.CheckAllScalePhaseFractions(self) # can be slow for sequential fits, skip
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
@@ -4639,9 +4651,7 @@ class GSASII(wx.Frame):
         
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
-        Called from self.OnRefine (Called from the Calculate/Refine menu)
-        
-        temporarily called from the Calculate/Sequential refine menu (to be removed)
+        Called from self.OnRefine (Which is called from the Calculate/Refine menu)
         '''
         seqList = self.testSeqRefineMode()
         if not seqList:

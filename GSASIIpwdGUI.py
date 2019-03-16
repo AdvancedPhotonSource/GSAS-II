@@ -4489,12 +4489,12 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         Super = 0
         if phaseName not in ['Unknown',]:
             pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Phases')
-            phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
-            if not phaseId:         #phase deleted 
-                return None
-            General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
-            if General.get('Modulated',False):
-                Super = 1
+            if pId: # phase section missing from file (unusual)
+                phaseId =  G2gd.GetGPXtreeItemId(G2frame,pId,phaseName)
+                if phaseId:         #is phase deleted?
+                    General = G2frame.GPXtree.GetItemPyData(phaseId)['General']
+                    if General.get('Modulated',False):
+                        Super = 1
         rowLabels = []
         if HKLF:
             refList = data[1]['RefList']

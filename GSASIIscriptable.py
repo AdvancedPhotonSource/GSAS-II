@@ -1067,8 +1067,11 @@ def make_empty_project(author=None, filename=None):
     filename = os.path.abspath(filename)
     gsasii_version = str(GSASIIpath.GetVersionNumber())
     LoadG2fil()
-    import matplotlib as mpl
-    python_library_versions = G2fil.get_python_versions([mpl, np, sp])
+    try:
+        import matplotlib as mpl
+        python_library_versions = G2fil.get_python_versions([mpl, np, sp])
+    except ModuleNotFoundError:
+        python_library_versions = G2fil.get_python_versions([np, sp])
 
     controls_data = dict(G2obj.DefaultControls)
     controls_data['LastSavedAs'] = filename
@@ -2811,17 +2814,18 @@ class G2PwdrData(G2ObjectWrapper):
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt
-            data = self.data['data'][1]
-            if Yobs:
-                plt.plot(data[0], data[1], label='Yobs')
-            if Ycalc:
-                plt.plot(data[0], data[3], label='Ycalc')
-            if Background:
-                plt.plot(data[0], data[4], label='Background')
-            if Residual:
-                plt.plot(data[0], data[5], label="Residual")
         except ImportError:
-            pass
+            print('Unable to import matplotlib, skipping plot')
+            return
+        data = self.data['data'][1]
+        if Yobs:
+            plt.plot(data[0], data[1], label='Yobs')
+        if Ycalc:
+            plt.plot(data[0], data[3], label='Ycalc')
+        if Background:
+            plt.plot(data[0], data[4], label='Background')
+        if Residual:
+            plt.plot(data[0], data[5], label="Residual")
 
     def get_wR(self):
         """returns the overall weighted profile R factor for a histogram

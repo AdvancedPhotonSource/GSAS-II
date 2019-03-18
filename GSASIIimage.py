@@ -25,7 +25,10 @@ import scipy.interpolate as scint
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-import GSASIIplot as G2plt
+try:
+    import GSASIIplot as G2plt
+except ImportError, ModuleNotFoundError: # expected in scriptable w/o matplotlib and/or wx
+    pass
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc

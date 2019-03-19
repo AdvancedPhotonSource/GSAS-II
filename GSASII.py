@@ -9,12 +9,16 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSAS-II GUI Script*
+*GSAS-II GUI*
 =====================
 
-Script to start the GSAS-II graphical user interface. This script imports GSASIIpath,
-sets a few misc. values and then launches :func:`GSASIIdataGUI.GSASIImain`, which
-creates a wx.Application which in turns creates the GUI. 
+This is the script to start the GSAS-II graphical user interface (GUI). 
+This script imports GSASIIpath, does some minor initialization 
+and then launches :func:`GSASIIdataGUI.GSASIImain`, 
+which creates a wx.Application that in turns creates the GUI. 
+If the GSAS-II binaries are not installed or are incompatible with
+the OS/Python packages, the user is asked if they should be updated
+from the subversion site. 
 '''
 
 import platform

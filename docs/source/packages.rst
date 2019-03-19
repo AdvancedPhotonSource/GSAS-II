@@ -1,10 +1,10 @@
-*Required packages*
+Required packages
 ====================
 
 GSAS-II requires a standard Python interpreter to be installed, as
 well as several separately-developed packages. GSAS-II is being
 developed using Python 2.7, 3.6 and 3.7. At this point we think that 
-most sections of the code have not been exercised in Python 2 and 3,
+most sections of the code have been exercised in Python 2 and 3,
 but  bugs are still expected (please report them). Our
 goal is to keep the code compliant with both Python 2.7 and 3.x for
 the immediate future. 
@@ -18,21 +18,21 @@ We do some testing using the older Enthought Python Distribution
 (EPD); this is known to have some problems with reading CIFs and
 encourage updating from that. 
 
-GUI Use
---------
+GUI Requirements
+----------------
 
 When using the GSAS-II graphical user interface (GUI), the following
 Python extension packages are required:
 
-* wxPython (http://wxpython.org/docs/api/). Note that GSAS-II has been tested with wxPython >=2.8, 3.0.x and 4.0.x
+* wxPython (http://wxpython.org/docs/api/). Note that GSAS-II has been tested with wxPython 2.8.x, 3.0.x and 4.0.x. We encourage use of 3.0 with Python 2.7 and 4.x with Python 3.x. 
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
 * matplotlib (http://matplotlib.org/contents.html)  and
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation). Note: a copy of this is distributed with GSAS-II (at present) and will be installed if the Python setuptools package is present. 
 
-Several packages are used by some parts of the code, but are not
+Several packages are used in sections of the code, but are not
 required. If these packages are not present, warning messages may be
-generated when needed, but the vast bulk of GSAS-II will function normally. 
+generated if they would be needed, but the vast bulk of GSAS-II will function normally. 
 
 * Pillow (https://pillow.readthedocs.org) or PIL (http://www.pythonware.com/products/pil/). This is used to save
   and read certain types of images.
@@ -48,8 +48,8 @@ generated when needed, but the vast bulk of GSAS-II will function normally.
   GSAS-II to download updates to our code.
 
 
-Scripting  Use
----------------
+Scripting  Requirements
+--------------------
 
 When using the GSAS-II scripting interface (:mod:`GSASIIscriptable`),
 only the following Python extension packages are required:

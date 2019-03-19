@@ -27,7 +27,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 try:
     import GSASIIplot as G2plt
-except ImportError, ModuleNotFoundError: # expected in scriptable w/o matplotlib and/or wx
+except (ImportError, ModuleNotFoundError): # expected in scriptable w/o matplotlib and/or wx
     pass
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd

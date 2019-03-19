@@ -6,7 +6,7 @@ GSAS-II Developer's Documentation
 
 The following documentation is intended for those wishing to code
 withing the GSAS-II framework, those planning to understand how
-GSAS-II works or for people wishing to develop scripting applications
+GSAS-II works, or for people wishing to develop scripting applications
 using the API (:mod:`GSASIIscriptable`).
 
 Contents

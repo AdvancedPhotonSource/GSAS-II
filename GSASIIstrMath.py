@@ -2320,7 +2320,9 @@ def Values2Dict(parmdict, varylist, values):
     parmdict.update(zip(varylist,values))
     
 def GetNewCellParms(parmDict,varyList):
-    'Needs a doc string'
+    '''Compute unit cell tensor terms from varied Aij and Dij values.
+    Terms are included in the dict only if Aij or Dij is varied.
+    '''
     newCellDict = {}
     Anames = ['A'+str(i) for i in range(6)]
     Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],Anames))

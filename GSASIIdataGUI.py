@@ -7090,8 +7090,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     'covMatrix': data[name]['covMatrix']}
                 A = RecpCellTerms[pId][:] # make copy of starting A values
                 # update with refined values
-                for i in range(6):
+                for i,j in enumerate(('D11','D22','D33','D12','D13','D23')):
                     var = str(pId)+'::A'+str(i)
+                    Dvar = str(pId)+':'+str(hId)+':'+j
+                    # apply Dij value if non-zero
+                    if Dvar in data[name]['parmDict']:
+                        parmDict = data[name]['parmDict']
+                        if parmDict[Dvar] != 0.0:
+                            A[i] += parmDict[Dvar]
+                    # override with fit result if is Dij varied
                     if var in cellAlist:
                         try:
                             val = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
@@ -7281,14 +7288,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     del parmDict['Use']
     name = histNames[0]
 
-    #******************************************************************************
-    # create a set of values for example evaluation of pseudovars and 
-    # this does not work for refinements that have differing numbers of variables.
+    # remove selected items from table
     saveColLabels = colLabels[:]
     if G2frame.SeqTblHideList is None:      #set default hides
         G2frame.SeqTblHideList = [item for item in saveColLabels if 'Back' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if 'dA' in item]
         G2frame.SeqTblHideList += [item for item in saveColLabels if ':*:D' in item]
+    #******************************************************************************
+    # create a set of values for example evaluation of pseudovars and 
+    # this does not work for refinements that have differing numbers of variables.
     VarDict = {}
     for i,var in enumerate(colLabels):
         if var in ['Use','Rwp',u'\u0394\u03C7\u00B2 (%)']: continue

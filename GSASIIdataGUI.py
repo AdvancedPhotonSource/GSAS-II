@@ -4406,6 +4406,7 @@ class GSASII(wx.Frame):
         phaseData = self.GetPhaseData()
         histoList,histIdList = self.GetHistogramNamesID(['PWDR','HKLF'])
 
+        badnum = 0
         for phase in phaseData:
             Phase = phaseData[phase]
             pId = phaseNames.index(phase)
@@ -4417,6 +4418,11 @@ class GSASII(wx.Frame):
                     if Phase['Histograms'][hist]['Use'] and phase not in Phases:
                         Phases[phase] = Phase
                     if hist not in Histograms and Phase['Histograms'][hist]['Use']:
+                        if hist not in histIdList:
+                            if badnum == 0:
+                                print('Error: hist {} not found in histIdList. Deleted?'.format(hist))
+                            badnum += 1
+                            continue
                         item = histIdList[hist]
                         if item:
                             if 'PWDR' in hist[:4]: 
@@ -4428,6 +4434,7 @@ class GSASII(wx.Frame):
                         else: # would happen if a referenced histogram were renamed or deleted
                             print(u'For phase "'+phase+
                                   u'" unresolved reference to histogram "'+hist+u'"')
+        if badnum > 1: print('  ...hist not in histIdList error occured {} times'.format(badnum))
         G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
         

@@ -1517,9 +1517,11 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         GSdata = np.inner(GSdata,uAmat.T)   #--> cartesian
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata,SSGData)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
-        MmodA = np.inner(MmodA,uAmat.T)*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #make cartesian * apply det(ops)
-        MmodB = np.inner(MmodB,uAmat.T)*(SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
+        MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata,SGData,SSGData)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
+        MmodA *= (SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #apply det(ops)
+        MmodB *= (SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
+        MmodA = np.inner(MmodA,uAmat.T)   #make cartesian
+        MmodB = np.inner(MmodB,uAmat.T)
         
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1589,8 +1591,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
             phasem = twopi*np.inner(H.T[:,:3],mXYZ)
             phasem = np.swapaxes(phasem,1,2)
-            sinm = np.sin(phasem)
             cosm = np.cos(phasem)
+            sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
                       

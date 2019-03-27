@@ -6049,7 +6049,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if not name.startswith('PWDR'): return 
             pickId = G2frame.PickId
             G2frame.PickId = G2frame.PatternId = GetGPXtreeItemId(G2frame, G2frame.root, name)
-            G2plt.PlotPatterns(G2frame,newPlot=True,plotType='PWDR')
+            G2plt.PlotPatterns(G2frame,newPlot=False,plotType='PWDR')
             G2frame.PickId = pickId
         elif rows:
             name = histNames[rows[0]]       #only does 1st one selected
@@ -6776,7 +6776,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         val = G2frame.SeqTable.GetValue(r,0)
 #        print (r,val)
         G2frame.SeqTable.SetValue(r,0, val)
-
+        
     def OnSelectUpdate(event):
         '''Update all phase parameters from a selected column in the Sequential Table. 
         If no histogram is selected (or more than one), ask the user to make a selection.
@@ -7047,10 +7047,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
-    G2frame.colList = [nRows*[True]]
-    G2frame.colSigs = [None,]
-    colLabels = ['Use',]
-    Types = [wg.GRID_VALUE_BOOL,]
+    G2frame.colList = [range(nRows),nRows*[True]]
+    G2frame.colSigs = [None,None,]
+    colLabels = ['No.','Use',]
+    Types = [wg.GRID_VALUE_LONG,wg.GRID_VALUE_BOOL,]
     # start with Rwp values
     if 'IMG ' not in histNames[0][:4]:
         G2frame.colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
@@ -7347,10 +7347,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # make all Use editable all others ReadOnly
     for c in range(len(colLabels)):
         for r in range(nRows):
-            if c:
-                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-            else:
+            if c == 1:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
+            else:
+                G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
     if 'phoenix' in wx.version():
         G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
     else:

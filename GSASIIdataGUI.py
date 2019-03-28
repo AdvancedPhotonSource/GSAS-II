@@ -6170,9 +6170,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 line = '"'+saveNames[row]+'"'
                 for col in cols:
                     if col in havesig:
-                        line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
+                        try:
+                            line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
+                        except TypeError:
+                            line += ',0.0,0.0'
                     else:
-                        line += ','+str(saveData[col][row])
+                        try:
+                            line += ','+str(saveData[col][row])
+                        except TypeError:
+                            line += ',0.0'
                 SeqFile.write(line+'\n')
         def WriteSeq():
             lenName = len(saveNames[0])
@@ -6188,9 +6194,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 line = " '%s' "%(saveNames[row])
                 for col in cols:
                     if col in havesig:
-                        line += ' %12.6f %12.6f '%(saveData[col][row],saveSigs[col][row])
+                        try:
+                            line += ' %12.6f %12.6f '%(saveData[col][row],saveSigs[col][row])
+                        except TypeError:
+                            line += ' 0.0 0.0'
                     else:
-                        line += ' %12.6f '%saveData[col][row]
+                        try:
+                            line += ' %12.6f '%saveData[col][row]
+                        except TypeError:
+                            line += ' 0.0'
                 SeqFile.write(line+'\n')
 
         # start of OnSaveSelSeq code

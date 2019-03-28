@@ -1518,8 +1518,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
         MmodA,MmodB = G2mth.MagMod(mXYZ,modQ,MSSdata,SGData,SSGData)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
-        MmodA *= (SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]   #apply det(ops)
-        MmodB *= (SGData['MagMom']/SGData['SpnFlp'])[:,nxs,nxs,nxs]
         MmodA = np.inner(MmodA,uAmat.T)   #make cartesian
         MmodB = np.inner(MmodB,uAmat.T)
         

@@ -1357,22 +1357,26 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
 
 def MagMod(XYZ,modQ,MSSdata,SGData,SSGData):
     
-    SGMT = np.array([ops[0] for ops in SGData['SGOps']])
+    SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    RI = np.array([ops[0][3,3] for ops in SSGData['SSGOps']])
     if SGData['SGInv']:
         SGMT = np.vstack((SGMT,-SGMT))
         SGT = np.vstack((SGT,-SGT))
+        RI = np.concatenate((RI,-RI))
     SGMT = np.vstack([SGMT for cen in SGData['SGCen']])
+    thdetR = np.array([nl.det(op) for op in SGMT])*SGData['SpnFlp']
     SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
-
-#works for DyMn6Ge6 but not MnWO4
+    RI = np.hstack([RI for cen in SSGData['SSGCen']])
     Bm = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
     Am = np.array(MSSdata[3:]).T   #...cos pos mods
     nWaves = Am.shape[1]
-    MmodA = 0; MmodB = 0
+
+#works for DyMn6Ge6 but not MnWO4
     nCen = len(SSGData['SSGCen'])
     nEqv = XYZ.shape[1]         #full no. of equivalent pos incl centering
     mEqv = nEqv//nCen           #no. operators not with centering; includes inversion
+    MmodAA = 0; MmodBA = 0
     if nWaves:
         modind = np.arange(nWaves)+1.
         phaseA = twopi*(modind[:,nxs,nxs]*(np.inner(XYZ,modQ))).T         #= 2pimk.r Nops,Natm,Nwave
@@ -1382,29 +1386,32 @@ def MagMod(XYZ,modQ,MSSdata,SGData,SSGData):
             for ic,cen in enumerate(SSGData['SSGCen']):
                 phaseA[ic] += twopi*cen[3]/2.
             phaseA = np.reshape(phaseA,phshp)                
-        MmodAA = Am[nxs,:,:,:]*np.cos(phaseA[:,:,:,nxs])-Bm[nxs,:,:,:]*np.sin(phaseA[:,:,:,nxs])
-        MmodBA = Am[nxs,:,:,:]*np.sin(phaseA[:,:,:,nxs])+Bm[nxs,:,:,:]*np.cos(phaseA[:,:,:,nxs])    
+        psinA = np.sin(phaseA)
+        pcosA = np.cos(phaseA)
+        MmodAA = Am[nxs,:,:,:]*pcosA[:,:,:,nxs]-Bm[nxs,:,:,:]*psinA[:,:,:,nxs]
+        MmodBA = Am[nxs,:,:,:]*psinA[:,:,:,nxs]+Bm[nxs,:,:,:]*pcosA[:,:,:,nxs]    
     
 #fails    
-    modQp = np.zeros(4); modQp[:3] = modQ; modQp[3] = 1.
-    poff = SGData['SpnFlp']*np.inner(modQp,SGT)
-    Bm = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
-    Am = np.array(MSSdata[3:]).T   #...cos pos mods
-    nWaves = Am.shape[1]
+    modQp = np.zeros(4); modQp[:3] = modQ; modQp[3] = -1.
+    toff = RI*np.inner(modQp,SGT)
     MmodA = 0; MmodB = 0
     if nWaves:
         modind = np.arange(nWaves)+1.
-        phase = twopi*(modind[:,nxs,nxs]*(np.inner(XYZ,modQ)+poff)).T
+        phase = twopi*(modind[:,nxs,nxs]*(np.inner(XYZ,modQ)-toff)).T
         psin = np.sin(phase)
         pcos = np.cos(phase)
         RAM = np.rollaxis(np.inner(Am,SGMT),2)
         RBM = np.rollaxis(np.inner(Bm,SGMT),2)
-        MmodA = SGData['MagMom'][nxs,nxs,:,nxs]*(RAM*pcos[:,:,:,nxs]-RBM*psin[:,:,:,nxs])
-        MmodB = SGData['MagMom'][nxs,nxs,:,nxs]*(RAM*psin[:,:,:,nxs]+RBM*pcos[:,:,:,nxs])
-#        MmodA = RAM*pcos[:,:,:,nxs]-RBM*psin[:,:,:,nxs]
-#        MmodB = RAM*psin[:,:,:,nxs]+RBM*pcos[:,:,:,nxs]   
+        RAC = RAM*pcos[:,:,:,nxs]
+        RBS = RBM*psin[:,:,:,nxs]
+        RAS = RAM*psin[:,:,:,nxs]
+        RBC = RBM*pcos[:,:,:,nxs]
+        MmodA = RAC-RBS
+        MmodB = RAS+RBC
+        MmodA *= thdetR[:,nxs,nxs,nxs]
+        MmodB *= thdetR[:,nxs,nxs,nxs]
 
-    return MmodA,MmodB    #cos & sin Nops,Natm,Nwaves,Mxyz
+    return MmodAA,MmodBA    #cos & sin Nops,Natm,Nwaves,Mxyz
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

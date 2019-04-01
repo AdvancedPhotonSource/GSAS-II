@@ -59,7 +59,7 @@ def InitMP(allowMP=True):
         ncores = 0
         return useMP,ncores
     ncores = GSASIIpath.GetConfigValue('Multiprocessing_cores',0)
-    if ncores < 0: ncores = mp.cpu_count()/2
+    if ncores < 0: ncores = mp.cpu_count()//2
     if ncores > 1:
         useMP = True
     if useMP:

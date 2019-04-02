@@ -227,7 +227,7 @@ def GetCheckImageFile(G2frame,treeId):
                 imagefile = dlg.GetPath()
                 G2frame.GPXtree.UpdateImageLoc(treeId,imagefile)
             else:
-                imagefile = False
+                imagefile = None # was False
         finally:
             dlg.Destroy()
     return Npix,imagefile,imagetag

@@ -6069,6 +6069,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'Called by a double-click on a row or column label'
         event.Skip()
         wx.CallAfter(PlotSelectedColRow,'double')
+        
+    def OnKeyUp(event):
+        key = event.GetKeyCode()
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        print(key,rows)
+        event.Skip()
+        wx.CallAfter(PlotSelectedColRow,'single')
             
     def OnPlotSelSeq(event):
         'plot the selected columns or row from menu command'
@@ -7367,8 +7374,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGED, OnCellChange)
     else:
         G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, OnCellChange)
+#    G2frame.dataDisplay.Bind(wx.EVT_KEY_UP,OnKeyUp)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, PlotSSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
+#    G2frame.dataDisplay.Bind(wg.EVT_GRID_SELECT_CELL,PlotSSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)

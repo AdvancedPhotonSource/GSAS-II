@@ -1508,32 +1508,22 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
-        GSdata0 = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
-        if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
-            GSdata0 = np.hstack((GSdata0,-GSdata0))      
-        GSdata0 = np.hstack([GSdata0 for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
-        GSdata0 = SGData['MagMom'][nxs,:,nxs]*GSdata0   #flip vectors according to spin flip * det(opM)
-        GSdata0 = np.swapaxes(GSdata0,0,1)    #Nop,Natm,Mxyz
-        GSdata0 = np.inner(GSdata0,uAmat.T)   #--> cartesian
-        
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        Mmod,SMag = G2mth.MagMod(ngl,mXYZ,modQ,MSSdata,SGData,SSGData)   #Re cos/Im sin,Nops,Natm,Nwaves,Mxyz
-#        MmodA = np.inner(MmodA,uAmat.T)   #make cartesian
-#        MmodB = np.inner(MmodB,uAmat.T)
-
-#from #3812
-#1st try at this
-#        GSdata = Gdata.T[:,nxs,:]+Mmod    #Natm,ntau,Mxyz 
-#        GSdata = np.inner(GSdata,SGMT).T  #apply sym. ops.--> Mxyz,Nops,Ntau,Natm
-#        if SGData['SGInv'] and not SGData['SGFixed']:
-#            GSdata = np.hstack((GSdata,-GSdata))       #inversion if any
-#        GSdata = np.hstack([GSdata for icen in range(Ncen)])        #dup over cell centering
-#        GSdata = SGData['MagMom'][nxs,:,nxs,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
-#        Kdata = np.inner(GSdata.T,uAmat).T     #Cartesian unit vectors
-#        SMag = np.sqrt(np.sum(Kdata**2,axis=0))         #Nops,Ntau,Natm
-#        Kmean = np.mean(SMag,axis=0)    #normalization --> unit vectors
-#        Kdata /= Kmean[nxs,nxs,:,:]      #mxyz,nops,ntau,natm
+        Tmag = G2mth.MagMod(ngl,mXYZ,modQ,MSSdata,SGData,SSGData)   #Ntau,Nops,Natm,Mxyz
         
+        if not SGData['SGGray']:
+            GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
+            if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
+                GSdata = np.hstack((GSdata,-GSdata))      
+            GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
+            GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
+            GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
+            Tmag += Gdata.T[nxs,nxs,:,:]
+            
+        TmagC = np.inner(Tmag,uAmat.T)   #make cartesian; Ntau,Nops,Natm,,Mxyz
+        Smag = np.sqrt(np.sum(TmagC**2,axis=-1))
+        Kmag = TmagC/Smag[:,:,:,nxs]
+
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -1609,15 +1599,15 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                       
             HM = np.inner(Bmat,HP.T)                            #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
-#for fixed moments --> m=0 reflections                       
-            fam0 = TMcorr[:,nxs,:,nxs]*GSdata0[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
-            fbm0 = TMcorr[:,nxs,:,nxs]*GSdata0[nxs,:,:,:]*sinm[:,:,:,nxs]    
-                       
-            famq0 = np.sum(np.sum(fam0,axis=-2),axis=-2)        #Nref,Mxyz; sum ops & atoms
-            fbmq0 = np.sum(np.sum(fbm0,axis=-2),axis=-2)
-            
-            fas0 = np.sum(famq0,axis=-1)**2-np.sum(HM.T*famq0,axis=-1)**2   #mag intensity calc F^2-(e.F)^2
-            fbs0 = np.sum(fbmq0,axis=-1)**2-np.sum(HM.T*fbmq0,axis=-1)**2
+
+#            fam = TMcorr[:,nxs,nxs,:,nxs]*Tmag[nxs,:,:,:,:]*cosm[:,nxs,:,:,nxs]    #Nref,Ntau,Nops,Natm,Mxyz
+#            fbm = TMcorr[:,nxs,nxs,:,nxs]*Tmag[nxs,:,:,:,:]*sinm[:,nxs,:,:,nxs]    
+#                       
+#            famq = np.sum(np.sum(fam,axis=-2),axis=-2)        #Nref,Mxyz; sum ops & atoms
+#            fbmq = np.sum(np.sum(fbm,axis=-2),axis=-2)
+#            
+#            fas = np.sum(famq,axis=-1)**2-np.sum(HM.T[:,nxs,:]*famq,axis=-1)**2   #mag intensity calc F^2-(e.F)^2
+#            fbs = np.sum(fbmq,axis=-1)**2-np.sum(HM.T[:,nxs,:]*fbmq,axis=-1)**2
 #for modulated moments --> m != 0 reflections
 #            M = np.array(np.abs(H[3]),dtype=np.int)-1
 #            fam = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(MmodA[:,:,M[i],:]*cosm[i,:,:,nxs]-np.sign(H[3])[i,nxs,nxs,nxs]*MmodB[:,:,M[i],:]*sinm[i,:,:,nxs]),0.) for i in range(mRef)])
@@ -1632,26 +1622,26 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             D = twopi*H.T[:,3:]*glTau[nxs,:]
             mphase = phase[:,:,nxs,:]+D[:,nxs,:,nxs]
             mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs,nxs] for cen in SGData['SGCen']])
-            mphase = np.concatenate(mphase,axis=1)    #remove extra axis; Nref,Nop,Natm
-            sinm = np.swapaxes(np.sin(mphase),2,3)    #--> Nref,Nop,Natm,Ntau
-            cosm = np.swapaxes(np.cos(mphase),2,3)                               #ditto
+            mphase = np.concatenate(mphase,axis=1)    #remove extra axis; Nref,Nop,Ntau,Natm
+            sinm = np.swapaxes(np.sin(mphase),1,2)    #--> Nref,Nop,Natm,Ntau
+            cosm = np.swapaxes(np.cos(mphase),1,2)                               #ditto
             
             HM = np.inner(Bmat,HP.T)                             #put into cartesian space
-            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Gdata = MAGS & HM = UVEC in magstrfc.for both OK
-            eDotK = np.sum(HM[:,:,nxs,nxs,nxs]*Kdata[:,nxs,:,:,:],axis=0)
-            Q = HM[:,:,nxs,nxs,nxs,nxs]*eDotK[nxs,:,:,:,:]-Kdata[:,nxs,:,:,:] #Mxyz,Nref,Nop,Ntau,Natm
+            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #normalize
+            eDotK = np.sum(HM.T[:,nxs,nxs,nxs,:]*Kmag[nxs,:,:,:,:],axis=-1)
+            Q = HM.T[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kmag[nxs,:,:,:,:] #Nref,Ntau,Nop,Natm,Mxyz
 
-            fam = (Q*TMcorr[nxs,:,nxs,:,nxs,nxs]*cosm[nxs,:,:,:,:,nxs]*SMag[nxs,nxs,:,:,:,nxs])   #Mxyz,Nref,Nop,Natm,Ntau,ReIm
-            fbm = (Q*TMcorr[nxs,:,nxs,:,nxs,nxs]*sinm[nxs,:,:,:,:,nxs]*SMag[nxs,nxs,:,:,:,nxs])
+            fam = (Q*TMcorr[:,nxs,nxs,:,nxs]*cosm[:,:,:,:,nxs]*Smag[nxs,:,:,:,nxs])   #Nref,Ntau,Nop,Natm,Mxyz
+            fbm = (Q*TMcorr[:,nxs,nxs,:,nxs]*sinm[:,:,:,:,nxs]*Smag[nxs,:,:,:,nxs])
             
-            fams = np.sum(np.sum(np.sum(fam,axis=-1),axis=2),axis=2)      #xyz,Nref,ntau; sum ops & atoms
-            fbms = np.sum(np.sum(np.sum(fbm,axis=-1),axis=2),axis=2)      #ditto
+            fams = np.sum(np.sum(fam,axis=2),axis=2)      #Nref,ntau,Mxyz; sum ops & atoms
+            fbms = np.sum(np.sum(fbm,axis=2),axis=2)      #ditto
             
-            fas = np.sum(fams*glWt[nxs,nxs,:],axis=-1)
-            fbs = np.sum(fbms*glWt[nxs,nxs,:],axis=-1)
+            fas = np.sum(fams/ngl,axis=-1)
+            fbs = np.sum(fbms/ngl,axis=-1)
                         
-            refl.T[10] = np.where(H[3],fas+fbs,fas0+fbs0)
-            refl.T[11] = np.where(H[3],atan2d(fas,fbs),atan2d(fas0,fbs0))
+            refl.T[10] = np.sum(fas,axis=-1)**2+np.sum(fbs,axis=-1)**2
+            refl.T[11] = atan2d(fbs[:,0],fas[:,0])
             
         else:
             GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms

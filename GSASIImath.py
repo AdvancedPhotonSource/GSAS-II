@@ -1361,81 +1361,37 @@ def MagMod(ngl,XYZ,modQ,MSSdata,SGData,SSGData):
     fxn of ngl tau points
     '''
     Bm = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
-    Am = np.array(MSSdata[3:]).T   #...cos pos mods
+    Am = np.array(MSSdata[3:]).T  #...cos pos mods
     nWaves = Am.shape[1]
-    ngl = 20
     tau = np.arange(ngl)/ngl
     if not nWaves:
         return 0.0,0.0
     SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
+    Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
-    RI = np.array([ops[0][3,3] for ops in SSGData['SSGOps']])
     if SGData['SGInv']:
         SGMT = np.vstack((SGMT,-SGMT))
+        Sinv =np.vstack((Sinv,-Sinv))
         SGT = np.vstack((SGT,-SGT))
-        RI = np.concatenate((RI,-RI))
     SGMT = np.vstack([SGMT for cen in SGData['SGCen']])
-    thdetR = np.array([nl.det(op) for op in SGMT])*SGData['SpnFlp']
+    Sinv = np.vstack([Sinv for cen in SGData['SGCen']])
     SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
-    RI = np.hstack([RI for cen in SSGData['SSGCen']])
+    detSM = nl.det(SGMT)
+    mst = Sinv[:,3,:3]
+    epsinv = Sinv[:,3,3]
+    phi = np.inner(XYZ,modQ).T
+    TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
+    tauT =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(tau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
     modind = np.arange(nWaves)+1.
-    modQp = np.zeros(4); modQp[:3] = modQ; modQp[3] = -1.
-    toff = RI*np.inner(modQp,SGT)
-    phase = (modind[:,nxs,nxs]*(np.inner(XYZ,modQ))).T     #Nops,Natm,Nwave
-#    phase = (thdetR[nxs,nxs,:]*(modind[:,nxs,nxs]*np.inner(XYZ,modQ))).T     #Nops,Natm,Nwave
-    phase = phase[nxs,:,:,:]+tau[:,nxs,nxs,nxs]                 #Ntau,Nops,Natm,Nwave
+    phase = (modind[:,nxs,nxs]*tauT)     #Nops,Natm,Nwave
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    Mmod = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,:,nxs]+Bm[nxs,nxs,:,:,:]*psin[:,:,:,:,nxs],axis=3)
+    Mmod = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs]+Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)
+    if SGData['SGGray']:
+        Mmod = -np.sum(SGMT[nxs,:,nxs,:,:]*Mmod[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
+    else:
+        Mmod = np.sum(SGMT[nxs,:,nxs,:,:]*Mmod[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
     return Mmod    #Ntau,Nops,Natm,,Mxyz
-
-
-
-##works for DyMn6Ge6 but not MnWO4
-#    nCen = len(SSGData['SSGCen'])
-#    nEqv = XYZ.shape[1]         #full no. of equivalent pos incl centering
-#    mEqv = nEqv//nCen           #no. operators not with centering; includes inversion
-#    MmodAA = 0; MmodBA = 0
-#    if nWaves:
-#        phaseA = twopi*(modind[:,nxs,nxs]*(np.inner(XYZ,modQ))).T         #= 2pimk.r Nops,Natm,Nwave
-#        if nCen > 0:
-#            phshp = phaseA.shape
-#            phaseA = np.reshape(phaseA,(nCen,mEqv,phshp[1],-1))
-#            for ic,cen in enumerate(SSGData['SSGCen']):
-#                phaseA[ic] += twopi*cen[3]/2.
-#            phaseA = np.reshape(phaseA,phshp)                
-#        psinA = np.sin(phaseA)
-#        pcosA = np.cos(phaseA)
-#        MmodAA = Am[nxs,:,:,:]*pcosA[:,:,:,nxs]-Bm[nxs,:,:,:]*psinA[:,:,:,nxs]
-#        MmodBA = Am[nxs,:,:,:]*psinA[:,:,:,nxs]+Bm[nxs,:,:,:]*pcosA[:,:,:,nxs]    
-#    
-##fails    
-#    modQp = np.zeros(4); modQp[:3] = modQ; modQp[3] = -1.
-#    toff = RI*np.inner(modQp,SGT)
-#    MmodA = 0; MmodB = 0
-#    if nWaves:
-#        modind = np.arange(nWaves)+1.
-#        phase = twopi*(modind[:,nxs,nxs]*(np.inner(XYZ,modQ)-toff)).T
-#        RAM = np.rollaxis(np.inner(Am,SGMT),2)
-#        RBM = np.rollaxis(np.inner(Bm,SGMT),2)
-#        RAC = RAM*pcos[:,:,:,nxs]
-#        RBS = RBM*psin[:,:,:,nxs]
-#        RAS = RAM*psin[:,:,:,nxs]
-#        RBC = RBM*pcos[:,:,:,nxs]
-#        MmodA = RAC-RBS
-#        MmodB = RAS+RBC
-#        MmodA *= thdetR[:,nxs,nxs,nxs]
-#        MmodB *= thdetR[:,nxs,nxs,nxs]
-#
-#from 3812
-#    MmodA = 0; MmodB = 0
-#    if nWaves:
-#        modind = np.arange(nWaves)+1.
-#        phase = np.sum(twopi*XYZ[:,:,nxs,:]*modind[nxs,nxs,:,nxs]*modQ[nxs,nxs,nxs,:],axis=-1)
-#        phase = np.swapaxes(phase,0,1)  #Nops,Natm,Nwave
-#        MmodA = Am[nxs,:,:,:]*np.cos(phase[:,:,:,nxs])-Bm[nxs,:,:,:]*np.sin(phase[:,:,:,nxs])
-#        MmodB = Am[nxs,:,:,:]*np.sin(phase[:,:,:,nxs])+Bm[nxs,:,:,:]*np.cos(phase[:,:,:,nxs])
-#    return MmodA,MmodB    #cos & sin Nops,Natm,Nwaves,Mxyz
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

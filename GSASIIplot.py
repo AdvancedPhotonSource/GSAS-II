@@ -1807,31 +1807,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             PublishRietveldPlot(G2frame,Pattern,Plot,Page)
 
-    global exclLines,Page
-    global DifLine # BHT: probably does not need to be global
-    global Ymax
-    global Pattern,mcolors,Plot,Page,imgAx,Temps
-    plottype = plotType
-    
-    if not G2frame.PatternId:
-        return
-    if 'PKS' in plottype:
-        PlotPowderLines(G2frame)
-        return
-#patch
-    if data is None:
-        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-    if plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
-        publish = PublishPlot
-    else:
-        publish = None
-    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
-    if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
-        Ymax = max(data[1][1])
-        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
-            'refDelt':0.1*Ymax,})
-        G2frame.GPXtree.SetItemPyData(G2frame.PickId,data)
-#end patch
     def OnPlotKeyPress(event):
         try:        #one way to check if key stroke will work on plot
             Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -2536,6 +2511,30 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         
     #=====================================================================================
     # beginning PlotPatterns execution
+    global exclLines,Page
+    global DifLine # BHT: probably does not need to be global
+    global Ymax
+    global Pattern,mcolors,Plot,Page,imgAx,Temps
+    plottype = plotType
+    
+    if not G2frame.PatternId:
+        return
+    if 'PKS' in plottype:
+        PlotPowderLines(G2frame)
+        return
+    if data is None:
+        data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+    if plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+        publish = PublishPlot
+    else:
+        publish = None
+    new,plotNum,Page,Plot,limits = G2frame.G2plotNB.FindPlotTab('Powder Patterns','mpl',publish=publish)
+#patch
+    if 'Offset' not in Page.plotStyle and plotType in ['PWDR','SASD','REFD']:     #plot offset data
+        Ymax = max(data[1][1])
+        Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
+            'refDelt':0.1*Ymax,})
+#end patch
     if not new:
         G2frame.xylim = limits
     else:

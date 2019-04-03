@@ -2556,12 +2556,23 @@ class G2ColumnIDDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         Sizer.Add((-1,5))
-        Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
         if self.Comments:
-            Sizer.Add(wx.StaticText(panel,label=' Header lines:'),0,WACV)
-            Sizer.Add(wx.TextCtrl(panel,value=self.Comments,size=(200,-1),
-                style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP),0,wx.ALL|wx.EXPAND|WACV,8)
-        columnsSizer = wx.FlexGridSizer(0,nCol,5,10)
+            if title[-1] == ':':
+                title = title[:-1] + ' using header line(s):'
+            else:
+                title += ' using header line(s):'
+            Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+            Sizer.Add((5,5))
+            if self.Comments[-1] != '\n': self.Comments += '\n'
+            txt = wx.StaticText(panel,label=self.Comments)
+            txt.SetBackgroundColour((250,250,250))
+            font1 = wx.Font(txt.GetFont().GetPointSize(),
+                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            txt.SetFont(font1)
+            Sizer.Add(txt,0,wx.ALL|wx.EXPAND|WACV,0)
+        else:
+            Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+        columnsSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sel = []
         self.mod = []
         Indx = {}
@@ -2572,16 +2583,16 @@ class G2ColumnIDDialog(wx.Dialog):
             colSizer.Add(self.sel[-1])
             colData = wx.TextCtrl(panel,value='\n'.join(self.ColumnData[icol]),size=(120,-1),
                 style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
-            colSizer.Add(colData,0,WACV)
+            colSizer.Add(colData,1,wx.ALL|WACV|wx.EXPAND,1)
             colSizer.Add(wx.StaticText(panel,label=' Modify by:'),0,WACV)
             mod = wx.TextCtrl(panel,size=(120,-1),value='',style=wx.TE_PROCESS_ENTER)
             mod.Bind(wx.EVT_TEXT_ENTER,OnModify)
             mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
             Indx[mod.GetId()] = [icol,colData]
             colSizer.Add(mod,0,WACV)
-            columnsSizer.Add(colSizer)
-        Sizer.Add(columnsSizer)
-        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+","-","*","/","**" all allowed'),0,WACV) 
+            columnsSizer.Add(colSizer,1,wx.ALL|WACV|wx.EXPAND,10)
+        Sizer.Add(columnsSizer,1,wx.ALL|WACV|wx.EXPAND,1)
+        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0,WACV) 
         Sizer.Add((-1,10))
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
@@ -3077,6 +3088,7 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
     :returns: a list of files or an empty list
     '''
     if not parent: parent = G2frame
+    #if GSASIIpath.GetConfigValue('debug'): print('debug: GetImportFile from '+defaultDir)
     dlg = wx.FileDialog(parent, message, defaultDir, defaultFile, *args,
                         style=style, **kwargs)
     pth = GetImportPath(G2frame)
@@ -4032,6 +4044,7 @@ def askSaveFile(G2frame,defnam,extension,longFormatName,parent=None):
 
     if not parent: parent = G2frame
     pth = GetExportPath(G2frame)
+    #if GSASIIpath.GetConfigValue('debug'): print('debug: askSaveFile to '+pth)
     dlg = wx.FileDialog(
         parent, 'Input name for file to write', pth, defnam,
         longFormatName+' (*'+extension+')|*'+extension,

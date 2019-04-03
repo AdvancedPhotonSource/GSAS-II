@@ -1597,9 +1597,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2*Nops)     #Nref,Natm
                       
-            HM = np.inner(Bmat,HP.T)                            #put into cartesian space
-            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
-
+#            HM = np.inner(Bmat,HP.T)                            #put into cartesian space
+#            HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
+#
 #            fam = TMcorr[:,nxs,nxs,:,nxs]*Tmag[nxs,:,:,:,:]*cosm[:,nxs,:,:,nxs]    #Nref,Ntau,Nops,Natm,Mxyz
 #            fbm = TMcorr[:,nxs,nxs,:,nxs]*Tmag[nxs,:,:,:,:]*sinm[:,nxs,:,:,nxs]    
 #                       
@@ -1619,28 +1619,28 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #            fas = np.sum(famq,axis=-1)**2-np.sum(HM.T*famq,axis=-1)**2      #mag intensity calc F^2-(e.F)^2
 #            fbs = np.sum(fbmq,axis=-1)**2-np.sum(HM.T*fbmq,axis=-1)**2
 #from #3812
-            D = twopi*H.T[:,3:]*glTau[nxs,:]
-            mphase = phase[:,:,nxs,:]+D[:,nxs,:,nxs]
-            mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs,nxs] for cen in SGData['SGCen']])
-            mphase = np.concatenate(mphase,axis=1)    #remove extra axis; Nref,Nop,Ntau,Natm
-            sinm = np.swapaxes(np.sin(mphase),1,2)    #--> Nref,Nop,Natm,Ntau
-            cosm = np.swapaxes(np.cos(mphase),1,2)                               #ditto
+#            D = twopi*H.T[:,3:]*glTau[nxs,:]
+#            mphase = phase[:,:,nxs,:]+D[:,nxs,:,nxs]
+#            mphase = np.array([mphase+twopi*np.inner(cen,HP.T)[:,nxs,nxs,nxs] for cen in SGData['SGCen']])
+#            mphase = np.concatenate(mphase,axis=1)    #remove extra axis; Nref,Nop,Ntau,Natm
+#            sinm = np.swapaxes(np.sin(mphase),1,2)    #--> Nref,Nop,Natm,Ntau
+#            cosm = np.swapaxes(np.cos(mphase),1,2)                               #ditto
             
             HM = np.inner(Bmat,HP.T)                             #put into cartesian space
             HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #normalize
             eDotK = np.sum(HM.T[:,nxs,nxs,nxs,:]*Kmag[nxs,:,:,:,:],axis=-1)
             Q = HM.T[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kmag[nxs,:,:,:,:] #Nref,Ntau,Nop,Natm,Mxyz
 
-            fam = (Q*TMcorr[:,nxs,nxs,:,nxs]*cosm[:,:,:,:,nxs]*Smag[nxs,:,:,:,nxs])   #Nref,Ntau,Nop,Natm,Mxyz
-            fbm = (Q*TMcorr[:,nxs,nxs,:,nxs]*sinm[:,:,:,:,nxs]*Smag[nxs,:,:,:,nxs])
+            fam = (Q*TMcorr[:,nxs,nxs,:,nxs]*cosm[:,nxs,:,:,nxs]*Smag[nxs,:,:,:,nxs])   #Nref,Ntau,Nop,Natm,Mxyz
+            fbm = (Q*TMcorr[:,nxs,nxs,:,nxs]*sinm[:,nxs,:,:,nxs]*Smag[nxs,:,:,:,nxs])
             
-            fams = np.sum(np.sum(fam,axis=2),axis=2)      #Nref,ntau,Mxyz; sum ops & atoms
-            fbms = np.sum(np.sum(fbm,axis=2),axis=2)      #ditto
-            
-            fas = np.sum(fams/ngl,axis=-1)
-            fbs = np.sum(fbms/ngl,axis=-1)
+            fams = np.sqrt(np.sum(fam**2,axis=-1))
+            fbms = np.sqrt(np.sum(fbm**2,axis=-1))
                         
-            refl.T[10] = np.sum(fas,axis=-1)**2+np.sum(fbs,axis=-1)**2
+            fas = np.sum(np.sum(fams,axis=2),axis=2)      #Nref,ntau,Mxyz; sum ops & atoms
+            fbs = np.sum(np.sum(fbms,axis=2),axis=2)      #ditto
+            
+            refl.T[10] = np.sum(fas/ngl,axis=-1)**2+np.sum(fbs/ngl,axis=-1)**2
             refl.T[11] = atan2d(fbs[:,0],fas[:,0])
             
         else:

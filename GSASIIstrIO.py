@@ -793,8 +793,14 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     outfile.close()
     # clean up tmp files
     tmpHistIndex.clear()
-    os.remove(GPXphase)
-    os.remove(GPXhist)
+    try:
+        os.remove(GPXphase)
+    except:
+        print('Warning: unable to delete {}'.format(GPXphase))
+    try:
+        os.remove(GPXhist)
+    except:
+        print('Warning: unable to delete {}'.format(GPXhist))
     print ('GPX file merge completed')
 
 #==============================================================================

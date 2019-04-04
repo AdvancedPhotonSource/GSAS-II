@@ -649,8 +649,14 @@ def ProjFileOpen(G2frame,showProvenance=True):
                     pass
             elif result != wx.ID_CANCEL:
                 #print('deleting .seqXXXX files')
-                os.remove(GPXphase)
-                os.remove(GPXhist)
+                try:
+                    os.remove(GPXphase)
+                except:
+                    print('Warning: unable to delete {}'.format(GPXphase))
+                try:
+                    os.remove(GPXhist)
+                except:
+                    print('Warning: unable to delete {}'.format(GPXhist))
         finally:
             dlg.Destroy()
     wx.BeginBusyCursor()
@@ -753,8 +759,14 @@ def ProjFileOpen(G2frame,showProvenance=True):
     if hist:
         hist.close()
         #print('deleting .seqXXXX files')
-        os.remove(GPXphase)
-        os.remove(GPXhist)
+        try:
+            os.remove(GPXphase)
+        except:
+            print('Warning: unable to delete {}'.format(GPXphase))
+        try:
+            os.remove(GPXhist)
+        except:
+            print('Warning: unable to delete {}'.format(GPXhist))
     G2frame.SetTitleByGPX()
     
 def ProjFileSave(G2frame):

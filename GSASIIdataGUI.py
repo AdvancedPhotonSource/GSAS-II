@@ -6156,6 +6156,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         
     def OnSaveSelSeq(event,csv=False,allcols=False):
         'export the selected columns to a .txt or .csv file from menu command'
+        def WriteLine(line):
+            if '2' in platform.python_version_tuple()[0]:
+                SeqFile.write(G2obj.StripUnicode(line))
+            else:
+                SeqFile.write(line)
+                
         def WriteCSV():
             def WriteList(headerItems):
                 line = ''
@@ -6165,28 +6171,29 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 return line
             head = ['name']
             for col in cols:
+                # Excel does not like unicode
                 item = G2obj.StripUnicode(G2frame.SeqTable.GetColLabelValue(col))
-                # get rid of labels that have Unicode characters
-                #if not all([ord(c) < 128 and ord(c) != 0 for c in item]): item = '?'
                 if col in havesig:
                     head += [item,'esd-'+item]
                 else:
                     head += [item]
-            SeqFile.write(WriteList(head)+'\n')
+            WriteLine(WriteList(head)+'\n')
             for row,name in enumerate(saveNames):
                 line = '"'+saveNames[row]+'"'
                 for col in cols:
-                    if col in havesig:
-                        try:
-                            line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
-                        except TypeError:
-                            line += ',0.0,0.0'
+                    if saveData[col][row] is None:
+                        if col in havesig:
+#                            line += ',0.0,0.0'
+                            line += ',,'
+                        else:
+#                            line += ',0.0'
+                            line += ','
                     else:
-                        try:
+                        if col in havesig:
+                            line += ','+str(saveData[col][row])+','+str(saveSigs[col][row])
+                        else:    
                             line += ','+str(saveData[col][row])
-                        except TypeError:
-                            line += ',0.0'
-                SeqFile.write(line+'\n')
+                WriteLine(line+'\n')
         def WriteSeq():
             lenName = len(saveNames[0])
             line = '  %s  '%('name'.center(lenName))
@@ -6196,7 +6203,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     line += ' %12s %12s '%(item.center(12),'esd'.center(12))
                 else:
                     line += ' %12s '%(item.center(12))
-            SeqFile.write(line+'\n')
+            WriteLine(line+'\n')
             for row,name in enumerate(saveNames):
                 line = " '%s' "%(saveNames[row])
                 for col in cols:
@@ -6204,13 +6211,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         try:
                             line += ' %12.6f %12.6f '%(saveData[col][row],saveSigs[col][row])
                         except TypeError:
-                            line += ' 0.0 0.0'
+                            line += '                           '
                     else:
                         try:
                             line += ' %12.6f '%saveData[col][row]
                         except TypeError:
-                            line += ' 0.0'
-                SeqFile.write(line+'\n')
+                            line += '              '
+                WriteLine(line+'\n')
 
         # start of OnSaveSelSeq code
         if allcols:
@@ -6219,9 +6226,19 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
         nrows = G2frame.SeqTable.GetNumberRows()
         if not cols:
-            G2frame.ErrorDialog('Select columns',
-                             'No columns selected in table. Click on column labels to select fields for output.')
-            return
+            choices = [G2frame.SeqTable.GetColLabelValue(r) for r in range(G2frame.SeqTable.GetNumberCols())]
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to write',
+                'select columns',choices)
+            #dlg.SetSelections()
+            if dlg.ShowModal() == wx.ID_OK:
+                cols = dlg.GetSelections()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            #G2frame.ErrorDialog('Select columns',
+            #                 'No columns selected in table. Click on column labels to select fields for output.')
+            #return
         saveNames = [G2frame.SeqTable.GetRowLabelValue(r) for r in range(nrows)]
         saveData = {}
         saveSigs = {}

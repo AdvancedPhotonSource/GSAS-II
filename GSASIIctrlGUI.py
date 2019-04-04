@@ -2590,7 +2590,7 @@ class G2ColumnIDDialog(wx.Dialog):
             mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
             Indx[mod.GetId()] = [icol,colData]
             colSizer.Add(mod,0,WACV)
-            columnsSizer.Add(colSizer,1,wx.ALL|WACV|wx.EXPAND,10)
+            columnsSizer.Add(colSizer,0,wx.ALL|WACV|wx.EXPAND,10)
         Sizer.Add(columnsSizer,1,wx.ALL|WACV|wx.EXPAND,1)
         Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+", "-", "*", "/", "**" all allowed'),0,WACV) 
         Sizer.Add((-1,10))
@@ -2614,7 +2614,7 @@ class G2ColumnIDDialog(wx.Dialog):
         panel.SetupScrolling()
         Size = [450,375]
         panel.SetSize(Size)
-        Size[0] += 25; Size[1]+= 25
+        Size[0] += 25; Size[1]+= 25+txt.GetSize()[1]
         self.SetSize(Size)
         
     def GetSelection(self):

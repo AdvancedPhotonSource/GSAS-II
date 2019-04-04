@@ -2396,6 +2396,8 @@ def UpdateSampleGrid(G2frame,data):
         for name in ['FreePrm1','FreePrm2','FreePrm3']:
             freeNames[Controls[name]] = name
             Names.append(Controls[name])
+        #import imp
+        #imp.reload(G2G)
         dlg = G2G.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
             'Select columns',Comments,Names,np.array(newItems).T)
         try:

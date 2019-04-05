@@ -225,17 +225,17 @@ class G2TreeCtrl(wx.TreeCtrl):
             parent = self.GetItemParent(parent)
         return textlist
     
-    def GetItemPyData(self,id):
+    def GetItemPyData(self,treeId):
         if 'phoenix' in wx.version():
-            return wx.TreeCtrl.GetItemData(self,id)
+            return wx.TreeCtrl.GetItemData(self,treeId)
         else:
-            return wx.TreeCtrl.GetItemPyData(self,id)
+            return wx.TreeCtrl.GetItemPyData(self,treeId)
 
-    def SetItemPyData(self,id,data):
+    def SetItemPyData(self,treeId,data):
         if 'phoenix' in wx.version():
-            return wx.TreeCtrl.SetItemData(self,id,data)
+            return wx.TreeCtrl.SetItemData(self,treeId,data)
         else:
-            return wx.TreeCtrl.SetItemPyData(self,id,data)
+            return wx.TreeCtrl.SetItemPyData(self,treeId,data)
 
     # def onSelectionChanged(self,event):
     #     '''Log each press on a tree item here. 
@@ -4496,13 +4496,13 @@ class MyHtmlPanel(wx.Panel):
     '''Defines a panel to display HTML help information, as an alternative to
     displaying help information in a web browser.
     '''
-    def __init__(self, frame, id):
+    def __init__(self, frame, newId):
         self.frame = frame
-        wx.Panel.__init__(self, frame, id)
+        wx.Panel.__init__(self, frame, newId)
         sizer = wx.BoxSizer(wx.VERTICAL)
         back = wx.Button(self, -1, "Back")
         back.Bind(wx.EVT_BUTTON, self.OnBack)
-        self.htmlwin = G2HtmlWindow(self, id, size=(750,450))
+        self.htmlwin = G2HtmlWindow(self, newId, size=(750,450))
         sizer.Add(self.htmlwin, 1,wx.EXPAND)
         sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
         self.SetSizer(sizer)

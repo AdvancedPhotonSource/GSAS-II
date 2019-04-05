@@ -287,7 +287,11 @@ def GetFileBackground(G2frame,xye,Pattern):
     if 'BackFile' in Pattern[0]:
         backfile,mult = Pattern[0]['BackFile']
         if backfile:
-            bxye = mult*G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile))[1][1]
+            bId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile)
+            if bId:
+                bxye = mult*G2frame.GPXtree.GetItemPyData(bId)[1][1]
+            else:
+                print('Error: background PWDR {} not found'.format(backfile))
     return bxye
     
 def IsHistogramInAnyPhase(G2frame,histoName):

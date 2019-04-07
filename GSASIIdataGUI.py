@@ -6108,16 +6108,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             
     def OnSelectUse(event):
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select rows to use','Select rows',histNames)
-        sellist = [i for i,item in enumerate(G2frame.colList[0]) if item]
+        sellist = [i for i,item in enumerate(G2frame.colList[1]) if item]
         dlg.SetSelections(sellist)
         if dlg.ShowModal() == wx.ID_OK:
             sellist = dlg.GetSelections()
             for row in range(G2frame.SeqTable.GetNumberRows()):
-                G2frame.SeqTable.SetValue(row,0,False)
-                G2frame.colList[0][row] = False
+                G2frame.SeqTable.SetValue(row,1,False)
+                G2frame.colList[1][row] = False
             for row in sellist:
-                G2frame.SeqTable.SetValue(row,0,True)
-                G2frame.colList[0][row] = True
+                G2frame.SeqTable.SetValue(row,1,True)
+                G2frame.colList[1][row] = True
             G2frame.dataDisplay.ForceRefresh()
         dlg.Destroy()
                 
@@ -6586,7 +6586,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             eqObjList = [eqObj,]
         else:
             eqObjList = data['SeqParFitEqList']
-        UseFlags = G2frame.SeqTable.GetColValues(0)         
+        UseFlags = G2frame.SeqTable.GetColValues(1)
         for obj in eqObjList:
             # assemble refined vars for this equation
             varyValueDict.update({var:val for var,val in obj.GetVariedVarVal()})
@@ -7002,7 +7002,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 uniqCellIndx[pId] = celllist
                 break
         else: # should not happen
-            uniqCellIndx[pId] = range(6)
+            uniqCellIndx[pId] = list(range(6))
         for i in uniqCellIndx[pId]:
             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[pId][i]
 
@@ -7083,7 +7083,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # build up the data table by columns -----------------------------------------------
     histNames = foundNames
     nRows = len(histNames)
-    G2frame.colList = [range(nRows),nRows*[True]]
+    G2frame.colList = [list(range(nRows)),nRows*[True]]
     G2frame.colSigs = [None,None,]
     colLabels = ['No.','Use',]
     Types = [wg.GRID_VALUE_LONG,wg.GRID_VALUE_BOOL,]

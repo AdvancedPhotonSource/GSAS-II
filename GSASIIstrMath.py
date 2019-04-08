@@ -1512,6 +1512,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #        Tmag,TmagA,TmagB = G2mth.MagMod(ngl,mXYZ,modQ,MSSdata,SGData,SSGData)   #Ntau,Nops,Natm,Mxyz-Tmag matches drawing moments
         
         if not SGData['SGGray']:
+            Mmod += Gdata.T[:,nxs,:]
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
             if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
                 GSdata = np.hstack((GSdata,-GSdata))      
@@ -1589,7 +1590,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??
-            GmfpuA = G2mth.MagModulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x refBlk x sym X atoms
+            UniqM = np.hstack([Uniq for cen in SSCen])
+            UniqPM = np.hstack([UniqP for cen in SSCen])
+            GmfpuA = G2mth.MagModulation(UniqM,UniqPM,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt) #2 x refBlk x sym X atoms
             
             
             
@@ -1641,8 +1644,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #            eDotK = np.sum(HM.T[:,nxs,nxs,nxs,:]*Kmag[nxs,:,:,:,:],axis=-1)
 #            Q = HM.T[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kmag[nxs,:,:,:,:] #Nref,Ntau,Nop,Natm,Mxyz
 #
-            fam = (Q*TMcorr[:,nxs,nxs,:,nxs]*cosm[:,nxs,:,:,nxs]*Smag[nxs,:,:,:,nxs])   #Nref,Ntau,Nop,Natm,Mxyz
-            fbm = (Q*TMcorr[:,nxs,nxs,:,nxs]*sinm[:,nxs,:,:,nxs]*Smag[nxs,:,:,:,nxs])
+            fam = (TMcorr[:,nxs,:,nxs]*cosp[:,:,:,nxs])   #Nref,Nop,Natm,Mxyz
+            fbm = (TMcorr[:,nxs,nxs,:,nxs]*sinp[:,nxs,:,:,nxs])
+            fagm = fam*GmfpuA[0]-fbm*GmfpuA[1]   #real; Nref,Nop,Natm,Mxyz
+            fbgm = fbm*GmfpuA[0]+fam*GmfpuA[1]
+            fasm = np.sum(np.sum(fagm,axis=1),axis=1)   #Nref,,Mxyz     sum Nop,Natm
+            fbsm = np.sum(np.sum(fbgm,axis=1),axis=1)
 #            
 #            fams = np.sqrt(np.sum(fam**2,axis=-1))
 #            fbms = np.sqrt(np.sum(fbm**2,axis=-1))

@@ -1637,8 +1637,13 @@ class G2MultiChoiceDialog(wx.Dialog):
 
     def _ShowSelections(self):
         'Show the selection state for displayed items'
-        self.clb.SetChecked(
-            [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+        if 'phoenix' in wx.version():
+            self.clb.SetCheckedItems(
+                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+            ) # Note anything previously checked will be cleared.
+        else:
+            self.clb.SetChecked(
+                [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
             ) # Note anything previously checked will be cleared.
             
     def _SetAll(self,event):

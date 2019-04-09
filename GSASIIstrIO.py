@@ -790,6 +790,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             #    if datus[0] in 
             #        datus[1] = histogram[datus[0]]
         cPickle.dump(data,outfile,1)
+    hist.close()
     infile.close()
     outfile.close()
     # clean up tmp files

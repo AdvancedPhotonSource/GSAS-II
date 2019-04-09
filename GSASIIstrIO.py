@@ -61,8 +61,6 @@ gpxIndex = {}; gpxNamelist = []; gpxSize = -1
 '''Global variables used in :func:`IndexGPX` to see if file has changed 
 (gpxSize) and to index where to find each 1st-level tree item in the file.
 '''
-tmpHistIndex = {}
-'Global variable used to index contents of .seqHist file'
 
 def GetFullGPX(GPXfile):
     ''' Returns complete contents of GSASII gpx file. 
@@ -658,7 +656,6 @@ def SetupSeqSavePhases(GPXfile):
     cPickle.dump(data,fp,1)
     fp.close()
     # create empty file for histogram info
-    tmpHistIndex.clear()
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     fp = open(GPXhist,'wb')
     fp.close()
@@ -724,10 +721,9 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     # append histogram to histogram info
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     fp = open(GPXhist,'ab')
-    tmpHistIndex[histname] = fp.tell()
     cPickle.dump(data,fp,1)
     fp.close()
-    return    
+    return
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
     '''
@@ -754,6 +750,16 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     fp.close()
     GPXhist = os.path.splitext(GPXfile)[0]+'.seqHist'
     hist = open(GPXhist,'rb')
+    # build an index to the GPXhist file
+    histIndex = {}
+    while True:
+        loc = hist.tell()
+        try:
+            datum = cPickleLoad(hist)[0]
+        except EOFError:
+            break
+        histIndex[datum[0]] = loc
+
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
@@ -774,9 +780,11 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             data[0][1] = RigidBodies
         elif datum[0] == 'Controls': # reset the Copy Next flag after a sequential fit
             data[0][1]['Copy2Next'] = False
-        elif datum[0] in tmpHistIndex:
-            hist.seek(tmpHistIndex[datum[0]])
+        elif datum[0] in histIndex:
+            hist.seek(histIndex[datum[0]])
             hdata = cPickleLoad(hist)
+            if GSASIIpath.GetConfigValue('debug'): 
+                print('Updating {} with {}'.format(data[0][0],hdata[0][0]))
             xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
             hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
             for j,(name,val) in enumerate(data[1:]):
@@ -794,7 +802,6 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     infile.close()
     outfile.close()
     # clean up tmp files
-    tmpHistIndex.clear()
     try:
         os.remove(GPXphase)
     except:

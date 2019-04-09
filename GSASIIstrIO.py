@@ -782,6 +782,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             for j,(name,val) in enumerate(data[1:]):
                 if name not in xferItems: continue
                 data[j+1][1] = hdata[hItems[name]][1]
+            data[0] = hdata[0]
             # old code update from Histograms array
             #histogram = Histograms[datum[0]]
             #data[0][1][1] = list(histogram['Data'])

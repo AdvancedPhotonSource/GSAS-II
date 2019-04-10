@@ -782,20 +782,14 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         elif datum[0] in histIndex:
             hist.seek(histIndex[datum[0]])
             hdata = cPickleLoad(hist)
-            if GSASIIpath.GetConfigValue('debug'): 
-                print('Updating {} with {}'.format(data[0][0],hdata[0][0]))
+            if data[0][0] != hdata[0][0]:
+                print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
+            data[0] = hdata[0]
             xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
             hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
             for j,(name,val) in enumerate(data[1:]):
                 if name not in xferItems: continue
                 data[j+1][1] = hdata[hItems[name]][1]
-            data[0] = hdata[0]
-            # old code update from Histograms array
-            #histogram = Histograms[datum[0]]
-            #data[0][1][1] = list(histogram['Data'])
-            #for datus in data[1:]:
-            #    if datus[0] in 
-            #        datus[1] = histogram[datus[0]]
         cPickle.dump(data,outfile,1)
     hist.close()
     infile.close()

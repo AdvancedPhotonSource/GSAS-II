@@ -616,6 +616,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
     if showProvenance: print ('loading from file: '+G2frame.GSASprojectfile)
     GPXphase = os.path.splitext(G2frame.GSASprojectfile)[0]+'.seqPhase'
     GPXhist = os.path.splitext(G2frame.GSASprojectfile)[0]+'.seqHist'
+    deleteSeq = False
     hist = None
     tmpHistIndex = {}
     updateFromSeq = False
@@ -625,7 +626,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
         dlg.CenterOnParent()
         try:
             result = dlg.ShowModal()
-            if result == wx.ID_OK:
+            deleteSeq = result != wx.ID_CANCEL
+            if result == wx.ID_YES:
                 updateFromSeq = True
                 fp = open(GPXphase,'rb')
                 data = cPickleLoad(fp) # first block in file should be Phases
@@ -647,16 +649,6 @@ def ProjFileOpen(G2frame,showProvenance=True):
                         tmpHistIndex[datum[0]] = loc
                 except EOFError:
                     pass
-            elif result != wx.ID_CANCEL:
-                #print('deleting .seqXXXX files')
-                try:
-                    os.remove(GPXphase)
-                except:
-                    print('Warning: unable to delete {}'.format(GPXphase))
-                try:
-                    os.remove(GPXhist)
-                except:
-                    print('Warning: unable to delete {}'.format(GPXhist))
         finally:
             dlg.Destroy()
     wx.BeginBusyCursor()
@@ -687,6 +679,9 @@ def ProjFileOpen(G2frame,showProvenance=True):
             elif updateFromSeq and datum[0] in tmpHistIndex:
                 hist.seek(tmpHistIndex[datum[0]])
                 hdata = cPickleLoad(hist)
+                if data[0][0] != hdata[0][0]:
+                    print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
+                datum = hdata[0]
                 xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
                 hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
                 for j,(name,val) in enumerate(data[1:]):
@@ -734,7 +729,7 @@ def ProjFileOpen(G2frame,showProvenance=True):
             if 'PDF ' in datum[0][:4] and oldPDF:
                 sub = G2frame.GPXtree.AppendItem(Id,'PDF Peaks')
                 G2frame.GPXtree.SetItemPyData(sub,{'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
-            if datum[0].startswith('IMG'):                   #retrieve image default flag & data if set
+            if datum [0].startswith('IMG'):                   #retrieve image default flag & data if set
                 Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Image Controls'))
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
@@ -756,9 +751,8 @@ def ProjFileOpen(G2frame,showProvenance=True):
         filep.close()
         wx.EndBusyCursor()
         G2frame.Status.SetStatusText('Mouse RB drag/drop to reorder',0)
-    if hist:
-        hist.close()
-        #print('deleting .seqXXXX files')
+    if deleteSeq:
+        if hist: hist.close()
         try:
             os.remove(GPXphase)
         except:

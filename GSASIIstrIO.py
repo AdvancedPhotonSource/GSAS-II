@@ -740,8 +740,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     fp = open(GPXphase,'rb')
     data = cPickleLoad(fp) # first block in file should be Phases
     if data[0][0] != 'Phases':
-        raise Exception('Unexpected block in {} file. How did this happen?'
-                            .format(GPXphase))
+        raise Exception('Unexpected block in {} file. How did this happen?'.format(GPXphase))
     Phases = {}
     for name,vals in data[1:]:
         Phases[name] = vals

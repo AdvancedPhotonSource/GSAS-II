@@ -3905,13 +3905,13 @@ def UpdateUnitCellsGrid(G2frame, data):
       Annu. Rev. Mater. Res. 2015. 45,217-48.
       doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
             
-            SUBGROUPS,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
+            SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
 #            SUBGROUPS,baseList = kMAG.GetNonStdSubgroups(SGData,kvec[:9],star,Landau,maximal)
             wx.EndBusyCursor()
-            if SUBGROUPS is None:
+            if SubGroups is None:
                 wx.MessageBox('Check your internet connection?',caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
                 return
-            if not SUBGROUPS:
+            if not SubGroups:
                 if Landau:
                     wx.MessageBox('No results from SUBGROUPS, multi k-vectors & Landau not compatible',
                         caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
@@ -3920,10 +3920,13 @@ def UpdateUnitCellsGrid(G2frame, data):
                         caption='Bilbao SUBGROUPS error',style=wx.ICON_EXCLAMATION)
                 return
             controls[14] = kvec[:9]
-            controls[16] = baseList
-            dlg = wx.ProgressDialog('SUBGROUPS results','Processing '+SUBGROUPS[0][0],len(SUBGROUPS), 
+            try:
+                controls[16] = baseList
+            except IndexError:
+                controls.append(baseList)
+            dlg = wx.ProgressDialog('SUBGROUPS results','Processing '+SubGroups[0][0],len(SubGroups), 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
-            for ir,result in enumerate(SUBGROUPS):
+            for ir,result in enumerate(SubGroups):
                 dlg.Update(ir,newmsg='Processing '+result[0])
                 Trans = np.array(eval(result[1][0]))
                 Uvec = np.array(eval(result[1][1]))
@@ -4021,7 +4024,10 @@ def UpdateUnitCellsGrid(G2frame, data):
                         caption='Bilbao k-SUBGROUPSMAG error',style=wx.ICON_EXCLAMATION)
                 return
             controls[14] = kvec[:9]
-            controls[16] = baseList
+            try:
+                controls[16] = baseList
+            except IndexError:
+                controls.append(baseList)
             dlg = wx.ProgressDialog('k-SUBGROUPSMAG results','Processing '+MAXMAGN[0][0],len(MAXMAGN), 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
             

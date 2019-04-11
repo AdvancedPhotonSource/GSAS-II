@@ -5217,6 +5217,8 @@ def UpdatePhaseData(G2frame,Item,data):
             drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
+        if 'showSlice' not in drawingData:
+            drawingData['showSlice'] = False
         if 'Plane' not in drawingData:
             drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
         if 'magMult' not in drawingData:
@@ -6248,6 +6250,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnShowSlice(event):
+                drawingData['showSlice'] = showCS.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
             def OnViewPoint(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -6336,6 +6342,16 @@ def UpdatePhaseData(G2frame,Item,data):
             line2Sizer.Add(showRB,0,WACV)
             
             showSizer.Add(line2Sizer)
+            
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            
+            showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
+            showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
+            showCS.SetValue(drawingData['showSlice'])            
+            line3Sizer.Add(showCS,0,WACV)
+            
+            showSizer.Add(line3Sizer)
+            
             return showSizer
             
         def RadSizer():

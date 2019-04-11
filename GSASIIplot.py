@@ -7556,6 +7556,8 @@ def PlotStructure(G2frame,data,firstCall=False):
     Or = np.array([255,128,0])
     wxOrange = wx.Colour(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+    eBox = np.array([[.125,.875],[.125,.125],[.9,.125],[.9,.875],])
+    eplane = np.array([[-1,-1,0],[-1,1,0],[1,1,0],[1,-1,0]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
@@ -8211,11 +8213,41 @@ def PlotStructure(G2frame,data,firstCall=False):
         GL.glShadeModel(GL.GL_SMOOTH)
         GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
         GL.glFrontFace(GL.GL_CW)
-        GL.glBegin(GL.GL_TRIANGLE_FAN)
+        GL.glBegin(GL.GL_POLYGON)
         for vertex in plane:
             GL.glVertex3fv(vertex)
         GL.glEnd()
         GL.glPopMatrix()
+        GL.glDisable(GL.GL_BLEND)
+        GL.glShadeModel(GL.GL_SMOOTH)
+                
+    def RenderViewPlane(plane,color,Z,width,height):
+        fade = list(color) + [.5,]
+        GL.glShadeModel(GL.GL_FLAT)
+        ID = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, ID)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT,1)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glEnable(GL.GL_TEXTURE_2D)
+        GL.glPushMatrix()
+        GL.glLoadIdentity()
+        GL.glShadeModel(GL.GL_SMOOTH)
+        GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
+        GL.glFrontFace(GL.GL_CW)
+        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, ID)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D,0,GL.GL_RGBA,width,height,0,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+        GL.glBegin(GL.GL_POLYGON)
+        for vertex,evertex in zip(plane,eBox):
+            GL.glTexCoord2fv(evertex)
+            GL.glVertex3fv(vertex)
+        GL.glEnd()
+#        GL.glDrawPixels(width,height,GL.GL_RGBA,GL.GL_UNSIGNED_BYTE,Z)
+        GL.glPopMatrix()
+        GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
         GL.glShadeModel(GL.GL_SMOOTH)
                 
@@ -8466,13 +8498,13 @@ def PlotStructure(G2frame,data,firstCall=False):
         SetBackground()
         GL.glInitNames()
         GL.glPushName(0)
-        
+            
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         GL.glViewport(0,0,VS[0],VS[1])
         GLU.gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        SetLights()            
+        SetLights()
             
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
@@ -8637,9 +8669,33 @@ def PlotStructure(G2frame,data,firstCall=False):
             RenderBox()
             if drawingData['Plane'][1]:
                 H,phase,stack,phase,color = drawingData['Plane']
-                Planes = G2lat.PlaneIntercepts(Amat,Bmat,H,phase,stack)
+                Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
                 for plane in Planes:
                     RenderPlane(plane,color)
+            if drawingData['showSlice']:
+                rho = generalData['Map']['rho']
+                if not len(rho):
+                    return
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                import matplotlib.pyplot as plt
+                Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
+                invModel = nl.inv(Model)
+                msize = 5.      #-5A - 5A slice
+                npts = int(2*msize/0.25)
+                VP = np.array(drawingData['viewPoint'][0])
+                SX,SY = np.meshgrid(np.linspace(-1.,1.,npts),np.linspace(-1.,1.,npts))
+                SXYZ = msize*np.dstack((SX,SY,np.zeros_like(SX)))
+                SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
+                Z = np.reshape(G2mth.getRhos(SXYZ,rho),(npts,npts))
+                plt.contour(Z,colors='k',linewidths=1)
+                plt.axis("off")
+                canvas = plt.get_current_fig_manager().canvas
+                agg = canvas.switch_backends(FigureCanvasAgg)
+                agg.draw()
+                img, (width, height) = agg.print_to_buffer()
+                Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+                RenderViewPlane(msize*eplane,Wt,Zimg,width,height)
+                
 #        print time.time()-time0
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)

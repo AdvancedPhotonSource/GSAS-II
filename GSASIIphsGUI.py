@@ -6239,6 +6239,7 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnShowUnitCell(event):
                 drawingData['unitCellBox'] = unitCellBox.GetValue()
                 G2plt.PlotStructure(G2frame,data)
+                wx.CallAfter(UpdateDrawOptions)
     
             def OnShowHyd(event):
                 drawingData['showHydrogen'] = showHydrogen.GetValue()
@@ -6343,14 +6344,15 @@ def UpdatePhaseData(G2frame,Item,data):
             
             showSizer.Add(line2Sizer)
             
-            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            if generalData['Map']['rhoMax'] and drawingData['unitCellBox']:
+                line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
-            showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
-            showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
-            showCS.SetValue(drawingData['showSlice'])            
-            line3Sizer.Add(showCS,0,WACV)
-            
-            showSizer.Add(line3Sizer)
+                showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice? NB: can be very slow for large structures!')
+                showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
+                showCS.SetValue(drawingData['showSlice'])            
+                line3Sizer.Add(showCS,0,WACV)
+                
+                showSizer.Add(line3Sizer)
             
             return showSizer
             

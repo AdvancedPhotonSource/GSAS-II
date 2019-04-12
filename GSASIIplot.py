@@ -7557,7 +7557,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     Or = np.array([255,128,0])
     wxOrange = wx.Colour(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
-    eBox = np.array([[.125,.875],[.125,.125],[.9,.125],[.9,.875],])
+    eBox = np.array([[0,1],[0,0],[1,0],[1,1],])
     eplane = np.array([[-1,-1,0],[-1,1,0],[1,1,0],[1,-1,0]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -8231,8 +8231,8 @@ def PlotStructure(G2frame,data,firstCall=False):
             newTX = True
         GL.glBindTexture(GL.GL_TEXTURE_2D, txID)
         GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT,1)
-        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA,GL.GL_ONE_MINUS_SRC_ALPHA)
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glPushMatrix()
         GL.glLoadIdentity()
@@ -8240,7 +8240,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         GL.glPolygonMode(GL.GL_FRONT_AND_BACK,GL.GL_FILL)
         GL.glFrontFace(GL.GL_CW)
         GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_TEXTURE_ENV_MODE, GL.GL_REPLACE)
-#        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
+        GL.glTexEnvf(GL.GL_TEXTURE_ENV, GL.GL_ALPHA_SCALE, 1.0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_BASE_LEVEL, 0)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAX_LEVEL, 0)
         if newTX:
@@ -8679,8 +8679,11 @@ def PlotStructure(G2frame,data,firstCall=False):
                 for plane in Planes:
                     RenderPlane(plane,color)
             if drawingData['showSlice']:
-                rho = generalData['Map']['rho']
-                if not len(rho):
+                if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
+                    rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
+                elif len(mapData['rho']):               #ordinary 3D map
+                    rho = mapData['rho']
+                else:
                     return
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
                 import matplotlib.pyplot as plt
@@ -8696,11 +8699,13 @@ def PlotStructure(G2frame,data,firstCall=False):
                 plt.cla()
                 plt.contour(Z,colors='k',linewidths=1)
                 plt.axis("off")
+                plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
                 canvas = plt.get_current_fig_manager().canvas
                 agg = canvas.switch_backends(FigureCanvasAgg)
                 agg.draw()
                 img, (width, height) = agg.print_to_buffer()
                 Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+                Zimg[:,:,3] = 64            #sets alpha to 25%
                 RenderViewPlane(msize*eplane,Zimg,width,height)
                 
 #        print time.time()-time0

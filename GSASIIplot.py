@@ -8696,6 +8696,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 SXYZ = msize*np.dstack((SX,SY,np.zeros_like(SX)))
                 SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
                 Z = np.reshape(G2mth.getRhos(SXYZ,rho),(npts,npts))
+                plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
                 plt.cla()
                 plt.contour(Z,colors='k',linewidths=1)
                 plt.axis("off")
@@ -8705,7 +8706,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 agg.draw()
                 img, (width, height) = agg.print_to_buffer()
                 Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-                Zimg[:,:,3] = 128           #sets alpha to 25%
+#                Zimg[:,:,3] = 128           #sets alpha to 25%
                 RenderViewPlane(msize*eplane,Zimg,width,height)
                 
 #        print time.time()-time0

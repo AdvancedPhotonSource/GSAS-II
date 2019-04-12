@@ -3650,29 +3650,24 @@ def getRho(xyz,mapData):
     return R
        
 def getRhos(XYZ,rho):
-    ''' get scattering density at a point by 8-point interpolation
+    ''' get scattering density at an array of point by 8-point interpolation
     param xyz:  array coordinates to be probed Nx3
     param: rho: array copy of map (NB: don't use original!)
     
     :returns: density at xyz
     '''
-    rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+    rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)[:2,:2,:2]
     mapShape = np.array(rho.shape)
     mapStep = 1./mapShape
     X = XYZ%1.    #get into unit cell
     I = np.array(np.rint(X*mapShape),dtype='int')
-    R = []
+    R = np.zeros(len(XYZ))
     for i,x in enumerate(X):
         D = x-I[i]*mapStep         #position inside map cell
-        D12 = D[0]*D[1]
-        D13 = D[0]*D[2]
-        D23 = D[1]*D[2]
-        D123 = np.prod(D)
         Rho = rollMap(rho,-I[i])    #shifts map so point is in corner
-        R.append(Rho[0,0,0]*(1.-np.sum(D))+Rho[1,0,0]*D[0]+Rho[0,1,0]*D[1]+Rho[0,0,1]*D[2]+  \
-            Rho[1,1,1]*D123+Rho[0,1,1]*(D23-D123)+Rho[1,0,1]*(D13-D123)+Rho[1,1,0]*(D12-D123)+  \
-            Rho[0,0,0]*(D12+D13+D23-D123)-Rho[0,0,1]*(D13+D23-D123)-    \
-            Rho[0,1,0]*(D23+D12-D123)-Rho[1,0,0]*(D13+D12-D123))
+        RIJ = Rho[0,:2,:2]*(1.-D[0])
+        RI = RIJ[0]*(1.-D[1])+RIJ[1]*D[1]
+        R[i] = RI[0]*(1.-D[2])+RI[1]*D[2]
     return R
        
 def SearchMap(generalData,drawingData,Neg=False):

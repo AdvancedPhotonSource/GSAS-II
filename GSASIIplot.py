@@ -8706,10 +8706,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                 agg.draw()
                 img, (width, height) = agg.print_to_buffer()
                 Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-#                Zimg[:,:,3] = 128           #sets alpha to 25%
                 RenderViewPlane(msize*eplane,Zimg,width,height)
                 
-#        print time.time()-time0
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)
         except:

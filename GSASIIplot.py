@@ -8451,7 +8451,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def Draw(caller='',Fade=[]):
 #useful debug?        
 #        if caller:
-#            print caller,generalData['Name']
+#            print (caller,generalData['Name'])
 # end of useful debug
         vdWRadii = generalData['vdWRadii']
         mapData = generalData['Map']

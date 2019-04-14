@@ -3656,32 +3656,34 @@ def getRhos(XYZ,rho):
     
     :returns: density at xyz
     '''
+    def getBoxes(rho,I):
+        Rhos = np.zeros((2,2,2))
+        Mx,My,Mz = rho.shape
+        Ix,Iy,Iz = I
+        Rhos = np.array([[[rho[Ix%Mx,Iy%My,Iz%Mz],rho[Ix%Mx,Iy%My,(Iz+1)%Mz]],
+                          [rho[Ix%Mx,(Iy+1)%My,Iz%Mz],rho[Ix%Mx,(Iy+1)%My,(Iz+1)%Mz]]],
+                        [[rho[(Ix+1)%Mx,Iy%My,Iz%Mz],rho[(Ix+1)%Mx,Iy%My,(Iz+1)%Mz]],
+                          [rho[(Ix+1)%Mx,(Iy+1)%My,Iz%Mz],rho[(Ix+1)%Mx,(Iy+1)%My,(Iz+1)%Mz]]]])
+        return Rhos
+        
     Blk = 8     #8 seems optimal
     nBlk = len(XYZ)//Blk        #select Blk so this is an exact divide
-    rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)[:2,:2,:2]
     mapShape = np.array(rho.shape)
     mapStep = 1./mapShape
     X = XYZ%1.    #get into unit cell
     iBeg = 0
     R = np.zeros(len(XYZ))
-#actually a bit faster!
+#actually a lot faster!
     for iblk in range(nBlk):
         iFin = iBeg+Blk
         Xs = X[iBeg:iFin]
         I = np.array(np.rint(Xs*mapShape),dtype='int')
-        Rhos = np.array([rollMap(rho,-i) for i in I])
+        Rhos = np.array([getBoxes(rho,i) for i in I])
         Ds = Xs-I*mapStep
         RIJs = Rhos[:,0,:2,:2]*(1.-Ds[:,0][:,nxs,nxs])
         RIs = RIJs[:,0]*(1.-Ds[:,1][:,nxs])+RIJs[:,1]*Ds[:,1][:,nxs]
         R[iBeg:iFin] = RIs[:,0]*(1.-Ds[:,2])+RIs[:,1]*Ds[:,2]
         iBeg += Blk
-#one at a time
-#    for i,x in enumerate(X):
-#        D = x-I[i]*mapStep         #position inside map cell
-#        Rho = rollMap(rho,-I[i])    #shifts map so point is in corner
-#        RIJ = Rho[0,:2,:2]*(1.-D[0])
-#        RI = RIJ[0]*(1.-D[1])+RIJ[1]*D[1]
-#        R[i] = RI[0]*(1.-D[2])+RI[1]*D[2]
     return R
        
 def SearchMap(generalData,drawingData,Neg=False):

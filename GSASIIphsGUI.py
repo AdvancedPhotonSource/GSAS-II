@@ -2199,7 +2199,7 @@ def UpdatePhaseData(G2frame,Item,data):
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
-            mapRes = G2G.ValidatedTxtCtrl(General,Map,'Resolution',nDig=(10,2),min=0.25,max=20.)
+            mapRes = G2G.ValidatedTxtCtrl(General,Map,'Resolution',nDig=(10,2),min=0.20,max=20.)
             line2Sizer.Add(mapRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
             cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),min=1.0,max=100.)

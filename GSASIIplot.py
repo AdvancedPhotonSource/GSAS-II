@@ -3074,8 +3074,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
                         Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                        Plot.plot(X,Z,colors[1],picker=False,label='_calc')
-                        Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #background
+                        if G2frame.SinglePlot or G2frame.plusPlot:
+                            Plot.plot(X,Z,colors[1],picker=False,label='_calc')
+                            Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #background
                     elif plottype in ['SASD','REFD']:
                         Plot.set_xscale("log",nonposx='mask')
                         Plot.set_yscale("log",nonposy='mask')
@@ -3090,7 +3091,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                         Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #const. background
                         Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
-                else:
+                else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
                             Plot.plot(Xum,Y-W,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
@@ -3105,7 +3106,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
-                    if 'PWDR' in plottype and G2frame.SinglePlot:
+                    if 'PWDR' in plottype and (G2frame.SinglePlot or G2frame.plusPlot):
                         Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
                         if not G2frame.Weight: DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
@@ -9716,26 +9717,34 @@ def changePlotSettings(G2frame,Plot):
     def RefreshPlot(*args,**kwargs):
         '''Apply settings to the plot
         '''
-        Plot.get_xaxis().get_label().set_fontsize(plotOpt['labelSize'])
-        Plot.get_yaxis().get_label().set_fontsize(plotOpt['labelSize'])
-        for l in Plot.get_xaxis().get_ticklabels():
-            l.set_fontsize(plotOpt['labelSize'])
-        for l in Plot.get_yaxis().get_ticklabels():
-            l.set_fontsize(plotOpt['labelSize'])
         Plot.figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,
-                        bottom=int(plotOpt['labelSize'])/150.,
-                        right=.98,
-                        top=1.-int(plotOpt['labelSize'])/200.,
-                        hspace=0.0)
-        for l in Plot.lines: 
-            l.set_linewidth(plotOpt['lineWid'])
-        Plot.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
-        Plot.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
-        for l in Plot.spines.values():
-            l.set_linewidth(plotOpt['lineWid'])
-        Plot.set_title(plotOpt['title'])
-        Plot.get_xaxis().set_label_text(plotOpt['xtitle'])
-        Plot.get_yaxis().set_label_text(plotOpt['ytitle'])            
+                            bottom=int(plotOpt['labelSize'])/150.,
+                            right=.98,
+                            top=1.-int(plotOpt['labelSize'])/200.,
+                            hspace=0.0)
+        for P in Plot.figure.axes:
+            P.get_xaxis().get_label().set_fontsize(plotOpt['labelSize'])
+            P.get_yaxis().get_label().set_fontsize(plotOpt['labelSize'])
+            for l in P.get_xaxis().get_ticklabels():
+                l.set_fontsize(plotOpt['labelSize'])
+            for l in P.get_yaxis().get_ticklabels():
+                l.set_fontsize(plotOpt['labelSize'])
+            for l in P.lines: 
+                l.set_linewidth(plotOpt['lineWid'])
+            P.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
+            P.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
+            for l in P.spines.values():
+                l.set_linewidth(plotOpt['lineWid'])
+                
+        Plot.set_title(plotOpt['title'],fontsize=plotOpt['labelSize'])
+        for i,P in enumerate(Plot.figure.axes):
+            if not P.get_visible(): continue
+            if i == 0:
+                lbl = ''
+            else:
+                lbl = str(i)
+            P.get_xaxis().set_label_text(plotOpt['xtitle'+lbl])
+            P.get_yaxis().set_label_text(plotOpt['ytitle'+lbl])            
         Plot.figure.canvas.draw()
 
     txtChoices = [str(i) for i in range (8,26)]
@@ -9767,23 +9776,29 @@ def changePlotSettings(G2frame,Plot):
     hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
     vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
 
-    vbox.Add((1,5))
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' x label'),0,wx.ALL)
-    plotOpt['xtitle'] = Plot.get_xaxis().get_label_text()
-    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'xtitle',OnLeave=RefreshPlot,
+    for i,P in enumerate(Plot.figure.axes):
+        if not P.get_visible(): continue
+        if i == 0:
+            lbl = ''
+        else:
+            lbl = str(i)
+        vbox.Add((1,5))
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' x label '+lbl),0,wx.ALL)
+        plotOpt['xtitle'+lbl] = P.get_xaxis().get_label_text()
+        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'xtitle'+lbl,OnLeave=RefreshPlot,
                                  size=(200,-1),notBlank=False)
-    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
     
-    vbox.Add((1,5))
-    hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' y label'),0,wx.ALL)
-    plotOpt['ytitle'] = Plot.get_yaxis().get_label_text()
-    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'ytitle',OnLeave=RefreshPlot,
+        vbox.Add((1,5))
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' y label '+lbl),0,wx.ALL)
+        plotOpt['ytitle'+lbl] = P.get_yaxis().get_label_text()
+        w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'ytitle'+lbl,OnLeave=RefreshPlot,
                                  size=(200,-1),notBlank=False)
-    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
-    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+        hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+        vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
     
     vbox.Add((1,10),1,wx.ALL|wx.EXPAND,1)
     hbox = wx.BoxSizer(wx.HORIZONTAL)

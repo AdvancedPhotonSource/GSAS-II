@@ -252,6 +252,7 @@ plotOpt['lineList']  = ('obs','calc','bkg','zero','diff')
 plotOpt['phaseList']  = []
 plotOpt['phaseLabels']  = {}
 plotOpt['fmtChoices']  = {}
+plotOpt['lineWid'] = '1'
 
 def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
                  squeeze=True, subplot_kw=None, gridspec_kw=None):
@@ -1818,6 +1819,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
+            elif 'PWDR' in plottype: # Turning on Weight plot clears previous limits
+                G2frame.FixedLimits['dylims'] = ['','']                
             newPlot = True
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
@@ -2508,7 +2511,93 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Page.plotStyle['refOffset'] = event.ydata
         PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
         G2frame.itemPicked = None
+
+    def onSetPlotLim(event):
+        '''Specify plot limits manually
+        '''
+        def onChecked(event):
+            try:
+                i = cbox.index(event.EventObject)
+                showChecked(i)
+            except:
+                pass
+        def showChecked(i):
+            checked = cbox[i].GetValue()
+            if not checked:
+                # fake out validation to avoid ugly yellow 
+                dbox[i].invalid = False
+                dbox[i]._IndicateValidity()
+            else: # reset validation
+                dbox[i].SetValue(dbox[i].GetValue())
+            dbox[i].Enable(checked)
+        dlg = wx.Dialog(G2frame.plotFrame,
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(wx.StaticText(dlg,wx.ID_ANY,
+                'Set Plot limits'
+                ),0,wx.ALL)
+        gsizer = wx.FlexGridSizer(cols=5,hgap=2,vgap=2)
+        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,' '),0,wx.ALL)
+        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'use'),0,wx.ALL)
+        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  min'),0,wx.ALL)
+        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'use'),0,wx.ALL)
+        gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'  max'),0,wx.ALL)
+        cbox = []
+        dbox = []
+        lblkeys = [(' x-axis ','xlims'),(' y-axis ','ylims')]
+        if G2frame.Weight:
+            lblkeys += [('(obs-calc)/sig ','dylims')]
+        for lbl,key in lblkeys:
+            gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,lbl),0,wx.ALL)
+            for i in range(2):
+                cbox.append(G2G.G2CheckBox(dlg,'',G2frame.UseLimits[key],i,
+                                        OnChange=onChecked))
+                dbox.append(G2G.ValidatedTxtCtrl(dlg,G2frame.FixedLimits[key],i,
+                                                typeHint=float))
+                gsizer.Add(cbox[-1])
+                gsizer.Add(dbox[-1])
+                showChecked(-1)
+        vbox.Add(gsizer)
+        vbox.Add((10,10),1,wx.ALL|wx.EXPAND,1)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        OKbtn = wx.Button(dlg, wx.ID_OK)
+        OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
+        hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+        hbox.Add(OKbtn)
+        hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+        vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
+        dlg.SetSizer(vbox)
+        vbox.Fit(dlg)
+        dlg.ShowModal()
+        dlg.Destroy()
+        # apply values
+        Page.toolbar.push_current()
+        CurLims = {}
+        CurLims['xlims'] = list(Plot.get_xlim())
+        if G2frame.Weight:
+            CurLims['ylims'] = list(Page.figure.axes[1].get_ylim())
+            CurLims['dylims'] = list(Page.figure.axes[2].get_ylim())
+        else:
+            CurLims['ylims'] = list(Plot.get_ylim())
+            CurLims['dylims'] = [0,0]
+        for var in 'xlims','ylims','dylims':
+            for i in range(2):
+                if not G2frame.UseLimits[var][i]: continue
+                try:
+                    CurLims[var][i] = float(G2frame.FixedLimits[var][i])
+                except:
+                    pass
+        Plot.set_xlim(CurLims['xlims'])
+        if G2frame.Weight:
+            Page.figure.axes[1].set_ylim(CurLims['ylims'])
+            Page.figure.axes[2].set_ylim(CurLims['dylims'])
+        else:
+            Plot.set_ylim(CurLims['ylims'])
+        Plot.figure.canvas.draw()
+        #GSASIIpath.IPyBreak()
         
+    def onPlotFormat(event):
+        changePlotSettings(G2frame,Plot)
     #=====================================================================================
     # beginning PlotPatterns execution
     global exclLines,Page
@@ -2535,6 +2624,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
             'refDelt':0.1*Ymax,})
 #end patch
+    try:
+        G2frame.FixedLimits
+    except:
+        G2frame.FixedLimits = {'xlims':['',''],'ylims':['',''],
+                                       'dylims':['','']}
+    try:
+        G2frame.UseLimits
+    except:
+        G2frame.UseLimits = {'xlims':[False,False],'ylims':[False,False],
+                                       'dylims':[False,False]}
     if not new:
         G2frame.xylim = limits
     else:
@@ -2564,6 +2663,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         G2frame.Bind(wx.EVT_MENU, onMoveDiffCurve, id=G2frame.dataWindow.moveDiffCurve.GetId())
         G2frame.Bind(wx.EVT_MENU, onMoveTopTick, id=G2frame.dataWindow.moveTickLoc.GetId())
         G2frame.Bind(wx.EVT_MENU, onMoveTickSpace, id=G2frame.dataWindow.moveTickSpc.GetId())
+        G2frame.Bind(wx.EVT_MENU, onSetPlotLim, id=G2frame.dataWindow.setPlotLim.GetId())
+        G2frame.Bind(wx.EVT_MENU, onPlotFormat, id=G2frame.dataWindow.setPlotFmt.GetId())
         G2frame.dataWindow.moveDiffCurve.Enable(False)
         G2frame.dataWindow.moveTickLoc.Enable(False)
         G2frame.dataWindow.moveTickSpc.Enable(False)
@@ -2961,7 +3062,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
-                    Plot1.set_ylim(bottom=np.min(DZ[Ibeg:Ifin])*1.2,top=np.max(DZ[Ibeg:Ifin])*1.2)  
+                    CurLims = [np.min(DZ[Ibeg:Ifin])*1.2,np.max(DZ[Ibeg:Ifin])*1.2]
+                    for i in range(2):
+                        if not G2frame.UseLimits['dylims'][i]: continue
+                        try:
+                            CurLims[i] = float(G2frame.FixedLimits['dylims'][i])
+                        except:
+                            pass
+                    Plot1.set_ylim(CurLims)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
@@ -2997,7 +3105,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
-                    if 'PWDR' in plottype: 
+                    if 'PWDR' in plottype and G2frame.SinglePlot:
                         Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
                         if not G2frame.Weight: DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
@@ -6206,12 +6314,6 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         label = 'Sequential refinement'
     else:
         label = 'Parametric fit #'+str(fitnum+1)
-#    def PublishPlot(event):
-#        print('Page=',Page)
-#        print('Plot=',Plot)
-#        GSASIIpath.IPyBreak()
-#    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl',
-#                                    publish=PublishPlot)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(label,'mpl')
     if not new:
         if not Page.IsShown():
@@ -9607,3 +9709,93 @@ def onLegendPick(event):
     else:
             print('Warning: artist matching ',lbl,' not found')
     
+def changePlotSettings(G2frame,Plot):
+    '''Code in development to allow changes to plot settings
+    prior to export of plot with "floppy disk" button
+    '''
+    def RefreshPlot(*args,**kwargs):
+        '''Apply settings to the plot
+        '''
+        Plot.get_xaxis().get_label().set_fontsize(plotOpt['labelSize'])
+        Plot.get_yaxis().get_label().set_fontsize(plotOpt['labelSize'])
+        for l in Plot.get_xaxis().get_ticklabels():
+            l.set_fontsize(plotOpt['labelSize'])
+        for l in Plot.get_yaxis().get_ticklabels():
+            l.set_fontsize(plotOpt['labelSize'])
+        Plot.figure.subplots_adjust(left=int(plotOpt['labelSize'])/100.,
+                        bottom=int(plotOpt['labelSize'])/150.,
+                        right=.98,
+                        top=1.-int(plotOpt['labelSize'])/200.,
+                        hspace=0.0)
+        for l in Plot.lines: 
+            l.set_linewidth(plotOpt['lineWid'])
+        Plot.get_xaxis().set_tick_params(width=plotOpt['lineWid'])
+        Plot.get_yaxis().set_tick_params(width=plotOpt['lineWid'])
+        for l in Plot.spines.values():
+            l.set_linewidth(plotOpt['lineWid'])
+        Plot.set_title(plotOpt['title'])
+        Plot.get_xaxis().set_label_text(plotOpt['xtitle'])
+        Plot.get_yaxis().set_label_text(plotOpt['ytitle'])            
+        Plot.figure.canvas.draw()
+
+    txtChoices = [str(i) for i in range (8,26)]
+    lwidChoices = ('0.5','0.7','1','1.5','2','2.5','3','4')
+    dlg = wx.Dialog(G2frame.plotFrame,
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    vbox = wx.BoxSizer(wx.VERTICAL)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,'Text size'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,txtChoices,None,None,plotOpt,'labelSize',RefreshPlot,
+                                   size=(50,-1))
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Line widths'),0,wx.ALL)
+    w = G2G.G2ChoiceButton(dlg,lwidChoices,None,None,plotOpt,'lineWid',RefreshPlot,
+            size=(50,-1))
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' Title'),0,wx.ALL)
+    plotOpt['title'] = Plot.get_title()
+    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'title',OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' x label'),0,wx.ALL)
+    plotOpt['xtitle'] = Plot.get_xaxis().get_label_text()
+    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'xtitle',OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+    vbox.Add((1,5))
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    hbox.Add(wx.StaticText(dlg,wx.ID_ANY,' y label'),0,wx.ALL)
+    plotOpt['ytitle'] = Plot.get_yaxis().get_label_text()
+    w = G2G.ValidatedTxtCtrl(dlg,plotOpt,'ytitle',OnLeave=RefreshPlot,
+                                 size=(200,-1),notBlank=False)
+    hbox.Add(w,0,wx.ALL|wx.ALIGN_CENTER)
+    vbox.Add(hbox,0,wx.ALL|wx.EXPAND)
+    
+    vbox.Add((1,10),1,wx.ALL|wx.EXPAND,1)
+    hbox = wx.BoxSizer(wx.HORIZONTAL)
+    OKbtn = wx.Button(dlg, wx.ID_OK)
+    OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
+    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+    hbox.Add(OKbtn)
+    hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+    vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
+        
+    dlg.SetSizer(vbox)
+    vbox.Fit(dlg)
+    #dlg.Show()
+    RefreshPlot()
+    dlg.ShowModal()

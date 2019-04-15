@@ -5111,6 +5111,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             'Click on position where difference curve is placed')
         self.moveTickLoc = self.ErrorAnal.Append(wx.ID_ANY,'Move ticks','Move mouse to where tick marks should be positioned')
         self.moveTickSpc = self.ErrorAnal.Append(wx.ID_ANY,'Set tick space','Click to set spacing between phase tick marks')
+        self.setPlotLim = self.ErrorAnal.Append(wx.ID_ANY,'Set plot limits...','Allows entry of plot min & max values')
+        self.setPlotFmt = self.ErrorAnal.Append(wx.ID_ANY,'Set plot formatting...','Allows changes to text size and line widths, etc.')
         self.PostfillDataMenu()
             
         # HKLF - wxIDs defined in PWDR & SASD above

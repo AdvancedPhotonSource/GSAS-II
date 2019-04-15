@@ -6347,7 +6347,7 @@ def UpdatePhaseData(G2frame,Item,data):
             if generalData['Map']['rhoMax'] and drawingData['unitCellBox']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
-                showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice? NB: can be very slow for large structures!')
+                showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
                 showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
                 showCS.SetValue(drawingData['showSlice'])            
                 line3Sizer.Add(showCS,0,WACV)

@@ -5192,7 +5192,7 @@ def UpdatePhaseData(G2frame,Item,data):
         defaultDrawing = {'viewPoint':[[0.5,0.5,0.5],[]],'showHydrogen':True,
             'backColor':[0,0,0],'depthFog':False,'Zclip':50.0,'cameraPos':50.,'Zstep':0.5,
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
-            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
+            'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,'contourMax':1.0,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],'magMult':1.0,
             'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
         V0 = np.array([0,0,1])
@@ -5211,6 +5211,8 @@ def UpdatePhaseData(G2frame,Item,data):
             drawingData['Zstep'] = 0.5
         if 'contourLevel' not in drawingData:
             drawingData['contourLevel'] = 1.
+        if 'contourMax' not in drawingData:
+            drawingData['contourMax'] = 1.
         if 'viewDir' not in drawingData:
             drawingData['viewDir'] = [0,0,1]
         if 'Quaternion' not in drawingData:
@@ -6129,7 +6131,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnContourLevel(event):
                 drawingData['contourLevel'] = contourLevel.GetValue()/100.
-                contourLevelTxt.SetLabel(' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
+                contourLevelTxt.SetLabel(' Rho maximum: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
                 G2plt.PlotStructure(G2frame,data)
 
             def OnMapSize(event):
@@ -6208,7 +6210,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
             
             if generalData['Map']['rhoMax']:
-                contourLevelTxt = wx.StaticText(drawOptions,-1,' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
+                contourLevelTxt = wx.StaticText(drawOptions,-1,' Rho maximum: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
                 slideSizer.Add(contourLevelTxt,0,WACV)
                 contourLevel = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['contourLevel']))
                 contourLevel.SetRange(1,100)
@@ -6255,6 +6257,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 drawingData['showSlice'] = showCS.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
+            def OnContourMax(event):
+                drawingData['contourMax'] = contourMax.GetValue()/100.
+                contourMaxTxt.SetLabel(' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+                G2plt.PlotStructure(G2frame,data)
+
             def OnViewPoint(event):
                 event.Skip()
                 Obj = event.GetEventObject()
@@ -6344,13 +6351,19 @@ def UpdatePhaseData(G2frame,Item,data):
             
             showSizer.Add(line2Sizer)
             
-            if generalData['Map']['rhoMax'] and drawingData['unitCellBox']:
+            if generalData['Map']['rhoMax']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
                 showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
                 showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
                 showCS.SetValue(drawingData['showSlice'])            
                 line3Sizer.Add(showCS,0,WACV)
+                contourMaxTxt = wx.StaticText(drawOptions,-1,' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
+                line3Sizer.Add(contourMaxTxt,0,WACV)
+                contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),value=int(100*drawingData['contourMax']))
+                contourMax.SetRange(1,100)
+                contourMax.Bind(wx.EVT_SLIDER, OnContourMax)
+                line3Sizer.Add(contourMax,1,wx.EXPAND|wx.RIGHT)
                 
                 showSizer.Add(line3Sizer)
             

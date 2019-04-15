@@ -3666,7 +3666,7 @@ def getRhos(XYZ,rho):
                           [rho[(Ix+1)%Mx,(Iy+1)%My,Iz%Mz],rho[(Ix+1)%Mx,(Iy+1)%My,(Iz+1)%Mz]]]])
         return Rhos
         
-    Blk = 8     #8 seems optimal
+    Blk = 400     #400 doesn't seem to matter
     nBlk = len(XYZ)//Blk        #select Blk so this is an exact divide
     mapShape = np.array(rho.shape)
     mapStep = 1./mapShape

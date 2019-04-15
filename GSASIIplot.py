@@ -7982,6 +7982,14 @@ def PlotStructure(G2frame,data,firstCall=False):
                     Q = drawingData['Quaternion']
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
+        elif drawingData['showSlice']:
+            View = GL.glGetIntegerv(GL.GL_VIEWPORT)
+            Tx,Ty,Tz = drawingData['viewPoint'][0]
+            tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
+            Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
+            rho = G2mth.getRho([Cx,Cy,Cz],mapData)
+            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
+            
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -8781,35 +8789,39 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
                 for plane in Planes:
                     RenderPlane(plane,color)
-            if drawingData['showSlice']:
-                if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
-                    rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
-                elif len(mapData['rho']):               #ordinary 3D map
-                    rho = mapData['rho']
-                else:
-                    return
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                import matplotlib.pyplot as plt
-                Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
-                invModel = nl.inv(Model)
-                msize = 5.      #-5A - 5A slice
-                npts = int(2*msize/0.25)
-                VP = np.array(drawingData['viewPoint'][0])
-                SX,SY = np.meshgrid(np.linspace(-1.,1.,npts),np.linspace(-1.,1.,npts))
-                SXYZ = msize*np.dstack((SX,SY,np.zeros_like(SX)))
-                SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
-                Z = np.reshape(G2mth.getRhos(SXYZ,rho),(npts,npts))
-                plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
-                plt.cla()
-                plt.contour(Z,colors='k',linewidths=1)
-                plt.axis("off")
-                plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
-                canvas = plt.get_current_fig_manager().canvas
-                agg = canvas.switch_backends(FigureCanvasAgg)
-                agg.draw()
-                img, (width, height) = agg.print_to_buffer()
-                Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
-                RenderViewPlane(msize*eplane,Zimg,width,height)
+        if drawingData['showSlice']:
+            if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
+                rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
+            elif len(mapData['rho']):               #ordinary 3D map
+                rho = mapData['rho']
+            else:
+                return
+            Rmax = np.max(rho)*drawingData['contourMax']
+            from matplotlib.backends.backend_agg import FigureCanvasAgg
+            import matplotlib.pyplot as plt
+            Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
+            invModel = nl.inv(Model)
+            msize = 5.      #-5A - 5A slice
+            mRes = generalData['Map']['Resolution']/2.
+            npts = int(2*msize/mRes)
+            VP = np.array(drawingData['viewPoint'][0])
+            SX,SY = np.meshgrid(np.linspace(-1.,1.,npts),np.linspace(-1.,1.,npts))
+            SXYZ = msize*np.dstack((SX,SY,np.zeros_like(SX)))
+            SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
+            Z = np.reshape(G2mth.getRhos(SXYZ,rho),(npts,npts))
+            Z = np.where(Z<=Rmax,Z,Rmax)
+            plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
+            plt.rcParams['figure.figsize'] = [6.0,6.0]
+            plt.cla()
+            plt.contour(Z,colors='k',linewidths=1)
+            plt.axis("off")
+            plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
+            canvas = plt.get_current_fig_manager().canvas
+            agg = canvas.switch_backends(FigureCanvasAgg)
+            agg.draw()
+            img, (width, height) = agg.print_to_buffer()
+            Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+            RenderViewPlane(msize*eplane,Zimg,width,height)
                 
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)

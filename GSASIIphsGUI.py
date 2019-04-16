@@ -1267,6 +1267,8 @@ def UpdatePhaseData(G2frame,Item,data):
         for reflName in reflNames:
             if 'PWDR' in reflName:
                 PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root, reflName)
+                if not PatternId:
+                    return None
                 reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
                 reflData = reflSets[phaseName]
             elif 'HKLF' in reflName:

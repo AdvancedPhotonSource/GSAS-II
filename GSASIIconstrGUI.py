@@ -1335,6 +1335,7 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     UseList = newPhase['Histograms']
     detTrans = np.abs(nl.det(Trans))
+    invTrans = nl.inv(Trans)
     opId = oldPhase['pId']
     npId = newPhase['pId']
     cx,ct,cs,cia = newPhase['General']['AtomPtrs']
@@ -1368,13 +1369,13 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         if Nop < 0:         #inversion
             Opr *= -1
         XOpr = np.inner(Opr,Trans)
-        for ix in list(set(CSX[0])):
+        for i,ix in enumerate(list(CSX[0])):
             if not ix:
                 continue
-            name = xnames[ix-1]
+            name = xnames[i]
             IndpCon = [1.0,G2obj.G2VarObj('%d::%s:%d'%(npId,name,ia))]
             DepCons = []
-            for iop,opval in enumerate(XOpr[ix-1]):
+            for iop,opval in enumerate(XOpr[i]):
                 if opval:
                     DepCons.append([opval,G2obj.G2VarObj('%d::%s:%s'%(opId,xnames[iop],iat))])
             if len(DepCons) == 1:

@@ -1422,7 +1422,8 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
         #how do I do Uij's for most Trans?
 
     # constraints on lattice parameters between phases
-    T = nl.inv(Trans).T
+#    T = nl.inv(Trans).T
+    T = Trans.T
     conMat = [
         [T[0,0]**2,T[0,1]**2,T[0,2]**2,T[0,0]*T[0,1],T[0,0]*T[0,2],T[0,1]*T[0,2]],
         [T[1,0]**2,T[1,1]**2,T[1,2]**2,T[1,0]*T[1,1],T[1,0]*T[1,2],T[1,1]*T[1,2]],

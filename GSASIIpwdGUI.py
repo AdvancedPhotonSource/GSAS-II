@@ -285,7 +285,7 @@ class RDFDialog(wx.Dialog):
 def GetFileBackground(G2frame,xye,Pattern):
     bxye = np.zeros(len(xye[1]))
     if 'BackFile' in Pattern[0]:
-        backfile,mult = Pattern[0]['BackFile']
+        backfile,mult = Pattern[0]['BackFile'][:2]
         if backfile:
             bId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,backfile)
             if bId:
@@ -1564,12 +1564,26 @@ def UpdateBackground(G2frame,data):
         
         def OnBackPWDR(event):
             data[1]['background PWDR'][0] = back.GetValue()
+            if  data[1]['background PWDR'][0]:
+                curHist = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data[1]['background PWDR'][0])
+                if not Id:
+                    G2G.G2MessageBox(G2frame,'Histogram not found -- how did this happen?','Missing histogram')
+                    back.SetValue('')
+                    data[1]['background PWDR'][0] = back.GetValue()
+                    return
+                bkgHist = G2frame.GPXtree.GetItemPyData(Id)
+                if len(bkgHist[1][0]) != len(curHist[1][0]):
+                    G2G.G2MessageBox(G2frame,'Histogram have different lengths','Mismatched histograms')
+                    back.SetValue('')
+                    data[1]['background PWDR'][0] = back.GetValue()
+                    return
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
         fileSizer = wx.BoxSizer(wx.VERTICAL)
         fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0,WACV)
         if 'background PWDR' not in data[1]:
-            data[1]['background PWDR'] = ['',-1.]
+            data[1]['background PWDR'] = ['',-1.,False]
         backSizer = wx.BoxSizer(wx.HORIZONTAL)
         Choices = ['',]+G2gd.GetGPXtreeDataNames(G2frame,['PWDR',])
         Source = G2frame.GPXtree.GetItemText(G2frame.PatternId)

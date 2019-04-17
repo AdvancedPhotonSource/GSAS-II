@@ -715,8 +715,9 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
 
-def getBackground(pfx,parmDict,bakType,dataType,xdata):
-    'needs a doc string'
+def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
+    '''Computes the background from vars pulled from gpx file or tree.
+    '''
     if 'T' in dataType:
         q = 2.*np.pi*parmDict[pfx+'difC']/xdata
     elif 'C' in dataType:
@@ -836,7 +837,16 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             break
         except ValueError:
             print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
-            break        
+            break
+    # fixed background from file
+    if len(fixedBkg) >= 3:
+        mult = fixedBkg.get('_fixedMult',0.0)
+        if len(fixedBkg.get('_fixedValues',[])) != len(yb):
+            print('Lengths of backgrounds do not agree: yb={}, fixed={}'.format(
+                len(yb),len(fixedBkg.get('_fixedValues',[]))))
+        elif mult: 
+            yb -= mult*fixedBkg.get('_fixedValues',[]) # N.B. mult is negative
+            sumBk[0] = sum(yb)
     return yb,sumBk
     
 def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
@@ -1086,7 +1096,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     return G2lat.sortHKLd(HKLs,True,True,True)
 
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
-    'needs a doc string'
+    'Computes the profile for a powder pattern'
     
     yb = getBackground('',parmDict,bakType,dataType,xdata)[0]
     yc = np.zeros_like(yb)
@@ -1403,7 +1413,7 @@ def Values2Dict(parmdict, varylist, values):
     parmdict.update(zip(varylist,values))
     
 def SetBackgroundParms(Background):
-    'needs a doc string'
+    'Loads background parameters into dicts/lists to create varylist & parmdict'
     if len(Background) == 1:            # fix up old backgrounds
         Background.append({'nDebye':0,'debyeTerms':[]})
     bakType,bakFlag = Background[0][:2]
@@ -1441,7 +1451,7 @@ def SetBackgroundParms(Background):
         if item[1]:
             peaksVary.append(item[0])
     backDict.update(peaksDict)
-    backVary += peaksVary    
+    backVary += peaksVary
     return bakType,backDict,backVary
     
 def DoCalibInst(IndexPeaks,Inst):
@@ -1866,9 +1876,9 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
                 break
     if dlg: dlg.Destroy()
     sigDict = dict(zip(varyList,sig))
-    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]
-    yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
-    yd[xBeg:xFin] = (y+fixback)[xBeg:xFin]-yc[xBeg:xFin]
+    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]-fixback[xBeg:xFin]
+    yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)-fixback[xBeg:xFin]
+    yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
     if bakVary: BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)
@@ -2847,7 +2857,7 @@ def test0():
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
     fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata)[0])   
     fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
-    
+   
 def test1():
     if NeedTestData: TestData()
     time0 = time.time()

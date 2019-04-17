@@ -3151,7 +3151,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
-    yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
+    fixedBkg = {i:Histogram['Background'][1][i] for i in Histogram['Background'][1] if i.startswith("_")} 
+    yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x,fixedBkg)
     yc = np.zeros_like(yb)
     cw = np.diff(ma.getdata(x))
     cw = np.append(cw,cw[-1])

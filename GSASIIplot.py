@@ -2750,9 +2750,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Pattern.append(G2frame.GPXtree.GetItemText(PatternId))
         PlotList = [Pattern,]
         PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-        Pattern[0]['BackFile'] = ['',-1.0]
+        Pattern[0]['BackFile'] = ['',-1.0,False]
         if PId:
-            Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0])
+            Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
         Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
@@ -2785,9 +2785,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Ymax = max(Pattern[1][1])
                 Page.plotStyle.update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
             PId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-            Pattern[0]['BackFile'] = ['',-1.0]
+            Pattern[0]['BackFile'] = ['',-1.0,False]
             if PId:
-                Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0])
+                Pattern[0]['BackFile'] =  G2frame.GPXtree.GetItemPyData(PId)[1].get('background PWDR',['',-1.0,False])
             PlotList.append(Pattern)
             ParmList.append(G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
                 pid,'Instrument Parameters'))[0])
@@ -2804,10 +2804,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Ymax = None
     for ip,Pattern in enumerate(PlotList):
         xye = Pattern[1]
-        bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
+        #bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if xye[1] is None: continue
-        if Ymax is None: Ymax = max(xye[1]+bxye)
-        Ymax = max(Ymax,max(xye[1]+bxye))
+        if Ymax is None: Ymax = max(xye[1])
+        Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot
     offsetX = Page.plotStyle['Offset'][1]
     offsetY = Page.plotStyle['Offset'][0]
@@ -2879,7 +2879,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = np.array(ma.getdata(Pattern[1])) # strips mask
         xye0 = Pattern[1][0]  # keeps mask
-        bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
+        #bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
             LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits')
@@ -2952,13 +2952,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             if Page.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                Y = np.where(xye[1]+bxye>=0.,np.sqrt(xye[1]+bxye),-np.sqrt(-xye[1]-bxye))+bxye+NoffY*Ymax/100.0
+                Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))+NoffY*Ymax/100.0
                 np.seterr(invalid=olderr['invalid'])
             elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-                Y = xye[1]*multArray+bxye+NoffY*Ymax/100.0
+                Y = xye[1]*multArray+NoffY*Ymax/100.0
             else:
-                Y = xye[1]+bxye+NoffY*Ymax/100.0
+                Y = xye[1]+NoffY*Ymax/100.0
         elif plottype in ['SASD','REFD']:
             if plottype == 'SASD':
                 B = xye[5]

@@ -509,6 +509,24 @@ def GetUsedHistogramsAndPhases(GPXfile):
                         # renamed or deleted
                         print('For phase "'+phase+
                               '" unresolved reference to histogram "'+hist+'"')
+    # load the fix background info into the histograms
+    for hist in Histograms:
+        fixedBkg = Histograms[hist]['Background'][1].get('background PWDR')
+        if fixedBkg:
+            if not fixedBkg[0]: continue
+            # patch: add refinement flag, if needed
+            if len(fixedBkg) == 2: fixedBkg += [False]
+            h = Histograms[hist]['Background'][1]
+            try:
+                Limits = Histograms[hist]['Limits'][1]
+                x = Histograms[hist]['Data'][0]
+                xB = np.searchsorted(x,Limits[0])
+                xF = np.searchsorted(x,Limits[1])+1
+                h['_fixedValues'] = allHistograms[fixedBkg[0]]['Data'][1][xB:xF]
+                h['_fixedMult'],h['_fixedVary'] = fixedBkg[1:]
+            except KeyError: # would happen if a referenced histogram were renamed or deleted
+                print('For hist "{}" unresolved background reference to hist "{}"'
+                          .format(hist,fixedBkg[0]))
     G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
     
@@ -603,8 +621,14 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
             data[0][1][0].update(histogram['Residuals'])
             for datus in data[1:]:
 #                print '    read: ',datus[0]
-                if datus[0] in ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']:
+                if datus[0] in ['Instrument Parameters','Sample Parameters','Reflection Lists']:
                     datus[1] = histogram[datus[0]]
+                if datus[0] == 'Background': # remove fixed background from file
+                    d1 = {key:histogram['Background'][1][key]
+                              for key in histogram['Background'][1]
+                              if not key.startswith('_fixed')}                
+                    datus[1] = copy.deepcopy(histogram['Background'])
+                    datus[1][1] = d1
         except KeyError:
             pass
         try:                        
@@ -710,6 +734,10 @@ def SaveUpdatedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData
     for key in ('Limits','Background','Instrument Parameters',
                     'Sample Parameters','Reflection Lists'):
         xfer_dict[key] = hist[key]
+        if key == 'Background':  # remove fixed background from file
+            xfer_dict['Background'][1] = {k:hist['Background'][1][k]
+                      for k in hist['Background'][1]
+                      if not k.startswith('_fixed')}                
         del hist[key]
     # xform into a gpx-type entry
     data = []

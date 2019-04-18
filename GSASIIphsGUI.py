@@ -9205,11 +9205,12 @@ def UpdatePhaseData(G2frame,Item,data):
             wx.BeginBusyCursor()
             try:
                 peaks,mags,dzeros,dcents = G2mth.SearchMap(generalData,drawingData)
-                npeaks,nmags,ndzeros,ndcents = G2mth.SearchMap(generalData,drawingData,Neg=True)
-                peaks = np.concatenate((peaks,npeaks))
-                mags = np.concatenate((mags,nmags))
-                dzeros = np.concatenate((dzeros,ndzeros))
-                dcents = np.concatenate((dcents,ndcents))
+                if mapData['MapType'] in ['delt-F',] or 'N' in mapData['Type']:
+                    npeaks,nmags,ndzeros,ndcents = G2mth.SearchMap(generalData,drawingData,Neg=True)
+                    peaks = np.concatenate((peaks,npeaks))
+                    mags = np.concatenate((mags,nmags))
+                    dzeros = np.concatenate((dzeros,ndzeros))
+                    dcents = np.concatenate((dcents,ndcents))
             finally:
                 wx.EndBusyCursor()
             if len(peaks):

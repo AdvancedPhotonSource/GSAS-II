@@ -7768,6 +7768,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+            
+        elif key in ['K'] and generalData['Map']['MapType']:
+            drawingData['showSlice'] = not drawingData.get('showSlice',False)
+            SetShowCS(drawingData['showSlice'])
                 
         elif key in ['P']:
             drawAtoms = drawingData['Atoms']
@@ -8017,6 +8021,12 @@ def PlotStructure(G2frame,data,firstCall=False):
             if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.phaseDisplay.viewPoint.SetValue('%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]))
                 
+    def SetShowCS(CS):
+        page = getSelection()
+        if page:
+            if G2frame.phaseDisplay.GetPageText(page) == 'Draw Options':
+                G2frame.phaseDisplay.showCS.SetValue(CS)
+                                
     def SetRBOrigText():
         page = getSelection()
         if page:
@@ -8841,11 +8851,13 @@ def PlotStructure(G2frame,data,firstCall=False):
         Page.views = False
     Font = Page.GetFont()
     Page.Choice = None
+    choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2']
+    if mapData['MapType']:
+        choice += ['k: toggle contour plot',]
     if mapData.get('Flip',False):
-        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2',
-            'u: roll up','d: roll down','l: roll left','r: roll right']
+        choice += ['u: roll up','d: roll down','l: roll left','r: roll right']
     else:
-        choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
+        choice += ['n: next','p: previous']
     if generalData['Modulated'] and len(drawAtoms):
         choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
 

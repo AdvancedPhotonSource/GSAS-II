@@ -6258,7 +6258,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnShowSlice(event):
-                drawingData['showSlice'] = showCS.GetValue()
+                drawingData['showSlice'] = G2frame.phaseDisplay.showCS.GetValue()
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnContourMax(event):
@@ -6358,10 +6358,10 @@ def UpdatePhaseData(G2frame,Item,data):
             if generalData['Map']['rhoMax']:
                 line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             
-                showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
-                showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
-                showCS.SetValue(drawingData['showSlice'])            
-                line3Sizer.Add(showCS,0,WACV)
+                G2frame.phaseDisplay.showCS = wx.CheckBox(drawOptions,-1,label=' Show contour slice?')
+                G2frame.phaseDisplay.showCS.Bind(wx.EVT_CHECKBOX, OnShowSlice)
+                G2frame.phaseDisplay.showCS.SetValue(drawingData['showSlice'])            
+                line3Sizer.Add(G2frame.phaseDisplay.showCS,0,WACV)
                 contourMaxTxt = wx.StaticText(drawOptions,-1,' Max.: '+'%.2f'%(drawingData['contourMax']*generalData['Map']['rhoMax']))
                 line3Sizer.Add(contourMaxTxt,0,WACV)
                 contourMax = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,size=(150,25),value=int(100*drawingData['contourMax']))

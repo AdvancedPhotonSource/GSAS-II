@@ -9030,6 +9030,20 @@ def UpdatePhaseData(G2frame,Item,data):
         FillMapPeaksGrid()
         G2plt.PlotStructure(G2frame,data)
         
+    def OnPeaksInvert(event):
+        if 'Map Peaks' in data:
+            generalData = data['General']
+            mapData = generalData['Map']
+            try:
+                mapData['rho'] = np.flip(mapData['rho'],(0,1,2))
+            except TypeError:
+                mapData['rho'] = np.flip(mapData['rho'],0)
+                mapData['rho'] = np.flip(mapData['rho'],1)
+                mapData['rho'] = np.flip(mapData['rho'],2)                
+            OnSearchMaps(event)
+        FillMapPeaksGrid()
+        G2plt.PlotStructure(G2frame,data)
+        
     def OnPeaksEquiv(event):
         if 'Map Peaks' in data:
             Ind = MapPeaks.GetSelectedRows()
@@ -9546,6 +9560,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2G.wxID_PEAKSDA)
         G2frame.Bind(wx.EVT_MENU, OnShowBonds, id=G2G.wxID_SHOWBONDS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2G.wxID_FINDEQVPEAKS)
+        G2frame.Bind(wx.EVT_MENU, OnPeaksInvert, id=G2G.wxID_INVERTPEAKS)
         G2frame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2G.wxID_PEAKSUNIQUE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksSave, id=G2G.wxID_PEAKSSAVE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)

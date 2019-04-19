@@ -8799,7 +8799,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Planes = G2lat.PlaneIntercepts(Amat,H,phase,stack)
                 for plane in Planes:
                     RenderPlane(plane,color)
-        if drawingData['showSlice']:
+        if drawingData.get('showSlice',False):
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
             elif len(mapData['rho']):               #ordinary 3D map

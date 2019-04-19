@@ -5662,7 +5662,7 @@ def UpdatePhaseData(G2frame,Item,data):
             atomData = data['Drawing']['Atoms']
             cx = data['Drawing']['atomPtrs'][0]
             data['Drawing']['viewPoint'] = [atomData[indx[0]][cx:cx+3],[indx[0],0]]
-            drawAtoms.ClearSelection()                                  #do I really want to do this?
+#            drawAtoms.ClearSelection()                                  #do I really want to do this?
             G2plt.PlotStructure(G2frame,data)
         else:
             G2G.G2MessageBox(G2frame,'Select atoms first')

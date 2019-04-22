@@ -98,8 +98,7 @@ def pinv(a, rcond=1e-15 ):
     res = np.dot(vt.T,s[:,nxs]*u.T)
     return res,nzero
 
-def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False):
-    
+def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
     values (y): :math:`\sum_{y=0}^{N_{obs}} f(y,{args})`    
@@ -208,6 +207,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if Print:
             print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g'%(
                 icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2))
+        Histograms = args[0][0]
+        if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
             if Print: print ("converged")
@@ -232,7 +233,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
         return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]          
             
-def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False):
+def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
@@ -318,6 +319,8 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         if Print:
             print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
                 icycle,time.time()-time0,chisq1,deltaChi2))
+        Histograms = args[0][0]
+        if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
             if Print: print ("converged")

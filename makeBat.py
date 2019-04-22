@@ -12,6 +12,7 @@ and the path to Python is determined from the version of Python
 used to run this script. 
 
 '''
+version = "$Id$"
 # creates Windows files to aid in running GSAS-II
 #   creates RunGSASII.bat and a desktop shortcut to that file
 #   registers the filetype .gpx so that the GSAS-II project files exhibit the

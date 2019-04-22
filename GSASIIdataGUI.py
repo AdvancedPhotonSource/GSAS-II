@@ -3879,8 +3879,10 @@ class GSASII(wx.Frame):
             self.EnablePlot = True
             self.GPXtree.Expand(Id)
             SelectDataTreeItem(self,Id)
+            self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
         elif phaseId:
             SelectDataTreeItem(self,phaseId)
+            self.GPXtree.SelectItem(phaseId) # as before for OSX
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
@@ -4554,7 +4556,7 @@ class GSASII(wx.Frame):
             self.ErrorDialog('Refinement error',errmsg+'\nCheck console output for more information')
             return
         if warnmsg:
-            print('Conflict between refinment flag settings and constraints:\n'+
+            print('Conflict between refinement flag settings and constraints:\n'+
                 warnmsg+'\nRefinement not possible')
             self.ErrorDialog('Refinement Flag Error',
                 'Conflict between refinement flag settings and constraints:\n'+
@@ -4570,8 +4572,9 @@ class GSASII(wx.Frame):
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
+        refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
         try:
-            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)    #Msg is Rvals dict if Ok=True
+            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)    #Msg is Rvals dict if Ok=True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -4588,12 +4591,15 @@ class GSASII(wx.Frame):
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
                     wx.CallAfter(self.reloadFromGPX)
+                else:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
-
+            
     def reloadFromGPX(self):
         '''Deletes current data tree & reloads it from GPX file (after a 
         refinemnt.) Done after events are completed to avoid crashes.
@@ -4643,9 +4649,13 @@ class GSASII(wx.Frame):
                     print('updating',lbl,'by calling',str(win.replotFunction))
                 try:
                     win.replotFunction(*win.replotArgs,**win.replotKWargs)
-                except:
+                except Exception as msg:
                     if GSASIIpath.GetConfigValue('debug'):
-                        print('Error with args',win.replotArgs,win.replotKWargs)
+                        print('Error calling',win.replotFunction,'with args',
+                                  win.replotArgs,win.replotKWargs)
+                    if GSASIIpath.GetConfigValue('debug'):
+                        print(msg)
+                        GSASIIpath.IPyBreak()
         # delete any remaining plots that have not been updated and need a refresh (win.plotRequiresRedraw)
         for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if win.plotInvalid and win.plotRequiresRedraw:
@@ -4664,6 +4674,7 @@ class GSASII(wx.Frame):
         if not seqList:
             self.OnRefine(event)
             return
+        plotHist = self.GPXtree.GetItemText(self.PatternId)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -4693,8 +4704,18 @@ class GSASII(wx.Frame):
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
+        # find 1st histogram to be refined
+        if 'Seq Data' in Controls: 
+            histNames = Controls['Seq Data']
+        else: # patch from before Controls['Seq Data'] was implemented
+            histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
+        if Controls.get('Reverse Seq'):
+            histNames.reverse()
+        # select it
+        self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])        
+        refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
         try:
-            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg,G2plt.SequentialPlotPattern,self)     #Msg is Rvals dict if Ok=True
+            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg,refPlotUpdate) #Msg is Rvals dict if Ok=True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -4703,6 +4724,7 @@ class GSASII(wx.Frame):
             dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
                     self.PickIdText = None  #force reload of PickId contents
                     self.GPXtree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
@@ -4711,8 +4733,13 @@ class GSASII(wx.Frame):
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
+                    self.PatternId = GetGPXtreeItemId(self,self.root,plotHist)
+                    SelectDataTreeItem(self,self.PatternId)
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
                     SelectDataTreeItem(self,sId)
+                    self.GPXtree.SelectItem(sId)
+                else:
+                    if refPlotUpdate: refPlotUpdate({},restore=True)
             finally:
                 dlg.Destroy()
             

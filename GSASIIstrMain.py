@@ -47,7 +47,7 @@ ateln2 = 8.0*math.log(2.0)
 DEBUG = True
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
-    calcControls,pawleyLookup,ifSeq,printFile,dlg):
+    calcControls,pawleyLookup,ifSeq,printFile,dlg,refPlotUpdate=None):
     '''Core optimization routines, shared between SeqRefine and Refine
 
     :returns: 5-tuple of ifOk (bool), Rvals (dict), result, covMatrix, sig
@@ -79,18 +79,21 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
+            if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot after completion
         elif 'analytic Hessian' in Controls['deriv type']:
             Lamda = Controls.get('Marquardt',-3)
             maxCyc = Controls['max cyc']
             result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,lamda=Lamda,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg),
+                refPlotUpdate=refPlotUpdate)
             ncyc = result[2]['num cyc']+1
             Rvals['lamMax'] = result[2]['lamMax']
             Controls['Marquardt'] = -3  #reset to default
         elif 'Hessian SVD' in Controls['deriv type']:
             maxCyc = Controls['max cyc']
             result = G2mth.HessianSVD(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,xtol=Xtol,maxcyc=maxCyc,Print=ifPrint,
-                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
+                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg),
+                refPlotUpdate=refPlotUpdate)
             if result[1] is None:
                 IfOK = False
                 covMatrix = []
@@ -103,6 +106,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             ncyc = 1
             if len(varyList):
                 ncyc = int(result[2]['nfev']/len(varyList))
+            if refPlotUpdate is not None: refPlotUpdate(Histograms)   # update plot
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
@@ -172,7 +176,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return IfOK,Rvals,result,covMatrix,sig
 
-def Refine(GPXfile,dlg=None,makeBack=True):
+def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     'Global refinement -- refines to minimize against all histograms'
     import GSASIImpsubs as G2mp
     G2mp.InitMP()
@@ -248,7 +252,8 @@ def Refine(GPXfile,dlg=None,makeBack=True):
 #    try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
-            rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg)
+            rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
+            refPlotUpdate=refPlotUpdate)
         if IfOK:
             sigDict = dict(zip(varyList,sig))
             newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
@@ -314,7 +319,7 @@ def phaseCheck(phaseVary,Phases,histogram):
             NewVary += newVary
     return NewVary
 
-def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
+def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     '''Perform a sequential refinement -- cycles through all selected histgrams,
     one at a time
     '''
@@ -479,9 +484,8 @@ def SeqRefine(GPXfile,dlg,PlotFunction=None,G2frame=None):
         if True:
 #        try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
-                rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg)
-            if PlotFunction:
-                PlotFunction(G2frame,Histo[histogram]['Data'],histogram)
+                rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
+                refPlotUpdate=refPlotUpdate)
             print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2']))
             # add the uncertainties into the esd dictionary (sigDict)

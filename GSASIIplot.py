@@ -1743,21 +1743,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 ################################################################################
 ##### PlotPatterns
 ################################################################################
-def SequentialPlotPattern(G2frame,refdata,histogram):
-    '''This is passed into :func:`GSASIIstrMain.SeqRefine` where it is used to
-    provide a plot of the current powder histogram just after a refinement. It
-    takes the old refinement information (Rfactors, curve locations, etc.) and
-    combines it with the refinement results in refdata and passes that to
-    :func:`PlotPatterns`
-    '''
-    if not histogram.startswith('PWDR'): return
-    pickId = G2frame.PickId
-    G2frame.PickId = G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, histogram)
-    treedata = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-    PlotPatterns(G2frame,newPlot=True,plotType='PWDR',data=[treedata[0],refdata])
-    wx.Yield() # force a plot update (needed on Windows?)
-    G2frame.PickId = pickId
-    
 def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     '''This does the same as PlotPatterns except that it expects the information
     to be plotted (pattern name, item picked in tree + eventually the reflection list)
@@ -1776,7 +1761,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     PlotPatterns(G2frame,newPlot,plotType)
 
 def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
-                     extraKeys=[]):
+                     extraKeys=[],refineMode=False):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
@@ -2593,11 +2578,76 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.figure.axes[2].set_ylim(CurLims['dylims'])
         else:
             Plot.set_ylim(CurLims['ylims'])
+        Page.toolbar.push_current()
         Plot.figure.canvas.draw()
         #GSASIIpath.IPyBreak()
         
     def onPlotFormat(event):
+        '''Change the appearance of the current plot'''
         changePlotSettings(G2frame,Plot)
+        
+    def refPlotUpdate(Histograms,cycle=None,restore=False):
+        '''called to update an existing plot during a Rietveld fit
+        '''
+        if restore:
+            (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
+                G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot']) = savedSettings
+            return
+
+        if plottingItem not in Histograms:
+            histoList = [i for i in Histograms.keys() if i.startswith('PWDR ')]
+            if len(histoList) == 0:
+                print('Skipping plot, no PWDR item found!')
+                return
+            plotItem = histoList[0]
+        else:
+            plotItem = plottingItem
+        xye = np.array(ma.getdata(Histograms[plotItem]['Data'])) # strips mask
+        xye0 = Histograms[plotItem]['Data'][0]
+        if Page.plotStyle['qPlot']:
+            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye0)
+            Ibeg = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][0]))
+            Ifin = np.searchsorted(X,2.*np.pi/G2lat.Pos2dsp(Parms,limits[1][1]))
+        elif Page.plotStyle['dPlot']:
+            X = G2lat.Pos2dsp(Parms,xye0)
+            Ibeg = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][1]))
+            Ifin = np.searchsorted(X,G2lat.Pos2dsp(Parms,limits[1][0]))
+        else:
+            X = copy.deepcopy(xye0)
+            Ibeg = np.searchsorted(X,limits[1][0])
+            Ifin = np.searchsorted(X,limits[1][1])
+        if Page.plotStyle['sqrtPlot']:
+            olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
+            Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
+            Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
+            W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
+            #D = np.where(xye[5],(Y-Z),0.)-Page.plotStyle['delOffset']
+            np.seterr(invalid=olderr['invalid'])
+        else:
+            Y = copy.copy(xye[1])
+            Z = copy.copy(xye[3])
+            W = copy.copy(xye[4])
+            #D = xye[5]-Page.plotStyle['delOffset']  #powder background
+        DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
+        DifLine[0].set_xdata(X[Ibeg:Ifin])
+        DifLine[0].set_ydata(DZ[Ibeg:Ifin])
+        Plot1.set_ylim((min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])))
+        CalcLine[0].set_xdata(X)
+        ObsLine[0].set_xdata(X)
+        BackLine[0].set_xdata(X)
+        CalcLine[0].set_ydata(Z)
+        ObsLine[0].set_ydata(Y)
+        BackLine[0].set_ydata(W)
+        if cycle:
+            Title = '{} cycle #{}'.format(plotItem,cycle)
+        else:
+            Title = plotItem
+        if Page.plotStyle['sqrtPlot']:
+            Plot.set_title(r'$\sqrt{I}$ for '+Title)
+        else:
+            Plot.set_title(Title)
+        Page.canvas.draw()
+
     #=====================================================================================
     # beginning PlotPatterns execution
     global exclLines,Page
@@ -2634,6 +2684,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     except:
         G2frame.UseLimits = {'xlims':[False,False],'ylims':[False,False],
                                        'dylims':[False,False]}
+    #=====================================================================================
+    # code to setup for plotting Rietveld results. Turns off multiplot,
+    # sqrtplot, turn on + and weight plot, but sqrtPlot qPlot and dPlot are not changed.
+    # Magnification regions are ignored.
+    # the last-plotted histogram (from G2frame.PatternId) is used for this plotting
+    #    (except in seq. fitting)
+    # Returns a pointer to refPlotUpdate, which is used to update the plot when this
+    # returns
+    if refineMode:
+        plottingItem = G2frame.GPXtree.GetItemText(G2frame.PatternId)
+        # save settings to be restored after refinement with repPlotUpdate({},restore=True)
+        savedSettings = (G2frame.SinglePlot,G2frame.Contour,G2frame.Weight,
+                            G2frame.plusPlot,G2frame.SubBack,Page.plotStyle['logPlot'])
+        G2frame.SinglePlot = True
+        G2frame.Contour = False
+        G2frame.Weight = True
+        G2frame.plusPlot = True
+        G2frame.SubBack = False
+        Page.plotStyle['logPlot'] = False
+    #=====================================================================================
     if not new:
         G2frame.xylim = limits
     else:
@@ -2906,7 +2976,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         multArray = np.ones_like(Pattern[1][0])
         if 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-            magLineList = data[0].get('Magnification',[])
+            if not refineMode:
+                magLineList = data[0].get('Magnification',[])
             if ('C' in ParmList[0]['Type'][0] and Page.plotStyle['dPlot']) or \
                 ('T' in ParmList[0]['Type'][0] and Page.plotStyle['qPlot']): # reversed regions relative to data order
                 tcorner = 1
@@ -3053,6 +3124,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(W))/2.,top=np.max(Y)*2.)
                     else:
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
+                # Matplotlib artist lists used for refPlotUpdate
+                ObsLine = None
+                CalcLine = None
+                BackLine = None
+                DifLine = None
                 if G2frame.Weight:
                     Plot1.set_yscale("linear")                                                  
                     wtFactor = Pattern[0]['wtFactor']
@@ -3094,20 +3170,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            Plot.plot(Xum,Y-W,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
-                            Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
+                            ObsLine = Plot.plot(Xum,Y-W,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
+                            CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
                     else:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')    #Io
-                            Plot.plot(X,Z,colors[1],picker=False,label='_calc')                 #Ic
+                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='_calc')                 #Ic
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
                     if 'PWDR' in plottype and (G2frame.SinglePlot or G2frame.plusPlot):
-                        Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
+                        BackLine = Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
                         if not G2frame.Weight: DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
@@ -3186,7 +3262,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
         elif G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or \
-            'PWDR' in G2frame.GPXtree.GetItemText(PickId):
+            'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode:
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
@@ -3280,6 +3356,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.dataWindow.moveTickSpc.Enable(True)
         if DifLine[0]:
             G2frame.dataWindow.moveDiffCurve.Enable(True)
+    if refineMode: return refPlotUpdate
             
 def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     '''Show a customizable "Rietveld" plot and export as a publication-quality

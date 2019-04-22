@@ -6550,7 +6550,7 @@ def UpdatePDFGrid(G2frame,data):
                 if invalid: return
                 data['Form Vol'] = max(10.0,SumElementVolumes())
                 wx.CallAfter(UpdatePDFGrid,G2frame,data)
-                wx.CallAfter(OnComputePDF,None)
+                wx.CallAfter(OnComputePDF,tc.event)
                     
             elemSizer.Add(wx.StaticText(parent=G2frame.dataWindow,
                 label=' Element: '+'%2s'%(ElData['Symbol'])+' * '),0,WACV)
@@ -6564,13 +6564,13 @@ def UpdatePDFGrid(G2frame,data):
         def AfterChange(invalid,value,tc):
             if invalid: return
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
-            wx.CallAfter(OnComputePDF,None)
+            wx.CallAfter(OnComputePDF,tc.event)
         
         def OnGeometry(event):
             data['Geometry'] = geometry.GetValue()
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             #UpdatePDFGrid(G2frame,data)
-            wx.CallAfter(OnComputePDF,None)
+            wx.CallAfter(OnComputePDF,tc.event)
         
         sampleSizer = wx.BoxSizer(wx.VERTICAL)
         if not ElList:

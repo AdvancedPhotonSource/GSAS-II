@@ -7822,7 +7822,6 @@ def PlotStructure(G2frame,data,firstCall=False):
             drawingData['Quaternion'] = Q
             SetViewPointText(drawingData['viewPoint'][0])
             SetViewDirText(drawingData['viewDir'])
-            Q = drawingData['Quaternion']
             G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
         elif key in ['N']:
             drawAtoms = drawingData['Atoms']
@@ -8717,6 +8716,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         GL.glMultMatrixf(matRot.T)
         GL.glMultMatrixf(A4mat.T)
         GL.glTranslate(-Tx,-Ty,-Tz)
+        drawingData['modelView'] = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)

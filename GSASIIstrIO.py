@@ -511,6 +511,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                               '" unresolved reference to histogram "'+hist+'"')
     # load the fix background info into the histograms
     for hist in Histograms:
+        if 'Background' not in Histograms[hist]: continue
         fixedBkg = Histograms[hist]['Background'][1].get('background PWDR')
         if fixedBkg:
             if not fixedBkg[0]: continue

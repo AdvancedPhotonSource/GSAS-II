@@ -97,7 +97,14 @@ class Panalytical_ReaderClass(G2obj.ImportPowderData):
         limits = dataPoints.find(tag+'positions')
         startPos = float(limits.find(tag+'startPosition').text)
         endPos= float(limits.find(tag+'endPosition').text)
-        y = np.fromstring(dataPoints.find(tag+'intensities').text,sep=' ')
+        for seclbl in 'intensities','counts':
+            sec = dataPoints.find(tag+seclbl)
+            if sec is None: continue
+            y = np.fromstring(sec.text,sep=' ')
+            break
+        else:
+            print('Panalytical read error: Intensities could not be located')
+            return False            
         N = y.shape[0]
         x = np.linspace(startPos,endPos,N)
         w = np.where(y>0,1./y,1.)

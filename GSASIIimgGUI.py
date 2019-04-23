@@ -2864,7 +2864,7 @@ class AutoIntFrame(wx.Frame):
             namenum = s[1]
         else:
             namenum = ''
-        for Id in G2frame.IntgOutList: # loop over newly created PDWR entry(ies)
+        for Id in G2frame.IntgOutList: # loop over newly created PWDR entry(ies)
             # save the created PWDR tree names so that a reset can delete them
             G2frame.Image = Id
             treename = G2frame.GPXtree.GetItemText(Id)
@@ -2997,7 +2997,7 @@ class AutoIntFrame(wx.Frame):
             self.Reset = False
         G2frame.AutointPWDRnames = [] # list of created PWDR tree item names
         G2frame.AutointPDFnames = [] # list of created PWDR tree item names
-        # check that AutoPDF input is OK, offer chance to use alternate PDWRs if referenced ones
+        # check that AutoPDF input is OK, offer chance to use alternate PWDRs if referenced ones
         # are not present
         if self.params['ComputePDF']:
             msg = self.checkPDFprm()
@@ -3018,8 +3018,8 @@ class AutoIntFrame(wx.Frame):
                 name = self.pdfControls[key]['Name']
                 if not name: continue
                 if not G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name):
-                    indx = G2G.ItemSelector(fileList, self, header='Select PDWR item',
-                                    title='Select a PDWR tree item for '+key+'\n(or cancel to quit)')
+                    indx = G2G.ItemSelector(fileList, self, header='Select PWDR item',
+                                    title='Select a PWDR tree item for '+key+'\n(or cancel to quit)')
                     if indx is None:
                         print('No PWDR entry selected for '+key)
                         return True

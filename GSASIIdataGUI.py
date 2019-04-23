@@ -1997,7 +1997,7 @@ class GSASII(wx.Frame):
         return # success
 
     def AddSimulatedPowder(self,ttArr,intArr,HistName,Lam1,Lam2):
-        '''Create a PDWR entry for a computed powder pattern
+        '''Create a PWDR entry for a computed powder pattern
         '''
         # get a list of existing histograms
         PWDRlist = []
@@ -4572,7 +4572,10 @@ class GSASII(wx.Frame):
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
-        refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+        if self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+        else:
+            refPlotUpdate = None
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg,refPlotUpdate=refPlotUpdate)    #Msg is Rvals dict if Ok=True
         finally:
@@ -4712,8 +4715,11 @@ class GSASII(wx.Frame):
         if Controls.get('Reverse Seq'):
             histNames.reverse()
         # select it
-        self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])        
-        refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+        self.PatternId = GetGPXtreeItemId(self,self.root,histNames[0])
+        if self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+            refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
+        else:
+            refPlotUpdate = None
         try:
             OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg,refPlotUpdate) #Msg is Rvals dict if Ok=True
         finally:

@@ -6293,6 +6293,19 @@ def UpdatePhaseData(G2frame,Item,data):
                     VX = np.cross(VC,VB)
                     A = acosd(max((2.-np.sum((VB-VC)**2))/2.,-1.))
                     QV = G2mth.AVdeg2Q(A,VX)
+                    if len(viewDir) > 3:
+                        Model = drawingData['modelView'][:3,:3]
+                        invModel = nl.inv(Model)
+                        rt2 = np.sqrt(2.)/2.
+                        VX0 = np.array([-1.,0.,0.])
+                        VY0 = np.array([0.,-1.,0.])
+                        if 'H' == viewDir[3].upper():
+                            QV = G2mth.prodQQ(np.array([0.,rt2,0.,rt2]),QV)
+                            VD = np.inner(invModel.T,VX0)
+                        elif 'V' == viewDir[3].upper():
+                            QV = G2mth.prodQQ(np.array([rt2,0.,0.,-rt2]),QV)
+                            VD = np.inner(invModel.T,VY0)
+                        VD /= np.sqrt(np.sum(VD**2))
                     Q = drawingData['Quaternion']
                     drawingData['Quaternion'] = G2mth.prodQQ(Q,QV)
                 except (ValueError,IndexError):

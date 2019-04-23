@@ -19,6 +19,7 @@ version = "$Id$"
 #     GSAS-II icon and so that double-clicking on them opens them in GSAS-II
 import os, sys
 import datetime
+import wx
 try:
     import _winreg as winreg
 except ImportError:
@@ -46,6 +47,8 @@ pause
 '''
 
 if __name__ == '__main__':
+    app = wx.App()
+    app.MainLoop()
     gsaspath = os.path.split(sys.argv[0])[0]
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
@@ -82,22 +85,42 @@ if __name__ == '__main__':
     fp.write(Script.format(activate,pexe,G2s))
     fp.close()
     print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
-
-    # Associate a script and icon with .gpx files
-    #gpxkey = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT, '.gpx')
-    gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\.gpx')
-    winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II.project')
-    winreg.CloseKey(gpxkey)
-    gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
-    winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II project')
-    iconkey = winreg.CreateKey(gpxkey, 'DefaultIcon')
-    winreg.SetValue(iconkey, None, winreg.REG_SZ, G2icon)
-    openkey = winreg.CreateKey(gpxkey, r'shell\open\command')
-    winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+' "%1"')
-    winreg.CloseKey(iconkey)
-    winreg.CloseKey(openkey)
-    winreg.CloseKey(gpxkey)
-    print('Assigned icon and batch file to .gpx files')
+    
+    new = False
+    try:
+        oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
+        oldopen = winreg.OpenKey(oldgpx,r'shell\open\command')
+    except FileNotFoundError:
+        new = True
+    if not new:
+        try:
+            oldBat = winreg.QueryValue(oldopen,None).split()[0]
+            if oldBat != G2bat:
+                dlg = wx.MessageDialog(None,'gpx files already assigned to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
+                        wx.YES_NO | wx.ICON_QUESTION)
+                if dlg.ShowModal() == wx.ID_YES:
+                    new = True
+                dlg.Destroy()
+        finally:
+            pass
+    if new:
+        # Associate a script and icon with .gpx files
+        #gpxkey = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT, '.gpx')
+        gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\.gpx')
+        winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II.project')
+        winreg.CloseKey(gpxkey)
+        gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
+        winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II project')
+        iconkey = winreg.CreateKey(gpxkey, 'DefaultIcon')
+        winreg.SetValue(iconkey, None, winreg.REG_SZ, G2icon)
+        openkey = winreg.CreateKey(gpxkey, r'shell\open\command')
+        winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+' "%1"')
+        winreg.CloseKey(iconkey)
+        winreg.CloseKey(openkey)
+        winreg.CloseKey(gpxkey)
+        print('Assigned icon and batch file to .gpx files')
+    else:
+        print('old assignment of icon and batch file is retained')
 
     try:
         import win32com.shell.shell, win32com.shell.shellcon

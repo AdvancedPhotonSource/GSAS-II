@@ -1749,7 +1749,11 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     to be passed as names rather than references to wx tree items, defined as class entries
     '''
     if PatternName:
-        G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
+        pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, PatternName)
+        if pId:
+            G2frame.PatternId = pId
+        else:
+            return
     if PickName == PatternName:
         G2frame.PickId = G2frame.PatternId
     elif PickName:

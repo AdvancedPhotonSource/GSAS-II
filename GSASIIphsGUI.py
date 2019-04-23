@@ -6300,14 +6300,14 @@ def UpdatePhaseData(G2frame,Item,data):
                         VX0 = np.array([-1.,0.,0.])
                         VY0 = np.array([0.,-1.,0.])
                         if 'H' == viewDir[3].upper():
-                            QV = G2mth.prodQQ(np.array([0.,rt2,0.,rt2]),QV)
+                            QV = G2mth.prodQQ(QV,np.array([0.,rt2,0.,rt2]))
                             VD = np.inner(invModel.T,VX0)
                         elif 'V' == viewDir[3].upper():
-                            QV = G2mth.prodQQ(np.array([rt2,0.,0.,-rt2]),QV)
+                            QV = G2mth.prodQQ(QV,np.array([rt2,0.,0.,rt2]))
                             VD = np.inner(invModel.T,VY0)
                         VD /= np.sqrt(np.sum(VD**2))
                     Q = drawingData['Quaternion']
-                    drawingData['Quaternion'] = G2mth.prodQQ(Q,QV)
+                    drawingData['Quaternion'] = G2mth.prodQQ(QV,Q)
                 except (ValueError,IndexError):
                     VD = drawingData['viewDir']
                 Obj.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))

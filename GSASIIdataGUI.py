@@ -4572,7 +4572,7 @@ class GSASII(wx.Frame):
         Rw = 100.00
         self.SaveTreeSetting() # save the current tree selection
         self.GPXtree.SaveExposedItems()             # save the exposed/hidden tree items
-        if self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
+        if self.PatternId and self.GPXtree.GetItemText(self.PatternId).startswith('PWDR '):
             refPlotUpdate = G2plt.PlotPatterns(self,refineMode=True) # prepare for plot updating
         else:
             refPlotUpdate = None

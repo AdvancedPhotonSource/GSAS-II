@@ -96,7 +96,7 @@ if __name__ == '__main__':
         try:
             oldBat = winreg.QueryValue(oldopen,None).split()[0]
             if oldBat != G2bat:
-                dlg = wx.MessageDialog(None,'gpx files already assigned to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
+                dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
                         wx.YES_NO | wx.ICON_QUESTION)
                 if dlg.ShowModal() == wx.ID_YES:
                     new = True
@@ -105,7 +105,6 @@ if __name__ == '__main__':
             pass
     if new:
         # Associate a script and icon with .gpx files
-        #gpxkey = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT, '.gpx')
         gpxkey = winreg.CreateKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\.gpx')
         winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II.project')
         winreg.CloseKey(gpxkey)
@@ -118,9 +117,9 @@ if __name__ == '__main__':
         winreg.CloseKey(iconkey)
         winreg.CloseKey(openkey)
         winreg.CloseKey(gpxkey)
-        print('Assigned icon and batch file to .gpx files')
+        print('Assigned icon and batch file to .gpx files in registery')
     else:
-        print('old assignment of icon and batch file is retained')
+        print('old assignment of icon and batch file in registery is retained')
 
     try:
         import win32com.shell.shell, win32com.shell.shellcon
@@ -138,14 +137,30 @@ if __name__ == '__main__':
         import win32com.shell.shell, win32com.shell.shellcon, win32com.client
         desktop = win32com.shell.shell.SHGetFolderPath(
             0, win32com.shell.shellcon.CSIDL_DESKTOP, None, 0)
-        shortcut = os.path.join(desktop, "GSAS-II.lnk")
-        shell = win32com.client.Dispatch('WScript.Shell')
-        shobj = shell.CreateShortCut(shortcut)
-        shobj.Targetpath = G2bat
-        #shobj.WorkingDirectory = wDir # could specify a default project location here
-        shobj.IconLocation = G2icon
-        shobj.save()
-        print('Created shortcut to start GSAS-II on desktop')
+        shortbase = "GSAS-II.lnk"
+        shortcut = os.path.join(desktop, shortbase)
+        save = True
+        if win32com.shell.shell.SHGetFileInfo(shortcut,0,0)[0]:
+            print('GSAS-II shortcut exists!')
+            dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
+                wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    shortcut = dlg.GetPath()
+                else:
+                    save = False
+            finally:
+                dlg.Destroy()
+        if save:
+            shell = win32com.client.Dispatch('WScript.Shell')
+            shobj = shell.CreateShortCut(shortcut)
+            shobj.Targetpath = G2bat
+            #shobj.WorkingDirectory = wDir # could specify a default project location here
+            shobj.IconLocation = G2icon
+            shobj.save()
+            print('Created shortcut to start GSAS-II on desktop')
+        else:
+            print('No shortcut for this GSAS-II created on desktop')
     except ImportError:
         print('Module pywin32 not present, will not make desktop shortcut')
     except:

@@ -6491,7 +6491,7 @@ def UpdatePhaseData(G2frame,Item,data):
         drawingData = data['Drawing']
         SetDrawingDefaults(drawingData)        
 
-        G2frame.GetStatusBar().SetStatusText('',1)
+        G2frame.GetStatusBar().SetStatusText('Add h or v to View Dir to set vector horizontal or vertical',1)
         if drawOptions.GetSizer():
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)

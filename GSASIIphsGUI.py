@@ -6284,6 +6284,16 @@ def UpdatePhaseData(G2frame,Item,data):
                 viewDir = Obj.GetValue().split()
                 try:
                     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#reset view to stndard 
+                    drawingData['viewDir'] = [0,0,1]
+                    drawingData['oldxy'] = []
+                    V0 = np.array([0,0,1])
+                    V = np.inner(Amat,V0)
+                    V /= np.sqrt(np.sum(V**2))
+                    A = np.arccos(np.sum(V*V0))
+                    Q = G2mth.AV2Q(A,[0,1,0])
+                    drawingData['Quaternion'] = Q
+#new view made here
                     VD = np.array([float(viewDir[i]) for i in range(3)])
                     VC = np.inner(Amat,VD)
                     VC /= np.sqrt(np.sum(VC**2))
@@ -6292,6 +6302,10 @@ def UpdatePhaseData(G2frame,Item,data):
                     VB /= np.sqrt(np.sum(VB**2))
                     VX = np.cross(VC,VB)
                     A = acosd(max((2.-np.sum((VB-VC)**2))/2.,-1.))
+                    if A == 0.0 and len(viewDir) == 3:
+                        raise ValueError        #avoid a no op
+#                    print('\nnew view =',viewDir)
+#                    print('A=%.3f, V='%A,VX)
                     QV = G2mth.AVdeg2Q(A,VX)
                     if len(viewDir) > 3:
                         Model = drawingData['modelView'][:3,:3]
@@ -6300,14 +6314,18 @@ def UpdatePhaseData(G2frame,Item,data):
                         VX0 = np.array([-1.,0.,0.])
                         VY0 = np.array([0.,-1.,0.])
                         if 'H' == viewDir[3].upper():
-                            QV = G2mth.prodQQ(QV,np.array([0.,rt2,0.,rt2]))
+                            QV = G2mth.prodQQ(np.array([rt2,0.,rt2,0.]),QV)     #rotate 90deg about +ve Y
                             VD = np.inner(invModel.T,VX0)
                         elif 'V' == viewDir[3].upper():
-                            QV = G2mth.prodQQ(QV,np.array([rt2,0.,0.,rt2]))
+                            QV = G2mth.prodQQ(np.array([rt2,-rt2,0.,0.]),QV)     #rotate 90deg about -ve X
                             VD = np.inner(invModel.T,VY0)
+#                        NAV = G2mth.Q2AVdeg(QV)
+#                        print('dir = %s, A= %.3f, V = '%(viewDir[3],NAV[0]),NAV[1:])
                         VD /= np.sqrt(np.sum(VD**2))
+#                        print('new view dir = ',VD)
                     Q = drawingData['Quaternion']
-                    drawingData['Quaternion'] = G2mth.prodQQ(QV,Q)
+                    QN = G2mth.prodQQ(Q,QV)
+                    drawingData['Quaternion'] = QN
                 except (ValueError,IndexError):
                     VD = drawingData['viewDir']
                 Obj.SetValue('%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]))
@@ -6326,7 +6344,7 @@ def UpdatePhaseData(G2frame,Item,data):
             viewDir = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
-            viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
+#            viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
             G2frame.phaseDisplay.viewDir = viewDir
             lineSizer.Add(viewDir,0,WACV)
             showSizer.Add(lineSizer)

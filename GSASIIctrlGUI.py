@@ -18,7 +18,7 @@ Class or function name             Description
 ================================  =================================================================
 :class:`EnumSelector`              A combo box with a built-in call back routine that
                                    automatically sets a dict or list entry.
-:class:'DisAglDialog'              Distance/Angle Controls input dialog. 
+:class:`DisAglDialog`              Distance/Angle Controls input dialog. 
 :class:`FlagSetDialog`             Dialog that provides a table of items along with a
                                    checkbox for each. 
 :class:`G2ChoiceButton`            A customized wx.Choice that automatically initializes to
@@ -53,8 +53,8 @@ Class or function name             Description
                                    ordered into columns.
 :class:`ScrolledMultiEditor`       wx.Dialog for editing many dict- or list-contained items.
                                    with validation. Results are placed in dict or list.
-:class:'SGMagSpinBox'               Special version of MessageBox that displays magnetic spin text
-:class:'SGMessageBox'              Special version of MessageBox that displays space group & 
+:class:`SGMagSpinBox`               Special version of MessageBox that displays magnetic spin text
+:class:`SGMessageBox`              Special version of MessageBox that displays space group & 
                                    super space group text in two blocks
 :class:`SingleFloatDialog`         Dialog to obtain a single float value from user, with
                                    optional range validation.

@@ -90,11 +90,15 @@ if __name__ == '__main__':
     try:
         oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
         oldopen = winreg.OpenKey(oldgpx,r'shell\open\command')
+        oldBat = winreg.QueryValue(oldopen,None).split()[0]
+        os.stat(oldBat)     #check if it is still around
     except FileNotFoundError:
-        new = True
+        if oldBat:
+            print('old '+oldBat+ 'not found; registry entry will be made for new one')
+        else:
+            new = True
     if not new:
         try:
-            oldBat = winreg.QueryValue(oldopen,None).split()[0]
             if oldBat != G2bat:
                 dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
                         wx.YES_NO | wx.ICON_QUESTION)

@@ -2667,7 +2667,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         return
     if data is None:
         data = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)
-    if plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+    if G2frame.PickId and plottype not in ['SASD','REFD'] and 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         publish = PublishPlot
     else:
         publish = None

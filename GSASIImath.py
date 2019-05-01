@@ -4056,7 +4056,7 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
     ins = {}
     if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an else
         for x in ['U','V','W','X','Y','Z']:
-            ins[x] = Parms[x][ind]
+            ins[x] = Parms.get(x,[0.0,0.0])[ind]
         if ifQ:                              #qplot - convert back to 2-theta
             pos = 2.0*asind(pos*getWave(Parms)/(4*math.pi))
         sig = getCWsig(ins,pos)
@@ -4070,13 +4070,13 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
             for x in ['sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms[x][ind]
+                ins[x] = Parms.get(x,[0.0,0.0])[ind]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:
             for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y','Z']:
-                ins[x] = Parms[x][ind]
+                ins[x] = Parms.get(x,[0.0,0.0])[ind]
             alp = getTOFalpha(ins,dsp)
             bet = getTOFbeta(ins,dsp)
         sig = getTOFsig(ins,dsp)

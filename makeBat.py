@@ -87,6 +87,7 @@ if __name__ == '__main__':
     print('\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath)
     
     new = False
+    oldBat = ''
     try:
         oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
         oldopen = winreg.OpenKey(oldgpx,r'shell\open\command')

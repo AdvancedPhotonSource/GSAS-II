@@ -122,6 +122,7 @@ try:
     import wx.aui
     import wx.glcanvas
     import matplotlib as mpl
+    mpl.use('wxAgg')
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
 except ImportError:

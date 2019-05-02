@@ -3654,6 +3654,9 @@ def getRho(xyz,mapData):
        
 def getRhos(XYZ,rho):
     ''' get scattering density at an array of point by 8-point interpolation
+    this is faster than gerRho which is only used for single points. However, getRhos is
+    replaced by scipy.ndimage.interpolation.map_coordinates which does a better job &  is just as fast.
+    Thus, getRhos is unused in GSAS-II at this time.
     param xyz:  array coordinates to be probed Nx3
     param: rho: array copy of map (NB: don't use original!)
     

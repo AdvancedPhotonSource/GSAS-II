@@ -8882,13 +8882,17 @@ def PlotStructure(G2frame,data,firstCall=False):
                 for plane in Planes:
                     RenderPlane(plane,color)
         if drawingData.get('showSlice',False):
+            FourD = False
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
-                rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
+                FourD = True
+                modQ = np.array(generalData['SuperVec'][0])
+                rho4D = D4mapData['rho']
             elif len(mapData['rho']):               #ordinary 3D map
                 rho = mapData['rho']
             else:
                 return
             Rmax = np.max(rho)*drawingData['contourMax']
+            from scipy.ndimage.interpolation import map_coordinates
             from matplotlib.backends.backend_agg import FigureCanvasAgg
             import matplotlib.pyplot as plt
             Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
@@ -8900,7 +8904,11 @@ def PlotStructure(G2frame,data,firstCall=False):
             SX,SY = np.meshgrid(np.linspace(-1.,1.,npts),np.linspace(-1.,1.,npts))
             SXYZ = msize*np.dstack((SX,SY,np.zeros_like(SX)))
             SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
-            Z = np.reshape(G2mth.getRhos(SXYZ,rho),(npts,npts))
+            if FourD:
+                SXYZT = np.vstack((SXYZ.T,np.inner(SXYZ,modQ)+G2frame.tau)).T
+                Z = np.reshape(map_coordinates(rho4D,(SXYZT*rho4D.shape).T,order=1,mode='wrap'),(npts,npts))
+            else:
+                Z = np.reshape(map_coordinates(rho,(SXYZ*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Z<=Rmax,Z,Rmax)
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
             plt.rcParams['figure.figsize'] = [6.0,6.0]

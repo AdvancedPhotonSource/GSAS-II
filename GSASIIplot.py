@@ -116,6 +116,7 @@ import os.path
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
+from scipy.ndimage.interpolation import map_coordinates
 # Don't depend on wx/matplotlib for scriptable
 try:
     import wx
@@ -7711,7 +7712,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         mcsaTypes = []
         neqv = 0
         for xyz,atyp in zip(XYZs,Types):
-            equiv = G2spc.GenAtom(xyz,SGData,All=True,Move=False)
+            equiv = list(G2spc.GenAtom(xyz,SGData,All=True,Move=False))
             neqv = max(neqv,len(equiv))
             for item in equiv:
                 mcsaXYZ.append(item[0]) 
@@ -8892,7 +8893,6 @@ def PlotStructure(G2frame,data,firstCall=False):
             else:
                 return
             Rmax = np.max(rho)*drawingData['contourMax']
-            from scipy.ndimage.interpolation import map_coordinates
             from matplotlib.backends.backend_agg import FigureCanvasAgg
             import matplotlib.pyplot as plt
             Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
@@ -8906,9 +8906,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
             if FourD:
                 SXYZT = np.vstack((SXYZ.T,np.inner(SXYZ,modQ)+G2frame.tau)).T
-                Z = np.reshape(map_coordinates(rho4D,(SXYZT*rho4D.shape).T,order=1,mode='wrap'),(npts,npts))
+                Z = np.reshape(map_coordinates(rho4D,(SXYZT%1.*rho4D.shape).T,order=1,mode='wrap'),(npts,npts))
             else:
-                Z = np.reshape(map_coordinates(rho,(SXYZ*rho.shape).T,order=1,mode='wrap'),(npts,npts))
+                Z = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Z<=Rmax,Z,Rmax)
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
             plt.rcParams['figure.figsize'] = [6.0,6.0]

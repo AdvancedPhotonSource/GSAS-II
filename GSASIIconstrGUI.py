@@ -2008,10 +2008,8 @@ def UpdateRigidBodies(G2frame,data):
         VectorRB.Scroll(0,Scroll)
         
     def UpdateResidueRB(rbId=0):
-        AtInfo = data['Residue']['AtInfo']
-        refChoice = {}
-        RefObjs = []
-
+        '''Draw the contents of the Residue Rigid Body tab for Rigid Bodies tree entry
+        '''
         def rbNameSizer(rbId,rbData):
 
             def OnRBName(event):
@@ -2049,7 +2047,8 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 Obj.SetValue(False)
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
-            
+                
+            # start of rbNameSizer
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(ResidueRBDisplay,-1,'Residue name: '),
                 0,wx.ALIGN_CENTER_VERTICAL)
@@ -2300,6 +2299,11 @@ def UpdateRigidBodies(G2frame,data):
             rbId = RBnames[rbname]
             wx.CallLater(100,UpdateResidueRB,rbId)
             
+        #----- beginning of UpdateResidueRB -----------------------------------------------
+        AtInfo = data['Residue']['AtInfo']
+        refChoice = {}
+        RefObjs = []
+
         GS = ResidueRBDisplay.GetSizer()
         if GS: 
             try:        #get around a c++ error in wx 4.0; doing is again seems to be OK
@@ -2313,7 +2317,10 @@ def UpdateRigidBodies(G2frame,data):
         if not RBnames:
             return
         rbchoice = list(RBnames.keys())
-        ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
+        if GS: 
+            ResidueRBSizer = GS
+        else:
+            ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         if len(RBnames) > 1:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             selSizer.Add(wx.StaticText(ResidueRBDisplay,label=' Select residue to view:'),0)

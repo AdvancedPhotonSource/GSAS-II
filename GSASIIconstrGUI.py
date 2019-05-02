@@ -2357,7 +2357,10 @@ def UpdateRigidBodies(G2frame,data):
         Size[0] += 40
         Size[1] = max(Size[1],450) + 20
         ResidueRB.SetSize(Size)
-        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)        
+        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+        Size = G2frame.dataWindow.GetSize()
+        Size[1] += 1
+        G2frame.dataWindow.SetSize(Size)
         
         ResidueRBDisplay.Show()
         

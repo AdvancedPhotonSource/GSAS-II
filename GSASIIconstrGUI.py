@@ -2346,6 +2346,12 @@ def UpdateRigidBodies(G2frame,data):
         ResidueRBDisplay.SetAutoLayout(True)
         Size = ResidueRBSizer.GetMinSize()
         ResidueRBDisplay.SetSize(Size)
+       
+        Size[0] += 40
+        Size[1] = max(Size[1],450) + 20
+        ResidueRB.SetSize(Size)
+        ResidueRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)        
+        
         ResidueRBDisplay.Show()
         
     def SetStatusLine(text):

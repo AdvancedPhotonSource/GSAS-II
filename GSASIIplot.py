@@ -1759,7 +1759,11 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
     if PickName == PatternName:
         G2frame.PickId = G2frame.PatternId
     elif PickName:
-        G2frame.PickId = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, PickName)
+        pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.PatternId, PickName)
+        if pId:
+            G2frame.PickId = pId
+        else:
+            return
     elif GSASIIpath.GetConfigValue('debug'):
         print('Possible PickId problem PickId=',G2frame.PickId)
     # for now I am not sure how to regenerate G2frame.HKL

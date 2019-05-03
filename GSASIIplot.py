@@ -2224,7 +2224,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 #                xy[1] = xy[1]**2
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId
-        if G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
+        if PickId and G2frame.GPXtree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):    #picked a data point, add a new peak
                 data = G2frame.GPXtree.GetItemPyData(G2frame.PickId)
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
@@ -2242,7 +2242,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
-        elif G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Limits':
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
@@ -2275,7 +2275,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
                 
-        elif G2frame.GPXtree.GetItemText(PickId) == 'Models':
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Models':
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
@@ -2287,7 +2287,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
-        elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
+        elif PickId and (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
                 'PWDR' in G2frame.GPXtree.GetItemText(PickId)
                 ):
             G2frame.itemPicked = pick
@@ -2324,7 +2324,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     f.set_color(v) # reset colors back to original values
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragTickmarks)
             
-        elif G2frame.GPXtree.GetItemText(PickId) == 'Background':
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Background':
             # selected a fixed background point. Can move it or delete it.
             backPts = G2frame.dataWindow.wxID_BackPts
             for mode in backPts: # what menu is selected?
@@ -2734,7 +2734,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.canvas.mpl_disconnect(b)
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
-    if 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
+    if not G2frame.PickId:
+        pass
+    elif 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         refColors=['b','r','c','g','m','k']
         Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}

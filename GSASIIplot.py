@@ -7837,19 +7837,23 @@ def PlotStructure(G2frame,data,firstCall=False):
             if not len(pI):
                 pI = [0,0]
             if indx:
-                pI[0] = indx[pI[1]]
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                try:
+                    pI[0] = indx[pI[1]]
+                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                except IndexError:
+                    pI = [0,0]
+                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
                 pI[1] += 1
-                if pI[1] >= len(indx):
-                    pI[1] = 0
+                pI[1] %= len(indx)
+                txt = ' in selection'
             else:
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
                 pI[0] += 1
-                if pI[0] >= len(drawAtoms):
-                    pI[0] = 0
+                pI[0] %= len(drawAtoms)
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                txt = ''
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+txt,1)
             
         elif key in ['K'] and generalData['Map']['MapType']:
             drawingData['showSlice'] = not drawingData.get('showSlice',False)
@@ -7863,19 +7867,23 @@ def PlotStructure(G2frame,data,firstCall=False):
             if not len(pI):
                 pI = [0,0]
             if indx:
-                pI[0] = indx[pI[1]]
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                try:
+                    pI[0] = indx[pI[1]]
+                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                except IndexError:
+                    pI = [0,0]
+                    Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
                 pI[1] -= 1
-                if pI[1] < 0:
-                    pI[1] = len(indx)-1
+                pI[1] %= len(indx)
+                txt = ' in selection'
             else:
-                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]                
                 pI[0] -= 1
-                if pI[0] < 0:
-                    pI[0] = len(drawAtoms)-1
+                pI[0] %= len(drawAtoms)
+                Tx,Ty,Tz = drawAtoms[pI[0]][cx:cx+3]
+                txt = ''
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])            
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI)+str(indx),1)
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+txt,1)
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
             dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])

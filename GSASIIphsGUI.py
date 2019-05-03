@@ -197,9 +197,9 @@ class SphereEnclosure(wx.Dialog):
         self.General = general
         self.Drawing = drawing
         self.indx = indx
-        self.Sphere = [1.0,]
+        self.Sphere = [3.0,]
         self.centers = []
-        self.atomTypes = [[item,True] for item in self.General['AtomTypes']]
+        self.atomTypes = [[item,False] for item in self.General['AtomTypes']]
         
         self.Draw()
         

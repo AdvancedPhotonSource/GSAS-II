@@ -6213,7 +6213,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 magMult.Bind(wx.EVT_SLIDER, OnMagMult)
                 slideSizer.Add(magMult,1,wx.EXPAND|wx.RIGHT)
             
-            if generalData['Map']['rhoMax']:
+            if generalData['Map']['rhoMax'] and not generalData.get('4DmapData',{}):
                 contourLevelTxt = wx.StaticText(drawOptions,-1,' Rho maximum: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
                 slideSizer.Add(contourLevelTxt,0,WACV)
                 contourLevel = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['contourLevel']))

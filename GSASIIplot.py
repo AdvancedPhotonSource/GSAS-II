@@ -7875,7 +7875,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                     pI[0] = len(drawAtoms)-1
             drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])            
-            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
+            G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI)+str(indx),1)
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
             dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
@@ -8665,8 +8665,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             pageName = G2frame.phaseDisplay.GetPageText(page)
         rhoXYZ = []
         rho = []
+        FourD = False
         if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
-            rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
+            FourD = True
+#            rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
         elif len(mapData['rho']):               #ordinary 3D map
             rho = mapData['rho']
         if len(rho):
@@ -8802,7 +8804,6 @@ def PlotStructure(G2frame,data,firstCall=False):
             elif 'lines' in atom[cs]:
                 radius = 0.1
                 RenderLines(x,y,z,Bonds,bndColor)
-#                RenderBonds(x,y,z,Bonds,0.05,color,6)
             elif atom[cs] == 'sticks':
                 radius = 0.1
                 RenderBonds(x,y,z,Bonds,bondR,bndColor)
@@ -8838,7 +8839,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             elif atom[cs+1] == 'chain' and atom[ct-1] in ['CA','CA  A']:
                 RenderLabel(x,y,z,'  '+atom[ct-2],radius,wxGreen,matRot)
 #        glDisable(GL_BLEND)
-        if len(rhoXYZ):
+        if not FourD and len(rhoXYZ):       #no green dot map for 4D - it's wrong!
             RenderMap(rho,rhoXYZ,indx,Rok)
         if len(mapPeaks):
             XYZ = mapPeaks.T[1:4].T
@@ -8883,11 +8884,9 @@ def PlotStructure(G2frame,data,firstCall=False):
                 for plane in Planes:
                     RenderPlane(plane,color)
         if drawingData.get('showSlice',False):
-            FourD = False
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
-                FourD = True
                 modQ = np.array(generalData['SuperVec'][0])
-                rho4D = D4mapData['rho']
+                rho = D4mapData['rho']
             elif len(mapData['rho']):               #ordinary 3D map
                 rho = mapData['rho']
             else:
@@ -8906,7 +8905,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
             if FourD:
                 SXYZT = np.vstack((SXYZ.T,np.inner(SXYZ,modQ)+G2frame.tau)).T
-                Z = np.reshape(map_coordinates(rho4D,(SXYZT%1.*rho4D.shape).T,order=1,mode='wrap'),(npts,npts))
+                Z = np.reshape(map_coordinates(rho,(SXYZT%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             else:
                 Z = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Z<=Rmax,Z,Rmax)

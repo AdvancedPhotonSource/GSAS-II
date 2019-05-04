@@ -2735,7 +2735,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.bindings = []
     Page.bindings.append(Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress))
     if not G2frame.PickId:
-        pass
+        print('No plot, G2frame.PickId,G2frame.PatternId=',G2frame.PickId,G2frame.PatternId)
+        return
     elif 'PWDR' in G2frame.GPXtree.GetItemText(G2frame.PickId):
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
         refColors=['b','r','c','g','m','k']

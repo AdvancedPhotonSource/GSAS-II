@@ -3279,7 +3279,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)
+            refColors=['b','r','c','g','m','k']
             Page.phaseList = sorted(Phases.keys()) # define an order for phases (once!)
+            Page.phaseColors = {p:refColors[i%len(refColors)] for i,p in enumerate(Phases)}
             for pId,phase in enumerate(Page.phaseList):
                 if 'list' in str(type(Phases[phase])):
                     continue

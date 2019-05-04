@@ -5752,7 +5752,15 @@ def UpdatePhaseData(G2frame,Item,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 centers,radius,targets = dlg.GetSelection()
-                for orig in centers:
+                ncent = len(centers)
+                pgbar = wx.ProgressDialog('Sphere of enclosure for %d atoms'%ncent,'Centers done=',ncent+1, 
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+                screenSize = wx.ClientDisplayRect()
+                Size = pgbar.GetSize()
+                if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                    pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                    pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+                for ic,orig in enumerate(centers):
                     xyzA = np.array(orig)
                     for atomB in atomData[:numAtoms]:
                         if atomB[ct] not in targets:
@@ -5783,6 +5791,10 @@ def UpdatePhaseData(G2frame,Item,data):
                                         newAtom[cx:cx+3] = xyz
                                         newAtom[cs-1] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
                                         atomData.append(newAtom)
+                    GoOn = pgbar.Update(ic,newmsg='Centers done=%d'%(ic))
+                    if not GoOn[0]:
+                        break
+                pgbar.Destroy()
         finally:
             dlg.Destroy()
         UpdateDrawAtoms()
@@ -5865,29 +5877,37 @@ def UpdatePhaseData(G2frame,Item,data):
             cij = ci+2
             SGData = generalData['SGData']
             cellArray = G2lat.CellBlock(1)
-            wx.BeginBusyCursor()
-            try:
-                for ind in indx:
-                    atomA = atomData[ind]
-                    xyzA = np.array(atomA[cx:cx+3])
-                    indA = atomTypes.index(atomA[ct])
-                    for atomB in atomData[:numAtoms]:
-                        indB = atomTypes.index(atomB[ct])
-                        sumR = radii[indA]+radii[indB]
-                        xyzB = np.array(atomB[cx:cx+3])
-                        for xyz in cellArray+xyzB:
-                            dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
-                            if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
-                                if noDuplicate(xyz,atomData):
-                                    oprB = atomB[cs-1]
-                                    C = xyz-xyzB
-                                    newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
-                                    newAtom = atomB[:]
-                                    newAtom[cx:cx+3] = xyz
-                                    newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                                    atomData.append(newAtom[:cij+9])  #not SS stuff
-            finally:
-                wx.EndBusyCursor()
+            nind = len(indx)
+            pgbar = wx.ProgressDialog('Fill CN sphere for %d atoms'%nind,'Atoms done=',nind+1, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+            screenSize = wx.ClientDisplayRect()
+            Size = pgbar.GetSize()
+            if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+            for Ind,ind in enumerate(indx):
+                atomA = atomData[ind]
+                xyzA = np.array(atomA[cx:cx+3])
+                indA = atomTypes.index(atomA[ct])
+                for atomB in atomData[:numAtoms]:
+                    indB = atomTypes.index(atomB[ct])
+                    sumR = radii[indA]+radii[indB]
+                    xyzB = np.array(atomB[cx:cx+3])
+                    for xyz in cellArray+xyzB:
+                        dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                        if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
+                            if noDuplicate(xyz,atomData):
+                                oprB = atomB[cs-1]
+                                C = xyz-xyzB
+                                newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                                newAtom = atomB[:]
+                                newAtom[cx:cx+3] = xyz
+                                newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
+                                atomData.append(newAtom[:cij+9])  #not SS stuff
+                GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
+                if not GoOn[0]:
+                    break
+            pgbar.Destroy()   
             data['Drawing']['Atoms'] = atomData
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
@@ -5909,39 +5929,47 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData = data['General']
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
-            wx.BeginBusyCursor()
-            try:
-                for ind in indx:
-                    atom = atomData[ind]
-                    XYZ = np.array(atom[cx:cx+3])
-                    Uij = atom[cuij:cuij+6]
-                    result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
-                    for item in result:
-                        atom = copy.copy(atomData[ind])
-                        atom[cx:cx+3] = item[0]
-                        if cmx:
-                            Opr = abs(item[2])%100
-                            M = SGData['SGOps'][Opr-1][0]
-                            opNum = G2spc.GetOpNum(item[2],SGData)
-                            mom = np.array(atom[cmx:cmx+3])
-                            if SGData['SGGray']:
-                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
-                            else:    
-                                atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
-                        atom[cs-1] = str(item[2])+'+' \
-                            +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
-                        atom[cuij:cuij+6] = item[1]
-                        Opp = G2spc.Opposite(item[0])
-                        for key in Opp:
-                            if noDuplicate(Opp[key],atomData):
-                                unit = item[3]+np.array(eval(key))*1.
-                                cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
-                                atom[cx:cx+3] = Opp[key]
-                                atom[cs-1] = cell
-                                atomData.append(atom[:cuij+9])  #not SS stuff
-                    data['Drawing']['Atoms'] = atomData
-            finally:
-                wx.EndBusyCursor()
+            nind = len(indx)
+            pgbar = wx.ProgressDialog('Fill unit cell for %d atoms'%nind,'Atoms done=',nind+1, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+            screenSize = wx.ClientDisplayRect()
+            Size = pgbar.GetSize()
+            if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+            for Ind,ind in enumerate(indx):
+                atom = atomData[ind]
+                XYZ = np.array(atom[cx:cx+3])
+                Uij = atom[cuij:cuij+6]
+                result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
+                for item in result:
+                    atom = copy.copy(atomData[ind])
+                    atom[cx:cx+3] = item[0]
+                    if cmx:
+                        Opr = abs(item[2])%100
+                        M = SGData['SGOps'][Opr-1][0]
+                        opNum = G2spc.GetOpNum(item[2],SGData)
+                        mom = np.array(atom[cmx:cmx+3])
+                        if SGData['SGGray']:
+                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)
+                        else:    
+                            atom[cmx:cmx+3] = np.inner(mom,M)*nl.det(M)*SpnFlp[opNum-1]
+                    atom[cs-1] = str(item[2])+'+' \
+                        +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
+                    atom[cuij:cuij+6] = item[1]
+                    Opp = G2spc.Opposite(item[0])
+                    for key in Opp:
+                        if noDuplicate(Opp[key],atomData):
+                            unit = item[3]+np.array(eval(key))*1.
+                            cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
+                            atom[cx:cx+3] = Opp[key]
+                            atom[cs-1] = cell
+                            atomData.append(atom[:cuij+9])  #not SS stuff
+                data['Drawing']['Atoms'] = atomData
+                GoOn = pgbar.Update(Ind,newmsg='Atoms done=%d'%(Ind))
+                if not GoOn[0]:
+                    break
+            pgbar.Destroy()   
             UpdateDrawAtoms()
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
@@ -7623,7 +7651,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     Id = atomData[pid][-1]
                     if Id in Ids:   #duplicate - 2 atoms on same site; invalidate & look again
                         dist[pid] = 100.
-                        id =  np.argmin(dist)
                         Id = atomData[pid][-1]
                     Ids.append(Id)
                     atomData[pid][cx:cx+3] = xyz
@@ -9187,7 +9214,7 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'Omit' in mapData['MapType']:
             dim = '3D '
             pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
             pgbar.Destroy()
         else:

@@ -358,6 +358,36 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
             changed.append(i.attrib.get('path'))
     return changed
 
+def svnCleanup(fpath=os.path.split(__file__)[0],verbose=True):
+    '''This runs svn cleanup on a selected local directory. 
+
+    :param str fpath: path to repository dictionary, defaults to directory where
+       the current file is located
+    '''
+    svn = whichsvn()
+    if not svn: return
+    if verbose: print(u"Performing svn cleanup at "+fpath)
+    cmd = [svn,'cleanup',fpath]
+    if verbose:
+        s = 'subversion command:\n  '
+        for i in cmd: s += i + ' '
+        print(s)
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = MakeByte2str(s.communicate())
+    if err:
+        print(60*"=")
+        print("****** An error was noted, see below *********")
+        print(60*"=")
+        print(err)
+        s = '\nsvn command:  '
+        for i in cmd: s += i + ' '
+        print(s)
+        #raise Exception('svn cleanup failed')
+        return False
+    elif verbose:
+        print(out)
+    return True
+        
 def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
     '''This performs an update of the files in a local directory from a server. 
 
@@ -395,7 +425,17 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
         s = '\nsvn command:  '
         for i in cmd: s += i + ' '
         print(s)
-        sys.exit()
+        if svnCleanup(fpath):
+            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            out,err = MakeByte2str(s.communicate())
+            if err:
+                print(60*"=")
+                print("****** Drat, failed again: *********")
+                print(60*"=")
+                print(err)
+            else:
+                return
+        raise Exception('svn update failed')
     elif verbose:
         print(out)
 
@@ -475,6 +515,16 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):
         s = '\nsvn command:  '
         for i in cmd: s += i + ' '
         print(s)
+        if svnCleanup(fpath):
+            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            out,err = MakeByte2str(s.communicate())
+            if err:
+                print(60*"=")
+                print("****** Drat, failed again: *********")
+                print(60*"=")
+                print(err)
+            else:
+                return True
         return False
     if verbose:
         print('=== Output from svn switch'+(43*'='))

@@ -8927,6 +8927,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Z = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             Z = np.where(Z<=Rmax,Z,Rmax)
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
+            oldSize = plt.rcParams['figure.figsize']
             plt.rcParams['figure.figsize'] = [6.0,6.0]
             plt.cla()
             plt.contour(Z,colors='k',linewidths=1)
@@ -8937,6 +8938,8 @@ def PlotStructure(G2frame,data,firstCall=False):
             agg.draw()
             img, (width, height) = agg.print_to_buffer()
             Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
+            plt.rcParams['figure.facecolor'] = (1.,1.,1.,1.)
+            plt.rcParams['figure.figsize'] = oldSize
             RenderViewPlane(msize*eplane,Zimg,width,height)
                 
         try:

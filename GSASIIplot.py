@@ -7674,7 +7674,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         return Bonds
 
     # PlotStructure initialization here
-    global mcsaXYZ,mcsaTypes,mcsaBonds,txID
+    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet
     global cell, Vol, Amat, Bmat, A4mat, B4mat
     txID = 0
     ForthirdPI = 4.0*math.pi/3.0
@@ -7690,6 +7690,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     SpnFlp = SGData.get('SpnFlp',[1,])
     atomData = data['Atoms']
     mapPeaks = []
+    contourSet = 0
     if generalData.get('DisAglCtrls',{}):
         BondRadii = generalData['DisAglCtrls']['BondRadii']
     else:
@@ -8091,8 +8092,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)
             Cx,Cy,Cz = GLU.gluUnProject(newxy[0],View[3]-newxy[1],tz)
             rho = G2mth.getRho([Cx,Cy,Cz],mapData)
-            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f'%(Cx,Cy,Cz,rho),1)
-            
+            contlevels = contourSet.get_array()
+            contstr = str(contlevels).strip('[]')
+            G2frame.G2plotNB.status.SetStatusText('Cursor position: %.4f, %.4f, %.4f; density: %.4f, contours at: %s'%(Cx,Cy,Cz,rho,contstr),1)
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -8901,6 +8903,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 for plane in Planes:
                     RenderPlane(plane,color)
         if drawingData.get('showSlice',False):
+            global contourSet
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
                 rho = D4mapData['rho']
@@ -8930,7 +8933,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             oldSize = plt.rcParams['figure.figsize']
             plt.rcParams['figure.figsize'] = [6.0,6.0]
             plt.cla()
-            plt.contour(Z,colors='k',linewidths=1)
+            contourSet = plt.contour(Z,colors='k',linewidths=1)
             plt.axis("off")
             plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
             canvas = plt.get_current_fig_manager().canvas

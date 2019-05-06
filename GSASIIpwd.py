@@ -1544,7 +1544,7 @@ def DoCalibInst(IndexPeaks,Inst):
     InstPrint(Inst,sigDict)
     return True
             
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
@@ -1819,6 +1819,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback,prevVaryLis
     if oneCycle:
         Ftol = 1.0
     x,y,w,yc,yb,yd = data   #these are numpy arrays - remove masks!
+    if fixback is None:
+        fixback = np.zeros_like(y)
     yc *= 0.                            #set calcd ones to zero
     yb *= 0.
     yd *= 0.

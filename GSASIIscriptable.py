@@ -744,6 +744,7 @@ Readers = {'Pwdr':[], 'Phase':[], 'Image':[]}
 '''Readers by reader type'''
 exportersByExtension = {}
 '''Specifies the list of extensions that are supported for Powder data export'''
+npsind = lambda x: np.sin(x*np.pi/180.)
 
 def LoadG2fil():
     """Setup GSAS-II importers. Delay importing this module, it is slow"""
@@ -1070,7 +1071,7 @@ def make_empty_project(author=None, filename=None):
     try:
         import matplotlib as mpl
         python_library_versions = G2fil.get_python_versions([mpl, np, sp])
-    except ModuleNotFoundError:
+    except ImportError:
         python_library_versions = G2fil.get_python_versions([np, sp])
 
     controls_data = dict(G2obj.DefaultControls)
@@ -1357,7 +1358,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             formatName = dImgObj.data['Image Controls'].get('formatName','')
             imagefile = dImgObj.data['data'][1]
             ImageTag = None # fix this for multiimage files
-            darkImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            darkImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if darkImg is None:
                 raise Exception('Error reading dark image {}'.format(imagefile))
             sumImg += np.array(darkImage*darkScale,dtype='int32')
@@ -1368,7 +1369,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             formatName = bImgObj.data['Image Controls'].get('formatName','')
             imagefile = bImgObj.data['data'][1]
             ImageTag = None # fix this for multiimage files
-            backImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
+            backImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if backImage is None:
                 raise Exception('Error reading background image {}'.format(imagefile))
             if darkImg:
@@ -2404,7 +2405,7 @@ class G2Project(G2ObjectWrapper):
         elif control in self.data['Controls']['data']:
             return self.data['Controls']['data'][control]
         elif control == 'seqCopy':
-            self.data['Controls']['data']['Copy2Next'] = bool(value)
+            return self.data['Controls']['data']['Copy2Next']
         else:
             print('Defined Controls:',self.data['Controls']['data'].keys())
             raise Exception('{} is an invalid control value'.format(control))
@@ -3036,8 +3037,13 @@ class G2PwdrData(G2ObjectWrapper):
         File.close()
         print ('Instrument parameters saved to: '+filename)
 
-    def LoadProfile(self,filename):
-        '''Reads a GSAS-II (new style) .instprm file and overwrites the current parameters
+    def LoadProfile(self,filename,bank=0):
+        '''Reads a GSAS-II (new style) .instprm file and overwrites the current 
+        parameters
+
+        :param str filename: instrument parameter file name, extension ignored if not
+          .instprm
+        :param int bank: bank number to read, defaults to zero
         '''
         filename = os.path.splitext(filename)[0]+'.instprm'         # make sure extension is .instprm
         File = open(filename,'r')
@@ -3797,17 +3803,26 @@ class G2Image(G2ObjectWrapper):
         else:
             self.data['Image Controls'][key] = [imgNam,mult]
 
-    def loadControls(self,filename):
+    def loadControls(self,filename=None,imgDict=None):
         '''load controls from a .imctrl file
 
         :param str filename: specifies a file to be read, which should end 
-          with .imctrl
+          with .imctrl (defaults to None, meaning parameters are input 
+          with imgDict.)
+        :param dict imgDict: contains a set of image parameters (defaults to 
+          None, meaning parameters are input with filename.)
         '''
-        File = open(filename,'r')
-        Slines = File.readlines()
-        File.close()
-        G2fil.LoadControls(Slines,self.data['Image Controls'])
-        print('file {} read into {}'.format(filename,self.name))
+        if filename:
+            File = open(filename,'r')
+            Slines = File.readlines()
+            File.close()
+            G2fil.LoadControls(Slines,self.data['Image Controls'])
+            print('file {} read into {}'.format(filename,self.name))
+        elif imgDict:
+            self.data['Image Controls'].update(imgDict)
+            print('Image controls set')
+        else:
+            raise Exception("loadControls called without imgDict or filename specified")
 
     def saveControls(self,filename):
         '''write current controls values to a .imctrl file
@@ -3959,12 +3974,15 @@ class G2Image(G2ObjectWrapper):
                             Sample[key] = float(item.split('=')[1])
                         except:
                             pass
-                if 'label_prm' in item.lower():
-                    for num in ('1','2','3'):
-                        if 'label_prm'+num in item.lower():
-                            Controls['FreePrm'+num] = item.split('=')[1].strip()
+                # if 'label_prm' in item.lower():
+                #     for num in ('1','2','3'):
+                #         if 'label_prm'+num in item.lower():
+                #             Controls['FreePrm'+num] = item.split('=')[1].strip()
             if 'PWDR' in Aname:
                 if 'target' in data:    #from lab x-ray 2D imaging data
+                    waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
+                                 'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
+                                 'AgKa':[0.559363,0.563775]}
                     wave1,wave2 = waves[data['target']]
                     parms = ['PXC',wave1,wave2,0.5,0.0,polariz,290.,-40.,30.,6.,-14.,0.0,0.0001,Azms[i]]
                 else:
@@ -4009,16 +4027,16 @@ class G2Image(G2ObjectWrapper):
                 section = 'Reflection Lists'
                 histItems += [section]
                 HistDict[section] = {}
-            elif 'SASD' in Aname:             
-                section = 'Substances'
-                histItems += [section]
-                HistDict[section] = G2pdG.SetDefaultSubstances()  # this needs to be moved
-                section = 'Sample Parameters'
-                histItems += [section]
-                HistDict[section] = Sample
-                section = 'Models'
-                histItems += [section]
-                HistDict[section] = G2pdG.SetDefaultSASDModel() # this needs to be moved
+            # elif 'SASD' in Aname:             
+            #     section = 'Substances'
+            #     histItems += [section]
+            #     HistDict[section] = G2pdG.SetDefaultSubstances()  # this needs to be moved
+            #     section = 'Sample Parameters'
+            #     histItems += [section]
+            #     HistDict[section] = Sample
+            #     section = 'Models'
+            #     histItems += [section]
+            #     HistDict[section] = G2pdG.SetDefaultSASDModel() # this needs to be moved
             valuesdict = {
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
                 'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,'Yminmax':[Ymin,Ymax]}
@@ -4074,7 +4092,7 @@ optional arguments::
                         associated with all histograms given.
 
     """
-    proj = G2Project(gpxname=args.filename)
+    proj = G2Project(gpxfile=args.filename)
 
     hist_objs = []
     if args.histograms:

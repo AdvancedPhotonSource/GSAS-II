@@ -6327,7 +6327,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
         colors=['b','g','r','c','m','k']
-        uselist = Page.seqTableGet(0)[1]
+        uselist = G2frame.SeqTable.GetColValues(1)
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
         else:

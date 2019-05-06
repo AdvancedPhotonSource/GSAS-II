@@ -555,8 +555,17 @@ def svnInstallDir(URL,loadpath):
         s = '\nsvn command:  '
         for i in cmd: s += i + ' '
         print(s)
-
-        return False
+        if svnCleanup(fpath):
+            s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            out,err = MakeByte2str(s.communicate())
+            if err:
+                print(60*"=")
+                print("****** Drat, failed again: *********")
+                print(60*"=")
+                print(err)
+                return False
+        else:
+            return False
     print ("Files installed at: "+loadpath)
     return True
 

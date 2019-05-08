@@ -425,12 +425,14 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return dataSizer
         
     def GenStrainDataSizer():
-        muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4])
         Snames = G2spc.MustrainNames(SGData)
         numb = len(Snames)
-        if len(UseList[G2frame.hist]['Mustrain'][4]) < numb:
-            UseList[G2frame.hist]['Mustrain'][4] = numb*[0.0,]
-            UseList[G2frame.hist]['Mustrain'][5] = numb*[False,]
+        onumb = len(UseList[G2frame.hist]['Mustrain'][4])
+        while onumb < numb:
+            UseList[G2frame.hist]['Mustrain'][4].append(0.0)
+            UseList[G2frame.hist]['Mustrain'][5].append(False)
+            onumb += 1
+        muMean = G2spc.MuShklMean(SGData,Amat,UseList[G2frame.hist]['Mustrain'][4])
         parms = zip(Snames,UseList[G2frame.hist]['Mustrain'][4],UseList[G2frame.hist]['Mustrain'][5],range(numb))
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,val,ref,Id in parms:

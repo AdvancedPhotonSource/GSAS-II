@@ -7674,7 +7674,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         return Bonds
 
     # PlotStructure initialization here
-    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet
+    global mcsaXYZ,mcsaTypes,mcsaBonds,txID,contourSet,Zslice
     global cell, Vol, Amat, Bmat, A4mat, B4mat
     txID = 0
     ForthirdPI = 4.0*math.pi/3.0
@@ -8903,7 +8903,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 for plane in Planes:
                     RenderPlane(plane,color)
         if drawingData.get('showSlice',False):
-            global contourSet
+            global contourSet,Zslice
             if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
                 modQ = np.array(generalData['SuperVec'][0])
                 rho = D4mapData['rho']
@@ -8925,10 +8925,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             SXYZ = np.reshape(np.inner(SXYZ,invModel[:3,:3].T)+VP[nxs,nxs,:],(-1,3))
             if FourD:
                 SXYZT = np.vstack((SXYZ.T,np.inner(SXYZ,modQ)+G2frame.tau)).T
-                Z = np.reshape(map_coordinates(rho,(SXYZT%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
+                Zslice = np.reshape(map_coordinates(rho,(SXYZT%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
             else:
-                Z = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
-            Z = np.where(Z<=Rmax,Z,Rmax)
+                Zslice = np.reshape(map_coordinates(rho,(SXYZ%1.*rho.shape).T,order=1,mode='wrap'),(npts,npts))
+            Z = np.where(Zslice<=Rmax,Zslice,Rmax)
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,.5)
             oldSize = plt.rcParams['figure.figsize']
             plt.rcParams['figure.figsize'] = [6.0,6.0]

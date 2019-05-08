@@ -5366,6 +5366,7 @@ class OpenTutorial(wx.Dialog):
                     self.tutorialPath = os.path.abspath(os.path.expanduser(
                       os.path.join('~',p,'G2tutorials')))
                     return
+            self.tutorialPath = '.\G2tutorials'     #would this work as an ultimate default?
         else:
             self.tutorialPath = os.path.abspath(os.path.expanduser(
                     os.path.join('~','G2tutorials')))

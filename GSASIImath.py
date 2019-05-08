@@ -3937,7 +3937,7 @@ def getCWgam(ins,pos):
     :returns: float getCWgam: peak gamma
     
     '''
-    return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)+ins['Z']
+    return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)+ins.get('Z',0.0)
     
 def getCWgamDeriv(pos):
     '''get derivatives of CW peak profile gamma wrt X, Y & Z

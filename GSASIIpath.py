@@ -778,8 +778,12 @@ def InvokeDebugOpts():
         import pdb
         global pdbBreak
         pdbBreak = pdb.set_trace
-        global IPyBreak
-        IPyBreak = IPyBreak_base
+        try:
+            import IPython
+            global IPyBreak
+            IPyBreak = IPyBreak_base
+        except:
+            pass
 
 def TestSPG(fpth):
     '''Test if pyspg.[so,.pyd] can be run from a location in the path

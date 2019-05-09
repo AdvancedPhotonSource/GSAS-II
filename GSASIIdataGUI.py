@@ -4621,14 +4621,11 @@ class GSASII(wx.Frame):
         self.lastTreeSetting = oldPath
         
     def ResetPlots(self):
-        '''This reloads the current tree item, often drawing a plot. It refreshes any plots
-        that have registered a refresh routine (see G2plotNB.RegisterRedrawRoutine)
-        and deletes all plots that have not been refreshed and
-        require one (see G2plotNB.SetNoDelete).
+        '''This reloads the current tree item, often drawing a plot. It 
+        also refreshes any plots that have registered a refresh routine 
+        (see G2plotNB.RegisterRedrawRoutine) and deletes all plots that 
+        have not been refreshed and require one (see G2plotNB.SetNoDelete).
         '''
-        lastRaisedPlotTab = self.G2plotNB.lastRaisedPlotTab # save the current plot tab
-        self.G2plotNB.lastRaisedPlotTab = None
-        #print ('lastRaisedPlotTab='+lastRaisedPlotTab)
         for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             win.plotInvalid = True  # mark all current plots as invalid so we can tell what has been updated
             
@@ -4636,16 +4633,18 @@ class GSASII(wx.Frame):
         Id = self.root
         for txt in oldPath:
             Id = GetGPXtreeItemId(self, Id, txt)
-        self.PickIdText = None  #forces reload of page
+        pltText = None
+        self.PickIdText = None   # forces reload of page when selected
         if Id:
             self.PickId = Id
             self.GPXtree.SelectItem(Id)
-        wx.CallLater(100,self.CleanupOldPlots,lastRaisedPlotTab) # wait for plotting to catch up before cleanup
-    
-    def CleanupOldPlots(self,lastRaisedPlotTab):
-        '''Called after a refinement to update plots and delete plots that show obsoleted information
-        '''
-        # update other self-updating plots
+            # selection above appears to trigger a tree event (all platforms?),
+            # but if not call SelectDataTreeItem(self,Id)
+            wx.Yield()
+            time.sleep(0.1)
+            pltNumber = self.G2plotNB.nb.GetSelection()
+            pltText = self.G2plotNB.nb.GetPageText(pltNumber)
+        # update plots where a routine is supplied
         for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if win.plotInvalid and win.replotFunction:
                 if GSASIIpath.GetConfigValue('debug'):
@@ -4659,15 +4658,20 @@ class GSASII(wx.Frame):
                     if GSASIIpath.GetConfigValue('debug'):
                         print(msg)
                         GSASIIpath.IPyBreak()
-        # delete any remaining plots that have not been updated and need a refresh (win.plotRequiresRedraw)
+        # delete any remaining plots unless they have been
+        # updated (win.plotInvalid is False) or are tagged as not
+        # needing a refresh (win.plotRequiresRedraw is False)
         for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if win.plotInvalid and win.plotRequiresRedraw:
                 if GSASIIpath.GetConfigValue('debug'):
                     print('Closing out-of-date plot',lbl)
                 self.G2plotNB.Delete(lbl)
-        # put the previously last-raised plot tab on top, if present. If not, use the one corresponding to
-        # the last tree item to be selected
-        wx.CallAfter(self.G2plotNB.RaiseLastPage,lastRaisedPlotTab,self.G2plotNB.lastRaisedPlotTab)
+        # put the previously last-raised plot tab on top, if present.
+        # Search by label text, since tab number may have changed
+        for i in range(self.G2plotNB.nb.GetPageCount()):
+            if self.G2plotNB.nb.GetPageText(i) == pltText:
+                self.G2plotNB.nb.SetSelection(i)
+                break
         
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
@@ -4677,7 +4681,7 @@ class GSASII(wx.Frame):
         if not seqList:
             self.OnRefine(event)
             return
-        plotHist = self.GPXtree.GetItemText(self.PatternId)
+        #plotHist = self.GPXtree.GetItemText(self.PatternId)
         Id = GetGPXtreeItemId(self,self.root,'Sequential results')
         if not Id:
             Id = self.GPXtree.AppendItem(self.root,text='Sequential results')
@@ -4739,8 +4743,8 @@ class GSASII(wx.Frame):
                     G2IO.ProjFileOpen(self,False)
                     self.GPXtree.RestoreExposedItems()
                     self.ResetPlots()
-                    self.PatternId = GetGPXtreeItemId(self,self.root,plotHist)
-                    SelectDataTreeItem(self,self.PatternId)
+                    #self.PatternId = GetGPXtreeItemId(self,self.root,plotHist)
+                    #SelectDataTreeItem(self,self.PatternId)
                     sId = GetGPXtreeItemId(self,self.root,'Sequential results')
                     SelectDataTreeItem(self,sId)
                     self.GPXtree.SelectItem(sId)

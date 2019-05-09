@@ -541,17 +541,17 @@ class G2PlotNoteBook(wx.Panel):
         else:
             raise ValueError('Plot not found')
 
-    def RaiseLastPage(self,lastRaisedPlotTab,treeItemPlot):
-        '''Raises either the Last tab clicked on or what is drawn by the selected tree item
-        This is called after a refinement is completed by :meth:`GSASIIdataGUI.GSASII.ResetPlots`
-        '''
-        plotNum = None
-        if lastRaisedPlotTab in self.plotList:
-            plotNum = self.plotList.index(lastRaisedPlotTab)
-        elif treeItemPlot in self.plotList:
-            plotNum = self.plotList.index(treeItemPlot)
-        if plotNum is not None:
-            wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
+    # def RaiseLastPage(self,lastRaisedPlotTab,treeItemPlot):
+    #     '''Raises either the Last tab clicked on or what is drawn by the selected tree item
+    #     This is called after a refinement is completed by :meth:`GSASIIdataGUI.GSASII.ResetPlots`
+    #     '''
+    #     plotNum = None
+    #     if lastRaisedPlotTab in self.plotList:
+    #         plotNum = self.plotList.index(lastRaisedPlotTab)
+    #     elif treeItemPlot in self.plotList:
+    #         plotNum = self.plotList.index(treeItemPlot)
+    #     if plotNum is not None:
+    #         wx.CallAfter(self.SetSelectionNoRefresh,plotNum)
 
     def FindPlotTab(self,label,Type,newImage=True,publish=None):
         '''Open a plot tab for initial plotting, or raise the tab if it already exists
@@ -1755,6 +1755,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
         if pId:
             G2frame.PatternId = pId
         else:
+            if GSASIIpath.GetConfigValue('debug'): print('PatternName not found',PatternName)
             return
     if PickName == PatternName:
         G2frame.PickId = G2frame.PatternId
@@ -1763,6 +1764,7 @@ def ReplotPattern(G2frame,newPlot,plotType,PatternName=None,PickName=None):
         if pId:
             G2frame.PickId = pId
         else:
+            if GSASIIpath.GetConfigValue('debug'): print('PickName not found',PickName)
             return
     elif GSASIIpath.GetConfigValue('debug'):
         print('Possible PickId problem PickId=',G2frame.PickId)
@@ -2754,12 +2756,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     elif G2frame.GPXtree.GetItemText(G2frame.PickId) == 'Peak List':
         G2frame.Bind(wx.EVT_MENU, onMovePeak, id=G2frame.dataWindow.movePeak.GetId())
     # save information needed to reload from tree and redraw
-    kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
-    if G2frame.PickId:
-        kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
-    #G2frame.G2plotNB.RegisterRedrawRoutine('Powder Patterns',ReplotPattern,
-    G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-                                           (G2frame,newPlot,plotType),kwargs)
+    if not refineMode:
+        kwargs={'PatternName':G2frame.GPXtree.GetItemText(G2frame.PatternId)}
+        if G2frame.PickId:
+            kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
+        G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
+                                            (G2frame,newPlot,plotType),kwargs)
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Page.tickDict = {}
@@ -5327,6 +5329,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Z = []
     W = []
     if 'C' in Parms['Type'][0]:
+        Plot.figure.suptitle(TreeItemText)
         Plot.set_title('Instrument and sample peak widths')
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
         Plot.set_ylabel(r'$\Delta Q/Q, \Delta d/d$',fontsize=14)

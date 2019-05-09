@@ -3264,10 +3264,14 @@ class IntegParmTable(wx.Dialog):
             'Azimuth min','Azimuth max','2Th min','2Th max','Int. pts',
             'Mask File',
             )
-    def __init__(self,parent,parms=None,IMfileList=None):
+    def __init__(self,parent,parms=None,IMfileList=None,readFileList=None):
         self.G2frame = parent.G2frame
+        dlg = None
+        pth = ''
         wx.Dialog.__init__(self,parent,style=wx.RESIZE_BORDER|wx.DEFAULT_DIALOG_STYLE)
-        if parms:
+        if readFileList:
+            self.parms,self.IMfileList = self.ReadFiles(readFileList)
+        elif parms:
             self.parms = parms # list of values by column
             self.IMfileList = IMfileList # list of .imctrl file names for each entry in table
         else:

@@ -9,7 +9,7 @@ import math
 import wx
 import numpy as np
 import matplotlib as mpl
-import pylab
+import matplotlib.pyplot as plt
 import sys
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
@@ -236,7 +236,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = None
         
     def OnFPRIMEExitMenu(self, event):
-        pylab.close('all')
+        plt.close('all')
         self.Close()
         self.Destroy()
 
@@ -340,7 +340,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 bxylim = bsb.get_xlim(),bsb.get_ylim()
             newPlot = False
         except:
-            self.fplot = pylab.figure(facecolor='white',figsize=(8,8))  #BTW: default figsize is (8,6)
+            self.fplot = plt.figure(facecolor='white',figsize=(8,8))  #BTW: default figsize is (8,6)
             self.fplot.canvas.set_window_title('X-Ray Resonant Scattering')
             self.fplot.canvas.mpl_connect('pick_event', self.OnPick)
             self.fplot.canvas.mpl_connect('button_release_event', self.OnRelease)
@@ -390,7 +390,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         E = self.Energy
         DE = E*self.Eres                         #smear by defined source resolution
         StlMax = min(2.0,math.sin(80.0*math.pi/180.)/Wave)
-        Stl = pylab.arange(0.,StlMax,.01)
+        Stl = np.arange(0.,StlMax,.01)
         Ymax = 0.0
         for i,Elem in enumerate(self.Elems):
             Els = Elem[0]
@@ -427,7 +427,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         
         if newPlot:
             newPlot = False
-            pylab.show()
+            plt.show()
         else:
             if rePlot:
                 tb = self.fplot.canvas.toolbar
@@ -440,7 +440,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 bx.set_ylim(bxylim[1])
                 bxylim = []
                 tb.push_current()
-            pylab.draw()
+            plt.draw()
         
     def OnPick(self, event):
         self.linePicked = event.artist

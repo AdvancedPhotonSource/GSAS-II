@@ -9,7 +9,7 @@ import math
 import wx
 import numpy as np
 import matplotlib as mpl
-import pylab
+import matplotlib.pyplot as plt
 import sys
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
@@ -326,7 +326,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = None
 
     def OnExitMenu(self, event):
-        pylab.close('all')
+        plt.close('all')
         self.Close()
         self.Destroy()
 
@@ -582,7 +582,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 xylim = asb.get_xlim(),asb.get_ylim()
             newPlot = False
         except:
-            self.fplot = pylab.figure(facecolor='white',figsize=(8,6))  #BTW: default figsize is (8,6)
+            self.fplot = plt.figure(facecolor='white',figsize=(8,6))  #BTW: default figsize is (8,6)
             self.fplot.canvas.set_window_title('X-Ray Absorption')
             self.fplot.canvas.mpl_connect('pick_event', self.OnPick)
             self.fplot.canvas.mpl_connect('button_release_event', self.OnRelease)
@@ -615,7 +615,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             ax.legend(loc='best')
         if newPlot:
             newPlot = False
-            pylab.show()
+            plt.show()
         else:
             if rePlot:
                 tb = self.fplot.canvas.toolbar
@@ -624,7 +624,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 ax.set_ylim(xylim[1])
                 xylim = []
                 tb.push_current()
-            pylab.draw()
+            plt.draw()
         
     def OnPick(self, event):
         self.linePicked = event.artist

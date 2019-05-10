@@ -3013,9 +3013,9 @@ def MustrainNames(SGData):
     uniq = SGData['SGUniq']
     if laue in ['m3','m3m']:
         return ['S400','S220']
-    elif laue in ['6/m','6/mmm']:
+    elif laue in ['6/m','6/mmm','3m1']:
         return ['S400','S004','S202']
-    elif laue in ['31m','3','3m1']:
+    elif laue in ['31m','3']:
         return ['S400','S004','S202','S301']
     elif laue in ['3R','3mR']:
         return ['S400','S220','S310','S211']
@@ -3101,11 +3101,11 @@ def MustrainCoeff(HKL,SGData):
     if laue in ['m3','m3m']:
         Strm.append(h**4+k**4+l**4)
         Strm.append(3.0*((h*k)**2+(h*l)**2+(k*l)**2))
-    elif laue in ['6/m','6/mmm']:
+    elif laue in ['6/m','6/mmm','3m1']:
         Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
         Strm.append(l**4)
         Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
-    elif laue in ['31m','3','3m1']:
+    elif laue in ['31m','3']:
         Strm.append(h**4+k**4+2.0*k*h**3+2.0*h*k**3+3.0*(h*k)**2)
         Strm.append(l**4)
         Strm.append(3.0*((h*l)**2+(k*l)**2+h*k*l**2))
@@ -3191,7 +3191,8 @@ def Muiso2Shkl(muiso,SGData,cell):
     def minMus(Shkl,muiso,H,SGData,A):
         U = np.inner(A.T,H)
         S = np.array(MustrainCoeff(U,SGData))
-        Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:,nxs]),axis=0))
+        nS = S.shape[0]
+        Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:nS,nxs]),axis=0))
         rad = np.sqrt(np.sum((Sum[:,nxs]*H)**2,axis=1))
         return (muiso-rad)**2
         

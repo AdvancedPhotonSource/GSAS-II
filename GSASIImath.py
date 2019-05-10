@@ -4599,7 +4599,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     def GetAtomM(Xdata,SGData):
         Mdata = []
         for xyz in Xdata:
-            Mdata.append(float(len(G2spc.GenAtom(xyz,SGData))))
+            Mdata.append(float(len(list(G2spc.GenAtom(xyz,SGData)))))
         return np.array(Mdata)
         
     def GetAtomT(RBdata,parmDict):

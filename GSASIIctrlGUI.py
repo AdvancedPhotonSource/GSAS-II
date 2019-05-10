@@ -5357,19 +5357,65 @@ class OpenTutorial(wx.Dialog):
         '''Get the tutorial location if set; if not pick a default
         directory in a logical place
         '''
+        # has the user set a location and is it valid?
         if GSASIIpath.GetConfigValue('Tutorial_location'):
-            self.tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
-        elif (sys.platform.lower().startswith('win')):
-            for p in ('Documents','My Documents'):
+            tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
+            if os.path.exists(tutorialPath):
+                self.tutorialPath = tutorialPath
+                return
+            try:
+                os.makedirs(tutorialPath)
+                if os.path.exists(tutorialPath):
+                    self.tutorialPath = tutorialPath
+                    return
+            except:
+                print('Unable to use Tutorial_location config setting',
+                          tutorialPath)
+        # try a system-specific location
+        if (sys.platform.lower().startswith('win')):
+            for p in ('Documents','My Documents',''):
                 if os.path.exists(os.path.abspath(os.path.expanduser(
                       os.path.join('~',p)))):
-                    self.tutorialPath = os.path.abspath(os.path.expanduser(
+                    tutorialPath = os.path.abspath(os.path.expanduser(
                       os.path.join('~',p,'G2tutorials')))
-                    return
-            self.tutorialPath = '.\G2tutorials'     #would this work as an ultimate default?
+                    if os.path.exists(tutorialPath):
+                        self.tutorialPath = tutorialPath
+                        return
+                    try:
+                        os.makedirs(tutorialPath)
+                        if os.path.exists(tutorialPath):
+                            self.tutorialPath = tutorialPath
+                            return
+                    except:
+                        pass
         else:
-            self.tutorialPath = os.path.abspath(os.path.expanduser(
+            tutorialPath = os.path.abspath(os.path.expanduser(
                     os.path.join('~','G2tutorials')))
+            if os.path.exists(tutorialPath):
+                self.tutorialPath = tutorialPath
+                return
+            try:
+                os.makedirs(tutorialPath)
+                if os.path.exists(tutorialPath):
+                    self.tutorialPath = tutorialPath
+                    return
+            except:
+                pass
+        # no success so far, use current working directory
+        tutorialPath = os.path.abspath(os.path.join(os.getcwd(),'G2tutorials'))
+        if os.path.exists(tutorialPath):
+            self.tutorialPath = tutorialPath
+            return
+        try:
+            os.makedirs(tutorialPath)
+            if os.path.exists(tutorialPath):
+                self.tutorialPath = tutorialPath
+                return
+        except:
+            pass
+        # nothing worked, set self.tutorialPath with os.getcwd() and hope for the best
+        print('Warning: Unable to set a TutorialPath, using',os.getcwd())
+        tutorialPath = os.getcwd()
 
     def SelectAndDownload(self,event):
         '''Make a list of all tutorials on web and allow user to choose one to

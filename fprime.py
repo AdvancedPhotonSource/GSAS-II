@@ -8,8 +8,6 @@ import platform
 import math
 import wx
 import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import sys
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
@@ -230,13 +228,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
     def __init__(self, parent):
         self._init_ctrls(parent)
-        mpl.rcParams['axes.grid'] = True
-        mpl.rcParams['legend.fontsize'] = 10
+        self.parent = parent
         self.Lines = []
         self.linePicked = None
         
     def OnFPRIMEExitMenu(self, event):
-        plt.close('all')
+        self.parent.G2plotNB.Delete('Fprime')
         self.Close()
         self.Destroy()
 
@@ -333,20 +330,19 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         axylim = []
         bxylim = []
         try:
-            self.fplot.canvas.set_window_title('X-Ray Resonant Scattering')
             if rePlot:
-                asb,bsb = self.fplot.get_children()[1:]
+                asb,bsb = self.Page.get_children()[1:]
                 axylim = asb.get_xlim(),asb.get_ylim()
                 bxylim = bsb.get_xlim(),bsb.get_ylim()
             newPlot = False
         except:
-            self.fplot = plt.figure(facecolor='white',figsize=(8,8))  #BTW: default figsize is (8,6)
-            self.fplot.canvas.set_window_title('X-Ray Resonant Scattering')
-            self.fplot.canvas.mpl_connect('pick_event', self.OnPick)
-            self.fplot.canvas.mpl_connect('button_release_event', self.OnRelease)
-            self.fplot.canvas.mpl_connect('motion_notify_event', self.OnMotion)
+            new,plotNum,self.Page,self.fplot,lim = self.parent.G2plotNB.FindPlotTab('Fprime','mpl')
+            self.Page.canvas.mpl_connect('pick_event', self.OnPick)
+            self.Page.canvas.mpl_connect('button_release_event', self.OnRelease)
+            self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             newPlot = True
-        ax = self.fplot.add_subplot(211)
+        self.fplot.set_visible(False)
+        ax = self.Page.figure.add_subplot(211)
         ax.clear()
         ax.set_title('Resonant Scattering Factors',x=0,ha='left')
         ax.set_ylabel("f ',"+' f ", e-',fontsize=14)
@@ -373,8 +369,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
             ax.legend(loc='best')
-        bx = self.fplot.add_subplot(212)
-        self.fplot.subplots_adjust(hspace=0.25)
+        bx = self.Page.figure.add_subplot(212)
+        self.Page.figure.subplots_adjust(hspace=0.25)
         bx.clear()
         if self.ifWave:
             bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
@@ -427,10 +423,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         
         if newPlot:
             newPlot = False
-            plt.show()
+            self.Page.canvas.draw()
         else:
             if rePlot:
-                tb = self.fplot.canvas.toolbar
+                tb = self.Page.canvas.toolbar
                 tb.push_current()
                 ax.set_xlim(axylim[0])
                 ax.set_ylim(axylim[1])
@@ -440,7 +436,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 bx.set_ylim(bxylim[1])
                 bxylim = []
                 tb.push_current()
-            plt.draw()
+            self.Page.canvas.draw()
         
     def OnPick(self, event):
         self.linePicked = event.artist
@@ -591,20 +587,3 @@ based on Fortran program of Cromer & Liberman corrected for
 Kissel & Pratt energy term; Jensen term not included
         '''
         wxadv.AboutBox(info)
-
-class FprimeApp(wx.App):
-    ''' '''
-    def OnInit(self):
-        self.main = Fprime(None)
-        self.main.Show()
-        self.SetTopWindow(self.main)
-        self.main.OnFPRIMENewMenu(None)
-        return True
-
-def main():
-    ''' '''
-    application = FprimeApp(0)
-    application.MainLoop()
-
-if __name__ == '__main__':
-    main()

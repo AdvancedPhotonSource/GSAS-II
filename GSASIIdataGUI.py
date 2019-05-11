@@ -4759,12 +4759,12 @@ class GSASII(wx.Frame):
             
     def OnRunFprime(self,event):
         import fprime
-        self.fprime = fprime.Fprime(None)
+        self.fprime = fprime.Fprime(self)
         self.fprime.Show()
         
     def OnRunAbsorb(self,event):
         import Absorb
-        self.absorb = Absorb.Absorb(None)
+        self.absorb = Absorb.Absorb(self)
         self.absorb.Show()
         
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):

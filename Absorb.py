@@ -8,8 +8,6 @@ import platform
 import math
 import wx
 import numpy as np
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import sys
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
@@ -320,13 +318,12 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
     def __init__(self, parent):
         self._init_ctrls(parent)
-        mpl.rcParams['axes.grid'] = True
-        mpl.rcParams['legend.fontsize'] = 10
+        self.parent = parent
         self.Lines = []
         self.linePicked = None
 
     def OnExitMenu(self, event):
-        plt.close('all')
+        self.parent.G2plotNB.Delete('Absorb')
         self.Close()
         self.Destroy()
 
@@ -576,19 +573,17 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         """Plot mu vs wavelength 0.05-3.0A"""
         xylim = []
         try:
-            self.fplot.canvas.set_window_title('X-Ray Absorption')
             if rePlot:
-                asb = self.fplot.get_children()[1]
+                asb = self.Page.get_children()[1]
                 xylim = asb.get_xlim(),asb.get_ylim()
             newPlot = False
         except:
-            self.fplot = plt.figure(facecolor='white',figsize=(8,6))  #BTW: default figsize is (8,6)
-            self.fplot.canvas.set_window_title('X-Ray Absorption')
-            self.fplot.canvas.mpl_connect('pick_event', self.OnPick)
-            self.fplot.canvas.mpl_connect('button_release_event', self.OnRelease)
-            self.fplot.canvas.mpl_connect('motion_notify_event', self.OnMotion)
+            new,plotNum,self.Page,self.fplot,lim = self.parent.G2plotNB.FindPlotTab('Absorb','mpl')
+            self.Page.canvas.mpl_connect('pick_event', self.OnPick)
+            self.Page.canvas.mpl_connect('button_release_event', self.OnRelease)
+            self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             newPlot = True
-        ax = self.fplot.add_subplot(111)
+        ax = self.Page.figure.add_subplot(111)
         ax.clear()
         ax.set_title('X-Ray Absorption',x=0,ha='left')
         ax.set_ylabel(r"$\mu R$",fontsize=14)
@@ -615,16 +610,16 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             ax.legend(loc='best')
         if newPlot:
             newPlot = False
-            plt.show()
+            self.Page.canvas.draw()
         else:
             if rePlot:
-                tb = self.fplot.canvas.toolbar
+                tb = self.Page.canvas.toolbar
                 tb.push_current()
                 ax.set_xlim(xylim[0])
                 ax.set_ylim(xylim[1])
                 xylim = []
                 tb.push_current()
-            plt.draw()
+            self.Page.canvas.draw()
         
     def OnPick(self, event):
         self.linePicked = event.artist

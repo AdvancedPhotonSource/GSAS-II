@@ -8915,7 +8915,6 @@ def PlotStructure(G2frame,data,firstCall=False):
             else:
                 return
             Rmax = np.max(rho)*drawingData['contourMax']
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
             import matplotlib.pyplot as plt
             Model = GL.glGetDoublev(GL.GL_MODELVIEW_MATRIX)
             invModel = nl.inv(Model)
@@ -8940,12 +8939,13 @@ def PlotStructure(G2frame,data,firstCall=False):
             plt.axis("off")
             plt.subplots_adjust(bottom=0.,top=1.,left=0.,right=1.,wspace=0.,hspace=0.)
             canvas = plt.get_current_fig_manager().canvas
-            agg = canvas.switch_backends(FigureCanvasAgg)
+            agg = canvas.switch_backends(hcCanvas)
             agg.draw()
             img, (width, height) = agg.print_to_buffer()
             Zimg = np.frombuffer(img, np.uint8).reshape((height, width, 4))
             plt.rcParams['figure.facecolor'] = (1.,1.,1.,1.)
             plt.rcParams['figure.figsize'] = oldSize
+#            agg = canvas.switch_backends(Canvas)
             RenderViewPlane(msize*eplane,Zimg,width,height)
                 
         try:

@@ -9,6 +9,7 @@ import math
 import wx
 import numpy as np
 import sys
+import matplotlib as mpl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
 import GSASIIElem as G2elem
@@ -324,6 +325,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             Wave = self.Kev/(float(self.slider1.GetValue())/1000.)
         self.SetWaveEnergy(Wave)
         
+    def OnKeyPress(self,event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+            self.SetWaveEnergy(self.Wave)            
+
     def UpDateFPlot(self,Wave,rePlot=True):
         """Plot f' & f" vs wavelength 0.05-3.0A"""
         "generate a set of form factor curves & plot them vs sin-theta/lambda or q or 2-theta"
@@ -340,7 +346,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('pick_event', self.OnPick)
             self.Page.canvas.mpl_connect('button_release_event', self.OnRelease)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
+            self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
+        self.Page.Choice = (' key press','g: toggle grid',)
+        self.Page.keyPress = self.OnKeyPress    
         self.fplot.set_visible(False)
         ax = self.Page.figure.add_subplot(211)
         ax.clear()

@@ -9,6 +9,7 @@ import math
 import wx
 import numpy as np
 import sys
+import matplotlib as mpl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 3765 $")
 import GSASIIElem as G2elem
@@ -569,6 +570,11 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.CalcFPPS()
         self.UpDateAbsPlot(self.Wave,rePlot=False)
         
+    def OnKeyPress(self,event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+            self.UpDateAbsPlot(self.Wave,rePlot=False)
+
     def UpDateAbsPlot(self,Wave,rePlot=True):
         """Plot mu vs wavelength 0.05-3.0A"""
         xylim = []
@@ -582,8 +588,11 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('pick_event', self.OnPick)
             self.Page.canvas.mpl_connect('button_release_event', self.OnRelease)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
+            self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
-        ax = self.Page.figure.add_subplot(111)
+            ax = self.Page.figure.add_subplot(111,label='absorb')
+        self.Page.Choice = (' key press','g: toggle grid',)
+        self.Page.keyPress = self.OnKeyPress    
         ax.clear()
         ax.set_title('X-Ray Absorption',x=0,ha='left')
         ax.set_ylabel(r"$\mu R$",fontsize=14)

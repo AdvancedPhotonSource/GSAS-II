@@ -8876,7 +8876,7 @@ def UpdatePhaseData(G2frame,Item,data):
         im = 0
         if generalData['Modulated']:
             im = 1
-        HistoNames = filter(lambda a:Histograms[a]['Use']==True,list(Histograms.keys()))
+        HistoNames = list(filter(lambda a:Histograms[a]['Use']==True,list(Histograms.keys())))
         if not len(HistoNames):
             G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return

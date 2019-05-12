@@ -755,7 +755,7 @@ def LoadG2fil():
     Readers['Image'] = G2fil.LoadImportRoutines("img", "Image")
 
     # initialize exports
-    for obj in exportersByExtension:
+    for obj in G2fil.LoadExportRoutines(None):
         try:
             obj.Writer
         except AttributeError:
@@ -1842,7 +1842,7 @@ class G2Project(G2ObjectWrapper):
             else:
                 raise Exception('Histogram object (G2PwdrData) is not in current project')
         if histname in self.data:
-            return G2PwdrData(self.data[histname], self)
+            return G2PwdrData(self.data[histname], self, histname)
         try:
             # see if histname is an id or ranId
             histname = int(histname)
@@ -2588,9 +2588,10 @@ class G2AtomRecord(G2ObjectWrapper):
 
 class G2PwdrData(G2ObjectWrapper):
     """Wraps a Powder Data Histogram."""
-    def __init__(self, data, proj):
+    def __init__(self, data, proj, name):
         self.data = data
         self.proj = proj
+        self.name = name
 
     @staticmethod
     def is_valid_refinement_key(key):
@@ -2598,9 +2599,9 @@ class G2PwdrData(G2ObjectWrapper):
                       'Instrument Parameters']
         return key in valid_keys
 
-    @property
-    def name(self):
-        return self.data['data'][-1]
+    #@property
+    #def name(self):
+    #    return self.data['data'][-1]
 
     @property
     def ranId(self):
@@ -2811,7 +2812,8 @@ class G2PwdrData(G2ObjectWrapper):
         obj = exportersByExtension['powder'][extension]
         obj.SetFromArray(hist=self.data,histname=self.name)
         obj.Writer(self.name,fil)
-            
+        return fil
+    
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt

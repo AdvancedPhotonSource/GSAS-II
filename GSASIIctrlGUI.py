@@ -2575,8 +2575,10 @@ class G2ColumnIDDialog(wx.Dialog):
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             txt.SetFont(font1)
             Sizer.Add(txt,0,wx.ALL|wx.EXPAND|WACV,0)
+            txtSize = txt.GetSize()[1]
         else:
             Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+            txtSize = 0
         columnsSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.sel = []
         self.mod = []
@@ -2619,7 +2621,7 @@ class G2ColumnIDDialog(wx.Dialog):
         panel.SetupScrolling()
         Size = [450,375]
         panel.SetSize(Size)
-        Size[0] += 25; Size[1]+= 25+txt.GetSize()[1]
+        Size[0] += 25; Size[1]+= 25+txtSize
         self.SetSize(Size)
         
     def GetSelection(self):

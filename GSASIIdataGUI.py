@@ -5238,7 +5238,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.SampleEdit.Append(G2G.wxID_SAMPLECOPYSOME,'Copy selected...','Copy selected sample parameters to other histograms')
         self.SampleEdit.Append(G2G.wxID_SAMPLEFLAGCOPY,'Copy flags','Copy sample parameter refinement flags to other histograms')
         self.SampleEdit.Append(G2G.wxID_SAMPLE1VAL,'Set one value','Set one sample parameter value across multiple histograms')
-        self.SampleEdit.Append(G2G.wxID_ALLSAMPLELOAD,'Load all','Load sample parmameters over multiple histograms')
+        self.SampleEdit.Append(G2G.wxID_ALLSAMPLELOAD,'Load all','Load sample parameters over multiple histograms')
         self.SampleEdit.Append(G2G.wxID_RESCALEALL,'Rescale all','Rescale all data with selected range')
         self.PostfillDataMenu()
         self.SetScale.Enable(False)

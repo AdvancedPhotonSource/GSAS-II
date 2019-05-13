@@ -7,8 +7,8 @@
 # $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIfile: data (non-GUI) I/O routines*
-=========================================
+*GSASIIfiles: data (non-GUI) I/O routines*
+==========================================
 
 Module with miscellaneous routines for input and output from files.
 
@@ -429,7 +429,7 @@ def readColMetadata(imagefile):
     
     The .par file has any number of columns separated by spaces.
     The directory for the file must be specified in
-    Config variable ``Column_Metadata_directory``.
+    Config variable :var:`config_example.Column_Metadata_directory`.
     As an index to the .par file a second "label file" must be specified with the
     same file root name as the .par file but the extension must be .XXX_lbls (where
     .XXX is the extension of the image) or if that is not present extension
@@ -479,8 +479,8 @@ def readColMetadata(imagefile):
 
     Note that several keywords, if defined in the Comments, will be found and
     placed in the appropriate section of the powder histogram(s)'s Sample
-    Parameters after an integration: ``Temperature``,``Pressure``,``Time``,
-    ``FreePrm1``,``FreePrm2``,``FreePrm3``,``Omega``,``Chi``, and ``Phi``. 
+    Parameters after an integration: ``Temperature``, ``Pressure``, ``Time``,
+    ``FreePrm1``, ``FreePrm2``, ``FreePrm3``, ``Omega``, ``Chi``, and ``Phi``. 
 
     After the Python code, supply a vertical bar (|) and then a list of one
     more more columns that will be supplied as arguments to that function.

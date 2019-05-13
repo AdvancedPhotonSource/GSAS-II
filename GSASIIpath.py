@@ -774,7 +774,6 @@ def InvokeDebugOpts():
     'Called in GSASII.py to set up debug options'
     if GetConfigValue('debug'):
         print ('Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()')
-        sys.excepthook = exceptHook
         import pdb
         global pdbBreak
         pdbBreak = pdb.set_trace
@@ -782,6 +781,10 @@ def InvokeDebugOpts():
             import IPython
             global IPyBreak
             IPyBreak = IPyBreak_base
+            if any('SPYDER' in name for name in os.environ):
+                print('Running from Spyder, skipping exception trapping')
+            else:
+                sys.excepthook = exceptHook
         except:
             pass
 

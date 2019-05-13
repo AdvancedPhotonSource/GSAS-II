@@ -337,7 +337,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         bxylim = []
         try:
             if rePlot:
-                asb,bsb = self.Page.get_children()[1:]
+                asb,bsb = self.Page.figure.get_axes()[1:3]
                 axylim = asb.get_xlim(),asb.get_ylim()
                 bxylim = bsb.get_xlim(),bsb.get_ylim()
             newPlot = False
@@ -349,10 +349,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
         self.Page.Choice = (' key press','g: toggle grid',)
-        self.Page.keyPress = self.OnKeyPress    
+        self.Page.keyPress = self.OnKeyPress
         self.fplot.set_visible(False)
-        ax = self.Page.figure.add_subplot(211)
-        ax.clear()
+        ax,bx = self.Page.figure.subplots(1,2)
+        ax.cla()
+        bx.cla()
         ax.set_title('Resonant Scattering Factors',x=0,ha='left')
         ax.set_ylabel("f ',"+' f ", e-',fontsize=14)
         Ymin = 0.0
@@ -378,9 +379,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
             ax.legend(loc='best')
-        bx = self.Page.figure.add_subplot(212)
         self.Page.figure.subplots_adjust(hspace=0.25)
-        bx.clear()
         if self.ifWave:
             bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
         else:

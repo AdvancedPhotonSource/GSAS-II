@@ -82,7 +82,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             sys.exit()
     Wmin = 0.05        #wavelength range
     Wmax = 3.0
-    Wres = 0.004094    #plot resolution step size as const delta-lam/lam - gives 1000 steps for Wmin to Wmax
+    Wres = 0.004094    #plot resolution step size as const delta-lam/lam - gives 1000 steps for Wmin to Wmself.ax
     Eres = 1.5e-4      #typical energy resolution for synchrotron x-ray sources
     ffpfignum = 1
     fppfignum = 2
@@ -185,8 +185,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=panel, 
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
         slideSizer.Add(self.SpinButton,0,wx.ALIGN_RIGHT)
-        self.SpinButton.SetRange(int(10000.*self.Wmin),int(10000.*self.Wmax))
-        self.SpinButton.SetValue(int(10000.*self.Wave))
+        self.SpinButton.SetRange(-1,1)
+        self.SpinButton.SetValue(0)
         self.SpinButton.Bind(wx.EVT_SPIN, self.OnSpinButton, id=wxID_SPINBUTTON)
 
         self.slider1 = wx.Slider(id=wxID_FPRIMESLIDER1, maxValue=int(1000.*self.Wmax),
@@ -211,11 +211,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
         def OnChoice2(event):
             if event.GetString() == ' sin('+Gktheta+')/'+Gklambda:
-                self.FFxaxis = 'S'
+                self.FFxself.axis = 'S'
             elif event.GetString() == ' Q':
-                self.FFxaxis = 'Q'
+                self.FFxself.axis = 'Q'
             else:
-                self.FFxaxis = 'T'
+                self.FFxself.axis = 'T'
             self.UpDateFPlot(self.Wave,rePlot=False)
             
         self.choice2 = wx.ComboBox(id=wxID_FPRIMECHOICE2, value=' sin('+Gktheta+')/'+Gklambda,
@@ -312,11 +312,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SetWaveEnergy(self.Kev/(float(self.SpinText2.GetValue())))
        
     def OnSpinButton(self, event):
-        if self.ifWave:
-            Wave = float(self.SpinButton.GetValue())/10000.
-        else:
-            Wave = self.Kev/(float(self.SpinButton.GetValue())/10000.)
-        self.SetWaveEnergy(Wave)
+        move = self.SpinButton.GetValue()/10000.
+        self.Wave = min(max(self.Wave+move,self.Wmin),self.Wmax)
+        self.SpinButton.SetValue(0)
+        self.SetWaveEnergy(self.Wave)
 
     def OnSlider1(self, event):
         if self.ifWave:
@@ -333,13 +332,12 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def UpDateFPlot(self,Wave,rePlot=True):
         """Plot f' & f" vs wavelength 0.05-3.0A"""
         "generate a set of form factor curves & plot them vs sin-theta/lambda or q or 2-theta"
-        axylim = []
-        bxylim = []
+        self.axylim = []
+        self.bxylim = []
         try:
             if rePlot:
-                asb,bsb = self.Page.figure.get_axes()[1:3]
-                axylim = asb.get_xlim(),asb.get_ylim()
-                bxylim = bsb.get_xlim(),bsb.get_ylim()
+                self.axylim = self.ax.get_xlim(),self.ax.get_ylim()
+                self.bxylim = self.bx.get_xlim(),self.bx.get_ylim()
             newPlot = False
         except:
             new,plotNum,self.Page,self.fplot,lim = self.parent.G2plotNB.FindPlotTab('Fprime','mpl')
@@ -348,14 +346,14 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
+            self.ax,self.bx = self.Page.figure.subplots(1,2)
         self.Page.Choice = (' key press','g: toggle grid',)
         self.Page.keyPress = self.OnKeyPress
         self.fplot.set_visible(False)
-        ax,bx = self.Page.figure.subplots(1,2)
-        ax.cla()
-        bx.cla()
-        ax.set_title('Resonant Scattering Factors',x=0,ha='left')
-        ax.set_ylabel("f ',"+' f ", e-',fontsize=14)
+        self.ax.cla()
+        self.bx.cla()
+        self.ax.set_title('Resonant Scattering Factors',x=0,ha='left')
+        self.ax.set_ylabel("f ',"+' f ", e-',fontsize=14)
         Ymin = 0.0
         Ymax = 0.0
         colors=['r','b','g','c','m','k']
@@ -367,30 +365,30 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 fppsP1 = np.array(Fpps[1])
                 fppsP2 = np.array(Fpps[2])
                 fppsP3 = np.array(Fpps[3])
-                ax.plot(fppsP1,fppsP2,Color,label=Fpps[0]+" f '")
-                ax.plot(fppsP1,fppsP3,Color,label=Fpps[0]+' f "')
+                self.ax.plot(fppsP1,fppsP2,Color,label=Fpps[0]+" f '")
+                self.ax.plot(fppsP1,fppsP3,Color,label=Fpps[0]+' f "')
         if self.ifWave: 
-            ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
-            ax.axvline(x=Wave,picker=3,color='black')
+            self.ax.set_xlabel(r'$\mathsf{\lambda, \AA}$',fontsize=14)
+            self.ax.axvline(x=Wave,picker=3,color='black')
         else:
-            ax.set_xlabel(r'$\mathsf{E, keV}$',fontsize=14)
-            ax.set_xscale('log')
-            ax.axvline(x=self.Kev/Wave,picker=3,color='black')
-        ax.set_ylim(Ymin,Ymax)
+            self.ax.set_xlabel(r'$\mathsf{E, keV}$',fontsize=14)
+            self.ax.set_xscale('log')
+            self.ax.axvline(x=self.Kev/Wave,picker=3,color='black')
+        self.ax.set_ylim(Ymin,Ymax)
         if self.FPPS:
-            ax.legend(loc='best')
+            self.ax.legend(loc='best')
         self.Page.figure.subplots_adjust(hspace=0.25)
         if self.ifWave:
-            bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
+            self.bx.set_title('%s%s%6.4f%s'%('Form factors (',r'$\lambda=$',self.Wave,r'$\AA)$'),x=0,ha='left')
         else:
-            bx.set_title('%s%6.2f%s'%('Form factors  (E =',self.Energy,'keV)'),x=0,ha='left')
+            self.bx.set_title('%s%6.2f%s'%('Form factors  (E =',self.Energy,'keV)'),x=0,ha='left')
         if self.FFxaxis == 'S':
-            bx.set_xlabel(r'$\mathsf{sin(\theta)/\lambda}$',fontsize=14)
+            self.bx.set_xlabel(r'$\mathsf{sin(\theta)/\lambda}$',fontsize=14)
         elif self.FFxaxis == 'T':
-            bx.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+            self.bx.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
         else:
-            bx.set_xlabel(r'$Q, \AA$',fontsize=14)
-        bx.set_ylabel("f+f ', e-",fontsize=14)
+            self.bx.set_xlabel(r'$Q, \AA$',fontsize=14)
+        self.bx.set_ylabel("f+f ', e-",fontsize=14)
         E = self.Energy
         DE = E*self.Eres                         #smear by defined source resolution
         StlMax = min(2.0,math.sin(80.0*math.pi/180.)/Wave)
@@ -423,11 +421,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             Xp = np.array(X)
             ffop = np.array(ffo)
             ffp = np.array(ff)
-            bx.plot(Xp,ffop,Color+'--',label=Els+" f")
-            bx.plot(Xp,ffp,Color,label=Els+" f+f'")
+            self.bx.plot(Xp,ffop,Color+'--',label=Els+" f")
+            self.bx.plot(Xp,ffp,Color,label=Els+" f+f'")
         if self.Elems:
-            bx.legend(loc='best')
-        bx.set_ylim(0.0,Ymax+1.0)
+            self.bx.legend(loc='best')
+        self.bx.set_ylim(0.0,Ymax+1.0)
         
         if newPlot:
             newPlot = False
@@ -436,13 +434,13 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             if rePlot:
                 tb = self.Page.canvas.toolbar
                 tb.push_current()
-                ax.set_xlim(axylim[0])
-                ax.set_ylim(axylim[1])
-                axylim = []
+                self.ax.set_xlim(self.axylim[0])
+                self.ax.set_ylim(self.axylim[1])
+                self.axylim = []
                 tb.push_current()
-                bx.set_xlim(bxylim[0])
-                bx.set_ylim(bxylim[1])
-                bxylim = []
+                self.bx.set_xlim(self.bxylim[0])
+                self.bx.set_ylim(self.bxylim[1])
+                self.bxylim = []
                 tb.push_current()
             self.Page.canvas.draw()
         
@@ -482,10 +480,8 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText2.Update()
         if self.ifWave:
             self.slider1.SetValue(int(1000.*self.Wave))
-            self.SpinButton.SetValue(int(10000.*self.Wave))
         else:
             self.slider1.SetValue(int(1000.*self.Energy))
-            self.SpinButton.SetValue(int(10000.*self.Energy))
         Text = ''
         for Elem in self.Elems:
             r1 = G2elem.FPcalc(Elem[3],E+DE)
@@ -554,22 +550,18 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.ifWave = True
             self.NewFPPlot = True
             self.Wave = round(self.Wave,4)
-            self.slider1.SetRange(int(1000.*self.Wmin),int(1000.*self.Wmax))
+            self.slider1.SetRange(int(1000.*self.Wmin),int(1000.*self.Wmself.ax))
             self.slider1.SetValue(int(1000.*self.Wave))
-            self.SpinButton.SetRange(int(10000.*self.Wmin),int(10000.*self.Wmax))
-            self.SpinButton.SetValue(int(10000.*self.Wave))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
         else:
             self.ifWave = False
             self.NewFPPlot = True
-            Emin = self.Kev/self.Wmax
+            Emin = self.Kev/self.Wmself.ax
             Emax = self.Kev/self.Wmin
             self.Energy = round(self.Energy,4)
             self.slider1.SetRange(int(1000.*Emin),int(1000.*Emax))
             self.slider1.SetValue(int(1000.*self.Energy))
-            self.SpinButton.SetRange(int(10000.*Emin),int(10000.*Emax))
-            self.SpinButton.SetValue(int(10000.*self.Energy))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
         self.CalcFPPS()

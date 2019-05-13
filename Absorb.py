@@ -258,8 +258,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinButton = wx.SpinButton(id=wxID_SPINBUTTON, parent=self.panel, 
               size=wx.Size(25,24), style=wx.SP_VERTICAL | wx.SP_ARROW_KEYS)
         slideSizer.Add(self.SpinButton,0,wx.ALIGN_RIGHT)
-        self.SpinButton.SetRange(int(10000.*self.Wmin),int(10000.*self.Wmax))
-        self.SpinButton.SetValue(int(10000.*self.Wave))
+        self.SpinButton.SetRange(-1,1)
+        self.SpinButton.SetValue(0)
         self.SpinButton.Bind(wx.EVT_SPIN, self.OnSpinButton, id=wxID_SPINBUTTON)
 
         self.slider1 = wx.Slider(id=wxID_SLIDER1, maxValue=int(1000.*self.Wmax),
@@ -404,11 +404,10 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SetWaveEnergy(self.Wave)
        
     def OnSpinButton(self, event):
-        if self.ifWave:
-            Wave = float(self.SpinButton.GetValue())/10000.
-        else:
-            Wave = self.Kev/(float(self.SpinButton.GetValue())/10000.)
-        self.SetWaveEnergy(Wave)
+        move = self.SpinButton.GetValue()/10000.
+        self.Wave = min(max(self.Wave+move,self.Wmin),self.Wmax)
+        self.SpinButton.SetValue(0)
+        self.SetWaveEnergy(self.Wave)
 
     def OnSlider1(self, event):
         if self.ifWave:
@@ -429,10 +428,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText2.Update()
         if self.ifWave:
             self.slider1.SetValue(int(1000.*self.Wave))
-            self.SpinButton.SetValue(int(10000.*self.Wave))
         else:
             self.slider1.SetValue(int(1000.*self.Energy))
-            self.SpinButton.SetValue(int(10000.*self.Energy))
         Text = ''
         if not self.ifVol:
             self.Volume = 0
@@ -551,8 +548,6 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Wave = round(self.Wave,4)
             self.slider1.SetRange(int(1000.*self.Wmin),int(1000.*self.Wmax))
             self.slider1.SetValue(int(1000.*self.Wave))
-            self.SpinButton.SetRange(int(10000.*self.Wmin),int(10000.*self.Wmax))
-            self.SpinButton.SetValue(int(10000.*self.Wave))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
         else:
@@ -563,8 +558,6 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Energy = round(self.Energy,4)
             self.slider1.SetRange(int(1000.*Emin),int(1000.*Emax))
             self.slider1.SetValue(int(1000.*self.Energy))
-            self.SpinButton.SetRange(int(10000.*Emin),int(10000.*Emax))
-            self.SpinButton.SetValue(int(10000.*self.Energy))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
         self.CalcFPPS()
@@ -580,7 +573,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         xylim = []
         try:
             if rePlot:
-                asb = self.Page.get_children()[1]
+                asb = self.Page.figure.get_axes()[1]
                 xylim = asb.get_xlim(),asb.get_ylim()
             newPlot = False
         except:
@@ -590,7 +583,8 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Page.canvas.mpl_connect('motion_notify_event', self.OnMotion)
             self.Page.canvas.mpl_connect('key_press_event', self.OnKeyPress)
             newPlot = True
-            ax = self.Page.figure.add_subplot(111,label='absorb')
+        ax = self.Page.figure.add_subplot(111,label='absorb')
+        self.fplot.set_visible(False)
         self.Page.Choice = (' key press','g: toggle grid',)
         self.Page.keyPress = self.OnKeyPress    
         ax.clear()
@@ -636,7 +630,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
     def OnMotion(self,event):
         if self.linePicked:
             xpos = event.xdata
-            if xpos>0.1:
+            if xpos and xpos>0.1:
                 if self.ifWave:
                     Wave = xpos
                 else:

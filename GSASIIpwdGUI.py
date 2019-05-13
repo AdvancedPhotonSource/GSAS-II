@@ -2751,10 +2751,14 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    topSizer.Add((-1,-1),0,WACV)
+    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Sample and Experimental Parameters'))
-    topSizer.Add((-1,-1),0,WACV)
-    mainSizer.Add(topSizer,0,WACV)
+    # add help button to bring up help web page
+    helpkey = G2frame.dataWindow.helpKey
+    topSizer.Add((30,-1))
+    topSizer.Add(G2G.HelpButton(G2frame.dataWindow,helpIndex=helpkey))
+    topSizer.Add((-1,-1),1,WACV|wx.EXPAND)
+    mainSizer.Add(topSizer,0,WACV|wx.EXPAND)
     nameSizer = wx.BoxSizer(wx.HORIZONTAL)
     nameSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,' Instrument Name '),0,WACV)
     nameSizer.Add((-1,-1),1,WACV)

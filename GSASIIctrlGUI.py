@@ -38,7 +38,8 @@ Class or function name             Description
 :class:`G2SingleChoiceDialog`      Dialog similar to wx.SingleChoiceDialog, but provides
                                    a filter to help search through choices.
 :class:`HelpButton`                Creates a button labeled with a "?" that when pressed
-                                   displays help text in a modal message window.
+                                   displays help text in a modal message window
+                                   or web browser. 
 :class:`MultiColumnSelection`      A dialog that builds a multicolumn table, word wrapping
                                    is used for the 2nd, 3rd,... columns. 
 :class:`MultiDataDialog`           Dialog to obtain multiple data values from user, 
@@ -4458,16 +4459,21 @@ For DIFFaX use cite:
 ################################################################################
 class HelpButton(wx.Button):
     '''Create a help button that displays help information.
-    The text is displayed in a modal message window.
+    The text can be displayed in a modal message window or it can be 
+    a reference to a location in the gsasII.html help web page, in which 
+    case that page is opened in a web browser. 
 
     TODO: it might be nice if it were non-modal: e.g. it stays around until
     the parent is deleted or the user closes it, but this did not work for
     me. 
 
-    :param parent: the panel which will be the parent of the button
+    :param parent: the panel/frame where the button will be placed
     :param str msg: the help text to be displayed
+    :param str helpIndex: location of the help information in the gsasII.html
+      help file in the form of an anchor string. The URL will be 
+      constructed from: location + gsasII.html + "#" + helpIndex
     '''
-    def __init__(self,parent,msg):
+    def __init__(self,parent,msg='',helpIndex=''):
         if sys.platform == "darwin": 
             wx.Button.__init__(self,parent,wx.ID_HELP)
         else:
@@ -4475,10 +4481,14 @@ class HelpButton(wx.Button):
         self.Bind(wx.EVT_BUTTON,self._onPress)
         self.msg=StripIndents(msg)
         self.parent = parent
+        self.helpIndex = helpIndex
     def _onClose(self,event):
         self.dlg.EndModal(wx.ID_CANCEL)
     def _onPress(self,event):
         'Respond to a button press by displaying the requested text'
+        if self.helpIndex:
+            ShowHelp(self.helpIndex,self.parent)
+            return
         #dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
         self.dlg = wx.Dialog(self.parent,wx.ID_ANY,'Help information', 
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)

@@ -8089,7 +8089,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                     Q = drawingData['Quaternion']
                     G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
                 Draw('move')
-        elif drawingData['showSlice']:
+        elif drawingData.get('showSlice'):
             View = GL.glGetIntegerv(GL.GL_VIEWPORT)
             Tx,Ty,Tz = drawingData['viewPoint'][0]
             tx,ty,tz = GLU.gluProject(Tx,Ty,Tz)

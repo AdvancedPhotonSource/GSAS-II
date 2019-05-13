@@ -183,7 +183,7 @@ Show_timing = False
 
 Column_Metadata_directory = None
 '''When specified and when images are read, GSAS-II will read metadata from a 1-ID
-style .par and a .EXT_lbls (EXT = image extension) or .lbls file. See :func:`GSASIIfile.readColMetadata` for
+style .par and a .EXT_lbls (EXT = image extension) or .lbls file. See :func:`GSASIIfiles.readColMetadata` for
 information on how this is done.
 '''
 

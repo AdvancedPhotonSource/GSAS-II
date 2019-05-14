@@ -321,6 +321,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self._init_ctrls(parent)
         self.parent = parent
         self.Lines = []
+        self.Elems = []
         self.linePicked = None
 
     def OnExitMenu(self, event):
@@ -352,6 +353,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.Delete.Enable(True)
             self.panel.Destroy()
             self.DrawPanel()
+            self.NewFPPlot = True
             self.SetWaveEnergy(self.Wave)
             
     def OnDeleteMenu(self, event):
@@ -371,6 +373,7 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                     self.Delete.Enable(False)
                 self.panel.Destroy()
                 self.DrawPanel()
+                self.NewFPPlot = True
                 self.SetWaveEnergy(self.Wave)
         
     def OnNumElem(self, event):
@@ -490,8 +493,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.SpinText5.Update()
         self.SpinText6.SetValue("%.2f" % (self.Pack))
         self.SpinText6.Update()
-        self.CalcFPPS()
-        self.UpDateAbsPlot(Wave,rePlot=True)
+        if len(self.Elems):
+            self.CalcFPPS()
+            self.UpDateAbsPlot(Wave,rePlot=True)
 
     def CalcFPPS(self):
         """generate f" curves for selected elements
@@ -560,8 +564,9 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.slider1.SetValue(int(1000.*self.Energy))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
-        self.CalcFPPS()
-        self.UpDateAbsPlot(self.Wave,rePlot=False)
+        if len(self.Elems):
+            self.CalcFPPS()
+            self.UpDateAbsPlot(self.Wave,rePlot=False)
         
     def OnKeyPress(self,event):
         if event.key == 'g':
@@ -628,14 +633,17 @@ without arguments Absorb uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = event.artist
         
     def OnMotion(self,event):
+        xpos = event.xdata
+        if xpos and xpos>0.1:
+            ypos = event.ydata
+            if self.ifWave:
+                Wave = xpos
+            else:
+                Wave = self.Kev/xpos
+            Wave = min(max(Wave,self.Wmin),self.Wmax)
+            self.parent.G2plotNB.status.SetStatusText('Wavelength: %.4f, Energy: %.3f, %sR: %.3f'%(Wave,self.Kev/Wave,Gkmu,ypos),1)
         if self.linePicked:
-            xpos = event.xdata
-            if xpos and xpos>0.1:
-                if self.ifWave:
-                    Wave = xpos
-                else:
-                    Wave = self.Kev/xpos               
-                self.SetWaveEnergy(Wave)
+            self.SetWaveEnergy(Wave)
                 
     def OnRelease(self, event):
         if self.linePicked is None: return

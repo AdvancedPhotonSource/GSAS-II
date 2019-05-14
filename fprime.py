@@ -82,7 +82,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             sys.exit()
     Wmin = 0.05        #wavelength range
     Wmax = 3.0
-    Wres = 0.004094    #plot resolution step size as const delta-lam/lam - gives 1000 steps for Wmin to Wmself.ax
+    Wres = 0.004094    #plot resolution step size as const delta-lam/lam - gives 1000 steps for Wmin to Wmax
     Eres = 1.5e-4      #typical energy resolution for synchrotron x-ray sources
     ffpfignum = 1
     fppfignum = 2
@@ -211,11 +211,11 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
 
         def OnChoice2(event):
             if event.GetString() == ' sin('+Gktheta+')/'+Gklambda:
-                self.FFxself.axis = 'S'
+                self.FFxaxis = 'S'
             elif event.GetString() == ' Q':
-                self.FFxself.axis = 'Q'
+                self.FFxaxis = 'Q'
             else:
-                self.FFxself.axis = 'T'
+                self.FFxaxis = 'T'
             self.UpDateFPlot(self.Wave,rePlot=False)
             
         self.choice2 = wx.ComboBox(id=wxID_FPRIMECHOICE2, value=' sin('+Gktheta+')/'+Gklambda,
@@ -231,6 +231,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self._init_ctrls(parent)
         self.parent = parent
         self.Lines = []
+        self.Elems = []
         self.linePicked = None
         
     def OnFPRIMEExitMenu(self, event):
@@ -256,7 +257,7 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                             Z = FormFac['Z']                #At. No.
                             Orbs = G2elem.GetXsectionCoeff(ElemSym)
                             Elem = (ElemSym,Z,FormFac,Orbs)
-                    Fprime.Elems.append(Elem)
+                    self.Elems.append(Elem)
             self.Delete.Enable(True)
             self.CalcFPPS()
             self.SetWaveEnergy(self.Wave)
@@ -383,10 +384,13 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         else:
             self.bx.set_title('%s%6.2f%s'%('Form factors  (E =',self.Energy,'keV)'),x=0,ha='left')
         if self.FFxaxis == 'S':
+            self.bxlabel = 'sin('+Gktheta+')/'+Gklambda
             self.bx.set_xlabel(r'$\mathsf{sin(\theta)/\lambda}$',fontsize=14)
         elif self.FFxaxis == 'T':
+            self.bxlabel = '2'+Gktheta
             self.bx.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
         else:
+            self.bxlabel = 'Q, '+Angstr+Pwrm1
             self.bx.set_xlabel(r'$Q, \AA$',fontsize=14)
         self.bx.set_ylabel("f+f ', e-",fontsize=14)
         E = self.Energy
@@ -448,14 +452,20 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
         self.linePicked = event.artist
         
     def OnMotion(self,event):
+        xpos = event.xdata
+        if xpos and xpos>0.1:
+            ypos = event.ydata
+            if self.ifWave:
+                Wave = xpos
+            else:
+                Wave = self.Kev/xpos
+            Wave = min(max(Wave,self.Wmin),self.Wmax)
+            if event.inaxes == self.ax:
+                self.parent.G2plotNB.status.SetStatusText("Wavelength: %.4f, Energy: %.3f, f'%s: %.3f"%(Wave,self.Kev/Wave,'f"',ypos),1)
+            elif event.inaxes == self.bx:
+                self.parent.G2plotNB.status.SetStatusText("%s: %.4f, f,f+f': %.3f"%(self.bxlabel,xpos,ypos),1)
         if self.linePicked:
-            xpos = event.xdata
-            if xpos:
-                if self.ifWave:
-                    Wave = xpos
-                else:
-                    Wave = self.Kev/xpos               
-                self.SetWaveEnergy(Wave)
+            self.SetWaveEnergy(Wave)
                 
     def OnRelease(self, event):
         if self.linePicked is None: return
@@ -500,9 +510,10 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
                 Text += "%s\t%s%6.3f   \t%s%6.3f  \t%s%10.2f %s\n" %    (
                     'Element= '+str(Els)," f'=",(r1[0]+r2[0])/2.0,
                     ' f"=',(r1[1]+r2[1])/2.0,' '+Gkmu+'=',(r1[2]+r2[2])/2.0,'barns/atom')
-        self.Results.SetValue(Text)
-        self.Results.Update()
-        self.UpDateFPlot(Wave)
+        if len(self.Elems):
+            self.Results.SetValue(Text)
+            self.Results.Update()
+            self.UpDateFPlot(Wave)
 
     def CalcFPPS(self):
         """generate set of f' & f" curves for selected elements
@@ -550,14 +561,14 @@ without arguments fprime uses CuKa as default (Wave=1.54052A, E=8.0478keV)
             self.ifWave = True
             self.NewFPPlot = True
             self.Wave = round(self.Wave,4)
-            self.slider1.SetRange(int(1000.*self.Wmin),int(1000.*self.Wmself.ax))
+            self.slider1.SetRange(int(1000.*self.Wmin),int(1000.*self.Wmax))
             self.slider1.SetValue(int(1000.*self.Wave))
             self.SpinText1.SetValue("%6.4f" % (self.Wave))
             self.SpinText2.SetValue("%7.4f" % (self.Energy))
         else:
             self.ifWave = False
             self.NewFPPlot = True
-            Emin = self.Kev/self.Wmself.ax
+            Emin = self.Kev/self.Wmax
             Emax = self.Kev/self.Wmin
             self.Energy = round(self.Energy,4)
             self.slider1.SetRange(int(1000.*Emin),int(1000.*Emax))

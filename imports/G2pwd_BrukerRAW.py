@@ -159,12 +159,13 @@ class raw_ReaderClass(G2obj.ImportPowderData):
                         fp.seek(pos+176)
                         step = st.unpack('<d',fp.read(8))[0]
                         pos += headLen      #position at start of data block
-#                        if blockNum != nBlock:
-#                            fp.seek(pos-40)
-#                        else:
-                        fp.seek(pos)  
+                        fp.seek(pos)
                         x = np.array([start2Th+i*step for i in range(nSteps)])
-                        y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
+                        try:
+                            y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
+                        except: #this is absurd
+                            fp.seek(pos-40)
+                            y = np.array([max(1.,st.unpack('<f',fp.read(4))[0]) for i in range(nSteps)])
                         w = 1./y
                         self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                         break

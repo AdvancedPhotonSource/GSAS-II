@@ -6306,10 +6306,19 @@ def computePDF(G2frame,data):
     '''
 
     xydata = {}
+    problem = False
     for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
         name = data[key]['Name']
-        if name:
-            xydata[key] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name))
+        if name.strip():
+            pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+            if pId == 0:
+                print(key,'Entry',name,'Not found.')
+                problem = True
+                continue                
+            xydata[key] = G2frame.GPXtree.GetItemPyData(pId)
+    if problem:
+        print('PDF computation aborted')
+        return
     powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['Sample']['Name'])
     limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
@@ -6798,7 +6807,9 @@ def UpdatePDFGrid(G2frame,data):
         def OnMult(invalid,value,tc):
             if invalid: return
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data['diffGRname'])
+            if Id == 0: return
             pId = G2gd.GetGPXtreeItemId(G2frame,Id,'PDF Controls')
+            if pId == 0: return
             subData = G2frame.GPXtree.GetItemPyData(pId)['G(R)']
             data['delt-G(R)'][1] = np.array([subData[1][0],data['G(R)'][1][1]-data['diffMult']*subData[1][1]])
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='delt-G(R)')
@@ -6867,7 +6878,7 @@ def UpdatePDFGrid(G2frame,data):
                 File = open(filename,'w')
                 File.write("#GSAS-II PDF controls file; do not add/delete items!\n")
                 for item in data:
-                    if item[:] not in ['I(Q)','S(Q)','F(Q)','G(R)']:
+                    if item[:] not in ['Sample','I(Q)','S(Q)','F(Q)','G(R)']:
                         File.write(item+':'+unicode(data[item])+'\n')
                 File.close()
                 print ('PDF controls saved to: '+filename)
@@ -6935,6 +6946,7 @@ def UpdatePDFGrid(G2frame,data):
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
             return
         auxPlot = computePDF(G2frame,data)
+        if auxPlot is None: return
         G2frame.GetStatusBar().SetStatusText('PDF computed',1)
         for plot in auxPlot:
             XY = np.array(plot[:2])

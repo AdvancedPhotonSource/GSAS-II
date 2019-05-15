@@ -301,8 +301,11 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         CId = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')
                         Data = G2frame.GPXtree.GetItemPyData(CId)
                         same = True
-                        for item in ['tilt','distance','rotation','center','DetDepth','azmthOff']:
+                        for item in ['tilt','distance','rotation','DetDepth','azmthOff']:
                             if Data[item] != oldData[item]:
+                                same = False
+                        if (Data['center'][0] != oldData['center'][0] or
+                            Data['center'][1] != oldData['center'][1]):
                                 same = False
                         if not same:
                             t0 = time.time()

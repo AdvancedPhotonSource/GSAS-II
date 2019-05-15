@@ -4218,7 +4218,7 @@ class GSASII(wx.Frame):
                                 ElData['FormulaNo'] = 1.0
                                 ElList['C'] = ElData
                     ElLists.append(ElList)
-                id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+                Id, cookie = self.GPXtree.GetNextChild(self.root, cookie)
             if len(TextList) < 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
                 return

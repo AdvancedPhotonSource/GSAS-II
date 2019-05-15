@@ -6447,6 +6447,7 @@ def UpdatePDFGrid(G2frame,data):
                 Obj.SetValue(fmt%(value))
                 data[fileKey][itemKey] = value
                 data[fileKey]['Mult'] = GetExposure(value)
+                mult.SetValue(data[fileKey]['Mult'])
                 ResetFlatBkg()
                 wx.CallAfter(OnComputePDF,None)
                 
@@ -6904,7 +6905,7 @@ def UpdatePDFGrid(G2frame,data):
                         newdata[key] = eval(val)
                     #except SyntaxError:
                     except:
-                        newdata[key] = val
+                        newdata[key] = val.strip()
                     S = File.readline()
                 File.close()
                 data.update(newdata)

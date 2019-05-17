@@ -32,7 +32,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
-mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
+mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 
 ################################################################################

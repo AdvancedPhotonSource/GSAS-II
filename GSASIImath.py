@@ -3067,7 +3067,7 @@ def OmitMap(data,reflDict,pgbar=None):
         print ('**** ERROR - Fourier map not defined')
         return
     mapData = generalData['Map']
-    dmin = mapData['Resolution']
+    dmin = mapData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -3118,7 +3118,7 @@ def OmitMap(data,reflDict,pgbar=None):
     mapData['rho'] = np.real(rho_omit)/cell[6]
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print ('Omit map time: %.4f no. elements: %d'%(time.time()-time0,Fhkl.size))
+    print ('Omit map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
     return mapData
     
 def FourierMap(data,reflDict):
@@ -3131,7 +3131,7 @@ def FourierMap(data,reflDict):
     '''
     generalData = data['General']
     mapData = generalData['Map']
-    dmin = mapData['Resolution']
+    dmin = mapData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -3184,7 +3184,7 @@ def FourierMap(data,reflDict):
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = complex(Fosq,0.)
     rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
-    print ('Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size))
+    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
     mapData['Type'] = reflDict['Type']
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
@@ -3201,7 +3201,7 @@ def Fourier4DMap(data,reflDict):
     generalData = data['General']
     map4DData = generalData['4DmapData']
     mapData = generalData['Map']
-    dmin = mapData['Resolution']
+    dmin = mapData['GridStep']*2.
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
@@ -3255,7 +3255,7 @@ def Fourier4DMap(data,reflDict):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print ('Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size))
+    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.sizestr(Fhkl.shape)))
 
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
@@ -3372,7 +3372,7 @@ def ChargeFlip(data,reflDict,pgbar):
         for ff in FFs:
             if ff['Symbol'] == normElem:
                 FFtable.update(ff)
-    dmin = flipData['Resolution']
+    dmin = flipData['GridStep']*2.
     SGData = generalData['SGData']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
@@ -3539,7 +3539,7 @@ def SSChargeFlip(data,reflDict,pgbar):
         for ff in FFs:
             if ff['Symbol'] == normElem:
                 FFtable.update(ff)
-    dmin = flipData['Resolution']
+    dmin = flipData['GridStep']*2.
     SGData = generalData['SGData']
     SSGData = generalData['SSGData']
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
@@ -3772,7 +3772,7 @@ def SearchMap(generalData,drawingData,Neg=False):
         else:
             rho = copy.copy(mapData['rho'])     #don't mess up original
         mapHalf = np.array(rho.shape)/2
-        res = mapData['Resolution']
+        res = mapData['GridStep']*2.
         incre = np.array(rho.shape,dtype=np.float)
         step = max(1.0,1./res)+1
         steps = np.array((3*[step,]),dtype='int32')
@@ -3900,6 +3900,12 @@ def PeaksUnique(data,Ind):
         if Indx[ind]:
             Ind.append(ind)
     return Ind
+
+################################################################################
+##### Dysnomia setup & return stuff
+################################################################################
+    
+
     
 ################################################################################
 ##### single peak fitting profile fxn stuff

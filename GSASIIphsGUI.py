@@ -70,7 +70,7 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
 WACV = wx.ALIGN_CENTER_VERTICAL
-mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
+mapDefault = {'MapType':'','RefList':'','GridStep':0.25,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 TabSelectionIdDict = {}
 # trig functions in degrees
@@ -1301,7 +1301,7 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'Map' not in generalData:
             generalData['Map'] = mapDefault.copy()
         if 'Flip' not in generalData:
-            generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
+            generalData['Flip'] = {'RefList':'','GridStep':0.25,'Norm element':'None',
                 'k-factor':0.1,'k-Max':20.,}
         if 'testHKL' not in generalData['Flip']:
             generalData['Flip']['testHKL'] = [[0,0,2],[2,0,0],[1,1,1],[0,2,0],[1,2,3]]
@@ -1315,6 +1315,8 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Pawley neg wt'] = 0.0
         if '3Dproj' not in generalData:
             generalData['3Dproj'] = ''
+        if 'doDysnomia' not in generalData:
+            generalData['doDysnomia'] = False
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[0.7,0.1,250],
@@ -1360,6 +1362,11 @@ def UpdatePhaseData(G2frame,Item,data):
         if generalData['Type'] == 'magnetic':
             if 'SGGray' not in generalData['SGData']:
                 generalData['SGData']['SGGray'] = False
+        if 'Resolution' in generalData['Map']:
+            generalData['Map']['GridStep'] = generalData['Map']['Resolution']/2.
+            generalData['Flip']['GridStep'] = generalData['Flip']['Resolution']/2.
+            del generalData['Map']['Resolution']
+            del generalData['Flip']['Resolution']
                 
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2175,7 +2182,23 @@ def UpdatePhaseData(G2frame,Item,data):
                         return
                 finally:
                     dlg.Destroy()
-                wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))                
+                wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
+
+            def OnDysnomia(event):
+                generalData['doDysnomia'] = not generalData['doDysnomia']
+                pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
+                if generalData['doDysnomia']:
+                    if 'Dysnomia' not in pages:
+                        G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
+                        G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
+                        Id = wx.NewId()
+                        TabSelectionIdDict[Id] = 'Dysnomia'
+                        if 'Dysnomia' not in data:  #set defaults here
+                            data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
+                                'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
+                else:
+                    if 'Dysnomia' in pages:
+                        G2frame.phaseDisplay.DeletePage(pages.index('Dysnomia'))
                             
             #patch
             if 'cutOff' not in Map:
@@ -2202,12 +2225,17 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(refList,0,WACV)
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
-            mapRes = G2G.ValidatedTxtCtrl(General,Map,'Resolution',nDig=(10,2),min=0.20,max=20.)
+            line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
+            mapRes = G2G.ValidatedTxtCtrl(General,Map,'GridStep',nDig=(10,2),min=0.1,max=2.)
             line2Sizer.Add(mapRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
             cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),min=1.0,max=100.)
             line2Sizer.Add(cutOff,0,WACV)
+            if len(Map['RefList']) and not generalData['Modulated']:
+                Dysno = wx.CheckBox(General,-1,label=' Use Dysnomia (Max. Ent. Method)?')
+                Dysno.SetValue(generalData['doDysnomia'])
+                Dysno.Bind(wx.EVT_CHECKBOX,OnDysnomia)
+                line2Sizer.Add(Dysno,0,WACV)
             mapSizer.Add(line2Sizer,0,WACV)
             return mapSizer
                 
@@ -2267,8 +2295,8 @@ def UpdatePhaseData(G2frame,Item,data):
             lineSizer.Add(normElem,0,WACV)
             flipSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
-            flipRes = G2G.ValidatedTxtCtrl(General,Flip,'Resolution',nDig=(10,2),min=0.25,max=2.)
+            line2Sizer.Add(wx.StaticText(General,label=' Map grid step: '),0,WACV)
+            flipRes = G2G.ValidatedTxtCtrl(General,Flip,'GridStep',nDig=(10,2),min=0.10,max=2.)
             line2Sizer.Add(flipRes,0,WACV)
             line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
             kFactor = G2G.ValidatedTxtCtrl(General,Flip,'k-factor',nDig=(10,3),min=0.1,max=1.2)
@@ -4088,6 +4116,120 @@ def UpdatePhaseData(G2frame,Item,data):
                         dlg.Destroy()
         SetupGeneral()
         wx.CallAfter(FillAtomsGrid,Atoms)
+        
+################################################################################
+#### Dysnomia (MEM) Data page
+################################################################################
+        
+    def UpdateDysnomia():
+        ''' Present the controls for running Dysnomia 
+        '''
+#data['Dysonmia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
+#    'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
+        def OnOptMeth(event):
+            DysData['Optimize'] = OptMeth.GetValue()
+            wx.CallAfter(UpdateDysnomia)
+            
+        def OnZmult(event):
+            DysData['Lagrange'][0] = Zmult.GetValue()
+            wx.CallAfter(UpdateDysnomia)
+            
+        def OnStart(event):
+            DysData['DenStart'] = Start.GetValue()
+            
+        def OnPrior(event):
+            DysData['prior'] = Prior.GetValue()
+        
+        MEMData = G2frame.MEMData
+        if MEMData.GetSizer():
+            MEMData.GetSizer().Clear(True)
+        DysData = data['Dysnomia']
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
+        lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+        lineSizer.Add(wx.StaticText(MEMData,label=' MEM Optimization method: '),0,WACV)
+        OptMeth = wx.ComboBox(MEMData,-1,value=DysData['Optimize'],choices=['ZSPA','L-BFGS'],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        OptMeth.Bind(wx.EVT_COMBOBOX,OnOptMeth)
+        lineSizer.Add(OptMeth,0,WACV)
+        mainSizer.Add(lineSizer)
+        if DysData['Optimize'] == 'ZSPA':
+            Zsizer = wx.BoxSizer(wx.HORIZONTAL)
+            Zsizer.Add(wx.StaticText(MEMData,label=' Initial Lagrangian multiplier: from '),0,WACV)
+            Zmult = wx.ComboBox(MEMData,value=DysData['Lagrange'][0],choices=['user','Dysnomia'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Zmult.Bind(wx.EVT_COMBOBOX,OnZmult)
+            Zsizer.Add(Zmult,0,WACV)
+            if DysData['Lagrange'][0] == 'user':
+                Zsizer.Add(wx.StaticText(MEMData,label=' value: '),0,WACV)
+                lamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],1,nDig=(10,4),min=0.0001,max=1.)
+                Zsizer.Add(lamb,0,WACV)
+            Zsizer.Add(wx.StaticText(MEMData,label=' Adjust by: '),0,WACV)
+            dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),min=0.05,max=0.1)
+            Zsizer.Add(dlamb,0,WACV)
+            mainSizer.Add(Zsizer)
+        Esizer = wx.BoxSizer(wx.HORIZONTAL)
+        Esizer.Add(wx.StaticText(MEMData,label=' Weight by d-spacing**'),0,WACV)
+        Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',min=0,max=4,size=(50,20))
+        Esizer.Add(Efact,0,WACV)
+        mainSizer.Add(Esizer)
+        PriorSizer = wx.BoxSizer(wx.HORIZONTAL)
+        PriorSizer.Add(wx.StaticText(MEMData,label=' Start from densities: '),0,WACV)
+        Start = wx.ComboBox(MEMData,-1,value=DysData['DenStart'],choices=['uniform','last run'],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Start.Bind(wx.EVT_COMBOBOX,OnStart)
+        PriorSizer.Add(Start,0,WACV)
+        PriorSizer.Add(wx.StaticText(MEMData,label=' Use as prior: '),0,WACV)
+        Prior = wx.ComboBox(MEMData,-1,value=DysData['prior'],choices=['uniform','last run'],
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Prior.Bind(wx.EVT_COMBOBOX,OnPrior)
+        PriorSizer.Add(Prior,0,WACV)
+        mainSizer.Add(PriorSizer)        
+        Csizer = wx.BoxSizer(wx.HORIZONTAL)
+        Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
+        Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',min=0,max=10000,size=(50,20))
+        Csizer.Add(Cyc,0,WACV)
+        mainSizer.Add(Csizer)
+        
+        
+        
+        
+        
+        SetPhaseWindow(G2frame.MEMData,mainSizer)
+
+    def OnLoadDysnomia(event):
+        print('Load MEM')
+        
+    def OnSaveDysnomia(event):
+        print('Save MEM')
+
+    def OnRunDysnomia(event):
+        
+        
+        generalData = data['General']
+        Map = generalData['Map']
+        Phase = generalData['Name'].replace(' ','_')
+        DysData = data['Dysnomia']
+        prf = open(Phase+'.prf','w')
+        prf.write(Phase+'.mem\n') #or .fos?
+        prf.write(Phase+'.out\n')
+        prf.write(Phase+'.pgrid\n')
+        prf.write(Phase+'.fba\n')
+        prf.write(Phase+'_eps.raw\n')
+        
+        
+
+        
+        prf.close()
+
+        wx.MessageBox(''' For use of Dysnomia, please cite:
+      Dysnomia, a computer program for maximum-entropy method (MEM) 
+      analysis and its performance in the MEM-based pattern fitting,
+      K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
+      doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+            
+        
+        
         
 ################################################################################
 #### Layer Data page
@@ -9485,6 +9627,9 @@ def UpdatePhaseData(G2frame,Item,data):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.WavesData)
             UpdateWavesData()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
+        elif text == 'Dysnomia':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMData)
+            UpdateDysnomia()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             UpdateDrawOptions()
@@ -9571,6 +9716,12 @@ def UpdatePhaseData(G2frame,Item,data):
         if data['General']['Modulated']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.WavesData)
             G2frame.Bind(wx.EVT_MENU, OnWaveVary, id=G2G.wxID_WAVEVARY)
+        # Dysnomia (MEM)
+        if data['General']['doDysnomia']:
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMData)
+            G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
+            G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
+            G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
         # Stacking faults 
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.LayerData)
         G2frame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2G.wxID_COPYPHASE)
@@ -9655,6 +9806,8 @@ def UpdatePhaseData(G2frame,Item,data):
         data['MCSA']['Results'] = []
     if 'Modulated' not in data['General']:
         data['General']['Modulated'] = False
+    if 'doDysnomia' not in data['General']:
+        data['General']['doDysnomia'] = False
     if 'modulated' in data['General']['Type']:
         data['General']['Modulated'] = True
         data['General']['Type'] = 'nuclear'     
@@ -9664,12 +9817,6 @@ def UpdatePhaseData(G2frame,Item,data):
     rbAtmDict = {}
     PhaseName = G2frame.GPXtree.GetItemText(Item)
     G2gd.SetDataMenuBar(G2frame)
-    # Bob: why do this differently in debug mode? Is this code to test if tabs can be moved around? #TODO - yup, flaky tho.
-#    if GSASIIpath.GetConfigValue('debug'):
-#        G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize(),
-#            style=wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_TAB_SPLIT | wx.aui.AUI_NB_TAB_MOVE)
-#    else:
-#        G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow,size=G2frame.dataWindow.GetClientSize())
     G2frame.phaseDisplay = G2G.GSNoteBook(parent=G2frame.dataWindow)
     G2frame.dataWindow.GetSizer().Add(G2frame.phaseDisplay,1,wx.ALL|wx.EXPAND,1)
     G2frame.phaseDisplay.gridList = [] # list of all grids in notebook
@@ -9709,6 +9856,10 @@ def UpdatePhaseData(G2frame,Item,data):
 #    MapPeaks.SetScrollRate(0,0)
     G2frame.phaseDisplay.gridList.append(MapPeaks)    
     G2frame.phaseDisplay.AddPage(MapPeaks,'Map peaks')
+    if data['General']['doDysnomia']:
+        G2frame.Dysnomia = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.Dysnomia,'Dysnomia')
+        Pages.append('Dysnomia')        
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)

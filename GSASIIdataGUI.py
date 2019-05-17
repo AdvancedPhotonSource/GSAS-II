@@ -5580,6 +5580,18 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.WavesDataEdit.Append(G2G.wxID_WAVEVARY,'Global wave vary','Global setting of wave vary flags')
         self.PostfillDataMenu()
         
+        #Phase / Dysnomia (Maximum Entropy Method) tab
+        G2G.Define_wxId('wxID_LOADDYSNOMIA', 'wxID_SAVEDYSNOMIA', 'wxID_RUNDYSNOMIA', )       
+        self.MEMData = wx.MenuBar()
+        self.PrefillDataMenu(self.MEMData)
+        self.MEMData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.MEMDataEdit = wx.Menu(title='')
+        self.MEMData.Append(menu=self.MEMDataEdit, title='Operations')
+        self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
+        self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
+        self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysonmia','Run Dysnomia to make new Fobs map')
+        self.PostfillDataMenu()
+        
         # Phase / Layer tab 
         G2G.Define_wxId('wxID_LOADDIFFAX', 'wxID_LAYERSIMULATE', 'wxID_SEQUENCESIMULATE', 'wxID_LAYERSFIT', 'wxID_COPYPHASE',)       
         self.LayerData = wx.MenuBar()

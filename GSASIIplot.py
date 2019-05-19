@@ -1888,12 +1888,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] += 1.
         elif event.key == 'o' and not G2frame.SinglePlot:
             G2frame.Cmax = 1.0
+            G2frame.Cmin = 0.0
             Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
                 Page.plotStyle['Offset'] = [0.,0.]
+                G2frame.FixedLimits['cylims'] = ['','']  # reset manual limits
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
@@ -2527,6 +2529,40 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             else: # reset validation
                 dbox[i].SetValue(dbox[i].GetValue())
             dbox[i].Enable(checked)
+        def applyLims(event):
+            Page.toolbar.push_current()
+            CurLims = {}
+            CurLims['xlims'] = list(Plot.get_xlim())
+            if G2frame.Weight:
+                CurLims['ylims'] = list(Page.figure.axes[1].get_ylim())
+                CurLims['dylims'] = list(Page.figure.axes[2].get_ylim())
+            elif G2frame.Contour:
+                CurLims['ylims'] = list(Plot.get_ylim())
+                CurLims['cylims'] = list(Page.Img.get_clim())
+            else:
+                CurLims['ylims'] = list(Plot.get_ylim())
+                CurLims['dylims'] = [0,0]
+            for var in 'xlims','ylims','dylims','cylims':
+                for i in range(2):
+                    if not G2frame.UseLimits[var][i]: continue
+                    try:
+                        CurLims[var][i] = float(G2frame.FixedLimits[var][i])
+                        CurLims[var][i] = float(G2frame.FixedLimits[var][i])
+                    except:
+                        pass
+            Plot.set_xlim(CurLims['xlims'])
+            if G2frame.Weight:
+                Page.figure.axes[1].set_ylim(CurLims['ylims'])
+                Page.figure.axes[2].set_ylim(CurLims['dylims'])
+            elif G2frame.Contour:
+                Plot.set_ylim(CurLims['ylims'])
+                Page.Img.set_clim(CurLims['cylims'])
+            else:
+                Plot.set_ylim(CurLims['ylims'])
+            Page.toolbar.push_current()
+            Plot.figure.canvas.draw()
+        
+        # onSetPlotLim starts here
         dlg = wx.Dialog(G2frame.plotFrame,
                     style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -2544,6 +2580,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         lblkeys = [(' x-axis ','xlims'),(' y-axis ','ylims')]
         if G2frame.Weight:
             lblkeys += [('(obs-calc)/sig ','dylims')]
+        elif G2frame.Contour:
+            lblkeys += [('contour','cylims')]
+
         for lbl,key in lblkeys:
             gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,lbl),0,wx.ALL)
             for i in range(2):
@@ -2557,9 +2596,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         vbox.Add(gsizer)
         vbox.Add((10,10),1,wx.ALL|wx.EXPAND,1)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
+        #btn = wx.Button(dlg, wx.ID_CLOSE)
+        #btn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_CANCEL))
+        #hbox.Add(btn)
+        btn = wx.Button(dlg, wx.ID_ANY, label='Apply')
+        btn.Bind(wx.EVT_BUTTON,applyLims)
+        hbox.Add(btn)
         OKbtn = wx.Button(dlg, wx.ID_OK)
         OKbtn.Bind(wx.EVT_BUTTON,lambda event:dlg.EndModal(wx.ID_OK))
-        hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
         hbox.Add(OKbtn)
         hbox.Add((-1,-1),1,wx.ALL|wx.EXPAND,1)
         vbox.Add(hbox,1,wx.ALL|wx.EXPAND,1)
@@ -2567,31 +2612,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         vbox.Fit(dlg)
         dlg.ShowModal()
         dlg.Destroy()
-        # apply values
-        Page.toolbar.push_current()
-        CurLims = {}
-        CurLims['xlims'] = list(Plot.get_xlim())
-        if G2frame.Weight:
-            CurLims['ylims'] = list(Page.figure.axes[1].get_ylim())
-            CurLims['dylims'] = list(Page.figure.axes[2].get_ylim())
-        else:
-            CurLims['ylims'] = list(Plot.get_ylim())
-            CurLims['dylims'] = [0,0]
-        for var in 'xlims','ylims','dylims':
-            for i in range(2):
-                if not G2frame.UseLimits[var][i]: continue
-                try:
-                    CurLims[var][i] = float(G2frame.FixedLimits[var][i])
-                except:
-                    pass
-        Plot.set_xlim(CurLims['xlims'])
-        if G2frame.Weight:
-            Page.figure.axes[1].set_ylim(CurLims['ylims'])
-            Page.figure.axes[2].set_ylim(CurLims['dylims'])
-        else:
-            Plot.set_ylim(CurLims['ylims'])
-        Page.toolbar.push_current()
-        Plot.figure.canvas.draw()
+        applyLims(None) # apply limits
         #GSASIIpath.IPyBreak()
         
     def onPlotFormat(event):
@@ -2689,13 +2710,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     try:
         G2frame.FixedLimits
     except:
-        G2frame.FixedLimits = {'xlims':['',''],'ylims':['',''],
-                                       'dylims':['','']}
+        G2frame.FixedLimits = {i:['',''] for i in ('xlims','ylims','dylims','cylims')}
     try:
         G2frame.UseLimits
     except:
-        G2frame.UseLimits = {'xlims':[False,False],'ylims':[False,False],
-                                       'dylims':[False,False]}
+        G2frame.UseLimits = {i:[False,False] for i in ('xlims','ylims','dylims','cylims')}
     #=====================================================================================
     # code to setup for plotting Rietveld results. Turns off multiplot,
     # sqrtplot, turn on + and weight plot, but sqrtPlot qPlot and dPlot are not changed.
@@ -2723,6 +2742,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['logPlot'] = True
             G2frame.ErrorBars = True
         newPlot = True
+        G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
 #        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -2767,7 +2787,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.tickDict = {}
     DifLine = ['']
     if G2frame.Contour:
-        Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max','g: toggle grid',
+        Page.Choice = (' key press',
+            'd: lower contour max','u: raise contour max',
+            'D: lower contour min','U: raise contour min',
+            'o: reset contour limits','g: toggle grid',
             'i: interpolation method','S: color scheme','c: contour off','t: temperature for y-axis','s: toggle sqrt plot')
     else:
         if Page.plotStyle['logPlot']:
@@ -3312,14 +3335,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     if G2frame.Contour:
         time0 = time.time()
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
+        Page.Img = Plot.imshow(ContourZ,cmap=acolor,
+                    vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
+                    interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         if G2frame.TforYaxis:
-            imgAx = Img.axes
+            imgAx = Page.Img.axes
             ytics = imgAx.get_yticks()
             ylabs = [Temps[int(i)] for i in ytics[:-1]]
             imgAx.set_yticklabels(ylabs)
-        Page.figure.colorbar(Img)
+        Page.figure.colorbar(Page.Img)
         if timeDebug:
             print('Contour display time: %.3f'%(time.time()-time0))
     else:
@@ -4622,7 +4647,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
 #                Plot.plot(X,Y,colors[N%6],picker=False)
     if G2frame.Contour and len(PlotList)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
-        Img = Plot.imshow(ContourZ,cmap=acolor,vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
+        Img = Plot.imshow(ContourZ,cmap=acolor,
+                    vmin=Ymax*G2frame.Cmin,vmax=Ymax*G2frame.Cmax,
+                    interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')
         Page.figure.colorbar(Img)
     else:

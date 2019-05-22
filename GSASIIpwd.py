@@ -2809,8 +2809,177 @@ def CalcStackingSADP(Layers,debug):
         iB += Nblk
     Layers['Sadp']['Img'] = Sapd
     print (' GETSAD time = %.2fs'%(time.time()-time0))
-#    GSASIIpath.IPyBreak()
     
+###############################################################################
+#### Maximum Entropy Method - Dysnomia
+###############################################################################
+    
+def makePRFfile(data,MEMtype):
+    ''' makes Dysnomia .prf control file from Dysnomia GUI controls
+    
+    ;param dict data: GSAS-II phase data
+    :param int MEMtype: 1 for neutron data with negative scattering lengths
+                        0 otherwise
+    :returns str: name of Dysnomia control file
+    '''
+
+    generalData = data['General']
+    pName = generalData['Name'].replace(' ','_')
+    DysData = data['Dysnomia']
+    prfName = pName+'.prf'
+    prf = open(prfName,'w')
+    prf.write('$PREFERENCES\n')
+    prf.write(pName+'.mem\n') #or .fos?
+    prf.write(pName+'.out\n')
+    prf.write(pName+'.pgrid\n')
+    prf.write(pName+'.fba\n')
+    prf.write(pName+'_eps.raw\n')
+    prf.write('%d\n'%MEMtype)
+    if DysData['DenStart'] == 'uniform':
+        prf.write('0\n')
+    else:
+        prf.write('1\n')
+    if DysData['Optimize'] == 'ZSPA':
+        prf.write('0\n')
+    else:
+        prf.write('1\n')
+    prf.write('1\n')
+    if DysData['Lagrange'][0] == 'user':
+        prf.write('0\n')
+    else:
+        prf.write('1\n')
+    prf.write('%.4f %d\n'%(DysData['Lagrange'][1],DysData['wt pwr']))
+    prf.write('%.3f\n'%DysData['Lagrange'][2])
+    prf.write('%.2f\n'%DysData['E_factor'])
+    prf.write('1\n')
+    prf.write('0\n')
+    prf.write('%d\n'%DysData['Ncyc'])
+    prf.write('1\n')
+    prf.write('1 0 0 0 0 0 0 0\n')
+    if DysData['prior'] == 'uniform':
+        prf.write('0\n')
+    else:
+        prf.write('1\n')
+    prf.close()
+    return prfName
+
+def makeMEMfile(data,reflData,MEMtype):
+    ''' make Dysnomia .mem file of reflection data, etc.
+    ;param dict data: GSAS-II phase data
+    :param list reflData: GSAS-II reflection data
+    :param int MEMtype: 1 for neutron data with negative scattering lengths
+                        0 otherwise
+    '''
+    
+    DysData = data['Dysnomia']
+    generalData = data['General']
+    pName = generalData['Name'].replace(' ','_')
+    memName = pName+'.mem'
+    Map = generalData['Map']
+    Type = Map['Type']
+    UseList = Map['RefList']
+    mem = open(memName,'w')
+    mem.write('%s\n'%(generalData['Name']+' from '+UseList[0]))
+    a,b,c,alp,bet,gam = generalData['Cell'][1:7]
+    mem.write('%10.5f%10.5f%10.5f%10.5f,%10.5f%10.5f\n'%(a,b,c,alp,bet,gam))
+    mem.write('      0.0000000      0.0000000     -1    0    0    0     P\n')   #dummy PO stuff
+    SGSym = generalData['SGData']['SpGrp']
+    try:
+        SGId = G2spc.spgbyNum.index(SGSym)
+    except IndexError:
+        return False
+    org = 1
+    if SGSym in G2spc.spg2origins:
+        org = 2
+    mapsize = Map['rho'].shape
+    sumZ = 0.
+    sumpos = 0.
+    sumneg = 0.
+    mem.write('%5d%5d%5d%5d%5d\n'%(SGId,org,mapsize[0],mapsize[1],mapsize[2]))
+    for atm in generalData['NoAtoms']:
+        Nat = generalData['NoAtoms'][atm]
+        AtInfo = G2elem.GetAtomInfo(atm)
+        sumZ += Nat*AtInfo['Z']
+        isotope = generalData['Isotope'][atm]
+        blen = generalData['Isotopes'][atm][isotope]['SL'][0]
+        if blen < 0.:
+            sumneg += blen*Nat
+        else:
+            sumpos += blen*Nat
+    if 'X' in Type:
+        mem.write('%10.2f  0.001\n'%sumZ)
+    elif 'N' in Type and MEMtype:
+        mem.write('%10.3f%10.3f 0.001\n'%(sumpos,sumneg))
+    else:
+        mem.write('%10.3 0.001\n'%sumpos)
+        
+    refs = []
+    prevpos = 0.
+    for ref in reflData:
+        if 'T' in Type:
+            h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = ref[:16]
+            FWHM = getgamFW(gam,sig)
+        else:
+            h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = ref[:13]
+            g = gam/100.    #centideg -> deg
+            s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+            FWHM = getgamFW(g,s)
+        delt = pos-prevpos
+        refs.append([h,k,l,mult,pos,FWHM,Fobs,phase,delt])
+        prevpos = pos
+            
+    ovlp = DysData['overlap']
+    refs1 = []
+    refs2 = []
+    nref2 = 0
+    iref = 0
+    Nref = len(refs)
+    start = False
+    while iref < Nref-1:
+        if refs[iref+1][-1] < ovlp*refs[iref][5]:
+            if refs[iref][-1] > ovlp*refs[iref][5]:
+                refs2.append([])
+                start = True
+            if nref2 == len(refs2):
+                refs2.append([])
+            refs2[nref2].append(refs[iref])
+        else:
+            if start:
+                refs2[nref2].append(refs[iref])
+                start = False
+                nref2 += 1
+            else:
+                refs1.append(refs[iref])
+        iref += 1
+    if start:
+        refs2[nref2].append(refs[iref])
+    else:
+        refs1.append(refs[iref])
+    
+    mem.write('%5d\n'%len(refs1))
+    for ref in refs1:
+        h,k,l = ref[:3]
+        Fobs = np.sqrt(ref[6])
+        mem.write('%5d%5d%5d%10.3f%10.3f%10.3f\n'%(h,k,l,Fobs*npcosd(ref[7]),Fobs*npsind(ref[7]),max(0.01*Fobs,0.1)))
+    mem.write('%5d\n'%len(refs2))
+    for ref2 in refs2:
+        if not len(ref2):
+            break
+        mem.write('%5d\n'%len(ref2))
+        Gsum = 0.
+        Msum = 0
+        for ref in ref2:
+            Gsum += ref[6]*ref[3]
+            Msum += ref[3]
+        G = np.sqrt(Gsum/Msum)
+        h,k,l = ref2[0][:3]
+        mem.write('%5d%5d%5d%10.3f%10.3f%5d\n'%(h,k,l,G,max(0.01*G,0.1),ref2[0][3]))
+        for ref in ref2[1:]:
+            h,k,l,m = ref[:4]
+            mem.write('%5d%5d%5d%5d\n'%(h,k,l,m))
+    mem.write('0\n')
+    mem.close()
+    return True
 #testing data
 NeedTestData = True
 def TestData():

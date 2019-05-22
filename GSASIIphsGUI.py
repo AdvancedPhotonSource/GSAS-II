@@ -39,6 +39,7 @@ import copy
 import time
 import sys
 import random as ran
+import subprocess as subp
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -2185,17 +2186,23 @@ def UpdatePhaseData(G2frame,Item,data):
                 wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
 
             def OnDysnomia(event):
-                generalData['doDysnomia'] = not generalData['doDysnomia']
+                data['General']['doDysnomia'] = not data['General']['doDysnomia']
                 pages = [G2frame.phaseDisplay.GetPageText(PageNum) for PageNum in range(G2frame.phaseDisplay.GetPageCount())]
                 if generalData['doDysnomia']:
                     if 'Dysnomia' not in pages:
                         G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
+                        G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
+                        G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
+                        G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
                         G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
                         Id = wx.NewId()
                         TabSelectionIdDict[Id] = 'Dysnomia'
+                        
+                        
                         if 'Dysnomia' not in data:  #set defaults here
                             data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
-                                'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
+                                'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0],
+                                'overlap':1.0}
                 else:
                     if 'Dysnomia' in pages:
                         G2frame.phaseDisplay.DeletePage(pages.index('Dysnomia'))
@@ -4124,7 +4131,7 @@ def UpdatePhaseData(G2frame,Item,data):
     def UpdateDysnomia():
         ''' Present the controls for running Dysnomia 
         '''
-#data['Dysonmia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
+#data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
 #    'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
         def OnOptMeth(event):
             DysData['Optimize'] = OptMeth.GetValue()
@@ -4144,6 +4151,8 @@ def UpdatePhaseData(G2frame,Item,data):
         if MEMData.GetSizer():
             MEMData.GetSizer().Clear(True)
         DysData = data['Dysnomia']
+        if 'overlap' not in DysData:
+            DysData['overlap'] = 1.0
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4152,6 +4161,9 @@ def UpdatePhaseData(G2frame,Item,data):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         OptMeth.Bind(wx.EVT_COMBOBOX,OnOptMeth)
         lineSizer.Add(OptMeth,0,WACV)
+        lineSizer.Add(wx.StaticText(MEMData,label=' Peak overlap factor'),0,WACV)
+        overlap = G2G.ValidatedTxtCtrl(MEMData,DysData,'overlap',nDig=(10,4),min=0.1,max=1.)
+        lineSizer.Add(overlap,0,WACV)
         mainSizer.Add(lineSizer)
         if DysData['Optimize'] == 'ZSPA':
             Zsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4205,28 +4217,38 @@ def UpdatePhaseData(G2frame,Item,data):
 
     def OnRunDysnomia(event):
         
-        
+#data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
+#    'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
+
         generalData = data['General']
         Map = generalData['Map']
-        Phase = generalData['Name'].replace(' ','_')
-        DysData = data['Dysnomia']
-        prf = open(Phase+'.prf','w')
-        prf.write(Phase+'.mem\n') #or .fos?
-        prf.write(Phase+'.out\n')
-        prf.write(Phase+'.pgrid\n')
-        prf.write(Phase+'.fba\n')
-        prf.write(Phase+'_eps.raw\n')
-        
-        
-
-        
-        prf.close()
+        UseList = Map['RefList']
+        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
+        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+        reflData = reflSets[generalData['Name']]['RefList']
+        Type = Map['Type']
+        MEMtype = 0
+        if 'N' in Type:
+            for el in generalData['Isotope']:
+                isotope = generalData['Isotope'][el]
+                if generalData['Isotopes'][el][isotope]['SL'][0] < 0.:
+                    MEMtype = 1
+        prfName = str(G2pwd.makePRFfile(data,MEMtype))
+        if not G2pwd.makeMEMfile(data,reflData,MEMtype):
+            print('non standard space groupsnot permitted in Dysnomia')
+            return
 
         wx.MessageBox(''' For use of Dysnomia, please cite:
       Dysnomia, a computer program for maximum-entropy method (MEM) 
       analysis and its performance in the MEM-based pattern fitting,
       K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
       doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+        
+        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+        print('Run '+DYSNOMIA)
+        
+        subp.call([DYSNOMIA,prfName])
             
         
         
@@ -9628,7 +9650,7 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateWavesData()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Dysnomia':
-            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMData)
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMMenu)
             UpdateDysnomia()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
@@ -9718,7 +9740,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.Bind(wx.EVT_MENU, OnWaveVary, id=G2G.wxID_WAVEVARY)
         # Dysnomia (MEM)
         if data['General']['doDysnomia']:
-            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMData)
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MEMMenu)
             G2frame.Bind(wx.EVT_MENU, OnLoadDysnomia, id=G2G.wxID_LOADDYSNOMIA)
             G2frame.Bind(wx.EVT_MENU, OnSaveDysnomia, id=G2G.wxID_SAVEDYSNOMIA)
             G2frame.Bind(wx.EVT_MENU, OnRunDysnomia, id=G2G.wxID_RUNDYSNOMIA)
@@ -9857,8 +9879,8 @@ def UpdatePhaseData(G2frame,Item,data):
     G2frame.phaseDisplay.gridList.append(MapPeaks)    
     G2frame.phaseDisplay.AddPage(MapPeaks,'Map peaks')
     if data['General']['doDysnomia']:
-        G2frame.Dysnomia = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.Dysnomia,'Dysnomia')
+        G2frame.MEMData = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.MEMData,'Dysnomia')
         Pages.append('Dysnomia')        
     Pages.append('Map peaks')
     if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:

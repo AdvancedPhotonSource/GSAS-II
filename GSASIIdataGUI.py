@@ -4715,7 +4715,7 @@ class GSASII(wx.Frame):
         if 'Seq Data' in Controls: 
             histNames = Controls['Seq Data']
         else: # patch from before Controls['Seq Data'] was implemented
-            histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
+            histNames = G2stIO.GetHistogramNames(self.GPXfile,['PWDR',])
         if Controls.get('Reverse Seq'):
             histNames.reverse()
         # select it
@@ -5582,11 +5582,11 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         #Phase / Dysnomia (Maximum Entropy Method) tab
         G2G.Define_wxId('wxID_LOADDYSNOMIA', 'wxID_SAVEDYSNOMIA', 'wxID_RUNDYSNOMIA', )       
-        self.MEMData = wx.MenuBar()
-        self.PrefillDataMenu(self.MEMData)
-        self.MEMData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.MEMMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.MEMMenu)
+        self.MEMMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.MEMDataEdit = wx.Menu(title='')
-        self.MEMData.Append(menu=self.MEMDataEdit, title='Operations')
+        self.MEMMenu.Append(menu=self.MEMDataEdit, title='Operations')
         self.MEMDataEdit.Append(G2G.wxID_LOADDYSNOMIA,'Load from Dysnomia file','Load MEM info from Dysnomia file')
         self.MEMDataEdit.Append(G2G.wxID_SAVEDYSNOMIA,'Save Dysnomia file','Save MEM info in Dysnomia file')
         self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysonmia','Run Dysnomia to make new Fobs map')
@@ -7816,33 +7816,24 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Inst = G2frame.GPXtree.GetItemPyData(GetGPXtreeItemId(G2frame,
                 G2frame.PatternId,'Instrument Parameters'))
             if 'C' in Inst[0]['Type'][0]:
-                magSizer.Add(wx.StaticText(panel,-1,'2Theta'
-                                       ),1,wx.ALIGN_CENTER,1)
+                magSizer.Add(wx.StaticText(panel,-1,'2Theta'),1,wx.ALIGN_CENTER,1)
             else:
-                magSizer.Add(wx.StaticText(panel,-1,'TOF'
-                                       ),1,wx.ALIGN_CENTER,1)
+                magSizer.Add(wx.StaticText(panel,-1,'TOF'),1,wx.ALIGN_CENTER,1)
             magSizer.Add(wx.StaticText(panel,-1,'Magnification\nfactor',
-                                       style=wx.ALIGN_CENTRE_HORIZONTAL),1,wx.ALIGN_CENTER,1)
+                style=wx.ALIGN_CENTRE_HORIZONTAL),1,wx.ALIGN_CENTER,1)
             magSizer.Add(wx.StaticText(panel,-1,'Delete\nbutton',
-                                       style=wx.ALIGN_CENTRE_HORIZONTAL
-                                       ),1,wx.ALIGN_CENTER,1)
+                style=wx.ALIGN_CENTRE_HORIZONTAL),1,wx.ALIGN_CENTER,1)
             magSizer.Add(wx.StaticText(panel,-1,'(start)'),1,wx.ALIGN_CENTER,1)
             edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][0],1,
-                                            nDig=(7,2),
-                                            min=0.01,max=1000.,
-                                            OnLeave=OnEditMag,size=(65,-1))
+                nDig=(7,2),min=0.01,max=1000.,OnLeave=OnEditMag,size=(65,-1))
             magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
             magSizer.Add((1,1))
             for i in range(1,lenmag):
-                edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],0,
-                                            nDig=(10,3),
-                                            min=data[1][0][0],max=data[1][0][-1],
-                                            OnLeave=OnEditMag)
+                edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],0,nDig=(10,3), 
+                    min=data[1][0][0],max=data[1][0][-1],OnLeave=OnEditMag)
                 magSizer.Add(edit)
                 edit = G2G.ValidatedTxtCtrl(panel,data[0]['Magnification'][i],1,
-                                            nDig=(7,2),
-                                            min=0.01,max=1000.,
-                                            OnLeave=OnEditMag,size=(65,-1))
+                    nDig=(7,2),min=0.01,max=1000.,OnLeave=OnEditMag,size=(65,-1))
                 magSizer.Add(edit,1,wx.ALIGN_CENTER,5)
                 delmag = wx.Button(panel,wx.ID_ANY,label='Del',size=(40,-1))
                 delmag.Bind(wx.EVT_BUTTON,OnDelMag)
@@ -7877,7 +7868,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Super = 0
             SuperVec = []       
         refList = data[1]['RefList']
-#        GSASIIpath.IPyBreak()
         FoMax = np.max(refList.T[5+data[1].get('Super',0)])
         page = G2frame.G2plotNB.nb.GetSelection()
         tab = ''

@@ -193,7 +193,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
             AskFile='default' # base name on the GPX file name
             ): return 
         self.OpenFile()
-        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
+        hist = list(self.histnam)[0] # there should only be one histogram, in any case take the 1st
         self.Write('\nHistogram '+hist)
         histblk = self.Histograms[hist]
         for phasenam in histblk['Reflection Lists']:
@@ -275,7 +275,7 @@ class ExportSingleText(G2IO.ExportBaseclass):
             AskFile='default' # base name on the GPX file name
             ): return 
         self.OpenFile()
-        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
+        hist = list(self.histnam)[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
         hklfmt = "{:.0f},{:.0f},{:.0f}"
         hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>12s} {:>7s} {:>6s}"

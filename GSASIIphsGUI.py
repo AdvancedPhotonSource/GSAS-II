@@ -4202,24 +4202,16 @@ def UpdatePhaseData(G2frame,Item,data):
         Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',min=0,max=10000,size=(50,20))
         Csizer.Add(Cyc,0,WACV)
         mainSizer.Add(Csizer)
-        
-        
-        
-        
-        
         SetPhaseWindow(G2frame.MEMData,mainSizer)
 
     def OnLoadDysnomia(event):
-        print('Load MEM')
+        print('Load MEM - might not be implemented')
         
     def OnSaveDysnomia(event):
-        print('Save MEM')
+        print('Save MEM - might not be implemented')
 
     def OnRunDysnomia(event):
         
-#data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
-#    'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
-
         generalData = data['General']
         Map = generalData['Map']
         UseList = Map['RefList']
@@ -4245,10 +4237,13 @@ def UpdatePhaseData(G2frame,Item,data):
       doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
         path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')     #TODO; need check if DYSNOMIA exists!
         print('Run '+DYSNOMIA)
         
         subp.call([DYSNOMIA,prfName])
+        
+        G2pwd.MEMupdateReflData(prfName,reflData)   #auto run Fourier?
+        OnFourierMaps(event)        
             
         
         

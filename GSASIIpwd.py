@@ -2886,7 +2886,7 @@ def makeMEMfile(data,reflData,MEMtype):
     SGSym = generalData['SGData']['SpGrp']
     try:
         SGId = G2spc.spgbyNum.index(SGSym)
-    except IndexError:
+    except ValueError:
         return False
     org = 1
     if SGSym in G2spc.spg2origins:
@@ -2980,6 +2980,34 @@ def makeMEMfile(data,reflData,MEMtype):
     mem.write('0\n')
     mem.close()
     return True
+
+def MEMupdateReflData(prfName,reflData):
+    ''' Update reflection data with new Fosq, phase result from Dysnomia
+    ;param str prfName: phase.mem file name
+    :param list reflData: GSAS-II reflection data
+    '''
+    
+    reflDict = {}
+    for iref,ref in enumerate(reflData):
+        reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
+    fbaName = os.path.splitext(prfName)[0]+'.fba'
+    fba = open(fbaName,'r')
+    fba.readline()
+    Nref = int(fba.readline()[:-1])
+    fbalines = fba.readlines()
+    for line in fbalines[:Nref]:
+        info = line.split()
+        h = int(info[0])
+        k = int(info[1])
+        l = int(info[2])
+        FoR = float(info[3])
+        FoI = float(info[4])
+        refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
+        Fosq = FoR**2+FoI**2
+        phase = npatan2d(FoI,FoR)
+        reflData[refId][8] = Fosq
+        reflData[refId][10] = phase
+    
 #testing data
 NeedTestData = True
 def TestData():

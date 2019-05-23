@@ -4216,8 +4216,16 @@ def UpdatePhaseData(G2frame,Item,data):
         Map = generalData['Map']
         UseList = Map['RefList']
         pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
+        if not pId:
+            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+                style=wx.ICON_ERROR)
+            return            
         reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
         reflData = reflSets[generalData['Name']]['RefList']
+        if 'Type' not in Map:
+            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+                style=wx.ICON_ERROR)
+            return            
         Type = Map['Type']
         MEMtype = 0
         if 'N' in Type:
@@ -4227,7 +4235,19 @@ def UpdatePhaseData(G2frame,Item,data):
                     MEMtype = 1
         prfName = str(G2pwd.makePRFfile(data,MEMtype))
         if not G2pwd.makeMEMfile(data,reflData,MEMtype):
-            print('non standard space groupsnot permitted in Dysnomia')
+            SpGrp = generalData['SGData']['SpGrp']
+            wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
+                style=wx.ICON_ERROR)
+            return
+
+        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+        
+        if not os.path.exists(DYSNOMIA):
+            wx.MessageBox(''' Dysnomia is not installed. Please download it from 
+         https://jp-minerals.org/dysnomia/en/ 
+         and install it at.'''+DYSNOMIA,
+                caption='Dysnomia not installed',style=wx.ICON_ERROR)
             return
 
         wx.MessageBox(''' For use of Dysnomia, please cite:
@@ -4236,17 +4256,11 @@ def UpdatePhaseData(G2frame,Item,data):
       K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
       doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')     #TODO; need check if DYSNOMIA exists!
-        print('Run '+DYSNOMIA)
-        
+        print('Run '+DYSNOMIA)        
         subp.call([DYSNOMIA,prfName])
         
         G2pwd.MEMupdateReflData(prfName,reflData)   #auto run Fourier?
         OnFourierMaps(event)        
-            
-        
-        
         
 ################################################################################
 #### Layer Data page

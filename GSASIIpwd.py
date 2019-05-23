@@ -2881,7 +2881,7 @@ def makeMEMfile(data,reflData,MEMtype):
     mem = open(memName,'w')
     mem.write('%s\n'%(generalData['Name']+' from '+UseList[0]))
     a,b,c,alp,bet,gam = generalData['Cell'][1:7]
-    mem.write('%10.5f%10.5f%10.5f%10.5f,%10.5f%10.5f\n'%(a,b,c,alp,bet,gam))
+    mem.write('%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f\n'%(a,b,c,alp,bet,gam))
     mem.write('      0.0000000      0.0000000     -1    0    0    0     P\n')   #dummy PO stuff
     SGSym = generalData['SGData']['SpGrp']
     try:

@@ -4245,8 +4245,8 @@ def UpdatePhaseData(G2frame,Item,data):
         
         if not os.path.exists(DYSNOMIA):
             wx.MessageBox(''' Dysnomia is not installed. Please download it from 
-         https://jp-minerals.org/dysnomia/en/ 
-         and install it at.'''+DYSNOMIA,
+    https://jp-minerals.org/dysnomia/en/ 
+    and install it at.'''+DYSNOMIA,
                 caption='Dysnomia not installed',style=wx.ICON_ERROR)
             return
 

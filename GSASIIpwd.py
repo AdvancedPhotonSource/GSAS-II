@@ -2991,7 +2991,10 @@ def MEMupdateReflData(prfName,reflData):
     for iref,ref in enumerate(reflData):
         reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
     fbaName = os.path.splitext(prfName)[0]+'.fba'
-    fba = open(fbaName,'r')
+    try:
+        fba = open(fbaName,'r')
+    except FileNotFoundError:
+        return False
     fba.readline()
     Nref = int(fba.readline()[:-1])
     fbalines = fba.readlines()
@@ -3007,6 +3010,7 @@ def MEMupdateReflData(prfName,reflData):
         phase = npatan2d(FoI,FoR)
         reflData[refId][8] = Fosq
         reflData[refId][10] = phase
+    return True
     
 #testing data
 NeedTestData = True

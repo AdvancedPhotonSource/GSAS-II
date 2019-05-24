@@ -2901,6 +2901,25 @@ def UpdateIndexPeaksGrid(G2frame, data):
         G2frame.GPXtree.SetItemPyData(IndexId,data)
         UpdateIndexPeaksGrid(G2frame,data)
         
+    def OnSave(event):
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose Index peaks csv file', pth, '', 
+            'indexing peaks file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                filename = os.path.splitext(filename)[0]+'.csv'
+                File = open(filename,'w')
+                names = 'h,k,l,position,intensity,d-Obs,d-calc\n'
+                File.write(names)
+                fmt = '%d,%d,%d,%.4f,%.1f,%.5f,%.5f\n'
+                for refl in data[0]:
+                    if refl[3]:
+                        File.write(fmt%(refl[4],refl[5],refl[6],refl[0],refl[1],refl[7],refl[8]))
+                File.close()
+        finally:
+            dlg.Destroy()
+        
     def KeyEditPickGrid(event):
         colList = G2frame.indxPeaks.GetSelectedCols()
         data = G2frame.GPXtree.GetItemPyData(IndexId)
@@ -2925,6 +2944,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     if 'PWD' in G2frame.GPXtree.GetItemText(G2frame.PatternId):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndPeaksMenu)
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2G.wxID_INDXRELOAD)
+        G2frame.Bind(wx.EVT_MENU, OnSave, id=G2G.wxID_INDEXSAVE)
     G2frame.dataWindow.IndexPeaks.Enable(False)
     G2frame.IndexPeaksTable = []
     if len(data[0]):

@@ -5272,12 +5272,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.AutoSearch.Enable(True)
         
         # PDR / Index Peak List
-        G2G.Define_wxId('wxID_INDXRELOAD',)
+        G2G.Define_wxId('wxID_INDXRELOAD','wxID_INDEXSAVE',)
         self.IndPeaksMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndPeaksMenu)
         self.IndPeaksEdit = wx.Menu(title='')
         self.IndPeaksMenu.Append(menu=self.IndPeaksEdit,title='Operations')
-        self.IndPeaksEdit.Append(G2G.wxID_INDXRELOAD,'Load/Reload','Load/Reload index peaks from peak list') 
+        self.IndPeaksEdit.Append(G2G.wxID_INDXRELOAD,'Load/Reload','Load/Reload index peaks from peak list')
+        self.IndPeaksEdit.Append(G2G.wxID_INDEXSAVE,'Save','Save index peaks to CSV file')
         self.PostfillDataMenu()
         
         # PDR / Unit Cells List

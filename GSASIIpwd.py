@@ -2863,12 +2863,13 @@ def makePRFfile(data,MEMtype):
     prf.close()
     return prfName
 
-def makeMEMfile(data,reflData,MEMtype):
+def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     ''' make Dysnomia .mem file of reflection data, etc.
     ;param dict data: GSAS-II phase data
     :param list reflData: GSAS-II reflection data
     :param int MEMtype: 1 for neutron data with negative scattering lengths
                         0 otherwise
+    :param str:DYSNOMIA path to dysnomia.exe
     '''
     
     DysData = data['Dysnomia']
@@ -2911,7 +2912,7 @@ def makeMEMfile(data,reflData,MEMtype):
     elif 'N' in Type and MEMtype:
         mem.write('%10.3f%10.3f 0.001\n'%(sumpos,sumneg))
     else:
-        mem.write('%10.3 0.001\n'%sumpos)
+        mem.write('%10.3f 0.001\n'%sumpos)
         
     refs = []
     prevpos = 0.
@@ -2961,10 +2962,14 @@ def makeMEMfile(data,reflData,MEMtype):
         h,k,l = ref[:3]
         Fobs = np.sqrt(ref[6])
         mem.write('%5d%5d%5d%10.3f%10.3f%10.3f\n'%(h,k,l,Fobs*npcosd(ref[7]),Fobs*npsind(ref[7]),max(0.01*Fobs,0.1)))
-    mem.write('%5d\n'%len(refs2))
-    for ref2 in refs2:
-        if not len(ref2):
+    while True:
+        if not len(refs2[-1]):
+            del refs2[-1]
+        else:
             break
+    mem.write('%5d\n'%len(refs2))
+    for iref2,ref2 in enumerate(refs2):
+        mem.write('#%5d\n'%iref2)
         mem.write('%5d\n'%len(ref2))
         Gsum = 0.
         Msum = 0

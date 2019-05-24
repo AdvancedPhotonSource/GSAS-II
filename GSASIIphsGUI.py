@@ -4212,6 +4212,16 @@ def UpdatePhaseData(G2frame,Item,data):
 
     def OnRunDysnomia(event):
         
+        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
+        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+        
+        if not os.path.exists(DYSNOMIA):
+            wx.MessageBox(''' Dysnomia is not installed. Please download it from 
+    https://jp-minerals.org/dysnomia/en/ 
+    and install it at.'''+DYSNOMIA,
+                caption='Dysnomia not installed',style=wx.ICON_ERROR)
+            return
+
         generalData = data['General']
         Map = generalData['Map']
         UseList = Map['RefList']
@@ -4231,24 +4241,17 @@ def UpdatePhaseData(G2frame,Item,data):
         if 'N' in Type:
             for el in generalData['Isotope']:
                 isotope = generalData['Isotope'][el]
+                if el not in generalData['Isotopes']:
+                    continue
                 if generalData['Isotopes'][el][isotope]['SL'][0] < 0.:
                     MEMtype = 1
         prfName = str(G2pwd.makePRFfile(data,MEMtype))
-        if not G2pwd.makeMEMfile(data,reflData,MEMtype):
+        if not G2pwd.makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
             SpGrp = generalData['SGData']['SpGrp']
             wx.MessageBox('Non standard space group '+SpGrp+' not permitted in Dysnomia','Dysnomia Error',
                 style=wx.ICON_ERROR)
             return
 
-        path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
-        DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
-        
-        if not os.path.exists(DYSNOMIA):
-            wx.MessageBox(''' Dysnomia is not installed. Please download it from 
-    https://jp-minerals.org/dysnomia/en/ 
-    and install it at.'''+DYSNOMIA,
-                caption='Dysnomia not installed',style=wx.ICON_ERROR)
-            return
 
         wx.MessageBox(''' For use of Dysnomia, please cite:
       Dysnomia, a computer program for maximum-entropy method (MEM) 
@@ -4257,7 +4260,7 @@ def UpdatePhaseData(G2frame,Item,data):
       doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
         print('Run '+DYSNOMIA)        
-        subp.run([DYSNOMIA,prfName],startupinfo=subp.CREATE_NEW_PROCESS_GROUP)
+        subp.call([DYSNOMIA,prfName],startupinfo=subp.CREATE_NEW_PROCESS_GROUP)
         
         if G2pwd.MEMupdateReflData(prfName,reflData):
             OnFourierMaps(event)           #auto run Fourier

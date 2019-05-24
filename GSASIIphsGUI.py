@@ -4260,7 +4260,7 @@ def UpdatePhaseData(G2frame,Item,data):
       doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
         print('Run '+DYSNOMIA)        
-        subp.call([DYSNOMIA,prfName],startupinfo=subp.CREATE_NEW_PROCESS_GROUP)
+        subp.call([DYSNOMIA,prfName])
         
         if G2pwd.MEMupdateReflData(prfName,reflData):
             OnFourierMaps(event)           #auto run Fourier

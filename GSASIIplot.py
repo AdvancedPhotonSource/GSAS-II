@@ -116,8 +116,7 @@ import os.path
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
-from scipy.ndimage.interpolation import map_coordinates
-# Don't depend on wx/matplotlib for scriptable
+# Don't depend on wx/matplotlib/scipy for scriptable; or for Sphinx docs
 try:
     import wx
     import wx.aui
@@ -126,6 +125,7 @@ try:
     mpl.use('wxAgg')
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
+    from scipy.ndimage.interpolation import map_coordinates
 except ImportError:
     pass
 import GSASIIpath

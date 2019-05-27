@@ -5006,18 +5006,7 @@ def UpdatePhaseData(G2frame,Item,data):
         print (' fit stacking fault model TBD')
 #        import scipy.optimize as opt
         wx.BeginBusyCursor()
-#        Min,Init,Done = SetupPDFEval()
-#        xstart = Init()
-#        rms = Min(xstart)
-#        print('Optimizing corrections to improve G(r) at low r')
-#        print('start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})'.format(
-#                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-#        
-#        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
-#                           method='L-BFGS-B',options={'maxiter':5})
-#        Done(res['x'])      
-#        print('end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.2f})\n'.format(
-#                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun']))
+        # see pwd.SetupPDFEval() and pwd.OptimizePDF() for an example minimization
         wx.EndBusyCursor()
         wx.CallAfter(UpdateLayerData)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')

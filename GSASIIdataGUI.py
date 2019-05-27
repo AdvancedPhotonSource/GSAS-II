@@ -4147,7 +4147,34 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def OnExportPDF(self,event):
-        #need S(Q) and G(R) to be saved here - probably best from selection?
+        'Save S(Q), G(R),... as selected by user'
+        def PDFSave(G2frame,exports,PDFsaves):
+            'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
+            if len(exports) > 1:
+                dirname = G2G.askSaveDirectory(G2frame)
+                if not dirname: return
+            else:
+                defnam = exports[0].replace(' ','_')[5:]
+                filename = G2G.askSaveFile(G2frame,defnam,'.gr',
+                                               'G(r) file, etc.')
+                if not filename: return
+                dirname,filename = os.path.split(filename)
+                filename = os.path.splitext(filename)[0]
+            for export in exports:
+                if len(exports) > 1:
+                    filename = export.replace(' ','_')[5:]
+                PickId = GetGPXtreeItemId(G2frame, G2frame.root, export)
+                PDFControls = G2frame.GPXtree.GetItemPyData(
+                    GetGPXtreeItemId(G2frame, PickId,'PDF Controls'))
+                if PDFsaves[4]: #pdfGUI file for G(R)
+                    pId = GetGPXtreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
+                    Inst = G2frame.GPXtree.GetItemPyData(
+                        GetGPXtreeItemId(G2frame, pId,'Instrument Parameters'))[0]
+                    Limits = G2frame.GPXtree.GetItemPyData(
+                        GetGPXtreeItemId(G2frame, pId,'Limits'))
+                G2fil.PDFWrite(export,os.path.join(dirname,filename),
+                            PDFsaves,PDFControls,Inst,Limits)
+        
         names = G2pdG.GetFileList(self,'PDF')
         exports = []
         if names:
@@ -4162,7 +4189,7 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         if exports:
             PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4'],od['value_5']]
-            G2IO.PDFSave(self,exports,PDFsaves)
+            PDFSave(self,exports,PDFsaves)
         
     def OnMakePDFs(self,event):
         '''Sets up PDF data structure filled with defaults; if found chemical formula is inserted

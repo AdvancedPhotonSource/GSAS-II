@@ -6331,7 +6331,7 @@ def computePDF(G2frame,data):
         name = data[key]['Name']
         if name.strip():
             pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
-            if pId == 0:
+            if not pId:
                 print(key,'Entry',name,'Not found.')
                 problem = True
                 continue                
@@ -6353,102 +6353,17 @@ def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
     '''Optimize the PDF to minimize the difference between G(r) and the expected value for
     low r (-4 pi r #density). 
     '''
-    import scipy.optimize as opt
-    Min,Init,Done = SetupPDFEval(G2frame,data)
-    xstart = Init()
-    bakMul = data['Sample Bkg.']['Mult']
-    if showFit:
-        rms = Min(xstart)
-        print('  Optimizing corrections to improve G(r) at low r')
-        if data['Sample Bkg.'].get('Refine',False):
-#            data['Flat Bkg'] = 0.
-            print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
-                data['Ruland'],data['Sample Bkg.']['Mult'],rms))
-        else:
-            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
-    if data['Sample Bkg.'].get('Refine',False):
-        res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
-                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
-    else:
-        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
-                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
-    Done(res['x'])
-    if showFit:
-        if res['success']:
-            msg = 'Converged'
-        else:
-            msg = 'Not Converged'
-        if data['Sample Bkg.'].get('Refine',False):
-            print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
-                data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
-        else:
-            print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
-                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
-    return res['success']
-
-def SetupPDFEval(G2frame,data):
-    '''Create functions needed to optimize the PDF at low r
-    '''
-    Data = copy.deepcopy(data)
     xydata = {}
     for key in ['Sample','Sample Bkg.','Container','Container Bkg.']:
-        name = Data[key]['Name']
+        name = data[key]['Name']
         if name:
             xydata[key] = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name))
-    powName = Data['Sample']['Name']
+    powName = data['Sample']['Name']
     powId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,powName)
     limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Limits'))[1]
     inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-    numbDen = G2pwd.GetNumDensity(Data['ElList'],Data['Form Vol'])
-    BkgMax = 1.
-    def EvalLowPDF(arg):
-        '''Objective routine -- evaluates the RMS deviations in G(r)
-        from -4(pi)*#density*r for for r<Rmin
-        arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
-        the min & max values are between 0 and 1. 
-        '''
-        if Data['Sample Bkg.'].get('Refine',False):
-            R,S = arg
-            Data['Sample Bkg.']['Mult'] = S
-        else:
-            F,B,R = arg
-            Data['Flat Bkg'] = F*BkgMax
-            Data['BackRatio'] = B
-        Data['Ruland'] = R/10.
-        G2pwd.CalcPDF(Data,inst,limits,xydata)
-        # test low r computation
-        g = xydata['GofR'][1][1]
-        r = xydata['GofR'][1][0]
-        g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
-        M = sum(g0**2)/len(g0)
-        return M
-    def GetCurrentVals():
-        '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
-        '''
-        if data['Sample Bkg.'].get('Refine',False):
-                return [max(10*data['Ruland'],.05),data['Sample']['Mult']]
-        try:
-            F = data['Flat Bkg']/BkgMax
-        except:
-            F = 0
-        return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
-    def SetFinalVals(arg):
-        '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
-        scaled, refined values and plot corrected region of G(r) 
-        '''
-        if data['Sample Bkg.'].get('Refine',False):
-            R,S = arg
-            data['Sample Bkg.']['Mult'] = S
-        else:
-            F,B,R = arg
-            data['Flat Bkg'] = F*BkgMax
-            data['BackRatio'] = B
-        data['Ruland'] = R/10.
-        G2pwd.CalcPDF(data,inst,limits,xydata)
-    EvalLowPDF(GetCurrentVals())
-    BkgMax = max(xydata['IofQ'][1][1])/50.
-    return EvalLowPDF,GetCurrentVals,SetFinalVals
+    res = G2pwd.OptimizePDF(data,xydata,limits,inst,showFit,maxCycles)
+    return res['success']
     
 def UpdatePDFGrid(G2frame,data):
     '''respond to selection of PWDR PDF data tree item.
@@ -6532,7 +6447,7 @@ def UpdatePDFGrid(G2frame,data):
             multSpin.Bind(wx.EVT_SPIN, OnMoveMult)
             mulBox.Add(multSpin,0,WACV)
             fileSizer.Add(mulBox,0,WACV)
-            if 'Refine' in item and item['Name']:
+            if 'Refine' in item and item['Name'] and 'Sample' in key:
                 refMult = wx.CheckBox(parent=G2frame.dataWindow,label='Refine?')
                 refMult.SetValue(item['Refine'])
                 refMult.Bind(wx.EVT_CHECKBOX, OnRefMult)
@@ -6667,8 +6582,8 @@ def UpdatePDFGrid(G2frame,data):
                 OptimizePDF(G2frame,data)
             finally:
                 wx.EndBusyCursor()
+            OnComputePDF(event)
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
-            OnComputePDF(event)        
                         
         def AfterChangeNoRefresh(invalid,value,tc):
             if invalid: return
@@ -7116,7 +7031,10 @@ def UpdatePDFGrid(G2frame,data):
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
         mainSizer.Add(SFGctrlSizer(),0,WACV)
         G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
-    mainSizer.Add(DiffSizer(),0,WACV)
+        mainSizer.Add(DiffSizer(),0,WACV)
+    else:
+        mainSizer.Add(wx.StaticText(G2frame.dataWindow,wx.ID_ANY,
+                                     powName+' not in Tree'))
     G2frame.dataWindow.SetDataSize()
 
 ###############################################################################################################

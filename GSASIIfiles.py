@@ -825,3 +825,143 @@ def readMasks(filename,masks,ignoreThreshold):
     for key in ['Points','Rings','Arcs','Polygons']:
         masks[key] = masks.get(key,[])
         masks[key] = [i for i in masks[key] if len(i)]
+
+def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
+    '''Write PDF-related data (G(r), S(Q),...) into files, as 
+    selected.
+
+    :param str PDFentry: name of the PDF entry in the tree. This is 
+      used for comments in the file specifying where it came from; 
+      it can be arbitrary
+    :param str fileroot: name of file(s) to be written. The extension 
+      will be ignored.
+    :param list PDFsaves: flags that determine what type of file will be 
+      written:
+      PDFsaves[0], if True writes a I(Q) file with a .iq extension
+      PDFsaves[1], if True writes a S(Q) file with a .sq extension
+      PDFsaves[2], if True writes a F(Q) file with a .fq extension
+      PDFsaves[3], if True writes a G(r) file with a .gr extension
+      PDFsaves[4], if True writes G(r) in a pdfGUI input file with 
+      a .gr extension. Note that if PDFsaves[3] and PDFsaves[4] are
+      both True, the pdfGUI overwrites the G(r) file. 
+    :param dict PDFControls: The PDF parameters and computed results
+    :param dict Inst: Instrument parameters from the PDWR entry used 
+      to compute the PDF. Needed only when PDFsaves[4] is True.
+    :param list Limits: Computation limits from the PDWR entry used 
+      to compute the PDF. Needed only when PDFsaves[4] is True.
+    '''
+    import scipy.interpolate as scintp
+    fileroot = os.path.splitext(fileroot)[0]
+    if PDFsaves[0]:     #I(Q)
+        iqfilename = fileroot+'.iq'
+        iqdata = PDFControls['I(Q)'][1]
+        iqfxn = scintp.interp1d(iqdata[0],iqdata[1],kind='linear')
+        iqfile = open(iqfilename,'w')
+        iqfile.write('#T I(Q) %s\n'%(PDFentry))
+        iqfile.write('#L Q     I(Q)\n')
+        qnew = np.arange(iqdata[0][0],iqdata[0][-1],0.005)
+        iqnew = zip(qnew,iqfxn(qnew))
+        for q,iq in iqnew:
+            iqfile.write("%15.6g %15.6g\n" % (q,iq))
+        iqfile.close()
+        print (' I(Q) saved to: '+iqfilename)
+
+    if PDFsaves[1]:     #S(Q)
+        sqfilename = fileroot+'.sq'
+        sqdata = PDFControls['S(Q)'][1]
+        sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
+        sqfile = open(sqfilename,'w')
+        sqfile.write('#T S(Q) %s\n'%(PDFentry))
+        sqfile.write('#L Q     S(Q)\n')
+        qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
+        sqnew = zip(qnew,sqfxn(qnew))
+        for q,sq in sqnew:
+            sqfile.write("%15.6g %15.6g\n" % (q,sq))
+        sqfile.close()
+        print (' S(Q) saved to: '+sqfilename)
+
+    if PDFsaves[2]:     #F(Q)
+        fqfilename = fileroot+'.fq'
+        fqdata = PDFControls['F(Q)'][1]
+        fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
+        fqfile = open(fqfilename,'w')
+        fqfile.write('#T F(Q) %s\n'%(PDFentry))
+        fqfile.write('#L Q     F(Q)\n')
+        qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
+        fqnew = zip(qnew,fqfxn(qnew))
+        for q,fq in fqnew:
+            fqfile.write("%15.6g %15.6g\n" % (q,fq))
+        fqfile.close()
+        print (' F(Q) saved to: '+fqfilename)
+
+    if PDFsaves[3]:     #G(R)
+        grfilename = fileroot+'.gr'
+        grdata = PDFControls['G(R)'][1]
+        grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
+        grfile = open(grfilename,'w')
+        grfile.write('#T G(R) %s\n'%(PDFentry))
+        grfile.write('#L R     G(R)\n')
+        rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+        grnew = zip(rnew,grfxn(rnew))
+        for r,gr in grnew:
+            grfile.write("%15.6g %15.6g\n" % (r,gr))
+        grfile.close()
+        print (' G(R) saved to: '+grfilename)
+
+    if PDFsaves[4]: #pdfGUI file for G(R)
+        import GSASIImath as G2mth
+        import GSASIIlattice as G2lat       
+        grfilename = fileroot+'.gr'
+        grdata = PDFControls['G(R)'][1]
+        qdata = PDFControls['I(Q)'][1][0]
+        grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
+        grfile = open(grfilename,'w')
+        rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+        grnew = zip(rnew,grfxn(rnew))
+
+        grfile.write('[DEFAULT]\n')
+        grfile.write('\n')
+        grfile.write('version = GSAS-II-v'+str(GSASIIpath.GetVersionNumber())+'\n')
+        grfile.write('\n')
+        grfile.write('# input and output specifications\n')
+        grfile.write('dataformat = Qnm\n')
+        grfile.write('inputfile = %s\n'%(PDFControls['Sample']['Name']))
+        grfile.write('backgroundfile = %s\n'%(PDFControls['Sample Bkg.']['Name']))
+        grfile.write('outputtype = gr\n')
+        grfile.write('\n')
+        grfile.write('# PDF calculation setup\n')
+        if 'x' in Inst['Type']:
+            grfile.write('mode = %s\n'%('xray'))
+        elif 'N' in Inst['Type']:
+            grfile.write('mode = %s\n'%('neutron'))
+        wave = G2mth.getMeanWave(Inst)
+        grfile.write('wavelength = %.5f\n'%(wave))
+        formula = ''
+        for el in PDFControls['ElList']:
+            formula += el
+            num = PDFControls['ElList'][el]['FormulaNo']
+            if num == round(num):
+                formula += '%d'%(int(num))
+            else:
+                formula += '%.2f'%(num)
+        grfile.write('composition = %s\n'%(formula))
+        grfile.write('bgscale = %.3f\n'%(-PDFControls['Sample Bkg.']['Mult']))
+        highQ = 2.*np.pi/G2lat.Pos2dsp(Inst,Limits[1][1])
+        grfile.write('qmaxinst = %.2f\n'%(highQ))
+        grfile.write('qmin = %.5f\n'%(qdata[0]))
+        grfile.write('qmax = %.4f\n'%(qdata[-1]))
+        grfile.write('rmin = %.2f\n'%(PDFControls['Rmin']))
+        grfile.write('rmax = %.2f\n'%(PDFControls['Rmax']))
+        grfile.write('rstep = 0.01\n')
+
+
+        grfile.write('\n')
+        grfile.write('# End of config '+63*'-')
+        grfile.write('\n')
+        grfile.write('#### start data\n')
+        grfile.write('#S 1\n')
+        grfile.write('#L r($\AA$)  G($\AA^{-2}$)\n')            
+        for r,gr in grnew:
+            grfile.write("%15.2F %15.6F\n" % (r,gr))
+        grfile.close()
+        print (' G(R) saved to: '+grfilename)

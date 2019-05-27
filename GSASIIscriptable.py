@@ -111,11 +111,15 @@ method                                                Use
 
 :meth:`G2Project.add_phase`                           Adds a phase to a project
 
+:meth:`G2Project.add_PDF`                             Adds a PDF entry to a project (does not compute it)
+
 :meth:`G2Project.histograms`                          Provides a list of histograms in the current project, as :class:`G2PwdrData` objects
 
 :meth:`G2Project.phases`                              Provides a list of phases defined in the current project, as :class:`G2Phase` objects
 
 :meth:`G2Project.images`                              Provides a list of images in the current project, as :class:`G2Image` objects
+
+:meth:`G2Project.pdfs`                                Provides a list of PDFs in the current project, as :class:`G2PDF` objects
 
 :meth:`G2Project.do_refinements`                      This is passed a list of dictionaries, where each dict defines a refinement step. 
                                                       Passing a list with a single empty dict initiates a refinement with the current
@@ -200,6 +204,26 @@ method                                                Use
 :meth:`G2Image.setCalibrant`                          Set a calibrant type (or show choices) for the current image.
 :meth:`G2Image.setControlFile`                        Set a image to be used as a background/dark/gain map image.
 ==================================================    ===============================================================================================================
+
+
+---------------------
+:class:`G2PDF`
+---------------------
+
+  To work with PDF entries, object :class:`G2PDF`, encapsulates a PDF entry with methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2PDF.export`                                   Used to write G(r), etc. as a file
+:meth:`G2PDF.calculate`                                Computes the PDF using parameters in the object
+:meth:`G2PDF.optimize`                                 Optimizes selected PDF parameters
+:meth:`G2PDF.set_background`                           Sets the histograms used for sample background, container, etc. 
+:meth:`G2PDF.set_formula`                              Sets the chemical formula for the sample
+==================================================    ===============================================================================================================
+
 
 ----------------------
 :class:`G2AtomRecord`
@@ -703,8 +727,17 @@ or setting parameters and performing a refinement
 
 To change settings within histograms, images and phases, one usually needs to use
 methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`. 
-
 """
+
+#============================================================================
+# adding a new object type
+# 1) add a new object class (e.g. G2PDF)
+# 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
+# 3) add a new method to add the object into a project (G2Project.add_PDF)
+# 4) add to documentation in section :class:`G2Project`
+# 5) add a new documentation section for the new class
+#============================================================================
+
 from __future__ import division, print_function
 import argparse
 import os.path as ospath
@@ -1974,6 +2007,109 @@ class G2Project(G2ObjectWrapper):
         :returns: A list of :class:`G2Image` objects
         """
         return [G2Image(self.data[i],i,self) for i in self._images()]
+    
+    def _pdfs(self):
+        """Returns a list of all the PDF entries in the project.
+        """
+        return [i[0] for i in self.names if i[0].startswith('PDF ')]
+    
+    def pdf(self, pdfRef):
+        """
+        Gives an object representing the specified PDF entry in this project.
+
+        :param pdfRef: A reference to the desired image. Either the PDF 
+          tree name (str), the pdf's index (int) or
+          a PDF object (:class:`G2PDF`)
+        :returns: A :class:`G2PDF` object
+        :raises: KeyError
+
+        .. seealso::
+            :meth:`~G2Project.pdfs`
+            :class:`~G2PDF`
+        """
+        if isinstance(pdfRef, G2PDF):
+            if pdfRef.proj == self:
+                return pdfRef
+            else:
+                raise Exception("PDF {} not in current selected project".format(pdfRef.name))
+        if pdfRef in self._pdfs():
+            return G2PDF(self.data[pdfRef], pdfRef, self)
+
+        try:
+            # pdfRef should be an index
+            num = int(pdfRef)
+            pdfRef = self._pdfs()[num] 
+            return G2PDF(self.data[pdfRef], pdfRef, self)
+        except ValueError:
+            raise Exception("pdfRef {} not an object, name or PDF index in current selected project"
+                                .format(pdfRef))
+        except IndexError:
+            raise Exception("pdfRef {} out of range (max={}) in current selected project"
+                                .format(pdfRef,len(self._images())-1))
+    def pdfs(self):
+        """
+        Returns a list of all the PDFs in the project.
+
+        :returns: A list of :class:`G2PDF` objects
+        """
+        return [G2PDF(self.data[i],i,self) for i in self._pdfs()]
+        
+    def add_PDF(self, prmfile, histogram):
+        '''Creates a PDF entry that can be used to compute a PDF. 
+        Note that this command places an entry in the project,
+        but :meth:`G2PDF.calculate` must be used to actually perform
+        the computation. 
+
+        :param str datafile: The powder data file to read, a filename.
+        :param histogram: A reference to a histogram,
+          which can be reference by object, name, or number.
+        :returns: A :class:`G2PDF` object for the PDF entry
+        '''
+        
+        LoadG2fil()
+        PDFname = 'PDF ' + self.histogram(histogram).name[4:]
+        peaks = {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]}
+        Controls = {
+            'Sample':{'Name':self.histogram(histogram).name,'Mult':1.0},
+            'Sample Bkg.':{'Name':'','Mult':-1.0,'Refine':False},
+            'Container':{'Name':'','Mult':-1.0,'Refine':False},
+            'Container Bkg.':{'Name':'','Mult':-1.0},
+            'ElList':{},
+            'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':0.0,'Flat Bkg':0,
+            'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[20,25],
+            'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,'Rmin':1.0,
+            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
+
+        fo = open(prmfile,'r')
+        S = fo.readline()
+        while S:
+            if '#' in S:
+                S = fo.readline()
+                continue
+            key,val = S.split(':',1)
+            try:
+                Controls[key] = eval(val)
+            except:
+                Controls[key] = val.strip()
+            S = fo.readline()
+        fo.close()
+        Controls['Sample']['Name'] = self.histogram(histogram).name
+        for i in 'Sample Bkg.','Container','Container Bkg.':
+            Controls[i]['Name'] = ''
+        PDFdict = {'data':None,'PDF Controls':Controls, 'PDF Peaks':peaks}
+        self.names.append([PDFname]+['PDF Controls', 'PDF Peaks'])
+        self.data[PDFname] = PDFdict
+        print('Adding "{}" to project'.format(PDFname))
+        return G2PDF(self.data[PDFname], PDFname, self)
+
+    # def seqref(self):
+    #     """
+    #     Returns a sequential refinement results object, if present
+
+    #     :returns: A :class:`G2SeqRefRes` object or None if not present
+    #     """
+    #     if 'Sequential results' not in self.data: return
+    #     return G2SeqRefRes(self.data['Sequential results']['data'], self)
     
     def update_ids(self):
         """Makes sure all phases and histograms have proper hId and pId"""
@@ -3622,6 +3758,234 @@ class G2Phase(G2ObjectWrapper):
                         h['Scale'][1] = False
                 else:
                     print(u'Unknown HAP key: '+key)
+
+# class G2SeqRefRes(G2ObjectWrapper):
+#     '''Wrapper for a Sequential Refinement Results tree entry, containing the 
+#     results for a refinement
+#     '''
+#     def __init__(self, data, proj):
+#         self.data = data
+#         self.proj = proj
+        
+# #    @property
+#     def histograms(self):
+#         '''returns a list of histograms in the squential fit
+#         '''
+#         return self.data['histNames']
+
+#     def get_cell_and_esd(self,phase,hist):
+#         import GSASIIlattice as G2lat
+#         cellGUIlist = [
+#         [['m3','m3m'],(0,)],
+#         [['3R','3mR'],(0,3)],
+#         [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
+#         [['mmm'],(0,1,2)],
+#         [['2/m'+'a'],(0,1,2,3)],
+#         [['2/m'+'b'],(0,1,2,4)],
+#         [['2/m'+'c'],(0,1,2,5)],
+#         [['-1'],(0,1,2,3,4,5)],
+#         ]
+
+#         initialCell = {}
+#         seqData,histData = self.RefData(hist)
+#         hId = histData['data'][0]['hId']
+#         phasedict = self.proj.phase(phase).data
+#         pId = phasedict['pId']
+#         pfx = str(pId)+'::' # prefix for A values from phase
+#         phfx = '%d:%d:'%(pId,hId) # Dij prefix
+#         RcellLbls = [pfx+'A'+str(i) for i in range(6)]
+#         RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
+#         zeroDict = dict(zip(RcellLbls[pId],6*[0.,]))
+#         SGdata = phasedict['General']['SGData']
+#         laue = SGdata['SGLaue']
+#         if laue == '2/m':
+#             laue += SGdata['SGUniq']
+#         for symlist,celllist in cellGUIlist:
+#             if laue in symlist:
+#                 uniqCellIndx = celllist
+#                 break
+#         else: # should not happen
+#             uniqCellIndx = list(range(6))
+#         for i in uniqCellIndx:
+#             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
+
+
+#         esdLookUp = {}
+#         dLookup = {}
+#         # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
+#         for nKey in seqData['newCellDict']:
+#             uniqCellIndx = list(range(6))
+#         for i in uniqCellIndx:
+#             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
+
+
+#         esdLookUp = {}
+#         dLookup = {}
+#         # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
+#         for nKey in seqData['newCellDict']:
+#             p = nKey.find('::')+1
+#             vKey = nKey[:p] + str(hId) + nKey[p:]
+#             if phfx+item.split('::')[1] in seqData['varyList']:
+#                 esdLookUp[newCellDict[item][0]] = item
+#                 dLookup[item] = newCellDict[item][0]
+#         covData = {'varyList': [dLookup.get(striphist(v),v) for v in seqData['varyList']],
+#                 'covMatrix': seqData['covMatrix']}
+#         A = RecpCellTerms[pId][:] # make copy of starting A values
+
+        
+    def RefData(self,hist):
+        try:
+            hist = self.data['histNames'][hist]
+        except IndexError:
+            raise Exception('Histogram #{} is out of range from the Sequential Refinement'
+                                .format(hist))
+        except TypeError:
+            pass
+        if hist not in self.data['histNames']:
+            raise Exception('Histogram {} is not included in the Sequential Refinement'
+                                .format(hist))
+        return self.data[hist],self.proj.histogram(hist).data
+
+class G2PDF(G2ObjectWrapper):
+    """Wrapper for a PDF tree entry, containing the information needed to 
+    compute a PDF and the S(Q, G(r) etc. after the computation is done. 
+    Note that in a GSASIIscriptable script, instances of G2PDF will be created by 
+    calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`, not via calls 
+    to :meth:`G2PDF.__init__`.
+
+    Example use of G2PDF::
+
+       gpx.add_PDF('250umSiO2.pdfprm',0)
+       pdf.set_formula(['Si',1],['O',2])
+       pdf.set_background('Container',1,-0.21)
+       for i in range(5):
+           if pdf.optimize(): break
+       pdf.calculate()
+       pdf.export(gpx.filename,'S(Q), pdfGUI')
+       gpx.save('pdfcalc.gpx')
+
+    """
+    def __init__(self, data, name, proj):
+        self.data = data
+        self.name = name
+        self.proj = proj
+    def set_background(self,btype,histogram,mult=-1.,refine=False):
+        '''Sets a histogram to be used as the 'Sample Background',
+        the 'Container' or the 'Container Background.'
+
+        :param str btype: Type of background to set, must contain 
+          the string 'samp' for Sample Background', 'cont' and 'back' 
+          for the 'Container Background' or only 'cont' for the 
+          'Container'. Note that capitalization and extra characters 
+          are ignored, so the full strings (such as 'Sample 
+          Background' & 'Container Background') can be used.
+        
+        :param histogram: A reference to a histogram,
+          which can be reference by object, name, or number.
+        :param float mult: a multiplier for the histogram; defaults 
+          to -1.0
+        :param bool refine: a flag to enable refinement (only 
+          implemented for 'Sample Background'); defaults to False
+        '''
+        if 'samp' in btype.lower():
+            key = 'Sample Bkg.'
+        elif 'cont' in btype.lower() and 'back' in btype.lower():
+            key = 'Container Bkg.'
+        elif 'cont' in btype.lower():
+            key = 'Container'
+        else:
+            raise Exception('btype = {} is invalid'.format(btype))
+        self.data['PDF Controls'][key]['Name'] = self.proj.histogram(histogram).name
+        self.data['PDF Controls'][key]['Mult'] = mult
+        self.data['PDF Controls'][key]['Refine'] = refine
+
+    def set_formula(self,*args):
+        '''Set the chemical formula for the PDF computation. 
+        Use pdf.set_formula(['Si',1],['O',2]) for SiO2.
+
+        :param list item1: The element symbol and number of atoms in formula for first element
+        :param list item2: The element symbol and number of atoms in formula for second element,...
+
+        repeat parameters as needed for all elements in the formula.
+        '''
+        powderHist = self.proj.histogram(self.data['PDF Controls']['Sample']['Name'])
+        inst = powderHist.data['Instrument Parameters'][0]
+        ElList = self.data['PDF Controls']['ElList']
+        ElList.clear()
+        sumVol = 0.
+        for elem,mult in args:
+            ElList[elem] = G2elem.GetElInfo(elem,inst)
+            ElList[elem]['FormulaNo'] = mult
+            Avol = (4.*np.pi/3.)*ElList[elem]['Drad']**3
+            sumVol += Avol*ElList[elem]['FormulaNo']
+        self.data['PDF Controls']['Form Vol'] = max(10.0,sumVol)
+        
+    def calculate(self):
+        '''Compute the PDF using the current parameters. Results are set
+        in the PDF object arrays (self.data['PDF Controls']['G(R)'] etc.)
+        '''
+        data = self.data['PDF Controls']
+        xydata = {}
+        for key in 'Sample Bkg.','Container Bkg.','Container','Sample':
+            name = data[key]['Name'].strip()
+            if name:
+                xydata[key] = self.proj.histogram(name).data['data']
+                if key != 'Sample': continue
+                limits = self.proj.histogram(name).data['Limits'][1]
+                inst = self.proj.histogram(name).data['Instrument Parameters'][0]
+        G2pwd.CalcPDF(data,inst,limits,xydata)
+        data['I(Q)'] = xydata['IofQ']
+        data['S(Q)'] = xydata['SofQ']
+        data['F(Q)'] = xydata['FofQ']
+        data['G(R)'] = xydata['GofR']
+
+    def optimize(self,showFit=True,maxCycles=5):
+        '''Optimize the low R portion of G(R) to minimize selected 
+        parameters. Note that this updates the parameters in the settings 
+        (self.data['PDF Controls']) but does not update the PDF object 
+        arrays (self.data['PDF Controls']['G(R)'] etc.) with the computed 
+        values, use :meth:`calculate` after a fit to do that. 
+
+        :param bool showFit: if True (default) the optimized parameters
+          are shown before and after the fit, as well as the RMS value 
+          in the minimized region.
+        :param int maxCycles: the maximum number of least-squares cycles;
+          defaults to 5. 
+        :returns: the result from the optimizer as True or False, depending 
+          on if the refinement converged.
+        '''
+        data = self.data['PDF Controls']
+        xydata = {}
+        for key in 'Sample Bkg.','Container Bkg.','Container','Sample':
+            name = data[key]['Name'].strip()
+            if name:
+                xydata[key] = self.proj.histogram(name).data['data']
+                if key != 'Sample': continue
+                limits = self.proj.histogram(name).data['Limits'][1]
+                inst = self.proj.histogram(name).data['Instrument Parameters'][0]
+        res = G2pwd.OptimizePDF(data,xydata,limits,inst,showFit,maxCycles)
+        return res['success']
+        
+    def export(self,fileroot,formats):
+        '''Write out the PDF-related data (G(r), S(Q),...) into files
+
+        :param str fileroot: name of file(s) to be written. The extension 
+          will be ignored and set to .iq, .sq, .fq or .gr depending 
+          on the formats selected.
+        :param str formats: string specifying the file format(s) to be written,
+          should contain at least one of the following keywords:
+          I(Q), S(Q), F(Q), G(r) and/or PDFgui (capitalization and
+          punctuation is ignored). Note that G(r) and PDFgui should not 
+          be specifed together.
+        '''
+        PDFsaves = 5*[False]
+        PDFentry = self.name
+        name = self.data['PDF Controls']['Sample']['Name'].strip()
+        limits = self.proj.histogram(name).data['Limits']
+        inst = self.proj.histogram(name).data['Instrument Parameters'][0]
+        for i,lbl in enumerate(['I(Q)', 'S(Q)', 'F(Q)', 'G(r)', 'PDFgui']):
+            PDFsaves[i] = lbl.lower() in formats.lower()
+        G2fil.PDFWrite(PDFentry,fileroot,PDFsaves,self.data['PDF Controls'],inst,limits)
 
 class G2Image(G2ObjectWrapper):
     """Wrapper for an IMG tree entry, containing an image and various metadata. 

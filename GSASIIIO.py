@@ -50,7 +50,6 @@ except ImportError:
     pass
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
-import GSASIImath as G2mth
 try:
     import GSASIIpwdGUI as G2pdG
     import GSASIIimgGUI as G2imG
@@ -945,139 +944,7 @@ def XYsave(G2frame,XY,labelX='X',labelY='Y',names=[]):
         for x,y in XY[i].T:
             File.write('%.3f,%.3f\n'%(x,y))   
     File.close()
-    print (' XY data saved to: '+filename)
-            
-def PDFSave(G2frame,exports,PDFsaves):
-    'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
-    import scipy.interpolate as scintp
-    if len(exports) > 1:
-        dirname = G2G.askSaveDirectory(G2frame)
-        if not dirname: return
-    else:
-        defnam = exports[0].replace(' ','_')[5:]
-        filename = G2G.askSaveFile(G2frame,defnam,'.gr','G(r) file, etc.')
-        if not filename: return
-        dirname,filename = os.path.split(filename)
-        filename = os.path.splitext(filename)[0]
-    for export in exports:
-        if len(exports) > 1:
-            filename = export.replace(' ','_')[5:]
-        PickId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, export)
-        PDFControls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, PickId,'PDF Controls'))
-        if PDFsaves[0]:     #I(Q)
-            iqfilename = ospath.join(dirname,filename+'.iq')
-            iqdata = PDFControls['I(Q)'][0]
-            iqfxn = scintp.interp1d(iqdata[0],iqdata[1],kind='linear')
-            iqfile = open(iqfilename,'w')
-            iqfile.write('#T I(Q) %s\n'%(export))
-            iqfile.write('#L Q     I(Q)\n')
-            qnew = np.arange(iqdata[0][0],iqdata[0][-1],0.005)
-            iqnew = zip(qnew,iqfxn(qnew))
-            for q,iq in iqnew:
-                iqfile.write("%15.6g %15.6g\n" % (q,iq))
-            iqfile.close()
-            print (' I(Q) saved to: '+iqfilename)
-            
-        if PDFsaves[1]:     #S(Q)
-            sqfilename = ospath.join(dirname,filename+'.sq')
-            sqdata = PDFControls['S(Q)'][1]
-            sqfxn = scintp.interp1d(sqdata[0],sqdata[1],kind='linear')
-            sqfile = open(sqfilename,'w')
-            sqfile.write('#T S(Q) %s\n'%(export))
-            sqfile.write('#L Q     S(Q)\n')
-            qnew = np.arange(sqdata[0][0],sqdata[0][-1],0.005)
-            sqnew = zip(qnew,sqfxn(qnew))
-            for q,sq in sqnew:
-                sqfile.write("%15.6g %15.6g\n" % (q,sq))
-            sqfile.close()
-            print (' S(Q) saved to: '+sqfilename)
-            
-        if PDFsaves[2]:     #F(Q)
-            fqfilename = ospath.join(dirname,filename+'.fq')
-            fqdata = PDFControls['F(Q)'][1]
-            fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
-            fqfile = open(fqfilename,'w')
-            fqfile.write('#T F(Q) %s\n'%(export))
-            fqfile.write('#L Q     F(Q)\n')
-            qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
-            fqnew = zip(qnew,fqfxn(qnew))
-            for q,fq in fqnew:
-                fqfile.write("%15.6g %15.6g\n" % (q,fq))
-            fqfile.close()
-            print (' F(Q) saved to: '+fqfilename)
-            
-        if PDFsaves[3]:     #G(R)
-            grfilename = ospath.join(dirname,filename+'.gr')
-            grdata = PDFControls['G(R)'][1]
-            grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
-            grfile = open(grfilename,'w')
-            grfile.write('#T G(R) %s\n'%(export))
-            grfile.write('#L R     G(R)\n')
-            rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
-            grnew = zip(rnew,grfxn(rnew))
-            for r,gr in grnew:
-                grfile.write("%15.6g %15.6g\n" % (r,gr))
-            grfile.close()
-            print (' G(R) saved to: '+grfilename)
-        
-        if PDFsaves[4]: #pdfGUI file for G(R)
-            pId = G2gd.GetGPXtreeItemId(G2frame, G2frame.root, 'PWDR'+export[4:])
-            Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Instrument Parameters'))[0]
-            Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame, pId,'Limits'))
-            grfilename = ospath.join(dirname,filename+'.gr')
-            grdata = PDFControls['G(R)'][1]
-            qdata = PDFControls['I(Q)'][1][0]
-            grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
-            grfile = open(grfilename,'w')
-            rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
-            grnew = zip(rnew,grfxn(rnew))
-
-            grfile.write('[DEFAULT]\n')
-            grfile.write('\n')
-            grfile.write('version = GSAS-II-v'+str(GSASIIpath.GetVersionNumber())+'\n')
-            grfile.write('\n')
-            grfile.write('# input and output specifications\n')
-            grfile.write('dataformat = Qnm\n')
-            grfile.write('inputfile = %s\n'%(PDFControls['Sample']['Name']))
-            grfile.write('backgroundfile = %s\n'%(PDFControls['Sample Bkg.']['Name']))
-            grfile.write('outputtype = gr\n')
-            grfile.write('\n')
-            grfile.write('# PDF calculation setup\n')
-            if 'x' in Inst['Type']:
-                grfile.write('mode = %s\n'%('xray'))
-            elif 'N' in Inst['Type']:
-                grfile.write('mode = %s\n'%('neutron'))
-            wave = G2mth.getMeanWave(Inst)
-            grfile.write('wavelength = %.5f\n'%(wave))
-            formula = ''
-            for el in PDFControls['ElList']:
-                formula += el
-                num = PDFControls['ElList'][el]['FormulaNo']
-                if num == round(num):
-                    formula += '%d'%(int(num))
-                else:
-                    formula += '%.2f'%(num)
-            grfile.write('composition = %s\n'%(formula))
-            grfile.write('bgscale = %.3f\n'%(-PDFControls['Sample Bkg.']['Mult']))
-            highQ = 2.*np.pi/G2lat.Pos2dsp(Inst,Limits[1][1])
-            grfile.write('qmaxinst = %.2f\n'%(highQ))
-            grfile.write('qmin = %.5f\n'%(qdata[0]))
-            grfile.write('qmax = %.4f\n'%(qdata[-1]))
-            grfile.write('rmin = %.2f\n'%(PDFControls['Rmin']))
-            grfile.write('rmax = %.2f\n'%(PDFControls['Rmax']))
-            grfile.write('rstep = 0.01\n')
-            
-            
-            grfile.write('\n')
-            grfile.write('# End of config '+63*'-')
-            grfile.write('\n')
-            grfile.write('#### start data\n')
-            grfile.write('#S 1\n')
-            grfile.write('#L r($\AA$)  G($\AA^{-2}$)\n')            
-            for r,gr in grnew:
-                grfile.write("%15.2F %15.6F\n" % (r,gr))
-            grfile.close()
-            print (' G(R) saved to: '+grfilename)
+    print (' XY data saved to: '+filename)                        
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'

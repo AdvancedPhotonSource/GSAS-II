@@ -495,6 +495,94 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     auxPlot.append([R[:iFin],DofR[:iFin],'D(R) for '+RDFcontrols['UseObsCalc']])    
     return auxPlot
 
+# PDF optimization =============================================================
+def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
+    import scipy.optimize as opt
+    numbDen = GetNumDensity(data['ElList'],data['Form Vol'])
+    Min,Init,Done = SetupPDFEval(data,xydata,limits,inst,numbDen)
+    xstart = Init()
+    bakMul = data['Sample Bkg.']['Mult']
+    if showFit:
+        rms = Min(xstart)
+        print('  Optimizing corrections to improve G(r) at low r')
+        if data['Sample Bkg.'].get('Refine',False):
+#            data['Flat Bkg'] = 0.
+            print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
+                data['Ruland'],data['Sample Bkg.']['Mult'],rms))
+        else:
+            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
+    if data['Sample Bkg.'].get('Refine',False):
+        res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
+                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+    else:
+        res = opt.minimize(Min,xstart,bounds=([0,None],[0,1],[0.01,1]),
+                    method='L-BFGS-B',options={'maxiter':maxCycles},tol=0.001)
+    Done(res['x'])
+    if showFit:
+        if res['success']:
+            msg = 'Converged'
+        else:
+            msg = 'Not Converged'
+        if data['Sample Bkg.'].get('Refine',False):
+            print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
+                data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
+        else:
+            print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
+                data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
+    return res
+
+def SetupPDFEval(data,xydata,limits,inst,numbDen):
+    Data = copy.deepcopy(data)
+    BkgMax = 1.
+    def EvalLowPDF(arg):
+        '''Objective routine -- evaluates the RMS deviations in G(r)
+        from -4(pi)*#density*r for for r<Rmin
+        arguments are ['Flat Bkg','BackRatio','Ruland'] scaled so that
+        the min & max values are between 0 and 1. 
+        '''
+        if Data['Sample Bkg.'].get('Refine',False):
+            R,S = arg
+            Data['Sample Bkg.']['Mult'] = S
+        else:
+            F,B,R = arg
+            Data['Flat Bkg'] = F*BkgMax
+            Data['BackRatio'] = B
+        Data['Ruland'] = R/10.
+        CalcPDF(Data,inst,limits,xydata)
+        # test low r computation
+        g = xydata['GofR'][1][1]
+        r = xydata['GofR'][1][0]
+        g0 = g[r < Data['Rmin']] + 4*np.pi*r[r < Data['Rmin']]*numbDen
+        M = sum(g0**2)/len(g0)
+        return M
+    def GetCurrentVals():
+        '''Get the current ['Flat Bkg','BackRatio','Ruland'] with scaling
+        '''
+        if data['Sample Bkg.'].get('Refine',False):
+                return [max(10*data['Ruland'],.05),data['Sample']['Mult']]
+        try:
+            F = data['Flat Bkg']/BkgMax
+        except:
+            F = 0
+        return [F,data['BackRatio'],max(10*data['Ruland'],.05)]
+    def SetFinalVals(arg):
+        '''Set the 'Flat Bkg', 'BackRatio' & 'Ruland' values from the
+        scaled, refined values and plot corrected region of G(r) 
+        '''
+        if data['Sample Bkg.'].get('Refine',False):
+            R,S = arg
+            data['Sample Bkg.']['Mult'] = S
+        else:
+            F,B,R = arg
+            data['Flat Bkg'] = F*BkgMax
+            data['BackRatio'] = B
+        data['Ruland'] = R/10.
+        CalcPDF(data,inst,limits,xydata)
+    EvalLowPDF(GetCurrentVals())
+    BkgMax = max(xydata['IofQ'][1][1])/50.
+    return EvalLowPDF,GetCurrentVals,SetFinalVals
+
 ################################################################################        
 #GSASII peak fitting routines: Finger, Cox & Jephcoat model        
 ################################################################################

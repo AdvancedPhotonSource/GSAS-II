@@ -4131,8 +4131,6 @@ def UpdatePhaseData(G2frame,Item,data):
     def UpdateDysnomia():
         ''' Present the controls for running Dysnomia 
         '''
-#data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
-#    'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0]}
         def OnOptMeth(event):
             DysData['Optimize'] = OptMeth.GetValue()
             wx.CallAfter(UpdateDysnomia)
@@ -4146,7 +4144,13 @@ def UpdatePhaseData(G2frame,Item,data):
             
         def OnPrior(event):
             DysData['prior'] = Prior.GetValue()
+            if DysData['prior'] == 'last run':
+                if os.path.isfile(pName+'_prior.pgrid'):
+                    os.remove(pName+'_prior.pgrid')
+                os.rename(pName+'.pgrid',pName+'_prior.pgrid')
         
+        generalData = data['General']
+        pName = generalData['Name'].replace(' ','_')
         MEMData = G2frame.MEMData
         if MEMData.GetSizer():
             MEMData.GetSizer().Clear(True)
@@ -4185,18 +4189,24 @@ def UpdatePhaseData(G2frame,Item,data):
         Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',min=0,max=4,size=(50,20))
         Esizer.Add(Efact,0,WACV)
         mainSizer.Add(Esizer)
-        PriorSizer = wx.BoxSizer(wx.HORIZONTAL)
-        PriorSizer.Add(wx.StaticText(MEMData,label=' Start from densities: '),0,WACV)
-        Start = wx.ComboBox(MEMData,-1,value=DysData['DenStart'],choices=['uniform','last run'],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Start.Bind(wx.EVT_COMBOBOX,OnStart)
-        PriorSizer.Add(Start,0,WACV)
-        PriorSizer.Add(wx.StaticText(MEMData,label=' Use as prior: '),0,WACV)
-        Prior = wx.ComboBox(MEMData,-1,value=DysData['prior'],choices=['uniform','last run'],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Prior.Bind(wx.EVT_COMBOBOX,OnPrior)
-        PriorSizer.Add(Prior,0,WACV)
-        mainSizer.Add(PriorSizer)        
+        
+        if os.path.isfile(pName+'.pgrid'):
+            PriorSizer = wx.BoxSizer(wx.HORIZONTAL)
+            PriorSizer.Add(wx.StaticText(MEMData,label=' Start from densities: '),0,WACV)
+            Start = wx.ComboBox(MEMData,-1,value=DysData['DenStart'],choices=['uniform','last run'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Start.Bind(wx.EVT_COMBOBOX,OnStart)
+            PriorSizer.Add(Start,0,WACV)
+            PriorSizer.Add(wx.StaticText(MEMData,label=' Use as prior: '),0,WACV)
+            Prior = wx.ComboBox(MEMData,-1,value=DysData['prior'],choices=['uniform','last run'],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Prior.Bind(wx.EVT_COMBOBOX,OnPrior)
+            PriorSizer.Add(Prior,0,WACV)
+            mainSizer.Add(PriorSizer)
+        else:
+            DysData['DenStart'] = 'uniform'
+            DysData['prior'] = 'uniform'
+        
         Csizer = wx.BoxSizer(wx.HORIZONTAL)
         Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
         Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',min=0,max=10000,size=(50,20))
@@ -4214,6 +4224,7 @@ def UpdatePhaseData(G2frame,Item,data):
         
         path2GSAS2 = os.path.dirname(os.path.abspath(os.path.expanduser(__file__)))
         DYSNOMIA = os.path.join(path2GSAS2,'Dysnomia','Dysnomia64.exe')
+        DysData = data['Dysnomia']
         
         if not os.path.exists(DYSNOMIA):
             wx.MessageBox(''' Dysnomia is not installed. Please download it from 
@@ -4252,7 +4263,6 @@ def UpdatePhaseData(G2frame,Item,data):
                 style=wx.ICON_ERROR)
             return
 
-
         wx.MessageBox(''' For use of Dysnomia, please cite:
       Dysnomia, a computer program for maximum-entropy method (MEM) 
       analysis and its performance in the MEM-based pattern fitting,
@@ -4261,6 +4271,10 @@ def UpdatePhaseData(G2frame,Item,data):
         
         print('Run '+DYSNOMIA)        
         subp.call([DYSNOMIA,prfName])
+        
+        DysData['DenStart'] = 'uniform'
+        DysData['prior'] = 'uniform'
+        wx.CallAfter(UpdateDysnomia)
         
         if G2pwd.MEMupdateReflData(prfName,reflData):
             OnFourierMaps(event)           #auto run Fourier

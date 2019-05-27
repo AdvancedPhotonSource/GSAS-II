@@ -2197,12 +2197,10 @@ def UpdatePhaseData(G2frame,Item,data):
                         G2frame.phaseDisplay.InsertPage(7,G2frame.MEMData,'Dysnomia')
                         Id = wx.NewId()
                         TabSelectionIdDict[Id] = 'Dysnomia'
-                        
-                        
                         if 'Dysnomia' not in data:  #set defaults here
                             data['Dysnomia'] = {'DenStart':'uniform','Optimize':'ZSPA','Lagrange':['user',0.001,0.05],
                                 'wt pwr':0,'E_factor':1.,'Ncyc':5000,'prior':'uniform','Lam frac':[1,0,0,0,0,0,0,0],
-                                'overlap':1.0}
+                                'overlap':0.2,'MEMdmin':1.0}
                 else:
                     if 'Dysnomia' in pages:
                         G2frame.phaseDisplay.DeletePage(pages.index('Dysnomia'))
@@ -4151,12 +4149,24 @@ def UpdatePhaseData(G2frame,Item,data):
         
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
+        Map = generalData['Map']
+        UseList = Map['RefList']
+        pId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,UseList[0])       #only use 1st histogram
+        if not pId:
+            wx.MessageBox('You must prepare a fourier map before running Dysnomia','Dysnomia Error',
+                style=wx.ICON_ERROR)
+            return            
+        reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
+        reflData = reflSets[generalData['Name']]['RefList']
+        refDmin = reflData[-1][4]
         MEMData = G2frame.MEMData
         if MEMData.GetSizer():
             MEMData.GetSizer().Clear(True)
         DysData = data['Dysnomia']
         if 'overlap' not in DysData:
             DysData['overlap'] = 1.0
+        if 'MEMdmin' not in DysData:
+            DysData['MEMdmin'] = refDmin
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4184,10 +4194,14 @@ def UpdatePhaseData(G2frame,Item,data):
             dlamb = G2G.ValidatedTxtCtrl(MEMData,DysData['Lagrange'],2,nDig=(8,2),min=0.05,max=0.1)
             Zsizer.Add(dlamb,0,WACV)
             mainSizer.Add(Zsizer)
+
         Esizer = wx.BoxSizer(wx.HORIZONTAL)
         Esizer.Add(wx.StaticText(MEMData,label=' Weight by d-spacing**'),0,WACV)
         Efact = G2G.ValidatedTxtCtrl(MEMData,DysData,'wt pwr',min=0,max=4,size=(50,20))
         Esizer.Add(Efact,0,WACV)
+        Dmin = G2G.ValidatedTxtCtrl(MEMData,DysData,'MEMdmin',min=0.5,max=refDmin,size=(50,20))
+        Esizer.Add(wx.StaticText(MEMData,label=' Minimum d-spacing for generated reflections: '),0,WACV)
+        Esizer.Add(Dmin,0,WACV)
         mainSizer.Add(Esizer)
         
         if os.path.isfile(pName+'.pgrid'):

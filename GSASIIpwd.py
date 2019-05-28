@@ -2963,6 +2963,9 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     
     DysData = data['Dysnomia']
     generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    A = G2lat.cell2A(cell)
+    SGData = generalData['SGData']
     pName = generalData['Name'].replace(' ','_')
     memName = pName+'.mem'
     Map = generalData['Map']
@@ -2970,7 +2973,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     UseList = Map['RefList']
     mem = open(memName,'w')
     mem.write('%s\n'%(generalData['Name']+' from '+UseList[0]))
-    a,b,c,alp,bet,gam = generalData['Cell'][1:7]
+    a,b,c,alp,bet,gam = cell
     mem.write('%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f\n'%(a,b,c,alp,bet,gam))
     mem.write('      0.0000000      0.0000000     -1    0    0    0     P\n')   #dummy PO stuff
     SGSym = generalData['SGData']['SpGrp']
@@ -3002,6 +3005,10 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
         mem.write('%10.3f%10.3f 0.001\n'%(sumpos,sumneg))
     else:
         mem.write('%10.3f 0.001\n'%sumpos)
+        
+    dmin = DysData['MEMdmin']
+    refSet = G2lat.GenHLaue(dmin,SGData,A)      #list of h,k,l,d
+    refDict = {'%d %d %d'%(ref[0],ref[1],ref[2]):ref for ref in refSet}
         
     refs = []
     prevpos = 0.
@@ -3049,6 +3056,9 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     mem.write('%5d\n'%len(refs1))
     for ref in refs1:
         h,k,l = ref[:3]
+        hkl = '%d %d %d'%(h,k,l)
+        if hkl in refDict:
+            del refDict[hkl]
         Fobs = np.sqrt(ref[6])
         mem.write('%5d%5d%5d%10.3f%10.3f%10.3f\n'%(h,k,l,Fobs*npcosd(ref[7]),Fobs*npsind(ref[7]),max(0.01*Fobs,0.1)))
     while True:
@@ -3067,11 +3077,23 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
             Msum += ref[3]
         G = np.sqrt(Gsum/Msum)
         h,k,l = ref2[0][:3]
+        hkl = '%d %d %d'%(h,k,l)
+        if hkl in refDict:
+            del refDict[hkl]
         mem.write('%5d%5d%5d%10.3f%10.3f%5d\n'%(h,k,l,G,max(0.01*G,0.1),ref2[0][3]))
         for ref in ref2[1:]:
             h,k,l,m = ref[:4]
             mem.write('%5d%5d%5d%5d\n'%(h,k,l,m))
-    mem.write('0\n')
+            hkl = '%d %d %d'%(h,k,l)
+            if hkl in refDict:
+                del refDict[hkl]
+    if len(refDict):
+        mem.write('%d\n'%len(refDict))
+        for hkl in list(refDict.keys()):
+            h,k,l = refDict[hkl][:3]
+            mem.write('%5d%5d%5d\n'%(h,k,l))
+    else:
+        mem.write('0\n')
     mem.close()
     return True
 
@@ -3100,9 +3122,12 @@ def MEMupdateReflData(prfName,reflData):
         l = int(info[2])
         FoR = float(info[3])
         FoI = float(info[4])
-        refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
         Fosq = FoR**2+FoI**2
         phase = npatan2d(FoI,FoR)
+        try:
+            refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
+        except KeyError:    #added reflections
+            break
         reflData[refId][8] = Fosq
         reflData[refId][10] = phase
     return True

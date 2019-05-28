@@ -121,6 +121,8 @@ method                                                Use
 
 :meth:`G2Project.pdfs`                                Provides a list of PDFs in the current project, as :class:`G2PDF` objects
 
+:meth:`G2Project.seqref`                              Returns a :class:`G2SeqRefRes` object if there are Sequential Refinement results
+
 :meth:`G2Project.do_refinements`                      This is passed a list of dictionaries, where each dict defines a refinement step. 
                                                       Passing a list with a single empty dict initiates a refinement with the current
                                                       parameters and flags. A refinement dict sets up a single refinement step 
@@ -224,6 +226,20 @@ method                                                Use
 :meth:`G2PDF.set_formula`                              Sets the chemical formula for the sample
 ==================================================    ===============================================================================================================
 
+---------------------
+:class:`G2SeqRefRes`
+---------------------
+
+  To work with Sequential Refinement results, object :class:`G2SeqRefRes`, encapsulates the sequential refinement table with methods:
+
+.. tabularcolumns:: |l|p{3.5in}|
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:meth:`G2SeqRefRes.histograms`                         Provides a list of histograms used in the Sequential Refinement 
+:meth:`G2SeqRefRes.get_cell_and_esd`                   Returns cell dimensions and standard uncertainies for a phase and histogram from the Sequential Refinement 
+==================================================    ===============================================================================================================
 
 ----------------------
 :class:`G2AtomRecord`
@@ -2102,14 +2118,14 @@ class G2Project(G2ObjectWrapper):
         print('Adding "{}" to project'.format(PDFname))
         return G2PDF(self.data[PDFname], PDFname, self)
 
-    # def seqref(self):
-    #     """
-    #     Returns a sequential refinement results object, if present
+    def seqref(self):
+        """
+        Returns a sequential refinement results object, if present
 
-    #     :returns: A :class:`G2SeqRefRes` object or None if not present
-    #     """
-    #     if 'Sequential results' not in self.data: return
-    #     return G2SeqRefRes(self.data['Sequential results']['data'], self)
+        :returns: A :class:`G2SeqRefRes` object or None if not present
+        """
+        if 'Sequential results' not in self.data: return
+        return G2SeqRefRes(self.data['Sequential results']['data'], self)
     
     def update_ids(self):
         """Makes sure all phases and histograms have proper hId and pId"""
@@ -3759,81 +3775,156 @@ class G2Phase(G2ObjectWrapper):
                 else:
                     print(u'Unknown HAP key: '+key)
 
-# class G2SeqRefRes(G2ObjectWrapper):
-#     '''Wrapper for a Sequential Refinement Results tree entry, containing the 
-#     results for a refinement
-#     '''
-#     def __init__(self, data, proj):
-#         self.data = data
-#         self.proj = proj
+class G2SeqRefRes(G2ObjectWrapper):
+    '''Wrapper for a Sequential Refinement Results tree entry, containing the 
+    results for a refinement
+
+    As an example:: 
+
+        from __future__ import division, print_function
+        import os,sys
+        sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+        PathWrap = lambda fil: os.path.join('/Users/toby/Scratch/SeqTut2019Mar',fil)
+        import GSASIIscriptable as G2sc
+        gpx = G2sc.G2Project(PathWrap('scr4.gpx'))
+        seq = gpx.seqref()
+        lbl = ('a','b','c','alpha','beta','gamma','Volume')
+        for j,h in enumerate(seq.histograms()):
+            cell,cellU,uniq = seq.get_cell_and_esd(1,h)
+            print(h)
+            print([cell[i] for i in list(uniq)+[6]])
+            print([cellU[i] for i in list(uniq)+[6]])
+            print('')
+        print('printed',[lbl[i] for i in list(uniq)+[6]])
+
+    '''
+    def __init__(self, data, proj):
+        self.data = data
+        self.proj = proj
+        self.newCellDict = {} # dict with recp. cell tensor & Dij name
+        # newAtomDict = {} # dict with atom positions; relative & absolute
+        for name in self.data['histNames']:
+            self.newCellDict.update(self.data[name].get('newCellDict',{}))
+            #newAtomDict.update(self.data[name].get('newAtomDict',{}) # dict with atom positions; relative & absolute
+        #ESDlookup = {self.newCellDict[item][0]:item for item in self.newCellDict}
+        #Dlookup = {item:self.newCellDict[item][0] for item in self.newCellDict}
+        # Possible error: the next might need to be data[histNames[0]]['varyList']
+        #atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in self.data['varyList']}
+        #Dlookup.update({atomLookup[parm]:parm for parm in atomLookup}
+        #ESDlookup.update({parm:atomLookup[parm] for parm in atomLookup})
+
+#    @property
+    def histograms(self):
+        '''returns a list of histograms in the squential fit
+        '''
+        return self.data['histNames']
+
+    def get_cell_and_esd(self,phase,hist):
+        '''Returns a vector of cell lengths and esd values
+
+        :param phase: A phase, which may be specified as a phase object
+          (see :class:`G2Phase`), the phase name (str) or the index number (int)
+          of the phase in the project, numbered starting from 0.
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :returns: cell,cellESD,uniqCellIndx where cell (list) 
+          with the unit cell parameters (a,b,c,alpha,beta,gamma,Volume);
+          cellESD are the standard uncertainties on the 7 unit cell 
+          parameters; and uniqCellIndx is a tuple with indicies for the 
+          unique (non-symmetry determined) unit parameters (e.g. 
+          [0,2] for a,c in a tetragonal cell)
+        '''
+        def striphist(var,insChar=''):
+            'strip a histogram number from a var name'
+            sv = var.split(':')
+            if len(sv) <= 1: return var
+            if sv[1]:
+                sv[1] = insChar
+            return ':'.join(sv)
+        import GSASIIlattice as G2lat
+        import GSASIIstrIO as G2stIO
         
-# #    @property
-#     def histograms(self):
-#         '''returns a list of histograms in the squential fit
-#         '''
-#         return self.data['histNames']
+        uniqCellLookup = [
+        [['m3','m3m'],(0,)],
+        [['3R','3mR'],(0,3)],
+        [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
+        [['mmm'],(0,1,2)],
+        [['2/m'+'a'],(0,1,2,3)],
+        [['2/m'+'b'],(0,1,2,4)],
+        [['2/m'+'c'],(0,1,2,5)],
+        [['-1'],(0,1,2,3,4,5)],
+        ]
 
-#     def get_cell_and_esd(self,phase,hist):
-#         import GSASIIlattice as G2lat
-#         cellGUIlist = [
-#         [['m3','m3m'],(0,)],
-#         [['3R','3mR'],(0,3)],
-#         [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],(0,2)],
-#         [['mmm'],(0,1,2)],
-#         [['2/m'+'a'],(0,1,2,3)],
-#         [['2/m'+'b'],(0,1,2,4)],
-#         [['2/m'+'c'],(0,1,2,5)],
-#         [['-1'],(0,1,2,3,4,5)],
-#         ]
+        seqData,histData = self.RefData(hist)
+        hId = histData['data'][0]['hId']
+        phasedict = self.proj.phase(phase).data
+        pId = phasedict['pId']
+        pfx = str(pId)+'::' # prefix for A values from phase
+        phfx = '%d:%d:'%(pId,hId) # Dij prefix
+        # get unit cell & symmetry for phase
+        RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
+        zeroDict = {pfx+'A'+str(i):0.0 for i in range(6)}
+        SGdata = phasedict['General']['SGData']
+        # determine the cell items not defined by symmetry
+        laue = SGdata['SGLaue'][:]
+        if laue == '2/m':
+            laue += SGdata['SGUniq']
+        for symlist,celllist in uniqCellLookup:
+            if laue in symlist:
+                uniqCellIndx = celllist
+                break
+        else: # should not happen
+            uniqCellIndx = list(range(6))
+        initialCell = {}
+        for i in uniqCellIndx:
+            initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
 
-#         initialCell = {}
-#         seqData,histData = self.RefData(hist)
-#         hId = histData['data'][0]['hId']
-#         phasedict = self.proj.phase(phase).data
-#         pId = phasedict['pId']
-#         pfx = str(pId)+'::' # prefix for A values from phase
-#         phfx = '%d:%d:'%(pId,hId) # Dij prefix
-#         RcellLbls = [pfx+'A'+str(i) for i in range(6)]
-#         RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
-#         zeroDict = dict(zip(RcellLbls[pId],6*[0.,]))
-#         SGdata = phasedict['General']['SGData']
-#         laue = SGdata['SGLaue']
-#         if laue == '2/m':
-#             laue += SGdata['SGUniq']
-#         for symlist,celllist in cellGUIlist:
-#             if laue in symlist:
-#                 uniqCellIndx = celllist
-#                 break
-#         else: # should not happen
-#             uniqCellIndx = list(range(6))
-#         for i in uniqCellIndx:
-#             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
+        esdLookUp = {}
+        dLookup = {}
+        # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
+        for nKey in seqData['newCellDict']:
+            p = nKey.find('::')+1
+            vKey = nKey[:p] + str(hId) + nKey[p:]
+            if vKey in seqData['varyList']:
+                esdLookUp[self.newCellDict[nKey][0]] = nKey
+                dLookup[nKey] = self.newCellDict[nKey][0]
+        covData = {'varyList': [dLookup.get(striphist(v),v) for v in seqData['varyList']],
+                'covMatrix': seqData['covMatrix']}
+        A = RecpCellTerms[:] # make copy of starting A values
 
-
-#         esdLookUp = {}
-#         dLookup = {}
-#         # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
-#         for nKey in seqData['newCellDict']:
-#             uniqCellIndx = list(range(6))
-#         for i in uniqCellIndx:
-#             initialCell[str(pId)+'::A'+str(i)] =  RecpCellTerms[i]
-
-
-#         esdLookUp = {}
-#         dLookup = {}
-#         # note that varyList keys are p:h:Dij while newCellDict keys are p::Dij
-#         for nKey in seqData['newCellDict']:
-#             p = nKey.find('::')+1
-#             vKey = nKey[:p] + str(hId) + nKey[p:]
-#             if phfx+item.split('::')[1] in seqData['varyList']:
-#                 esdLookUp[newCellDict[item][0]] = item
-#                 dLookup[item] = newCellDict[item][0]
-#         covData = {'varyList': [dLookup.get(striphist(v),v) for v in seqData['varyList']],
-#                 'covMatrix': seqData['covMatrix']}
-#         A = RecpCellTerms[pId][:] # make copy of starting A values
+        for i,j in enumerate(('D11','D22','D33','D12','D13','D23')):
+            var = pfx+'A'+str(i)
+            Dvar = phfx+j
+            # apply Dij value if non-zero
+            if Dvar in seqData['parmDict']:
+                A[i] += seqData['parmDict'][Dvar]
+            # override with fit result if is Dij varied
+            try:
+                A[i] = seqData['newCellDict'][esdLookUp[var]][1] # get refined value 
+            except KeyError:
+                pass
+        Albls = [pfx+'A'+str(i) for i in range(6)]
+        cellDict = dict(zip(Albls,A))
 
         
+        A,zeros = G2stIO.cellFill(pfx,SGdata,cellDict,zeroDict)
+        # convert to direct cell
+        c = G2lat.A2cell(A)
+        vol = G2lat.calc_V(A)
+        cE = G2stIO.getCellEsd(pfx,SGdata,A,covData)
+        return list(c)+[vol],cE,uniqCellIndx
+    
     def RefData(self,hist):
+        '''Provides access to the output from a particular histogram
+
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :returns: a list of dicts where the first element has sequential 
+          refinement results and the second element has the contents of 
+          the histogram tree items.
+        '''
         try:
             hist = self.data['histNames'][hist]
         except IndexError:
@@ -3848,12 +3939,12 @@ class G2Phase(G2ObjectWrapper):
 
 class G2PDF(G2ObjectWrapper):
     """Wrapper for a PDF tree entry, containing the information needed to 
-    compute a PDF and the S(Q, G(r) etc. after the computation is done. 
+    compute a PDF and the S(Q), G(r) etc. after the computation is done. 
     Note that in a GSASIIscriptable script, instances of G2PDF will be created by 
     calls to :meth:`G2Project.add_PDF` or :meth:`G2Project.pdf`, not via calls 
     to :meth:`G2PDF.__init__`.
 
-    Example use of G2PDF::
+    Example use of :class:`G2PDF`::
 
        gpx.add_PDF('250umSiO2.pdfprm',0)
        pdf.set_formula(['Si',1],['O',2])

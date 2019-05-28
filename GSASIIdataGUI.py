@@ -6876,7 +6876,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def onSelectSeqVars(event):
         '''Select which variables will be shown in table'''
-        hides = [saveColLabels[1:].index(item) for item in G2frame.SeqTblHideList]
+        hides = [saveColLabels[1:].index(item) for item in G2frame.SeqTblHideList if
+                     item in saveColLabels[1:]]
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select columns to hide',
                 'Hide columns',saveColLabels[1:])
         dlg.SetSelections(hides)
@@ -7189,7 +7190,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     sampleDict = {}
     for i,name in enumerate(histNames):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
-    # add unique cell parameters TODO: review this where the cell symmetry changes (when possible)
+    # add unique cell parameters  
     if Controls.get('ShowCell',False) and len(newCellDict):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
@@ -7224,22 +7225,21 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     # override with fit result if is Dij varied
                     if var in cellAlist:
                         try:
-                            val = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
-                            A[i] = val # override with updated value
+                            A[i] = data[name]['newCellDict'][esdLookUp[var]][1] # get refined value 
                         except KeyError:
-                            A[i] = None
+                            pass
                 # apply symmetry
                 cellDict = dict(zip(Albls,A))
-                if None in A:
-                    c = 6*[None]
-                    cE = 6*[None]
-                    vol = None
-                else:
+                try:    # convert to direct cell
                     A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
-                    # convert to direct cell & add only unique values to table
                     c = G2lat.A2cell(A)
                     vol = G2lat.calc_V(A)
                     cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                except:
+                    c = 6*[None]
+                    cE = 6*[None]
+                    vol = None
+                # add only unique values to table
                 cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
                 cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
             G2frame.colList += zip(*cells)

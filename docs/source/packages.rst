@@ -49,7 +49,7 @@ generated if they would be needed, but the vast bulk of GSAS-II will function no
 
 
 Scripting  Requirements
---------------------
+-----------------------
 
 When using the GSAS-II scripting interface (:mod:`GSASIIscriptable`),
 only the following Python extension packages are required:

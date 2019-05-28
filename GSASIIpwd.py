@@ -2905,7 +2905,7 @@ def CalcStackingSADP(Layers,debug):
 def makePRFfile(data,MEMtype):
     ''' makes Dysnomia .prf control file from Dysnomia GUI controls
     
-    ;param dict data: GSAS-II phase data
+    :param dict data: GSAS-II phase data
     :param int MEMtype: 1 for neutron data with negative scattering lengths
                         0 otherwise
     :returns str: name of Dysnomia control file
@@ -2953,11 +2953,12 @@ def makePRFfile(data,MEMtype):
 
 def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     ''' make Dysnomia .mem file of reflection data, etc.
-    ;param dict data: GSAS-II phase data
+
+    :param dict data: GSAS-II phase data
     :param list reflData: GSAS-II reflection data
     :param int MEMtype: 1 for neutron data with negative scattering lengths
                         0 otherwise
-    :param str:DYSNOMIA path to dysnomia.exe
+    :param str DYSNOMIA: path to dysnomia.exe
     '''
     
     DysData = data['Dysnomia']
@@ -3076,7 +3077,8 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
 
 def MEMupdateReflData(prfName,reflData):
     ''' Update reflection data with new Fosq, phase result from Dysnomia
-    ;param str prfName: phase.mem file name
+
+    :param str prfName: phase.mem file name
     :param list reflData: GSAS-II reflection data
     '''
     

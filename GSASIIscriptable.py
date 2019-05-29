@@ -130,6 +130,8 @@ method                                                Use
 
 :meth:`G2Project.set_refinement`                      This is passed a single dict which is used to set parameters and flags.
                                                       These actions can be performed also in :meth:`G2Project.do_refinements`. 
+:meth:`G2Project.get_Variable'                        Retrieves the value and esd for a parameter
+:meth:`G2Project.get_Covariance'                      Retrieves values and covariance for a set of refined parameters
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -239,6 +241,8 @@ method                                                Use
 ==================================================    ===============================================================================================================
 :meth:`G2SeqRefRes.histograms`                         Provides a list of histograms used in the Sequential Refinement 
 :meth:`G2SeqRefRes.get_cell_and_esd`                   Returns cell dimensions and standard uncertainies for a phase and histogram from the Sequential Refinement 
+:meth:`G2SeqRefRes.get_Variable'                       Retrieves the value and esd for a parameter from a particular histogram in the Sequential Refinement 
+:meth:`G2SeqRefRes.get_Covariance'                     Retrieves values and covariance for a set of refined parameters for a particular histogram 
 ==================================================    ===============================================================================================================
 
 ----------------------
@@ -2637,10 +2641,83 @@ class G2Project(G2ObjectWrapper):
                 raise Exception('{} is not a valid histogram'.format(h))
             for key in copysections: 
                 hist_out[key] = copy.deepcopy(hist_in[key])
+
+    def get_VaryList(self):
+        '''Returns a list of the refined variables in the 
+        last refinement cycle
+
+        :returns: a list of variables or None if no refinement has been
+          performed. 
+        '''
+        try:
+            return self['Covariance']['data']['varyList']
+        except:
+            return
+
+    def get_ParmList(self):
+        '''Returns a list of all the parameters defined in the 
+        last refinement cycle
+
+        :returns: a list of parameters or None if no refinement has been
+          performed. 
+        '''
+        try:
+            return list(self['Covariance']['data']['parmDict'].keys())
+        except:
+            return
         
+    def get_Variable(self,var):
+        '''Returns the value and standard uncertainty (esd) for a variable 
+        parameters, as defined in the last refinement cycle
+
+        :param str var: a variable name of form '<p>:<h>:<name>', such as 
+          ':0:Scale'
+        :returns: (value,esd) if the parameter is refined or 
+          (value, None) if the variable is in a constraint or is not 
+          refined or None if the parameter is not found. 
+        '''
+        if var not in self['Covariance']['data']['parmDict']:
+            return None
+        val = self['Covariance']['data']['parmDict'][var]
+        try:
+            pos = self['Covariance']['data']['varyList'].index(var)
+            esd = np.sqrt(self['Covariance']['data']['covMatrix'][pos,pos])
+            return (val,esd)
+        except ValueError:
+            return (val,None)
+
+    def get_Covariance(self,varList):
+        '''Returns the values and covariance matrix for a series of variable 
+        parameters. as defined in the last refinement cycle
+
+        :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
+        :returns: (valueList,CovMatrix) where valueList contains the (n) values
+          in the same order as varList (also length n) and CovMatrix is a 
+          (n x n) matrix. If any variable name is not found in the varyList
+          then None is returned. 
+
+        Use this code, where sig provides standard uncertainties for 
+        parameters and where covArray provides the correlation between 
+        off-diagonal terms::
+
+            sig = np.sqrt(np.diag(covMatrix))
+            xvar = np.outer(sig,np.ones_like(sig))
+            covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
+
+        '''
+        missing = [i for i in varList if i not in self['Covariance']['data']['varyList']]
+        if missing:
+            print('Variable(s) {} were not found in the varyList'.format(missing))
+            return None
+        vals = [self['Covariance']['data']['parmDict'][i] for i in varList]
+        import GSASIImath as G2mth
+        cov = G2mth.getVCov(varList,
+                            self['Covariance']['data']['varyList'],
+                            self['Covariance']['data']['covMatrix'])
+        return (vals,cov)
+
 class G2AtomRecord(G2ObjectWrapper):
     """Wrapper for an atom record. Has convenient accessors via @property.
-
 
     Available accessors: label, type, refinement_flags, coordinates,
         occupancy, ranId, id, adp_flag, uiso
@@ -3797,6 +3874,8 @@ class G2SeqRefRes(G2ObjectWrapper):
             print('')
         print('printed',[lbl[i] for i in list(uniq)+[6]])
 
+    .. seealso::
+        :meth:`G2Project.seqref`
     '''
     def __init__(self, data, proj):
         self.data = data
@@ -3915,6 +3994,101 @@ class G2SeqRefRes(G2ObjectWrapper):
         cE = G2stIO.getCellEsd(pfx,SGdata,A,covData)
         return list(c)+[vol],cE,uniqCellIndx
     
+    def get_VaryList(self,hist):
+        '''Returns a list of the refined variables in the 
+        last refinement cycle for the selected histogram
+
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :returns: a list of variables or None if no refinement has been
+          performed. 
+        '''
+        try:
+            seqData,histData = self.RefData(hist)
+            return seqData['varyList']
+        except:
+            return
+
+    def get_ParmList(self,hist):
+        '''Returns a list of all the parameters defined in the 
+        last refinement cycle for the selected histogram
+
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :returns: a list of parameters or None if no refinement has been
+          performed. 
+        '''
+        try:
+            seqData,histData = self.RefData(hist)
+            return list(seqData['parmDict'].keys())
+        except:
+            return
+
+    def get_Variable(self,hist,var):
+        '''Returns the value and standard uncertainty (esd) for a variable 
+        parameters, as defined for the selected histogram 
+        in the last sequential refinement cycle
+
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :param str var: a variable name of form '<p>:<h>:<name>', such as 
+          ':0:Scale'
+        :returns: (value,esd) if the parameter is refined or 
+          (value, None) if the variable is in a constraint or is not 
+          refined or None if the parameter is not found. 
+        '''
+        try:
+            seqData,histData = self.RefData(hist)
+            val = seqData['parmDict'][var]
+        except:
+            return
+        try:
+            pos = seqData['varyList'].index(var)
+            esd = np.sqrt(seqData['covMatrix'][pos,pos])
+            return (val,esd)
+        except ValueError:
+            return (val,None)
+
+    def get_Covariance(self,hist,varList):
+        '''Returns the values and covariance matrix for a series of variable 
+        parameters, as defined for the selected histogram 
+        in the last sequential refinement cycle
+
+        :param hist: Specify a histogram or using the histogram name (str) 
+          or the index number (int) of the histogram in the sequential 
+          refinement (not the project), numbered starting from 0.
+        :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
+        :returns: (valueList,CovMatrix) where valueList contains the (n) values
+          in the same order as varList (also length n) and CovMatrix is a 
+          (n x n) matrix. If any variable name is not found in the varyList
+          then None is returned. 
+
+        Use this code, where sig provides standard uncertainties for 
+        parameters and where covArray provides the correlation between 
+        off-diagonal terms::
+
+            sig = np.sqrt(np.diag(covMatrix))
+            xvar = np.outer(sig,np.ones_like(sig))
+            covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
+
+        '''
+        try:
+            seqData,histData = self.RefData(hist)
+        except:
+            print('Histogram {} not found in the sequential fit'.format(hist))
+            return
+        missing = [i for i in varList if i not in seqData['varyList']]
+        if missing:
+            print('Variable(s) {} were not found in the varyList'.format(missing))
+            return None
+        vals = [seqData['parmDict'][i] for i in varList]
+        import GSASIImath as G2mth
+        cov = G2mth.getVCov(varList,seqData['varyList'],seqData['covMatrix'])
+        return (vals,cov)
+    
     def RefData(self,hist):
         '''Provides access to the output from a particular histogram
 
@@ -3955,6 +4129,9 @@ class G2PDF(G2ObjectWrapper):
        pdf.export(gpx.filename,'S(Q), pdfGUI')
        gpx.save('pdfcalc.gpx')
 
+    .. seealso::
+        :meth:`G2Project.pdf`
+        :meth:`G2Project.pdfs`
     """
     def __init__(self, data, name, proj):
         self.data = data

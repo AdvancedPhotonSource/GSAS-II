@@ -6114,11 +6114,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         return plotName,G2frame.colList[col],G2frame.colSigs[col]
             
     def PlotSelectedColRow(calltyp=''):
-        '''Called to plot a selected column or row. This is called after the event is processed
-        so that the column or row gets selected.
-        Single click on row: plots histogram
-        Double click on row: plots V-C matrix
-        Single or double click on column: plots values in column
+        '''Called to plot a selected column or row by clicking or 
+        double-clicking on a row or column label. N.B. This is called 
+        after the event is processed so that the column or row has been
+        selected.
+
+        :param str calltyp: ='single'/'double', specifies if this was 
+          a single- or double-click, where a single click on row 
+          plots histogram; Double click on row plots V-C matrix; 
+          Single or double click on column: plots values in column
         '''
         cols = G2frame.dataDisplay.GetSelectedCols()
         rows = G2frame.dataDisplay.GetSelectedRows()
@@ -6153,7 +6157,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnKeyUp(event):
         key = event.GetKeyCode()
         rows = G2frame.dataDisplay.GetSelectedRows()
-        print(key,rows)
+        #print(key,rows)
         event.Skip()
         wx.CallAfter(PlotSelectedColRow,'single')
             

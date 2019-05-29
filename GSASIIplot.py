@@ -6057,20 +6057,10 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
 ################################################################################
             
 def PlotCovariance(G2frame,Data):
-    'needs a doc string'
-    if not Data:
-        print ('No covariance matrix available')
-        return
-    varyList = Data['varyList']
-    values = Data['variables']
-    covMatrix = Data['covMatrix']
-    sig = np.sqrt(np.diag(covMatrix))
-    xvar = np.outer(sig,np.ones_like(sig))
-    covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
-    title = G2obj.StripUnicode(' for\n'+Data['title'],'') # matplotlib 1.x does not like unicode
-    newAtomDict = Data.get('newAtomDict',{})
-    G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
-
+    '''Plots the covariance matrix. Also shows values for parameters 
+    and their standard uncertainties (esd's) or the correlation between 
+    variables.
+    '''
     def OnPlotKeyPress(event):
         if event.key == 's':
             choice = [m for m in mpl.cm.datad.keys()]   # if not m.endswith("_r")
@@ -6089,7 +6079,7 @@ def PlotCovariance(G2frame,Data):
             covFile.write('*{:^126}*\n'.format('Covariance Matrix'))
             covFile.write('*' + 126*' ' + '*\n')
             covFile.write(128*'*' + '\n\n\n\n')
-            llen = len(varyList)
+            llen = len(Page.varyList)
             for start in range(0, llen, 8):  # split matrix into batches of 7 columns
                 if llen >= start + 8:
                     stop = start + 8
@@ -6097,38 +6087,42 @@ def PlotCovariance(G2frame,Data):
                     stop = llen
                 covFile.write(12*' ' + '\t')
                 for idx in range(start, stop):
-                    covFile.write('{:^12}\t'.format(varyList[idx]))
+                    covFile.write('{:^12}\t'.format(Page.varyList[idx]))
                 covFile.write('\n\n')
                 for line in range(llen):
-                    covFile.write('{:>12}\t'.format(varyList[line]))
+                    covFile.write('{:>12}\t'.format(Page.varyList[line]))
                     for idx in range(start, stop):
-                        covFile.write('{: 12.6f}\t'.format(covArray[line][idx]))
+                        covFile.write('{: 12.6f}\t'.format(Page.covArray[line][idx]))
                     covFile.write('\n')
                 covFile.write('\n\n\n')
             covFile.close()
-        PlotCovariance(G2frame,Data)
+        wx.CallAfter(PlotCovariance,G2frame,Data)
 
     def OnMotion(event):
         if event.button:
             ytics = imgAx.get_yticks()
-            ytics = np.where(ytics<len(varyList),ytics,-1)
-            ylabs = [np.where(0<=i ,varyList[int(i)],' ') for i in ytics]
+            ytics = np.where(ytics<len(Page.varyList),ytics,-1)
+            ylabs = [np.where(0<=i ,Page.varyList[int(i)],' ') for i in ytics]
             imgAx.set_yticklabels(ylabs)            
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = int(event.xdata+.5)
             ypos = int(event.ydata+.5)
-            if -1 < xpos < len(varyList) and -1 < ypos < len(varyList):
+            if -1 < xpos < len(Page.varyList) and -1 < ypos < len(Page.varyList):
                 if xpos == ypos:
-                    value = values[xpos]
-                    name = varyList[xpos]
-                    if varyList[xpos] in newAtomDict:
-                        name,value = newAtomDict[name]                        
-                    msg = '%s value = %.4g, esd = %.4g'%(name,value,sig[xpos])
+                    value = Page.values[xpos]
+                    name = Page.varyList[xpos]
+                    if Page.varyList[xpos] in Page.newAtomDict:
+                        name,value = Page.newAtomDict[name]                        
+                    msg = '%s value = %.4g, esd = %.4g'%(name,value,Page.sig[xpos])
                 else:
-                    msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
+                    msg = '%s - %s: %5.3f'%(Page.varyList[xpos],Page.varyList[ypos],Page.covArray[xpos][ypos])
                 Page.SetToolTipString(msg)
                 G2frame.G2plotNB.status.SetStatusText(msg,1)
                 
+    #==== PlotCovariance(G2frame,Data) starts here =========================
+    if not Data:
+        print ('No covariance matrix available')
+        return
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Covariance','mpl')
     if not new:
         if not Page.IsShown():
@@ -6136,17 +6130,26 @@ def PlotCovariance(G2frame,Data):
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+    Page.varyList = Data['varyList']
+    Page.values = Data['variables']
+    covMatrix = Data['covMatrix']
+    Page.sig = np.sqrt(np.diag(covMatrix))
+    xvar = np.outer(Page.sig,np.ones_like(Page.sig))
+    Page.covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
+    title = G2obj.StripUnicode(' for\n'+Data['title'],'') # matplotlib 1.x does not like unicode
+    Page.newAtomDict = Data.get('newAtomDict',{})
+    G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Page.Choice = ['s: to change colors','p: to save covariance as text file']
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.status.SetStatusText('',0)
     G2frame.G2plotNB.status.SetStatusText('',1)
     G2frame.G2plotNB.status.SetStatusWidths([150,-1])   #need to reset field widths here    
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
-    Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
+    Img = Plot.imshow(Page.covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
         vmin=-1.,vmax=1.)
     imgAx = Img.axes
     ytics = imgAx.get_yticks()
-    ylabs = [varyList[int(i)] for i in ytics[:-1]]
+    ylabs = [Page.varyList[int(i)] for i in ytics[:-1]]
     imgAx.set_yticklabels(ylabs)
     Page.figure.colorbar(Img)
     Plot.set_title('V-Cov matrix'+title)

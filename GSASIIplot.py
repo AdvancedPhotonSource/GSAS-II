@@ -256,6 +256,23 @@ plotOpt['phaseLabels']  = {}
 plotOpt['fmtChoices']  = {}
 plotOpt['lineWid'] = '1'
 
+def Write2csv(fil,dataItems,header=False):
+    '''Write a line to a CSV file
+
+    :param object fil: file object
+    :param list dataItems: items to write as row in file
+    :param bool header: True if all items should be written with quotes (default is False)
+    '''
+    line = ''
+    for item in dataItems:
+        if line: line += ','
+        item = str(item)
+        if header or ' ' in item:
+            line += '"'+item+'"'
+        else:
+            line += item
+    fil.write(line+'\n')
+
 def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
                  squeeze=True, subplot_kw=None, gridspec_kw=None):
         """
@@ -3468,23 +3485,6 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure)
         figure.canvas.draw()
         
-    def Write2csv(fil,dataItems,header=False):
-        '''Write a line to a CSV file
-
-        :param object fil: file object
-        :param list dataItems: items to write as row in file
-        :param bool header: True if all items should be written with quotes (default is False)
-        '''
-        line = ''
-        for item in dataItems:
-            if line: line += ','
-            item = str(item)
-            if header or ' ' in item:
-                line += '"'+item+'"'
-            else:
-                line += item
-        fil.write(line+'\n')
-
     # blocks of code used in grace .agr files
     linedef = '''@{0} legend "{1}"
 @{0} line color {2}
@@ -5306,6 +5306,33 @@ def PlotPeakWidths(G2frame,PatternName=None):
     def OnKeyPress(event):
         if event.key == 'g':
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+        elif event.key == 's':
+            # write the function values (not peaks) onto a file
+            dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', 
+                    wildcard='column-separated file (*.csv)|.csv',
+                    style=wx.FD_CHANGE_DIR|wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    filename = dlg.GetPath()
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+            fp = open(filename,'w')
+            fp.write("# Peak widths. Def. are default values from InstParms file, fit are from refined Instrument Parameters\n")
+            if 'C' in Parms['Type'][0]:
+                Write2csv(fp,['Q',
+                                'Gauss-def','Lorenz-def,total-def',
+                                'Gauss-fit','Lorenz-fit,total-fit']
+                                  ,header=True)
+                for vals in zip(Q,Y,Z,W,Yf,Zf,Wf): Write2csv(fp,vals)
+            else:
+                Write2csv(fp,['Q',
+                                'Gauss-def','Lorenz-def',
+                                'Gauss-fit','Lorenz-fit',]
+                                  ,header=True)
+                for vals in zip(Q,S,G,Sf,Gf): Write2csv(fp,vals)
+            fp.close()
         wx.CallAfter(PlotPeakWidths,G2frame,PatternName)
 
     if PatternName:
@@ -5336,7 +5363,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
         return
     xylim = []
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Peak Widths','mpl')
-    Page.Choice = (' key press','g: toggle grid',)
+    Page.Choice = (' key press','g: toggle grid','s: save as .csv file')
     Page.keyPress = OnKeyPress    
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
@@ -5386,25 +5413,25 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Zf,color='g',dashes=(5,5),label='Lorentzian fit')
         Plot.plot(Q,Wf,color='b',dashes=(5,5),label='G+L fit')
         
-        X = []
-        Y = []
-        Z = []
-        W = []
+        Xp = []
+        Yp = []
+        Zp = []
+        Wp = []
         for peak in peaks:
-            X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
+            Xp.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
             try:
                 s = math.sqrt(peak[4])*math.pi/18000.
             except ValueError:
                 s = 0.01
             g = peak[6]*math.pi/18000.
             G = G2pwd.getgamFW(g,s)         #/2.
-            Y.append(sq8ln2*s/tand(peak[0]/2.))
-            Z.append(g/tand(peak[0]/2.))
-            W.append(G/tand(peak[0]/2.))
+            Yp.append(sq8ln2*s/tand(peak[0]/2.))
+            Zp.append(g/tand(peak[0]/2.))
+            Wp.append(G/tand(peak[0]/2.))
         if len(peaks):
-            Plot.plot(X,Y,'+',color='r',label='G peak')
-            Plot.plot(X,Z,'+',color='g',label='L peak')
-            Plot.plot(X,W,'+',color='b',label='G+L peak')
+            Plot.plot(Xp,Yp,'+',color='r',label='G peak')
+            Plot.plot(Xp,Zp,'+',color='g',label='L peak')
+            Plot.plot(Xp,Wp,'+',color='b',label='G+L peak')
         legend = Plot.legend(loc='best')
         SetupLegendPick(legend,new)
         Page.canvas.draw()
@@ -5439,26 +5466,26 @@ def PlotPeakWidths(G2frame,PatternName=None):
         Plot.plot(Q,Sf,color='b',dashes=(5,5),label='Gaussian fit')
         Plot.plot(Q,Gf,color='m',dashes=(5,5),label='Lorentzian fit')
         
-        T = []
-        A = []
-        B = []
-        S = []
-        G = []
-        W = []
-        Q = []
+        Tp = []
+        Ap = []
+        Bp = []
+        Sp = []
+        Gp = []
+        Wp = []
+        Qp = []
         for peak in peaks:
-            T.append(peak[0])
-            A.append(peak[4])
-            B.append(peak[6])
-            Q.append(2.*np.pi*difC/peak[0])
-            S.append(1.17741*np.sqrt(peak[8])/peak[0])
-            G.append(peak[10]/peak[0])
+            Tp.append(peak[0])
+            Ap.append(peak[4])
+            Bp.append(peak[6])
+            Qp.append(2.*np.pi*difC/peak[0])
+            Sp.append(1.17741*np.sqrt(peak[8])/peak[0])
+            Gp.append(peak[10]/peak[0])
             
-        
-        Plot.plot(Q,A,'+',color='r',label='Alpha peak')
-        Plot.plot(Q,B,'+',color='g',label='Beta peak')
-        Plot.plot(Q,S,'+',color='b',label='Gaussian peak')
-        Plot.plot(Q,G,'+',color='m',label='Lorentzian peak')
+        if Qp: 
+            Plot.plot(Qp,Ap,'+',color='r',label='Alpha peak')
+            Plot.plot(Qp,Bp,'+',color='g',label='Beta peak')
+            Plot.plot(Qp,Sp,'+',color='b',label='Gaussian peak')
+            Plot.plot(Qp,Gp,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
     if xylim and not G2frame.G2plotNB.allowZoomReset:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)

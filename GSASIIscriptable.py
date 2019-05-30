@@ -130,8 +130,10 @@ method                                                Use
 
 :meth:`G2Project.set_refinement`                      This is passed a single dict which is used to set parameters and flags.
                                                       These actions can be performed also in :meth:`G2Project.do_refinements`. 
-:meth:`G2Project.get_Variable'                        Retrieves the value and esd for a parameter
-:meth:`G2Project.get_Covariance'                      Retrieves values and covariance for a set of refined parameters
+:meth:`G2Project.get_Variable`                        Retrieves the value and esd for a parameter
+:meth:`G2Project.get_Covariance`                      Retrieves values and covariance for a set of refined parameters
+:meth:`G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
+                                                      fit. (Also see :meth:`G2Project.get_Controls` to read values.)
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -160,8 +162,6 @@ method                                                Use
 :meth:`G2Phase.histograms`                            Returns a list of histograms linked to the phase
 :meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
 :meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
-:meth:`G2Phase.set_Controls`                          Set overall GSAS-II control settings such as number of cycles and to set up a sequential
-                                                      fit. (Also see :meth:`G2Phase.get_Controls` to read values.)
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -241,8 +241,8 @@ method                                                Use
 ==================================================    ===============================================================================================================
 :meth:`G2SeqRefRes.histograms`                         Provides a list of histograms used in the Sequential Refinement 
 :meth:`G2SeqRefRes.get_cell_and_esd`                   Returns cell dimensions and standard uncertainies for a phase and histogram from the Sequential Refinement 
-:meth:`G2SeqRefRes.get_Variable'                       Retrieves the value and esd for a parameter from a particular histogram in the Sequential Refinement 
-:meth:`G2SeqRefRes.get_Covariance'                     Retrieves values and covariance for a set of refined parameters for a particular histogram 
+:meth:`G2SeqRefRes.get_Variable`                       Retrieves the value and esd for a parameter from a particular histogram in the Sequential Refinement 
+:meth:`G2SeqRefRes.get_Covariance`                     Retrieves values and covariance for a set of refined parameters for a particular histogram 
 ==================================================    ===============================================================================================================
 
 ----------------------
@@ -3365,12 +3365,10 @@ class G2Phase(G2ObjectWrapper):
         return output
 
     def histograms(self):
-        '''Returns a list of histogram names associated with the current phase.
+        '''Returns a list of histogram names associated with the current phase ordered 
+        as they appear in the tree (see :meth:`G2Project.histograms`).
         '''
-        output = []
-        for hname in self.data.get('Histograms', {}).keys():
-            output.append(self.proj.histogram(hname))
-        return output
+        return [i.name for i in self.proj.histograms() if i.name in self.data.get('Histograms', {})] 
 
     @property
     def ranId(self):
@@ -3583,28 +3581,29 @@ class G2Phase(G2ObjectWrapper):
                 raise ValueError("Unknown key:", key)
 
     def set_HAP_refinements(self, refs, histograms='all'):
-        """Sets the given HAP refinement parameters between this phase and
-        the given histograms.
+        """Sets the given HAP refinement parameters between the current phase and
+        the specified histograms.
 
         :param dict refs: A dictionary of the parameters to be set. See
                           the :ref:`HAP_parameters_table` table for a description of this
                           dictionary.
-        :param histograms: Either 'all' (default) or a list of the histograms
+        :param histograms: Either 'all' (default) or a list of the histograms by index, name
+            or object. The index number is relative to all histograms in the tree, not to 
+            those in the phase. 
+            Histograms not associated with the current phase will be ignored. 
             whose HAP parameters will be set with this phase. Histogram and phase
-            must already be associated
-
+            must already be associated. 
         :returns: None
         """
-        if not self.data['Histograms']:
+        if not self.data.get('Histograms',[]):
             print("Error likely: Phase {} has no linked histograms".format(self.name))
             return
             
         if histograms == 'all':
-            histograms = self.data['Histograms'].values()
+            histograms = self.data['Histograms'].keys()
         else:
-            histograms = [self.data['Histograms'][h.name] for h in histograms
-                          if h.name in self.data['Histograms']]
-
+            histograms = [self._decodeHist(h) for h in histograms 
+                          if self._decodeHist(h) in self.data['Histograms']]    
         if not histograms:
             print("Skipping HAP set for phase {}, no selected histograms".format(self.name))
             return
@@ -3618,24 +3617,24 @@ class G2Phase(G2ObjectWrapper):
                     if param not in ['BabA', 'BabU']:
                         raise ValueError("Not sure what to do with" + param)
                     for h in histograms:
-                        h['Babinet'][param][1] = True
+                        self.data['Histograms'][h]['Babinet'][param][1] = True
             elif key == 'Extinction':
                 for h in histograms:
-                    h['Extinction'][1] = bool(val)
+                    self.data['Histograms'][h]['Extinction'][1] = bool(val)
             elif key == 'HStrain':
                 if isinstance(val,list) or isinstance(val,tuple):
                     for h in histograms:
-                        if len(h['HStrain'][1]) != len(val):
-                            raise Exception('Need {} HStrain terms for phase {}'
-                                .format(len(h['HStrain'][1]),self.name))
+                        if len(self.data['Histograms'][h]['HStrain'][1]) != len(val):
+                            raise Exception('Need {} HStrain terms for phase {} hist {}'
+                                .format(len(self.data['Histograms'][h]['HStrain'][1]),self.name,h))
                         for i,v in enumerate(val):
-                            h['HStrain'][1][i] = bool(v)
+                            self.data['Histograms'][h]['HStrain'][1][i] = bool(v)
                 else:
                     for h in histograms:
-                        h['HStrain'][1] = [bool(val) for p in h['HStrain'][1]]
+                        self.data['Histograms'][h]['HStrain'][1] = [bool(val) for p in self.data['Histograms'][h]['HStrain'][1]]
             elif key == 'Mustrain':
                 for h in histograms:
-                    mustrain = h['Mustrain']
+                    mustrain = self.data['Histograms'][h]['Mustrain']
                     newType = None
                     direction = None
                     if isinstance(val, strtypes):
@@ -3691,7 +3690,7 @@ class G2Phase(G2ObjectWrapper):
                 if 'value' in val:
                     newSize = float(val['value'])
                 for h in histograms:
-                    size = h['Size']
+                    size = self.data['Histograms'][h]['Size']
                     newType = None
                     direction = None
                     if isinstance(val, strtypes):
@@ -3705,7 +3704,7 @@ class G2Phase(G2ObjectWrapper):
 
                     if newType:
                         size[0] = newType
-                        refine = True == val.get('refine')
+                        refine = bool(val.get('refine'))
                         if newType == 'isotropic' and refine is not None:
                             size[2][0] = bool(refine)
                             if newSize: size[1][0] = newSize
@@ -3724,16 +3723,16 @@ class G2Phase(G2ObjectWrapper):
                         size[3] = direction
             elif key == 'Pref.Ori.':
                 for h in histograms:
-                    h['Pref.Ori.'][2] = bool(val)
+                    self.data['Histograms'][h]['Pref.Ori.'][2] = bool(val)
             elif key == 'Show':
                 for h in histograms:
-                    h['Show'] = bool(val)
+                    self.data['Histograms'][h]['Show'] = bool(val)
             elif key == 'Use':
                 for h in histograms:
-                    h['Use'] = bool(val)
+                    self.data['Histograms'][h]['Use'] = bool(val)
             elif key == 'Scale':
                 for h in histograms:
-                    h['Scale'][1] = bool(val)
+                    self.data['Histograms'][h]['Scale'][1] = bool(val)
             else:
                 print(u'Unknown HAP key: '+key)
 
@@ -3753,61 +3752,92 @@ class G2Phase(G2ObjectWrapper):
         """Returns a dict with HAP values for the selected histogram
 
         :param histogram: is a histogram object (:class:`G2PwdrData`) or
-            a histogram name or the index number of the histogram
-
+            a histogram name or the index number of the histogram.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
         :returns: HAP value dict
         """
         return self.data['Histograms'][self._decodeHist(histname)]
 
-    def copyHAPvalues(self, sourcehist, targethistlist, skip=[]):
-        """Returns a dict with HAP values for the selected histogram
+    def copyHAPvalues(self, sourcehist, targethistlist='all', skip=[], use=None):
+        """Copies HAP parameters for one histogram to a list of other histograms.
+        Use skip or use to select specific entries to be copied or not used.
 
         :param sourcehist: is a histogram object (:class:`G2PwdrData`) or
-            a histogram name or the index number of the histogram
+            a histogram name or the index number of the histogram to copy 
+            parameters from.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
         :param list targethistlist: a list of histograms where each item in the
             list can be a histogram object (:class:`G2PwdrData`), 
             a histogram name or the index number of the histogram.
-            if the string 'all', then all histograms in the phase are used.
+            If the string 'all' (default), then all histograms in the phase 
+            are used.
         :param list skip: items in the HAP dict that should not be 
             copied. The default is an empty list, which causes all items
             to be copied. To see a list of items in the dict, use
             :meth:`getHAPvalues` or use an invalid item, such as '?'.
+        :param list use: specifies the items in the HAP dict should be 
+            copied. The default is None, which causes all items
+            to be copied. 
+
+        examples::
+
+            ph0.copyHAPvalues(0,[1,2,3])
+            ph0.copyHAPvalues(0,use=['HStrain','Size'])
+
+        The first example copies all HAP parameters from the first histogram to 
+        the second, third and fourth histograms (as listed in the project tree). 
+        The second example copies only the 'HStrain' (Dij parameters and 
+        refinement flags) and the 'Size' (crystallite size settings, parameters
+        and refinement flags) from the first histogram to all histograms.
         """
         sourcehist = self._decodeHist(sourcehist)
         if targethistlist == 'all':
-            targethistlist = list(self.data['Histograms'].keys())
+            targethistlist = self.histograms()
         
         copydict = copy.deepcopy(self.data['Histograms'][sourcehist])
         for item in skip:
-            if item in copydict:
+            if item in list(copydict.keys()):
                 del copydict[item]
             else:
                 print('items in HAP dict are: {}'.format(
                     list(self.data['Histograms'][sourcehist])))
-                raise Exception('HAP dict entry {} invalid'.format(item))
+                raise Exception('HAP skip list entry {} invalid'.format(item))
+        if use:
+            for item in list(copydict.keys()):
+                if item not in use:
+                    del copydict[item]
+
+        print('Copying items {} from histgram {}'.format(list(copydict.keys()),sourcehist))
+        print(' to histograms {}'.format([self._decodeHist(h) for h in targethistlist]))
         for h in targethistlist:
             h = self._decodeHist(h)
-            self.data['Histograms'][h].update(copydict)
+            if h not in self.data['Histograms']:
+                print('Warning: histogram {} not in phase {}'.format(h,self.name))
+                continue
+            self.data['Histograms'][h].update(copy.deepcopy(copydict))
             
-        #GSASIIpath.IPyBreak_base()
-                    
     def clear_HAP_refinements(self, refs, histograms='all'):
         """Clears the given HAP refinement parameters between this phase and
         the given histograms.
 
         :param dict refs: A dictionary of the parameters to be cleared.
             See the the :ref:`HAP_parameters_table` table for what can be specified. 
-        :param histograms: Either 'all' (default) or a list of the histograms
-            whose HAP parameters will be cleared with this phase. Histogram and
-            phase must already be associated
-
+        :param histograms: Either 'all' (default) or a list of the histograms by index, name
+            or object. 
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
+            Histograms not associated with the current phase will be ignored. 
+            whose HAP parameters will be set with this phase. Histogram and phase
+            must already be associated
         :returns: None
         """
         if histograms == 'all':
-            histograms = self.data['Histograms'].values()
+            histograms = self.data['Histograms'].keys()
         else:
-            histograms = [self.data['Histograms'][h.name] for h in histograms
-                          if h.name in self.data['Histograms']]
+            histograms = [self._decodeHist(h) for h in histograms 
+                          if self._decodeHist(h) in self.data['Histograms']]    
 
         for key, val in refs.items():
             for h in histograms:
@@ -3819,36 +3849,36 @@ class G2Phase(G2ObjectWrapper):
                     for param in sets:
                         if param not in ['BabA', 'BabU']:
                             raise ValueError("Not sure what to do with" + param)
-                        for hist in histograms:
-                            hist['Babinet'][param][1] = False
+                        for h in histograms:
+                            self.data['Histograms'][h]['Babinet'][param][1] = False
                 elif key == 'Extinction':
                     for h in histograms:
-                        h['Extinction'][1] = False
+                        self.data['Histograms'][h]['Extinction'][1] = False
                 elif key == 'HStrain':
                     for h in histograms:
-                        h['HStrain'][1] = [False for p in h['HStrain'][1]]
+                        self.data['Histograms'][h]['HStrain'][1] = [False for p in self.data['Histograms'][h]['HStrain'][1]]
                 elif key == 'Mustrain':
                     for h in histograms:
-                        mustrain = h['Mustrain']
+                        mustrain = self.data['Histograms'][h]['Mustrain']
                         mustrain[2] = [False for p in mustrain[2]]
                         mustrain[5] = [False for p in mustrain[4]]
                 elif key == 'Pref.Ori.':
                     for h in histograms:
-                        h['Pref.Ori.'][2] = False
+                        self.data['Histograms'][h]['Pref.Ori.'][2] = False
                 elif key == 'Show':
                     for h in histograms:
-                        h['Show'] = False
+                        self.data['Histograms'][h]['Show'] = False
                 elif key == 'Size':
                     for h in histograms:
-                        size = h['Size']
+                        size = self.data['Histograms'][h]['Size']
                         size[2] = [False for p in size[2]]
                         size[5] = [False for p in size[5]]
                 elif key == 'Use':
                     for h in histograms:
-                        h['Use'] = False
+                        self.data['Histograms'][h]['Use'] = False
                 elif key == 'Scale':
                     for h in histograms:
-                        h['Scale'][1] = False
+                        self.data['Histograms'][h]['Scale'][1] = False
                 else:
                     print(u'Unknown HAP key: '+key)
 
@@ -3906,7 +3936,8 @@ class G2SeqRefRes(G2ObjectWrapper):
           of the phase in the project, numbered starting from 0.
         :param hist: Specify a histogram or using the histogram name (str) 
           or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered starting from 0.
+          refinement (not the project), numbered as in in the project tree
+          starting from 0.
         :returns: cell,cellESD,uniqCellIndx where cell (list) 
           with the unit cell parameters (a,b,c,alpha,beta,gamma,Volume);
           cellESD are the standard uncertainties on the 7 unit cell 
@@ -4016,7 +4047,8 @@ class G2SeqRefRes(G2ObjectWrapper):
 
         :param hist: Specify a histogram or using the histogram name (str) 
           or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered starting from 0.
+          refinement (not the project), numbered as in the project tree 
+          starting from 0.
         :returns: a list of parameters or None if no refinement has been
           performed. 
         '''
@@ -4033,7 +4065,8 @@ class G2SeqRefRes(G2ObjectWrapper):
 
         :param hist: Specify a histogram or using the histogram name (str) 
           or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered starting from 0.
+          refinement (not the project), numbered as in the project tree 
+          starting from 0.
         :param str var: a variable name of form '<p>:<h>:<name>', such as 
           ':0:Scale'
         :returns: (value,esd) if the parameter is refined or 
@@ -4059,7 +4092,8 @@ class G2SeqRefRes(G2ObjectWrapper):
 
         :param hist: Specify a histogram or using the histogram name (str) 
           or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered starting from 0.
+          refinement (not the project), numbered as in the project tree 
+          starting from 0.
         :param tuple varList: a list of variable names of form '<p>:<h>:<name>'
         :returns: (valueList,CovMatrix) where valueList contains the (n) values
           in the same order as varList (also length n) and CovMatrix is a 
@@ -4094,7 +4128,8 @@ class G2SeqRefRes(G2ObjectWrapper):
 
         :param hist: Specify a histogram or using the histogram name (str) 
           or the index number (int) of the histogram in the sequential 
-          refinement (not the project), numbered starting from 0.
+          refinement (not the project), numbered as in the project tree 
+          starting from 0.
         :returns: a list of dicts where the first element has sequential 
           refinement results and the second element has the contents of 
           the histogram tree items.

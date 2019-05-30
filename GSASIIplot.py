@@ -23,7 +23,7 @@ plotting routine               action
 :func:`PlotCovariance`        Show covariance terms in 2D 
 :func:`PlotStructure`         Crystal structure plotting with balls, sticks, lines,
                               ellipsoids, polyhedra and magnetic moments
-:func:'Plot1DSngl'            1D stick plots of structure factors                              
+:func:`Plot1DSngl`            1D stick plots of structure factors                              
 :func:`PlotSngl`              Structure factor plotting
 :func:`Plot3DSngl`            3D Structure factor plotting
 :func:`PlotDeltSig`           Normal probability plot (powder or single crystal)

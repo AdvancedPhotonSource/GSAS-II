@@ -121,7 +121,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']-len(varyList)))
         printFile.write(' Number of function calls: %d No. of observations: %d No. of parameters: %d User rejected: %d Sp. gp. extinct: %d\n'%  \
             (result[2]['nfev'],Histograms['Nobs'],len(varyList),Histograms['Nrej'],Histograms['Next']))
-        printFile.write(' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles\n'%(runtime,runtime/ncyc,ncyc))
+        if ncyc:
+            printFile.write(' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles\n'%(runtime,runtime/ncyc,ncyc))
         printFile.write(' wR = %7.2f%%, chi**2 = %12.6g, GOF = %6.2f\n'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']))
         sig = len(varyList)*[None,]
         if 'None' in str(type(result[1])) and ifSeq:    #this bails out of a sequential refinement on singular matrix

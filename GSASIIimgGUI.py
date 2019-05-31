@@ -221,21 +221,23 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     if not len(result):
                         print('calibrant missing from local image calibrants files')
                         return
-                    vals,varyList,sigList,parmDict = result
+                    vals,varyList,sigList,parmDict,covar = result
                     sigList = list(sigList)
                     if 'dist' not in varyList:
                         vals.append(parmDict['dist'])
                         varyList.append('dist')
                         sigList.append(None)
                     vals.append(Data.get('setdist',Data['distance']))
+                    # add setdist to varylist etc. so that it is displayed in Seq Res table
                     varyList.append('setdist')
                     sigList.append(None)
-                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
-                    varyList.append('chgrpos')
-                    sigList.append(None)
+                    covar = np.lib.pad(covar, (0,1), 'constant')
+#                    vals.append(Data.get('samplechangerpos',Data['samplechangerpos']))
+#                    varyList.append('chgrpos')
+#                    sigList.append(None)
                     
                     SeqResult[name] = {'variables':vals,'varyList':varyList,'sig':sigList,'Rvals':[],
-                        'covMatrix':np.eye(len(varyList)),'title':name,'parmDict':parmDict}
+                        'covMatrix':covar,'title':name,'parmDict':parmDict}
                 SeqResult['histNames'] = Names                
                 G2frame.GPXtree.SetItemPyData(Id,SeqResult)
         finally:

@@ -135,8 +135,17 @@ def FitEllipse(xy):
         phi -= 90.
     return cent,phi,radii
 
-def FitDetector(rings,varyList,parmDict,Print=True):
-    'Needs a doc string'
+def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
+    '''Fit detector calibration paremeters
+
+    :param np.array rings: vector of ring positions
+    :param list varyList: calibration parameters to be refined
+    :param dict parmDict: all calibration parameters
+    :param bool Print: set to True (default) to print the results
+    :param bool covar: set to True to return the covariance matrix (default is False)
+    :returns: [chisq,vals,sigList] unless covar is True, then 
+        [chisq,vals,sigList,coVarMatrix] is returned
+    '''
         
     def CalibPrint(ValSig,chisq,Npts):
         print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
@@ -209,7 +218,10 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     ValSig = zip(varyList,vals,sig)
     if Print:
         CalibPrint(ValSig,chisq,rings.shape[0])
-    return [chisq,vals,sigList]
+    if covar:
+        return [chisq,vals,sigList,result[1]]
+    else:
+        return [chisq,vals,sigList]
 
 def ImageLocalMax(image,w,Xpix,Ypix):
     'Needs a doc string'
@@ -550,7 +562,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     :param np.Array ImageZ: the image to calibrate
     :param dict data: the Controls dict for the image
     :param dict masks: a dict with masks
-    :returns: a list containing vals,varyList,sigList,parmDict
+    :returns: a list containing vals,varyList,sigList,parmDict,covar
     '''
     import ImageCalibrants as calFile
     print ('Image recalibration:')
@@ -618,7 +630,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         return []    
         
     rings = np.concatenate((data['rings']),axis=0)
-    [chisq,vals,sigList] = FitDetector(rings,varyList,parmDict)
+    [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
@@ -634,8 +646,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
         G2plt.PlotImage(G2frame,newImage=True)        
-    return [vals,varyList,sigList,parmDict]
-            
+    return [vals,varyList,sigList,parmDict,covar]
+
 def ImageCalibrate(G2frame,data):
     '''Called to perform an initial image calibration after points have been
     selected for the inner ring.

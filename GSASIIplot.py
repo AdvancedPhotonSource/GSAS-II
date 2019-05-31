@@ -2683,7 +2683,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         DZ = (xye[1]-xye[3])*np.sqrt(xye[2])
         DifLine[0].set_xdata(X[Ibeg:Ifin])
         DifLine[0].set_ydata(DZ[Ibeg:Ifin])
-        Plot1.set_ylim((min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])))
+        lims = [min(DZ[Ibeg:Ifin]),max(DZ[Ibeg:Ifin])]
+        if all(np.isfinite(lims)): Plot1.set_ylim(lims)
         CalcLine[0].set_xdata(X)
         ObsLine[0].set_xdata(X)
         BackLine[0].set_xdata(X)
@@ -3178,9 +3179,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         ZB = Z+B
                     Plot.set_yscale("log",nonposy='mask')
                     if np.any(W>0.):
-                        Plot.set_ylim(bottom=np.min(np.trim_zeros(W))/2.,top=np.max(Y)*2.)
+                        lims = [np.min(np.trim_zeros(W))/2.,np.max(Y)*2.]
                     else:
-                        Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
+                        lims = [np.min(np.trim_zeros(YB))/2.,np.max(Y)*2.]
+                    if all(np.isfinite(lims)): 
+                        Plot.set_ylim(bottom=lims[0],top=lims[1])
                 # Matplotlib artist lists used for refPlotUpdate
                 ObsLine = None
                 CalcLine = None
@@ -3200,9 +3203,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if not G2frame.UseLimits['dylims'][i]: continue
                         try:
                             CurLims[i] = float(G2frame.FixedLimits['dylims'][i])
-                            Plot1.set_ylim(CurLims)
                         except:
                             pass
+                    if all(np.isfinite(CurLims)): Plot1.set_ylim(CurLims)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')

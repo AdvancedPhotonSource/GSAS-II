@@ -3200,9 +3200,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         if not G2frame.UseLimits['dylims'][i]: continue
                         try:
                             CurLims[i] = float(G2frame.FixedLimits['dylims'][i])
+                            Plot1.set_ylim(CurLims)
                         except:
                             pass
-                    Plot1.set_ylim(CurLims)
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')

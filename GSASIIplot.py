@@ -1840,6 +1840,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key == 'e' and plottype in ['SASD','REFD']:
             G2frame.ErrorBars = not G2frame.ErrorBars
+        elif event.key == '.':
+            Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
+            newPlot = True
         elif event.key == 'b':
             G2frame.SubBack = not G2frame.SubBack
             if not G2frame.SubBack:
@@ -2944,6 +2947,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     elif Page.plotStyle['sqrtPlot']:
         Title = r'$\sqrt{I}$ for '+Title
         Ymax = np.sqrt(Ymax)
+    elif Page.plotStyle.get('WgtDiagnostic',False):
+        Title = 'Scaling diagnostic for '+Title
     if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
     elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
@@ -2973,6 +2978,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if 'PWDR' in plottype:
             if Page.plotStyle['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
+            elif Page.plotStyle.get('WgtDiagnostic',False):
+                Plot.set_ylabel('Intensity * Weight')
             else:
                 Plot.set_ylabel(r'$Intensity$',fontsize=16)
         elif plottype == 'SASD':
@@ -3083,6 +3090,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))+NoffY*Ymax/100.0
                 np.seterr(invalid=olderr['invalid'])
+            elif Page.plotStyle.get('WgtDiagnostic',False):
+                Y = xye[1]*xye[2]
             elif 'PWDR' in plottype and G2frame.SinglePlot and not (
                 Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                 Y = xye[1]*multArray+NoffY*Ymax/100.0
@@ -3157,7 +3166,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Page.plotStyle['delOffset']
-                    elif 'PWDR' in plottype and G2frame.SinglePlot and not (
+                    elif Page.plotStyle.get('WgtDiagnostic',False):
+                        Z = D = W = np.zeros_like(Y)
+                    elif G2frame.SinglePlot and not (
                         Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                         W = xye[4]*multArray+NoffY*Ymax/100.0
                         D = multArray*xye[5]-Page.plotStyle['delOffset']  #powder background
@@ -3321,8 +3332,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
-        elif G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or \
-            'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode:
+        elif Page.plotStyle.get('WgtDiagnostic',False):
+            pass # skip reflection markers
+        elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 
+            'PWDR' in G2frame.GPXtree.GetItemText(PickId) or refineMode):
             Phases = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists'))
             l = GSASIIpath.GetConfigValue('Tick_length',8.0)
             w = GSASIIpath.GetConfigValue('Tick_width',1.)

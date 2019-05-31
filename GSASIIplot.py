@@ -276,15 +276,16 @@ def Write2csv(fil,dataItems,header=False):
 def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
                  squeeze=True, subplot_kw=None, gridspec_kw=None):
         """
-        Copy of Figure.figure.subplots from matplotlib.figure.py
-        Included here because this appears only in later versions of
-        matplotlib. When v2.2 is standard, this can be removed from GSAS-II
-        
         Add a set of subplots to this figure.
         
-        :param nrows, ncols : int, default: 1
+        This is a copy of Figure.figure.subplots from matplotlib.figure.py.
+        Included here because this appears only in later versions of
+        matplotlib. When v2.2 is standard, this should be removed from GSAS-II.
+        
+        :param int nrows, ncols: default: 1
             Number of rows/cols of the subplot grid.
-        :param sharex, sharey : bool or {'none', 'all', 'row', 'col'}, default: False
+        :param bool/str sharex, sharey: True/False or {'none', 'all', 'row', 'col'}, default: False
+
             Controls sharing of properties among x (`sharex`) or y (`sharey`)
             axes:
             
@@ -299,7 +300,8 @@ def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
             labels of the bottom subplot are visible.  Similarly, when
             subplots have a shared y-axis along a row, only the y tick labels
             of the first column subplot are visible.
-        :param squeeze : bool, default: True
+        :param bool squeeze: default: True
+
             - If True, extra dimensions are squeezed out from the returned
               axis object:
               
@@ -315,20 +317,20 @@ def MPLsubplots(figure, nrows=1, ncols=1, sharex=False, sharey=False,
               is always a 2D array containing Axes instances, even if it ends
               up being 1x1.
               
-        :param subplot_kw : dict, default: {}
+        :param dict subplot_kw: default: {}
             Dict with keywords passed to the
-            :meth:`~matplotlib.figure.Figure.add_subplot` call used to create
+            :meth:`matplotlib.figure.Figure.add_subplot` call used to create
             each subplots.
-        :param gridspec_kw : dict, default: {}
+        :param dict gridspec_kw: default: {}
             Dict with keywords passed to the
-            :class:`~matplotlib.gridspec.GridSpec` constructor used to create
+            :class:`matplotlib.gridspec.GridSpec` constructor used to create
             the grid the subplots are placed on.
             
-        :return: ax : single Axes object or array of Axes objects
-            The added axes.  The dimensions of the resulting array can be
+        :returns: A single Axes object or array of Axes objects with 
+            the added axes.  The dimensions of the resulting array can be
             controlled with the squeeze keyword, see above.
             
-        See Also pyplot.subplots : pyplot API; docstring includes examples.
+        See also: pyplot.subplots: pyplot API; docstring includes examples.
         
         """
 
@@ -6383,58 +6385,47 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             
     def Draw():
         global Title,xLabel,yLabel
-        G2frame.G2plotNB.status.SetStatusText(  \
+        G2frame.G2plotNB.status.SetStatusText(
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
         colors=['b','g','r','c','m','k']
         uselist = G2frame.SeqTable.GetColValues(1)
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
+            if G2frame.seqReverse and not G2frame.seqXaxis:
+                X = X[::-1]
         else:
             X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
             xName = 'Data sequence number'
         for ic,col in enumerate(Page.seqYaxisList):
             Ncol = colors[ic%6]
             name,Y,sig = Page.seqTableGet(col)
-            # deal with missing (None) values
+            if G2frame.seqReverse and not G2frame.seqXaxis:
+                Y = Y[::-1]
+                sig = sig[::-1]
+            # deal with missing (None) values in arrays
             Xnew = []
             Ynew = []
             Ysnew = []
+            gotsig = False
             for i in range(len(X)):
                 if not uselist[i]:
                     continue
                 if X[i] is None or Y[i] is None:
-                    if Ysnew:
-                        if G2frame.seqReverse and not G2frame.seqXaxis:
-                            Ynew = Ynew[::-1]
-                            Ysnew = Ysnew[::-1]
-                        if G2frame.seqLines:
-                            Plot.errorbar(Xnew,Ynew,yerr=Ysnew,color=Ncol)
-                        else:
-                            Plot.errorbar(Xnew,Ynew,yerr=Ysnew,linestyle='None',color=Ncol,marker='x')
-                    else:
-                        if G2frame.seqReverse and not G2frame.seqXaxis:
-                            Ynew = Ynew[::-1]
-                        Plot.plot(Xnew,Ynew,color=Ncol)
-                        Plot.plot(Xnew,Ynew,'o',color=Ncol)
-                    Xnew = []
-                    Ynew = []
-                    Ysnew = []
                     continue
                 Xnew.append(X[i])
                 Ynew.append(Y[i])
-                if sig: Ysnew.append(sig[i])
-            if Ysnew:
-                if G2frame.seqReverse and not G2frame.seqXaxis:
-                    Ynew = Ynew[::-1]
-                    Ysnew = Ysnew[::-1]
+                if sig[i]:
+                    gotsig = True
+                    Ysnew.append(sig[i])
+                else:
+                    Ysnew.append(0.0)
+            if gotsig:
                 if G2frame.seqLines:
                     Plot.errorbar(Xnew,Ynew,yerr=Ysnew,color=Ncol,label=name)
                 else:
                     Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name,linestyle='None',color=Ncol,marker='x')
             else:
-                if G2frame.seqReverse and not G2frame.seqXaxis:
-                    Ynew = Ynew[::-1]
                 Plot.plot(Xnew,Ynew,color=Ncol)
                 Plot.plot(Xnew,Ynew,'o',color=Ncol,label=name)
         if Page.fitvals: # TODO: deal with fitting of None values

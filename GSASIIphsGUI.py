@@ -6753,23 +6753,25 @@ def UpdatePhaseData(G2frame,Item,data):
             # of any type with differing setting angles from the 1st.
             instArray = {}
             if int(Obj.GetValue()) > 0:
-                if textureData['Model'] != 'cylindrical':
-                    for h in data['Histograms']:
-                        PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,h)
-                        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
-                        Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Sample Parameters'))
-                        if Inst['Type'][1] in instArray:
-                            if instArray[Inst['Type'][1]] != [Sample['Chi'],Sample['Phi'],Sample['Omega']]:
-                                textureData['Order'] = int(Obj.GetValue())
-                                break
-                        else:
-                            instArray[Inst['Type'][1]] = [Sample['Chi'],Sample['Phi'],Sample['Omega']]
+                for h in data['Histograms']:
+                    PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,h)
+                    Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
+                    Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId,'Sample Parameters'))
+                    if Inst['Type'][1] in instArray:
+                        if instArray[Inst['Type'][1]] != [Sample['Chi'],Sample['Phi'],Sample['Omega']]:
+                            textureData['Order'] = int(Obj.GetValue())
+                            break
                     else:
+                        instArray[Inst['Type'][1]] = [Sample['Chi'],Sample['Phi'],Sample['Omega']]
+                else:
+                    if textureData['Model'] != 'cylindrical':
                         textureData['Order'] = 0
                         wx.MessageBox('Incorrect use of Texture. Use preferred orientation (on data tab) unless you have multiple histograms taken with different orientations',
                                 caption='Texture Error',style=wx.ICON_EXCLAMATION)
-                else:
-                    textureData['Order'] = 0
+                    else:
+                        textureData['Order'] = int(Obj.GetValue())
+            else:
+                textureData['Order'] = 0
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallLater(100,UpdateTexture)
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)

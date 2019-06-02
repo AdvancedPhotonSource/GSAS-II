@@ -3255,7 +3255,7 @@ def Fourier4DMap(data,reflDict):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.sizestr(Fhkl.shape)))
+    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
 
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          

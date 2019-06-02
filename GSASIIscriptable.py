@@ -3736,6 +3736,70 @@ class G2Phase(G2ObjectWrapper):
             else:
                 print(u'Unknown HAP key: '+key)
 
+    def clear_HAP_refinements(self, refs, histograms='all'):
+        """Clears the given HAP refinement parameters between this phase and
+        the given histograms.
+
+        :param dict refs: A dictionary of the parameters to be cleared.
+            See the the :ref:`HAP_parameters_table` table for what can be specified. 
+        :param histograms: Either 'all' (default) or a list of the histograms by index, name
+            or object. 
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
+            Histograms not associated with the current phase will be ignored. 
+            whose HAP parameters will be set with this phase. Histogram and phase
+            must already be associated
+        :returns: None
+        """
+        if histograms == 'all':
+            histograms = self.data['Histograms'].keys()
+        else:
+            histograms = [self._decodeHist(h) for h in histograms 
+                          if self._decodeHist(h) in self.data['Histograms']]    
+
+        for key, val in refs.items():
+            for h in histograms:
+                if key == 'Babinet':
+                    try:
+                        sets = list(val)
+                    except ValueError:
+                        sets = ['BabA', 'BabU']
+                    for param in sets:
+                        if param not in ['BabA', 'BabU']:
+                            raise ValueError("Not sure what to do with" + param)
+                        for h in histograms:
+                            self.data['Histograms'][h]['Babinet'][param][1] = False
+                elif key == 'Extinction':
+                    for h in histograms:
+                        self.data['Histograms'][h]['Extinction'][1] = False
+                elif key == 'HStrain':
+                    for h in histograms:
+                        self.data['Histograms'][h]['HStrain'][1] = [False for p in self.data['Histograms'][h]['HStrain'][1]]
+                elif key == 'Mustrain':
+                    for h in histograms:
+                        mustrain = self.data['Histograms'][h]['Mustrain']
+                        mustrain[2] = [False for p in mustrain[2]]
+                        mustrain[5] = [False for p in mustrain[4]]
+                elif key == 'Pref.Ori.':
+                    for h in histograms:
+                        self.data['Histograms'][h]['Pref.Ori.'][2] = False
+                elif key == 'Show':
+                    for h in histograms:
+                        self.data['Histograms'][h]['Show'] = False
+                elif key == 'Size':
+                    for h in histograms:
+                        size = self.data['Histograms'][h]['Size']
+                        size[2] = [False for p in size[2]]
+                        size[5] = [False for p in size[5]]
+                elif key == 'Use':
+                    for h in histograms:
+                        self.data['Histograms'][h]['Use'] = False
+                elif key == 'Scale':
+                    for h in histograms:
+                        self.data['Histograms'][h]['Scale'][1] = False
+                else:
+                    print(u'Unknown HAP key: '+key)
+
     def _decodeHist(self,hist):
         '''Convert a histogram reference to a histogram name string
         '''
@@ -3809,78 +3873,81 @@ class G2Phase(G2ObjectWrapper):
                 if item not in use:
                     del copydict[item]
 
-        print('Copying items {} from histgram {}'.format(list(copydict.keys()),sourcehist))
-        print(' to histograms {}'.format([self._decodeHist(h) for h in targethistlist]))
+        print('Copying item(s) {} from histogram {}'.format(list(copydict.keys()),sourcehist))
+        print(' to histogram(s) {}'.format([self._decodeHist(h) for h in targethistlist]))
+        for h in targethistlist:
+            h = self._decodeHist(h)
+            if h not in self.data['Histograms']:
+                print('Unexpected Warning: histogram {} not in phase {}'.format(h,self.name))
+                continue
+            self.data['Histograms'][h].update(copy.deepcopy(copydict))
+
+    def setHAPvalues(self, HAPdict, targethistlist='all', skip=[], use=None):
+        """Copies HAP parameters for one histogram to a list of other histograms.
+        Use skip or use to select specific entries to be copied or not used.
+        Note that ``HStrain`` and sometimes ``Mustrain`` values can be specific to 
+        a Laue class and should be copied with care between phases of different 
+        symmetry. A "sanity check" on the number of Dij terms is made if ``HStrain``
+        values are copied.
+
+        :param dict HAPdict: is a dict returned by :meth:`getHAPvalues` containing 
+            HAP parameters.
+        :param list targethistlist: a list of histograms where each item in the
+            list can be a histogram object (:class:`G2PwdrData`), 
+            a histogram name or the index number of the histogram.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
+            If the string 'all' (default), then all histograms in the phase 
+            are used.
+        :param list skip: items in the HAP dict that should not be 
+            copied. The default is an empty list, which causes all items
+            to be copied. To see a list of items in the dict, use
+            :meth:`getHAPvalues` or use an invalid item, such as '?'.
+        :param list use: specifies the items in the HAP dict should be 
+            copied. The default is None, which causes all items
+            to be copied. 
+
+        example::
+
+            HAPdict = ph0.getHAPvalues(0)
+            ph1.setHAPvalues(HAPdict,use=['HStrain','Size'])
+
+        This copies the Dij (hydrostatic strain) HAP parameters and the 
+        crystallite size broadening terms from the first histogram in 
+        phase ``ph0`` to all histograms in phase ``ph1``. 
+        """
+        if targethistlist == 'all':
+            targethistlist = self.histograms()
+        copydict = copy.deepcopy(HAPdict)
+        for item in skip:
+            if item in list(copydict.keys()):
+                del copydict[item]
+            else:
+                print('items in HAP dict are: {}'.format(
+                    list(self.data['Histograms'][sourcehist])))
+                raise Exception('HAP skip list entry {} invalid'.format(item))
+        if use:
+            for item in list(copydict.keys()):
+                if item not in use:
+                    del copydict[item]
+
+        first = True
         for h in targethistlist:
             h = self._decodeHist(h)
             if h not in self.data['Histograms']:
                 print('Warning: histogram {} not in phase {}'.format(h,self.name))
                 continue
-            self.data['Histograms'][h].update(copy.deepcopy(copydict))
-            
-    def clear_HAP_refinements(self, refs, histograms='all'):
-        """Clears the given HAP refinement parameters between this phase and
-        the given histograms.
-
-        :param dict refs: A dictionary of the parameters to be cleared.
-            See the the :ref:`HAP_parameters_table` table for what can be specified. 
-        :param histograms: Either 'all' (default) or a list of the histograms by index, name
-            or object. 
-            The index number is relative to all histograms in the tree, not to 
-            those in the phase.
-            Histograms not associated with the current phase will be ignored. 
-            whose HAP parameters will be set with this phase. Histogram and phase
-            must already be associated
-        :returns: None
-        """
-        if histograms == 'all':
-            histograms = self.data['Histograms'].keys()
-        else:
-            histograms = [self._decodeHist(h) for h in histograms 
-                          if self._decodeHist(h) in self.data['Histograms']]    
-
-        for key, val in refs.items():
-            for h in histograms:
-                if key == 'Babinet':
-                    try:
-                        sets = list(val)
-                    except ValueError:
-                        sets = ['BabA', 'BabU']
-                    for param in sets:
-                        if param not in ['BabA', 'BabU']:
-                            raise ValueError("Not sure what to do with" + param)
-                        for h in histograms:
-                            self.data['Histograms'][h]['Babinet'][param][1] = False
-                elif key == 'Extinction':
-                    for h in histograms:
-                        self.data['Histograms'][h]['Extinction'][1] = False
-                elif key == 'HStrain':
-                    for h in histograms:
-                        self.data['Histograms'][h]['HStrain'][1] = [False for p in self.data['Histograms'][h]['HStrain'][1]]
-                elif key == 'Mustrain':
-                    for h in histograms:
-                        mustrain = self.data['Histograms'][h]['Mustrain']
-                        mustrain[2] = [False for p in mustrain[2]]
-                        mustrain[5] = [False for p in mustrain[4]]
-                elif key == 'Pref.Ori.':
-                    for h in histograms:
-                        self.data['Histograms'][h]['Pref.Ori.'][2] = False
-                elif key == 'Show':
-                    for h in histograms:
-                        self.data['Histograms'][h]['Show'] = False
-                elif key == 'Size':
-                    for h in histograms:
-                        size = self.data['Histograms'][h]['Size']
-                        size[2] = [False for p in size[2]]
-                        size[5] = [False for p in size[5]]
-                elif key == 'Use':
-                    for h in histograms:
-                        self.data['Histograms'][h]['Use'] = False
-                elif key == 'Scale':
-                    for h in histograms:
-                        self.data['Histograms'][h]['Scale'][1] = False
-                else:
-                    print(u'Unknown HAP key: '+key)
+            if first:
+                first = False
+                if 'HStrain' in self.data['Histograms'][h] and 'HStrain' in copydict:
+                    if len(copydict['HStrain'][0]) != len(self.data['Histograms'][h]['HStrain'][0]):
+                        print('HStrain has differing numbers of terms. Input: {}, phase {}: {}'.
+                                  format(len(copydict['HStrain'][0]),
+                                        self.name,len(self.data['Histograms'][h]['HStrain'][0])))
+                        raise Exception('HStrain has differing numbers of terms.')
+            self.data['Histograms'][h].update(copy.deepcopy(copydict))            
+        print('Copied item(s) {} from dict'.format(list(copydict.keys())))
+        print(' to histogram(s) {}'.format([self._decodeHist(h) for h in targethistlist]))
 
 class G2SeqRefRes(G2ObjectWrapper):
     '''Wrapper for a Sequential Refinement Results tree entry, containing the 

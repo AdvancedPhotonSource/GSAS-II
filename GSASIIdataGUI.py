@@ -2359,6 +2359,7 @@ class GSASII(wx.Frame):
         '''
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
+        item.Enable(False) # TODO: this does not appear to have ever been made to work
         for reader in self.ImportPDFReaderlist:
             item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader

@@ -33,13 +33,13 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
             )
 
     # Validate the contents -- make sure we only have valid lines
-    def ContentsValidator(self, filepointer):
+    def ContentsValidator(self, filename):
         'Look through the file for expected types of lines in a valid r-step file'
+        filepointer = open(filename,'r')
         Ndata = 0
         for i,S in enumerate(filepointer):
             if '#L' in S[:2]:
                 break
-        filepointer.seek(i)
         for i,S in enumerate(filepointer):            
             vals = S.split()
             if len(vals) >= 2:
@@ -50,14 +50,17 @@ class txt_PDFReaderClass(G2obj.ImportPDFData):
                     pass
         if not Ndata:     
             self.errors = 'No 2 or more column numeric data found'
+            filepointer.close()
             return False
+        filepointer.close()
         return True # no errors encountered
 
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+    def Reader(self,filename,ParentFrame=None, **unused):
         print ('Read a q-step text file')
         x = []
         y = []
         ifData = False
+        filepointer = open(filename,'r')
         for i,S in enumerate(filepointer):
             if not ifData:
                 if len(S) == 1:     #skip blank line

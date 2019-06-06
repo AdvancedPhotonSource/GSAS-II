@@ -1235,13 +1235,13 @@ def UpdateBackground(G2frame,data):
                     S = File.readline()     #should contain the std. bck fxn
                 newback[0] = eval(S[:-1])
                 S = File.readline()                
-                while S:
+                while S and ':' in S:
                     [item,vals] = S[:-1].split(':')
                     if item in ['nPeaks','nDebye']:
                         newback[1][item] = int(vals)
                     elif 'PWDR' in item:
                         newback[1][item] = eval(vals)
-                    elif item in ['FixedPoints','debyeTerms','peakList']:
+                    elif item in ['FixedPoints','debyeTerms','peaksList']:
                         newback[1][item] = []
                         S = File.readline()
                         while ':' not in S:

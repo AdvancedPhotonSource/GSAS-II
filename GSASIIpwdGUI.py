@@ -4384,7 +4384,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 else:
                     gridDisplay.SetReadOnly(r,c,isReadOnly=True)
         mainSizer.Add(gridDisplay,0,WACV)
-    if magcells:
+    if magcells and len(controls) > 16:
         itemList = [phase.get('gid',ip+1) for ip,phase in enumerate(magcells)]
         phaseDict = dict(zip(itemList,magcells))
         G2frame.dataWindow.CopyCell.Enable(False)

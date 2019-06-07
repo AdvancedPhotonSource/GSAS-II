@@ -313,6 +313,11 @@ def ReadPowderInstprm(instLines, bank, databanks, rd):
         newItems.append(item)
         newVals.append(val)
         il += 1
+    if 'Lam1' in newItems:
+        rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+            'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+    else:
+        rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],'DisplaceY':[0.,False]})
     return [makeInstDict(newItems, newVals, len(newVals)*[False]), {}]
 
 def LoadImportRoutines(prefix, errprefix=None, traceback=False):

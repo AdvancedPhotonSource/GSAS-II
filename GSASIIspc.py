@@ -2039,7 +2039,7 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     Cell = []
     inv = int(SGData['SGInv']+1)
     icen = SGData['SGCen']
-    if SGData['SGFixed']:
+    if SGData.get('SGFixed',False):
         inv = 1
     SpnFlp = SGData.get('SpnFlp',[])
     spnflp = []

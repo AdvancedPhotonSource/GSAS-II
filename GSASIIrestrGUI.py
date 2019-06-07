@@ -51,7 +51,10 @@ def GetSelectedRows(widget):
     '''Returns a list of selected rows. Rows can be selected, blocks of cells
     or individual cells can be selected. The column for selected cells is ignored.
     '''
-    rows = widget.GetSelectedRows()
+    try:
+        rows = widget.GetSelectedRows()
+    except:
+        return
     if not rows:
         top = widget.GetSelectionBlockTopLeft()
         bot = widget.GetSelectionBlockBottomRight()
@@ -943,7 +946,9 @@ def UpdateRestraints(G2frame,data,phaseName):
                                 
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(Bonds)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             Bonds.ClearSelection()
             rows.sort()
@@ -1073,7 +1078,9 @@ def UpdateRestraints(G2frame,data,phaseName):
                                             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(Angles)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rows.sort()
             rows.reverse()
@@ -1193,7 +1200,9 @@ def UpdateRestraints(G2frame,data,phaseName):
                                             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(Planes)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rows.sort()
             rows.reverse()
@@ -1300,7 +1309,9 @@ def UpdateRestraints(G2frame,data,phaseName):
             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(Volumes)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rows.sort()
             rows.reverse()
@@ -1428,8 +1439,10 @@ def UpdateRestraints(G2frame,data,phaseName):
             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(TorsionRestr.Torsions)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
                 return
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
             rows.sort()
             rows.reverse()
             for row in rows:
@@ -1552,7 +1565,9 @@ def UpdateRestraints(G2frame,data,phaseName):
             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(RamaRestr.Ramas)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rows.sort()
             rows.reverse()
@@ -1684,7 +1699,9 @@ def UpdateRestraints(G2frame,data,phaseName):
         def OnDeleteRestraint(event):
             #rows = GetSelectedRows()
             rows = ChemComps.GetSelectedRows()
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rowLabl = ChemComps.GetRowLabelValue(r)
             row = int(rowLabl.split(':')[1])
@@ -1793,7 +1810,9 @@ def UpdateRestraints(G2frame,data,phaseName):
             
         def OnDeleteRestraint(event):
             rows = GetSelectedRows(Textures)
+            G2frame.GetStatusBar().SetStatusText('',1)
             if not rows:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
                 return
             rows.sort()
             rows.reverse()
@@ -1877,7 +1896,10 @@ def UpdateRestraints(G2frame,data,phaseName):
         def OnDelGenRestraint(event):
             '''Delete a restraint expression'''
             n = event.GetEventObject().index
-            del generalRestData['General'][n]
+            G2frame.GetStatusBar().SetStatusText('',1)
+            if not n:
+                G2frame.GetStatusBar().SetStatusText('First select restraints to be deleted',1)
+                return
             wx.CallAfter(UpdateGeneralRestr,restrData['General'])
             
         if GeneralRestr.GetSizer(): GeneralRestr.GetSizer().Clear(True)

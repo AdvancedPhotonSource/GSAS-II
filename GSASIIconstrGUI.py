@@ -1451,41 +1451,44 @@ def TransConstraints(G2frame,oldPhase,newPhase,Trans,Vec,atCodes):
     
     #print('old A',G2lat.cell2A(oldPhase['General']['Cell'][1:7]))
     #print('new A',G2lat.cell2A(newPhase['General']['Cell'][1:7]))
-    for iAnew,Asi in enumerate(['A0','A1','A2','A3','A4','A5']): # loop through A[i] for new cell
-        Nparm = str(npId) + '::' + Asi
-        if Nparm != SetUniqAj(npId,iAnew,nSGData):
-            continue # skip: Ai constrained from Aj or must be zero
-        multDict = {}
-        for iAorg in range(6):
-            cA = conMat[iAnew][iAorg] # coeff for A[i] in constraint matrix
-            if abs(cA) < 1.e-8: continue
-            parm = SetUniqAj(opId,iAorg,oSGData) # translate to unique A[i] in original cell
-            if not parm: continue # must be zero
-            # sum coeff
-            if parm in multDict:
-                multDict[parm] += cA
-            else:
-                multDict[parm] = cA
-        # any non-zero multipliers?
-        maxMult = 0
-        for i in multDict:
-            maxMult = max(maxMult,abs(multDict[i]))
-        if maxMult <= 0:  # Nparm computes as zero; Fix this parameter
-            constraints['Phase'] += [[
-                [0.0,G2obj.G2VarObj(Nparm)],
-                None,None,'h']]
-        elif len(multDict) == 1:        # create equivalence
-            key = list(multDict.keys())[0]
-            constraints['Phase'] += [[
-                [1.0,G2obj.G2VarObj(key)],
-                [multDict[key],G2obj.G2VarObj(Nparm)],
-                None,None,'e']]
-        else:                           # create constraint
-            constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
-            for key in multDict:
-                constr += [[multDict[key],G2obj.G2VarObj(key)]]
-            constr += [0.0,None,'c']
-            constraints['Phase'] += [constr]
+    
+#this is still incorrect for hex/trig/ortho/tetragonal --> monoclinic
+    
+#    for iAnew,Asi in enumerate(['A0','A1','A2','A3','A4','A5']): # loop through A[i] for new cell
+#        Nparm = str(npId) + '::' + Asi
+#        if Nparm != SetUniqAj(npId,iAnew,nSGData):
+#            continue # skip: Ai constrained from Aj or must be zero
+#        multDict = {}
+#        for iAorg in range(6):
+#            cA = conMat[iAnew][iAorg] # coeff for A[i] in constraint matrix
+#            if abs(cA) < 1.e-8: continue
+#            parm = SetUniqAj(opId,iAorg,oSGData) # translate to unique A[i] in original cell
+#            if not parm: continue # must be zero
+#            # sum coeff
+#            if parm in multDict:
+#                multDict[parm] += cA
+#            else:
+#                multDict[parm] = cA
+#        # any non-zero multipliers?
+#        maxMult = 0
+#        for i in multDict:
+#            maxMult = max(maxMult,abs(multDict[i]))
+#        if maxMult <= 0:  # Nparm computes as zero; Fix this parameter
+#            constraints['Phase'] += [[
+#                [0.0,G2obj.G2VarObj(Nparm)],
+#                None,None,'h']]
+#        elif len(multDict) == 1:        # create equivalence
+#            key = list(multDict.keys())[0]
+#            constraints['Phase'] += [[
+#                [1.0,G2obj.G2VarObj(key)],
+#                [multDict[key],G2obj.G2VarObj(Nparm)],
+#                None,None,'e']]
+#        else:                           # create constraint
+#            constr = [[-1.0,G2obj.G2VarObj(Nparm)]]
+#            for key in multDict:
+#                constr += [[multDict[key],G2obj.G2VarObj(key)]]
+#            constr += [0.0,None,'c']
+#            constraints['Phase'] += [constr]
     
     # constraints on HAP Scale, etc.
     for hId,hist in enumerate(UseList):    #HAP - seems OK

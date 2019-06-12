@@ -55,9 +55,9 @@ def G2SetPrintLevel(level):
     'all', 'warn', 'error' or 'none'
     
     :param str level: a string used to set the print level, which may be 
-    'all', 'warn', 'error' or 'none'.
-    Note that capitalization and extra letters in level are ignored, so 
-    'Warn', 'warnings', etc. will all set the mode to 'warn'
+      'all', 'warn', 'error' or 'none'.
+      Note that capitalization and extra letters in level are ignored, so 
+      'Warn', 'warnings', etc. will all set the mode to 'warn'
     '''
     global G2printLevel
     for mode in  'all', 'warn', 'error', 'none':
@@ -73,9 +73,9 @@ def G2Print(*args,**kwargs):
     Use G2Print() as replacement for print(). 
 
     :param str mode: if specified, this should contain the mode for printing
-    ('error', 'warn' or anything else). If not specified, the first argument 
-    of the print command (args[0]) should contain the string 'error' for 
-    error messages and 'warn' for warning messages. 
+      ('error', 'warn' or anything else). If not specified, the first argument 
+      of the print command (args[0]) should contain the string 'error' for 
+      error messages and 'warn' for warning messages. 
     '''
     if G2printLevel is 'none': return
     if kwargs.get('mode') is None:

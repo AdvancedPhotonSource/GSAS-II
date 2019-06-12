@@ -806,9 +806,9 @@ def SetPrintLevel(level):
     documented here. 
     
     :param str level: a string used to set the print level, which may be 
-    'all', 'warn', 'error' or 'none'.
-    Note that capitalization and extra letters in level are ignored, so 
-    'Warn', 'warnings', etc. will all set the mode to 'warn'
+      'all', 'warn', 'error' or 'none'.
+      Note that capitalization and extra letters in level are ignored, so 
+      'Warn', 'warnings', etc. will all set the mode to 'warn'
     '''
     G2fil.G2SetPrintLevel(level)
     global printLevel

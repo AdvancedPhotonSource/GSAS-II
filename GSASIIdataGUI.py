@@ -4161,6 +4161,8 @@ class GSASII(wx.Frame):
                 if not filename: return
                 dirname,filename = os.path.split(filename)
                 filename = os.path.splitext(filename)[0]
+            Inst = None
+            Limits = None
             for export in exports:
                 if len(exports) > 1:
                     filename = export.replace(' ','_')[5:]

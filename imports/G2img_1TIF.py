@@ -22,6 +22,7 @@ from __future__ import division, print_function
 import struct as st
 import GSASIIobj as G2obj
 import GSASIIpath
+import GSASIIfiles as G2fil
 import numpy as np
 import time
 DEBUG = False
@@ -66,7 +67,7 @@ class TIF_ReaderClass(G2obj.ImportImage):
         '''
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:
-            print("GetTifData failed to read "+str(filename)+" Trying SciPy")
+            G2fil.G2Print("GetTifData failed to read "+str(filename)+" Trying SciPy")
             import scipy.misc
             self.Image = scipy.misc.imread(filename,flatten=True)
             # for scipy 1.2 & later  scipy.misc.imread will be removed
@@ -119,10 +120,10 @@ def GetTifData(filename):
                 elif 'samplechangercoordinate' == keyword.lower():
                     samplechangerpos = float(line.split('=')[1])
             except:
-                print('error reading metadata: '+line)
+                G2fil.G2Print('error reading metadata: '+line)
         Meta.close()
     except IOError:
-        print ('no metadata file found - will try to read file anyway')
+        G2fil.G2Print ('no metadata file found - will try to read file anyway')
         head = ['no metadata file found',]
         
     tag = File.read(2)
@@ -135,7 +136,7 @@ def GetTifData(filename):
         byteOrd = '>'
         IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])        
     else:
-        print (tag)
+#        print (tag)
         lines = ['not a detector tiff file',]
         return lines,0,0,0
     File.seek(IFD)                                                  #get number of directory entries
@@ -170,7 +171,7 @@ def GetTifData(filename):
     Npix = nx*ny
     time0 = time.time()
     if 34710 in IFD:
-        print ('Read MAR CCD tiff file: '+filename)
+        G2fil.G2Print ('Read MAR CCD tiff file: '+filename)
         marFrame = rmf.marFrame(File,byteOrd,IFD)
         image = np.flipud(np.array(np.asarray(marFrame.image),dtype=np.int32))
         tifType = marFrame.filetitle
@@ -195,7 +196,7 @@ def GetTifData(filename):
             try:
                 from PIL import Image as Im
             except ImportError:
-                print ("PIL/pillow Image module not present. This TIF cannot be read without this")
+                G2fil.G2Print ("PIL/pillow Image module not present. This TIF cannot be read without this")
                 #raise Exception("PIL/pillow Image module not found")
                 lines = ['not a detector tiff file',]
                 return lines,0,0,0
@@ -214,18 +215,18 @@ def GetTifData(filename):
             dataType = 0
             pixy = [172.,172.]
             File.seek(4096)
-            print ('Read Pilatus tiff file: '+filename)
+            G2fil.G2Print ('Read Pilatus tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.int32),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
                 if sizexy == [3888,3072] or sizexy == [3072,3888]:
                     tifType = 'Dexela'
                     pixy = [74.8,74.8]
-                    print ('Read Dexela detector tiff file: '+filename)
+                    G2fil.G2Print ('Read Dexela detector tiff file: '+filename)
                 else:
                     tifType = 'GE'
                     pixy = [200.,200.]
-                    print ('Read GE-detector tiff file: '+filename)
+                    G2fil.G2Print ('Read GE-detector tiff file: '+filename)
                 File.seek(8)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
             elif IFD[258][2][0] == 32:
@@ -233,7 +234,7 @@ def GetTifData(filename):
                 tifType = 'CHESS'
                 pixy = [200.,200.]
                 File.seek(8)
-                print ('Read as 32-bit unsigned (CHESS) tiff file: '+filename)
+                G2fil.G2Print ('Read as 32-bit unsigned (CHESS) tiff file: '+filename)
                 image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.uint32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
@@ -243,7 +244,7 @@ def GetTifData(filename):
             dataType = 0
             pixy = [200.,200.]*IFD[277][2][0]
             File.seek(IFD[273][2][0])
-            print ('Read ImageJ tiff file: '+filename)
+            G2fil.G2Print ('Read ImageJ tiff file: '+filename)
             if IFD[258][2][0] == 32:
                 image = File.read(4*Npix)
                 image = np.array(np.frombuffer(image,dtype=byteOrd+'i4'),dtype=np.int32)
@@ -261,13 +262,13 @@ def GetTifData(filename):
         tifType = 'DND'
         pixy = [158.,158.]
         File.seek(512)
-        print ('Read DND SAX/WAX-detector tiff file: '+filename)
+        G2fil.G2Print ('Read DND SAX/WAX-detector tiff file: '+filename)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
     elif sizexy == [1536,1536]:
         tifType = 'APS Gold'
         pixy = [150.,150.]
         File.seek(64)
-        print ('Read Gold tiff file:'+filename)
+        G2fil.G2Print ('Read Gold tiff file:'+filename)
         image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
     elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
@@ -275,7 +276,7 @@ def GetTifData(filename):
                 tifType = 'PE'
                 pixy = [200.,200.]
                 File.seek(8)
-                print ('Read APS PE-detector tiff file: '+filename)
+                G2fil.G2Print ('Read APS PE-detector tiff file: '+filename)
                 if dataType == 5:
                     image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32),dtype=np.int32)  #fastest
                 else:
@@ -284,7 +285,7 @@ def GetTifData(filename):
                 tifType = 'MedOptics D1'
                 pixy = [46.9,46.9]
                 File.seek(8)
-                print ('Read MedOptics D1 tiff file: '+filename)
+                G2fil.G2Print ('Read MedOptics D1 tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
                   
         elif IFD[273][2][0] == 4096:
@@ -295,13 +296,13 @@ def GetTifData(filename):
                 pixy = [158.,158.]
                 tifType = 'MAR325'            
             File.seek(4096)
-            print ('Read MAR CCD tiff file: '+filename)
+            G2fil.G2Print ('Read MAR CCD tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
         elif IFD[273][2][0] == 512:
             tifType = '11-ID-C'
             pixy = [200.,200.]
             File.seek(512)
-            print ('Read 11-ID-C tiff file: '+filename)
+            G2fil.G2Print ('Read 11-ID-C tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
                     
     elif sizexy == [4096,4096]:
@@ -310,19 +311,19 @@ def GetTifData(filename):
                 tifType = 'scanCCD'
                 pixy = [9.,9.]
                 File.seek(8)
-                print ('Read APS scanCCD tiff file: '+filename)
+                G2fil.G2Print ('Read APS scanCCD tiff file: '+filename)
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 tifType = 'PE4k'
                 pixy = [100.,100.]
                 File.seek(8)
-                print ('Read PE 4Kx4K tiff file: '+filename)
+                G2fil.G2Print ('Read PE 4Kx4K tiff file: '+filename)
                 image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32)/2.**4,dtype=np.int32)
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
             pixy = [73.242,73.242]
             File.seek(4096)
-            print ('Read Rayonix MX300HE tiff file: '+filename)
+            G2fil.G2Print ('Read Rayonix MX300HE tiff file: '+filename)
             image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.uint16),dtype=np.int32)
     elif sizexy == [391,380]:
         pixy = [109.92,109.92]
@@ -361,7 +362,7 @@ def GetTifData(filename):
     if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
         lines = ['not a known detector tiff file',]
         return lines,0,0,0
-    print ('image read time: %.3f'%(time.time()-time0))
+    G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
     wavelength = (not wavelength) and 0.10 or wavelength

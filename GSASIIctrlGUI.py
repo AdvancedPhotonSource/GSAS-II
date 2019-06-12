@@ -1153,12 +1153,14 @@ class G2ChoiceButton(wx.Choice):
         self.strKey = strKey
         self.onChoice = None
         self.SetSelection(wx.NOT_FOUND)
-        if self.indLoc is not None and self.indLoc.get(self.indKey) is not None:
-            self.SetSelection(self.indLoc[self.indKey])
-            if self.strLoc is not None:
+        if self.indLoc is not None and self.strLoc is not None:
+            try:
+                self.SetSelection(self.indLoc[self.indKey])
                 self.strLoc[self.strKey] = self.GetStringSelection()
                 log.LogVarChange(self.strLoc,self.strKey)
-        elif self.strLoc is not None and self.strLoc.get(self.strKey) is not None:
+            except ValueError:
+                pass
+        elif self.strLoc is not None and self.strKey is not None:
             try:
                 self.SetSelection(choiceList.index(self.strLoc[self.strKey]))
                 if self.indLoc is not None:

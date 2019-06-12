@@ -43,7 +43,8 @@ except ImportError:
 try:
     import pydiffax as pyx
 except ImportError:
-    print ('pydiffax is not available for this platform - under develpment')
+    print ('pydiffax is not available for this platform')
+import GSASIIfiles as G2fil
 
     
 # trig functions in degrees
@@ -439,7 +440,7 @@ def PDFPeakFit(peaks,data):
     Y = data[1][1][iBeg:iFin]
     parmDict,varyList = MakeParms(peaks)
     if not len(varyList):
-        print (' Nothing varied')
+        G2fil.G2Print (' Nothing varied')
         return newpeaks,None,None,None,None,None
     
     Rvals = {}
@@ -504,13 +505,13 @@ def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
     bakMul = data['Sample Bkg.']['Mult']
     if showFit:
         rms = Min(xstart)
-        print('  Optimizing corrections to improve G(r) at low r')
+        G2fil.G2Print('  Optimizing corrections to improve G(r) at low r')
         if data['Sample Bkg.'].get('Refine',False):
 #            data['Flat Bkg'] = 0.
-            print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
+            G2fil.G2Print('  start: Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f})'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],rms))
         else:
-            print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
+            G2fil.G2Print('  start: Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f} (RMS:{:.4f})'.format(
                 data['Flat Bkg'],data['BackRatio'],data['Ruland'],rms))
     if data['Sample Bkg.'].get('Refine',False):
         res = opt.minimize(Min,xstart,bounds=([0.01,1],[1.2*bakMul,0.8*bakMul]),
@@ -525,10 +526,10 @@ def OptimizePDF(data,xydata,limits,inst,showFit=True,maxCycles=5):
         else:
             msg = 'Not Converged'
         if data['Sample Bkg.'].get('Refine',False):
-            print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
+            G2fil.G2Print('  end:   Ruland={:.3f}, Sample Bkg mult={:.3f} (RMS:{:.4f}) *** {} ***\n'.format(
                 data['Ruland'],data['Sample Bkg.']['Mult'],res['fun'],msg))
         else:
-            print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
+            G2fil.G2Print('  end:   Flat Bkg={:.1f}, BackRatio={:.3f}, Ruland={:.3f}) *** {} ***\n'.format(
                 data['Flat Bkg'],data['BackRatio'],data['Ruland'],res['fun'],msg))
     return res
 
@@ -924,13 +925,13 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
         except KeyError:
             break
         except ValueError:
-            print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
+            G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break
     # fixed background from file
     if len(fixedBkg) >= 3:
         mult = fixedBkg.get('_fixedMult',0.0)
         if len(fixedBkg.get('_fixedValues',[])) != len(yb):
-            print('Lengths of backgrounds do not agree: yb={}, fixed={}'.format(
+            G2fil.G2Print('Lengths of backgrounds do not agree: yb={}, fixed={}'.format(
                 len(yb),len(fixedBkg.get('_fixedValues',[]))))
         elif mult: 
             yb -= mult*fixedBkg.get('_fixedValues',[]) # N.B. mult is negative
@@ -1062,7 +1063,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
         except KeyError:
             break
         except ValueError:
-            print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
+            G2fil.G2Print ('**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****')
             break        
     return dydb,dyddb,dydpk
 
@@ -1604,7 +1605,7 @@ def DoCalibInst(IndexPeaks,Inst):
     parmDict.update(insDict)
     varyList = insVary
     if not len(varyList):
-        print ('**** ERROR - nothing to refine! ****')
+        G2fil.G2Print ('**** ERROR - nothing to refine! ****')
         return False
     while True:
         begin = time.time()
@@ -1616,16 +1617,16 @@ def DoCalibInst(IndexPeaks,Inst):
         chisq = np.sum(result[2]['fvec']**2)
         Values2Dict(parmDict, varyList, result[0])
         GOF = chisq/(len(peakPos)-len(varyList))       #reduced chi^2
-        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(peakPos),len(varyList)))
-        print ('calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
-        print ('chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF))
+        G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(peakPos),len(varyList)))
+        G2fil.G2Print ('calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
+        G2fil.G2Print ('chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF))
         try:
             sig = np.sqrt(np.diag(result[1])*GOF)
             if np.any(np.isnan(sig)):
-                print ('*** Least squares aborted - some invalid esds possible ***')
+                G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***')
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
-            print ('**** Refinement failed - singular matrix ****')
+            G2fil.G2Print ('**** Refinement failed - singular matrix ****')
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,Inst,varyList)
@@ -1942,23 +1943,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
         Values2Dict(parmDict, varyList, result[0])
         Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*(y+fixback)[xBeg:xFin]**2))*100.      #to %
         Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
-        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],xFin-xBeg,len(varyList)))
+        G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],xFin-xBeg,len(varyList)))
         if ncyc:
-            print ('fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
-        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
+            G2fil.G2Print ('fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
+        G2fil.G2Print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
         sig = [0]*len(varyList)
         if len(varyList) == 0: break  # if nothing was refined
         try:
             sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
             if np.any(np.isnan(sig)):
-                print ('*** Least squares aborted - some invalid esds possible ***')
+                G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***')
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
-            print ('**** Refinement failed - singular matrix ****')
+            G2fil.G2Print ('**** Refinement failed - singular matrix ****')
             Ipvt = result[2]['ipvt']
             for i,ipvt in enumerate(Ipvt):
                 if not np.sum(result[2]['fjac'],axis=1)[i]:
-                    print ('Removing parameter: '+varyList[ipvt-1])
+                    G2fil.G2Print ('Removing parameter: '+varyList[ipvt-1])
                     badVary.append(varyList[ipvt-1])
                     del(varyList[ipvt-1])
                     break
@@ -1984,14 +1985,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,fixback=None,prevVa
     if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList,binsperFWHM)
     if len(binsperFWHM):
         if min(binsperFWHM) < 1.:
-            print ('*** Warning: calculated peak widths are too narrow to refine profile coefficients ***')
+            G2fil.G2Print ('*** Warning: calculated peak widths are too narrow to refine profile coefficients ***')
             if 'T' in Inst['Type'][0]:
-                print (' Manually increase sig-0, 1, or 2 in Instrument Parameters')
+                G2fil.G2Print (' Manually increase sig-0, 1, or 2 in Instrument Parameters')
             else:
-                print (' Manually increase W in Instrument Parameters')
+                G2fil.G2Print (' Manually increase W in Instrument Parameters')
         elif min(binsperFWHM) < 4.:
-            print ('*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***')
-            print ('*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM)))
+            G2fil.G2Print ('*** Warning: data binning yields too few data points across peak FWHM for reliable Rietveld refinement ***')
+            G2fil.G2Print ('*** recommended is 6-10; you have %.2f ***'%(min(binsperFWHM)))
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
     
 def calcIncident(Iparm,xdata):
@@ -2054,7 +2055,7 @@ def calcIncident(Iparm,xdata):
 ################################################################################
 
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
-    print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
+    G2fil.G2Print ('fit REFD data by '+data['Minimizer']+' using %.2f%% data resolution'%(data['Resolution'][0]))
     
     class RandomDisplacementBounds(object):
         """random displacement with bounds"""
@@ -2113,15 +2114,15 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
         if 'Scale' in varyList:
             data['Scale'][0] = parmDict['Scale']
             line += ' esd: %.4g'%(sigDict['Scale'])                                                             
-        print (line)
+        G2fil.G2Print (line)
         line = ' Flat background: %15.4g'%(parmDict['FltBack'])
         if 'FltBack' in varyList:
             data['FltBack'][0] = parmDict['FltBack']
             line += ' esd: %15.3g'%(sigDict['FltBack'])
-        print (line)
+        G2fil.G2Print (line)
         for ilay,layer in enumerate(data['Layers']):
             name = layer['Name']
-            print (' Parameters for layer: %d %s'%(ilay,name))
+            G2fil.G2Print (' Parameters for layer: %d %s'%(ilay,name))
             cid = str(ilay)+';'
             line = ' '
             line2 = ' Scattering density: Real %.5g'%(Substances[name]['Scatt density']*parmDict[cid+'DenMul'])
@@ -2135,8 +2136,8 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
                     line += ' %s: %.3f'%(parm,layer[parm][0])
                     if cid+parm in varyList:
                         line += ' esd: %.3g'%(sigDict[cid+parm])
-            print (line)
-            print (line2)
+            G2fil.G2Print (line)
+            G2fil.G2Print (line2)
     
     def calcREFD(values,Q,Io,wt,Qsig,parmDict,varyList):
         parmDict.update(zip(varyList,values))
@@ -2215,7 +2216,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             xyrng = np.array(bounds).T
             take_step = RandomDisplacementBounds(xyrng[0], xyrng[1])
             T0 = estimateT0(take_step)
-            print (' Estimated temperature: %.3g'%(T0))
+            G2fil.G2Print (' Estimated temperature: %.3g'%(T0))
             result = so.basinhopping(sumREFD,values,take_step=take_step,disp=True,T=T0,stepsize=Bfac,
                 interval=20,niter=200,minimizer_kwargs={'method':'L-BFGS-B','bounds':bounds,
                 'args':(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList)})
@@ -2235,7 +2236,7 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             chisq = result[1]
             ncalc = result[3]
             covM = []
-            print (' MC/SA final temperature: %.4g'%(result[2]))
+            G2fil.G2Print (' MC/SA final temperature: %.4g'%(result[2]))
         elif data['Minimizer'] == 'L-BFGS-B':
             result = so.minimize(sumREFD,values,method='L-BFGS-B',bounds=bounds,   #ftol=Ftol,
                 args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Qsig[Ibeg:Ifin],parmDict,varyList))
@@ -2280,13 +2281,13 @@ def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
             sig = np.zeros(len(varyList))
             covMatrix = []
         sigDict = dict(zip(varyList,sig))
-        print (' Results of reflectometry data modelling fit:')
-        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
-        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
+        G2fil.G2Print (' Results of reflectometry data modelling fit:')
+        G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
+        G2fil.G2Print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
         SetModelParms()
         return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
-        print (Msg)
+        G2fil.G2Print (Msg)
         return False,0,0,0,0,0,0,Msg
         
 def makeSLDprofile(data,Substances):
@@ -2469,7 +2470,7 @@ def SmearAbeles(kz,dq, depth, rho, irho=0, sigma=0):
     return y
         
 def makeRefdFFT(Limits,Profile):
-    print ('make fft')
+    G2fil.G2Print ('make fft')
     Q,Io = Profile[:2]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
@@ -2534,7 +2535,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     for name in path:
         if 'bin' in name:
             DIFFaX = name+'/DIFFaX.exe'
-            print (' Execute '+DIFFaX)
+            G2fil.G2Print (' Execute '+DIFFaX)
             break
     # make form factor file that DIFFaX wants - atom types are GSASII style
     sf = open('data.sfc','w')
@@ -2653,7 +2654,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
             df.write('%.3f %.5f %.5f %.5f\n'%(p,dx,dy,dz))
             sumPx += p
         if sumPx != 1.0:    #this has to be picky since DIFFaX is.
-            print ('ERROR - Layer probabilities sum to %.3f DIFFaX will insist it = 1.0'%sumPx)
+            G2fil.G2Print ('ERROR - Layer probabilities sum to %.3f DIFFaX will insist it = 1.0'%sumPx)
             df.close()
             os.remove('data.sfc')
             os.remove('control.dif')
@@ -2664,8 +2665,8 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     try:
         subp.call(DIFFaX)
     except OSError:
-        print (' DIFFax.exe is not available for this platform - under development')
-    print (' DIFFaX time = %.2fs'%(time.time()-time0))
+        G2fil.G2Print('DIFFax.exe is not available for this platform',mode='warn')
+    G2fil.G2Print (' DIFFaX time = %.2fs'%(time.time()-time0))
     if os.path.exists('GSASII-DIFFaX.spc'):
         Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
         iFin = iBeg+Xpat.shape[1]
@@ -2830,7 +2831,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     spec = np.zeros(Nspec,dtype='double')    
     time0 = time.time()
     pyx.pygetspc(controls,Nspec,spec)
-    print (' GETSPC time = %.2fs'%(time.time()-time0))
+    G2fil.G2Print (' GETSPC time = %.2fs'%(time.time()-time0))
     time0 = time.time()
     U = ateln2*inst['U'][1]/10000.
     V = ateln2*inst['V'][1]/10000.
@@ -2861,7 +2862,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
         profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
         profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
     profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
-    print (' Broadening time = %.2fs'%(time.time()-time0))
+    G2fil.G2Print (' Broadening time = %.2fs'%(time.time()-time0))
     
 def CalcStackingSADP(Layers,debug):
     
@@ -2896,7 +2897,7 @@ def CalcStackingSADP(Layers,debug):
             Sapd[:,p2] = spec[iB:iF]
         iB += Nblk
     Layers['Sadp']['Img'] = Sapd
-    print (' GETSAD time = %.2fs'%(time.time()-time0))
+    G2fil.G2Print (' GETSAD time = %.2fs'%(time.time()-time0))
     
 ###############################################################################
 #### Maximum Entropy Method - Dysnomia
@@ -3186,7 +3187,7 @@ def test1():
     time0 = time.time()
     for i in range(100):
         getPeakProfile(parmDict1,xdata,varyList,bakType)
-    print ('100+6*Ka1-2 peaks=1200 peaks %.2f'%time.time()-time0)
+    G2fil.G2Print ('100+6*Ka1-2 peaks=1200 peaks %.2f'%time.time()-time0)
     
 def test2(name,delt):
     if NeedTestData: TestData()
@@ -3224,5 +3225,5 @@ if __name__ == '__main__':
         test2(name,shft)
     for name,shft in [['pos',0.0001],['sig',0.01],['gam',0.0001],['shl',0.00005]]:
         test3(name,shft)
-    print ("OK")
+    G2fil.G2Print ("OK")
     plotter.StartEventLoop()

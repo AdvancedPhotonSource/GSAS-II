@@ -42,6 +42,55 @@ def sfloat(S):
             pass
     return 0.0
 
+G2printLevel = 'all'
+'''This defines the level of output from calls to :func:`G2Print`, 
+which should  be used in place of print() within this module. 
+Settings for this are 'all', 'warn', 'error' or 'none'. Also see:
+:func:`G2Print` and :func:`G2SetPrintLevel`.
+'''
+
+def G2SetPrintLevel(level):
+    '''Set the level of output from calls to :func:`G2Print`, which should 
+    be used in place of print() within GSASII. Settings for the mode are 
+    'all', 'warn', 'error' or 'none'
+    
+    :param str level: a string used to set the print level, which may be 
+    'all', 'warn', 'error' or 'none'.
+    Note that capitalization and extra letters in level are ignored, so 
+    'Warn', 'warnings', etc. will all set the mode to 'warn'
+    '''
+    global G2printLevel
+    for mode in  'all', 'warn', 'error', 'none':
+        if mode in level.lower():
+            G2printLevel = mode
+            return
+    else:
+        G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
+                    'Use all, warn, error or none.')
+        
+def G2Print(*args,mode=None,**kwargs):
+    '''Print with filtering based level of output (see :func:`G2SetPrintLevel`).
+    Use G2Print() as replacement for print(). 
+
+    :param str mode: if specified, this should contain the mode for printing
+    ('error', 'warn' or anything else). If not specified, the first argument 
+    of the print command (args[0]) should contain the string 'error' for 
+    error messages and 'warn' for warning messages. 
+    '''
+    if G2printLevel is 'none': return
+    if mode is None:
+        testStr = args[0].lower()
+    else:
+        testStr = mode[:].lower()
+    level = 2
+    for i,mode in enumerate(('error', 'warn')):
+        if mode in testStr:
+            level = i
+            break
+    if G2printLevel == 'error' and level > 0: return
+    if G2printLevel == 'warn' and level > 1: return
+    print(*args,**kwargs)
+
 def get_python_versions(packagelist):
     versions = [['Python', sys.version.split()[0]]]
     for pack in packagelist:
@@ -359,12 +408,12 @@ def LoadImportRoutines(prefix, errprefix=None, traceback=False):
                         if reader.UseReader:
                             readerlist.append(reader)
         except AttributeError:
-            print ('Import_' + errprefix + ': Attribute Error ' + filename)
+            G2Print ('Import_' + errprefix + ': Attribute Error ' + filename)
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            print ('\nImport_' + errprefix + ': Error importing file ' + filename)
-            print (u'Error message: {}\n'.format(exc))
+            G2Print ('\nImport_' + errprefix + ': Error importing file ' + filename)
+            G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         finally:
@@ -408,19 +457,19 @@ def LoadExportRoutines(parent, traceback=False):
                 except AttributeError:
                     pass
                 except Exception as exc:
-                    print ('\nExport init: Error substantiating class ' + clss[0])
-                    print (u'Error message: {}\n'.format(exc))
+                    G2Print ('\nExport init: Error substantiating class ' + clss[0])
+                    G2Print (u'Error message: {}\n'.format(exc))
                     if traceback:
                         traceback.print_exc(file=sys.stdout)
                     continue
                 exporterlist.append(exporter)
         except AttributeError:
-            print ('Export Attribute Error ' + filename)
+            G2Print ('Export Attribute Error ' + filename)
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         except Exception as exc:
-            print ('\nExport init: Error importing file ' + filename)
-            print (u'Error message: {}\n'.format(exc))
+            G2Print ('\nExport init: Error importing file ' + filename)
+            G2Print (u'Error message: {}\n'.format(exc))
             if traceback:
                 traceback.print_exc(file=sys.stdout)
         finally:
@@ -563,7 +612,7 @@ def readColMetadata(imagefile):
     if not GSASIIpath.GetConfigValue('Column_Metadata_directory'): return
     parfiles = glob.glob(os.path.join(GSASIIpath.GetConfigValue('Column_Metadata_directory'),'*.par'))
     if len(parfiles) == 0:
-        print('Sorry, No Column metadata (.par) file found in '+
+        G2Print('Sorry, No Column metadata (.par) file found in '+
               GSASIIpath.GetConfigValue('Column_Metadata_directory'))
         return {}
     for parFil in parfiles: # loop over all .par files (hope just 1) in image dir until image is found
@@ -573,7 +622,7 @@ def readColMetadata(imagefile):
                 lblFil = parRoot+e
                 break
         else:
-            print('Warning: No labels definitions found for '+parFil)
+            G2Print('Warning: No labels definitions found for '+parFil)
             continue
         labels,lbldict,keyCols,keyExp,errors = readColMetadataLabels(lblFil)
         if errors:
@@ -581,7 +630,7 @@ def readColMetadata(imagefile):
             for i in errors: print('  '+i)
             continue
         else:
-            print('Read '+lblFil)
+            G2Print('Read '+lblFil)
         # scan through each line in this .par file, looking for the matching image rootname
         fp = open(parFil,'Ur')
         for iline,line in enumerate(fp):
@@ -599,16 +648,16 @@ def readColMetadata(imagefile):
             metadata = evalColMetadataDicts(items,labels,lbldict,keyCols,keyExp)
             metadata['par file'] = parFil
             metadata['lbls file'] = lblFil
-            print("Metadata read from {} line {}".format(parFil,iline+1))
+            G2Print("Metadata read from {} line {}".format(parFil,iline+1))
             fp.close()
             return metadata
         else:
-            print("Image {} not found in {}".format(imageName,parFil))
+            G2Print("Image {} not found in {}".format(imageName,parFil))
             fp.close()
             continue
         fp.close()
     else:
-        print("Warning: No .par metadata for image {}".format(imageName))
+        G2Print("Warning: No .par metadata for image {}".format(imageName))
         return {}
 
 def readColMetadataLabels(lblFil):
@@ -699,12 +748,12 @@ def GetColumnMetadata(reader):
     if "wavelength" in parParms:
         reader.Data['wavelength'] = parParms['wavelength']
     else:
-        print('Error: wavelength not defined in {}'.format(parParms['lbls file']))
+        G2Print('Error: wavelength not defined in {}'.format(parParms['lbls file']))
     if "distance" in parParms:
         reader.Data['distance'] = parParms['distance']
         reader.Data['setdist'] = parParms['distance']
     else:
-        print('Error: distance not defined in {}'.format(parParms['lbls file']))
+        G2Print('Error: distance not defined in {}'.format(parParms['lbls file']))
 
 def LoadControls(Slines,data):
     'Read values from a .imctrl (Image Controls) file'
@@ -777,7 +826,7 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
             elif FormatName == rd.formatName:
                 primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
-        print('Error: No matching format for file '+imagefile)
+        G2Print('Error: No matching format for file '+imagefile)
         raise Exception('No image read')
     errorReport = ''
     if not imagefile:
@@ -795,13 +844,13 @@ def RereadImageData(ImageReaderlist,imagefile,ImageTag=None,FormatName=''):
             if rd.Image is None:
                 raise Exception('No image read. Strange!')
             if GSASIIpath.GetConfigValue('Transpose'):
-                print ('Transposing Image!')
+                G2Print ('Warning: Transposing Image!')
                 rd.Image = rd.Image.T
             #rd.readfilename = imagefile
             return rd.Image
     else:
-        print('Error reading file '+imagefile)
-        print('Error messages(s)\n'+errorReport)
+        G2Print('Error reading file '+imagefile)
+        G2Print('Error messages(s)\n'+errorReport)
         raise Exception('No image read')
 
 def readMasks(filename,masks,ignoreThreshold):
@@ -869,7 +918,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         for q,iq in iqnew:
             iqfile.write("%15.6g %15.6g\n" % (q,iq))
         iqfile.close()
-        print (' I(Q) saved to: '+iqfilename)
+        G2Print (' I(Q) saved to: '+iqfilename)
 
     if PDFsaves[1]:     #S(Q)
         sqfilename = fileroot+'.sq'
@@ -883,7 +932,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         for q,sq in sqnew:
             sqfile.write("%15.6g %15.6g\n" % (q,sq))
         sqfile.close()
-        print (' S(Q) saved to: '+sqfilename)
+        G2Print (' S(Q) saved to: '+sqfilename)
 
     if PDFsaves[2]:     #F(Q)
         fqfilename = fileroot+'.fq'
@@ -897,7 +946,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         for q,fq in fqnew:
             fqfile.write("%15.6g %15.6g\n" % (q,fq))
         fqfile.close()
-        print (' F(Q) saved to: '+fqfilename)
+        G2Print (' F(Q) saved to: '+fqfilename)
 
     if PDFsaves[3]:     #G(R)
         grfilename = fileroot+'.gr'
@@ -911,7 +960,7 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         for r,gr in grnew:
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
-        print (' G(R) saved to: '+grfilename)
+        G2Print (' G(R) saved to: '+grfilename)
 
     if PDFsaves[4]: #pdfGUI file for G(R)
         import GSASIImath as G2mth
@@ -969,4 +1018,4 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
         for r,gr in grnew:
             grfile.write("%15.2F %15.6F\n" % (r,gr))
         grfile.close()
-        print (' G(R) saved to: '+grfilename)
+        G2Print (' G(R) saved to: '+grfilename)

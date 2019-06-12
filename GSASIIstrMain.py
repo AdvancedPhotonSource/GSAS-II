@@ -35,6 +35,7 @@ import GSASIImath as G2mth
 import GSASIIstrIO as G2stIO
 import GSASIIstrMath as G2stMth
 import GSASIIobj as G2obj
+import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -128,24 +129,24 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         if 'None' in str(type(result[1])) and ifSeq:    #this bails out of a sequential refinement on singular matrix
             IfOK = False
             covMatrix = []
-            print ('**** Refinement failed - singular matrix ****')
+            G2fil.G2Print ('Warning: **** Refinement failed - singular matrix ****')
             if 'Hessian' in Controls['deriv type']:
                 num = len(varyList)-1
                 for i,val in enumerate(np.flipud(result[2]['psing'])):
                     if val:
-                        print ('Bad parameter: '+varyList[num-i])
+                        G2fil.G2Print('Bad parameter: '+varyList[num-i],mode='warn')
             else:
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
                     if not np.sum(result[2]['fjac'],axis=1)[i]:
-                        print ('Bad parameter: '+varyList[ipvt-1])
+                        G2fil.G2Print('Bad parameter: '+varyList[ipvt-1],mode='warn')
             break
         IfOK = True
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
             if np.any(np.isnan(sig)) or not sig.shape:
-                print ('*** Least squares aborted - some invalid esds possible ***')
+                G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
@@ -154,7 +155,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             if not len(varyList):
                 covMatrix = []
                 break
-            print ('**** Refinement failed - singular matrix ****')
+            G2fil.G2Print ('**** Refinement failed - singular matrix ****',mode='error')
             if 'Hessian' in Controls['deriv type']:
                 if result[1] is None:
                     IfOK = False
@@ -164,13 +165,13 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                 num = len(varyList)-1
                 for i,val in enumerate(np.flipud(result[2]['psing'])):
                     if val:
-                        print ('Removing parameter: '+varyList[num-i])
+                        G2fil.G2Print ('Removing parameter: '+varyList[num-i])
                         del(varyList[num-i])
             else:
                 Ipvt = result[2]['ipvt']
                 for i,ipvt in enumerate(Ipvt):
                     if not np.sum(result[2]['fjac'],axis=1)[i]:
-                        print ('Removing parameter: '+varyList[ipvt-1])
+                        G2fil.G2Print ('Removing parameter: '+varyList[ipvt-1])
                         del(varyList[ipvt-1])
                         break
     if IfOK:
@@ -197,12 +198,12 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        print (' *** ERROR - you have no phases to refine! ***')
-        print (' *** Refine aborted ***')
+        G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
+        G2fil.G2Print (' *** Refine aborted ***')
         return False,'No phases'
     if not Histograms:
-        print (' *** ERROR - you have no data to refine with! ***')
-        print (' *** Refine aborted ***')
+        G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
+        G2fil.G2Print (' *** Refine aborted ***')
         return False,'No data'
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -239,7 +240,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         #print 'DependentVars',G2mv.GetDependentVars()
         #print 'IndependentVars',G2mv.GetIndependentVars()
     except G2mv.ConstraintException:
-        print (' *** ERROR - your constraints are internally inconsistent ***')
+        G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
         #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
         #print 'Errors',errmsg
         #if warnmsg: print 'Warnings',warnmsg
@@ -273,10 +274,10 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
             G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData,makeBack)
             printFile.close()
-            print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
-            print (' ***** Refinement successful *****')
+            G2fil.G2Print (' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
+            G2fil.G2Print (' ***** Refinement successful *****')
         else:
-            print ('****ERROR - Refinement failed')
+            G2fil.G2Print ('****ERROR - Refinement failed')
             raise G2obj.G2Exception('****ERROR - Refinement failed')
 #    except G2obj.G2Exception(Msg):
 #        printFile.close()
@@ -330,19 +331,19 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
 
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
-    print ('Starting Sequential Refinement')
+    G2fil.G2Print ('Starting Sequential Refinement')
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
     G2stIO.ShowControls(Controls,printFile,SeqRef=True)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        print (' *** ERROR - you have no phases to refine! ***')
-        print (' *** Refine aborted ***')
+        G2fil.G2Print (' *** ERROR - you have no phases to refine! ***')
+        G2fil.G2Print (' *** Refine aborted ***')
         return False,'No phases'
     if not Histograms:
-        print (' *** ERROR - you have no data to refine with! ***')
-        print (' *** Refine aborted ***')
+        G2fil.G2Print (' *** ERROR - you have no data to refine with! ***')
+        G2fil.G2Print (' *** Refine aborted ***')
         return False,'No data'
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
@@ -351,12 +352,12 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile,seqRef=True)
     for item in phaseVary:
         if '::A0' in item:
-            print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
-            print ('****           instead use the Dij parameters for each powder histogram            ****')
+            G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
+            G2fil.G2Print ('****           instead use the Dij parameters for each powder histogram            ****')
             return False,'Lattice parameter refinement error - see console message'
         if '::C(' in item:
-            print ('**** WARNING - phase texture parameters should not be refined in a sequential refinement ****')
-            print ('****           instead use the C(L,N) parameters for each powder histogram               ****')
+            G2fil.G2Print ('**** WARNING - phase texture parameters should not be refined in a sequential refinement ****')
+            G2fil.G2Print ('****           instead use the C(L,N) parameters for each powder histogram               ****')
             return False,'Phase texture refinement error - see console message'
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
@@ -372,7 +373,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     G2stIO.SetupSeqSavePhases(GPXfile)
     for ihst,histogram in enumerate(histNames):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
-        print('\nRefining with '+str(histogram))
+        G2fil.G2Print('\nRefining with '+str(histogram))
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -384,7 +385,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         calcControls['MFtables'] = MFtables
         calcControls['maxSSwave'] = maxSSwave
         if histogram not in Histograms:
-            print("Error: not found!")
+            G2fil.G2Print("Error: not found!")
             continue
     #TODO - implement "Fix FXU" for seq refinement here - done?
         hId = Histograms[histogram]['hId']
@@ -433,7 +434,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
 #                G2mv.VarRemapShow(varyList,True))
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
         except G2mv.ConstraintException:
-            print (' *** ERROR - your constraints are internally inconsistent ***')
+            G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
             #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
             #print 'Errors',errmsg
             #if warnmsg: print 'Warnings',warnmsg
@@ -465,18 +466,18 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             combined = list(set(firstVaryList+newVaryList))
             c = [var for var in combined if var not in newVaryList]
             p = [var for var in combined if var not in firstVaryList]
-            print('*** Variables change ***')
+            G2fil.G2Print('*** Variables change ***')
             for typ,vars in [('Removed',c),('Added',p)]:
                 line = '  '+typ+': '
                 if vars:
                     for var in vars:
                         if len(line) > 70:
-                            print(line)
+                            G2fil.G2Print(line)
                             line = '    '
                         line += var + ', '
                 else:
                         line += 'none, '
-                print(line[:-2])
+                G2fil.G2Print(line[:-2])
             firstVaryList = newVaryList
 
         ifSeq = True
@@ -487,11 +488,11 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
-            print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
+            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
                 Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2']))
             # add the uncertainties into the esd dictionary (sigDict)
             if not IfOK:
-                print('***** Sequential refinement failed at histogram '+histogram)
+                G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')
                 break
             sigDict = dict(zip(varyList,sig))
             # the uncertainties for dependent constrained parms into the esd dict
@@ -530,17 +531,17 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                         NewparmDict[newparm] = parmDict[parm]
 #        except G2obj.G2Exception(Msg):
 #            printFile.close()
-#            print (' ***** Refinement aborted *****')
+#            G2fil.G2Print (' ***** Refinement aborted *****')
 #            return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
-            print("Fit step time {:.2f} sec.".format(t2-t1))
+            G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))
             t1 = t2
     SeqResult['histNames'] = [itm for itm in G2stIO.GetHistogramNames(GPXfile,['PWDR',]) if itm in SeqResult.keys()]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
-    print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
-    print (' ***** Sequential refinement successful *****')
+    G2fil.G2Print (' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst')
+    G2fil.G2Print (' ***** Sequential refinement successful *****')
     return True,'Success'
 
 def RetDistAngle(DisAglCtls,DisAglData):
@@ -781,24 +782,24 @@ def DisAglTor(DATData):
     atmSeq = [atom[1]+'('+atom[-2]+')' for atom in Datoms]
     if DATData['Natoms'] == 4:  #torsion
         Tors,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
-        print (' Torsion angle for %s atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Tors,sig)))
-        print (' NB: Atom sequence determined by selection order')
+        G2fil.G2Print (' Torsion angle for %s atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Tors,sig)))
+        G2fil.G2Print (' NB: Atom sequence determined by selection order')
         return      # done with torsion
     elif DATData['Natoms'] == 3:  #angle
         Ang,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
-        print (' Angle in %s for atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Ang,sig)))
-        print (' NB: Atom sequence determined by selection order')
+        G2fil.G2Print (' Angle in %s for atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Ang,sig)))
+        G2fil.G2Print (' NB: Atom sequence determined by selection order')
     else:   #2 atoms - distance
         Dist,sig = G2mth.GetDATSig(Oatoms,Datoms,Amat,SGData,covData)
-        print (' Distance in %s for atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Dist,sig)))
+        G2fil.G2Print (' Distance in %s for atom sequence: %s = %s'%(DATData['Name'],str(atmSeq).replace("'","")[1:-1],G2mth.ValEsd(Dist,sig)))
 
 def BestPlane(PlaneData):
     'Needs a doc string'
 
     def ShowBanner(name):
-        print (80*'*')
-        print ('   Best plane result for phase '+name)
-        print (80*'*','\n')
+        G2fil.G2Print (80*'*')
+        G2fil.G2Print ('   Best plane result for phase '+name)
+        G2fil.G2Print (80*'*','\n')
 
     ShowBanner(PlaneData['Name'])
 
@@ -818,17 +819,17 @@ def BestPlane(PlaneData):
     Zmat = np.zeros((3,3))
     for i,xyz in enumerate(XYZ):
         Zmat += np.outer(xyz.T,xyz)
-    print (' Selected atoms centered at %10.5f %10.5f %10.5f'%(sumXYZ[0],sumXYZ[1],sumXYZ[2]))
+    G2fil.G2Print (' Selected atoms centered at %10.5f %10.5f %10.5f'%(sumXYZ[0],sumXYZ[1],sumXYZ[2]))
     Evec,Emat = nl.eig(Zmat)
     Evec = np.sqrt(Evec)/(Natoms-3)
     Order = np.argsort(Evec)
     XYZ = np.inner(XYZ,Emat.T).T
     XYZ = np.array([XYZ[Order[2]],XYZ[Order[1]],XYZ[Order[0]]]).T
-    print (' Atoms in Cartesian best plane coordinates:')
-    print (' Name         X         Y         Z')
+    G2fil.G2Print (' Atoms in Cartesian best plane coordinates:')
+    G2fil.G2Print (' Name         X         Y         Z')
     for i,xyz in enumerate(XYZ):
-        print (' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2]))
-    print ('\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]]))
+        G2fil.G2Print (' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2]))
+    G2fil.G2Print ('\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]]))
 
 def main():
     'Called to run a refinement when this module is executed '
@@ -837,14 +838,14 @@ def main():
     if len(arg) > 1:
         GPXfile = arg[1]
         if not ospath.exists(GPXfile):
-            print ('ERROR - '+GPXfile+" doesn't exist!")
+            G2fil.G2Print ('ERROR - '+GPXfile+" doesn't exist!")
             exit()
     else:
-        print ('ERROR - missing filename')
+        G2fil.G2Print ('ERROR - missing filename')
         exit()
     # TODO: figure out if this is a sequential refinement and call SeqRefine(GPXfile,None)
     Refine(GPXfile,None)
-    print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
+    G2fil.G2Print("Done. Execution time {:.2f} sec.".format(time.time()-starttime))
 
 if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()

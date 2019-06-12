@@ -33,6 +33,7 @@ import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
 import GSASIImath as G2mth
+import GSASIIfiles as G2fil
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -565,7 +566,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     :returns: a list containing vals,varyList,sigList,parmDict,covar
     '''
     import ImageCalibrants as calFile
-    print ('Image recalibration:')
+    G2fil.G2Print ('Image recalibration:')
     time0 = time.time()
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -577,12 +578,12 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     if data['DetDepth'] > 0.5:          #patch - redefine DetDepth
         data['DetDepth'] /= data['distance']
     if not data['calibrant']:
-        print ('no calibration material selected')
+        G2fil.G2Print ('warning: no calibration material selected')
         return []    
     skip = data['calibskip']
     dmin = data['calibdmin']
     if data['calibrant'] not in calFile.Calibrants:
-        print(' %s not in local copy of image calibrants file'%data['calibrant'])
+        G2fil.G2Print('Warning: %s not in local copy of image calibrants file'%data['calibrant'])
         return []
     Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
     HKL = []
@@ -611,7 +612,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
-            print ('next line is a hyperbola - search stopped')
+            G2fil.G2Print ('next line is a hyperbola - search stopped')
             break
         ellipse = GetEllipse(dsp,data)
         Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
@@ -626,7 +627,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
             data['ellipses'].append([])
             continue
     if not data['rings']:
-        print ('no rings found; try lower Min ring I/Ib')
+        G2fil.G2Print ('no rings found; try lower Min ring I/Ib',mode='warn')
         return []    
         
     rings = np.concatenate((data['rings']),axis=0)
@@ -643,7 +644,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
-    print ('calibration time = %.3f'%(time.time()-time0))
+    G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     if G2frame:
         G2plt.PlotImage(G2frame,newImage=True)        
     return [vals,varyList,sigList,parmDict,covar]
@@ -653,7 +654,7 @@ def ImageCalibrate(G2frame,data):
     selected for the inner ring.
     '''
     import ImageCalibrants as calFile
-    print ('Image calibration:')
+    G2fil.G2Print ('Image calibration:')
     time0 = time.time()
     ring = data['ring']
     pixelSize = data['pixelSize']
@@ -663,10 +664,10 @@ def ImageCalibrate(G2frame,data):
     cutoff = data['cutoff']
     varyDict = data['varyList']
     if varyDict['dist'] and varyDict['wave']:
-        print ('ERROR - you can not simultaneously calibrate distance and wavelength')
+        G2fil.G2Print ('ERROR - you can not simultaneously calibrate distance and wavelength')
         return False
     if len(ring) < 5:
-        print ('ERROR - not enough inner ring points for ellipse')
+        G2fil.G2Print ('ERROR - not enough inner ring points for ellipse')
         return False
         
     #fit start points on inner ring
@@ -676,7 +677,7 @@ def ImageCalibrate(G2frame,data):
     fmt  = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f'
     fmt2 = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f, chi**2: %.3f, Np: %d'
     if outE:
-        print (fmt%('start ellipse: ',outE[0][0],outE[0][1],outE[1],outE[2][0],outE[2][1]))
+        G2fil.G2Print (fmt%('start ellipse: ',outE[0][0],outE[0][1],outE[1],outE[2][0],outE[2][1]))
         ellipse = outE
     else:
         return False
@@ -689,10 +690,10 @@ def ImageCalibrate(G2frame,data):
         Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]    #do again
         ellipse = FitEllipse(Ring)
     else:
-        print ('1st ring not sufficiently complete to proceed')
+        G2fil.G2Print ('1st ring not sufficiently complete to proceed',mode='warn')
         return False
     if debug:
-        print (fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],
+        G2fil.G2Print (fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],
             ellipse[2][0],ellipse[2][1],0.,len(Ring)))     #cent,phi,radii
     data['ellipses'].append(ellipse[:]+('r',))
     data['rings'].append(np.array(Ring))
@@ -701,7 +702,7 @@ def ImageCalibrate(G2frame,data):
 #setup for calibration
     data['rings'] = []
     if not data['calibrant']:
-        print ('no calibration material selected')
+        G2fil.G2Print ('Warning: no calibration material selected')
         return True
     
     skip = data['calibskip']
@@ -714,7 +715,7 @@ def ImageCalibrate(G2frame,data):
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
             hkl = G2pwd.getHKLpeak(dmin,SGData,A)
-            print(hkl)
+            G2fil.G2Print(hkl)
             HKL += list(hkl)
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
@@ -723,7 +724,7 @@ def ImageCalibrate(G2frame,data):
 #set up 1st ring
     elcent,phi,radii = ellipse              #from fit of 1st ring
     dsp = HKL[0][3]
-    print ('1st ring: try %.4f'%(dsp))
+    G2fil.G2Print ('1st ring: try %.4f'%(dsp))
     if varyDict['dist']:
         wave = data['wavelength']
         tth = 2.0*asind(wave/(2.*dsp))
@@ -738,8 +739,8 @@ def ImageCalibrate(G2frame,data):
     if varyDict['tilt']:
         tilt = npasind(np.sqrt(max(0.,1.-(radii[0]/radii[1])**2))*ctth)
         if not tilt:
-            print ('WARNING - selected ring was fitted as a circle')
-            print (' - if detector was tilted we suggest you skip this ring - WARNING')
+            G2fil.G2Print ('WARNING - selected ring was fitted as a circle')
+            G2fil.G2Print (' - if detector was tilted we suggest you skip this ring - WARNING')
     else:
         tilt = data['tilt']
 #1st estimate of dist: sample to detector normal to plane
@@ -762,10 +763,10 @@ def ImageCalibrate(G2frame,data):
         i2 = 1
         while fail:
             dsp = HKL[i2][3]
-            print ('2nd ring: try %.4f'%(dsp))
+            G2fil.G2Print ('2nd ring: try %.4f'%(dsp))
             tth = 2.0*asind(wave/(2.*dsp))
             ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-            print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
+            G2fil.G2Print (fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1]))
             Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
                 'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
@@ -779,7 +780,7 @@ def ImageCalibrate(G2frame,data):
             else:
                 chip = 1e6
             ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-            print (fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1]))
+            G2fil.G2Print (fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1]))
             Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
@@ -816,7 +817,7 @@ def ImageCalibrate(G2frame,data):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
-            print ('next line is a hyperbola - search stopped')
+            G2fil.G2Print ('next line is a hyperbola - search stopped')
             break
         if debug:   print ('HKLD:'+str(H[:4])+'2-theta: %.4f'%(tth))
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
@@ -844,7 +845,7 @@ def ImageCalibrate(G2frame,data):
     G2plt.PlotImage(G2frame,newImage=True)
     fullSize = len(G2frame.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
-        print ('Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib')
+        G2fil.G2Print ('Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib')
     N = len(data['ellipses'])
     if N > 2:
         FitDetector(rings,varyList,parmDict)[0]
@@ -857,7 +858,7 @@ def ImageCalibrate(G2frame,data):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    print ('calibration time = %.3f'%(time.time()-time0))
+    G2fil.G2Print ('calibration time = %.3f'%(time.time()-time0))
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
     
@@ -970,7 +971,7 @@ def MakeUseMask(data,masks,blkSize=128):
 def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask=None):
     'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
-    print ('Begin image integration; image range: %d %d'%(np.min(image),np.max(image)))
+    G2fil.G2Print ('Begin image integration; image range: %d %d'%(np.min(image),np.max(image)))
     CancelPressed = False
     LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
@@ -1044,7 +1045,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             times[3] += time.time()-t0
 #            print('done block %d %d %d %d %d %d %d %d'%(iBlk,iBeg,iFin,jBlk,jBeg,jFin,np.min(Block),np.max(Block)))
-    print('End integration loops')
+    G2fil.G2Print('End integration loops')
     t0 = time.time()
 #    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
 #    NST = np.array(NST,dtype=np.float32)
@@ -1073,10 +1074,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         #NB: in G2pwd.Polarization azm is defined from plane of polarization, not image x axis!
         H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     times[4] += time.time()-t0
-    print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
+    G2fil.G2Print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))
-    print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))
-    print ('Integration complete')
+    G2fil.G2Print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))
+    G2fil.G2Print ('Integration complete')
     if returnN:     #As requested by Steven Weigand
         return H0,H1,H2,NST,CancelPressed
     else:
@@ -1131,7 +1132,7 @@ def FitStrSta(Image,StrSta,Controls):
             ringint /= np.mean(ringint)
             ring['Ivar'] = np.var(ringint)
             ring['covMat'] = covMat
-            print ('Variance in normalized ring intensity: %.3f'%(ring['Ivar']))
+            G2fil.G2Print ('Variance in normalized ring intensity: %.3f'%(ring['Ivar']))
     CalcStrSta(StrSta,Controls)
     
 def IntStrSta(Image,StrSta,Controls):
@@ -1150,7 +1151,7 @@ def IntStrSta(Image,StrSta,Controls):
             ring['ImxyCalc'] = np.array(ringxy).T[:2]
             ringint = np.array([float(Image[int(x*scalex),int(y*scaley)]) for y,x in np.array(ringxy)[:,:2]])
             ringint /= np.mean(ringint)
-            print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
+            G2fil.G2Print (' %s %.3f %s %.3f %s %d'%('d-spacing',ring['Dcalc'],'sig(MRD):',np.sqrt(np.var(ringint)),'# points:',len(ringint)))
             RingsAI.append(np.array(zip(ringazm,ringint)).T)
     return RingsAI
     
@@ -1297,7 +1298,7 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy):
     
 def AutoSpotMasks(Image,Masks,Controls):
     
-    print ('auto spot search')
+    G2fil.G2Print ('auto spot search')
     nxy = 15
     rollImage = lambda rho,roll: np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1)
     pixelSize = Controls['pixelSize']
@@ -1320,7 +1321,7 @@ def AutoSpotMasks(Image,Masks,Controls):
     indx = np.array(magind[0:2],dtype=np.int32)
     mags = magind[2]
     size2 = mags.shape[0]
-    print ('Initial search done: %d -->%d %.2fs'%(size1,size2,time.time()-time0))
+    G2fil.G2Print ('Initial search done: %d -->%d %.2fs'%(size1,size2,time.time()-time0))
     nx,ny = Image.shape
     ImMax = np.max(Image)
     peaks = []
@@ -1331,17 +1332,17 @@ def AutoSpotMasks(Image,Masks,Controls):
         mult += .0001            
         minM = mult*np.max(mags)
         num = ma.count(ma.array(mags,mask=mags<=minM))
-        print('try',mult,minM,num)
+        G2fil.G2Print('try',mult,minM,num)
     minM = mult*np.max(mags)
-    print ('Find biggest spots:',mult,num,minM)
+    G2fil.G2Print ('Find biggest spots:',mult,num,minM)
     for i,mag in enumerate(mags):
         if mag > minM:
             if (nxy2 < indx[0][i] < nx-nxy2-1) and (nxy2 < indx[1][i] < ny-nxy2-1):
-#                    print ('try:%d %d %d %.2f'%(i,indx[0][i],indx[1][i],mags[i]))
+#                    G2fil.G2Print ('try:%d %d %d %.2f'%(i,indx[0][i],indx[1][i],mags[i]))
                 peak = FitImageSpots(Image,ImMax,[indx[1][i],indx[0][i]],pixelSize,nxy)
                 if peak and not any(np.isnan(np.array(peak))):
                     peaks.append(peak)
-#                    print (' Spot found: %s'%str(peak))
+#                    G2fil.G2Print (' Spot found: %s'%str(peak))
     peaks = G2mth.sortArray(G2mth.sortArray(peaks,1),0)
     Peaks = [peaks[0],]
     for peak in peaks[1:]:
@@ -1349,7 +1350,7 @@ def AutoSpotMasks(Image,Masks,Controls):
             continue
         if (peak[0]-Peaks[-1][0])**2+(peak[1]-Peaks[-1][1])**2 > peak[2]*Peaks[-1][2] :
             Peaks.append(peak)
-#            print (' Spot found: %s'%str(peak))
-    print ('Spots found: %d time %.2fs'%(len(Peaks),time.time()-time0))
+#            G2fil.G2Print (' Spot found: %s'%str(peak))
+    G2fil.G2Print ('Spots found: %d time %.2fs'%(len(Peaks),time.time()-time0))
     Masks['Points'] = Peaks
     return None

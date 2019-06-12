@@ -3199,7 +3199,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 ObsLine = None
                 CalcLine = None
                 BackLine = None
-                DifLine = None
+                DifLine = [None]
                 if G2frame.Weight:
                     Plot1.set_yscale("linear")                                                  
                     wtFactor = Pattern[0]['wtFactor']

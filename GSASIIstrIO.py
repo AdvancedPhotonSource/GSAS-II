@@ -38,6 +38,7 @@ import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
+import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -117,7 +118,7 @@ def IndexGPX(GPXfile,read=False):
     except EOFError:
         pass
     except Exception as msg:
-        print('Read Error:',msg)
+        G2fil.G2Print('Read Error:',msg)
         raise Exception("Error reading file "+str(GPXfile)+". This is not a GSAS-II .gpx file")
     finally:
         fp.close()
@@ -133,7 +134,7 @@ def GetControls(GPXfile):
     IndexGPX(GPXfile)
     pos = gpxIndex.get('Controls')
     if pos is None:
-        print('Warning: Controls not found in gpx file {}'.format(GPXfile))
+        G2fil.G2Print('Warning: Controls not found in gpx file {}'.format(GPXfile))
         return Controls
     fp = open(GPXfile,'rb')
     fp.seek(pos)
@@ -162,7 +163,7 @@ def GetConstraints(GPXfile):
         constList += datum[1][item]
     constDict,fixedList,ignored = ProcessConstraints(constList)
     if ignored:
-        print ('{} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
+        G2fil.G2Print ('Warning: {} Constraints were rejected. Was a constrained phase, histogram or atom deleted?'.format(ignored))
     return constDict,fixedList
     
 def ProcessConstraints(constList):
@@ -284,9 +285,9 @@ def ReadCheckConstraints(GPXfile, seqHist=None):
     errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
     if errmsg:
         # print some diagnostic info on the constraints
-        print('Error in constraints:\n'+errmsg+
+        G2fil.G2Print('Error in constraints:\n'+errmsg+
               '\nRefinement not possible due to conflict in constraints, see below:\n')
-        print (G2mv.VarRemapShow(varyList,True))
+        G2fil.G2Print(G2mv.VarRemapShow(varyList,True),mode='error')
     return errmsg, warnmsg
     
 def makeTwinFrConstr(Phases,Histograms,hapVary):
@@ -507,7 +508,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                         Histograms[hist]['hId'] = hId
                     except KeyError: # would happen if a referenced histogram were
                         # renamed or deleted
-                        print('For phase "'+phase+
+                        G2fil.G2Print('Warning: For phase "'+phase+
                               '" unresolved reference to histogram "'+hist+'"')
     # load the fix background info into the histograms
     for hist in Histograms:
@@ -526,7 +527,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 h['_fixedValues'] = allHistograms[fixedBkg[0]]['Data'][1][xB:xF]
                 h['_fixedMult'],h['_fixedVary'] = fixedBkg[1:]
             except KeyError: # would happen if a referenced histogram were renamed or deleted
-                print('For hist "{}" unresolved background reference to hist "{}"'
+                G2fil.G2Print('Warning: For hist "{}" unresolved background reference to hist "{}"'
                           .format(hist,fixedBkg[0]))
     G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
@@ -595,8 +596,8 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
                         
     import distutils.file_util as dfu
     GPXback = GPXBackup(GPXfile,makeBack)
-    print ('Read from file:'+GPXback)
-    print ('Save to file  :'+GPXfile)
+    G2fil.G2Print ('Read from file:'+GPXback)
+    G2fil.G2Print ('Save to file  :'+GPXfile)
     infile = open(GPXback,'rb')
     outfile = open(GPXfile,'wb')
     while True:
@@ -635,14 +636,14 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
         try:                        
             cPickle.dump(data,outfile,1)
         except AttributeError:
-            print ('ERROR - bad data in least squares result')
+            G2fil.G2Print ('ERROR - bad data in least squares result')
             infile.close()
             outfile.close()
             dfu.copy_file(GPXback,GPXfile)
-            print ('GPX file save failed - old version retained')
+            G2fil.G2Print ('GPX file save failed - old version retained',mode='error')
             return
             
-    print ('GPX file save successful')
+    G2fil.G2Print ('GPX file save successful')
     
 def GetSeqResult(GPXfile):
     '''
@@ -763,8 +764,8 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     :param str GPXfile: full .gpx file name
     '''
     GPXback = GPXBackup(GPXfile)
-    print ('Read from file:'+GPXback)
-    print ('Save to file  :'+GPXfile)
+    G2fil.G2Print ('Read from file:'+GPXback)
+    G2fil.G2Print ('Save to file  :'+GPXfile)
     GPXphase = os.path.splitext(GPXfile)[0]+'.seqPhase'
     fp = open(GPXphase,'rb')
     data = cPickleLoad(fp) # first block in file should be Phases
@@ -812,7 +813,7 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
             hist.seek(histIndex[datum[0]])
             hdata = cPickleLoad(hist)
             if data[0][0] != hdata[0][0]:
-                print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
+                G2fil.G2Print('Error! Updating {} with {}'.format(data[0][0],hdata[0][0]))
             data[0] = hdata[0]
             xferItems = ['Background','Instrument Parameters','Sample Parameters','Reflection Lists']
             hItems = {name:j+1 for j,(name,val) in enumerate(hdata[1:]) if name in xferItems}
@@ -827,12 +828,12 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
     try:
         os.remove(GPXphase)
     except:
-        print('Warning: unable to delete {}'.format(GPXphase))
+        G2fil.G2Print('Warning: unable to delete {}'.format(GPXphase))
     try:
         os.remove(GPXhist)
     except:
-        print('Warning: unable to delete {}'.format(GPXhist))
-    print ('GPX file merge completed')
+        G2fil.G2Print('Warning: unable to delete {}'.format(GPXhist))
+    G2fil.G2Print ('GPX file merge completed')
 
 #==============================================================================
 # Refinement routines
@@ -3277,7 +3278,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             
             Inst = Histogram['Instrument Parameters']        #TODO ? ignores tabulated alp,bet & delt for TOF
             if 'T' in Type and len(Inst[1]):    #patch -  back-to-back exponential contribution to TOF line shape is removed
-                print ('Warning: tabulated profile coefficients are ignored')
+                G2fil.G2Print ('Warning: tabulated profile coefficients are ignored')
             Type,instDict,insVary = GetInstParms(hId,Inst[0])
             controlDict[pfx+'histType'] = Type
             if 'XC' in Type:

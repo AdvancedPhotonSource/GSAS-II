@@ -31,6 +31,7 @@ import numpy.ma as ma
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIpwd as G2pwd
+import GSASIIfiles as G2fil
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -55,7 +56,7 @@ def InitMP(allowMP=True):
     if ncores is not None: return useMP,ncores
     useMP = False
     if not allowMP:
-        print('Multiprocessing disabled')
+        G2fil.G2Print('Multiprocessing disabled')
         ncores = 0
         return useMP,ncores
     ncores = GSASIIpath.GetConfigValue('Multiprocessing_cores',0)
@@ -63,7 +64,7 @@ def InitMP(allowMP=True):
     if ncores > 1:
         useMP = True
     if useMP:
-        print('Multiprocessing with {} cores enabled'.format(ncores))
+        G2fil.G2Print('Multiprocessing with {} cores enabled'.format(ncores))
     return useMP,ncores
 
 ################################################################################

@@ -68,7 +68,7 @@ def G2SetPrintLevel(level):
         G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
                     'Use all, warn, error or none.')
         
-def G2Print(*args,mode=None,**kwargs):
+def G2Print(*args,**kwargs):
     '''Print with filtering based level of output (see :func:`G2SetPrintLevel`).
     Use G2Print() as replacement for print(). 
 
@@ -78,10 +78,11 @@ def G2Print(*args,mode=None,**kwargs):
     error messages and 'warn' for warning messages. 
     '''
     if G2printLevel is 'none': return
-    if mode is None:
+    if kwargs.get('mode') is None:
         testStr = args[0].lower()
     else:
         testStr = mode[:].lower()
+        del kwargs['mode'] 
     level = 2
     for i,mode in enumerate(('error', 'warn')):
         if mode in testStr:

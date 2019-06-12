@@ -75,13 +75,14 @@ def G2Print(*args,**kwargs):
     :param str mode: if specified, this should contain the mode for printing
       ('error', 'warn' or anything else). If not specified, the first argument 
       of the print command (args[0]) should contain the string 'error' for 
-      error messages and 'warn' for warning messages. 
+      error messages and 'warn' for warning messages
+      (capitalization and additional letters ignored.)
     '''
     if G2printLevel is 'none': return
     if kwargs.get('mode') is None:
         testStr = args[0].lower()
     else:
-        testStr = mode[:].lower()
+        testStr = kwargs['mode'][:].lower()
         del kwargs['mode'] 
     level = 2
     for i,mode in enumerate(('error', 'warn')):

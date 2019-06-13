@@ -28,6 +28,7 @@ import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
+import GSASIIfiles as G2fil
 import numpy.fft as fft
 import scipy.optimize as so
 try:
@@ -156,7 +157,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     lamMax = lam
     nfev = 0
     if Print:
-        print (' Hessian Levenberg-Marquardt SVD refinement on %d variables:'%(n))
+        G2fil.G2Print(' Hessian Levenberg-Marquardt SVD refinement on %d variables:'%(n))
     Lam = np.zeros((n,n))
     while icycle < maxcyc:
         time0 = time.time()
@@ -173,7 +174,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            print ('initial chi^2 %.5g on %d obs.'%(chisq0,Nobs))
+            G2fil.G2Print('initial chi^2 %.5g on %d obs.'%(chisq0,Nobs))
         chitol = ftol
         while True:
             Lam = np.eye(Amat.shape[0])*lam
@@ -182,7 +183,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
                 Ainv,Nzeros = pinv(Amatlam,xtol)    #do Moore-Penrose inversion (via SVD)
             except nl.LinAlgError:
                 psing = list(np.where(np.diag(nl.qr(Amatlam)[1]) < 1.e-14)[0])
-                print ('ouch #1 bad SVD inversion; change parameterization for ',psing)
+                G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization for ',psing, mode='error')
                 return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]
             Xvec = np.inner(Ainv,Yvec)      #solve
             Xvec /= Adiag
@@ -192,26 +193,26 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
             if chisq1 > chisq0*(1.+chitol):     #TODO put Alan Coehlo's criteria for lambda here?
                 lam *= 10.
                 if Print:
-                    print ('new chi^2 %.5g on %d obs., %d SVD zeros ; matrix modification needed; lambda now %.1e'  \
+                    G2fil.G2Print('new chi^2 %.5g on %d obs., %d SVD zeros ; matrix modification needed; lambda now %.1e'  \
                            %(chisq1,Nobs,Nzeros,lam))
             else:
                 x0 += Xvec
                 lam /= 10.
                 break
             if lam > 10.:
-                print ('ouch #3 chisq1 %g.4 stuck > chisq0 %g.4'%(chisq1,chisq0))
+                G2fil.G2Print('ouch #3 chisq1 %g.4 stuck > chisq0 %g.4'%(chisq1,chisq0), mode='warn')
                 break
             chitol *= 2
         lamMax = max(lamMax,lam)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g'%(
+            G2fil.G2Print(' Cycle: %d, Time: %.2fs, Chi**2: %.5g for %d obs., Lambda: %.3g,  Delta: %.3g'%(
                 icycle,time.time()-time0,chisq1,Nobs,lamMax,deltaChi2))
         Histograms = args[0][0]
         if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
-            if Print: print ("converged")
+            if Print: G2fil.G2Print("converged")
             break
         icycle += 1
     M = func(x0,*args)
@@ -223,11 +224,11 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Amatlam = Amat/Anorm        
     try:
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-        if Print: print ('Found %d SVD zeros'%(Nzero))
+        if Print: G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
-        print ('ouch #2 linear algebra error in making v-cov matrix')
+        G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -288,7 +289,7 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     icycle = 0
     nfev = 0
     if Print:
-        print (' Hessian SVD refinement on %d variables:'%(n))
+        G2fil.G2Print(' Hessian SVD refinement on %d variables:'%(n))
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)
@@ -303,11 +304,11 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Yvec /= Adiag
         Amat /= Anorm
         if Print:
-            print ('initial chi^2 %.5g'%(chisq0))
+            G2fil.G2Print('initial chi^2 %.5g'%(chisq0))
         try:
             Ainv,Nzeros = pinv(Amat,xtol)    #do Moore-Penrose inversion (via SVD)
         except nl.LinAlgError:
-            print ('ouch #1 bad SVD inversion; change parameterization')
+            G2fil.G2Print('ouch #1 bad SVD inversion; change parameterization', mode='warn')
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
             return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':psing,'SVD0':-1}]
         Xvec = np.inner(Ainv,Yvec)      #solve
@@ -317,13 +318,13 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         chisq1 = np.sum(M2**2)
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print (' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
+            G2fil.G2Print(' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Delta: %.3g'%(
                 icycle,time.time()-time0,chisq1,deltaChi2))
         Histograms = args[0][0]
         if refPlotUpdate is not None: refPlotUpdate(Histograms,icycle)   # update plot
         if deltaChi2 < ftol:
             ifConverged = True
-            if Print: print ("converged")
+            if Print: G2fil.G2Print("converged")
             break
         icycle += 1
     M = func(x0,*args)
@@ -334,13 +335,13 @@ def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     Amat = Amat/Anorm        
     try:
         Bmat,Nzero = pinv(Amat,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
-        print ('Found %d SVD zeros'%(Nzero))
+        G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
 #        Bmat = nl.inv(Amatlam); Nzeros = 0
         Bmat = Bmat/Anorm
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':0.,'psing':[],
             'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
-        print ('ouch #2 linear algebra error in making v-cov matrix')
+        G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
@@ -2740,7 +2741,7 @@ def validProtein(Phase,old):
             Boxes[box[0],box[1],box[2],0] += 1
             Boxes[box[0],box[1],box[2],Boxes[box[0],box[1],box[2],0]] = ib
         except IndexError:
-            print('too many atoms in box' )
+            G2fil.G2Print('Error: too many atoms in box' )
             continue
     #Box content checks with errat.f $ erratv2.cpp ibox1 arrays
     indices = (-1,0,1)
@@ -3009,15 +3010,15 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             GOF = chisq/(len(result[2]['fvec'])-len(varyList))       #reduced chi^2
-            print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(result[2]['fvec']),len(varyList)))
-            print ('refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
+            G2fil.G2Print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(result[2]['nfev'],len(result[2]['fvec']),len(varyList)))
+            G2fil.G2Print ('refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc))
             try:
                 sig = np.sqrt(np.diag(result[1])*GOF)
                 if np.any(np.isnan(sig)):
-                    print ('*** Least squares aborted - some invalid esds possible ***')
+                    G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***', mode='error')
                 break                   #refinement succeeded - finish up!
             except ValueError:          #result[1] is None on singular matrix
-                print ('**** Refinement failed - singular matrix ****')
+                G2fil.G2Print ('**** Refinement failed - singular matrix ****', mode='error')
                 return None
         else:
             break
@@ -3064,7 +3065,7 @@ def OmitMap(data,reflDict,pgbar=None):
     '''
     generalData = data['General']
     if not generalData['Map']['MapType']:
-        print ('**** ERROR - Fourier map not defined')
+        G2fil.G2Print ('**** ERROR - Fourier map not defined')
         return
     mapData = generalData['Map']
     dmin = mapData['GridStep']*2.
@@ -3118,7 +3119,7 @@ def OmitMap(data,reflDict,pgbar=None):
     mapData['rho'] = np.real(rho_omit)/cell[6]
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print ('Omit map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
+    G2fil.G2Print ('Omit map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
     return mapData
     
 def FourierMap(data,reflDict):
@@ -3184,7 +3185,7 @@ def FourierMap(data,reflDict):
                     h,k,l = -hkl+Hmax
                     Fhkl[h,k,l] = complex(Fosq,0.)
     rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
-    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
+    G2fil.G2Print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
     mapData['Type'] = reflDict['Type']
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
@@ -3255,7 +3256,7 @@ def Fourier4DMap(data,reflDict):
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
+    G2fil.G2Print ('Fourier map time: %.4f no. elements: %d dimensions: %s'%(time.time()-time0,Fhkl.size,str(Fhkl.shape)))
 
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
@@ -3338,7 +3339,7 @@ def findOffset(SGData,A,Fhkl):
             break
         i += 1
     DH = np.array(DH)
-    print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
+    G2fil.G2Print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
     Dphi = np.array(Dphi)
     steps = np.array(hklShape)
     X,Y,Z = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2]]
@@ -3350,7 +3351,7 @@ def findOffset(SGData,A,Fhkl):
 #        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print (' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2]))
+    G2fil.G2Print (' map offset chi**2: %.3f, map offset: %d %d %d'%(chisq,DX[0],DX[1],DX[2]))
 #    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
@@ -3443,9 +3444,9 @@ def ChargeFlip(data,reflDict,pgbar):
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
-    print (' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size))
+    G2fil.G2Print (' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.  #? to get on same scale as e-map
-    print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
+    G2fil.G2Print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
     roll = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
         
     mapData['Rcf'] = Rcf
@@ -3504,7 +3505,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
             break
         i += 1
     DH = np.array(DH)
-    print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
+    G2fil.G2Print (' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist)))
     Dphi = np.array(Dphi)
     steps = np.array(hklmShape)
     X,Y,Z,T = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2],0:1:1./steps[3]]
@@ -3516,7 +3517,7 @@ def findSSOffset(SGData,SSGData,A,Fhklm):
 #        print item,bins[i]
     chisq = np.min(Mmap)
     DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
-    print (' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3]))
+    G2fil.G2Print (' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3]))
 #    print (np.dot(DX,DH.T)+.5)%1.-Dphi
     return DX
     
@@ -3604,10 +3605,10 @@ def SSChargeFlip(data,reflDict,pgbar):
         if not GoOn or Ncyc > 10000:
             break
     np.seterr(**old)
-    print (' Charge flip time: %.4f no. elements: %d'%(time.time()-time0,Ehkl.size))
+    G2fil.G2Print (' Charge flip time: %.4f no. elements: %d'%(time.time()-time0,Ehkl.size))
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))/10.    #? to get on same scale as e-map
     SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.                  #? ditto
-    print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
+    G2fil.G2Print (' No.cycles = %d Residual Rcf =%8.3f%s Map size: %s'%(Ncyc,Rcf,'%',str(CErho.shape)))
     roll = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
 
     mapData['Rcf'] = Rcf
@@ -3777,7 +3778,7 @@ def SearchMap(generalData,drawingData,Neg=False):
         step = max(1.0,1./res)+1
         steps = np.array((3*[step,]),dtype='int32')
     except KeyError:
-        print ('**** ERROR - Fourier map not defined')
+        G2fil.G2Print ('**** ERROR - Fourier map not defined')
         return peaks,mags
     rhoMask = ma.array(rho,mask=(rho<contLevel))
     indices = (-1,0,1)
@@ -4435,14 +4436,14 @@ def anneal(func, x0, args=(), schedule='fast',
         fqueue.pop(0)
         af = asarray(fqueue)*1.0
         if retval == 5:
-            print (' User terminated run; incomplete MC/SA')
+            G2fil.G2Print ('Error: User terminated run; incomplete MC/SA')
             keepGoing = False
             break
         if all(abs((af-af[0])/af[0]) < feps):
             retval = 0
             if abs(af[-1]-best_state.cost) > feps*10:
                 retval = 5
-                print (" Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1))
+                G2fil.G2Print (" Warning: Cooled to %.4f > selected Tmin %.4f in %d steps"%(squeeze(last_state.cost),Tf,iters-1))
             break
         if (Tf is not None) and (schedule.T < Tf):
 #            print ' Minimum T reached in %d steps'%(iters-1)
@@ -4452,7 +4453,7 @@ def anneal(func, x0, args=(), schedule='fast',
             retval = 2
             break
         if (iters > maxiter):
-            print  (" Warning: Maximum number of iterations exceeded.")
+            G2fil.G2Print  (" Warning: Maximum number of iterations exceeded.")
             retval = 3
             break
         if (maxaccept is not None) and (schedule.accepted > maxaccept):
@@ -4472,7 +4473,7 @@ def worker(iCyc,data,RBdata,reflType,reflData,covData,out_q,out_t,out_n,nprocess
         outlist.append(result[0])
         timelist.append(result[1])
         nsflist.append(result[2])
-        print (' MC/SA final fit: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1]))
+        G2fil.G2Print (' MC/SA final fit: %.3f%% structure factor time: %.3f'%(100*result[0][2],result[1]))
     out_q.put(outlist)
     out_t.put(timelist)
     out_n.put(nsflist)
@@ -4878,8 +4879,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
     allFF = np.array(allFF).T
     refs = np.array(refs).T
     if start:
-        print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
-        print (' Number of parameters varied: %d'%(len(varyList)))
+        G2fil.G2Print (' Minimum d-spacing used: %.2f No. reflections used: %d'%(MCSA['dmin'],nRef))
+        G2fil.G2Print (' Number of parameters varied: %d'%(len(varyList)))
         start = False
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
@@ -4901,7 +4902,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
             quench=MCSA['fast parms'][0], c=MCSA['fast parms'][1], 
             lower=lower, upper=upper, slope=MCSA['log slope'],ranStart=MCSA.get('ranStart',False),
             ranRange=MCSA.get('ranRange',10.)/100.,autoRan=MCSA.get('autoRan',False),dlg=pgbar)
-        print (' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1]))
+        G2fil.G2Print (' Acceptance rate: %.2f%% MCSA residual: %.2f%%'%(100.*results[5]/results[3],100.*results[1]))
         results = so.minimize(mcsaCalc,results[0],method='L-BFGS-B',args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
             bounds=bounds,)
     mcsaCalc(results['x'],refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict)

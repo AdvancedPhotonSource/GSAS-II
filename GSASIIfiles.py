@@ -80,7 +80,7 @@ def G2Print(*args,**kwargs):
     '''
     if G2printLevel is 'none': return
     if kwargs.get('mode') is None:
-        testStr = args[0].lower()
+        testStr = str(args[0]).lower()
     else:
         testStr = kwargs['mode'][:].lower()
         del kwargs['mode'] 

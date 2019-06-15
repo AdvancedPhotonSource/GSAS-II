@@ -1145,7 +1145,6 @@ def getlattSym(Trans):
 #        lattSym = Fives[lattSym]
     return lattSym
 
-
 def Text2MT(mcifOpr,CIF=True):
     "From space group cif text returns matrix/translation"
     XYZ = {'x':[1,0,0],'+x':[1,0,0],'-x':[-1,0,0],'y':[0,1,0],'+y':[0,1,0],'-y':[0,-1,0],
@@ -1274,6 +1273,7 @@ def GetSGSpin(SGData,MSgSym):
             else:
                 Spn.append(1)
                 iB = jF+1
+    Spn.append(1)
     return Spn
             
 def GenMagOps(SGData):

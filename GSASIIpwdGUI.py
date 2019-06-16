@@ -3560,8 +3560,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         try:
             OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
-            if not OK:
-                dlg.Destroy()
         finally:
             dlg.Destroy()
         cells = keepcells+newcells

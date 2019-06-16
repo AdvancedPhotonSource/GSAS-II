@@ -941,7 +941,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
     print ("%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs))
     cells = []
     lastcell = np.zeros(7)
-    for ibrav in range(16):
+    for ibrav in range(17):
         begin = time.time()
         if bravais[ibrav]:
             print ('cell search for ',bravaisNames[ibrav])
@@ -1005,7 +1005,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                             break
                         if ibrav < 13:
                             V1 *= 1.1
-                        elif ibrav in range(13,16):
+                        elif ibrav in range(13,17):
                             V1 *= 1.05
                         if not GoOn:
                             if bestM20 > topM20:

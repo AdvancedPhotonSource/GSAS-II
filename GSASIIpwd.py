@@ -3127,8 +3127,8 @@ def MEMupdateReflData(prfName,reflData):
         phase = npatan2d(FoI,FoR)
         try:
             refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
-        except KeyError:    #added reflections
-            break
+        except KeyError:    #added reflections at end skipped
+            continue
         reflData[refId][8] = Fosq
         reflData[refId][10] = phase
     return True

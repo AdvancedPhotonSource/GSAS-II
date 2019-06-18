@@ -1319,6 +1319,17 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 
         G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close 
     G2frame.Bind(wx.EVT_MENU, OnAutoInt, id=G2G.wxID_IMAUTOINTEG)
+    def OnIntPDFtool(event):
+        import subprocess
+        ex = sys.executable
+        if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
+            if os.path.exists(ex+'w'): ex += 'w'
+        if G2frame.GSASprojectfile:
+            project = os.path.abspath(G2frame.GSASprojectfile)
+        else:
+            project = ''
+        subprocess.Popen([ex,os.path.join(GSASIIpath.path2GSAS2,'GSASIIIntPDFtool.py'),project])
+    G2frame.Bind(wx.EVT_MENU, OnIntPDFtool, id=G2G.wxID_IMINTEGPDFTOOL)
 
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add((5,10),0)    
@@ -3212,7 +3223,7 @@ def DefineEvaluator(dlg):
         :param float dist: distance to use for interpolation
         :returns: a list with 3 items:
 
-          * a dict with parameter values,
+          * a dict with interpolated parameter values,
           * the closest imctrl and
           * the closest maskfile (or None)
         '''            
@@ -3443,6 +3454,10 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         
     def FillList(self,parms):
         'Places the current parms into the table'
+        # the use of InsertStringItem and SetStringItem are depricated in 4.0 but
+        # I am not quite sure how to replace them with InsertItem and SetItem yet.
+        # Perhaps switch to  ULC.UltimateListCtrl?
+        #
         maxint = 2**31-1
         self.ClearAll()
         self.rowlen = len(self.parent.ParmList)

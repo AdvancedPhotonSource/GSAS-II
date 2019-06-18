@@ -1166,7 +1166,7 @@ class G2ChoiceButton(wx.Choice):
                 if self.indLoc is not None:
                     self.indLoc[self.indKey] = self.GetSelection()
                     log.LogVarChange(self.indLoc,self.indKey)
-            except ValueError:
+            except (KeyError,ValueError):
                 pass
         self.Bind(wx.EVT_CHOICE, self._OnChoice)
         #if self.strLoc is not None: # make sure strLoc gets initialized

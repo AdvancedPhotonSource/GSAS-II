@@ -2105,8 +2105,9 @@ class G2Project(G2ObjectWrapper):
         This places an entry in the project but :meth:`G2PDF.calculate` 
         must be used to actually perform the PDF computation. 
 
-        :param str PDFobj: A :class:`G2PDF` object which may be 
-          in a separate project. 
+        :param PDFobj: A :class:`G2PDF` object which may be 
+          in a separate project or the dict associated with the
+          PDF object (G2PDF.data).
         :param histogram: A reference to a histogram,
           which can be reference by object, name, or number.
         :returns: A :class:`G2PDF` object for the PDF entry

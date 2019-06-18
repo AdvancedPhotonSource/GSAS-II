@@ -5436,6 +5436,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         ImageIntegrate.Append(G2G.wxID_IMINTEGRATE,'Integrate','Integrate selected image')
         ImageIntegrate.Append(G2G.wxID_INTEGRATEALL,'Integrate all','Integrate all images selected from list')
         ImageIntegrate.Append(G2G.wxID_IMAUTOINTEG,'Auto Integrate','Open Auto-integration window to integrate a series of images')
+        G2G.Define_wxId('wxID_IMINTEGPDFTOOL')
+        ImageIntegrate.Append(G2G.wxID_IMINTEGPDFTOOL,'Integrate/PDF app (in dev)','Start Integration/PDF task (in development)')
 
         ImageParams = wx.Menu(title='')
         self.ImageMenu.Append(menu=ImageParams, title='Parms')

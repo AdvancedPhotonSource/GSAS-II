@@ -547,7 +547,7 @@ def MakeFrameMask(data,frame):
             tay = np.asfarray(tay*scaley,dtype=np.float32)
             tamp = ma.make_mask_none((1024*1024))
             tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
-                tay.flatten(),len(frame),frame,tamp)[:nI*nJ])-True  #switch to exclude around frame
+                tay.flatten(),len(frame),frame,tamp)[:nI*nJ])^True  #switch to exclude around frame
             if tamp.shape:
                 tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
                 tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
@@ -1023,6 +1023,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
             Block = image[iBeg:iFin,jBeg:jFin]
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
+            pol = G2pwd.Polarization(data['PolaVal'][0],tay,tax-90.)[0]         #for pixel pola correction
             times[0] += time.time()-t0
             t0 = time.time()
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
@@ -1039,16 +1040,13 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             times[2] += time.time()-t0
             t0 = time.time()
-            taz = np.array((taz*tad/tabs),dtype='float32')
+            taz = np.array((taz*tad/tabs),dtype='float32')/pol
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             times[3] += time.time()-t0
-#            print('done block %d %d %d %d %d %d %d %d'%(iBlk,iBeg,iFin,jBlk,jBeg,jFin,np.min(Block),np.max(Block)))
     G2fil.G2Print('End integration loops')
     t0 = time.time()
-#    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
-#    NST = np.array(NST,dtype=np.float32)
     #prepare masked arrays of bins with pixels for interpolation setup
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
     H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
@@ -1065,14 +1063,13 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
+    if 'SASD' not in data['type']:
+        H0 *= np.array(G2pwd.Polarization(data['PolaVal'][0],H2[:-1],0.)[0])
     H0 /= npcosd(H2[:-1])           #**2? I don't think so, **1 is right for powders
     if 'SASD' in data['type']:
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
-    if 'SASD' in data['type'] and data['PolaVal'][1]:
-        #NB: in G2pwd.Polarization azm is defined from plane of polarization, not image x axis!
-        H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     times[4] += time.time()-t0
     G2fil.G2Print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))

@@ -824,16 +824,17 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
         codes = [0 for i in range(4)]
         X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
     Xminmax = [X[0],X[-1]]
-    Azms = []
+    Azms = np.zeros(data['outAzimuths'])
     dazm = 0.
-    if data['fullIntegrate'] and data['outAzimuths'] == 1:
-        Azms = [45.0,]                              #a poor man's average?
-    else:
-        for i,azm in enumerate(azms[:-1]):
-            if azm > 360. and azms[i+1] > 360.:
-                Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
-            else:    
-                Azms.append(G2img.meanAzm(azm,azms[i+1]))
+#    if data['fullIntegrate'] and data['outAzimuths'] == 1:
+#        Azms = [0.0,]                              #a poor man's average?
+#    else:
+##        for i,azm in enumerate(azms[:-1]):
+##            if azm > 360. and azms[i+1] > 360.:
+##                Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
+##            else:    
+##                Azms.append(G2img.meanAzm(azm,azms[i+1]))
+    if data['outAzimuths'] > 1:
         dazm = np.min(np.abs(np.diff(azms)))/2.
     G2frame.IntgOutList = []
     for i,azm in enumerate(azms[:-1]):

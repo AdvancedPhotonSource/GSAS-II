@@ -5453,7 +5453,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # IMG / Masks
         G2G.Define_wxId('wxID_MASKCOPY', 'wxID_MASKSAVE', 'wxID_MASKLOAD', 'wxID_NEWMASKSPOT', 'wxID_NEWMASKARC', 'wxID_NEWMASKRING',
-            'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY', 'wxID_MASKLOADNOT', 'wxID_FINDSPOTS', 'wxID_DELETESPOTS',)
+            'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY','wxID_NEWMASKXLINE','wxID_NEWMASKYLINE','wxID_MASKLOADNOT', 'wxID_FINDSPOTS', 'wxID_DELETESPOTS',)
         self.MaskMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MaskMenu)
         self.MaskEdit = wx.Menu(title='')
@@ -5471,6 +5471,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         submenu.Append(G2G.wxID_NEWMASKPOLY,'Polygon mask','Create a polygon mask with mouse input')
         submenu.Append(G2G.wxID_NEWMASKRING,'Ring mask','Create a ring mask with mouse input')
         submenu.Append(G2G.wxID_NEWMASKSPOT,'Spot mask','Create spot masks with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKXLINE,'X line mask','Create line masks with mouse input')
+        submenu.Append(G2G.wxID_NEWMASKYLINE,'Y line mask','Create line masks with mouse input')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain

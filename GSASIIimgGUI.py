@@ -268,11 +268,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         '''
         CleanupMasks(masks)
         sumImg = GetImageZ(G2frame,data)
-        wx.BeginBusyCursor()
-        try:
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA,useMask=useMask)            
-        finally:
-            wx.EndBusyCursor()    
+        G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA,useMask=useMask)            
         G2frame.PauseIntegration = G2frame.Integrate[-1]
         del sumImg  #force cleanup
         Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
@@ -1362,7 +1358,7 @@ def CleanupMasks(data):
     and before saving them or after reading them in. This should also probably be done
     before they are used for integration.
     '''
-    for key in ['Points','Rings','Arcs','Polygons']:
+    for key in ['Points','Rings','Arcs','Polygons','Xlines','Ylines',]:
         data[key] = data.get(key,[])
         l1 = len(data[key])
         data[key] = [i for i in data[key] if len(i)]
@@ -1443,7 +1439,7 @@ def UpdateMasks(G2frame,data):
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0]+'.immask'
                 File = open(filename,'w')
-                keys = ['Points','Rings','Arcs','Polygons','Frames','Thresholds']
+                keys = ['Points','Rings','Arcs','Polygons','Xlines','Ylines','Frames','Thresholds']
                 for key in keys:
                     File.write(key+':'+str(data[key])+'\n')
                 File.close()
@@ -1496,6 +1492,17 @@ def UpdateMasks(G2frame,data):
     def OnNewRingMask(event):
         'Start a new ring mask'
         G2frame.MaskKey = 'r'
+        G2plt.OnStartMask(G2frame)
+        
+    def OnNewXlineMask(event):
+        'Start a new x-line mask'
+        print('x')
+        G2frame.MaskKey = 'x'
+        G2plt.OnStartMask(G2frame)
+        
+    def OnNewYlineMask(event):
+        'Start a new y-line mask'
+        G2frame.MaskKey = 'y'
         G2plt.OnStartMask(G2frame)
         
     def OnNewPolyMask(event):
@@ -1678,6 +1685,8 @@ def UpdateMasks(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2G.wxID_NEWMASKSPOT)
     G2frame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2G.wxID_NEWMASKARC)
     G2frame.Bind(wx.EVT_MENU, OnNewRingMask, id=G2G.wxID_NEWMASKRING)
+    G2frame.Bind(wx.EVT_MENU, OnNewXlineMask, id=G2G.wxID_NEWMASKXLINE)
+    G2frame.Bind(wx.EVT_MENU, OnNewYlineMask, id=G2G.wxID_NEWMASKYLINE)
     G2frame.Bind(wx.EVT_MENU, OnNewPolyMask, id=G2G.wxID_NEWMASKPOLY)
     G2frame.Bind(wx.EVT_MENU, OnNewFrameMask, id=G2G.wxID_NEWMASKFRAME)
     if G2frame.MaskKey == 'f':
@@ -1688,8 +1697,12 @@ def UpdateMasks(G2frame,data):
         G2frame.GetStatusBar().SetStatusText('Arc mask active - LB pick arc location',1)
     elif G2frame.MaskKey == 'r':
         G2frame.GetStatusBar().SetStatusText('Ring mask active - LB pick ring location',1)
+    elif G2frame.MaskKey == 'x':
+        G2frame.GetStatusBar().SetStatusText('X-line mask active - LB pick x line of pixels',1)
+    elif G2frame.MaskKey == 'y':
+        G2frame.GetStatusBar().SetStatusText('Y-line mask active - LB pick y line of pixels',1)
     else:
-        G2frame.GetStatusBar().SetStatusText("To add mask: press a,r,s,p or f on 2D image for arc/ring/spot/polygon/frame",1)
+        G2frame.GetStatusBar().SetStatusText("To add mask: press a,r,s,x,y,p or f on 2D image for arc/ring/spot/xline/yline/polygon/frame",1)
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add((5,10),0)
 
@@ -1697,6 +1710,11 @@ def UpdateMasks(G2frame,data):
     Spots = data['Points']               #x,y,radius in mm
     Rings = data['Rings']               #radius, thickness
     Polygons = data['Polygons']         #3+ x,y pairs
+    if 'Xlines' not in data:            #single rows/columns of bad pixels
+        data['Xlines'] = []
+        data['Ylines'] = []
+    Xlines = data['Xlines']
+    Ylines = data['Ylines']
     if 'Frames' not in data:
         data['Frames'] = []
     frame = data['Frames']             #3+ x,y pairs
@@ -1796,6 +1814,33 @@ def UpdateMasks(G2frame,data):
                     locationcode='Delete+Arcs+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(arcDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
+        
+    if Xlines:
+        lbl = wx.StaticText(parent=G2frame.dataWindow,label=' X line masks')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        littleSizer = wx.FlexGridSizer(0,2,0,5)
+        for i in range(len(Xlines)):
+            if Xlines[i]:
+                littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='at Y-pixel: %d'%(Xlines[i])),0,WACV)
+                xlineDelete = G2G.G2LoggedButton(G2frame.dataWindow,label='delete?',
+                    locationcode='Delete+Xlines+'+str(i),handler=onDeleteMask)
+                littleSizer.Add(xlineDelete,0,WACV)
+        mainSizer.Add(littleSizer,0,)
+        
+    if Ylines:
+        lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Y line masks')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
+        littleSizer = wx.FlexGridSizer(0,2,0,5)
+        for i in range(len(Ylines)):
+            if Ylines[i]:
+                littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='at X-pixel: %d'%(Ylines[i])),0,WACV)
+                ylineDelete = G2G.G2LoggedButton(G2frame.dataWindow,label='delete?',
+                    locationcode='Delete+Ylines+'+str(i),handler=onDeleteMask)
+                littleSizer.Add(ylineDelete,0,WACV)
+        mainSizer.Add(littleSizer,0,)
+        
     if Polygons:
         lbl = wx.StaticText(parent=G2frame.dataWindow,
             label=' Polygon masks (on plot LB vertex drag to move, RB vertex drag to insert)')

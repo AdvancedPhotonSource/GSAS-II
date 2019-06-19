@@ -2208,6 +2208,8 @@ def UpdatePhaseData(G2frame,Item,data):
             #patch
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
+            if 'Resolution' in Map:
+                Map['GridStep'] = Map['Resolution']
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','2Fo-Fc Omit','Patterson']
             refsList = [item for item in G2gd.GetGPXtreeDataNames(G2frame,['HKLF','PWDR']) if item in data['Histograms'].keys()]
             if not generalData['AtomTypes']:
@@ -2245,7 +2247,10 @@ def UpdatePhaseData(G2frame,Item,data):
             return mapSizer
                 
         def FlipSizer():
+            #patches
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
+            if 'Resolution' in Flip:
+                Flip['GridStep'] = Flip['Resolution']
             
             def OnRefList(event):
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',

@@ -6530,6 +6530,14 @@ def OnStartMask(G2frame):
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         Page.figure.suptitle('Left-click to create an arc mask',color='r',fontweight='bold')
         Page.canvas.draw()
+    elif G2frame.MaskKey == 'x':
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('Left-click to create an x-line mask',color='r',fontweight='bold')
+        Page.canvas.draw()
+    elif G2frame.MaskKey == 'y':
+        new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
+        Page.figure.suptitle('Left-click to create an y-line mask',color='r',fontweight='bold')
+        Page.canvas.draw()
     elif G2frame.MaskKey == 'r':
         new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Powder Image','mpl',newImage=False)
         Page.figure.suptitle('Left-click to create a ring mask',color='r',fontweight='bold')
@@ -6745,7 +6753,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2imG.UpdateMasks(G2frame,Masks)
                 Page.canvas.draw()
                 return 
-            elif event.key in ['l','p','f','a','r']:
+            elif event.key in ['l','p','f','a','r','x','y']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
             elif event.key == 'd':
@@ -6921,7 +6929,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             try:
                 pickType = pick.itemType
             except:
-                pickType = '?'
+                pickType = None
             if pickType == "Spot":
                 itemNum = G2frame.itemPicked.itemNumber
                 if event.button == 1:
@@ -7058,7 +7066,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             try:
                 pickType = pick.itemType
             except: # should not happen anymore
-                pickType = '?'
+                pickType = None
             if pickType == 'Spot':
                 pl = [pick,]
             elif pickType.startswith('Ring'):
@@ -7197,7 +7205,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.MaskKey = ''
                 wx.CallAfter(PlotImage,G2frame,newImage=True)
                 return
-            elif G2frame.MaskKey =='p' or G2frame.MaskKey =='f':
+            elif G2frame.MaskKey in ['p','f']:
                 if G2frame.MaskKey =='p':
                     polygon = Masks['Polygons'][-1]
                     color = 'r'
@@ -7231,6 +7239,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     polygon.append([Xpos,Ypos])
                     #G2imG.UpdateMasks(G2frame,Masks)
                     return
+            elif G2frame.MaskKey in ['x','y']:
+                Xpix,Ypix = int(Xpos*scalex),int(Ypos*scaley)
+                if G2frame.MaskKey == 'y':
+                    Masks['Ylines'].append(Xpix)
+                else:
+                    Masks['Xlines'].append(Ypix)
+                G2imG.UpdateMasks(G2frame,Masks)
+                wx.CallAfter(PlotImage,G2frame,newImage=True)
+                return
             G2imG.UpdateMasks(G2frame,Masks)
             wx.CallAfter(PlotImage,G2frame,newImage=False)
         elif G2frame.MskDelete:
@@ -7377,6 +7394,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.GPXtree.GetItemText(G2frame.PickId) in ['Masks',]:
             Page.Choice = [' key press','a: arc mask','r: ring mask',
+                'x: x line mask','y: y line mask',
                 'p: polygon mask','f: frame mask',
                 't: add spot mask at mouse position',
                 'd: select spot mask to delete with mouse',
@@ -7413,6 +7431,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if newImage:
             Imin,Imax = Data['range'][1]
             MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
+            
             MaskA = ma.getmaskarray(MA)
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)

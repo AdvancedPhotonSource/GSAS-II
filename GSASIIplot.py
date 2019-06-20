@@ -7430,9 +7430,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     try:
         if newImage:
             Imin,Imax = Data['range'][1]
-            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
-            
+            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])            
             MaskA = ma.getmaskarray(MA)
+            for xline in Masks.get('Xlines',[]):
+                MaskA[xline,:] = True
+            for yline in Masks.get('Ylines',[]):
+                MaskA[:,yline] = True
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
             Plot.imshow(AM,aspect='equal',cmap='Reds',

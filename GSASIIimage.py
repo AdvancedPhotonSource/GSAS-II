@@ -900,10 +900,18 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
         if polygon:
             tam = ma.mask_or(tam,ma.make_mask(pm.polymask(nI*nJ,tax,
                 tay,len(polygon),polygon,tamp)[:nI*nJ]))
-    if True:
-        for X,Y,rsq in masks['Points'].T:
-            tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
-    if tam.shape: tam = np.reshape(tam,(nI,nJ))
+    for X,Y,rsq in masks['Points'].T:
+        tam = ma.mask_or(tam,ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,rsq)))
+    if tam.shape: 
+        tam = np.reshape(tam,(nI,nJ))
+    else:
+        tam = ma.make_mask_none((nI,nJ))
+    for xline in masks.get('Xlines',[]):    #a y pixel position
+        if iLim[0] <= xline <= iLim[1]:
+            tam[iLim[1]-xline,:] = True
+    for yline in masks.get('Ylines',[]):    #a x pixel position
+        if jLim[0] <= yline <= jLim[1]:
+            tam[:,jLim[1]-yline] = True            
     return tam           #position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):

@@ -1358,7 +1358,7 @@ def CleanupMasks(data):
     and before saving them or after reading them in. This should also probably be done
     before they are used for integration.
     '''
-    for key in ['Points','Rings','Arcs','Polygons','Xlines','Ylines',]:
+    for key in ['Points','Rings','Arcs','Polygons',]:
         data[key] = data.get(key,[])
         l1 = len(data[key])
         data[key] = [i for i in data[key] if len(i)]

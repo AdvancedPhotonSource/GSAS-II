@@ -142,7 +142,9 @@ except ImportError:
     else:
         wg = Placeholder('Grid PyGridTableBase PyGridCellEditor'.split())
 import time
+import glob
 import copy
+import random as ran
 import webbrowser     # could postpone this for quicker startup
 import numpy as np
 
@@ -154,6 +156,8 @@ import GSASIIspc as G2spc
 import GSASIIpy3 as G2py3
 import GSASIIlog as log
 import GSASIIobj as G2obj
+import GSASIIfiles as G2fil
+import GSASIIscriptable as G2sc
 
 
 # Define a short names for convenience
@@ -1153,12 +1157,13 @@ class G2ChoiceButton(wx.Choice):
         self.strKey = strKey
         self.onChoice = None
         self.SetSelection(wx.NOT_FOUND)
-        if self.indLoc is not None and self.strLoc is not None:
+        if self.indLoc is not None and self.indKey is not None:
             try:
                 self.SetSelection(self.indLoc[self.indKey])
-                self.strLoc[self.strKey] = self.GetStringSelection()
-                log.LogVarChange(self.strLoc,self.strKey)
-            except ValueError:
+                if self.strLoc is not None and self.strKey is not None:
+                    self.strLoc[self.strKey] = self.GetStringSelection()
+                #log.LogVarChange(self.strLoc,self.strKey)
+            except (KeyError,ValueError,TypeError):
                 pass
         elif self.strLoc is not None and self.strKey is not None:
             try:
@@ -1166,7 +1171,7 @@ class G2ChoiceButton(wx.Choice):
                 if self.indLoc is not None:
                     self.indLoc[self.indKey] = self.GetSelection()
                     log.LogVarChange(self.indLoc,self.indKey)
-            except (KeyError,ValueError):
+            except (KeyError,ValueError,TypeError):
                 pass
         self.Bind(wx.EVT_CHOICE, self._OnChoice)
         #if self.strLoc is not None: # make sure strLoc gets initialized
@@ -5618,7 +5623,326 @@ class OpenTutorial(wx.Dialog):
             SaveConfigVars(vars)
         except KeyError:
             pass
-            
+################################################################################
+# Autoload PWDR files
+################################################################################
+AutoLoadWindow = None
+
+def AutoLoadFiles(G2frame,FileTyp='pwd'):
+    def OnBrowse(event):
+        '''Responds when the Browse button is pressed to load a file.
+        The routine determines which button was pressed and gets the
+        appropriate file type and loads it into the appropriate place
+        in the dict.
+        '''
+        if btn3 == event.GetEventObject():
+            d = wx.DirDialog(dlg,
+                    'Select directory for input files',
+                    Settings['indir'],wx.DD_DEFAULT_STYLE)
+            d.CenterOnParent()
+            try:
+                if d.ShowModal() == wx.ID_OK:
+                    Settings['indir'] = d.GetPath()
+                    fInp3.SetValue(Settings['indir'])
+            finally:
+                d.Destroy()
+        elif btn4 == event.GetEventObject():
+            extList = 'GSAS iparm file (*.prm,*.inst,*.ins,.instprm)|*.prm;*.inst;*.ins;*.instprm'
+            d = wx.FileDialog(dlg,
+                'Choose instrument parameter file',
+                '', '',extList, wx.FD_OPEN)
+            if os.path.exists(Settings['instfile']):
+                d.SetFilename(Settings['instfile'])
+            try:
+                if d.ShowModal() == wx.ID_OK:
+                    Settings['instfile'] = d.GetPath()
+                    fInp4.SetValue(Settings['instfile'])
+            finally:
+                d.Destroy()
+        TestInput()
+    def onSetFmtSelection():
+        extSel.Clear()
+        extSel.AppendItems(pwdrReaders[Settings['fmt']].extensionlist)
+        Settings['extStr'] = pwdrReaders[Settings['fmt']].extensionlist[0]
+        extSel.SetSelection(0)
+        onSetExtSelection()
+    def onSetExtSelection():
+        Settings['filter'] = os.path.splitext(Settings['filter'])[0] + Settings['extStr']
+        flterInp.SetValue(Settings['filter'])
+        TestInput()
+    def OnQuit(event):
+        Settings['timer'].Stop()
+        wx.CallAfter(dlg.Destroy)
+    def TestInput(*args,**kwargs):
+        valid = True
+        if not os.path.exists(Settings['indir']):
+            valid = False
+        if not os.path.exists(Settings['instfile']):
+            valid = False
+        btnstart.Enable(valid)
+    def OnStart(event):
+        if btnstart.GetLabel() == 'Pause':
+            Settings['timer'].Stop()
+            btnstart.SetLabel('Continue')
+            return
+        else:
+            btnstart.SetLabel('Pause')
+        if Settings['timer'].IsRunning(): return
+        PollTime = 1 # sec
+        G2frame.CheckNotebook()
+        Settings['timer'].Start(int(1000*PollTime),oneShot=False)
+
+        # get a list of existing histograms
+        PWDRlist = []
+        if G2frame.GPXtree.GetCount():
+            item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.GPXtree.GetItemText(item)
+                if name.startswith('PWDR ') and name not in PWDRlist:
+                    PWDRlist.append(name)
+                item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
+        Settings['PWDRlist'] = PWDRlist
+    def RunTimerLoop(event):
+        if GSASIIpath.GetConfigValue('debug'):
+            import datetime
+            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+        filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
+        if not filelist: return
+        #if GSASIIpath.GetConfigValue('debug'): print(filelist)
+        Id = None
+        for f in filelist:
+            if f in Settings['filesread']: continue
+            Settings['filesread'].append(f)
+            rd = pwdrReaders[Settings['fmt']]
+            rd.ReInitialize()
+            if not rd.ContentsValidator(f):
+                Settings['timer'].Stop()
+                btnstart.SetLabel('Continue')
+                G2G.G2MessageBox(dlg,'Error in reading file {}: {}'.format(
+                    f, rd.errors))
+                return
+            #if len(rd.selections) > 1:
+            #    G2fil.G2Print('Warning: Skipping file {}: multibank not yet implemented'.format(f))
+            #    continue
+            block = 0
+            rdbuffer = {}
+            repeat = True
+            while repeat:
+                repeat = False
+                try:
+                    flag = rd.Reader(f,buffer=rdbuffer, blocknum=block)
+                except:
+                    flag = False
+                if flag:
+                    rd.readfilename = f
+                    if rd.warnings:
+                        G2fil.G2Print("Read warning by", rd.formatName,
+                                          "reader:",
+                                          rd.warnings)
+                    elif not block:
+                        G2fil.G2Print("{} read by Reader {}"
+                              .format(f,rd.formatName))
+                    else:
+                        G2fil.G2Print("{} block # {} read by Reader {}"
+                                .format(f,block,rd.formatName))
+                    block += 1    
+                    repeat = rd.repeat
+                else:
+                    G2fil.G2Print("Warning: {} Reader failed to read {}"
+                                      .format(rd.formatName,filename))
+                Iparm1, Iparm2 = G2sc.load_iprms(Settings['instfile'],rd)    
+                if 'phoenix' in wx.version():
+                    HistName = 'PWDR '+rd.idstring
+                else:
+                    HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
+                # make new histogram names unique
+                HistName = G2obj.MakeUniqueLabel(HistName,Settings['PWDRlist'])
+                Settings['PWDRlist'].append(HistName)
+                # put into tree
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=HistName)
+                if 'T' in Iparm1['Type'][0]:
+                    if not rd.clockWd and rd.GSAS:
+                        rd.powderdata[0] *= 100.        #put back the CW centideg correction
+                    cw = np.diff(rd.powderdata[0])
+                    rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
+                    if rd.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
+                        npts = min(len(rd.powderdata[0]),len(rd.powderdata[1]),len(cw))
+                        rd.powderdata[1] = rd.powderdata[1][:npts]/cw[:npts]
+                        rd.powderdata[2] = rd.powderdata[2][:npts]*cw[:npts]**2  #1/var=w at this point
+                    else:       #NB: from topas/fullprof type files
+                        rd.powderdata[1] = rd.powderdata[1][:-1]
+                        rd.powderdata[2] = rd.powderdata[2][:-1]
+                    if 'Itype' in Iparm2:
+                        Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
+                        Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
+                        rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
+                        YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
+                        rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
+                        var = 1./rd.powderdata[2][Ibeg:Ifin]
+                        var += WYI*rd.powderdata[1]**2
+                        var /= YI**2
+                        rd.powderdata[2] = 1./var
+                    rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
+                    rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
+                    rd.powderdata[5] = np.zeros_like(rd.powderdata[0])
+                Ymin = np.min(rd.powderdata[1])                 
+                Ymax = np.max(rd.powderdata[1])                 
+                valuesdict = {
+                    'wtFactor':1.0,
+                    'Dummy':False,
+                    'ranId':ran.randint(0,sys.maxsize),
+                    'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-.1*Ymax,'refDelt':0.1*Ymax,
+                    'Yminmax':[Ymin,Ymax]
+                    }
+                # apply user-supplied corrections to powder data
+                if 'CorrectionCode' in Iparm1:
+                    print('Applying corrections from instprm file')
+                    corr = Iparm1['CorrectionCode'][0]
+                    try:
+                        exec(corr)
+                        print('done')
+                    except Exception as err:
+                        print(u'error: {}'.format(err))
+                        print('with commands -------------------')
+                        print(corr)
+                        print('---------------------------------')
+                    finally:
+                        del Iparm1['CorrectionCode']
+                rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
+                G2frame.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Comments'),
+                    rd.comments)
+                Tmin = min(rd.powderdata[0])
+                Tmax = max(rd.powderdata[0])
+                Tmin1 = Tmin
+                if 'NT' in Iparm1['Type'][0] and G2lat.Pos2dsp(Iparm1,Tmin) < 0.4:                
+                    Tmin1 = G2lat.Dsp2pos(Iparm1,0.4)
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Limits'),
+                    rd.pwdparms.get('Limits',[(Tmin,Tmax),[Tmin1,Tmax]])
+                    )
+                G2frame.PatternId = G2gd.GetGPXtreeItemId(G2frame,Id,'Limits')
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Background'),
+                    rd.pwdparms.get('Background',
+                        [['chebyschev',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+                        )
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Instrument Parameters'),
+                    [Iparm1,Iparm2])
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Sample Parameters'),
+                    rd.Sample)
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Peak List')
+                    ,{'peaks':[],'sigDict':{}})
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Index Peak List'),
+                    [[],[]])
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Unit Cells List'),
+                    [])
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='Reflection Lists'),
+                    {})
+                # if any Control values have been set, move them into tree
+                Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.root, 'Controls'))
+                Controls.update(rd.Controls)
+                # Tree entries complete
+        # select and show last PWDR file to be read
+        if Id:
+            G2frame.EnablePlot = True
+            G2frame.GPXtree.Expand(Id)
+            G2frame.GPXtree.SelectItem(Id)
+                
+    global AutoLoadWindow    
+    Settings = {}
+    if AutoLoadWindow: # make sure only one window is open at a time
+        try:
+            AutoLoadWindow.Destroy()
+        except:
+            pass
+        AutoLoadWindow = None
+    pwdrReaders = [i for i in G2fil.LoadImportRoutines("pwd", "Powder_Data")
+                       if i.scriptable]
+    fmtchoices = [p.longFormatName for p in pwdrReaders]
+    Settings['fmt'] = [i for i,v in enumerate(fmtchoices) if 'fxye' in v][0]
+    Settings['ext'] = 0
+    Settings['extStr'] = ''
+    Settings['filter'] = '*.*'
+    Settings['indir'] = os.getcwd()
+    Settings['instfile'] = ''
+    Settings['timer'] = wx.Timer()
+    Settings['timer'].Bind(wx.EVT_TIMER,RunTimerLoop)
+    Settings['filesread'] = []
+    dlg = wx.Frame(G2frame,title='Automatic Data Loading',
+                       style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
+    mnpnl = wx.Panel(dlg)
+    mnsizer = wx.BoxSizer(wx.VERTICAL)
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format:'))
+    fmtSel = G2ChoiceButton(mnpnl,fmtchoices,Settings,'fmt',
+                                       onChoice=onSetFmtSelection
+                                    )
+    sizer.Add(fmtSel,1,wx.EXPAND)
+    mnsizer.Add(sizer,0,wx.EXPAND)
+
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select extension:'))
+    extSel = G2ChoiceButton(mnpnl,[],Settings,'ext',Settings,'extStr',
+                                       onChoice=onSetExtSelection
+                                    )
+    sizer.Add(extSel,0)
+    mnsizer.Add(sizer,0,wx.EXPAND)
+    
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add((-1,-1),1,wx.EXPAND,1)
+    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'  File filter: '))
+    flterInp = ValidatedTxtCtrl(mnpnl,Settings,'filter')
+    sizer.Add(flterInp)
+    mnsizer.Add(sizer,0,wx.EXPAND,0)
+
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Read from: '),0,wx.ALIGN_CENTER_VERTICAL)
+    fInp3 = ValidatedTxtCtrl(mnpnl,Settings,'indir',size=(300,-1),
+                                        OnLeave=TestInput)
+    sizer.Add(fInp3,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
+    btn3.Bind(wx.EVT_BUTTON, OnBrowse)
+    sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    mnsizer.Add(sizer,0,wx.EXPAND)
+        
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Instrument parameter file from: '),0,wx.ALIGN_CENTER_VERTICAL)
+    fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),
+                                        OnLeave=TestInput)
+    sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+    btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
+    btn4.Bind(wx.EVT_BUTTON, OnBrowse)
+    sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    mnsizer.Add(sizer,0,wx.EXPAND)
+    
+    # buttons on bottom
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add((-1,-1),1,wx.EXPAND)
+    btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
+    btnstart.Bind(wx.EVT_BUTTON, OnStart)
+    sizer.Add(btnstart)
+    sizer.Add((20,-1),0,wx.EXPAND)
+    btnclose = wx.Button(mnpnl,  wx.ID_ANY, "Close")
+    onSetFmtSelection()
+    btnclose.Bind(wx.EVT_BUTTON, OnQuit)
+    sizer.Add(btnclose)
+    sizer.Add((-1,-1),1,wx.EXPAND)
+    mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
+    
+    mnpnl.SetSizer(mnsizer)
+    mnsizer.Fit(dlg)
+    dlg.Show()
+    AutoLoadWindow = dlg # save window reference
+
+
 if __name__ == '__main__':
     app = wx.PySimpleApp()
     GSASIIpath.InvokeDebugOpts()

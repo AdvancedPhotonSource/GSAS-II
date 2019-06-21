@@ -1238,6 +1238,13 @@ class GSASII(wx.Frame):
         submenu.AppendSeparator()
         item = submenu.Append(wx.ID_ANY,'Simulate a dataset','Create a powder data set entry that will be simulated')
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,'Auto Import','Import data files as found')
+        def OnAutoImport(event):
+            #import imp
+            #imp.reload(G2G)
+            G2G.AutoLoadFiles(self)
+        self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
+        
         item = submenu.Append(wx.ID_ANY,'Fit instr. profile from fundamental parms...','')
         self.Bind(wx.EVT_MENU, self.OnPowderFPA, id=item.GetId())
         

@@ -908,10 +908,10 @@ def MakeMaskMap(data,masks,iLim,jLim,tamp):
         tam = ma.make_mask_none((nI,nJ))
     for xline in masks.get('Xlines',[]):    #a y pixel position
         if iLim[0] <= xline <= iLim[1]:
-            tam[iLim[1]-xline,:] = True
+            tam[xline-iLim[0],:] = True
     for yline in masks.get('Ylines',[]):    #a x pixel position
         if jLim[0] <= yline <= jLim[1]:
-            tam[:,jLim[1]-yline] = True            
+            tam[:,yline-jLim[0]] = True            
     return tam           #position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):

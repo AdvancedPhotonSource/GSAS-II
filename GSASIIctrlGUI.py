@@ -5796,18 +5796,19 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                     }
                 # apply user-supplied corrections to powder data
                 if 'CorrectionCode' in Iparm1:
-                    print('Applying corrections from instprm file')
-                    corr = Iparm1['CorrectionCode'][0]
-                    try:
-                        exec(corr)
-                        print('done')
-                    except Exception as err:
-                        print(u'error: {}'.format(err))
-                        print('with commands -------------------')
-                        print(corr)
-                        print('---------------------------------')
-                    finally:
-                        del Iparm1['CorrectionCode']
+                    print('Warning: CorrectionCode from instprm file not applied')
+                #    print('Applying corrections from instprm file')
+                #    corr = Iparm1['CorrectionCode'][0]
+                #    try:
+                #        exec(corr)
+                #        print('done')
+                #    except Exception as err:
+                #        print(u'error: {}'.format(err))
+                #        print('with commands -------------------')
+                #        print(corr)
+                #        print('---------------------------------')
+                #    finally:
+                #        del Iparm1['CorrectionCode']
                 rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
                 G2frame.GPXtree.SetItemPyData(Id,[valuesdict,rd.powderdata])
                 G2frame.GPXtree.SetItemPyData(

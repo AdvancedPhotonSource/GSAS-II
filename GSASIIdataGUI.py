@@ -2910,6 +2910,7 @@ class GSASII(wx.Frame):
         self.SeqTblHideList = None
         self.newGPXfile = ''
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
+        self.testRBObjSizers = {}   #rigid body sizer data
         
     def __init__(self, parent):
         self.ExportLookup = {}

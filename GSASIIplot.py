@@ -8221,14 +8221,14 @@ def PlotStructure(G2frame,data,firstCall=False):
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                for i,sizer in enumerate(testRBObj['Sizers']['Xsizers']):
+                for i,sizer in enumerate(G2frame.testRBObjSizers['Xsizers']):
                     sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orig'][0][i]))
                     
     def SetRBOrienText():
         page = getSelection()
         if page:
             if G2frame.phaseDisplay.GetPageText(page) == 'RB Models':
-                for i,sizer in enumerate(testRBObj['Sizers']['Osizers']):
+                for i,sizer in enumerate(G2frame.testRBObjSizers['Osizers']):
                     sizer.SetValue('%8.5f'%(testRBObj['rbObj']['Orient'][0][i]))
                 
     def SetViewDirText(VD):

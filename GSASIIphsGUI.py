@@ -8058,13 +8058,13 @@ def UpdatePhaseData(G2frame,Item,data):
                 if len(atomData):
                     choice = list(atNames[0].keys())
                     choice.sort()
-                    data['testRBObj']['Sizers']['Xsizers'] = Xsizers
+                    G2frame.testRBObjSizers.update({'Xsizers':Xsizers})
                 OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,WACV)
                 for ix,x in enumerate(Orien):
                     orien = wx.StaticText(RigidBodies,-1,'%10.4f'%(x))
                     OriSizer.Add(orien,0,WACV)
                     Osizers.append(orien)
-                data['testRBObj']['Sizers']['Osizers'] = Osizers
+                G2frame.testRBObjSizers.update({'Osizers':Osizers})
                 mainSizer.Add(OriSizer)
                 mainSizer.Add((5,5),0)
                 RefSizer = wx.FlexGridSizer(0,7,5,5)

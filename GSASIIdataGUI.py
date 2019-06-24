@@ -2005,6 +2005,9 @@ class GSASII(wx.Frame):
             refList = self.GPXtree.GetItemPyData(
                 GetGPXtreeItemId(self,Id,'Reflection Lists'))
             refList[generalData['Name']] = []
+        cId = GetGPXtreeItemId(self,self.root, 'Controls')
+        Controls = self.GPXtree.GetItemPyData(cId)
+        Controls['max cyc'] = 0
         self.EnableRefineCommand()
         return # success
 

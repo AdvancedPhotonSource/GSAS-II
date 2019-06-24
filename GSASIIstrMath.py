@@ -1519,11 +1519,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
             GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
             GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
-#            Tmag += Gdata.T[nxs,nxs,:,:]
-#            
-#        TmagC = np.inner(Tmag,uAmat.T)   #make cartesian; Ntau,Nops,Natm,,Mxyz
-#        Smag = np.sqrt(np.sum(TmagC**2,axis=-1))
-#        Kmag = TmagC/Smag[:,:,:,nxs]
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:

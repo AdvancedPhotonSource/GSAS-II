@@ -1743,7 +1743,8 @@ class G2Project(G2ObjectWrapper):
         for phase in phases:
             phase = self.phase(phase)
             self.link_histogram_phase(histname, phase)
-
+            
+        self.set_Controls('cycles', 0)
         return self.histogram(histname)
     
     def add_phase(self, phasefile, phasename=None, histograms=[], fmthint=None):

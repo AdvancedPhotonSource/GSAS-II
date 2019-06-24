@@ -5797,6 +5797,10 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 # apply user-supplied corrections to powder data
                 if 'CorrectionCode' in Iparm1:
                     print('Warning: CorrectionCode from instprm file not applied')
+                # code below produces error on Py2.7: unqualified exec is not
+                # allowed in function 'RunTimerLoop' because it is a nested function
+                # no attempt made to address this.
+                #
                 #    print('Applying corrections from instprm file')
                 #    corr = Iparm1['CorrectionCode'][0]
                 #    try:

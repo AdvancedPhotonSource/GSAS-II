@@ -3209,14 +3209,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
-                    CurLims = [np.min(DZ[Ibeg:Ifin])*1.2,np.max(DZ[Ibeg:Ifin])*1.2]
-                    for i in range(2):
-                        if not G2frame.UseLimits['dylims'][i]: continue
-                        try:
+                    try:
+                        CurLims = [np.min(DZ[Ibeg:Ifin])*1.2,np.max(DZ[Ibeg:Ifin])*1.2]
+                        for i in range(2):
+                            if not G2frame.UseLimits['dylims'][i]: continue
                             CurLims[i] = float(G2frame.FixedLimits['dylims'][i])
-                        except:
-                            pass
-                    if all(np.isfinite(CurLims)): Plot1.set_ylim(CurLims)
+                        if all(np.isfinite(CurLims)): Plot1.set_ylim(CurLims)
+                    except:
+                        pass
+
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')

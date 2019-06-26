@@ -3735,10 +3735,10 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         l10 = np.log10(ytick)
         if l10 < 0:
             yti = int(10**(1 + l10 - int(l10)))
-            r = -0.5
+#            r = -0.5
         else:
             yti = int(10**(l10 - int(l10)))
-            r = 0.5
+#            r = 0.5
         if yti == 3:
             yti = 2
         elif yti > 5:

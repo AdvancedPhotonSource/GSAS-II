@@ -410,7 +410,7 @@ def GetHistsLikeSelected(G2frame):
     else:
         hLam = 0
     sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
-    hGeom = sample.get('Type')
+#    hGeom = sample.get('Type')
     hstName = G2frame.GPXtree.GetItemText(G2frame.PatternId)
     hPrefix = hstName.split()[0]+' '
     # cycle through tree looking for items that match the above
@@ -424,7 +424,7 @@ def GetHistsLikeSelected(G2frame):
                 subname = G2frame.GPXtree.GetItemText(subitem)
                 if subname == 'Sample Parameters':
                     sample = G2frame.GPXtree.GetItemPyData(subitem)
-                    cGeom = sample.get('Type')
+#                    cGeom = sample.get('Type')
                 elif subname == 'Instrument Parameters':
                     inst,inst2 = G2frame.GPXtree.GetItemPyData(subitem)
                     cType = inst['Type'][0]
@@ -435,7 +435,7 @@ def GetHistsLikeSelected(G2frame):
                     else:
                         cLam = 0
                 subitem, subcookie = G2frame.GPXtree.GetNextChild(item, subcookie)
-            if cLam == hLam and cType == hType and cGeom == hGeom:
+            if cLam == hLam and cType == hType: # and cGeom == hGeom:
                 if name not in histList: histList.append(name)
         item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
     return histList

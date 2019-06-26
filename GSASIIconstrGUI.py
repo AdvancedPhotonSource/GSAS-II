@@ -1729,7 +1729,7 @@ def UpdateRigidBodies(G2frame,data):
             data['RBIds']['Residue'].append(rbId)
             print ('Rigid body UNKRB added')
         text.close()
-        UpdateResidueRB(rbId)
+        UpdateResidueRB()
         
     def FindNeighbors(Orig,XYZ,atTypes,atNames,AtInfo):
         Radii = []
@@ -1795,7 +1795,7 @@ def UpdateRigidBodies(G2frame,data):
                 Riding.append(atNames.index(atm))
             rbData['rbSeq'].append([Orig,Piv,0.0,Riding])            
         dlg.Destroy()
-        UpdateResidueRB(rbId)
+        UpdateResidueRB()
 
     def UpdateVectorRB(Scroll=0):
         AtInfo = data['Vector']['AtInfo']
@@ -2010,15 +2010,16 @@ def UpdateRigidBodies(G2frame,data):
         VectorRB.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         VectorRB.Scroll(0,Scroll)
         
-    def UpdateResidueRB(rbId=0):
+    def UpdateResidueRB():
         '''Draw the contents of the Residue Rigid Body tab for Rigid Bodies tree entry
         '''
+        global rbId
         def rbNameSizer(rbId,rbData):
 
             def OnRBName(event):
                 Obj = event.GetEventObject()
                 rbData['RBname'] = Obj.GetValue()
-                wx.CallAfter(UpdateResidueRB,rbId)
+                wx.CallAfter(UpdateResidueRB)
                 
             def OnDelRB(event):
                 Obj = event.GetEventObject()
@@ -2044,7 +2045,7 @@ def UpdateRigidBodies(G2frame,data):
                     rbData['rbTypes'] = newTypes
                     rbData['rbXYZ'] = newXYZ
                 G2plt.PlotRigidBody(G2frame,'Residue',AtInfo,rbData,plotDefaults)
-                wx.CallAfter(UpdateResidueRB,rbId)
+                wx.CallAfter(UpdateResidueRB)
                     
             def OnPlotRB(event):
                 Obj = event.GetEventObject()
@@ -2225,7 +2226,7 @@ def UpdateRigidBodies(G2frame,data):
                 Obj = event.GetEventObject()
                 rbId,Seq = Indx[Obj.GetId()]
                 data['Residue'][rbId]['rbSeq'].remove(Seq)        
-                wx.CallAfter(UpdateResidueRB,rbId)
+                wx.CallAfter(UpdateResidueRB)
             
             seqSizer = wx.FlexGridSizer(0,5,2,2)
             seqSizer.AddGrowableCol(3,0)
@@ -2298,9 +2299,10 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].sort()
                 
         def OnSelect(event):
+            global rbId
             rbname = rbchoice[select.GetSelection()]
             rbId = RBnames[rbname]
-            wx.CallLater(100,UpdateResidueRB,rbId)
+            wx.CallLater(100,UpdateResidueRB)
             
         #----- beginning of UpdateResidueRB -----------------------------------------------
         AtInfo = data['Residue']['AtInfo']
@@ -2332,7 +2334,10 @@ def UpdateRigidBodies(G2frame,data):
             select.Bind(wx.EVT_COMBOBOX,OnSelect)
             selSizer.Add(select,0)
             ResidueRBSizer.Add(selSizer,0)
-        if not rbId:
+        try:
+            if not rbId:
+                rbId = RBnames[rbchoice[0]]
+        except NameError:
             rbId = RBnames[rbchoice[0]]
         rbData = data['Residue'][rbId]
         FillRefChoice(rbId,rbData)

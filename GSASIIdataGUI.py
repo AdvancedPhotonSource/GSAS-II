@@ -1242,7 +1242,7 @@ class GSASII(wx.Frame):
         def OnAutoImport(event):
             #import imp
             #imp.reload(G2G)
-            G2G.AutoLoadFiles(self)
+            G2G.AutoLoadFiles(self,FileTyp='pwd')
         self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
         
         item = submenu.Append(wx.ID_ANY,'Fit instr. profile from fundamental parms...','')
@@ -2374,11 +2374,17 @@ class GSASII(wx.Frame):
         '''
         submenu = wx.Menu()
         item = parent.AppendSubMenu(submenu,'PDF G(R) Data','Import PDF G(R) data')
-        item.Enable(False) # TODO: this does not appear to have ever been made to work
         for reader in self.ImportPDFReaderlist:
             item = submenu.Append(wx.ID_ANY,u'from '+reader.formatName+u' file',reader.longFormatName)
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportPDF, id=item.GetId())
+        submenu.AppendSeparator()
+        item = submenu.Append(wx.ID_ANY,'Auto Import','Import PDF files as found')
+        def OnAutoImport(event):
+            #import imp
+            #imp.reload(G2G)
+            G2G.AutoLoadFiles(self,FileTyp='gr')
+        self.Bind(wx.EVT_MENU, OnAutoImport, id=item.GetId())
         # item = submenu.Append(wx.ID_ANY,
         #     help='Import reflectometry data, use file to try to determine format',
         #     kind=wx.ITEM_NORMAL,text='guess format from file')
@@ -2425,11 +2431,12 @@ class GSASII(wx.Frame):
             valuesdict = {
                 'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),
                 'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
-                'Yminmax':[Ymin,Ymax]
+                'Yminmax':[Ymin,Ymax],
                 }
             self.GPXtree.SetItemPyData(
                 self.GPXtree.AppendItem(Id,text='PDF Controls'),
-                    {'G(R)':[valuesdict,rd.pdfdata,HistName],'diffGRname':'','diffMult':1.0})
+                    {'G(R)':[valuesdict,rd.pdfdata,HistName],
+                         'diffGRname':'','diffMult':1.0,'Rmax':Ymax,})
             self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='PDF Peaks'),
                 {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
         else:

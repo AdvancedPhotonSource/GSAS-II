@@ -5662,8 +5662,8 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         TestInput()
     def onSetFmtSelection():
         extSel.Clear()
-        extSel.AppendItems(pwdrReaders[Settings['fmt']].extensionlist)
-        Settings['extStr'] = pwdrReaders[Settings['fmt']].extensionlist[0]
+        extSel.AppendItems(fileReaders[Settings['fmt']].extensionlist)
+        Settings['extStr'] = fileReaders[Settings['fmt']].extensionlist[0]
         extSel.SetSelection(0)
         onSetExtSelection()
     def onSetExtSelection():
@@ -5677,7 +5677,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         valid = True
         if not os.path.exists(Settings['indir']):
             valid = False
-        if not os.path.exists(Settings['instfile']):
+        if FileTyp == 'pwd' and not os.path.exists(Settings['instfile']):
             valid = False
         btnstart.Enable(valid)
     def OnStart(event):
@@ -5693,16 +5693,20 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         Settings['timer'].Start(int(1000*PollTime),oneShot=False)
 
         # get a list of existing histograms
-        PWDRlist = []
+        if FileTyp == 'pwd':
+            treePrfx = 'PWDR '
+        else:
+            treePrfx = 'PDF  '
+        ReadList = []
         if G2frame.GPXtree.GetCount():
             item, cookie = G2frame.GPXtree.GetFirstChild(G2frame.root)
             while item:
                 name = G2frame.GPXtree.GetItemText(item)
-                if name.startswith('PWDR ') and name not in PWDRlist:
-                    PWDRlist.append(name)
+                if name.startswith(treePrfx) and name not in ReadList:
+                    ReadList.append(name)
                 item, cookie = G2frame.GPXtree.GetNextChild(G2frame.root, cookie)
-        Settings['PWDRlist'] = PWDRlist
-    def RunTimerLoop(event):
+        Settings['ReadList'] = ReadList
+    def RunTimerPWDR(event):
         if GSASIIpath.GetConfigValue('debug'):
             import datetime
             print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
@@ -5713,7 +5717,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         for f in filelist:
             if f in Settings['filesread']: continue
             Settings['filesread'].append(f)
-            rd = pwdrReaders[Settings['fmt']]
+            rd = fileReaders[Settings['fmt']]
             rd.ReInitialize()
             if not rd.ContentsValidator(f):
                 Settings['timer'].Stop()
@@ -5756,8 +5760,8 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 else:
                     HistName = 'PWDR '+G2obj.StripUnicode(rd.idstring,'_')
                 # make new histogram names unique
-                HistName = G2obj.MakeUniqueLabel(HistName,Settings['PWDRlist'])
-                Settings['PWDRlist'].append(HistName)
+                HistName = G2obj.MakeUniqueLabel(HistName,Settings['ReadList'])
+                Settings['ReadList'].append(HistName)
                 # put into tree
                 Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=HistName)
                 if 'T' in Iparm1['Type'][0]:
@@ -5798,7 +5802,7 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
                 if 'CorrectionCode' in Iparm1:
                     print('Warning: CorrectionCode from instprm file not applied')
                 # code below produces error on Py2.7: unqualified exec is not
-                # allowed in function 'RunTimerLoop' because it is a nested function
+                # allowed in this function because it is a nested function
                 # no attempt made to address this.
                 #
                 #    print('Applying corrections from instprm file')
@@ -5860,6 +5864,82 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
             G2frame.EnablePlot = True
             G2frame.GPXtree.Expand(Id)
             G2frame.GPXtree.SelectItem(Id)
+            
+    def RunTimerGR(event):
+        if GSASIIpath.GetConfigValue('debug'):
+            import datetime
+            print ("DBG_Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+        filelist = glob.glob(os.path.join(Settings['indir'],Settings['filter']))
+        if not filelist: return
+        #if GSASIIpath.GetConfigValue('debug'): print(filelist)
+        Id = None
+        for f in filelist:
+            if f in Settings['filesread']: continue
+            Settings['filesread'].append(f)
+            rd = fileReaders[Settings['fmt']]
+            rd.ReInitialize()
+            if not rd.ContentsValidator(f):
+                Settings['timer'].Stop()
+                btnstart.SetLabel('Continue')
+                G2G.G2MessageBox(dlg,'Error in reading file {}: {}'.format(
+                    f, rd.errors))
+                return
+            #if len(rd.selections) > 1:
+            #    G2fil.G2Print('Warning: Skipping file {}: multibank not yet implemented'.format(f))
+            #    continue
+            block = 0
+            rdbuffer = {}
+            repeat = True
+            while repeat:
+                repeat = False
+                try:
+                    flag = rd.Reader(f,buffer=rdbuffer, blocknum=block)
+                except:
+                    flag = False
+                if flag:
+                    rd.readfilename = f
+                    if rd.warnings:
+                        G2fil.G2Print("Read warning by", rd.formatName,
+                                          "reader:",
+                                          rd.warnings)
+                    elif not block:
+                        G2fil.G2Print("{} read by Reader {}"
+                              .format(f,rd.formatName))
+                    else:
+                        G2fil.G2Print("{} block # {} read by Reader {}"
+                                .format(f,block,rd.formatName))
+                    block += 1    
+                    repeat = rd.repeat
+                else:
+                    G2fil.G2Print("Warning: {} Reader failed to read {}"
+                                      .format(rd.formatName,filename))
+                if 'phoenix' in wx.version():
+                    HistName = 'PDF  '+rd.idstring
+                else:
+                    HistName = 'PDF  '+G2obj.StripUnicode(rd.idstring,'_')
+                HistName = G2obj.MakeUniqueLabel(HistName,Settings['ReadList'])
+                Settings['ReadList'].append(HistName)
+                # put into tree
+                Id = G2frame.GPXtree.AppendItem(parent=G2frame.root,text=HistName)
+                Ymin = np.min(rd.pdfdata[1])                 
+                Ymax = np.max(rd.pdfdata[1])                 
+                valuesdict = {
+                    'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxsize),
+                    'Offset':[0.0,0.0],'delOffset':0.02*Ymax,
+                    'Yminmax':[Ymin,Ymax],
+                    }
+                G2frame.GPXtree.SetItemPyData(
+                    G2frame.GPXtree.AppendItem(Id,text='PDF Controls'),
+                    {'G(R)':[valuesdict,rd.pdfdata,HistName],
+                         'diffGRname':'','diffMult':1.0,'Rmax':Ymax,})
+                G2frame.GPXtree.SetItemPyData(G2frame.GPXtree.AppendItem(Id,text='PDF Peaks'),
+                    {'Limits':[1.,5.],'Background':[2,[0.,-0.2*np.pi],False],'Peaks':[]})
+                    
+        # select and show last PWDR file to be read
+        if Id:
+            G2frame.EnablePlot = True
+            G2frame.GPXtree.Expand(Id)
+            G2frame.GPXtree.SelectItem(Id)
                 
     global AutoLoadWindow    
     Settings = {}
@@ -5869,17 +5949,26 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
         except:
             pass
         AutoLoadWindow = None
-    pwdrReaders = [i for i in G2fil.LoadImportRoutines("pwd", "Powder_Data")
+    if FileTyp == 'pwd':
+        fileReaders = [i for i in G2fil.LoadImportRoutines("pwd", "Powder_Data")
                        if i.scriptable]
-    fmtchoices = [p.longFormatName for p in pwdrReaders]
-    Settings['fmt'] = [i for i,v in enumerate(fmtchoices) if 'fxye' in v][0]
+        fmtchoices = [p.longFormatName for p in fileReaders]
+        Settings['fmt'] = [i for i,v in enumerate(fmtchoices) if 'fxye' in v][0]
+    else:
+        fileReaders = [i for i in G2frame.ImportPDFReaderlist]
+#                       if i.scriptable]
+        fmtchoices = [p.longFormatName for p in fileReaders]
+        Settings['fmt'] = 0       
     Settings['ext'] = 0
     Settings['extStr'] = ''
     Settings['filter'] = '*.*'
     Settings['indir'] = os.getcwd()
     Settings['instfile'] = ''
     Settings['timer'] = wx.Timer()
-    Settings['timer'].Bind(wx.EVT_TIMER,RunTimerLoop)
+    if FileTyp == 'pwd':
+        Settings['timer'].Bind(wx.EVT_TIMER,RunTimerPWDR)
+    else:
+        Settings['timer'].Bind(wx.EVT_TIMER,RunTimerGR)
     Settings['filesread'] = []
     dlg = wx.Frame(G2frame,title='Automatic Data Loading',
                        style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
@@ -5918,15 +6007,16 @@ def AutoLoadFiles(G2frame,FileTyp='pwd'):
     sizer.Add(btn3,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
     mnsizer.Add(sizer,0,wx.EXPAND)
         
-    sizer = wx.BoxSizer(wx.HORIZONTAL)
-    sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Instrument parameter file from: '),0,wx.ALIGN_CENTER_VERTICAL)
-    fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),
+    if FileTyp == 'pwd':
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Instrument parameter file from: '),0,wx.ALIGN_CENTER_VERTICAL)
+        fInp4 = ValidatedTxtCtrl(mnpnl,Settings,'instfile',size=(300,-1),
                                         OnLeave=TestInput)
-    sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-    btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
-    btn4.Bind(wx.EVT_BUTTON, OnBrowse)
-    sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
-    mnsizer.Add(sizer,0,wx.EXPAND)
+        sizer.Add(fInp4,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        btn4 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
+        btn4.Bind(wx.EVT_BUTTON, OnBrowse)
+        sizer.Add(btn4,0,wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        mnsizer.Add(sizer,0,wx.EXPAND)
     
     # buttons on bottom
     sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -125,7 +125,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         scaleSizer.Add(scaleVal,0,WACV)
         if 'PWDR' in G2frame.hist and generalData['Type'] != 'magnetic':
             wtSum = G2pwd.PhaseWtSum(G2frame,G2frame.hist)
-            if wtSum:
+            if wtSum and UseList[G2frame.hist]['Use']:
                 weightFr = UseList[G2frame.hist]['Scale'][0]*generalData['Mass']/wtSum
                 scaleSizer.Add(wx.StaticText(DData,label=' Wt. fraction: %.3f'%(weightFr)),0,WACV)
         return scaleSizer
@@ -831,6 +831,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         def OnUseData(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Use'] = Obj.GetValue()
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
         def OnLeBail(event):
             Obj = event.GetEventObject()

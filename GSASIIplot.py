@@ -6432,7 +6432,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                     continue
                 Xnew.append(X[i])
                 Ynew.append(Y[i])
-                if sig[i]:
+                if sig and sig[i]:
                     gotsig = True
                     Ysnew.append(sig[i])
                 else:

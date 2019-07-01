@@ -4696,7 +4696,10 @@ class GSASII(wx.Frame):
             wx.Yield()
             time.sleep(0.1)
             pltNumber = self.G2plotNB.nb.GetSelection()
-            pltText = self.G2plotNB.nb.GetPageText(pltNumber)
+            if pltNumber >= 0:
+                pltText = self.G2plotNB.nb.GetPageText(pltNumber)
+            else:
+                pltText = None
         # update plots where a routine is supplied
         for lbl,win in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
             if win.plotInvalid and win.replotFunction:
@@ -7354,9 +7357,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 wtFrList.append(None)
                 sigwtFrList.append(0.0)
                 continue
+            elif not Phases[phase]['Histograms'][name]['Use']:
+                wtFrList.append(None)
+                sigwtFrList.append(0.0)
+                continue
             wtFrSum = 0.
             for phase1 in Phases:
                 if name not in Phases[phase1]['Histograms']: continue
+                if not Phases[phase1]['Histograms'][name]['Use']: continue
                 wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
             var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
             wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum

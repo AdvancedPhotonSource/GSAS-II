@@ -3012,6 +3012,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 if phase not in Phases:     #skips deleted or renamed phases silently!
                     continue
                 Phase = Phases[phase]
+                if histogram not in Phase['Histograms']:
+                    continue
                 im = 0
                 if Phase['General'].get('Modulated',False):
                     im = 1
@@ -3113,7 +3115,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
     if GSASIIpath.GetConfigValue('Show_timing',False):
         print ('GetFobsSq t=',time.time()-starttime)
                 
-def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup):
+def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLookup,histogram=None):
     'Computes the powder pattern for a histogram based on contributions from all used phases'
     if GSASIIpath.GetConfigValue('Show_timing',False): starttime = time.time()
     
@@ -3172,6 +3174,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         if phase not in Phases:     #skips deleted or renamed phases silently!
             continue
         Phase = Phases[phase]
+        if histogram and not histogram in Phase['Histograms']:
+            continue
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
@@ -3317,10 +3321,10 @@ def getPowderProfileDervMP(args):
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics for each processor
     parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars = args[:9]
-    prc=0
-    tprc=1
+    prc,tprc,histogram = 0,1,None
     if len(args) >= 10: prc=args[9]
     if len(args) >= 11: tprc=args[10]
+    if len(args) >= 12: histogram=args[11]
     def cellVaryDerv(pfx,SGData,dpdA): 
         if SGData['SGLaue'] in ['-1',]:
             return [[pfx+'A0',dpdA[0]],[pfx+'A1',dpdA[1]],[pfx+'A2',dpdA[2]],
@@ -3389,6 +3393,8 @@ def getPowderProfileDervMP(args):
         if phase not in Phases:     #skips deleted or renamed phases silently!
             continue
         Phase = Phases[phase]
+        if histogram and histogram not in Phase['Histograms']:
+            continue
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
         im = 0
@@ -3854,10 +3860,16 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 MPpool = mp.Pool(ncores)
                 dMdvh = None
                 depDerivDict = None
-                profArgs = [
+                # old approach, create all args prior to use
+#                profArgs = [
+#                    (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
+#                     i,ncores,histogram) for i in range(ncores)]
+#                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
+                # better, use a generator so arg is created as used
+                profGenArgs = (
                     (parmDict,x[xB:xF],varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,
-                     i,ncores) for i in range(ncores)]
-                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profArgs):
+                     i,ncores,histogram) for i in range(ncores))
+                for dmdv,depDerivs in MPpool.imap_unordered(getPowderProfileDervMP,profGenArgs):
                     if dMdvh is None:
                        dMdvh = dmdv
                        depDerivDict = depDerivs
@@ -3867,7 +3879,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 MPpool.terminate()
             else:
                 dMdvh,depDerivDict = getPowderProfileDervMP([parmDict,x[xB:xF],
-                    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars])
+                    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars,0,1,histogram])
                 #dMdvh = getPowderProfileDerv(parmDict,x[xB:xF],
                 #    varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup,dependentVars)
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
@@ -3949,7 +3961,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])+1
             yc[xB:xF],yb[xB:xF] = getPowderProfile(parmDict,x[xB:xF],
-                varylist,Histogram,Phases,calcControls,pawleyLookup)
+                varylist,Histogram,Phases,calcControls,pawleyLookup,histogram)
             yc[xB:xF] += yb[xB:xF]
             if not np.any(y):                   #fill dummy data
                 try:

@@ -85,6 +85,7 @@ def PhaseWtSum(G2frame,histo):
     for phase in Phases:
         if Phases[phase]['General']['Type'] != 'magnetic':
             if histo in Phases[phase]['Histograms']:
+                if not Phases[phase]['Histograms'][histo]['Use']: continue
                 mass = Phases[phase]['General']['Mass']
                 phFr = Phases[phase]['Histograms'][histo]['Scale'][0]
                 wtSum += mass*phFr

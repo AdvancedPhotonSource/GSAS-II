@@ -2446,6 +2446,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             SSGData = Phases[phase]['General']['SSGData']
             Vec,x,maxH = Phases[phase]['General']['SuperVec']
         pId = Phases[phase]['pId']
+        for histogram in Histograms:
+            if histogram not in HistoPhase and phase in Histograms[histogram]['Reflection Lists']:
+                #remove previously created reflection list if histogram is removed from phase
+                #print("removing ",phase,"from",histogram)
+                del Histograms[histogram]['Reflection Lists'][phase]
         histoList = list(HistoPhase.keys())
         histoList.sort()
         for histogram in histoList:

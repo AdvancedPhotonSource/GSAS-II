@@ -422,7 +422,7 @@ class AutoIntFrame(wx.Frame):
         #GSASIIpath.IPyBreak_base()
         
         wx.Frame.__init__(self, None, title='Automatic Integration',
-                          style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
+                          style=wx.DEFAULT_FRAME_STYLE)
         self.Status = self.CreateStatusBar()
         self.Status.SetStatusText('Press Start to load and integrate images matching filter')
         mnpnl = wx.Panel(self)
@@ -586,8 +586,9 @@ class AutoIntFrame(wx.Frame):
         mnsizer.Fit(self)
         ShowbyMode()
         if len(sys.argv) > 1:
-            if os.path.exists(sys.argv[1]):
-                self.gpxin[3] = sys.argv[1]
+            fil = os.path.splitext(sys.argv[1])[0]+'.gpx'
+            if os.path.exists(fil):
+                self.gpxin[3] = fil
                 SetGPXInputFile()
         showPDFctrls(None)
     
@@ -688,6 +689,33 @@ class AutoIntFrame(wx.Frame):
                 if not os.path.exists(dir): os.makedirs(dir)
         return False
                 
+    def ArgGen(self,PDFobj,imgprms,mskprms,xydata):
+        '''generator for arguments for integration/PDF calc
+        '''
+        for newImage in self.currImageList:
+            self.Pause |= self.G2frame.PauseIntegration
+            if self.Pause:
+                self.OnPause()
+                self.PreventTimerReEntry = False
+                self.Raise()
+                return
+            print('generating ',newImage)
+            TableMode = self.params['TableMode']
+            ComputePDF = self.params['ComputePDF']
+            SeparateDir = self.params['SeparateDir']
+            optPDF = self.params['optPDF']
+            outdir = self.params['outdir']
+            calcModes = (TableMode,ComputePDF,SeparateDir,optPDF)
+            InterpVals = self.params.get('InterVals')
+            outputSelect = self.params['outsel']
+            PDFformats = self.PDFformats
+            fmtlist = self.fmtlist
+            outputModes = (outputSelect,PDFformats,fmtlist,outdir)
+            if PDFobj:
+                PDFdict = PDFobj.data
+            else:
+                PDFdict = None
+            yield (newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,outputModes)
     def OnTimerLoop(self,event):
         '''A method that is called every :meth:`PollTime` seconds that is
         used to check for new files and process them. Integrates new images.
@@ -738,31 +766,10 @@ class AutoIntFrame(wx.Frame):
                 PDFobj.data['PDF Controls'][lbl]['Name'] = name
         else:
             PDFobj = None
-        # loop over image files
-        for newImage in self.currImageList:
-            self.Pause |= self.G2frame.PauseIntegration
-            if self.Pause:
-                self.OnPause()
-                self.PreventTimerReEntry = False
-                self.Raise()
-                return
+        for intArgs in self.ArgGen(PDFobj,imgprms,mskprms,xydata):
+            newImage = intArgs[0]
             print('processing ',newImage)
-            TableMode = self.params['TableMode']
-            ComputePDF = self.params['ComputePDF']
-            SeparateDir = self.params['SeparateDir']
-            optPDF = self.params['optPDF']
-            outdir = self.params['outdir']
-            calcModes = (TableMode,ComputePDF,SeparateDir,optPDF)
-            InterpVals = self.params.get('InterVals')
-            outputSelect = self.params['outsel']
-            PDFformats = self.PDFformats
-            fmtlist = self.fmtlist
-            outputModes = (outputSelect,PDFformats,fmtlist,outdir)
-            if PDFobj:
-                PDFdict = PDFobj.data
-            else:
-                PDFdict = None
-            ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,outputModes)
+            ProcessImage(*intArgs)
             updateList = True
             self.ProcessedList.append(newImage)
         if updateList: self.ShowMatchingFiles(None)

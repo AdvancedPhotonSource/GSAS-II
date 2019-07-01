@@ -1045,8 +1045,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     Indx = {}
     
     if DData.GetSizer():
-        if hasattr(DData,'select'): 
-            DData.select.Unbind(wx.EVT_LISTBOX)  # remove binding to avoid event on Linux
+        try:
+            if hasattr(DData,'select'): 
+                DData.select.Unbind(wx.EVT_LISTBOX)  # remove binding to avoid event on Linux
+        except:
+            pass
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV|wx.LEFT,5)

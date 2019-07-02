@@ -3515,7 +3515,7 @@ def getPowderProfileDervMP(args):
                     hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],phfx+'Extinction':[dFdEx,'int'],}
                 if 'Bragg' in calcControls[hfx+'instType']:
                     names.update({hfx+'SurfRoughA':[dFdAb[0],'int'],
                         hfx+'SurfRoughB':[dFdAb[1],'int'],})

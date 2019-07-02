@@ -2570,10 +2570,10 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     dlde = 0.
     if 0 < xfac <= 1.:
         xn = np.array([i*flv2*xfac**i for i in [1,2,3,4,5,6]])
-        dlde = np.sum(xn*coef)
+        dlde = np.sum(xn*coef)/xfac
     elif xfac > 1.:
         xfac2 = 1./np.sqrt(xfac)
-        dlde = flv2*pi2*xfac2*(-1./xfac+0.375/xfac**2)
+        dlde = 0.5*flv2*pi2*xfac2*(-1./xfac+0.375/xfac**2)
         
     return dbde*sth2+dlde*(1.-sth2)
     

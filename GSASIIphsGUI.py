@@ -4164,6 +4164,9 @@ def UpdatePhaseData(G2frame,Item,data):
         reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
         reflData = reflSets[generalData['Name']]['RefList']
         refDmin = reflData[-1][4]
+        mulMin = np.argmin(reflData[:,3])
+        if reflData[mulMin,3] < 0:
+            refDmin = reflData[mulMin-1,4]
         MEMData = G2frame.MEMData
         if MEMData.GetSizer():
             MEMData.GetSizer().Clear(True)
@@ -4295,7 +4298,10 @@ def UpdatePhaseData(G2frame,Item,data):
         DysData['prior'] = 'uniform'
         wx.CallAfter(UpdateDysnomia)
         
-        if G2pwd.MEMupdateReflData(prfName,reflData):
+        goon,reflData = G2pwd.MEMupdateReflData(prfName,data,reflData)
+        if goon:
+            reflSets[generalData['Name']]['RefList'] = reflData
+            G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'),reflSets)
             OnFourierMaps(event)           #auto run Fourier
         else:
             wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',

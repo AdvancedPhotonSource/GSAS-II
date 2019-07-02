@@ -3015,6 +3015,8 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     refs = []
     prevpos = 0.
     for ref in reflData:
+        if ref[3] < 0:
+            continue
         if 'T' in Type:
             h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = ref[:16]
             FWHM = getgamFW(gam,sig)
@@ -3099,16 +3101,22 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
     mem.close()
     return True
 
-def MEMupdateReflData(prfName,reflData):
+def MEMupdateReflData(prfName,data,reflData):
     ''' Update reflection data with new Fosq, phase result from Dysnomia
 
     :param str prfName: phase.mem file name
     :param list reflData: GSAS-II reflection data
     '''
     
+    generalData = data['General']
+    cell = generalData['Cell'][1:7]
+    A = G2lat.cell2A(cell)
     reflDict = {}
+    newRefs = []
     for iref,ref in enumerate(reflData):
-        reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
+        if ref[3] > 0:
+            newRefs.append(ref)
+            reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
     fbaName = os.path.splitext(prfName)[0]+'.fba'
     try:
         fba = open(fbaName,'r')
@@ -3129,10 +3137,13 @@ def MEMupdateReflData(prfName,reflData):
         try:
             refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
         except KeyError:    #added reflections at end skipped
+            d = float(1/np.sqrt(G2lat.calc_rDsq([h,k,l],A)))
+            newRefs.append([h,k,l,-1,d,0.,0.01,1.0,Fosq,Fosq,phase,1.0,1.0,1.0,1.0])
             continue
-        reflData[refId][8] = Fosq
-        reflData[refId][10] = phase
-    return True
+        newRefs[refId][8] = Fosq
+        newRefs[refId][10] = phase
+    newRefs = np.array(newRefs)
+    return True,newRefs
     
 #testing data
 NeedTestData = True

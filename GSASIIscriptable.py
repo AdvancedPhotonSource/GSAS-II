@@ -3087,6 +3087,7 @@ class G2PwdrData(G2ObjectWrapper):
         :returns: name of file that was written
         '''
         if extension not in exportersByExtension.get('powder',[]):
+            print('Known exporters are',exportersByExtension.get('powder',[]))
             raise G2ScriptException('No Writer for file type = "'+extension+'"')
         fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
         obj = exportersByExtension['powder'][extension]

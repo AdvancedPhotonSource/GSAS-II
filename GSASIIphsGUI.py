@@ -4151,6 +4151,9 @@ def UpdatePhaseData(G2frame,Item,data):
                 if os.path.isfile(pName+'_prior.pgrid'):
                     os.remove(pName+'_prior.pgrid')
                 os.rename(pName+'.pgrid',pName+'_prior.pgrid')
+                
+        def OnFileCheck(event):
+            DysData['clear'] = fileCheck.GetValue()
         
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
@@ -4175,6 +4178,8 @@ def UpdatePhaseData(G2frame,Item,data):
             DysData['overlap'] = 1.0
         if 'MEMdmin' not in DysData:
             DysData['MEMdmin'] = refDmin
+        if 'clear' not in DysData:
+            DysData['clear'] = True
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(MEMData,label=' Maximum Entropy Method (Dysnomia) controls:'))
         lineSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4233,6 +4238,10 @@ def UpdatePhaseData(G2frame,Item,data):
         Csizer.Add(wx.StaticText(MEMData,label=' Maximum number of cycles: '),0,WACV)
         Cyc = G2G.ValidatedTxtCtrl(MEMData,DysData,'Ncyc',min=0,max=10000,size=(50,20))
         Csizer.Add(Cyc,0,WACV)
+        fileCheck = wx.CheckBox(MEMData,label='Clear Dynsomia files? ')
+        fileCheck.SetValue(DysData['clear'])
+        fileCheck.Bind(wx.EVT_CHECKBOX,OnFileCheck)
+        Csizer.Add(fileCheck,0,WACV)
         mainSizer.Add(Csizer)
         SetPhaseWindow(G2frame.MEMData,mainSizer)
 
@@ -4303,6 +4312,12 @@ def UpdatePhaseData(G2frame,Item,data):
             reflSets[generalData['Name']]['RefList'] = reflData
             G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'),reflSets)
             OnFourierMaps(event)           #auto run Fourier
+            if DysData['clear']:
+                os.remove(os.path.splitext(prfName)[0]+'.fba')
+                os.remove(os.path.splitext(prfName)[0]+'.mem')
+                os.remove(os.path.splitext(prfName)[0]+'.out')
+                os.remove(os.path.splitext(prfName)[0]+'.prf')
+                os.remove(os.path.splitext(prfName)[0]+'_eps.raw')
         else:
             wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',
                 style=wx.ICON_ERROR)

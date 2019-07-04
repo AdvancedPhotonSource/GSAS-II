@@ -30,6 +30,7 @@ import GSASIIpy3 as G2py3
 import GSASIIimgGUI as G2imG
 import GSASIIfiles as G2fil
 import GSASIIscriptable as G2sc
+import multiprocessing as mp
 
 class AutoIntFrame(wx.Frame):
     '''Creates a wx.Frame window for the Image AutoIntegration.
@@ -60,6 +61,14 @@ class AutoIntFrame(wx.Frame):
                 if self.StartLoop():
                     G2G.G2MessageBox(self,'Error in setting up integration. See console')
                     return
+                # delete pool of slaved interpreters in case input has changed
+                if self.MPpool:
+                    self.MPpool.terminate()
+                    self.MPpool = None
+#                if self.ncores >= 1: # debug
+                if self.ncores > 1:
+#                    print('Creating pool of ',self.ncores,'cores') # debug
+                    self.MPpool = mp.Pool(self.ncores)
                 self.OnTimerLoop(None) # run once immediately
                 if not self.Pause:
                     # no pause, so start timer to check for new files
@@ -392,7 +401,8 @@ class AutoIntFrame(wx.Frame):
         self.params['ControlsTable'] = {}
         self.params['MaskTable'] = {}
         G2sc.LoadG2fil()
-        self.fmtlist = G2sc.exportersByExtension.get('powder',[])
+        self.fmtlist = G2sc.exportersByExtension.get('powder',{})
+        self.fmtlist['.gpx'] = None
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
         self.imageBase = G2frame.Image
@@ -414,7 +424,8 @@ class AutoIntFrame(wx.Frame):
         self.gpxin = [None,None,None,'']
         self.imprm = [None,None,None,'']
         self.maskfl = [None,None,None,'']
-
+        self.ncores = mp.cpu_count()//2
+        self.MPpool = None
         self.params['readdir'] = os.getcwd()
         self.params['filter'] = '*.tif'
         self.params['outdir'] = os.getcwd()
@@ -574,6 +585,20 @@ class AutoIntFrame(wx.Frame):
         self.btnreset.Bind(wx.EVT_BUTTON, OnReset)
         sizer.Add(self.btnreset)
         sizer.Add((20,-1),wx.EXPAND,1)
+        
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,' cores:'))
+        spin = wx.SpinCtrl(mnpnl, wx.ID_ANY,size=(50,-1))
+        spin.SetRange(1, mp.cpu_count())
+#        spin.SetRange(0, mp.cpu_count()) # debug
+        spin.SetValue(self.ncores)
+        def _onSpin(event):
+            if event: event.Skip()
+            self.ncores = spin.GetValue()
+        spin.Bind(wx.EVT_SPINCTRL, _onSpin)
+        spin.Bind(wx.EVT_KILL_FOCUS, _onSpin)
+        sizer.Add(spin)
+
+        sizer.Add((20,-1),wx.EXPAND,1)
         self.btnclose = wx.Button(mnpnl,  wx.ID_ANY, "Exit")
         self.btnclose.Bind(wx.EVT_BUTTON, OnQuit)
         self.EnableIntButtons(False)
@@ -686,7 +711,7 @@ class AutoIntFrame(wx.Frame):
                 if not self.params['outsel'][fmt]: continue
                 dir = os.path.join(self.params['outdir'],
                                    fmt.replace("(","_").replace(")",""))
-                if not os.path.exists(dir): os.makedirs(dir)
+                if not os.path.exists(dir): os.makedirs(dir)            
         return False
                 
     def ArgGen(self,PDFobj,imgprms,mskprms,xydata):
@@ -699,7 +724,6 @@ class AutoIntFrame(wx.Frame):
                 self.PreventTimerReEntry = False
                 self.Raise()
                 return
-            print('generating ',newImage)
             TableMode = self.params['TableMode']
             ComputePDF = self.params['ComputePDF']
             SeparateDir = self.params['SeparateDir']
@@ -709,8 +733,7 @@ class AutoIntFrame(wx.Frame):
             InterpVals = self.params.get('InterVals')
             outputSelect = self.params['outsel']
             PDFformats = self.PDFformats
-            fmtlist = self.fmtlist
-            outputModes = (outputSelect,PDFformats,fmtlist,outdir)
+            outputModes = (outputSelect,PDFformats,self.fmtlist,outdir)
             if PDFobj:
                 PDFdict = PDFobj.data
             else:
@@ -766,16 +789,31 @@ class AutoIntFrame(wx.Frame):
                 PDFobj.data['PDF Controls'][lbl]['Name'] = name
         else:
             PDFobj = None
-        for intArgs in self.ArgGen(PDFobj,imgprms,mskprms,xydata):
-            newImage = intArgs[0]
-            print('processing ',newImage)
-            ProcessImage(*intArgs)
-            updateList = True
+        if self.MPpool:
+            self.MPpool.imap_unordered(ProcessImageMP,
+                            self.ArgGen(PDFobj,imgprms,mskprms,xydata))
+        else:
+            for intArgs in self.ArgGen(PDFobj,imgprms,mskprms,xydata):
+                newImage = intArgs[0]
+                print('processing ',newImage)
+                ProcessImage(*intArgs)
+                updateList = True
+        for newImage in self.currImageList:
             self.ProcessedList.append(newImage)
         if updateList: self.ShowMatchingFiles(None)
         self.PreventTimerReEntry = False
         self.Raise()
         
+def ProcessImageMP(onearg):
+    newImage = onearg[0]
+    print('processing ',newImage)
+    t0 = time.time() # debug
+    ProcessImage(*onearg)
+    print('ProcessImageMP time',time.time()-t0)
+
+MapCache = {'maskMap':{}, 'ThetaAzimMap':{}, 'distanceList':[]}
+'caches for TA and Mask maps'
+
 def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,outputModes):
     '''Process one image that is read from file newImage and is integrated into 
     one or more diffraction patterns and optionally each diffraction pattern can 
@@ -795,24 +833,44 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
     '''
     (TableMode,ComputePDF,SeparateDir,optPDF) = calcModes
     (outputSelect,PDFformats,fmtlist,outdir) = outputModes            
-    gpxout = G2sc.G2Project(filename=os.path.splitext(newImage)[0]+'.gpx')
+    if SeparateDir:
+        savedir = os.path.join(outdir,'gpx')
+        if not os.path.exists(savedir): os.makedirs(savedir)
+    else:
+        savedir = outdir
+    outgpx = os.path.join(savedir,os.path.split(os.path.splitext(newImage)[0]+'.gpx')[1])
+    gpxout = G2sc.G2Project(filename=outgpx)
     print('creating',gpxout.filename)
     # looped because a file can contain multiple images
+    if TableMode: # look up parameter values from table
+        imgprms,mskprms = LookupFromTable(im.data['Image Controls'].get('setdist'),
+                                                  InterpVals)    
     for im in gpxout.add_image(newImage):
-        if TableMode: # look up parameter values from table
-            imgprms,mskprms = LookupFromTable(im.data['Image Controls'].get('setdist'),
-                                                  InterpVals)
-        # apply image & mask parameters & integrate 
+        # apply image parameters
         im.setControls(imgprms)
-        if mskprms:
-            im.setMasks(mskprms)
-        else:
-            im.initMasks()                    
-        hists = im.Integrate()
+        setdist = '{:.2f}'.format(im.getControls()['setdist']) # ignore differences in position less than 0.01 mm
+        if setdist not in MapCache['distanceList']:
+            if mskprms:
+                im.setMasks(mskprms)
+            else:
+                im.initMasks()
+            MapCache['distanceList'].append(setdist)
+            MapCache['maskMap'][setdist] = G2sc.calcMaskMap(im.getControls(),
+                                                            im.getMasks())
+            MapCache['ThetaAzimMap'][setdist] = G2sc.calcThetaAzimMap(im.getControls())
+#        else: # debug
+#            print('*** reusing',setdist)
+        #if mskprms:
+        #    im.setMasks(mskprms)
+        #else:
+        #    im.initMasks()
+        hists = im.Integrate(MaskMap=MapCache['maskMap'][setdist],
+                             ThetaAzimMap=MapCache['ThetaAzimMap'][setdist])
         # write requested files
         for dfmt in fmtlist:
             fmt = dfmt[1:]
             if not outputSelect[fmt]: continue
+            if fmtlist[dfmt] is None: continue
             if SeparateDir:
                 savedir = os.path.join(outdir,fmt)
             else:
@@ -848,8 +906,12 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
                     else:
                         savedir = outdir
                     pdf.export(os.path.join(savedir,fname),fmt)
-    gpxout.save()
+    if outputSelect.get('gpx'):
+        gpxout.save()
+    else:
+        del gpxout
 # Autointegration end
+
 def SetupInterpolation(dlg):
     '''Creates an object for interpolating image parameters at a given distance value
     '''

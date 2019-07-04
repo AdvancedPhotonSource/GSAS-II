@@ -4452,6 +4452,19 @@ class G2PDF(G2ObjectWrapper):
             PDFsaves[i] = lbl.lower() in formats.lower()
         G2fil.PDFWrite(PDFentry,fileroot,PDFsaves,self.data['PDF Controls'],inst,limits)
 
+blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
+'Integration block size; 256 seems to be optimal, must be <=1024 (for polymask)'
+
+def calcMaskMap(imgprms,mskprms):
+    '''Computes the mask array for a set of image controls and mask parameters
+    '''
+    return G2img.MakeUseMask(imgprms,mskprms,blkSize)
+
+def calcThetaAzimMap(imgprms):
+    '''Computes the array for theta-azimuth mapping for a set of image controls
+    '''
+    return G2img.MakeUseTA(imgprms,blkSize)
+
 class G2Image(G2ObjectWrapper):
     """Wrapper for an IMG tree entry, containing an image and various metadata. 
     Note that in a GSASIIscriptable script, instances of G2Image will be created by 
@@ -4715,7 +4728,8 @@ class G2Image(G2ObjectWrapper):
     def setMasks(self,maskDict,resetThresholds=False):
         '''load masks dict (from :meth:`getMasks`) into current IMG record
 
-        :param dict maskDict: specifies a dict with image parameters 
+        :param dict maskDict: specifies a dict with image parameters, 
+          from :meth:`getMasks`
         :param bool resetThresholds: If True, Threshold Masks in the 
           dict are ignored. The default is False which means Threshold 
           Masks are retained.
@@ -4725,8 +4739,8 @@ class G2Image(G2ObjectWrapper):
             ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
             Imin = max(0.,np.min(ImageZ))
             Imax = np.max(ImageZ)
-            self.data['Masks']['Thresholds'] [(0,Imax),[Imin,Imax]]
-        
+            self.data['Masks']['Thresholds'] [(0,Imax),[Imin,Imax]]        
+
     def getVary(self,*args):
         '''Return the refinement flag(s) for Image Controls parameter(s)
         in the current image.
@@ -4778,21 +4792,29 @@ class G2Image(G2ObjectWrapper):
         ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         G2img.ImageRecalibrate(None,ImageZ,self.data['Image Controls'],self.data['Masks'])
 
-    def Integrate(self,name=None):
+    def Integrate(self,name=None,MaskMap=None,ThetaAzimMap=None):
         '''Invokes an image integration (same as Image Controls/Integration/Integrate
         menu command). All parameters will have previously been set with Image Controls
-        so no input is needed here. Note that if integration is performed on an 
+        so no input is needed here. However, the optional parameters MaskMap 
+        and ThetaAzimMap may be supplied to save computing these items more than
+        once, speeding integration of multiple images with the same 
+        image/mask parameters.
+
+        Note that if integration is performed on an 
         image more than once, histogram entries may be overwritten. Use the name
         parameter to prevent this if desired. 
 
         :param str name: base name for created histogram(s). If None (default), 
           the histogram name is taken from the image name. 
+        :param list MaskMap: from :func:`calcMaskMap` 
+        :param list ThetaAzimMap: from :func:`calcThetaAzimMap`
         :returns: a list of created histogram (:class:`G2PwdrData`) objects.
         '''
-        blkSize = 256   #256 seems to be optimal; will break in polymask if >1024
         ImageZ = _getCorrImage(Readers['Image'],self.proj,self)
         # do integration
-        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,self.data['Image Controls'],self.data['Masks'],blkSize=blkSize)
+        ints,azms,Xvals,cancel = G2img.ImageIntegrate(ImageZ,
+                self.data['Image Controls'],self.data['Masks'],blkSize=blkSize,
+                useMask=MaskMap,useTA=ThetaAzimMap)
         # code from here on based on G2IO.SaveIntegration, but places results in the current
         # project rather than tree
         X = Xvals[:-1]

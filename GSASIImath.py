@@ -1415,28 +1415,22 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     if SGData['SGInv']:
         SGMT = np.vstack((SGMT,-SGMT))
-        Sinv =np.vstack((Sinv,-Sinv))
+        Sinv = np.vstack((Sinv,-Sinv))
         SGT = np.vstack((SGT,-SGT))
     SGMT = np.vstack([SGMT for cen in SGData['SGCen']])     #Nops,3,3
     Sinv = np.vstack([Sinv for cen in SGData['SGCen']])     #Nops,4,4
     SGT = np.vstack([SGT+cen for cen in SSGData['SSGCen']])%1.
-    detSM = nl.det(SGMT)            #Nops
     epsinv = Sinv[:,3,3]            #Nops
     kdr = np.inner(XYZ,modQ).T      #Nops,Natm
-    phase = kdr+(epsinv*(np.inner(modQ,SGT[:,:3])-SGT[:,3]))[:,nxs]     #Nops,Natm
+    phase = kdr+(epsinv*(np.inner(SGT[:,:3],modQ)-SGT[:,3]))[:,nxs]     #Nops,Natm
     
     psin = np.sin(twopi*phase)      #Nops,Natm
     pcos = np.cos(twopi*phase)
     MmodB = np.sum(Bm[nxs,:,:,:]*pcos[:,:,nxs,nxs],axis=2)      #Nops,Natm,3
     MmodA = np.sum(Am[nxs,:,:,:]*psin[:,:,nxs,nxs],axis=2)
-#    if SGData['SGGray']:
-#        MmodA = -np.sum(SGMT[:,nxs,:,:]*MmodA[:,:,nxs,:],axis=-1)*detSM[:,nxs,nxs]*SGData['SpnFlp'][:,nxs,nxs]
-#        MmodB = -np.sum(SGMT[:,nxs,:,:]*MmodB[:,:,nxs,:],axis=-1)*detSM[:,nxs,nxs]*SGData['SpnFlp'][:,nxs,nxs]
-#    else:
     MmodA = np.sum(SGMT[:,nxs,:,:]*MmodA[:,:,nxs,:],axis=-1)*SGData['MagMom'][:,nxs,nxs]
     MmodB = np.sum(SGMT[:,nxs,:,:]*MmodB[:,:,nxs,:],axis=-1)*SGData['MagMom'][:,nxs,nxs]
-    Mmod = MmodA+MmodB
-    return Mmod,MmodA,MmodB    #Nops,Natm,,Mxyz; sum,sin & cos parts
+    return MmodA,MmodB    #Nops,Natm,,Mxyz; sin & cos parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

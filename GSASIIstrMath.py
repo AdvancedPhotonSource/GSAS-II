@@ -1509,7 +1509,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        Tmag,TmagA,TmagB = G2mth.MagMod2(mXYZ,modQ,MSSdata,SGData,SSGData)   #Nops,Natm,Mxyz-Tmag matches drawing moments
+        TmagA,TmagB = G2mth.MagMod2(mXYZ,modQ,MSSdata,SGData,SSGData)   #Nops,Natm,Mxyz-Tmag matches drawing moments
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             Mmod += Gdata.T[:,nxs,:]
@@ -1613,6 +1613,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         
             fam = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*cosm[i,:,:,nxs]-    \
                 np.sign(H[3,i])*TmagA*sinm[i,:,:,nxs]),0.) for i in range(mRef)])
+            
             fbm = TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*sinm[i,:,:,nxs]+    \
                 np.sign(H[3,i])*TmagA*cosm[i,:,:,nxs]),0.) for i in range(mRef)])
                        

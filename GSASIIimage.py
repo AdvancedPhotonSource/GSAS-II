@@ -1246,7 +1246,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
     StrainPrint(ValSig,dset)
     return vals,sig,covMatrix
 
-def FitImageSpots(Image,ImMax,ind,pixSize,nxy):
+def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
     
     def calcMean(nxy,pixSize,img):
         gdx,gdy = np.mgrid[0:nxy,0:nxy]
@@ -1290,14 +1290,14 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy):
     if ma.any(ma.getmaskarray(ImBox)):
         vals = calcMean(nxy,pixSize,ImBox)
         posx,posy = [px+vals[0],py+vals[1]]
-        return [posx,posy,6.]
+        return [posx,posy,spotSize]
     else:
         result = leastsq(calc2Peak,vals,args=(nxy,pixSize,ImBox),full_output=True)
         vals = result[0]
         ratio = vals[4]/vals[5]
         if 0.5 < ratio < 2.0 and vals[2] < 2. and vals[3] < 2.:
             posx,posy = [px+vals[2],py+vals[3]]
-            return [posx,posy,min(6.*vals[4],6.)]
+            return [posx,posy,min(6.*vals[4],spotSize)]
         else:
             return None
     

@@ -7171,7 +7171,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         ind = [int(Xpix),int(Ypix)]
                         nxy = 15
                         ImMax = np.max(G2frame.ImageZ)
-                        result = G2img.FitImageSpots(G2frame.ImageZ,ImMax,ind,pixelSize,nxy)
+                        result = G2img.FitImageSpots(G2frame.ImageZ,ImMax,ind,pixelSize,nxy,G2frame.spotSize)
                         if result:
                             Xpos,Ypos,sig = result
                         else:

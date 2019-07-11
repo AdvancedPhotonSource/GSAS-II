@@ -1405,8 +1405,8 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     '''
     this needs to make magnetic moment modulations & magnitudes
     '''
-    Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
-    Bm = np.array(MSSdata[3:]).T  #...cos pos mods
+    Am = np.array(MSSdata[:3]).T   #atoms x waves x sin mag mods
+    Bm = np.array(MSSdata[3:]).T  #...cos mag mods
     nWaves = Am.shape[1]
     if not nWaves:
         return 0.0,0.0
@@ -1426,10 +1426,12 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     
     psin = np.sin(twopi*phase)      #Nops,Natm
     pcos = np.cos(twopi*phase)
-    MmodB = np.sum(Bm[nxs,:,:,:]*pcos[:,:,nxs,nxs],axis=2)      #Nops,Natm,3
-    MmodA = np.sum(Am[nxs,:,:,:]*psin[:,:,nxs,nxs],axis=2)
-    MmodA = np.sum(SGMT[:,nxs,:,:]*MmodA[:,:,nxs,:],axis=-1)*SGData['MagMom'][:,nxs,nxs]
-    MmodB = np.sum(SGMT[:,nxs,:,:]*MmodB[:,:,nxs,:],axis=-1)*SGData['MagMom'][:,nxs,nxs]
+    MmodA = np.sum(Am[nxs,:,:,:]*psin[:,:,nxs,nxs],axis=2)      #Nops,Natm,3
+    MmodB = np.sum(Bm[nxs,:,:,:]*pcos[:,:,nxs,nxs],axis=2)
+    MmodA = np.sum(SGMT[:,nxs,:,:]*MmodA[:,:,nxs,:],axis=-1)
+    MmodB = np.sum(SGMT[:,nxs,:,:]*MmodB[:,:,nxs,:],axis=-1)
+    MmodA = MmodA*SGData['MagMom'][:,nxs,nxs]
+    MmodB = MmodB*SGData['MagMom'][:,nxs,nxs]
     return MmodA,MmodB    #Nops,Natm,,Mxyz; sin & cos parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):

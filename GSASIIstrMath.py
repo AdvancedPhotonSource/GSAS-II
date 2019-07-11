@@ -1481,8 +1481,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     '''
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
-    GS = G/np.outer(ast,ast)
-    uAmat = G2lat.Gmat2AB(GS)[0]
+#    GS = G/np.outer(ast,ast)
+#    uAmat = G2lat.Gmat2AB(GS)[0]
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -1512,7 +1512,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         TmagA,TmagB = G2mth.MagMod2(mXYZ,modQ,MSSdata,SGData,SSGData)   #Nops,Natm,Mxyz-Tmag matches drawing moments
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
-            Mmod += Gdata.T[:,nxs,:]
+#            Mmod += Gdata.T[:,nxs,:]
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
             if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
                 GSdata = np.hstack((GSdata,-GSdata))      

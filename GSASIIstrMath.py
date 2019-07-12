@@ -1588,7 +1588,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??            
             
             phasem = twopi*np.inner(H.T[:,:3],mXYZ)
-            phasem = np.swapaxes(phasem,1,2)
+            phasem = np.swapaxes(phasem,1,2)            #Nref,Nops,Natm
             cosm = np.cos(phasem)
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm

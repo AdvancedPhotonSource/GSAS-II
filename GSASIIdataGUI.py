@@ -5339,21 +5339,23 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         
         # PDR / Unit Cells List
         G2G.Define_wxId('wxID_INDEXPEAKS', 'wxID_REFINECELL', 'wxID_COPYCELL', 'wxID_MAKENEWPHASE',
-            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUB','wxID_RUNSUBMAG')
+            'wxID_EXPORTCELLS','wxID_LOADCELL','wxID_IMPORTCELL','wxID_TRANSFORMCELL','wxID_RUNSUB','wxID_RUNSUBMAG','wxID_LATSYM')
         self.IndexMenu = wx.MenuBar()
         self.PrefillDataMenu(self.IndexMenu)
         self.IndexEdit = wx.Menu(title='')
         self.IndexMenu.Append(menu=self.IndexEdit, title='Cell Index/Refine')
         self.IndexPeaks = self.IndexEdit.Append(G2G.wxID_INDEXPEAKS,'Index Cell',
             'Find cells that index fitted peaks')
+        self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search',
+            'Run Bilboa "Lattice Symmetry" to find higher symmetry cells')
         self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
             'If disabled, do Load Cell first')
         self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',
             'If disabled, do Load Cell first')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
             'Copy selected unit cell from indexing to cell refinement fields')
-        self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Cell', 
-            'Load unit cell from phase')
+        self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Cell from phase', 
+            'Load unit cell from a phase tree entry')
         self.ImportCell = self.IndexEdit.Append(G2G.wxID_IMPORTCELL,'Import Cell', 
             'Import unit cell from file')
         self.TransposeCell = self.IndexEdit.Append(G2G.wxID_TRANSFORMCELL,'Transform Cell', 

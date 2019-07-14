@@ -2900,6 +2900,9 @@ class MultiColumnSelection(wx.Dialog):
     of the selected row, or -1. Be sure to use <dlg>.Destroy() to remove the window
     after reading the selection. If the dialog cannot be shown because a very old
     version of wxPython is in use, <dlg>.Selection will be None.
+
+    If checkLbl is provided with a value, then a set of check buttons starts the table
+    and <dlg>.Selections has the checked rows.
     
     :param wx.Frame parent: the parent frame (or None)
     :param str title: A title for the dialog window
@@ -2910,7 +2913,9 @@ class MultiColumnSelection(wx.Dialog):
       and unspecified columns are left blank.
     :param list colWidths: a list of int values specifying the column width for each
       column in the table (pixels). There must be a value for every column label (colLabels).
+    :param str checkLbl: A label for a row of checkboxes added at the beginning of the table
     :param int height: an optional height (pixels) for the table (defaults to 400)
+    :param bool centerCols: if True, items in each column are centered. Default is False
     
     Example use::
     
@@ -2924,7 +2929,8 @@ class MultiColumnSelection(wx.Dialog):
         dlg.Destroy()
     
     '''
-    def __init__(self, parent, title, colLabels, choices, colWidths, height=400, *args, **kw):
+    def __init__(self, parent, title, colLabels, choices, colWidths, checkLbl="",
+                     height=400, centerCols=False, *args, **kw):
         if len(colLabels) != len(colWidths):
             raise ValueError('Length of colLabels) != colWidths')
         sizex = 20 # extra room for borders, etc.
@@ -2932,38 +2938,62 @@ class MultiColumnSelection(wx.Dialog):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title, *args,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,
                            size=(sizex,height), **kw)
+        self.Selections = len(choices)*[False]
         try:
             from wx.lib.wordwrap import wordwrap
             import wx.lib.agw.ultimatelistctrl as ULC
         except ImportError:
             self.Selection = None
             return
+        self.Selection = -1
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.list = ULC.UltimateListCtrl(self, agwStyle=ULC.ULC_REPORT|ULC.ULC_HAS_VARIABLE_ROW_HEIGHT
-                                         |ULC.ULC_HRULES|ULC.ULC_SINGLE_SEL)
+                                         |ULC.ULC_HRULES|ULC.ULC_HRULES|ULC.ULC_SINGLE_SEL)
+        if centerCols:
+            colPosition = ULC.ULC_FORMAT_CENTER
+        else:
+            colPosition = ULC.ULC_FORMAT_LEFT
+            
+        if checkLbl:
+            self.list.InsertColumn(0, checkLbl, width=8*len(checkLbl), format=colPosition)
+            inc = 1
+        else:
+            inc = 0
         for i,(lbl,wid) in enumerate(zip(colLabels, colWidths)):
-            self.list.InsertColumn(i, lbl, width=wid)
+            self.list.InsertColumn(i+inc, lbl, width=wid, format=colPosition)
         for i,item in enumerate(choices):
-            self.list.InsertStringItem(i, item[0])
+            if checkLbl:
+                def OnCheck(event,row=i):
+                    self.Selections[row] = event.EventObject.GetValue()
+                c = wx.CheckBox(self.list)
+                c.Bind(wx.EVT_CHECKBOX,OnCheck)
+                self.list.InsertStringItem(i, "")
+                citem = self.list.GetItem(i,0)
+                citem.SetWindow(c)
+                self.list.SetItem(citem)
+                self.list.SetStringItem(i, 1, item[0])
+            else:
+                self.list.InsertStringItem(i, item[0])
             for j,item in enumerate(item[1:len(colLabels)]):
                 item = wordwrap(StripIndents(item,True), colWidths[j+1], wx.ClientDC(self))
-                self.list.SetStringItem(i,1+j, item)
+                self.list.SetStringItem(i,1+j+inc, item)
         # make buttons
         mainSizer.Add(self.list, 1, wx.EXPAND|wx.ALL, 1)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         OKbtn = wx.Button(self, wx.ID_OK)
         OKbtn.SetDefault()
         btnsizer.Add(OKbtn)
-        btn = wx.Button(self, wx.ID_CLOSE,"Cancel") 
-        btnsizer.Add(btn)
+        if not checkLbl:
+            btn = wx.Button(self, wx.ID_CLOSE,"Cancel") 
+            btnsizer.Add(btn)
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         # bindings for close of window, double-click,...
-        OKbtn.Bind(wx.EVT_BUTTON,self._onSelect)
-        btn.Bind(wx.EVT_BUTTON,self._onClose)
         self.Bind(wx.EVT_CLOSE, self._onClose)
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._onSelect)
+        if not checkLbl:
+            OKbtn.Bind(wx.EVT_BUTTON,self._onSelect)
+            self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._onSelect)
+            btn.Bind(wx.EVT_BUTTON,self._onClose)            
         self.SetSizer(mainSizer)
-        self.Selection = -1
         self.ShowModal()
     def _onClose(self,event):
         event.Skip()

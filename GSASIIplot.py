@@ -2268,7 +2268,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
                 G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
                 pick.set_linestyle('--') # back to dashed
-        elif PickId and G2frame.GPXtree.GetItemText(PickId) == 'Limits':
+        elif PickId and G2frame.GPXtree.GetItemText(PickId) in ['Limits','Unit Cells List']:
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.GPXtree.GetItemPyData(LimitId)
@@ -2463,7 +2463,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             return
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
-        if G2frame.GPXtree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
+        if G2frame.GPXtree.GetItemText(PickId) in ['Peak List','Limits','Unit Cells List'] and xpos:
             lines = []
             for line in G2frame.Lines: 
                 lines.append(line.get_xdata()[0])
@@ -3328,11 +3328,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
                 if Page.plotStyle['qPlot']:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(1,3),lw=2.5)
                 if Page.plotStyle['dPlot']:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(1,3),lw=2.5)
                 else:
-                    Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
+                    Plot.axvline(hkl[-2],color=clr,dashes=(1,3),lw=2.5)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 

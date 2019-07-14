@@ -3027,11 +3027,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
 
 ################################################################################
 #####  Unit cells
-################################################################################           
-       
+################################################################################
+
 def UpdateUnitCellsGrid(G2frame, data):
     '''respond to selection of PWDR Unit Cells data tree item.
     '''
+    G2frame.ifGetExclude = False
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
@@ -3227,12 +3228,12 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = cellList.index(Obj.GetId())
         valObj = valDict[Obj.GetId()]
-        if ObjId//2 < 3:
-            move = Obj.GetValue()*0.01
-        else:
-            move = Obj.GetValue()*0.1
+        inc = float(shiftChoices[shiftSel.GetSelection()][:-1])
+        move = Obj.GetValue()  # +1 or -1 
+#        if ObjId//2 >= 3: # angle movements could be bigger
+#            move *= 2
         Obj.SetValue(0)
-        value = float(valObj.GetValue())+move  
+        value = float(valObj.GetValue()) * (1. + move*inc/100.)
         SetCellValue(valObj,ObjId//2,value)
         OnHklShow(event)
         
@@ -3265,6 +3266,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         PatternId = G2frame.PatternId
         peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
         controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        # recompute dmin in case limits were changed
+        Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+        Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
+        if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
+            wave = G2mth.getWave(Inst)
+            dmin = G2lat.Pos2dsp(Inst,Limits[1])
+        else:
+            dmin = G2lat.Pos2dsp(Inst,Limits[0])
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         spc = controls[13]
@@ -3585,11 +3594,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefreshUnitCellsGrid(event):
+        'responds when "use" is pressed in index table; generates/plots reflections'
         data = G2frame.GPXtree.GetItemPyData(UnitCellsId)
         cells,dminx = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
-            if c == 2:
+            if event.GetEventObject().GetColLabelValue(c) == 'use':
                 for i in range(len(cells)):
                     cells[i][-2] = False
                     UnitCellsTable.SetValue(i,c,False)
@@ -3606,7 +3616,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     G2plt.PlotPowderLines(G2frame)
                 else:
                     G2plt.PlotPatterns(G2frame)
-            elif c == 11:
+            elif event.GetEventObject().GetColLabelValue(c) == 'Keep':
                 if UnitCellsTable.GetValue(r,c):
                     UnitCellsTable.SetValue(r,c,False)
                     cells[r][c] = False
@@ -3891,6 +3901,49 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(None)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
+    def OnLatSym(event):
+        'Run Bilbao PsuedoLattice cell search'
+        # look up a space group matching Bravais lattice (should not matter which one) 
+        bravaisSPG = {'Fm3m':225,'Im3m':229,'Pm3m':221,'R3-H':146,'P6/mmm':191,
+                       'I4/mmm':139,'P4/mmm':123,'Fmmm':69,'Immm':71,
+                       'Cmmm':65,'Pmmm':47,'C2/m':12,'P2/m':10,'P1':2}
+        pUCid = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
+        controls,bravais,cells,dminx,ssopt,magcells = G2frame.GPXtree.GetItemPyData(pUCid)
+        sgNum = bravaisSPG.get(controls[5],0)
+        if sgNum < 1:
+            wx.MessageBox('Sorry, only standard cell settings are allowed, please transform axes',caption='Bilbao requires standard settings',style=wx.ICON_EXCLAMATION)
+            return
+        cell = controls[6:12]
+        tolerance = 5.
+        dlg = G2G.SingleFloatDialog(G2frame,'Tolerance',
+                'Enter angular tolerance for search',5.0,[.1,30.],"%.1f")
+        if dlg.ShowModal() == wx.ID_OK:
+            tolerance = dlg.GetValue()
+            dlg.Destroy()    
+        else:
+            dlg.Destroy()    
+            return
+        import SUBGROUPS as kSUB
+        wx.BeginBusyCursor()
+        wx.MessageBox(''' For use of PSEUDOLATTICE, please cite:
+      Bilbao Crystallographic Server I: Databases and crystallographic computing programs,
+      M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek
+      Z. Krist. 221, 1, 15-27 (2006). 
+      doi:10.1524/zkri.2006.221.1.15''', 
+        caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
+        page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
+        wx.EndBusyCursor()
+        if not page: return
+        while cells: cells.pop() # cells.clear() is much cleaner but not Py2
+        for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
+            cells.append([])
+            cells[-1] += [mat,0,16]
+            cells[-1] += cell
+            cells[-1] += [G2lat.calc_V(G2lat.cell2A(cell)),False,False]            
+        G2frame.GPXtree.SetItemPyData(pUCid,data)
+        G2frame.OnFileSave(event)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
     def OnRunSubs(event):
         import SUBGROUPS as kSUB
         G2frame.dataWindow.RunSubGroupsMag.Enable(False)
@@ -4101,9 +4154,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.IndexMenu)
+    G2frame.GetStatusBar().SetStatusText('')
     G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2G.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnRunSubs, id=G2G.wxID_RUNSUB)
     G2frame.Bind(wx.EVT_MENU, OnRunSubsMag, id=G2G.wxID_RUNSUBMAG)
+    G2frame.Bind(wx.EVT_MENU, OnLatSym, id=G2G.wxID_LATSYM)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2G.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, LoadUnitCell, id=G2G.wxID_LOADCELL)
     G2frame.Bind(wx.EVT_MENU, ImportUnitCell, id=G2G.wxID_IMPORTCELL)
@@ -4137,9 +4192,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         [True,True,True,False],[0,1,2,0])],
     [[13,14,15],10,zip([" Unit cell: a = "," b = "," c = "," beta = "," Vol = "],
         [(10,5),(10,5),(10,5),(10,3),"%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
-    [[16,17],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
-        [(10,5),(10,5),(10,5),"%.3f",(10,3),(10,3),(10,3)],
-        [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
+    [[16,17],8,zip([" Unit cell: a = "," b = "," c = "," alpha = "," beta = "," gamma = "," Vol = "],
+        [(10,5),(10,5),(10,5),(10,3),(10,3),(10,3),"%.3f"],
+        [True,True,True,True,True,True,False],[0,1,2,3,4,5,0])]]
     
     G2frame.dataWindow.IndexPeaks.Enable(False)
     peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
@@ -4182,7 +4237,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select Bravais Lattices for indexing: '),
         0,WACV)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(0,7,5,5)
+    littleSizer = wx.FlexGridSizer(0,5,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
     for brav,bravName in bravs:
@@ -4192,18 +4247,26 @@ def UpdateUnitCellsGrid(G2frame, data):
         bravCk.Bind(wx.EVT_CHECKBOX,OnBravais)
         littleSizer.Add(bravCk,0,WACV)
     mainSizer.Add(littleSizer,0)
-    mainSizer.Add((5,5),0)
+    mainSizer.Add((-1,10),0)
     
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test & Refinement: '),0,WACV)
+    littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test && Refinement: '),0,WACV)
+    littleSizer.Add((5,5),0)
+    if 'X' in Inst['Type'][0]:
+        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
+        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+        littleSizer.Add(hklShow,0,WACV)    
+    mainSizer.Add(littleSizer,0)
+    
     mainSizer.Add((5,5),0)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais lattice "),0,WACV)
-    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label="Bravais\nlattice",style=wx.ALIGN_CENTER),0,WACV,5)
+    bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space group "),0,WACV)
-    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]])
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label="Space\ngroup",style=wx.ALIGN_CENTER),0,WACV,5)
+    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(75,-1))
     spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
@@ -4211,7 +4274,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[0] = False
     else:
         littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset"),0,WACV)
-        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,min=-5.,max=5.)
+        zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
+                                    min=-5.,max=5.,size=(50,-1))
         littleSizer.Add(zero,0,WACV)
         zeroVar = wx.CheckBox(G2frame.dataWindow,label="Refine?")
         zeroVar.SetValue(controls[0])
@@ -4221,11 +4285,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     SSopt.SetValue(ssopt.get('Use',False))
     SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
     littleSizer.Add(SSopt,0,WACV)
-    if 'X' in Inst['Type'][0]:
-        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
-        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
-        littleSizer.Add(hklShow,0,WACV)
-    elif 'N' in Inst['Type'][0]:
+    if 'N' in Inst['Type'][0]:
         MagSel = wx.CheckBox(G2frame.dataWindow,label="Magnetic?")
         MagSel.SetValue('MagSpGrp' in SGData)
         MagSel.Bind(wx.EVT_CHECKBOX,OnMagSel)
@@ -4277,9 +4337,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     cellList = []
     valDict = {}
     Info = {}
-    littleSizer = wx.FlexGridSizer(0,useGUI[1],5,5)
+    littleSizer = wx.FlexGridSizer(0,min(6,useGUI[1]),5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt),0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=txt,style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
         if ifEdit:          #a,b,c,etc.
             cellVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,6+Id,nDig=fmt,OnLeave=OnCellChange)
             Info[cellVal.GetId()] = Id
@@ -4298,6 +4358,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell inc',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
+    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices,size=(75,-1))
+    shiftSel.SetSelection(3)
+    littleSizer.Add(shiftSel)
+        
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
@@ -4350,16 +4416,33 @@ def UpdateUnitCellsGrid(G2frame, data):
 
     G2frame.dataWindow.currentGrids = []
     if cells:
-        mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'),0,WACV)
+        mode = 0
+        try: # for Cell sym, 1st entry is cell xform matrix
+            len(cells[0][0])
+            mode = 1
+        except:
+            pass
+        if mode:
+            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Cell symmetry search:'),0,WACV)
+            colLabels = ['use']
+            Types = [wg.GRID_VALUE_BOOL]
+        else:
+            mainSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label='\n Indexing Result:'),0,WACV)
+            colLabels = ['M20','X20','use','Bravais']
+            Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,
+                         wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING]
         rowLabels = []
-        colLabels = ['M20','X20','use','Bravais','a','b','c','alpha','beta','gamma','Volume','Keep']
-        Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_NUMBER,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_STRING,]+ \
-            3*[wg.GRID_VALUE_FLOAT+':10,5',]+3*[wg.GRID_VALUE_FLOAT+':10,3',]+ \
-            [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL]
+        colLabels += ['a','b','c','alpha','beta','gamma','Volume','Keep']
+        Types += (3*[wg.GRID_VALUE_FLOAT+':10,5',]+
+                  3*[wg.GRID_VALUE_FLOAT+':10,3',]+
+                  [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL])
         table = []
         for cell in cells:
             rowLabels.append('')
-            row = cell[0:2]+[cell[-2]]+[bravaisSymb[cell[2]]]+cell[3:10]+[cell[11],]
+            if mode:
+                row = [cell[-2]]+cell[3:10]+[cell[11],]
+            else:
+                row = cell[0:2]+[cell[-2]]+[bravaisSymb[cell[2]]]+cell[3:10]+[cell[11],]
             if cell[-2]:
                 A = G2lat.cell2A(cell[3:9])
                 G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)

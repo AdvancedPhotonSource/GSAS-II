@@ -16,6 +16,8 @@ from the GSAS version of SUBGROUPS & k-SUBGROUPSMAG web page on the Bilbao Cryst
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import requests
+import numpy as np
+import numpy.linalg as nl
 import GSASIIspc as G2spc
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
@@ -272,6 +274,49 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             MVs.append([getMatVec(items[5]),getMatVec(items[6])])
     result = list(zip(SPGPs,BNSs,MVs,itemList,altList,superList))
     return result,baseList
+
+def subBilbaoCheckLattice(spgNum,cell,tol=5):
+    '''submit a unit cell to  Bilbao PseudoLattice
+    '''
+    psSite = "http://www.cryst.ehu.es/cgi-bin/cryst/programs/pseudosym/nph-pseudolattice"
+    cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
+    datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
+        str(int(spgNum)),cellstr,str(int(tol)))
+    try:
+        r = requests.post(psSite,data=datastr)
+    except:     #ConnectionError?
+        page = ''
+        print('connection error - not on internet')
+        return None
+    if r.status_code == 200:
+        print('request OK')
+        page = r.text
+        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
+    else:
+        page = ''
+        print('request failed. Reason=',r.reason)
+        return None
+    r.close()
+    return page
+
+def parseBilbaoCheckLattice(page):
+    '''find the cell options from the web page returned by Bilbao PseudoLattice
+    '''
+    cellopts = [i for i in page.split('<tr>') if '<td><pre>' in i]
+    found = []
+    for c in cellopts:
+        cells = c.split("pre")[1].split('<')[0].replace('>','').split('\n') # list of cells, 1st is approx
+        try:
+            acell = [float(i) for i in cells[0].split()]
+            xmatA = [c.split('[')[i].split(']')[0].split() for i in (1,2,3)]
+            xmat =  np.array([[eval(i) for i in j] for j in xmatA])
+            cellmat = nl.inv(xmat).T
+        except:
+            print('Error processing cell in',c)
+            continue
+        found.append((acell,cellmat))
+    return found
+
 
 def test():
     SGData = G2spc.SpcGroup('f d -3 m')[1]

@@ -5349,12 +5349,12 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.IndexEdit.Append(G2G.wxID_LATSYM,'Cell Symmetry Search',
             'Run Bilboa "Lattice Symmetry" to find higher symmetry cells')
         self.RunSubGroups = self.IndexEdit.Append(G2G.wxID_RUNSUB,'Run SUBGROUPS',
-            'If disabled, do Load Cell first')
+            'If disabled, do Load Phase first')
         self.RunSubGroupsMag = self.IndexEdit.Append(G2G.wxID_RUNSUBMAG,'Run k-SUBGROUPMAG',
-            'If disabled, do Load Cell first')
+            'If disabled, do Load Phase first')
         self.CopyCell = self.IndexEdit.Append(G2G.wxID_COPYCELL,'Copy Cell', 
             'Copy selected unit cell from indexing to cell refinement fields')
-        self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Cell from phase', 
+        self.LoadCell = self.IndexEdit.Append(G2G.wxID_LOADCELL,'Load Phase', 
             'Load unit cell from a phase tree entry')
         self.ImportCell = self.IndexEdit.Append(G2G.wxID_IMPORTCELL,'Import Cell', 
             'Import unit cell from file')

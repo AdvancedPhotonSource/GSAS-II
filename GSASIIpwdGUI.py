@@ -3036,18 +3036,16 @@ def UpdateUnitCellsGrid(G2frame, data):
     UnitCellsId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
-        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','C2/m','P2/m','C1','P1']
+        'Fmmm','Immm','Ammm','Bmmm','Cmmm','Pmmm','I2/m','C2/m','P2/m','P1','C1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
-        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','C -1','P -1']
+        'P 4/m m m','F m m m','I m m m','A m m m','B m m m','C m m m','P m m m','I 2/m','C 2/m','P 2/m','P -1','C -1']
     Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
-#        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[1]))
         dmin = G2lat.Pos2dsp(Inst,Limits[1])
     else:
         difC = Inst['difC'][1]
-#        dmin = max(1.0,G2lat.Pos2dsp(Inst,Limits[0]))
         dmin = G2lat.Pos2dsp(Inst,Limits[0])
     
     def SetLattice(controls):
@@ -3064,7 +3062,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[9] = controls[10] = controls[11] = 90.
         elif controls[5] in ['C2/m','P2/m','I2/m']:
             controls[9] = controls[11] = 90.  # b unique
-#        if len(controls) < 13: controls.append(0)
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         return ibrav
         
@@ -3085,8 +3082,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnSSopt(event):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             SSopt.SetValue(False)
-            G2frame.ErrorDialog('Cubic lattice',
-                                'Incommensurate superlattice not possible with a cubic lattice')
+            G2frame.ErrorDialog('Cubic lattice','Incommensurate superlattice not possible with a cubic lattice')
             return
         ssopt['Use'] = SSopt.GetValue()
         if 'ssSymb' not in ssopt:
@@ -3230,8 +3226,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         valObj = valDict[Obj.GetId()]
         inc = float(shiftChoices[shiftSel.GetSelection()][:-1])
         move = Obj.GetValue()  # +1 or -1 
-#        if ObjId//2 >= 3: # angle movements could be bigger
-#            move *= 2
         Obj.SetValue(0)
         value = float(valObj.GetValue()) * (1. + move*inc/100.)
         SetCellValue(valObj,ObjId//2,value)
@@ -3626,12 +3620,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.GPXtree.SetItemPyData(UnitCellsId,data)
         
     KeyList = []
+    
     def ClearCurrentShowNext():
         KeepShowNext(False)
+        
     KeyList += [['j',ClearCurrentShowNext,'Show next Mag. Spc. Group, clear keep flag on current']]        
+    
     def KeepCurrentShowNext():
         KeepShowNext(True)
-    KeyList += [['k',KeepCurrentShowNext,'Show next Mag. Spc. Group, keep current']]        
+        
+    KeyList += [['k',KeepCurrentShowNext,'Show next Mag. Spc. Group, keep current']]
+        
     def KeepShowNext(KeepCurrent=True):
         '''Show next "keep" item in Magnetic Space Group list, possibly resetting the 
         keep flag for the current displayed cell
@@ -3933,7 +3932,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return
-        while cells: cells.pop() # cells.clear() is much cleaner but not Py2
+#        while cells: cells.pop() # cells.clear() is much cleaner but not Py2
         for i,(cell,mat) in enumerate(kSUB.parseBilbaoCheckLattice(page)):
             cells.append([])
             cells[-1] += [mat,0,16]
@@ -4175,16 +4174,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
     if len(controls) < 15:
         controls.append(list(range(1,len(magcells)+1)))
-    if len(bravais) < 16:
-        bravais += [0,0,]
-    if len(bravais) < 17:
+    while len(bravais) < 17:
         bravais += [0,]
     SGData = ssopt.get('SGData',G2spc.SpcGroup(controls[13])[1])
     G2frame.GPXtree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',
         'Tetragonal-I','Tetragonal-P','Orthorhombic-F','Orthorhombic-I','Orthorhombic-A',
         'Orthorhombic-B','Orthorhombic-C','Orthorhombic-P',
-        'Monoclinic-I','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic']
+        'Monoclinic-I','Monoclinic-C','Monoclinic-P','Triclinic','Triclinic',]
     cellGUIlist = [[[0,1,2],4,zip([" Unit cell: a = "," Vol = "],[(10,5),"%.3f"],[True,False],[0,0])],
     [[3,4,5,6],6,zip([" Unit cell: a = "," c = "," Vol = "],[(10,5),(10,5),"%.3f"],[True,True,False],[0,2,0])],
     [[7,8,9,10,11,12],8,zip([" Unit cell: a = "," b = "," c = "," Vol = "],[(10,5),(10,5),(10,5),"%.3f"],
@@ -4259,12 +4256,12 @@ def UpdateUnitCellsGrid(G2frame, data):
     
     mainSizer.Add((5,5),0)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label="Bravais\nlattice",style=wx.ALIGN_CENTER),0,WACV,5)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Bravais  \n lattice ",style=wx.ALIGN_CENTER),0,WACV,5)
     bravSel = wx.Choice(G2frame.dataWindow,choices=bravaisSymb,size=(75,-1))
     bravSel.SetSelection(bravaisSymb.index(controls[5]))
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label="Space\ngroup",style=wx.ALIGN_CENTER),0,WACV,5)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
     spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(75,-1))
     spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
@@ -4272,7 +4269,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     if ssopt.get('Use',False):        #zero for super lattice doesn't work!
         controls[0] = False
     else:
-        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset"),0,WACV)
+        littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Zero offset "),0,WACV)
         zero = G2G.ValidatedTxtCtrl(G2frame.dataWindow,controls,1,nDig=(10,4),typeHint=float,
                                     min=-5.,max=5.,size=(50,-1))
         littleSizer.Add(zero,0,WACV)

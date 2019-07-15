@@ -3270,7 +3270,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         Inst = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
         Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
         if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
-            wave = G2mth.getWave(Inst)
             dmin = G2lat.Pos2dsp(Inst,Limits[1])
         else:
             dmin = G2lat.Pos2dsp(Inst,Limits[0])
@@ -4358,9 +4357,9 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell inc',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell step',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
     shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
-    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices,size=(75,-1))
+    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
     shiftSel.SetSelection(3)
     littleSizer.Add(shiftSel)
         
@@ -6600,7 +6599,7 @@ def UpdatePDFGrid(G2frame,data):
             data['Geometry'] = geometry.GetValue()
             wx.CallAfter(UpdatePDFGrid,G2frame,data)
             #UpdatePDFGrid(G2frame,data)
-            wx.CallAfter(OnComputePDF,tc.event)
+            wx.CallAfter(OnComputePDF,event)
         
         sampleSizer = wx.BoxSizer(wx.VERTICAL)
         if not ElList:
@@ -6896,7 +6895,7 @@ def UpdatePDFGrid(G2frame,data):
                 File.write("#GSAS-II PDF controls file; do not add/delete items!\n")
                 for item in data:
                     if item[:] not in ['Sample','I(Q)','S(Q)','F(Q)','G(R)']:
-                        File.write(item+':'+unicode(data[item])+'\n')
+                        File.write(item+':'+data[item]+'\n')
                 File.close()
                 print ('PDF controls saved to: '+filename)
         finally:

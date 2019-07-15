@@ -3209,14 +3209,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
                     DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
-#                    try:
-#                        CurLims = [np.min(DZ[Ibeg:Ifin])*1.2,np.max(DZ[Ibeg:Ifin])*1.2]
-#                        for i in range(2):
-#                            if not G2frame.UseLimits['dylims'][i]: continue
-#                            CurLims[i] = float(G2frame.FixedLimits['dylims'][i])
-#                        if all(np.isfinite(CurLims)): Plot1.set_ylim(CurLims)
-#                    except:
-#                        pass
 
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
@@ -3312,6 +3304,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
 
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        orange = [255/256.,128/256.,0.]
         if G2frame.GPXtree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Index Peak List'))
             if not len(peaks): return # are there any peaks?
@@ -3324,15 +3317,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     else:
                         Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
-                clr = 'r'
+                clr = orange
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
                 if Page.plotStyle['qPlot']:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(1,3),lw=2.5)
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
                 if Page.plotStyle['dPlot']:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(1,3),lw=2.5)
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(3,3),lw=1.5)
                 else:
-                    Plot.axvline(hkl[-2],color=clr,dashes=(1,3),lw=2.5)
+                    Plot.axvline(hkl[-2],color=clr,dashes=(3,3),lw=1.5)
         elif Page.plotStyle.get('WgtDiagnostic',False):
             pass # skip reflection markers
         elif (G2frame.GPXtree.GetItemText(PickId) in ['Reflection Lists'] or 

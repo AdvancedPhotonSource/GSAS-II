@@ -1138,7 +1138,6 @@ def UpdatePeakGrid(G2frame, data):
 def UpdateBackground(G2frame,data):
     '''respond to selection of PWDR background data tree item.
     '''
-    
     def OnBackFlagCopy(event):
         flag = data[0][1]
         backDict = data[-1]
@@ -1306,7 +1305,6 @@ def UpdateBackground(G2frame,data):
         xFin = np.searchsorted(pwddata[0],limits[1])
         xdata = pwddata[0][xBeg:xFin]
         ydata = si.interp1d(X,Y)(ma.getdata(xdata))
-        #GSASIIpath.IPyBreak()
         W = [1]*len(xdata)
         Z = [0]*len(xdata)
 
@@ -1337,8 +1335,7 @@ def UpdateBackground(G2frame,data):
         # Note that this generates a MaskedArrayFutureWarning, but these items are not always masked
         pwddata[3][xBeg:xFin] *= 0.
         pwddata[5][xBeg:xFin] *= 0.
-        pwddata[4][xBeg:xFin] = G2pwd.getBackground(
-            '',parmDict,bakType,dataType,xdata)[0]
+        pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,xdata)[0]
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
@@ -1407,8 +1404,12 @@ def UpdateBackground(G2frame,data):
                 for i in range(N,M):
                     del(item[-1])
             G2frame.GPXtree.SetItemPyData(BackId,data)
-            #wx.CallAfter(UpdateBackground,G2frame,data)
             wx.CallLater(100,UpdateBackground,G2frame,data)
+            
+        def AfterChange(invalid,value,tc):
+            if invalid: return
+            CalcBack()
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
         backSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1434,7 +1435,7 @@ def UpdateBackground(G2frame,data):
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background coefficients:'),0,WACV)
         bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
-            bakVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],i+3,nDig=(10,4),typeHint=float)
+            bakVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[0],i+3,nDig=(10,4),OnLeave=AfterChange)
             bakSizer.Add(bakVal,0,WACV)
         backSizer.Add(bakSizer)
         return backSizer
@@ -1451,8 +1452,10 @@ def UpdateBackground(G2frame,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['debyeTerms'][-1])
-            #wx.CallAfter(UpdateBackground,G2frame,data)
-            wx.CallLater(100,UpdateBackground,G2frame,data)
+            if N == 0:
+                CalcBack()
+                G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            wx.CallAfter(UpdateBackground,G2frame,data)
 
         def KeyEditPeakGrid(event):
             colList = debyeGrid.GetSelectedCols()
@@ -1471,8 +1474,11 @@ def UpdateBackground(G2frame,data):
                             for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=True
                         elif key == 78:  #'N'
                             for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=False
-
         
+        def OnCellChange(event):
+            CalcBack()
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+
         debSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Debye scattering: '),0,WACV)
@@ -1495,6 +1501,7 @@ def UpdateBackground(G2frame,data):
             debyeGrid = G2G.GSGrid(parent=G2frame.dataWindow)
             debyeGrid.SetTable(debyeTable, True)
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+            debyeGrid.Bind(wg.EVT_GRID_CELL_CHANGED,OnCellChange)
             debyeGrid.AutoSizeColumns(False)
             debSizer.Add(debyeGrid)        
         return debSizer
@@ -1511,8 +1518,10 @@ def UpdateBackground(G2frame,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['peaksList'][-1])
-            #wx.CallAfter(UpdateBackground,G2frame,data)
-            wx.CallLater(100,UpdateBackground,G2frame,data)
+            if N == 0:
+                CalcBack()
+                G2plt.PlotPatterns(G2frame,plotType='PWDR')                
+            wx.CallAfter(UpdateBackground,G2frame,data)
             
         def KeyEditPeakGrid(event):
             colList = peaksGrid.GetSelectedCols()
@@ -1531,6 +1540,10 @@ def UpdateBackground(G2frame,data):
                             for row in range(peaksGrid.GetNumberRows()): data[1]['peaksList'][row][col]=True
                         elif key == 78:  #'N'
                             for row in range(peaksGrid.GetNumberRows()): data[1]['peaksList'][row][col]=False
+                            
+        def OnCellChange(event):
+            CalcBack()
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')                
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1556,6 +1569,7 @@ def UpdateBackground(G2frame,data):
             peaksGrid = G2G.GSGrid(parent=G2frame.dataWindow)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
+            peaksGrid.Bind(wg.EVT_GRID_CELL_CHANGED,OnCellChange)
             peaksGrid.AutoSizeColumns(False)
             peaksSizer.Add(peaksGrid)        
         return peaksSizer
@@ -1578,8 +1592,14 @@ def UpdateBackground(G2frame,data):
                     back.SetValue('')
                     data[1]['background PWDR'][0] = back.GetValue()
                     return
+            CalcBack()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
+        def AfterChange(invalid,value,tc):
+            if invalid: return
+            CalcBack()
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+
         fileSizer = wx.BoxSizer(wx.VERTICAL)
         fileSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Fixed background file:'),0,WACV)
         if 'background PWDR' not in data[1]:
@@ -1593,12 +1613,35 @@ def UpdateBackground(G2frame,data):
         back.Bind(wx.EVT_COMBOBOX,OnBackPWDR)
         backSizer.Add(back)
         backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' multiplier'),0,WACV)
-        backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1]['background PWDR'],1,nDig=(10,3))
+        backMult = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data[1]['background PWDR'],1,nDig=(10,3),OnLeave=AfterChange)
         backSizer.Add(backMult,0,WACV)
         fileSizer.Add(backSizer)
         return fileSizer
+    
+    def CalcBack():
+            PatternId = G2frame.PatternId
+            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+            inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+            dataType = inst['Type'][0]
+            insDict = {inskey:inst[inskey][1] for inskey in inst}
+            parmDict = {}
+            bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(data)
+            parmDict.update(bakDict)
+            parmDict.update(insDict)
+            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
+            pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
+            xBeg = np.searchsorted(pwddata[0],limits[0])
+            xFin = np.searchsorted(pwddata[0],limits[1])
+            fixBack = data[1]['background PWDR']
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data[1]['background PWDR'][0])
+            fixData = G2frame.GPXtree.GetItemPyData(Id)
+            fixedBkg = {'_fixedVary':False,'_fixedMult':fixBack[1],'_fixedValues':fixData[1][1][xBeg:xFin]} 
+            try:    #typically bad grid value
+                pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[0][xBeg:xFin],fixedBkg)[0]
+            except:
+                pass
 
-    # UpdateBackground execution starts here
+    # UpdateBackground execution starts here    
     if len(data) < 2:       #add Debye diffuse & peaks scattering here
         data.append({'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]})
     if 'nPeaks' not in data[1]:

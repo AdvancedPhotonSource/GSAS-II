@@ -3088,7 +3088,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
-            YI = xye[1]
+            YI = copy.copy(xye[1])
             if G2frame.SubBack:
                 YI -= xye[5]
             if Page.plotStyle['sqrtPlot']:
@@ -3160,7 +3160,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if ifpicked:
                 if Page.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                    Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
+                    ZI = copy.copy(xye[3])
+                    if G2frame.SubBack:
+                        ZI -= xye[5]
+                    Z = np.where(ZI>=0.,np.sqrt(ZI),-np.sqrt(-ZI))
                     np.seterr(invalid=olderr['invalid'])
                 else:
                     if 'PWDR' in plottype and G2frame.SinglePlot and not (

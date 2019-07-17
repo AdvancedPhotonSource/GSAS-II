@@ -1611,10 +1611,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #for modulated moments --> m != 0 reflections
             M = np.array(np.abs(H[3]),dtype=np.int)-1
         
-            fam = 0.5*TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*cosm[i,:,:,nxs]-    \
+            fam = .5*TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*cosm[i,:,:,nxs]-    \
                 np.sign(H[3,i])*TmagA*sinm[i,:,:,nxs]),0.) for i in range(mRef)])+fam0
             
-            fbm = 0.5*TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*sinm[i,:,:,nxs]+    \
+            fbm = .5*TMcorr[:,nxs,:,nxs]*np.array([np.where(M[i]>=0,(TmagB*sinm[i,:,:,nxs]+    \
                 np.sign(H[3,i])*TmagA*cosm[i,:,:,nxs]),0.) for i in range(mRef)])+fbm0
                        
             famq = np.sum(np.sum(fam,axis=-2),axis=-2)      #Nref,Mxyz; sum ops & atoms

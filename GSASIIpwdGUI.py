@@ -1194,6 +1194,7 @@ def UpdateBackground(G2frame,data):
             Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,item)
             G2frame.GPXtree.SetItemPyData(
                 G2gd.GetGPXtreeItemId(G2frame,Id,'Background'),copy.deepcopy(data))
+            CalcBack(Id)
             
     def OnBackSave(event):
         pth = G2G.GetExportPath(G2frame)
@@ -1253,6 +1254,7 @@ def UpdateBackground(G2frame,data):
                 G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Background'),newback)
         finally:
             dlg.Destroy()
+        CalcBack(G2frame.PatternId)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         wx.CallLater(100,UpdateBackground,G2frame,newback)
 
@@ -1408,7 +1410,7 @@ def UpdateBackground(G2frame,data):
             
         def AfterChange(invalid,value,tc):
             if invalid: return
-            CalcBack()
+            CalcBack(G2frame.PatternId)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
         backSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1453,7 +1455,7 @@ def UpdateBackground(G2frame,data):
                 for i in range(N,M):
                     del(data[1]['debyeTerms'][-1])
             if N == 0:
-                CalcBack()
+                CalcBack(G2frame.PatternId)
                 G2plt.PlotPatterns(G2frame,plotType='PWDR')                
             wx.CallAfter(UpdateBackground,G2frame,data)
 
@@ -1476,7 +1478,7 @@ def UpdateBackground(G2frame,data):
                             for row in range(debyeGrid.GetNumberRows()): data[1]['debyeTerms'][row][col]=False
         
         def OnCellChange(event):
-            CalcBack()
+            CalcBack(G2frame.PatternId)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')                
 
         debSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1519,7 +1521,7 @@ def UpdateBackground(G2frame,data):
                 for i in range(N,M):
                     del(data[1]['peaksList'][-1])
             if N == 0:
-                CalcBack()
+                CalcBack(G2frame.PatternId)
                 G2plt.PlotPatterns(G2frame,plotType='PWDR')                
             wx.CallAfter(UpdateBackground,G2frame,data)
             
@@ -1542,7 +1544,7 @@ def UpdateBackground(G2frame,data):
                             for row in range(peaksGrid.GetNumberRows()): data[1]['peaksList'][row][col]=False
                             
         def OnCellChange(event):
-            CalcBack()
+            CalcBack(G2frame.PatternId)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')                
 
         peaksSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1618,26 +1620,25 @@ def UpdateBackground(G2frame,data):
         fileSizer.Add(backSizer)
         return fileSizer
     
-    def CalcBack():
-            PatternId = G2frame.PatternId
+    def CalcBack(PatternId=G2frame.PatternId):
             limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
             inst,inst2 = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+            backData = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Background'))
             dataType = inst['Type'][0]
             insDict = {inskey:inst[inskey][1] for inskey in inst}
             parmDict = {}
             bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(data)
             parmDict.update(bakDict)
             parmDict.update(insDict)
-            limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Limits'))[1]
-            pwddata = G2frame.GPXtree.GetItemPyData(PatternId)[1]
-            xBeg = np.searchsorted(pwddata[0],limits[0])
-            xFin = np.searchsorted(pwddata[0],limits[1])
-            fixBack = data[1]['background PWDR']
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,data[1]['background PWDR'][0])
+            pwddata = G2frame.GPXtree.GetItemPyData(PatternId)
+            xBeg = np.searchsorted(pwddata[1][0],limits[0])
+            xFin = np.searchsorted(pwddata[1][0],limits[1])
+            fixBack = backData[1]['background PWDR']
+            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,fixBack[0])
             fixData = G2frame.GPXtree.GetItemPyData(Id)
             fixedBkg = {'_fixedVary':False,'_fixedMult':fixBack[1],'_fixedValues':fixData[1][1][xBeg:xFin]} 
             try:    #typically bad grid value
-                pwddata[4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[0][xBeg:xFin],fixedBkg)[0]
+                pwddata[1][4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[1][0][xBeg:xFin],fixedBkg)[0]
             except:
                 pass
 

@@ -1845,8 +1845,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             newPlot = True
         elif event.key == 'b':
             G2frame.SubBack = not G2frame.SubBack
-            if not G2frame.SubBack:
-                G2frame.SinglePlot = True                
+#            if not G2frame.SubBack:
+#                G2frame.SinglePlot = True                
         elif event.key == 'n':
             if G2frame.Contour:
                 pass
@@ -2810,7 +2810,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
     Page.tickDict = {}
     DifLine = ['']
     if G2frame.Contour:
-        Page.Choice = (' key press',
+        Page.Choice = (' key press','b: toggle subtract background',
             'd: lower contour max','u: raise contour max',
             'D: lower contour min','U: raise contour min',
             'o: reset contour limits','g: toggle grid',
@@ -2949,6 +2949,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Ymax = np.sqrt(Ymax)
     elif Page.plotStyle.get('WgtDiagnostic',False):
         Title = 'Scaling diagnostic for '+Title
+    if G2frame.SubBack:
+        Title += ' - background'
     if Page.plotStyle['qPlot'] or plottype in ['SASD','REFD'] and not G2frame.Contour:
         xLabel = r'$Q, \AA^{-1}$'
     elif Page.plotStyle['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
@@ -3086,17 +3088,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
+            YI = xye[1]
+            if G2frame.SubBack:
+                YI -= xye[5]
             if Page.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))+NoffY*Ymax/100.0
+                Y = np.where(YI>=0.,np.sqrt(YI),-np.sqrt(-YI))+NoffY*Ymax/100.0
                 np.seterr(invalid=olderr['invalid'])
             elif Page.plotStyle.get('WgtDiagnostic',False):
                 Y = xye[1]*xye[2]
-            elif 'PWDR' in plottype and G2frame.SinglePlot and not (
-                Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-                Y = xye[1]*multArray+NoffY*Ymax/100.0
+            elif 'PWDR' in plottype and G2frame.SinglePlot and not \
+                (Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
+                Y = YI*multArray+NoffY*Ymax/100.0
             else:
-                Y = xye[1]+NoffY*Ymax/100.0
+                Y = YI+NoffY*Ymax/100.0
         elif plottype in ['SASD','REFD']:
             if plottype == 'SASD':
                 B = xye[5]
@@ -3122,7 +3127,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.Contour:            
             if lenX == len(X):
                 ContourY.append(N)
-                ContourZ.append(Y)
+                if G2frame.SubBack:
+                    ContourZ.append(Y)
+                else:
+                    ContourZ.append(Y)
                 if 'C' in ParmList[0]['Type'][0]:        
                     ContourX = X
                 else: #'T'OF

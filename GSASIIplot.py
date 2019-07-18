@@ -3014,19 +3014,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         LimitId = 0
         NoffY = offsetY*(Nmax-N)
         if Pattern[1] is None: continue # skip over uncomputed simulations
-        xye = np.array(ma.getdata(Pattern[1])) # strips mask
+        xye = np.array(ma.getdata(Pattern[1])) # strips mask = X,Yo,W,Yc,Yb,Yd
         xye0 = Pattern[1][0]  # keeps mask
-        #bxye = G2pdG.GetFileBackground(G2frame,xye,Pattern)
         if PickId:
             ifpicked = Pattern[2] == G2frame.GPXtree.GetItemText(PatternId)
             LimitId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Limits')
             limits = G2frame.GPXtree.GetItemPyData(LimitId)
             # recompute mask from excluded regions, in case they have changed
             excls = limits[2:]
-#            xye0 = ma.masked_outside(xye0,limits[0],limits[1],copy=False)
             for excl in excls:
                 xye0 = ma.masked_inside(xye[0],excl[0],excl[1],copy=False)                   #excluded region mask
-#            Pattern[1][0] = ma.array(Pattern[1][0],mask=ma.getmask(xye0))       #save the excluded region masking
             if not G2frame.Contour:
                 xye0 = ma.masked_outside(xye[0],limits[1][0],limits[1][1],copy=False)            #now mask for limits
         if Page.plotStyle['qPlot'] and 'PWDR' in plottype:
@@ -3088,15 +3085,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.toolbar.updateActions = (PlotPatterns,G2frame)
             multArray = ma.getdata(multArray)
         if 'PWDR' in plottype:
-            YI = copy.copy(xye[1])
+            YI = copy.copy(xye[1])      #yo
             if G2frame.SubBack:
-                YI -= xye[5]
+                YI -= xye[4]            #background
             if Page.plotStyle['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(YI>=0.,np.sqrt(YI),-np.sqrt(-YI))+NoffY*Ymax/100.0
                 np.seterr(invalid=olderr['invalid'])
             elif Page.plotStyle.get('WgtDiagnostic',False):
-                Y = xye[1]*xye[2]
+                Y = xye[1]*xye[2]       #Y-obs*wt
             elif 'PWDR' in plottype and G2frame.SinglePlot and not \
                 (Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
                 Y = YI*multArray+NoffY*Ymax/100.0
@@ -3104,7 +3101,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Y = YI+NoffY*Ymax/100.0
         elif plottype in ['SASD','REFD']:
             if plottype == 'SASD':
-                B = xye[5]
+                B = xye[5]      #Yo - Yc
             else:
                 B = np.zeros_like(xye[5])
             if Page.plotStyle['sqPlot']:
@@ -3158,41 +3155,39 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Ibeg = np.searchsorted(X,limits[1][0])
             Ifin = np.searchsorted(X,limits[1][1])
             if ifpicked:
+                ZI = copy.copy(xye[3])      #Yc
                 if Page.plotStyle['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                    ZI = copy.copy(xye[3])
-                    if G2frame.SubBack:
-                        ZI -= xye[5]
                     Z = np.where(ZI>=0.,np.sqrt(ZI),-np.sqrt(-ZI))
                     np.seterr(invalid=olderr['invalid'])
                 else:
                     if 'PWDR' in plottype and G2frame.SinglePlot and not (
                         Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-                        Z = xye[3]*multArray+NoffY*Ymax/100.0
+                        Z = ZI*multArray+NoffY*Ymax/100.0   #yc
                     else:
-                        Z = xye[3]+NoffY*Ymax/100.0
+                        Z = ZI+NoffY*Ymax/100.0         #yc
                 if 'PWDR' in plottype:
                     if Page.plotStyle['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
-                        W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
+                        W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))      #yb
                         np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Page.plotStyle['delOffset']
                     elif Page.plotStyle.get('WgtDiagnostic',False):
                         Z = D = W = np.zeros_like(Y)
                     elif G2frame.SinglePlot and not (
                         Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-                        W = xye[4]*multArray+NoffY*Ymax/100.0
-                        D = multArray*xye[5]-Page.plotStyle['delOffset']  #powder background
+                        W = xye[4]*multArray+NoffY*Ymax/100.0       #yb
+                        D = multArray*xye[5]-Page.plotStyle['delOffset']  #Yo-Yc
                     else:
-                        W = xye[4]+NoffY*Ymax/100.0
-                        D = xye[5]-Page.plotStyle['delOffset']  #powder background
+                        W = xye[4]+NoffY*Ymax/100.0     #yb
+                        D = xye[5]-Page.plotStyle['delOffset']  #Yo-Yc
                 elif plottype in ['SASD','REFD']:
                     if Page.plotStyle['sqPlot']:
-                        W = xye[4]*X**4
-                        Z = xye[3]*X**4
-                        B = B*X**4
+                        W = xye[4]*X**4         #Yb
+                        Z = xye[3]*X**4         #Yc
+                        B = B*X**4              #(yo-Yc)*x**4
                     else:
-                        W = xye[4]
+                        W = xye[4]              #Yb
                     if G2frame.SubBack:
                         YB = Y-B
                         ZB = Z
@@ -3245,7 +3240,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y-W,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
                             CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
@@ -3305,9 +3300,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             
                 if Page.plotStyle['logPlot'] and 'PWDR' in plottype:
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
-#    if not G2frame.SinglePlot and not G2frame.Contour:
-#        axcb = mpl.colorbar.ColorbarBase(N)
-#        axcb.set_label('PDF number')
     if timeDebug:
         print('plot fill time: %.3f'%(time.time()-time0))
     if not magLineList:

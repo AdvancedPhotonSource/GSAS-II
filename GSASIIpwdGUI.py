@@ -1634,10 +1634,10 @@ def UpdateBackground(G2frame,data):
             xBeg = np.searchsorted(pwddata[1][0],limits[0])
             xFin = np.searchsorted(pwddata[1][0],limits[1])
             fixBack = backData[1]['background PWDR']
-            Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,fixBack[0])
-            fixData = G2frame.GPXtree.GetItemPyData(Id)
-            fixedBkg = {'_fixedVary':False,'_fixedMult':fixBack[1],'_fixedValues':fixData[1][1][xBeg:xFin]} 
-            try:    #typically bad grid value
+            try:    #typically bad grid value or no fixed bkg file
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,fixBack[0])
+                fixData = G2frame.GPXtree.GetItemPyData(Id)
+                fixedBkg = {'_fixedVary':False,'_fixedMult':fixBack[1],'_fixedValues':fixData[1][1][xBeg:xFin]} 
                 pwddata[1][4][xBeg:xFin] = G2pwd.getBackground('',parmDict,bakType,dataType,pwddata[1][0][xBeg:xFin],fixedBkg)[0]
             except:
                 pass

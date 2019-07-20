@@ -3241,7 +3241,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs')  #Io-Ib
-                            CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
+                            if np.any(Z):       #only if there is a calc pattern
+                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[1],picker=False,label='_calc')

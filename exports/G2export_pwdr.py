@@ -41,6 +41,8 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
     def WriteInstFile(self,hist,Inst):
         '''Write an instrument parameter file
         '''
+        if 'T' in Inst['Type'][0]:      #can't do TOF iparm files
+            return None
         prmname = os.path.splitext(self.filename)[0] + '.prm'
         prmname = os.path.join(self.dirname,prmname)
         self.OpenFile(prmname)

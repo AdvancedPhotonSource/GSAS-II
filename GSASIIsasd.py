@@ -90,7 +90,10 @@ def SpheroidFF(Q,R,args):
         return SphereFF(Q,R,0)
     else:
         cth = np.linspace(0,1.,NP)
-        Rct = R[:,np.newaxis]*np.sqrt(1.+(AR**2-1.)*cth**2)
+        try:
+            Rct = R[:,np.newaxis]*np.sqrt(1.+(AR**2-1.)*cth**2)
+        except:
+            Rct = R*np.sqrt(1.+(AR**2-1.)*cth**2)
         return np.sqrt(np.sum(SphereFF(Q[:,np.newaxis],Rct,0)**2,axis=2)/NP)
             
 def CylinderFF(Q,R,args):
@@ -1402,10 +1405,9 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
         cumeFxn = 'GaussCume'
         pos = distDict['Mean']
         args = [distDict['StdDev']]
-        step = 0.02*distDict['StdDev']
         mode = distDict['Mean']
-        minX = np.fmax([mode-4.*distDict['StdDev'],1.])
-        maxX = np.fmin([mode+4.*distDict['StdDev'],1.e5])
+        minX = np.max([mode-4.*distDict['StdDev'],1.])
+        maxX = np.min([mode+4.*distDict['StdDev'],1.e5])
     elif 'LSW' in DistName:
         distFxn = 'LSWDist'
         cumeFxn = 'LSWCume'
@@ -1417,8 +1419,8 @@ def MakeDiamDist(DistName,nPoints,cutoff,distDict):
         cumeFxn = 'SchulzZimmCume'
         pos = distDict['Mean']
         args = [distDict['StdDev']]
-        minX = np.fmax([1.,pos-4.*distDict['StdDev']])
-        maxX = np.fmin([pos+4.*distDict['StdDev'],1.e5])
+        minX = np.max([1.,pos-4.*distDict['StdDev']])
+        maxX = np.min([pos+4.*distDict['StdDev'],1.e5])
     nP = 500
     Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')

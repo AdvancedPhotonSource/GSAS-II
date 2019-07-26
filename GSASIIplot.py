@@ -1843,10 +1843,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == '.':
             Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
             newPlot = True
-        elif event.key == 'b':
+        elif event.key == 'b' and plottype not in ['SASD','REFD']:
             G2frame.SubBack = not G2frame.SubBack
-#            if not G2frame.SubBack:
-#                G2frame.SinglePlot = True                
         elif event.key == 'n':
             if G2frame.Contour:
                 pass

@@ -367,7 +367,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     G2frame.GPXtree.SetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id, 'Image Controls'),Data)
         finally:
             dlg.Destroy()
-            G2frame.GPXtree.SelectItem(G2frame.PickId)
+            if G2frame.PickId: G2frame.GPXtree.SelectItem(G2frame.PickId)
             
     def OnCopySelected(event):
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])

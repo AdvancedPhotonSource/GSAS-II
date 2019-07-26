@@ -71,7 +71,12 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         self.OpenFile(filename)
         self.Write(TreeName[5:])
         if prmname: self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
-        x = 100*np.array(histblk['Data'][0])
+        x = np.array(histblk['Data'][0])
+        if 'C' in histblk['Instrument Parameters'][0]['Type'][0]:
+            x *= 100.
+        else:
+            cw = np.diff(x)
+            x[:-1] += cw
         # convert weights to sigmas; use largest weight as minimum esd
         s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
         s[s==0] = np.max(s)

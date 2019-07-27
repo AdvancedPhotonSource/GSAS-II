@@ -1068,7 +1068,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
 
     '''
     if SGData is None: SGData = P1SGData
-    if cell is None: cell=[1.0,1.0,1.0,90.,90,90.,1.]
+    if cell is None: cell=[1.0,1.0,1.0,90.,90.,90.,1.]
     phaseData = {
         'ranId':ran.randint(0,sys.maxsize),
         'General':{

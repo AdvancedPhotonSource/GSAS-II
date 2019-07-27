@@ -926,14 +926,12 @@ class GSASII(wx.Frame):
             psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
             self.GPXtree.SetItemPyData(psub,rd.Phase)
             wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
-#            self.GPXtree.SelectItem(psub)
             try:
                 rd.MPhase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName+' mag',phaseNameList)
                 PhaseName = rd.MPhase['General']['Name'][:]
                 newPhaseList.append(PhaseName)
                 psub = self.GPXtree.AppendItem(parent=sub,text=PhaseName)
                 self.GPXtree.SetItemPyData(psub,rd.MPhase)
-#                self.GPXtree.SelectItem(psub)
                 wx.CallAfter(self.GPXtree.SelectItem,psub) # should call SelectDataTreeItem
             except (AttributeError,TypeError):
                 pass

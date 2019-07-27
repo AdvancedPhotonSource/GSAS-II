@@ -1440,7 +1440,8 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     else:        
         MmodA = MmodA*SGData['MagMom'][:,nxs,nxs]
         MmodB = MmodB*SGData['MagMom'][:,nxs,nxs]
-    return MmodA,MmodB    #Nops,Natm,,Mxyz; sin & cos parts
+#MmodA+MmodB matches drawn tau=0 atom moments
+    return MmodA,MmodB    #Nops,Natm,Mxyz; sin & cos parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

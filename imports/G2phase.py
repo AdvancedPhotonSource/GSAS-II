@@ -47,13 +47,13 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         (look for cell & at least one atom)
         '''
         fp = open(filename,'r')
-        for i,l in enumerate(fp):
-            if l.startswith('CRYST1'):
-                break
-        else:
-            self.errors = 'no CRYST1 record found'
-            fp.close()
-            return False
+#        for i,l in enumerate(fp):
+#            if l.startswith('CRYST1'):
+#                break
+#        else:
+#            self.errors = 'no CRYST1 record found'
+#            fp.close()
+#            return False
         for i,l in enumerate(fp):
             if l.startswith('ATOM'):
                 fp.close()
@@ -82,6 +82,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         line = 1
         SGData = None
         cell = None
+        Dummy = True
         while S:
             self.errors = 'Error reading at line '+str(line)
             Atom = []
@@ -90,6 +91,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
             elif 'COMPND    ' in S[:10]:
                 Compnd = S[10:72].strip()
             elif 'CRYST' in S[:5]:
+                Dummy = False
                 abc = S[7:34].split()
                 angles = S[34:55].split()
                 cell=[float(abc[0]),float(abc[1]),float(abc[2]),
@@ -125,17 +127,22 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
                     self.warnings += "Change this in phase's General tab."
                     SGData = G2obj.P1SGData # P 1
+                    cell = [1.0,1.0,1.0,90.,90.,90.]
+                    Volume = G2lat.calc_V(G2lat.cell2A(cell))
+                    AA,AB = G2lat.cell2AB(cell)                    
                 XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
                 XYZ = np.inner(AB,XYZ)
                 XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
                 SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                 Uiso = float(S[61:67])/EightPiSq
                 Type = S[76:78].lower()
+                if Dummy and S[12:17].strip() == 'CA':
+                    Type = 'C'
                 Atom = [S[22:27].strip(),S[17:20].upper(),S[20:22],
                     S[12:17].strip(),Type.strip().capitalize(),'',XYZ[0],XYZ[1],XYZ[2],
                     float(S[55:61]),SytSym,Mult,'I',Uiso,0,0,0,0,0,0]
-                if S[16] in [' ','A','B']:      #remove disorered residues - can't handle them just now
-#                    Atom[3] = Atom[3][:3]
+                if S[16] in [' ','A','B']:
+                    Atom[3] = Atom[3][:3]
                     Atom.append(ran.randint(0,sys.maxsize))
                     Atoms.append(Atom)
             elif 'ANISOU' in S[:6]:

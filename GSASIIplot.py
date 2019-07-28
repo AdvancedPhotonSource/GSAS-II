@@ -5591,9 +5591,9 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     
     PHI = np.linspace(0.,360.,40,True)
     PSI = np.linspace(0.,180.,40,True)
-    X = np.outer(npcosd(PHI),npsind(PSI))
-    Y = np.outer(npsind(PHI),npsind(PSI))
-    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+    X = np.outer(npcosd(PHI),npsind(PSI))/2.
+    Y = np.outer(npsind(PHI),npsind(PSI))/2.
+    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))/2.
     try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
         if plotDict[plotType]:
             coeff = useList[hist][plotDict[plotType]]

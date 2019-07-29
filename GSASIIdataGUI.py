@@ -1710,6 +1710,7 @@ class GSASII(wx.Frame):
                     var += WYI*rd.powderdata[1]**2
                     var /= YI**2
                     rd.powderdata[2] = 1./var
+                rd.powderdata[1] = np.where(np.isinf(rd.powderdata[1]),0.,rd.powderdata[1])
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])

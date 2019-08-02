@@ -350,9 +350,14 @@ def SetupSampleLabels(histName,dataType,histType):
 
 def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
-    return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt','Distribution':[],
-        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
-        'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},            
+    return {'Back':[0.0,False],
+        'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt',
+                'Distribution':[],'Shape':['Spheroid',1.0],
+                'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
+                'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
+        'Pair':{'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
+                'Percent error':2.5,'Background':[0,False],'Distribution':[],
+                'Moore':20,'Dist G':100.,},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
         'Current':'Size dist.','BackFile':'',
         }
@@ -5215,6 +5220,10 @@ def UpdateModelsGrid(G2frame,data):
         data['Particle']['Matrix'] = {'Name':'vacuum','VolFrac':[0.0,False]}
     if 'BackFile' not in data:
         data['BackFile'] = ''
+    if 'Pair' not in data:
+        data['Pair'] = {'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
+            'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}            
+
     #end patches
     
     def RefreshPlots(newPlot=False):
@@ -5397,6 +5406,13 @@ def UpdateModelsGrid(G2frame,data):
             RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
+        elif data['Current'] == 'Pair distance':
+            SaveState()
+            G2sasd.PairDistFxn(Profile,ProfDict,Limits,Sample,data)
+            G2plt.PlotSASDPairDist(G2frame)
+            RefreshPlots(True)
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
+            
     def OnUnDo(event):
         DoUnDo()
         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
@@ -5541,6 +5557,91 @@ def UpdateModelsGrid(G2frame,data):
 
         return sizeSizer
         
+    def PairSizer():
+#        'Pair':{'Method':'Regularization','MaxRadius':[100.,False],'NBins':101,'Errors':'User',
+#                'Percent error':2.5,'Background':[0,False],'Distribution':[],
+#                'Moore':20,},            
+                
+        def OnMethod(event):
+            data['Pair']['Method'] = method.GetValue()
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
+            
+        def OnError(event):
+            data['Pair']['Errors'] = error.GetValue()
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
+            
+        def OnMaxRadEst(event):
+            Results = G2sasd.RgFit(Profile,ProfDict,Limits,Sample,data)
+            if not Results[0]:
+                    G2frame.ErrorDialog('Failed refinement',
+                        ' Msg: '+Results[-1]+'\nYou need to rethink your selection of parameters\n'+    \
+                        ' Model restored to previous version')
+#            G2sasd.PairFxn(Profile,ProfDict,Limits,Sample,data)
+            RefreshPlots(True)
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)                    
+                        
+        def OnMooreTerms(event):
+            data['Pair']['Moore'] = int(round(Limits[1][1]*data['Pair']['MaxRadius']/np.pi))-1
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)                    
+            
+            
+        pairSizer = wx.BoxSizer(wx.VERTICAL)
+        pairSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pair distribution parameters: '),0,WACV)
+        binSizer = wx.FlexGridSizer(0,6,5,5)
+        binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. R bins: '),0,WACV)
+        bins = ['50','100','150','200']
+        nbins = wx.ComboBox(G2frame.dataWindow,value=str(data['Pair']['NBins']),choices=bins,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Indx[nbins.GetId()] = [data['Pair'],'NBins',0]
+        nbins.Bind(wx.EVT_COMBOBOX,OnIntVal)        
+        binSizer.Add(nbins,0,WACV)
+        binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max diam.: '),0,WACV)
+        maxdiam = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'MaxRadius',min=10.,nDig=(10,1))
+        binSizer.Add(maxdiam,0,WACV)
+        maxest = wx.Button(G2frame.dataWindow,label='Make estimate')
+        maxest.Bind(wx.EVT_BUTTON,OnMaxRadEst)
+        binSizer.Add(maxest,0,WACV)
+        pairSizer.Add(binSizer,0)
+        pairSizer.Add((5,5),0)
+        fitSizer = wx.BoxSizer(wx.HORIZONTAL)
+        methods = ['Regularization','Moore']
+        fitSizer.Add(wx.StaticText(G2frame.dataWindow,label='Fitting method: '),0,WACV)
+        method = wx.ComboBox(G2frame.dataWindow,value=data['Pair']['Method'],choices=methods,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        method.Bind(wx.EVT_COMBOBOX,OnMethod)
+        fitSizer.Add(method,0,WACV)
+        pairSizer.Add(fitSizer,0,WACV)
+        if 'Moore' in data['Pair']['Method']:
+            mooreSizer = wx.BoxSizer(wx.HORIZONTAL)
+            mooreSizer.Add(wx.StaticText(G2frame.dataWindow,label='Number of functions: '),0,WACV)
+            moore = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Moore',min=10)
+            mooreSizer.Add(moore,0,WACV)
+            mooreterms = wx.Button(G2frame.dataWindow,label = 'Auto determine?')
+            mooreterms.Bind(wx.EVT_BUTTON,OnMooreTerms)
+            mooreSizer.Add(mooreterms,0,WACV)
+            pairSizer.Add(mooreSizer,0,WACV)
+        errorSizer = wx.BoxSizer(wx.HORIZONTAL)
+        errorSizer.Add(wx.StaticText(G2frame.dataWindow,label='Error method: '),0,WACV)
+        errors = ['User','Sqrt','Percent']
+        error = wx.ComboBox(G2frame.dataWindow,value=data['Pair']['Errors'],choices=errors,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        error.Bind(wx.EVT_COMBOBOX,OnError)
+        if 'Percent' in data['Pair']['Errors']:
+            percent = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Percent error',min=0.5,nDig=(10,1))
+            errorSizer.Add(percent,0,WACV)
+        errorSizer.Add(error,0,WACV)
+        pairSizer.Add(errorSizer,0,WACV)
+        return pairSizer    
+    
+    def ShapeSizer():
+        shapeSizer = wx.BoxSizer(wx.VERTICAL)
+        shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters: TBD'),0,WACV)
+        
+        
+        return shapeSizer
+        
+        
+
     def PartSizer():
         
         FormFactors = {'Sphere':{},'Spheroid':{'Aspect ratio':[1.0,False]},
@@ -5749,8 +5850,8 @@ def UpdateModelsGrid(G2frame,data):
                             Indx[parmSldr.GetId()] = [Args,parm,parmValue]
                             parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
                             parmSizer.Add(parmSldr,1,wx.EXPAND)
-            return parmSizer                
-            
+            return parmSizer
+
         Indx = {}
         partSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -5838,7 +5939,9 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
-    models = ['Size dist.','Particle fit']
+    models = ['Size dist.','Particle fit','Pair distance',]
+    if len(data['Pair']['Distribution']):
+        models += ['Shape',]
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Modeling by: '),0,WACV)
     fitSel = wx.ComboBox(G2frame.dataWindow,value=data['Current'],choices=models,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -5860,6 +5963,10 @@ def UpdateModelsGrid(G2frame,data):
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
         mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+    elif 'Pair' in data['Current']:
+        mainSizer.Add(PairSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+    elif 'Shape' in data['Current']:
+        mainSizer.Add(ShapeSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background:'),0,WACV)
@@ -7001,7 +7108,7 @@ def UpdatePDFGrid(G2frame,data):
         '''
         if not data['ElList']:
             G2frame.ErrorDialog('PDF error','Chemical formula not defined')
-            return
+            OnAddElement(event)
         auxPlot = computePDF(G2frame,data)
         if auxPlot is None: return
         G2frame.GetStatusBar().SetStatusText('PDF computed',1)

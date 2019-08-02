@@ -587,7 +587,10 @@ class G2PlotNoteBook(wx.Panel):
                 Plot = Page.figure.gca()          #get previous plot
                 limits = [Plot.get_xlim(),Plot.get_ylim()] # save previous limits
                 if len(Axes)>1 and Plot.get_aspect() == 'auto':  # aspect will be equal for image plotting
-                    limits[1] = Axes[1].get_ylim()
+                    if Axes[1].get_aspect() != 'auto':      #not colorbars!
+                        limits[1] = Axes[0].get_ylim()
+                    else:
+                        limits[1] = Axes[1].get_ylim()
                 if newImage:
                     Page.figure.clf()
                     Plot = Page.figure.gca()          #get a fresh plot after clf()
@@ -2802,7 +2805,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.PickId:
             kwargs['PickName'] = G2frame.GPXtree.GetItemText(G2frame.PickId)
         G2frame.G2plotNB.RegisterRedrawRoutine(G2frame.G2plotNB.lastRaisedPlotTab,ReplotPattern,
-                                            (G2frame,newPlot,plotType),kwargs)
+            (G2frame,newPlot,plotType),kwargs)
     # now start plotting
     G2frame.G2plotNB.status.DestroyChildren() #get rid of special stuff on status bar
     Page.tickDict = {}
@@ -4560,7 +4563,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(plotType,'mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         G2frame.Cmin = 0.0
@@ -5219,6 +5222,8 @@ def PlotSASDSizeDist(G2frame):
             PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
             PlotSASDSizeDist(G2frame)
+        elif 'Pair' in PlotText:
+            PlotSASDPairDist(G2frame)
     
     def OnMotion(event):
         xpos = event.xdata
@@ -5228,7 +5233,7 @@ def PlotSASDSizeDist(G2frame):
             try:
                 G2frame.G2plotNB.status.SetStatusText('diameter =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select Size pattern first',1)
 
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Size Distribution','mpl')
     if new:
@@ -5244,13 +5249,54 @@ def PlotSASDSizeDist(G2frame):
     if data['Size']['logBins']:
         Plot.set_xscale("log",nonposx='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
-    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='green')       #plot diameters
+    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white',edgecolor='green')       #plot diameters
     colors=['b','r','c','m','k']
     if 'Size Calc' in data:
         Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
             if len(Rbins[i]):
                 Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%5])       #plot diameters
+    Page.canvas.draw()
+
+################################################################################
+##### PlotSASDPairDist
+################################################################################
+            
+def PlotSASDPairDist(G2frame):
+    'Needs a description'
+    
+    def OnPageChanged(event):
+        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+        if 'Powder' in PlotText:
+            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        elif 'Size' in PlotText:
+            PlotSASDSizeDist(G2frame)
+        elif 'Pair' in PlotText:
+            PlotSASDPairDist(G2frame)
+    
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            SetCursor(Page)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('pair dist =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select Pair pattern first',1)
+
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Pair Distribution','mpl')
+    if new:
+        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = None
+    PatternId = G2frame.PatternId
+    data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'))
+    Bins,Dbins,BinMag = data['Pair']['Distribution']
+    Plot.set_title('Pair Distribution')
+    Plot.set_xlabel(r'$R, \AA$',fontsize=14)
+    Plot.set_ylabel(r'$Pair\ distribution,\ P(R)$',fontsize=14)
+    Plot.bar(Bins-Dbins,BinMag,Dbins,facecolor='white',edgecolor='green')       #plot diameters
+    colors=['b','r','c','m','k']
     Page.canvas.draw()
 
 ################################################################################

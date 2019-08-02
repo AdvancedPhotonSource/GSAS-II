@@ -1077,6 +1077,122 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
     Ic[Ibeg:Ifin] += Back[0]
     print (' Final chi^2: %.3f'%(chisq))
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
+    
+################################################################################
+#### Modelling
+################################################################################
+
+def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
+    print('create P(R) fit to data - TBD')
+    
+    def CalcMoore():
+        
+#        def MooreRg(cw,q):      #lines 1400-1409
+#            n = 0
+#            nmax = len(cw)-5
+#            POR = 0.
+#            dmax = cw[nmax+2]
+#            while n < nmax:
+#                POR += cw[n]*((-1**n)*((np.pi*(n+1))**2-6)/((n+1)**3))
+#                n += 1
+#            POR *= 4*(dmax**4)/((np.pi**2)*cw[nmax+3])
+#            return POR
+        
+        def MoorePOR(cw,r,dmax):    #lines 1417-1428
+            n = 0
+            nmax = len(cw)
+            POR = np.zeros(len(r))
+            while n < nmax:
+                POR += 4.*r*cw[n]*np.sin((n+1.)*np.pi*r/dmax)
+                n += 1
+            return POR
+        
+        def MooreIOREFF(cw,q,dmax):      #lines 1437-1448
+            n = 0
+            nmax = len(cw)
+            POR = np.zeros(len(q))
+            dq = dmax*q
+            fpd = 8.*(np.pi**2)*dmax*np.sin(dq)/q
+            while n < nmax:
+                POR += cw[n]*(n+1.)*((-1)**n)*fpd/(((n+1.)*np.pi)**2-dq**2)
+                n += 1
+            return POR
+        
+#        def MooreINaught(cw,q,dmax):         #lines 1457-1466
+#            n = 0
+#            nmax = len(cw)
+#            POR = 0.
+#            while n < nmax:
+#                POR += cw[n]*8*(dmax**2)*((-1.)**n)/(n+1)
+#                n += 1
+#            return POR
+        
+        def calcSASD(values,Q,Io,wt,Ifb,dmax,ifBack):
+            if ifBack:
+                M = np.sqrt(wt)*(MooreIOREFF(values[:-1],Q,dmax)+Ifb+values[-1]-Io)
+            else:
+                M = np.sqrt(wt)*(MooreIOREFF(values,Q,dmax)+Ifb-Io)
+            return M
+
+        Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+        Qmin = Limits[1][0]
+        Qmax = Limits[1][1]
+        wtFactor = ProfDict['wtFactor']
+        Back,ifBack = data['Back']
+        Ibeg = np.searchsorted(Q,Qmin)
+        Ifin = np.searchsorted(Q,Qmax)+1    #include last point
+        Ic[Ibeg:Ifin] = 0
+        Bins = np.linspace(0.,pairData['MaxRadius'],pairData['NBins']+1,True)
+        Dbins = np.diff(Bins)
+        Bins = Bins[:-1]+Dbins/2.
+        N = pairData['Moore']
+        if ifBack:
+            N += 1
+        MPV = np.zeros(N)
+        MPS = np.zeros(N)
+        MPV[0] = Q[Ibeg]
+        dmax = pairData['MaxRadius']
+        result = so.leastsq(calcSASD,MPV,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+            args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],dmax,ifBack))
+        if ifBack:
+            MPVR = result[0][:-1]
+            data['Back'][0] = result[0][-1]
+            Back = data['Back'][0]
+        else:        
+            MPVR = result[0]
+            Back = 0.
+        chisq = np.sum(result[2]['fvec']**2)
+        Ic[Ibeg:Ifin] = MooreIOREFF(MPVR,Q[Ibeg:Ifin],dmax)+Ifb+Back
+        covM = result[1]
+        GOF = chisq/(Ifin-Ibeg-N)
+        MPS = np.sqrt(np.diag(covM)*GOF)
+        BinMag = MoorePOR(MPVR,Bins,dmax)/2.
+        return Bins,Dbins,BinMag
+    
+    def CalcRegular():
+        Bins = np.linspace(0.,pairData['MaxRadius'],pairData['NBins']+1,True)
+        Dbins = np.diff(Bins)
+        Bins = Bins[:-1]+Dbins/2.
+
+#test        
+        midBin = pairData['MaxRadius']/4.
+        wid = midBin/4.
+        BinMag  = 1./np.sqrt(2.*np.pi*wid*2)*np.exp(-(midBin-Bins)**2/(2.*wid**2))
+        return Bins,Dbins,BinMag
+                
+    pairData = data['Pair']
+    
+    if pairData['Method'] == 'Regularization':
+        print('Regularization calc; dummy Gaussian - TBD')
+        Bins,Dbins,BinMag = CalcRegular()
+        
+        
+    elif pairData['Method'] == 'Moore':
+        Bins,Dbins,BinMag = CalcMoore()        
+    
+    data['Pair']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
+    
+    
         
 ################################################################################
 #### Modelling
@@ -1291,6 +1407,94 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         return False,0,0,0,0,0,0,Msg
+
+def RgFit(Profile,ProfDict,Limits,Sample,Model):
+    print('unified fit single Rg to data to estimate a size')
+    
+    def GetModelParms():
+        parmDict = {}
+        varyList = []
+        values = []
+        Back = Model['Back']
+        if Back[1]:
+            varyList += ['Back',]
+            values.append(Back[0])
+        parmDict['Back'] = Back[0]
+        pairData = Model['Pair']
+        parmDict['G'] = pairData.get('Dist G',100.)
+        parmDict['Rg'] = pairData['MaxRadius']/2.5
+        varyList  += ['G','Rg',]
+        values += [parmDict['G'],parmDict['Rg'],]
+        return parmDict,varyList,values
+
+    def calcSASD(values,Q,Io,wt,Ifb,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        M = np.sqrt(wt)*(getSASD(Q,parmDict)+Ifb-Io)
+        return M
+    
+    def getSASD(Q,parmDict):
+        Ic = np.zeros_like(Q)
+        Rg,G = parmDict['Rg'],parmDict['G']
+        Guin = G*np.exp(-(Q*Rg)**2/3)
+        Ic += Guin
+        Ic += parmDict['Back']  #/parmDict['Scale']
+        return Ic
+        
+    def SetModelParms():
+        print (' Refined parameters: ')
+        if 'Back' in varyList:
+            Model['Back'][0] = parmDict['Back']
+            print ('  %15s %15.4f esd: %15.4g'%('Background:',parmDict['Back'],sigDict['Back']))
+        pairData = Model['Pair']
+        pairData['Dist G'] = parmDict['G']
+        pairData['MaxRadius'] = parmDict['Rg']*2.5
+        for item in varyList:
+            print (' %15s: %15.4g esd: %15.4g'%(item,parmDict[item],sigDict[item]))
+
+    Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    wtFactor = ProfDict['wtFactor']
+    Ibeg = np.searchsorted(Q,Qmin)
+    Ifin = np.searchsorted(Q,Qmax)+1    #include last point
+    Ic[:] = 0
+    parmDict,varyList,values = GetModelParms()
+    result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+        args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],parmDict,varyList))
+    parmDict.update(zip(varyList,result[0]))
+    chisq = np.sum(result[2]['fvec']**2)
+    ncalc = result[2]['nfev']
+    covM = result[1]
+    Rvals = {}
+    Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
+    Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
+    Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],parmDict)
+    Msg = 'Failed to converge'
+    try:
+        Nans = np.isnan(result[0])
+        if np.any(Nans):
+            name = varyList[Nans.nonzero(True)[0]]
+            Msg = 'Nan result for '+name+'!'
+            raise ValueError
+        Negs = np.less_equal(result[0],0.)
+        if np.any(Negs):
+            name = varyList[Negs.nonzero(True)[0]]
+            Msg = 'negative coefficient for '+name+'!'
+            raise ValueError
+        if len(covM):
+            sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
+            sigDict = dict(zip(varyList,sig))
+        print (' Results of Rg fit:')
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,len(varyList)))
+        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF']))
+        SetModelParms()
+        covMatrix = covM*Rvals['GOF']
+        return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
+    except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
+        return False,0,0,0,0,0,0,Msg
+
+    return [None,]
+
     
 def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     

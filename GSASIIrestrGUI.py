@@ -1881,19 +1881,21 @@ def UpdateRestraints(G2frame,data,phaseName):
             
     def UpdateGeneralRestr(generalRestData):
         '''Display any generalized restraint expressions'''
+        
         def OnEditGenRestraint(event):
             '''Edit a restraint expression'''
             n = event.GetEventObject().index
             parmDict = SetupParmDict(G2frame)
             dlg = G2exG.ExpressionDialog(G2frame,parmDict,
-                            exprObj=generalRestData['General'][n][0],
-                            header="Edit a restraint expression",
-                            fit=False,wildCard=G2frame.testSeqRefineMode())
+                exprObj=generalRestData['General'][n][0],
+                header="Edit a restraint expression",
+                fit=False,wildCard=G2frame.testSeqRefineMode())
             restobj = dlg.Show(True)
             if restobj:
                 generalRestData['General'][n][0] = restobj
                 wx.CallAfter(UpdateGeneralRestr,restrData['General'])
-        def OnDelGenRestraint(event):
+                
+        def OnDelGenRestraint(event):              #does this work??
             '''Delete a restraint expression'''
             n = event.GetEventObject().index
             G2frame.GetStatusBar().SetStatusText('',1)
@@ -1907,10 +1909,8 @@ def UpdateRestraints(G2frame,data,phaseName):
         mainSizer.Add((5,5),0)
         hSizer = wx.BoxSizer(wx.HORIZONTAL)
         hSizer.Add(wx.StaticText(GeneralRestr,wx.ID_ANY,'Weight factor: '))
-        hSizer.Add(
-                    G2G.ValidatedTxtCtrl(GeneralRestr,generalRestData,
-                                'wtFactor',nDig=(10,1),typeHint=float)
-                    )
+        hSizer.Add(G2G.ValidatedTxtCtrl(GeneralRestr,generalRestData,
+            'wtFactor',nDig=(10,1),typeHint=float))
         btn = G2G.G2CheckBox(GeneralRestr,'Use?',generalRestData,'Use')
         hSizer.Add(btn)
         hSizer.Add((5,5),0)

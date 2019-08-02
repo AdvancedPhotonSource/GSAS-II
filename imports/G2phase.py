@@ -74,7 +74,8 @@ class PDB_ReaderClass(G2obj.ImportPhase):
         self.errors = 'Error opening file'
         file = open(filename, 'Ur')
         Phase = {}
-        Title = ''
+        Title = os.path.basename(filename)
+        
         Compnd = ''
         Atoms = []
         A = np.zeros(shape=(3,3))
@@ -127,7 +128,7 @@ class PDB_ReaderClass(G2obj.ImportPhase):
                     self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
                     self.warnings += "Change this in phase's General tab."
                     SGData = G2obj.P1SGData # P 1
-                    cell = [1.0,1.0,1.0,90.,90.,90.]
+                    cell = [20.0,20.0,20.0,90.,90.,90.]
                     Volume = G2lat.calc_V(G2lat.cell2A(cell))
                     AA,AB = G2lat.cell2AB(cell)                    
                 XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]

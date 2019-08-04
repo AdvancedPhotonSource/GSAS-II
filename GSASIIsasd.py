@@ -1083,20 +1083,8 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
 ################################################################################
 
 def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
-    print('create P(R) fit to data - TBD')
     
     def CalcMoore():
-        
-#        def MooreRg(cw,q):      #lines 1400-1409
-#            n = 0
-#            nmax = len(cw)-5
-#            POR = 0.
-#            dmax = cw[nmax+2]
-#            while n < nmax:
-#                POR += cw[n]*((-1**n)*((np.pi*(n+1))**2-6)/((n+1)**3))
-#                n += 1
-#            POR *= 4*(dmax**4)/((np.pi**2)*cw[nmax+3])
-#            return POR
         
         def MoorePOR(cw,r,dmax):    #lines 1417-1428
             n = 0
@@ -1117,15 +1105,6 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
                 POR += cw[n]*(n+1.)*((-1)**n)*fpd/(((n+1.)*np.pi)**2-dq**2)
                 n += 1
             return POR
-        
-#        def MooreINaught(cw,q,dmax):         #lines 1457-1466
-#            n = 0
-#            nmax = len(cw)
-#            POR = 0.
-#            while n < nmax:
-#                POR += cw[n]*8*(dmax**2)*((-1.)**n)/(n+1)
-#                n += 1
-#            return POR
         
         def calcSASD(values,Q,Io,wt,Ifb,dmax,ifBack):
             if ifBack:
@@ -1149,7 +1128,6 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
         if ifBack:
             N += 1
         MPV = np.zeros(N)
-        MPS = np.zeros(N)
         MPV[0] = Q[Ibeg]
         dmax = pairData['MaxRadius']
         result = so.leastsq(calcSASD,MPV,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
@@ -1163,9 +1141,12 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
             Back = 0.
         chisq = np.sum(result[2]['fvec']**2)
         Ic[Ibeg:Ifin] = MooreIOREFF(MPVR,Q[Ibeg:Ifin],dmax)+Ifb+Back
-        covM = result[1]
+        ncalc = result[2]['nfev']
         GOF = chisq/(Ifin-Ibeg-N)
-        MPS = np.sqrt(np.diag(covM)*GOF)
+        Rwp = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
+        print (' Results of small angle data modelling fit of P(R):')
+        print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,N))
+        print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF))
         BinMag = MoorePOR(MPVR,Bins,dmax)/2.
         return Bins,Dbins,BinMag
     

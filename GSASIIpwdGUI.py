@@ -359,6 +359,8 @@ def SetDefaultSASDModel():
                 'Percent error':2.5,'Background':[0,False],'Distribution':[],
                 'Moore':20,'Dist G':100.,},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
+        'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
+                 'inflateV':1.0,'AAglue':0.0,'pdbOut':False},
         'Current':'Size dist.','BackFile':'',
         }
         
@@ -5222,7 +5224,10 @@ def UpdateModelsGrid(G2frame,data):
         data['BackFile'] = ''
     if 'Pair' not in data:
         data['Pair'] = {'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
-            'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}            
+            'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}  
+    if 'Shapes' not in data:
+        data['Shapes'] = {'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
+            'inflateV':1.0,'AAglue':0.0,'pdbOut':False}
 
     #end patches
     
@@ -5413,6 +5418,19 @@ def UpdateModelsGrid(G2frame,data):
             RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
+        elif data['Current'] == 'Shapes':
+            import G2shapes
+            SaveState()
+            wx.MessageBox(''' For use of SHAPES, please cite:
+      A New Algroithm for the Reconstruction of Protein Molecular Envelopes
+      from X-ray Solution Scattering Data, 
+      J. Badger, Jour. of Appl. Chrystallogr. 2019, XX, xxx-xxx.
+      doi: xxx''',
+      caption='Program Shapes',style=wx.ICON_INFORMATION)
+            Phases,Patterns = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
+            
+            
+            
     def OnUnDo(event):
         DoUnDo()
         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
@@ -5576,14 +5594,12 @@ def UpdateModelsGrid(G2frame,data):
                     G2frame.ErrorDialog('Failed refinement',
                         ' Msg: '+Results[-1]+'\nYou need to rethink your selection of parameters\n'+    \
                         ' Model restored to previous version')
-#            G2sasd.PairFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)                    
                         
         def OnMooreTerms(event):
             data['Pair']['Moore'] = int(round(Limits[1][1]*data['Pair']['MaxRadius']/np.pi))-1
-            wx.CallAfter(UpdateModelsGrid,G2frame,data)                    
-            
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)                               
             
         pairSizer = wx.BoxSizer(wx.VERTICAL)
         pairSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pair distribution parameters: '),0,WACV)
@@ -5633,14 +5649,50 @@ def UpdateModelsGrid(G2frame,data):
         pairSizer.Add(errorSizer,0,WACV)
         return pairSizer    
     
-    def ShapeSizer():
+    def ShapesSizer():
+        
+        def OnPDBout(event):
+            data['Shapes']['pdbOut'] = not data['Shapes']['pdbOut']
+        
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
-        shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters: TBD'),0,WACV)
+        shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)
+        parmSizer = wx.FlexGridSizer(0,4,5,5)
+#1st row        
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. amino acids: '),0,WACV)
+        numAA = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'NumAA',min=10)
+        parmSizer.Add(numAA,0,WACV)
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Nballs=no. amino acids*'),0,WACV)        
+        scaleAA = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'AAscale',min=0.1,max=10.,nDig=(10,2))
+        parmSizer.Add(scaleAA,0,WACV)
+#2nd row        
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Inflate by (1.-1.4): '),0,WACV)        
+        inflate = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'inflateV',min=1.,max=1.4,nDig=(10,2))
+        parmSizer.Add(inflate,0,WACV)
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Axial symmetry (1-6): '),0,WACV)        
+        symm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'Symm',min=1,max=6)
+        parmSizer.Add(symm,0,WACV)
+#3rd row
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' z-axis bias (-2 to 2): '),0,WACV)        
+        zaxis = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'bias-z',min=-2.,max=2.,nDig=(10,2))
+        parmSizer.Add(zaxis,0,WACV)
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' elongation (0-20): '),0,WACV)        
+        glue = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'AAglue',min=0.,max=20.,nDig=(10,2))
+        parmSizer.Add(glue,0,WACV)
+#4th row
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' No. iterations (1-10): '),0,WACV)        
+        niter = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'Niter',min=1,max=10)
+        parmSizer.Add(niter,0,WACV)
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Output name: '),0,WACV)        
+        name = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'outName')
+        parmSizer.Add(name,0,WACV)
+#last row        
+        pdb = wx.CheckBox(G2frame.dataWindow,label=' Save as pdb files?: ')
+        pdb.SetValue(data['Shapes']['pdbOut'])
+        pdb.Bind(wx.EVT_CHECKBOX, OnPDBout)       
+        parmSizer.Add(pdb,0,WACV)
         
-        
+        shapeSizer.Add(parmSizer)
         return shapeSizer
-        
-        
 
     def PartSizer():
         
@@ -5941,7 +5993,7 @@ def UpdateModelsGrid(G2frame,data):
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     models = ['Size dist.','Particle fit','Pair distance',]
     if len(data['Pair']['Distribution']):
-        models += ['Shape',]
+        models += ['Shapes',]
     topSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Modeling by: '),0,WACV)
     fitSel = wx.ComboBox(G2frame.dataWindow,value=data['Current'],choices=models,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -5966,7 +6018,7 @@ def UpdateModelsGrid(G2frame,data):
     elif 'Pair' in data['Current']:
         mainSizer.Add(PairSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     elif 'Shape' in data['Current']:
-        mainSizer.Add(ShapeSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
+        mainSizer.Add(ShapesSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background:'),0,WACV)

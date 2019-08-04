@@ -3237,8 +3237,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                     ecolor=colors[0],picker=3.,clip_on=Clip_on,label='_obs')
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                        Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #const. background
-                        Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
+                        Plot.plot(X,W,colors[1],picker=False,label='_bkg')     #const. background
+                        Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
@@ -3247,14 +3247,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc')               #Ic-Ib
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
+                            Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
                     else:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')    #Io
                             CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='_calc')                 #Ic
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,ZB,colors[1],picker=False,label='_calc')
+                            Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
                         BackLine = Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
                         if not G2frame.Weight: DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic

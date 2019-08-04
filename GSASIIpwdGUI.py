@@ -5427,7 +5427,7 @@ def UpdateModelsGrid(G2frame,data):
       J. Badger, Jour. of Appl. Chrystallogr. 2019, XX, xxx-xxx.
       doi: xxx''',
       caption='Program Shapes',style=wx.ICON_INFORMATION)
-            Phases,Patterns = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
+            Phases,Patterns,PRcalc = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
             
             
             

@@ -261,29 +261,29 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         return;
     
-    # Write P(r) with SD and calculated value.
-    
-    def pr_writer(aList_pr,aList_r,aList_pr_model,outfile_pr):
-    
-        num_pr = len(aList_pr)
-    
-        file = open(outfile_pr,'w')
-        file.write('#\n')
-    
-        i = 0
-        while i < num_pr:
-        
-            r = float(aList_r[i])
-            pr = float(aList_pr[i])
-            pr_calc = float(aList_pr_model[i])
-            aString = str(r) + ' ' + str(pr) + ' ' + str(pr_calc) + '\n'
-            file.write(aString)
-    
-            i = i + 1
-    
-        file.close()
-    
-        return;
+#    # Write P(r) with SD and calculated value.
+#    
+#    def pr_writer(aList_pr,aList_r,aList_pr_model,outfile_pr):
+#    
+#        num_pr = len(aList_pr)
+#    
+#        file = open(outfile_pr,'w')
+#        file.write('#\n')
+#    
+#        i = 0
+#        while i < num_pr:
+#        
+#            r = float(aList_r[i])
+#            pr = float(aList_pr[i])
+#            pr_calc = float(aList_pr_model[i])
+#            aString = str(r) + ' ' + str(pr) + ' ' + str(pr_calc) + '\n'
+#            file.write(aString)
+#    
+#            i = i + 1
+#    
+#        file.close()
+#    
+#        return;
     
     # Write a set of points as a pseudo-PDB file
     
@@ -1115,6 +1115,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     pdbOut = shapeDict['pdbOut']
     Phases = []
     Patterns = []
+    PRcalc = []
     
 #    # Parse
 #    
@@ -1380,7 +1381,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
         file_beads = prefix + 'beads_' + file_no + '.pdb'
         file_pr = prefix + 'pr_calc_' + file_no + '.dat'
         file_psv = prefix + 'psv_shape_' + file_no + '.pdb'
-        file_intensity = prefix + 'intensity_' + file_no + '.dat'
+#        file_intensity = prefix + 'intensity_' + file_no + '.dat'
     
         # Setup initial bead distribution
     
@@ -1827,7 +1828,8 @@ def G2shapes(Profile,ProfDict,Limits,data):
         print (aString)
     
         # Write input and model P(r)
-        pr_writer(aList_pr,aList_r,aList_pr_model,file_pr)
+#        pr_writer(aList_pr,aList_r,aList_pr_model,file_pr)
+        PRcalc.append([aList_r,aList_pr,aList_pr_model,])
     
         # Calculate comparison versus intensities
     
@@ -1914,7 +1916,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
         i = i + 1
     file.close()
 
-    return Phases,Patterns
+    return Phases,Patterns,PRcalc
     
     
         

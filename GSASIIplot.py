@@ -4678,8 +4678,11 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
         Ymin = np.amin(XYlist.T[1])
         Ymax = np.amax(XYlist.T[1])
         dy = 0.02*(Ymax-Ymin)
-        Plot.set_xlim(Xmin-dx,Xmax+dx)
-        Plot.set_ylim(Ymin-dy,Ymax+dy)
+        try:
+            Plot.set_xlim(Xmin-dx,Xmax+dx)
+            Plot.set_ylim(Ymin-dy,Ymax+dy)
+        except:
+            pass
         if Peaks == None:
             normcl = mpcls.Normalize(Ymin,Ymax)
             acolor = mpl.cm.get_cmap(G2frame.ContourColor)
@@ -5224,6 +5227,7 @@ def PlotSASDSizeDist(G2frame):
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
             PlotSASDPairDist(G2frame)
+            
     
     def OnMotion(event):
         xpos = event.xdata
@@ -9133,6 +9137,236 @@ def PlotStructure(G2frame,data,firstCall=False):
     if firstCall: Draw('main') # redraw
 
 ################################################################################
+#### Plot Bead Model
+################################################################################
+
+def PlotBeadModel(G2frame,Atoms,defaults):
+    '''Bead modelplotting package. For bead models from SHAPES
+    '''
+
+    Mydir = G2frame.dirname
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    Bl = np.array([0,0,255])
+    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
+    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
+    uColors = [Rd,Gr,Bl]
+    XYZ = np.array(Atoms[1:]).T      #don't mess with original!
+
+#    def SetRBOrigin():
+#        page = getSelection()
+#        if page:
+#            if G2frame.GetPageText(page) == 'Rigid bodies':
+#                G2frame.MapPeaksTable.SetData(mapPeaks)
+#                panel = G2frame.GetPage(page).GetChildren()
+#                names = [child.GetName() for child in panel]
+#                panel[names.index('grid window')].Refresh()
+            
+    def OnMouseDown(event):
+        xy = event.GetPosition()
+        defaults['oldxy'] = list(xy)
+
+    def OnMouseMove(event):
+        newxy = event.GetPosition()
+                                
+        if event.Dragging():
+            if event.LeftIsDown():
+                SetRotation(newxy)
+                Q = defaults['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+#            elif event.RightIsDown():
+#                SetRBOrigin(newxy)
+            elif event.MiddleIsDown():
+                SetRotationZ(newxy)
+                Q = defaults['Quaternion']
+                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+            Draw('move')
+        
+    def OnMouseWheel(event):
+        defaults['cameraPos'] += event.GetWheelRotation()/24
+        defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
+        G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(defaults['cameraPos']),1)
+        Draw('wheel')
+        
+    def SetBackground():
+        R,G,B,A = Page.camera['backColor']
+        GL.glClearColor(R,G,B,A)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
+        
+    def SetLights():
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glEnable(GL.GL_LIGHTING)
+        GL.glEnable(GL.GL_LIGHT0)
+        GL.glLightModeli(GL.GL_LIGHT_MODEL_TWO_SIDE,0)
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_AMBIENT,[1,1,1,.8])
+        GL.glLightfv(GL.GL_LIGHT0,GL.GL_DIFFUSE,[1,1,1,1])
+        
+    def SetRotation(newxy):
+#first get rotation vector in screen coords. & angle increment        
+        oldxy = defaults['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        defaults['oldxy'] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
+# next transform vector back to xtal coordinates via inverse quaternion
+# & make new quaternion
+        Q = defaults['Quaternion']
+        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        defaults['Quaternion'] = Q
+# finally get new view vector - last row of rotation matrix
+        VD = G2mth.Q2Mat(Q)[2]
+        VD /= np.sqrt(np.sum(VD**2))
+        defaults['viewDir'] = VD
+        
+    def SetRotationZ(newxy):                        
+#first get rotation vector (= view vector) in screen coords. & angle increment        
+        View = GL.glGetIntegerv(GL.GL_VIEWPORT)
+        cent = [View[2]/2,View[3]/2]
+        oldxy = defaults['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        defaults['oldxy'] = list(newxy)
+        V = defaults['viewDir']
+        A = [0,0]
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
+        if newxy[0] > cent[0]:
+            A[0] *= -1
+        if newxy[1] < cent[1]:
+            A[1] *= -1        
+# next transform vector back to xtal coordinates & make new quaternion
+        Q = defaults['Quaternion']
+        Qx = G2mth.AVdeg2Q(A[0],V)
+        Qy = G2mth.AVdeg2Q(A[1],V)
+        Q = G2mth.prodQQ(Q,Qx)
+        Q = G2mth.prodQQ(Q,Qy)
+        defaults['Quaternion'] = Q
+
+    def RenderUnitVectors(x,y,z):
+        GL.glEnable(GL.GL_COLOR_MATERIAL)
+        GL.glLineWidth(1)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        GL.glBegin(GL.GL_LINES)
+        for line,color in zip(uEdges,uColors):
+            GL.glColor3ubv(color)
+            GL.glVertex3fv(-line[1])
+            GL.glVertex3fv(line[1])
+        GL.glEnd()
+        GL.glPopMatrix()
+        GL.glColor4ubv([0,0,0,0])
+        GL.glDisable(GL.GL_COLOR_MATERIAL)
+                
+    def RenderSphere(x,y,z,radius,color):
+        GL.glMaterialfv(GL.GL_FRONT_AND_BACK,GL.GL_DIFFUSE,color)
+        GL.glPushMatrix()
+        GL.glTranslate(x,y,z)
+        q = GLU.gluNewQuadric()
+        GLU.gluSphere(q,radius,20,10)
+        GL.glPopMatrix()
+        
+    def Draw(caller=''):
+#useful debug?        
+#        if caller:
+#            print caller
+# end of useful debug
+        cPos = defaults['cameraPos']
+        VS = np.array(Page.canvas.GetSize())
+        aspect = float(VS[0])/float(VS[1])
+        Q = defaults['Quaternion']
+        SetBackground()
+        GL.glInitNames()
+        GL.glPushName(0)
+        
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GL.glViewport(0,0,VS[0],VS[1])
+        GLU.gluPerspective(20.,aspect,1.,500.)
+        GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        SetLights()            
+            
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
+        matRot = G2mth.Q2Mat(Q)
+        matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        GL.glMultMatrixf(matRot.T)
+        RenderUnitVectors(0.,0.,0.)
+        radius = 2.0
+        for iat,atom in enumerate(XYZ):
+            x,y,z = atom
+            color = (144,144,144)
+            RenderSphere(x,y,z,radius,color)
+        try:
+            if Page.context: Page.canvas.SetCurrent(Page.context)
+        except:
+            pass
+        Page.canvas.SwapBuffers()
+
+    def OnSize(event):
+        Draw('size')
+        
+    def OnFocus(event):
+        Draw('focus')
+        
+    def OnKeyBox(event):
+        mode = cb.GetValue()
+        if mode in ['jpeg','bmp','tiff',]:
+            try:
+                import Image as Im
+            except ImportError:
+                try:
+                    from PIL import Image as Im
+                except ImportError:
+                    print ("PIL/pillow Image module not present. Cannot save images without this")
+                    raise Exception("PIL/pillow Image module not found")
+            
+            Fname = os.path.join(Mydir,Page.name+'.'+mode)
+            print (Fname+' saved')
+            size = Page.canvas.GetSize()
+            GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+            Pix = GL.glReadPixels(0,0,size[0],size[1],GL.GL_RGB, GL.GL_UNSIGNED_BYTE)
+            im = Im.new("RGB", (size[0],size[1]))
+            try:
+                im.frombytes(Pix)
+            except AttributeError:
+                im.fromstring(Pix)
+            im = im.transpose(Im.FLIP_TOP_BOTTOM)
+            im.save(Fname,mode)
+            cb.SetValue(' save as/key:')
+            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+
+    # PlotRigidBody execution starts here (N.B. initialization above)
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
+    if new:
+        Page.views = False
+    Page.name = Atoms[0]
+    Page.Choice = None
+    choice = [' save as:','jpeg','tiff','bmp',]
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    cb.SetValue(' save as/key:')
+    
+    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
+    Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+    Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
+    Page.camera['position'] = defaults['cameraPos']
+    Page.camera['backColor'] = np.array([0,0,0,0])
+    try:
+        if Page.context: Page.canvas.SetCurrent(Page.context)
+    except:
+        pass
+    Draw('main')
+    Draw('main')    #to fill both buffers so save works
+
+################################################################################
 #### Plot Rigid Body
 ################################################################################
 
@@ -9376,6 +9610,9 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     def OnSize(event):
         Draw('size')
         
+    def OnFocus(event):
+        Draw('focus')
+        
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -9421,6 +9658,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = defaults['cameraPos']
     Page.camera['backColor'] = np.array([0,0,0,0])
     try:
@@ -9830,6 +10068,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     def OnSize(event):
         Draw('size')
         
+    def OnFocus(event):
+        Draw('focus')
+        
     # PlotLayers execution starts here
     cell = Layers['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
@@ -9875,6 +10116,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_KEY_UP, OnPlotKeyPress)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = defaults['cameraPos']
     Page.camera['backColor'] = np.array([0,0,0,0])
     Page.context = wx.glcanvas.GLContext(Page.canvas)

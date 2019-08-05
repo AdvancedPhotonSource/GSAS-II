@@ -357,7 +357,7 @@ def SetDefaultSASDModel():
                 'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
         'Pair':{'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
                 'Percent error':2.5,'Background':[0,False],'Distribution':[],
-                'Moore':20,'Dist G':100.,},            
+                'Moore':20,'Dist G':100.,'Result':[],},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
         'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
                  'inflateV':1.0,'AAglue':0.0,'pdbOut':False},
@@ -5223,11 +5223,12 @@ def UpdateModelsGrid(G2frame,data):
     if 'BackFile' not in data:
         data['BackFile'] = ''
     if 'Pair' not in data:
-        data['Pair'] = {'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
+        data['Pair'] = {'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User','Result':[],
             'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}  
     if 'Shapes' not in data:
         data['Shapes'] = {'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
             'inflateV':1.0,'AAglue':0.0,'pdbOut':False}
+    plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':150.,'viewDir':[0,0,1],}
 
     #end patches
     
@@ -5427,9 +5428,9 @@ def UpdateModelsGrid(G2frame,data):
       J. Badger, Jour. of Appl. Chrystallogr. 2019, XX, xxx-xxx.
       doi: xxx''',
       caption='Program Shapes',style=wx.ICON_INFORMATION)
-            Phases,Patterns,PRcalc = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
-            
-            
+            data['Pair']['Result'] = []       #clear old results (if any) for now
+            data['Pair']['Result'] = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
     def OnUnDo(event):
         DoUnDo()
@@ -5653,6 +5654,22 @@ def UpdateModelsGrid(G2frame,data):
         
         def OnPDBout(event):
             data['Shapes']['pdbOut'] = not data['Shapes']['pdbOut']
+            
+        def OnShapeSelect(event):
+            r,c =  event.GetRow(),event.GetCol()
+            shapeTable.SetValue(r,c,False)
+            selAtoms = Atoms[2*r+(c-1)]
+            pattern = Patterns[r]
+            PRvals = PRcalc[r]
+            print('%s %d'%('num. beads',len(selAtoms[1])))
+            print('%s %.3f'%('selected r value',pattern[-1]))
+            print('%s %.3f'%('selected Delta P(r)',PRvals[-1]))
+            G2plt.PlotSASDPairDist(G2frame)
+            RefreshPlots(True)
+            
+            G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
+            
+            
         
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
         shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)
@@ -5692,6 +5709,29 @@ def UpdateModelsGrid(G2frame,data):
         parmSizer.Add(pdb,0,WACV)
         
         shapeSizer.Add(parmSizer)
+        
+        if len(data['Pair'].get('Result',[])):
+            shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' SHAPES run results:'),0,WACV)
+            Atoms,Patterns,PRcalc = data['Pair']['Result']
+            colLabels = ['name','show beads','show shape','Rvalue','P(r) dif','Nbeads','Nshape']
+            Types = [wg.GRID_VALUE_STRING,]+2*[wg.GRID_VALUE_BOOL,]+2*[wg.GRID_VALUE_FLOAT+':10,3',]+2*[wg.GRID_VALUE_LONG,]
+            rowLabels = [str(i) for i in range(len(Patterns))]
+            tableVals = []
+            for i in range(len(Patterns)):
+                tableVals.append([Atoms[2*i][0],False,False,Patterns[i][-1],PRcalc[i][-1],len(Atoms[2*1][1]),len(Atoms[2*i+1][1])])
+            shapeTable = G2G.Table(tableVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            ShapesResult = G2G.GSGrid(G2frame.dataWindow)
+            ShapesResult.SetTable(shapeTable,True)
+            ShapesResult.AutoSizeColumns(False)
+            ShapesResult.Bind(wg.EVT_GRID_CELL_CHANGED, OnShapeSelect)
+            for r in range(len(Patterns)):
+                for c in range(7):
+                    if c in [1,2]:
+                        ShapesResult.SetReadOnly(r,c,isReadOnly=False)
+                    else:
+                        ShapesResult.SetReadOnly(r,c,isReadOnly=True)
+    
+            shapeSizer.Add(ShapesResult,0,WACV)
         return shapeSizer
 
     def PartSizer():

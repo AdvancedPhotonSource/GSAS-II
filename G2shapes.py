@@ -1082,9 +1082,9 @@ def G2shapes(Profile,ProfDict,Limits,data):
     aString = 'Starting time: ' + str(localtime) + '\n'
     print (aString)
     
-    aList_summary = []
-    aList_summary.append(version_aString)
-    aList_summary.append(str(localtime))
+#    aList_summary = []
+#    aList_summary.append(version_aString)
+#    aList_summary.append(str(localtime))
     
     ######################
     # Start up parmeters #
@@ -1376,10 +1376,10 @@ def G2shapes(Profile,ProfDict,Limits,data):
         print (aString)
                          
         aString  = 'Trial:' + file_no
-        aList_summary.append(aString)
+#        aList_summary.append(aString)
     
         file_beads = prefix + 'beads_' + file_no + '.pdb'
-        file_pr = prefix + 'pr_calc_' + file_no + '.dat'
+#        file_pr = prefix + 'pr_calc_' + file_no + '.dat'
         file_psv = prefix + 'psv_shape_' + file_no + '.pdb'
 #        file_intensity = prefix + 'intensity_' + file_no + '.dat'
     
@@ -1779,9 +1779,8 @@ def G2shapes(Profile,ProfDict,Limits,data):
         aString = 'VDW energy: ' + str('%4.2f'%(vdw_all))
         print (aString)
     
+        Phases.append([file_beads.split('.')[0],aList_beads_x,aList_beads_y,aList_beads_z])
         # Write out beads as pseudo a PDB file
-        Phases.append({'pname':file_beads.split('.')[0],
-            'Atoms':[aList_beads_x,aList_beads_y,aList_beads_z,file_beads]})
         if pdbOut:
             pdb_writer(aList_beads_x,aList_beads_y,aList_beads_z,file_beads,aString)
     
@@ -1829,7 +1828,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         # Write input and model P(r)
 #        pr_writer(aList_pr,aList_r,aList_pr_model,file_pr)
-        PRcalc.append([aList_r,aList_pr,aList_pr_model,])
+        PRcalc.append([aList_r,aList_pr,aList_pr_model,delta_hist_sum])
     
         # Calculate comparison versus intensities
     
@@ -1847,7 +1846,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
             print (aString)
     
             # Write output intensity file
-            Patterns.append([aList_q,aList_i,aList_i_calc,aString])
+            Patterns.append([aList_q,aList_i,aList_i_calc,rvalue])
 #            write_all_data(file_intensity,aList_q,aList_i,aList_i_calc,aString)
     
 #            aString = 'Output intensity file: ' + str(file_intensity)
@@ -1868,8 +1867,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
                   + str(vdw_all) + ' CHIsq:' + str(chi_sq) + \
                   ' PSV:' + str(fraction_psv)
     
-        Phases.append({'pname':file_psv.split('.')[0],
-            'Atoms':[aList_box_x,aList_box_y,aList_box_z]})
+        Phases.append([file_psv.split('.')[0],aList_box_x,aList_box_y,aList_box_z])
         if pdbOut:
             pdb_writer(aList_box_x,aList_box_y,aList_box_z,file_psv,aString)
     
@@ -1877,7 +1875,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         aString = 'P(r) dif:' + str(delta_hist_sum) + ' E:' \
                          + str(vdw_all) + ' CHISQ:' + str(chi_sq) + ' PSV:' + str(fraction_psv)
-        aList_summary.append(aString)               
+#        aList_summary.append(aString)               
     
         i_soln = i_soln + 1
     
@@ -1900,21 +1898,21 @@ def G2shapes(Profile,ProfDict,Limits,data):
     aString = '\nCompletion time: ' + str(localtime)
     print (aString)
                          
-    aList_summary.append(str(localtime))
-    
-    # Create summary
-    
-    aFile_log = prefix + 'shapes_summary.log'
-    num_lines = len(aList_summary)
-    
-    file = open(aFile_log,'w')
-    i = 0
-    while i < num_lines:
-        aString = str(aList_summary[i])
-        file.write(aString)
-        file.write('\n')
-        i = i + 1
-    file.close()
+#    aList_summary.append(str(localtime))
+#    
+#    # Create summary
+#    
+#    aFile_log = prefix + 'shapes_summary.log'
+#    num_lines = len(aList_summary)
+#    
+#    file = open(aFile_log,'w')
+#    i = 0
+#    while i < num_lines:
+#        aString = str(aList_summary[i])
+#        file.write(aString)
+#        file.write('\n')
+#        i = i + 1
+#    file.close()
 
     return Phases,Patterns,PRcalc
     

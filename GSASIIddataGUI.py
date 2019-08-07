@@ -27,6 +27,7 @@ import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
 import GSASIIctrlGUI as G2G
 import numpy as np
+import numpy.linalg as nl
 
 WACV = wx.ALIGN_CENTER_VERTICAL
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -177,6 +178,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             except ValueError:
                 pass
             Obj.SetValue("%.5f"%(UseList[G2frame.hist]['Size'][4][pid]))          #reset in case of error
+            wx.CallAfter(UpdateDData,G2frame,DData,data,G2frame.hist)
         else:
             try:
                 size = float(Obj.GetValue())
@@ -404,24 +406,46 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             sizeVal.Bind(wx.EVT_KILL_FOCUS,OnVal)
             dataSizer.Add(sizeVal,0,WACV|wx.BOTTOM,5)
         return dataSizer
-        
+
     def EllSizeDataSizer():
         parms = zip(['S11','S22','S33','S12','S13','S23'],UseList[G2frame.hist]['Size'][4],
             UseList[G2frame.hist]['Size'][5],range(6))
-        dataSizer = wx.FlexGridSizer(0,6,5,5)
-        for Pa,val,ref,Id in parms:
+        dataSizer = wx.BoxSizer(wx.VERTICAL)
+        # dataSizer = wx.FlexGridSizer(0,6,5,5)
+        matrixSizer = wx.FlexGridSizer(0,6,5,5)
+        Sij = []
+        for Pa,val,ref,id in parms:
             sizeRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             sizeRef.thisown = False
             sizeRef.SetValue(ref)
-            Indx[sizeRef.GetId()] = [G2frame.hist,Id]
+            Indx[sizeRef.GetId()] = [G2frame.hist,id]
             sizeRef.Bind(wx.EVT_CHECKBOX, OnSizeRef)
-            dataSizer.Add(sizeRef,0,WACV)
-#        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
+            # dataSizer.Add(sizeRef,0,WACV)
+            matrixSizer.Add(sizeRef,0,WACV)
+    #        azmthOff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'azmthOff',nDig=(10,2),typeHint=float,OnLeave=OnAzmthOff)
             sizeVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3f'%(val),style=wx.TE_PROCESS_ENTER)
-            Indx[sizeVal.GetId()] = [G2frame.hist,Id]
+            # Create Sij matrix
+            Sij += [val]
+            Indx[sizeVal.GetId()] = [G2frame.hist,id]
             sizeVal.Bind(wx.EVT_TEXT_ENTER,OnSizeVal)
             sizeVal.Bind(wx.EVT_KILL_FOCUS,OnSizeVal)
-            dataSizer.Add(sizeVal,0,WACV)
+            # dataSizer.Add(sizeVal,0,WACV)
+            matrixSizer.Add(sizeVal,0,WACV)
+        dataSizer.Add(matrixSizer, 0, WACV)
+        Esize,Rsize = nl.eigh(G2lat.U6toUij(np.asarray(Sij)))
+        lengths = Esize
+        G,g = G2lat.cell2Gmat(data['General']['Cell'][1:7])       #recip & real metric tensors
+        GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
+        hkls = [x/(sum(x**2)**0.5) for x in np.dot(Rsize, GA)]
+        Ids = np.argsort(lengths)
+        dataSizer.Add(wx.StaticText(DData,label=' Principal ellipsoid components:'),0,WACV)
+        compSizer = wx.FlexGridSizer(3,3,5,5)
+        Axes = [' Short Axis:',' Middle Axis:',' Long Axis:']
+        for Id in Ids:
+            compSizer.Add(wx.StaticText(DData,label=Axes[Id]),0,WACV)
+            compSizer.Add(wx.StaticText(DData,label='(%.3f, %.3f, %.3f) '%(hkls[Id][0], hkls[Id][1], hkls[Id][2])),0,WACV)
+            compSizer.Add(wx.StaticText(DData,label='Length: %.3f'%lengths[Id]),0,WACV)
+        dataSizer.Add(compSizer)
         return dataSizer
         
     def GenStrainDataSizer():

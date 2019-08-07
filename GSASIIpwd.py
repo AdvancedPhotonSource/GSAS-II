@@ -1111,12 +1111,12 @@ def getdEpsVoigt(pos,alp,bet,sig,gam,xdata):
     return Df,dFdp,dFda,dFdb,dFds,dFdg   
 
 def ellipseSize(H,Sij,GB):
-    'needs a doc string'
+    'Implements r=1/sqrt(sum((1/S)*(q.v)^2) per note from Alexander Brady'
     HX = np.inner(H.T,GB)
     lenHX = np.sqrt(np.sum(HX**2))
     Esize,Rsize = nl.eigh(G2lat.U6toUij(Sij))            
-    R = np.inner(HX/lenHX,Rsize)*Esize         #want column length for hkl in crystal
-    lenR = np.sqrt(np.sum(R**2))
+    R = np.inner(HX/lenHX,Rsize)**2*Esize         #want column length for hkl in crystal
+    lenR = 1./np.sqrt(np.sum(R))
     return lenR
 
 def ellipseSizeDerv(H,Sij,GB):

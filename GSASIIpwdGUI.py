@@ -4313,7 +4313,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     bravSel.Bind(wx.EVT_CHOICE,OnBravSel)
     littleSizer.Add(bravSel,0,WACV)
     littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
-    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(75,-1))
+    spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
     spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)

@@ -260,7 +260,7 @@ class testDeriv(wx.Frame):
                 self.parmDict[name] -= delt    
             Mn = (M1-M0)/(2.*abs(delt))
             hplot.plot(Mn,'r',label='numeric deriv')
-            hplot.plot(M2-Mn,'g',label='diff')
+#            hplot.plot(M2-Mn,'g',label='diff')
 #            GSASIIpath.IPyBreak()
             hplot.legend(loc='best')            
             

@@ -305,6 +305,15 @@ class CIFpwdReader(G2obj.ImportPowderData):
                         vl.append(0.)
                     else:
                         vl.append(v)
+            elif sucf ==  '_pd_proc_intensity_total':
+                for val in cf[blk].get(sucf,'?'):
+                    v,e = cif.get_number_with_esd(val)
+                    if v is None: # not parsed
+                        vl.append(0.)
+                    elif v <= 0:
+                        vl.append(1.)
+                    else:
+                        vl.append(1./v)                
             elif sucf ==  '_pd_meas_counts_total':
                 for val in cf[blk].get(sucf,'?'):
                     v,e = cif.get_number_with_esd(val)

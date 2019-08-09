@@ -1025,7 +1025,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Structure Factors','mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('button_press_event', OnSCPress)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
@@ -1271,7 +1271,7 @@ def Plot1DSngl(G2frame,newPlot=False,hklRef=None,Super=0,Title=False):
     Page.Offset = [0,0]
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         Page.qaxis = False
@@ -4801,7 +4801,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -4962,7 +4962,7 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
     Page.Offset = [0,0]
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
@@ -5057,7 +5057,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -5185,7 +5185,7 @@ def PlotStrain(G2frame,data,newPlot=False):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Strain','mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         newPlot = True
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -5227,7 +5227,6 @@ def PlotSASDSizeDist(G2frame):
             PlotSASDSizeDist(G2frame)
         elif 'Pair' in PlotText:
             PlotSASDPairDist(G2frame)
-            
     
     def OnMotion(event):
         xpos = event.xdata
@@ -5300,7 +5299,9 @@ def PlotSASDPairDist(G2frame):
     Plot.set_xlabel(r'$R, \AA$',fontsize=14)
     Plot.set_ylabel(r'$Pair\ distribution,\ P(R)$',fontsize=14)
     Plot.bar(Bins-Dbins,BinMag,Dbins,facecolor='white',edgecolor='green')       #plot diameters
-    colors=['b','r','c','m','k']
+    if 'Pair Calc' in data['Pair']:
+        [Rbins,Dist] = data['Pair']['Pair Calc'].T
+        Plot.plot(Rbins,Dist,color='r')       #plot radii
     Page.canvas.draw()
 
 ################################################################################
@@ -5432,7 +5433,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
     Page.keyPress = OnKeyPress    
     if not new:
         if not G2frame.G2plotNB.allowZoomReset: # save previous limits
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
@@ -7685,7 +7686,7 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Integration','mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
@@ -7740,7 +7741,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('2D Transformed Powder Image','mpl')
     if not new:
         if not newPlot:
-            xylim = lim
+            xylim = copy.copy(lim)
     else:
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.views = False
@@ -9266,7 +9267,7 @@ def PlotBeadModel(G2frame,Atoms,defaults):
         GL.glPushMatrix()
         GL.glTranslate(x,y,z)
         q = GLU.gluNewQuadric()
-        GLU.gluSphere(q,radius,20,10)
+        GLU.gluSphere(q,radius,40,20)
         GL.glPopMatrix()
         
     def Draw(caller=''):
@@ -9298,7 +9299,7 @@ def PlotBeadModel(G2frame,Atoms,defaults):
         radius = 2.0
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
-            color = (144,144,144)
+            color = np.array([144,144,144])/255.
             RenderSphere(x,y,z,radius,color)
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)

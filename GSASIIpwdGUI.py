@@ -5657,13 +5657,17 @@ def UpdateModelsGrid(G2frame,data):
             
         def OnShapeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
-            shapeTable.SetValue(r,c,False)
+            for i in [1,2]:
+                for j in range(len(Patterns)):
+                    shapeTable.SetValue(j,i,False)
+            shapeTable.SetValue(r,c,True)
+            ShapesResult.ForceRefresh()
             selAtoms = Atoms[2*r+(c-1)]
             pattern = Patterns[r]
-            PRvals = PRcalc[r]
+            data['Pair']['Pair Calc'] = np.array([PRcalc[r][0],PRcalc[r][2]]).T
             print('%s %d'%('num. beads',len(selAtoms[1])))
             print('%s %.3f'%('selected r value',pattern[-1]))
-            print('%s %.3f'%('selected Delta P(r)',PRvals[-1]))
+            print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
             G2plt.PlotSASDPairDist(G2frame)
             RefreshPlots(True)
             
@@ -5718,12 +5722,12 @@ def UpdateModelsGrid(G2frame,data):
             rowLabels = [str(i) for i in range(len(Patterns))]
             tableVals = []
             for i in range(len(Patterns)):
-                tableVals.append([Atoms[2*i][0],False,False,Patterns[i][-1],PRcalc[i][-1],len(Atoms[2*1][1]),len(Atoms[2*i+1][1])])
+                tableVals.append([Atoms[2*i][0],False,False,Patterns[i][-1],PRcalc[i][-1],len(Atoms[2*i][1]),len(Atoms[2*i+1][1])])
             shapeTable = G2G.Table(tableVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             ShapesResult = G2G.GSGrid(G2frame.dataWindow)
             ShapesResult.SetTable(shapeTable,True)
             ShapesResult.AutoSizeColumns(False)
-            ShapesResult.Bind(wg.EVT_GRID_CELL_CHANGED, OnShapeSelect)
+            ShapesResult.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnShapeSelect)
             for r in range(len(Patterns)):
                 for c in range(7):
                     if c in [1,2]:

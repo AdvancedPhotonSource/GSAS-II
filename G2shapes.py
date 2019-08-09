@@ -20,6 +20,7 @@
 #
 # this version modified by R B. Von Dreele for inclusion in GSAS-II
 
+from __future__ import division, print_function
 import math
 import sys
 import os

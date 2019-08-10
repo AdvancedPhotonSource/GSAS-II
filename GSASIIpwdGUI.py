@@ -3979,7 +3979,7 @@ def UpdateUnitCellsGrid(G2frame, data):
       M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek
       Z. Krist. 221, 1, 15-27 (2006). 
       doi:10.1524/zkri.2006.221.1.15''', 
-        caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
+        caption='Bilbao PSEUDOLATTICE',style=wx.ICON_INFORMATION)
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
         if not page: return

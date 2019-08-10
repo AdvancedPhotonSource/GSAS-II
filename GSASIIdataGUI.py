@@ -463,9 +463,11 @@ class GSASII(wx.Frame):
 #        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
     
     def _Add_FileMenuItems(self, parent):
-        item = parent.Append(wx.ID_ANY,'&Open project...','Open a GSAS-II project file (*.gpx)')            
+        item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'&Save project','Save project under current name')
+        item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+R','Reopen a previously used GSAS-II project file (*.gpx)')
+        self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'&Save project\tCtrl+S','Save project under current name')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Save project as...','Save current project to new file')
         self.Bind(wx.EVT_MENU, self.OnFileSaveas, id=item.GetId())
@@ -2763,7 +2765,7 @@ class GSASII(wx.Frame):
             self._init_Macro()
         if addhelp:
             HelpMenu=G2G.MyHelp(self,includeTree=True,
-                morehelpitems=[('&Tutorials','Tutorials'),])
+                morehelpitems=[('&Tutorials\tCtrl+T','Tutorials'),])
             menubar.Append(menu=HelpMenu,title='&Help')
             
     def _init_ctrls(self, parent):
@@ -3806,6 +3808,34 @@ class GSASII(wx.Frame):
             finally:
                 dlg.Destroy()
 
+    def OnFileReopen(self, event):
+        files = GSASIIpath.GetConfigValue('previous_GPX_files')
+        if not files:
+            print('no previous projects saved')
+            return
+        sellist = []
+        for f in files:
+            dirname,filroot = os.path.split(f)
+            if os.path.exists(f):
+                sellist.append("{} from {}".format(filroot,dirname))
+            else:
+                sellist.append("not found: {}".format(f))
+        
+        dlg = G2G.G2SingleChoiceDialog(self,
+                                           'Select previous project to open',
+                                           'Select project',sellist)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+        f = files[sel]
+        if os.path.exists(f):
+            self.OnFileOpen(event, filename=f)
+        else:
+            print('file not found',f)        
+        
     def OnFileOpen(self, event, filename=None):
         '''Gets a GSAS-II .gpx project file in response to the
         File/Open Project menu button
@@ -3909,7 +3939,11 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
-        if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
+        if GSASIIpath.GetConfigValue('Save_paths'):
+            G2G.SaveGPXdirectory(pth,write=False)
+        config = G2G.GetConfigValsDocs()
+        GSASIIpath.addPrevGPX(self.GSASprojectfile,config)
+        G2G.SaveConfigVars(config)
         self.LastGPXdir = pth
 
     def OnFileClose(self, event):

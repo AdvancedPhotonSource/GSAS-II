@@ -4636,13 +4636,13 @@ def StripUnicode(string,subs='.'):
         
 ################################################################################
 # configuration routines (for editing config.py)
-def SaveGPXdirectory(path):
+def SaveGPXdirectory(path,write=True):
     if GSASIIpath.GetConfigValue('Starting_directory') == path: return
     vars = GetConfigValsDocs()
     try:
         vars['Starting_directory'][1] = path
         if GSASIIpath.GetConfigValue('debug'): print('DBG_Saving GPX path: '+path)
-        SaveConfigVars(vars)
+        if write: SaveConfigVars(vars)
     except KeyError:
         pass
 
@@ -4757,20 +4757,31 @@ def SaveConfigVars(vars,parent=None):
             float(vars[var][1]) # test for number
             fp.write(var + ' = ' + str(vars[var][1])+'\n')
         except:
-            try:
-                eval(vars[var][1]) # test for an expression
+            if type(vars[var][1]) is list:
+                fp.write(var + ' = [\n')
+                for varstr in vars[var][1]:
+                    if '\\' in varstr:
+                        fp.write('\t  os.path.normpath("' + varstr.replace('\\','/') +'"),\n')
+                    else:
+                        fp.write('\t  "' + str(varstr)+'",\n')
+                fp.write('   ]\n')
+            elif type(vars[var][1]) is tuple:
                 fp.write(var + ' = ' + str(vars[var][1])+'\n')
-            except: # must be a string
-                varstr = vars[var][1]
-                if '\\' in varstr:
-                    fp.write(var + ' = os.path.normpath("' + varstr.replace('\\','/') +'")\n')
-                else:
-                    fp.write(var + ' = "' + str(varstr)+'"\n')
+            else:
+                try:
+                    eval(vars[var][1]) # test for an expression
+                    fp.write(var + ' = ' + str(vars[var][1])+'\n')
+                except: # must be a string
+                    varstr = vars[var][1]
+                    if '\\' in varstr:
+                        fp.write(var + ' = os.path.normpath("' + varstr.replace('\\','/') +'")\n')
+                    else:
+                        fp.write(var + ' = "' + str(varstr)+'"\n')
         if vars[var][3]:
             fp.write("'''" + str(vars[var][3]) + "\n'''\n\n")
     fp.close()
     print('wrote file '+savefile)
-
+    
 class SelectConfigSetting(wx.Dialog):
     '''Dialog to select configuration variables and set associated values.
     '''

@@ -61,6 +61,23 @@ def SetConfigValue(parmdict):
             if parmdict[var][0] == parmdict[var][1]: continue
             configDict[var] = parmdict[var][1]
 
+def addPrevGPX(fil,configDict):
+    '''Add a GPX file to the list of previous files. 
+    Move previous names to start of list. Keep most recent five files
+    '''
+    fil = os.path.abspath(os.path.expanduser(fil))
+    if 'previous_GPX_files' not in configDict: return
+    try:
+        pos = configDict['previous_GPX_files'][1].index(fil) 
+        if pos == 0: return
+        configDict['previous_GPX_files'][1].pop(pos) # if present, remove if not 1st
+    except ValueError:
+        pass
+    except AttributeError:
+        configDict['previous_GPX_files'][1] = []
+    configDict['previous_GPX_files'][1].insert(0,fil)
+    configDict['previous_GPX_files'][1] = configDict['previous_GPX_files'][1][:5]
+
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):

@@ -199,3 +199,7 @@ line colors in order of obs., calc., back., diff., color5 & color6 separated by 
 PDF_Rmax = 100.
 '''Maximum radius for G(r) calculations: range is from 10-200A; default is 100A
 '''
+
+previous_GPX_files = []
+'''A list of previously used .gpx files
+'''

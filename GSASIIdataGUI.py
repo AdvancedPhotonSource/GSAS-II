@@ -7264,6 +7264,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
     # add unique cell parameters  
     if Controls.get('ShowCell',False) and len(newCellDict):
+        phaseLookup = {Phases[phase]['pId']:phase for phase in Phases}
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []
@@ -7312,8 +7313,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     cE = 6*[None]
                     vol = None
                 # add only unique values to table
-                cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
-                cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
+                if name in Phases[phaseLookup[pId]]['Histograms']:
+                    cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
+                    cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
+                else:
+                    cells += [[None for i in uniqCellIndx[pId]]+[None]]
+                    cellESDs += [[None for i in uniqCellIndx[pId]]+[None]]
             G2frame.colList += zip(*cells)
             G2frame.colSigs += zip(*cellESDs)
     # sort out the variables in their selected order

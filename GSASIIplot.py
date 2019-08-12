@@ -827,8 +827,9 @@ class GSASIItoolbar(Toolbar):
             ymax += delta
         else:
             # should not happen!
-            if GSASIIpath.GetConfigValue('debug'): GSASIIpath.IPyBreak()
-        self.parent.toolbar.push_current()
+            if GSASIIpath.GetConfigValue('debug'):
+                GSASIIpath.IPyBreak()
+        self.parent.toolbar.push_current()      #NB: self.parent.toolbar = self
         ax.axis((xmin,xmax,ymin,ymax))
         #print xmin,xmax,ymin,ymax
         self.plotCanvas.figure.canvas.draw()

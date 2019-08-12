@@ -7,8 +7,10 @@ commonly used for powder calibrations for image data.
 
 Each entry in ``ImageCalibrants`` consists of::
 
-  'key':([Bravais num,],[space group,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))
+  'key':([Bravais num,],[space group,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff),(absent list))
   (The space group may be an empty string)
+  the absent list is optional; it gives indices of lines that have no intensity despite being allowed - see the Si example below;
+  counting begins at zero
 
 as an example::
 
@@ -24,7 +26,7 @@ duplicate the format of this file in a file named `UserCalibrants.py`
 and there define the material(s) you want::
 
   Calibrants={
-    'LaB6 skip 2 lines':([2,],['',],[(4.1569162,4.1569162,4.1569162,90,90,90),],2,(1.0,10,10)),
+    'LaB6 skip 2 lines':([2,],['',],[(4.1569162,4.1569162,4.1569162,90,90,90),],2,(1.0,10,10),()),
   }
 
 New key values will be added to the list of options.
@@ -53,7 +55,7 @@ Calibrants={
 'LaB6  SRM660a':([2,],[''],[(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10.)),
 'LaB6  SRM660a skip 1':([2,],[''],[(4.1569162,4.1569162,4.1569162,90,90,90),],1,(1.0,10,10.)),
 'LaB6  SRM660': ([2,],[''],[(4.15695,4.15695,4.15695,90,90,90),],0,(1.0,10,10.)),
-'Si    SRM640c':([0,],['F d 3 m'],[(5.4311946,5.4311946,5.4311946,90,90,90),],0,(1.,10,10.)),
+'Si    SRM640c':([0,],['F d 3 m'],[(5.4311946,5.4311946,5.4311946,90,90,90),],0,(1.,10,10.),(3,10,13,20,23,26,33,35,40,43)),
 'CeO2  SRM674b':([0,],[''],[(5.411651,5.411651,5.411651,90,90,90),],0,(1.0,2,1.)),
 'Al2O3 SRM676a':([3,],['R -3 c'],[(4.759091,4.759091,12.991779,90,90,120),],0,(1.0,5,5.)),
 'Ni   @ 298K':([0,],[''],[(3.52475,3.52475,3.52475,90,90,90),],0,(1.0,10,10.)),

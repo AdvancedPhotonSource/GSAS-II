@@ -585,7 +585,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     if data['calibrant'] not in calFile.Calibrants:
         G2fil.G2Print('Warning: %s not in local copy of image calibrants file'%data['calibrant'])
         return []
-    Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
+    calibrant = calFile.Calibrants[data['calibrant']]
+    Bravais,SGs,Cells = calibrant[:3]
     HKL = []
     for bravais,sg,cell in zip(Bravais,SGs,Cells):
         A = G2lat.cell2A(cell)
@@ -596,6 +597,10 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
             HKL += list(hkl)
+    if len(calibrant) > 4:
+        absent = calibrant[5]
+    else:
+        absent = ()
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
@@ -608,6 +613,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
+        if iH in absent:
+            continue
         if debug:   print (H) 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
@@ -708,7 +715,8 @@ def ImageCalibrate(G2frame,data):
     skip = data['calibskip']
     dmin = data['calibdmin']
 #generate reflection set
-    Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
+    calibrant = calFile.Calibrants[data['calibrant']]
+    Bravais,SGs,Cells = calibrant[:3]
     HKL = []
     for bravais,sg,cell in zip(Bravais,SGs,Cells):
         A = G2lat.cell2A(cell)

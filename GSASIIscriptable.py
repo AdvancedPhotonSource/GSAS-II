@@ -183,7 +183,13 @@ method                                                Use
                                                       :meth:`G2PwdrData.ref_back_peak`.
 :meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
 :meth:`G2PwdrData.getdata`                            Provides access to the diffraction data associated with the histogram.
-:meth:`G2PwdrData.Export`                             Writes the diffraction data into a file 
+:meth:`G2PwdrData.Export`                             Writes the diffraction data into a file
+:meth:`G2PwdrData.add_peak`                           Adds a peak to the peak list. Also see :ref:`PeakRefine`.
+:meth:`G2PwdrData.set_peakFlags`                      Sets refinement flags for peaks
+:meth:`G2PwdrData.refine_peaks`                       Starts a peak/background fitting cycle
+:attr:`G2PwdrData.Peaks`                              Provides access to the peak list data structure
+:attr:`G2PwdrData.PeakList`                           Provides the peak list parameter values 
+:meth:`G2PwdrData.Export_peaks`                       Writes the peak parameters to a text file 
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -677,6 +683,53 @@ and here is an example for HAP parameters:
     some_phase.set_HAP_refinements(params)
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
+
+.. _PeakRefine:
+
+=================================
+Peak Refinement 
+=================================
+Peak refinement is performed with routines 
+:meth:`G2PwdrData.add_peak`, :meth:`G2PwdrData.set_peakFlags` and
+:meth:`G2PwdrData.refine_peaks`. Method :meth:`G2PwdrData.Export_peaks` and
+properties :attr:`G2PwdrData.Peaks` and :attr:`G2PwdrData.PeakList` 
+provide ways to access the results. Note that when peak parameters are 
+refined with :meth:`~G2PwdrData.refine_peaks`, the background may also
+be refined. Use :meth:`G2PwdrData.set_refinements` to change background 
+settings and the range of data used in the fit. See below for an example
+peak refinement script, where the data files are taken from the 
+"Rietveld refinement with CuKa lab Bragg-Brentano powder data" tutorial 
+(in https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/LabData/data/).
+
+.. code-block::  python
+
+    from __future__ import division, print_function
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
+    import GSASIIscriptable as G2sc
+    datadir = os.path.expanduser("~/Scratch/peakfit")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    gpx = G2sc.G2Project(newgpx=PathWrap('pkfit.gpx'))
+    hist = gpx.add_powder_histogram(PathWrap('FAP.XRA'), PathWrap('INST_XRY.PRM'),
+                                    fmthint='GSAS powder')
+    hist.set_refinements({'Limits': [16.,24.],
+          'Background': {"no. coeffs": 2,'type': 'chebyschev', 'refine': True}
+                         })
+    peak1 = hist.add_peak(1, ttheta=16.8)
+    peak2 = hist.add_peak(1, ttheta=18.9)
+    peak3 = hist.add_peak(1, ttheta=21.8)
+    peak4 = hist.add_peak(1, ttheta=22.9)
+    hist.set_peakFlags(area=True)
+    hist.refine_peaks()
+    hist.set_peakFlags(area=True,pos=True)
+    hist.refine_peaks()
+    hist.set_peakFlags(area=True, pos=True, sig=True, gam=True)
+    hist.refine_peaks()
+    print('peak positions: ',[i[0] for i in hist.PeakList])
+    for i in range(len(hist.Peaks['peaks'])):
+        print('peak',i,'pos=',hist.Peaks['peaks'][i][0],'sig=',hist.Peaks['sigDict']['pos'+str(i)])
+    hist.Export_peaks('pkfit.txt')
+    #gpx.save()  # gpx file is not written without this
 
 .. _CommandlineInterface:
 
@@ -3087,7 +3140,8 @@ class G2PwdrData(G2ObjectWrapper):
         :returns: name of file that was written
         '''
         if extension not in exportersByExtension.get('powder',[]):
-            print('Known exporters are',exportersByExtension.get('powder',[]))
+            print('Defined exporters are:')
+            print('  ',list(exportersByExtension.get('powder',[]).keys()))
             raise G2ScriptException('No Writer for file type = "'+extension+'"')
         fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
         obj = exportersByExtension['powder'][extension]
@@ -3242,7 +3296,8 @@ class G2PwdrData(G2ObjectWrapper):
         :param float Q: peak position as Q (A-1)
         :param float ttheta: peak position as 2Theta (deg)
 
-        Note: only one of the parameters dspace, Q or ttheta may be specified
+        Note: only one of the parameters: dspace, Q or ttheta may be specified.
+        See :ref:`PeakRefine` for an example.
         '''
         import GSASIIlattice as G2lat
         import GSASIImath as G2mth
@@ -3307,6 +3362,89 @@ class G2PwdrData(G2ObjectWrapper):
         peaks['sigDict'] = G2pwd.DoPeakFit('LSQ',peaks['peaks'],background,limits,
                                            Parms,Parms2,self.data['data'][1],bxye,[],
                                            False,controls,None)[0]
+
+    @property
+    def Peaks(self):
+        '''Provides a dict with the Peak List parameters
+        for this histogram.
+
+        :returns: dict with two elements where item
+          'peaks' is a list of peaks where each element is 
+          [pos,pos-ref,area,area-ref,sig,sig-ref,gam,gam-ref], 
+          where the -ref items are refinement flags and item
+          'sigDict' is a dict with possible items 'Back;#', 
+          'pos#', 'int#', 'sig#', 'gam#'
+        '''
+        return self.data['Peak List']
+
+    @property
+    def PeakList(self):
+        '''Provides a list of peaks parameters
+        for this histogram.
+
+        :returns: a list of peaks, where each peak is a list containing
+          [pos,area,sig,gam] 
+          (position, peak area, Gaussian width, Lorentzian width)
+           
+        '''
+        return [i[::2] for i in self.data['Peak List']['peaks']]
+    
+    def Export_peaks(self,filename):
+        '''Write the peaks file. The path is specified by filename
+        extension.
+        
+        :param str filename: name of the file, optionally with a path, 
+            includes an extension
+        :returns: name of file that was written
+        '''
+        import GSASIIlattice as G2lat
+        import math
+        nptand = lambda x: np.tan(x*math.pi/180.)
+        fil = os.path.abspath(filename)
+        fp = open(filename,'w')
+        Inst,Inst2 = self.data['Instrument Parameters']
+        Type = Inst['Type'][0]
+        if 'T' not in Type:
+            import GSASIImath as G2mth
+            wave = G2mth.getWave(Inst)
+        else:
+            wave = None
+        pkdata = self.data['Peak List']
+        peaks = pkdata['peaks']
+        sigDict = pkdata['sigDict']
+        # code taken from GSASIIdataGUI OnExportPeakList
+        fp.write("#%s \n" % (self.name+' Peak List'))
+        if wave:
+            fp.write('#wavelength = %10.6f\n'%(wave))
+        if 'T' in Type:
+            fp.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))                                    
+        else:
+            fp.write('#%9s %10s %10s %12s %10s %10s %10s\n'%('pos','dsp','esd','int','sig','gam','FWHM'))
+        for ip,peak in enumerate(peaks):
+            dsp = G2lat.Pos2dsp(Inst,peak[0])
+            if 'T' in Type:  #TOF - more cols
+                esds = {'pos':0.,'int':0.,'alp':0.,'bet':0.,'sig':0.,'gam':0.}
+                for name in list(esds.keys()):
+                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
+                sig = np.sqrt(peak[8])
+                gam = peak[10]
+                esddsp = G2lat.Pos2dsp(Inst,esds['pos'])
+                FWHM = G2pwd.getgamFW(gam,sig) +(peak[4]+peak[6])*np.log(2.)/(peak[4]*peak[6])     #to get delta-TOF from Gam(peak)
+                fp.write("%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                    (peak[0],dsp,esddsp,peak[2],peak[4],peak[6],peak[8],peak[10],FWHM))
+            else:               #CW
+                #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
+                esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}
+                for name in list(esds.keys()):
+                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
+                sig = np.sqrt(peak[4]) #var -> sig
+                gam = peak[6]
+                esddsp = 0.5*esds['pos']*dsp/nptand(peak[0]/2.)
+                FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
+                fp.write("%10.4f %10.5f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
+                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+        fp.close()
+        return fil
 
     def SaveProfile(self,filename):
         '''Writes a GSAS-II (new style) .instprm file

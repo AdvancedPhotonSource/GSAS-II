@@ -613,8 +613,6 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
-        if iH in absent:
-            continue
         if debug:   print (H) 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
@@ -624,7 +622,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         ellipse = GetEllipse(dsp,data)
         Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
         if Ring:
-            if iH >= skip:
+            if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
             Found = True

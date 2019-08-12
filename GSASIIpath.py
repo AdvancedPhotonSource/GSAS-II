@@ -490,7 +490,9 @@ def svnUpdateProcess(version=None,projectfile=None,branch=None):
     else:
         version = str(version)
     # start the upgrade in a separate interpreter (avoids loading .pyd files)
-    subprocess.Popen([sys.executable,__file__,projectfile,version])
+    proc = subprocess.Popen([sys.executable,__file__,projectfile,version])
+    if sys.platform != "win32":
+        proc.wait()
     sys.exit()
 
 def svnSwitchDir(rpath,filename,baseURL,loadpath=None,verbose=True):

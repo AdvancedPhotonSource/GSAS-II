@@ -2761,7 +2761,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         Page.plotStyle['logPlot'] = False
     #=====================================================================================
     if not new:
-        G2frame.xylim = limits
+        G2frame.xylim = copy.copy(limits)
     else:
         if plottype in ['SASD','REFD']:
             Page.plotStyle['logPlot'] = True

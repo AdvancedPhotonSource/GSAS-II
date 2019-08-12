@@ -4967,13 +4967,17 @@ def UpdateSubstanceGrid(G2frame,data):
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
-            style=wx.OK)
+            style=wx.OK|wx.CANCEL)
         if dlg.ShowModal() == wx.ID_OK:
             Name = dlg.GetValue()
             data['Substances'][Name] = {'Elements':{},'Volume':1.0,'Density':1.0,
-                'Scatt density':0.0,'XAnom density':0.,'XAbsorption':0.}
+                'Scatt density':0.0,'XAnom density':0.,'XAbsorption':0.,'XImag density':0.}
             AddElement(Name)
+        else:
+            return
         dlg.Destroy()
+        if not data['Substances'][Name]['XAbsorption']:
+            del data['Substances'][Name]
         UpdateSubstanceGrid(G2frame,data)
         
     def OnDeleteSubstance(event):
@@ -5038,6 +5042,8 @@ def UpdateSubstanceGrid(G2frame,data):
             data['Substances'][name]['XAnom density'] = recontrst
             data['Substances'][name]['XAbsorption'] = absorb
             data['Substances'][name]['XImag density'] = imcontrst
+        else:
+            return
         dlg.Destroy()
         
     def OnDeleteElement(event):
@@ -5783,7 +5789,7 @@ def UpdateModelsGrid(G2frame,data):
                 sldrObj.SetRange(slMult*valMinMax[0],slMult*valMinMax[1])
                 sldrObj.SetValue(slMult*logv)
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
-            RefreshPlots()
+            RefreshPlots(True)
             
         def OnSelect(event):
             Obj = event.GetEventObject()
@@ -5799,7 +5805,7 @@ def UpdateModelsGrid(G2frame,data):
                     item['SFargs'] = StructureFactors[Obj.GetValue()]
                 wx.CallAfter(UpdateModelsGrid,G2frame,data)
                 G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
-                RefreshPlots()
+                RefreshPlots(True)
                 
         def OnDelLevel(event):
             Obj = event.GetEventObject()
@@ -5807,7 +5813,7 @@ def UpdateModelsGrid(G2frame,data):
             del data['Particle']['Levels'][item]
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
-            RefreshPlots()
+            RefreshPlots(True)
             
         def OnParmSlider(event):
             Obj = event.GetEventObject()
@@ -5820,7 +5826,7 @@ def UpdateModelsGrid(G2frame,data):
             item[key][0] = value
             pvObj.SetValue('%.3g'%(item[key][0]))
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
-            RefreshPlots()
+            RefreshPlots(True)
             
         def SizeSizer():
             sizeSizer = wx.FlexGridSizer(0,4,5,5)

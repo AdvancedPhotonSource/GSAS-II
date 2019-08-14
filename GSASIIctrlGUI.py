@@ -4220,12 +4220,15 @@ class MyHelp(wx.Menu):
         wx.Menu.__init__(self,'')
         self.HelpById = {}
         self.frame = frame
-        self.Append(wx.ID_ABOUT,'&About GSAS-II','')
+        self.Append(wx.ID_ABOUT,'&About GSAS-II',
+                        'Shows version and citation info')
         frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
         if GSASIIpath.whichsvn():
-            helpobj = self.Append(wx.ID_ANY,'&Check for updates','')
+            helpobj = self.Append(wx.ID_ANY,'&Check for updates\tCtrl+U',
+                    'Updates to latest GSAS-II version')
             frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
-            helpobj = self.Append(wx.ID_ANY,'&Regress to an old GSAS-II version','')
+            helpobj = self.Append(wx.ID_ANY,'&Regress to old GSAS-II version',
+                    'Installs previous GSAS-II version')
             frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
             # if GSASIIpath.svnTestBranch():
             #     msg = "&Switch back to standard GSAS-II version"
@@ -4242,10 +4245,12 @@ class MyHelp(wx.Menu):
         # add help lookup(s) in gsasii.html
         self.AppendSeparator()
         if includeTree:
-            helpobj = self.Append(wx.ID_ANY,'Help on Data tree','')
+            helpobj = self.Append(wx.ID_ANY,'Help on Data tree',
+                'Web page on GSAS-II data structure')
             frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
             self.HelpById[helpobj.GetId()] = 'Data tree'
-        helpobj = self.Append(wx.ID_ANY,'Help on current data tree item','')
+        helpobj = self.Append(wx.ID_ANY,'Help on current data tree item\tF1',
+                'Web page on selected item in tree')
         frame.Bind(wx.EVT_MENU, self.OnHelpById, id=helpobj.GetId())
        
     def OnHelpById(self,event):

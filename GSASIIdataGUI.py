@@ -465,7 +465,7 @@ class GSASII(wx.Frame):
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
-        item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+R','Reopen a previously used GSAS-II project file (*.gpx)')
+        item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Save project\tCtrl+S','Save project under current name')
         self.Bind(wx.EVT_MENU, self.OnFileSave, id=item.GetId())
@@ -489,7 +489,7 @@ class GSASII(wx.Frame):
             item = parent.Append(wx.ID_ANY,"wx inspection tool",'')
             self.Bind(wx.EVT_MENU, OnwxInspect, item)
             
-        item = parent.Append(wx.ID_ANY,'&Exit','Exit from GSAS-II')
+        item = parent.Append(wx.ID_EXIT,'Exit\tALT+F4','Exit from GSAS-II')
         self.Bind(wx.EVT_MENU, self.ExitMain, id=item.GetId())
         
     def _Add_DataMenuItems(self,parent):
@@ -538,7 +538,7 @@ class GSASII(wx.Frame):
         item = parent.Append(wx.ID_ANY,'&View LS parms','View least squares parameters')
         self.Bind(wx.EVT_MENU, self.OnShowLSParms, id=item.GetId())
         
-        item = parent.Append(wx.ID_ANY,'&Refine','') 
+        item = parent.Append(wx.ID_ANY,'&Refine\tCTRL+R','Perform a refinement') 
         if len(self.Refine): # extend state for new menus to match main (on mac)
             state = self.Refine[0].IsEnabled()
         else:
@@ -585,11 +585,11 @@ class GSASII(wx.Frame):
             
         if seqSetting:
             for item in self.Refine:
-                item.SetText('Se&quential refine')
+                item.SetText('Se&quential refine\tCtrl+R')
             seqMode = True
         else:
             for item in self.Refine:
-                item.SetText('&Refine')
+                item.SetText('&Refine\tCtrl+R')
             seqMode = False
         for menu,Id in self.ExportSeq:
             menu.Enable(Id,seqMode)
@@ -3979,8 +3979,9 @@ class GSASII(wx.Frame):
             self.GPXtree.SetItemText(self.root,'Project: '+self.GSASprojectfile)
             self.CheckNotebook()
             G2IO.ProjFileSave(self)
+            return True
         else:
-            self.OnFileSaveas(event)
+            return self.OnFileSaveas(event)
             
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
@@ -4016,6 +4017,9 @@ class GSASII(wx.Frame):
                 G2IO.ProjFileSave(self)
                 self.SetTitleByGPX()
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
+                return True
+            else:
+                return False
         finally:
             dlg.Destroy()
             
@@ -4074,6 +4078,24 @@ class GSASII(wx.Frame):
         rescord last position of data & plot windows; saved to config.py file
         NB: not called if console window closed
         '''
+        if self.GPXtree.GetCount() > 1:
+            dlg = wx.MessageDialog(self,
+                    'Do you want to save and exit?\n(Use No to exit without save or Cancel to prevent exiting)',
+                    'Confirm exit/save?',
+                    wx.YES|wx.NO|wx.CANCEL)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+        else:
+            result = wx.ID_NO
+        if result == wx.ID_NO:
+            pass
+        elif result == wx.ID_CANCEL:
+            return
+        else:
+            if not self.OnFileSave(event):
+                return
         FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),

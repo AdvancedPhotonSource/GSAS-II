@@ -56,6 +56,7 @@ Substances = {
 'Pt':{'Elements':{'Pt':{'Num':1}},'Volume':15.14},
 'SrTiO3':{'Elements':{'Sr':{'Num':1},'Ti':{'Num':1},'O':{'Num':1}},'Volume':26.71},
 'V':{'Elements':{'V':{'Num':1}},'Volume':19.26},
+'protein':{'Elements':{'C':{'Num':9.25},'N':{'Num':2.34},'O':{'Num':2.77},'S':{'Num':0.22},'H':{'Num':14.3}},'Volume':288.8}, #insulin - typical?
 }
 # they should not be duplicated in the UserSubstances.py file:
 try:

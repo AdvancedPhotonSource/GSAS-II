@@ -9150,7 +9150,7 @@ def PlotBeadModel(G2frame,Atoms,defaults):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
-    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
+    uBox = np.array([[0,0,0],[50,0,0],[0,50,0],[0,0,50]])
     uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
     uColors = [Rd,Gr,Bl]
     XYZ = np.array(Atoms[1:]).T      #don't mess with original!
@@ -9287,7 +9287,7 @@ def PlotBeadModel(G2frame,Atoms,defaults):
         GL.glMatrixMode(GL.GL_PROJECTION)
         GL.glLoadIdentity()
         GL.glViewport(0,0,VS[0],VS[1])
-        GLU.gluPerspective(20.,aspect,1.,500.)
+        GLU.gluPerspective(50.,aspect,1.,500.)
         GLU.gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             

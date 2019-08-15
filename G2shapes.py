@@ -24,6 +24,7 @@ from __future__ import division, print_function
 import math
 import sys
 import os
+import copy
 import random
 import time
 import cProfile,pstats
@@ -646,7 +647,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
                 aList_pr_model_test,aList_pr_model_test2,inFile):
     
         angstrom_scale = 1.0
-        Bins,Dbins,BinMag = data['Size']['Distribution']
+        Bins,Dbins,BinMag = data['Pair']['Distribution']
         
         aList_r += list(Bins)
         aList_pr += list(BinMag)
@@ -1829,7 +1830,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         # Write input and model P(r)
 #        pr_writer(aList_pr,aList_r,aList_pr_model,file_pr)
-        PRcalc.append([aList_r,aList_pr,aList_pr_model,delta_hist_sum])
+        PRcalc.append([aList_r,aList_pr,copy.copy(aList_pr_model),delta_hist_sum])
     
         # Calculate comparison versus intensities
     

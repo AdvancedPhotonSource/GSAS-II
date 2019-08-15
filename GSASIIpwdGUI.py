@@ -355,7 +355,7 @@ def SetDefaultSASDModel():
                 'Distribution':[],'Shape':['Spheroid',1.0],
                 'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
                 'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
-        'Pair':{'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User',
+        'Pair':{'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User',
                 'Percent error':2.5,'Background':[0,False],'Distribution':[],
                 'Moore':20,'Dist G':100.,'Result':[],},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
@@ -5229,7 +5229,7 @@ def UpdateModelsGrid(G2frame,data):
     if 'BackFile' not in data:
         data['BackFile'] = ''
     if 'Pair' not in data:
-        data['Pair'] = {'Method':'Regularization','MaxRadius':100.,'NBins':100,'Errors':'User','Result':[],
+        data['Pair'] = {'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User','Result':[],
             'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}  
     if 'Shapes' not in data:
         data['Shapes'] = {'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
@@ -5421,8 +5421,8 @@ def UpdateModelsGrid(G2frame,data):
         elif data['Current'] == 'Pair distance':
             SaveState()
             G2sasd.PairDistFxn(Profile,ProfDict,Limits,Sample,data)
-            G2plt.PlotSASDPairDist(G2frame)
             RefreshPlots(True)
+            G2plt.PlotSASDPairDist(G2frame)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
         elif data['Current'] == 'Shapes':
@@ -5431,8 +5431,8 @@ def UpdateModelsGrid(G2frame,data):
             wx.MessageBox(''' For use of SHAPES, please cite:
       A New Algroithm for the Reconstruction of Protein Molecular Envelopes
       from X-ray Solution Scattering Data, 
-      J. Badger, Jour. of Appl. Chrystallogr. 2019, XX, xxx-xxx.
-      doi: xxx''',
+      J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, xxx-xxx.
+      doi: 10.1107/S1600576719009774''',
       caption='Program Shapes',style=wx.ICON_INFORMATION)
             data['Pair']['Result'] = []       #clear old results (if any) for now
             data['Pair']['Result'] = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
@@ -5606,7 +5606,15 @@ def UpdateModelsGrid(G2frame,data):
                         
         def OnMooreTerms(event):
             data['Pair']['Moore'] = int(round(Limits[1][1]*data['Pair']['MaxRadius']/np.pi))-1
-            wx.CallAfter(UpdateModelsGrid,G2frame,data)                               
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
+
+        def OnNewVal(invalid,value,tc):
+            if invalid: return
+            parmDict = {'Rg':data['Pair']['MaxRadius']/2.5,'G':data['Pair']['Dist G'],
+                'B':data['Pair'].get('Dist B',Profile[1][-1]*Profile[0][-1]**4),
+                'Back':data['Back'][0]}
+            Profile[2] = G2sasd.getSASDRg(Profile[0],parmDict)
+            RefreshPlots(True)
             
         pairSizer = wx.BoxSizer(wx.VERTICAL)
         pairSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Pair distribution parameters: '),0,WACV)
@@ -5619,7 +5627,7 @@ def UpdateModelsGrid(G2frame,data):
         nbins.Bind(wx.EVT_COMBOBOX,OnIntVal)        
         binSizer.Add(nbins,0,WACV)
         binSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Max diam.: '),0,WACV)
-        maxdiam = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'MaxRadius',min=10.,nDig=(10,1))
+        maxdiam = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'MaxRadius',min=10.,nDig=(10,1),OnLeave=OnNewVal)
         binSizer.Add(maxdiam,0,WACV)
         maxest = wx.Button(G2frame.dataWindow,label='Make estimate')
         maxest.Bind(wx.EVT_BUTTON,OnMaxRadEst)
@@ -5627,17 +5635,21 @@ def UpdateModelsGrid(G2frame,data):
         pairSizer.Add(binSizer,0)
         pairSizer.Add((5,5),0)
         fitSizer = wx.BoxSizer(wx.HORIZONTAL)
-        methods = ['Regularization','Moore']
+        methods = ['Moore',]            #'Regularization',
         fitSizer.Add(wx.StaticText(G2frame.dataWindow,label='Fitting method: '),0,WACV)
         method = wx.ComboBox(G2frame.dataWindow,value=data['Pair']['Method'],choices=methods,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         method.Bind(wx.EVT_COMBOBOX,OnMethod)
         fitSizer.Add(method,0,WACV)
+        if data['Pair']['Method'] == 'Moore':
+            fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=" P.B. Moore, J. Appl. Cryst., 13, 168-175 (1980)"),0,WACV)
+        else:
+            fitSizer.Add(wx.StaticText(G2frame.dataWindow,label=" D.I. Svergun, J. Appl. Cryst., 24, 485-492 (1991)"),0,WACV)
         pairSizer.Add(fitSizer,0,WACV)
         if 'Moore' in data['Pair']['Method']:
             mooreSizer = wx.BoxSizer(wx.HORIZONTAL)
             mooreSizer.Add(wx.StaticText(G2frame.dataWindow,label='Number of functions: '),0,WACV)
-            moore = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Moore',min=10)
+            moore = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Moore',min=2)
             mooreSizer.Add(moore,0,WACV)
             mooreterms = wx.Button(G2frame.dataWindow,label = 'Auto determine?')
             mooreterms.Bind(wx.EVT_BUTTON,OnMooreTerms)
@@ -5670,14 +5682,18 @@ def UpdateModelsGrid(G2frame,data):
             ShapesResult.ForceRefresh()
             selAtoms = Atoms[2*r+(c-1)]
             pattern = Patterns[r]
-            data['Pair']['Pair Calc'] = np.array([PRcalc[r][0],PRcalc[r][2]]).T
+            prCalc = PRcalc[r][2]
+            prDelt= np.diff(PRcalc[r][0])[0]
+            prsum = np.sum(prCalc)
+            prCalc /= prsum*prDelt
+            data['Pair']['Pair Calc'] = np.array([PRcalc[r][0],prCalc]).T
             print('%s %d'%('num. beads',len(selAtoms[1])))
             print('%s %.3f'%('selected r value',pattern[-1]))
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
-            G2plt.PlotSASDPairDist(G2frame)
-            RefreshPlots(True)
-            
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
+            RefreshPlots(True)
+            G2plt.PlotSASDPairDist(G2frame)
+            
             
             
         
@@ -5695,8 +5711,8 @@ def UpdateModelsGrid(G2frame,data):
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Inflate by (1.-1.4): '),0,WACV)        
         inflate = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'inflateV',min=1.,max=1.4,nDig=(10,2))
         parmSizer.Add(inflate,0,WACV)
-        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Axial symmetry (1-6): '),0,WACV)        
-        symm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'Symm',min=1,max=6)
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Axial symmetry (1-12): '),0,WACV)        
+        symm = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'Symm',min=1,max=12)
         parmSizer.Add(symm,0,WACV)
 #3rd row
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' z-axis bias (-2 to 2): '),0,WACV)        
@@ -6073,7 +6089,7 @@ def UpdateModelsGrid(G2frame,data):
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Background:'),0,WACV)
     backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Back'],0,
-        nDig=(10,3),typeHint=float,OnLeave=OnBackChange)
+        nDig=(10,3,'g'),OnLeave=OnBackChange)
     backSizer.Add(backVal,0,WACV)
     backVar = wx.CheckBox(G2frame.dataWindow,label='Refine?')
     Indx[backVar.GetId()] = [data['Back'],1]

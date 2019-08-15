@@ -665,7 +665,7 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
     RESET_STRAYS      = 1                       # was 0.001, correction of stray negative values
     DISTANCE_LIMIT_FACTOR = 0.1                 # limitation on df to constrain runaways
     
-    MAX_MOVE_LOOPS    = 500                     # for no solution in routine: move, 
+    MAX_MOVE_LOOPS    = 5000                     # for no solution in routine: move, 
     MOVE_PASSES       = 0.001                   # convergence test in routine: move
 
     def tropus (data, G):
@@ -1127,8 +1127,8 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
         N = pairData['Moore']
         if ifBack:
             N += 1
-        MPV = np.zeros(N)
-        MPV[0] = Q[Ibeg]
+        MPV = np.ones(N)*1.e-5
+#        MPV[0] = Q[Ibeg]
         dmax = pairData['MaxRadius']
         result = so.leastsq(calcSASD,MPV,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
             args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],dmax,ifBack))
@@ -1140,38 +1140,36 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
             MPVR = result[0]
             Back = 0.
         chisq = np.sum(result[2]['fvec']**2)
-        Ic[Ibeg:Ifin] = MooreIOREFF(MPVR,Q[Ibeg:Ifin],dmax)+Ifb+Back
+        covM = result[1]
+        Ic[Ibeg:Ifin] = MooreIOREFF(MPVR,Q[Ibeg:Ifin],dmax)+Ifb[Ibeg:Ifin]+Back
         ncalc = result[2]['nfev']
         GOF = chisq/(Ifin-Ibeg-N)
         Rwp = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
         print (' Results of small angle data modelling fit of P(R):')
         print ('Number of function calls: %d Number of observations: %d Number of parameters: %d'%(ncalc,Ifin-Ibeg,N))
         print ('Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF))
+        if len(covM):
+            sig = np.sqrt(np.diag(covM)*GOF)
+            for val,esd in zip(result[0],sig):
+                print(' parameter: %.4g esd: %.4g'%(val,esd))            
         BinMag = MoorePOR(MPVR,Bins,dmax)/2.
         return Bins,Dbins,BinMag
     
-    def CalcRegular():
-        Bins = np.linspace(0.,pairData['MaxRadius'],pairData['NBins']+1,True)
-        Dbins = np.diff(Bins)
-        Bins = Bins[:-1]+Dbins/2.
-
-#test        
-        midBin = pairData['MaxRadius']/4.
-        wid = midBin/4.
-        BinMag  = 1./np.sqrt(2.*np.pi*wid*2)*np.exp(-(midBin-Bins)**2/(2.*wid**2))
-        return Bins,Dbins,BinMag
-                
     pairData = data['Pair']
     
-    if pairData['Method'] == 'Regularization':
+    if pairData['Method'] == 'Regularization':      #not used
         print('Regularization calc; dummy Gaussian - TBD')
-        Bins,Dbins,BinMag = CalcRegular()
+        pairData['Method'] = 'Moore'
         
         
     elif pairData['Method'] == 'Moore':
-        Bins,Dbins,BinMag = CalcMoore()        
+        Bins,Dbins,BinMag = CalcMoore()
+        BinSum = np.sum(BinMag*Dbins)
+        BinMag /= BinSum        
     
-    data['Pair']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
+    data['Pair']['Distribution'] = [Bins,Dbins,BinMag]      #/(2.*Dbins)]
+    if 'Pair Calc' in data['Pair']:
+        del data['Pair']['Pair Calc']
     
     
         
@@ -1389,6 +1387,15 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         return False,0,0,0,0,0,0,Msg
 
+def getSASDRg(Q,parmDict):
+    Ic = np.zeros_like(Q)
+    Rg,G,B = parmDict['Rg'],parmDict['G'],parmDict['B']
+    Qstar = Q/(scsp.erf(Q*Rg/np.sqrt(6)))**3
+    Guin = G*np.exp(-(Q*Rg)**2/3)
+    Porod = (B/Qstar**4)        #*np.exp(-(Q*B)**2/3)
+    Ic += Guin+Porod+parmDict['Back']
+    return Ic
+        
 def RgFit(Profile,ProfDict,Limits,Sample,Model):
     print('unified fit single Rg to data to estimate a size')
     
@@ -1402,25 +1409,18 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
             values.append(Back[0])
         parmDict['Back'] = Back[0]
         pairData = Model['Pair']
-        parmDict['G'] = pairData.get('Dist G',100.)
+        parmDict['G'] = pairData.get('Dist G',Io[Ibeg])
         parmDict['Rg'] = pairData['MaxRadius']/2.5
-        varyList  += ['G','Rg',]
-        values += [parmDict['G'],parmDict['Rg'],]
+        parmDict['B'] = pairData.get('Dist B',Io[Ifin-1]*Q[Ifin-1]**4)
+        varyList  += ['G','Rg','B']
+        values += [parmDict['G'],parmDict['Rg'],parmDict['B']]
         return parmDict,varyList,values
 
     def calcSASD(values,Q,Io,wt,Ifb,parmDict,varyList):
         parmDict.update(zip(varyList,values))
-        M = np.sqrt(wt)*(getSASD(Q,parmDict)+Ifb-Io)
+        M = np.sqrt(wt)*(getSASDRg(Q,parmDict)-Io)
         return M
     
-    def getSASD(Q,parmDict):
-        Ic = np.zeros_like(Q)
-        Rg,G = parmDict['Rg'],parmDict['G']
-        Guin = G*np.exp(-(Q*Rg)**2/3)
-        Ic += Guin
-        Ic += parmDict['Back']  #/parmDict['Scale']
-        return Ic
-        
     def SetModelParms():
         print (' Refined parameters: ')
         if 'Back' in varyList:
@@ -1429,6 +1429,7 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
         pairData = Model['Pair']
         pairData['Dist G'] = parmDict['G']
         pairData['MaxRadius'] = parmDict['Rg']*2.5
+        pairData['Dist B'] = parmDict['B']
         for item in varyList:
             print (' %15s: %15.4g esd: %15.4g'%(item,parmDict[item],sigDict[item]))
 
@@ -1440,16 +1441,16 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
     parmDict,varyList,values = GetModelParms()
-    result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
+    result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-12,factor=0.1,  #ftol=Ftol,
         args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],parmDict,varyList))
-    parmDict.update(zip(varyList,result[0]))
+    parmDict.update(dict(zip(varyList,result[0])))
     chisq = np.sum(result[2]['fvec']**2)
     ncalc = result[2]['nfev']
     covM = result[1]
     Rvals = {}
     Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
     Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
-    Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],parmDict)
+    Ic[Ibeg:Ifin] = getSASDRg(Q[Ibeg:Ifin],parmDict)
     Msg = 'Failed to converge'
     try:
         Nans = np.isnan(result[0])

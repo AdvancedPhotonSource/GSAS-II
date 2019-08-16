@@ -731,10 +731,9 @@ class G2PlotNoteBook(wx.Panel):
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
-    arrows = {}
-        
     def __init__(self,plotCanvas,publish=None):
         '''Adds additional icons to toolbar'''
+        self.arrows = {}
         # try to remove a button from the bar
         POS_CONFIG_SPLTS_BTN = 6 # position of button to remove
         try:
@@ -2013,7 +2012,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
     def OnMotion(event):
-        
+        'Update the status line with infor based on the mouse position'        
         SetCursor(Page)
         if event.button and G2frame.Contour and G2frame.TforYaxis:
             ytics = imgAx.get_yticks()
@@ -2391,9 +2390,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
         if event.xdata is None or event.ydata is None: # ignore drag if cursor is outside of plot
+            if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, invalid pos:',event.xdata,event.ydata)
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if not G2frame.PickId:
+            if GSASIIpath.GetConfigValue('debug'): print('Ignoring drag, G2frame.PickId is not set')
             return
         
         PickId = G2frame.PickId                             # points to item in tree
@@ -2439,7 +2440,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 return
         
         if G2frame.itemPicked is None:
-            # after any mouse release event (could be a zoom), redraw magnification lines
+            # after any mouse release event (could be a zoom) where nothing is selected,
+            # redraw magnification lines
             if magLineList: wx.CallAfter(PlotPatterns,G2frame,plotType=plottype,extraKeys=extraKeys)
             return
         if DifLine[0] is G2frame.itemPicked:   # respond to dragging of the difference curve
@@ -2519,7 +2521,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 data[1][lineNo] = xpos
                 data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
                 data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
-        elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or \
+        elif (G2frame.GPXtree.GetItemText(PickId) == 'Reflection Lists' or
             'PWDR' in G2frame.GPXtree.GetItemText(PickId)) and xpos:
             Id = G2gd.GetGPXtreeItemId(G2frame,PatternId,'Reflection Lists')
             if Id:     
@@ -2532,6 +2534,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                             Page.plotStyle['refDelt'] = -(event.ydata-Page.plotStyle['refOffset'])/num
                         else:       #1st row of refl ticks
                             Page.plotStyle['refOffset'] = event.ydata
+        elif GSASIIpath.GetConfigValue('debug'): # should not happen!
+            print('How did we get here?')
+            GSASIIpath.IPyBreak()
         PlotPatterns(G2frame,plotType=plottype,extraKeys=extraKeys)
         G2frame.itemPicked = None
 

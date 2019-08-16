@@ -378,7 +378,33 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         return;
     
-    # Establish a volume
+     # Evaluate local bead densities and point density on a notional grid - fast version
+    
+    def set_box_fast(aList_beads_x,aList_beads_y,aList_beads_z,\
+                aList_box_x_all,aList_box_y_all,aList_box_z_all,\
+                aList_box_score,box_step,dmax,rsearch):
+    
+        dmax_over2 = dmax/2.0
+        num_box = int(dmax/box_step)+1
+        
+        box_grid = np.zeros((num_box,num_box,num_box),dtype=int)
+        aList_beads_xyz_loc = np.array([(np.array(aList_beads_x)+dmax_over2)/box_step,
+            (np.array(aList_beads_y)+dmax_over2)/box_step,
+            (np.array(aList_beads_z)+dmax_over2)/box_step],dtype=int)
+    
+        for ix,iy,iz in aList_beads_xyz_loc.T:
+            box_grid[ix,iy,iz] += 1
+            
+        non_zero = np.argwhere(box_grid)
+        for ix,iy,iz in non_zero:
+            aList_box_x_all.append((ix*box_step)-dmax_over2)
+            aList_box_y_all.append((iy*box_step)-dmax_over2)
+            aList_box_z_all.append((iz*box_step)-dmax_over2)
+            aList_box_score.append(box_grid[ix,iy,iz])
+    
+        return;
+    
+   # Establish a volume
     
     def set_vol(aList_box_x_all,aList_box_y_all,aList_box_z_all,aList_box_score,\
                 aList_box_x,aList_box_y,aList_box_z,vol_target,box_pt_vol):
@@ -1488,7 +1514,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
                 # Adaptive masking was not helpful
                 # rsearch_use = (2.0 - scale)*rsearch
     
-                set_box(aList_beads_x,aList_beads_y,aList_beads_z,\
+                set_box_fast(aList_beads_x,aList_beads_y,aList_beads_z,\
                         aList_box_x_all,aList_box_y_all,aList_box_z_all,\
                         aList_box_score,box_step,dmax,rsearch)
     
@@ -1794,7 +1820,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
         aList_box_z_all = []
         aList_box_score = []
     
-        set_box(aList_beads_x,aList_beads_y,aList_beads_z,\
+        set_box_fast(aList_beads_x,aList_beads_y,aList_beads_z,\
                 aList_box_x_all,aList_box_y_all,aList_box_z_all,\
                 aList_box_score,box_step,dmax,rsearch)
     

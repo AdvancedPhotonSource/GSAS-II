@@ -52,7 +52,7 @@ import GSASIIctrlGUI as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
-import G2shapes_np
+import G2shapes
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 if '2' in platform.python_version_tuple()[0]:
@@ -5429,7 +5429,6 @@ def UpdateModelsGrid(G2frame,data):
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
         elif data['Current'] == 'Shapes':
-            import G2shapes
             SaveState()
             wx.MessageBox(''' For use of SHAPES, please cite:
       A New Algroithm for the Reconstruction of Protein Molecular Envelopes

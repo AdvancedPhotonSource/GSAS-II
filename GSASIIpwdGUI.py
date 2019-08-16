@@ -52,6 +52,7 @@ import GSASIIctrlGUI as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
+import G2shapes_np
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 if '2' in platform.python_version_tuple()[0]:
@@ -357,10 +358,10 @@ def SetDefaultSASDModel():
                 'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},
         'Pair':{'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User',
                 'Percent error':2.5,'Background':[0,False],'Distribution':[],
-                'Moore':20,'Dist G':100.,'Result':[],},            
+                'Moore':10,'Dist G':100.,'Result':[],},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
         'Shapes':{'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
-                 'inflateV':1.0,'AAglue':0.0,'pdbOut':False},
+                 'inflateV':1.0,'AAglue':0.0,'pdbOut':False,'boxStep':4.0},
         'Current':'Size dist.','BackFile':'',
         }
         
@@ -5230,10 +5231,12 @@ def UpdateModelsGrid(G2frame,data):
         data['BackFile'] = ''
     if 'Pair' not in data:
         data['Pair'] = {'Method':'Moore','MaxRadius':100.,'NBins':100,'Errors':'User','Result':[],
-            'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':[20,False],'Dist G':100.,}  
+            'Percent error':2.5,'Background':[0,False],'Distribution':[],'Moore':10,'Dist G':100.,}  
     if 'Shapes' not in data:
         data['Shapes'] = {'outName':'run','NumAA':100,'Niter':1,'AAscale':1.0,'Symm':1,'bias-z':0.0,
-            'inflateV':1.0,'AAglue':0.0,'pdbOut':False}
+            'inflateV':1.0,'AAglue':0.0,'pdbOut':False,'boxStep':4.0}
+    if 'boxStep' not in data['Shapes']:
+        data['Shapes']['boxStep'] = 4.0
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':150.,'viewDir':[0,0,1],}
 
     #end patches
@@ -5583,9 +5586,6 @@ def UpdateModelsGrid(G2frame,data):
         return sizeSizer
         
     def PairSizer():
-#        'Pair':{'Method':'Regularization','MaxRadius':[100.,False],'NBins':101,'Errors':'User',
-#                'Percent error':2.5,'Background':[0,False],'Distribution':[],
-#                'Moore':20,},            
                 
         def OnMethod(event):
             data['Pair']['Method'] = method.GetValue()
@@ -5649,7 +5649,7 @@ def UpdateModelsGrid(G2frame,data):
         if 'Moore' in data['Pair']['Method']:
             mooreSizer = wx.BoxSizer(wx.HORIZONTAL)
             mooreSizer.Add(wx.StaticText(G2frame.dataWindow,label='Number of functions: '),0,WACV)
-            moore = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Moore',min=2)
+            moore = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Pair'],'Moore',min=2,max=20)
             mooreSizer.Add(moore,0,WACV)
             mooreterms = wx.Button(G2frame.dataWindow,label = 'Auto determine?')
             mooreterms.Bind(wx.EVT_BUTTON,OnMooreTerms)
@@ -5693,9 +5693,6 @@ def UpdateModelsGrid(G2frame,data):
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
             RefreshPlots(True)
             G2plt.PlotSASDPairDist(G2frame)
-            
-            
-            
         
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
         shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)
@@ -5705,7 +5702,7 @@ def UpdateModelsGrid(G2frame,data):
         numAA = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'NumAA',min=10)
         parmSizer.Add(numAA,0,WACV)
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Nballs=no. amino acids*'),0,WACV)        
-        scaleAA = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'AAscale',min=0.1,max=10.,nDig=(10,2))
+        scaleAA = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'AAscale',min=0.01,max=10.,nDig=(10,2))
         parmSizer.Add(scaleAA,0,WACV)
 #2nd row        
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Inflate by (1.-1.4): '),0,WACV)        
@@ -5728,7 +5725,10 @@ def UpdateModelsGrid(G2frame,data):
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Output name: '),0,WACV)        
         name = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'outName')
         parmSizer.Add(name,0,WACV)
-#last row        
+#last row
+        parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bead separation (3.5-5): '),0,WACV)
+        beadsep = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'boxStep',min=3.5,max=5,nDig=(10,1))
+        parmSizer.Add(beadsep,0,WACV)        
         pdb = wx.CheckBox(G2frame.dataWindow,label=' Save as pdb files?: ')
         pdb.SetValue(data['Shapes']['pdbOut'])
         pdb.Bind(wx.EVT_CHECKBOX, OnPDBout)       
@@ -6074,16 +6074,20 @@ def UpdateModelsGrid(G2frame,data):
     mainSizer.Add(topSizer)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)
     if 'Size' in data['Current']:
+        G2frame.dataWindow.SasSeqFit.Enable(False)
         if 'MaxEnt' in data['Size']['Method']:
             G2frame.GetStatusBar().SetStatusText('Size distribution by Maximum entropy',1)
         elif 'IPG' in data['Size']['Method']:
             G2frame.GetStatusBar().SetStatusText('Size distribution by Interior-Point Gradient',1)
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
+        G2frame.dataWindow.SasSeqFit.Enable(True)
         mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     elif 'Pair' in data['Current']:
+        G2frame.dataWindow.SasSeqFit.Enable(False)
         mainSizer.Add(PairSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     elif 'Shape' in data['Current']:
+        G2frame.dataWindow.SasSeqFit.Enable(False)
         mainSizer.Add(ShapesSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     G2G.HorizontalLine(mainSizer,G2frame.dataWindow)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -6091,12 +6095,13 @@ def UpdateModelsGrid(G2frame,data):
     backVal = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Back'],0,
         nDig=(10,3,'g'),OnLeave=OnBackChange)
     backSizer.Add(backVal,0,WACV)
-    backVar = wx.CheckBox(G2frame.dataWindow,label='Refine?')
-    Indx[backVar.GetId()] = [data['Back'],1]
-    backVar.SetValue(data['Back'][1])
-    backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-    backSizer.Add(backVar,0,WACV)
-    #multiple background files?
+    if 'Shape' not in data['Current']:
+        backVar = wx.CheckBox(G2frame.dataWindow,label='Refine?')
+        Indx[backVar.GetId()] = [data['Back'],1]
+        backVar.SetValue(data['Back'][1])
+        backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
+        backSizer.Add(backVar,0,WACV)
+        #multiple background files?
     backSizer.Add(wx.StaticText(G2frame.dataWindow,-1,' Background file: '),0,WACV)
     Choices = ['',]+G2gd.GetGPXtreeDataNames(G2frame,['SASD',])
     backFile = wx.ComboBox(parent=G2frame.dataWindow,value=data['BackFile'],choices=Choices,

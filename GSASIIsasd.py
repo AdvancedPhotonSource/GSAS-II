@@ -749,7 +749,7 @@ def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=
                     #print "ChoSol: %d %d %d  z = %lg" % ( i, j, k, z)
                 z = a[i][j] - z
                 if j == i:
-                    y = math.sqrt(z)
+                    y = math.sqrt(max(0.,z))
                 else:
                     y = z / fl[j][j]
                 fl[i][j] = y
@@ -1128,10 +1128,15 @@ def PairDistFxn(Profile,ProfDict,Limits,Sample,data):
         if ifBack:
             N += 1
         MPV = np.ones(N)*1.e-5
-#        MPV[0] = Q[Ibeg]
         dmax = pairData['MaxRadius']
+        if 'User' in pairData['Errors']:
+            Wt = wt[Ibeg:Ifin]
+        elif 'Sqrt' in pairData['Errors']:
+            Wt = 1./Io[Ibeg:Ifin]
+        elif 'Percent' in pairData['Errors']:
+            Wt = 1./(pairData['Percent error']*Io[Ibeg:Ifin])
         result = so.leastsq(calcSASD,MPV,full_output=True,epsfcn=1.e-8,   #ftol=Ftol,
-            args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],dmax,ifBack))
+            args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*Wt,Ifb[Ibeg:Ifin],dmax,ifBack))
         if ifBack:
             MPVR = result[0][:-1]
             data['Back'][0] = result[0][-1]
@@ -1440,9 +1445,16 @@ def RgFit(Profile,ProfDict,Limits,Sample,Model):
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
+    pairData = Model['Pair']
+    if 'User' in pairData['Errors']:
+        Wt = wt[Ibeg:Ifin]
+    elif 'Sqrt' in pairData['Errors']:
+        Wt = 1./Io[Ibeg:Ifin]
+    elif 'Percent' in pairData['Errors']:
+        Wt = 1./(pairData['Percent error']*Io[Ibeg:Ifin])
     parmDict,varyList,values = GetModelParms()
     result = so.leastsq(calcSASD,values,full_output=True,epsfcn=1.e-12,factor=0.1,  #ftol=Ftol,
-        args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],Ifb[Ibeg:Ifin],parmDict,varyList))
+        args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*Wt,Ifb[Ibeg:Ifin],parmDict,varyList))
     parmDict.update(dict(zip(varyList,result[0])))
     chisq = np.sum(result[2]['fvec']**2)
     ncalc = result[2]['nfev']

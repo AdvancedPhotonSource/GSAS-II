@@ -1115,6 +1115,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     inflate = shapeDict['inflateV']
     surface_scale = shapeDict['AAglue']
     pdbOut = shapeDict['pdbOut']
+    box_step = shapeDict.get('boxStep',4.0)
     Phases = []
     Patterns = []
     PRcalc = []
@@ -1299,7 +1300,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     nmols_vol_subtract = nmols_vol_start - nmols_vol_end
     
     # Box parametere
-    box_step = 5.0
+#    box_step = 4.0      #5.0
     box_pt_vol = box_step*box_step*box_step
     
     # Energy parameters - flat bottomed VDW (2.0A for a 5.6A bead separation)

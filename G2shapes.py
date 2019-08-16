@@ -385,23 +385,22 @@ def G2shapes(Profile,ProfDict,Limits,data):
                 aList_box_score,box_step,dmax,rsearch):
     
         dmax_over2 = dmax/2.0
-        num_box = int(dmax/box_step)+1
+        num_box = int(dmax/box_step)
+        search_sq = rsearch**2
         
-        box_grid = np.zeros((num_box,num_box,num_box),dtype=int)
-        aList_beads_xyz_loc = np.array([(np.array(aList_beads_x)+dmax_over2)/box_step,
-            (np.array(aList_beads_y)+dmax_over2)/box_step,
-            (np.array(aList_beads_z)+dmax_over2)/box_step],dtype=int)
-    
-        for ix,iy,iz in aList_beads_xyz_loc.T:
-            box_grid[ix,iy,iz] += 1
-            
-        non_zero = np.argwhere(box_grid)
-        for ix,iy,iz in non_zero:
-            aList_box_x_all.append((ix*box_step)-dmax_over2)
-            aList_box_y_all.append((iy*box_step)-dmax_over2)
-            aList_box_z_all.append((iz*box_step)-dmax_over2)
-            aList_box_score.append(box_grid[ix,iy,iz])
-    
+        XYZ = np.meshgrid(np.linspace(-dmax_over2,dmax_over2,num_box),
+            np.linspace(-dmax_over2,dmax_over2,num_box),
+            np.linspace(-dmax_over2,dmax_over2,num_box))
+        XYZ = np.array([XYZ[0].flatten(),XYZ[1].flatten(),XYZ[2].flatten()]).T
+        xyz = np.array((aList_beads_y,aList_beads_x,aList_beads_z)).T
+        for XYZi in XYZ:
+            dsq = np.sum((xyz-XYZi)**2,axis=1)
+            count = int(np.sum(np.array([1 for dist in dsq if dist < search_sq])))
+            if count>1:
+                aList_box_x_all.append(XYZi[0])
+                aList_box_y_all.append(XYZi[1])
+                aList_box_z_all.append(XYZi[2])
+                aList_box_score.append(count)
         return;
     
    # Establish a volume

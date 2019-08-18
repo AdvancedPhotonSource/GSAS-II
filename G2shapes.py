@@ -799,39 +799,55 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         return dr;
     
+    # Return non-zero distances one coordinate & the rest
+    
+    def get_drs(xyz,XYZ):
+        
+        return  np.sqrt(np.sum((XYZ-xyz)**2,axis=1))
+    
     # Find center of beads within a radii
     
     def center_beads(x,y,z,aList_beads_x,aList_beads_y,aList_beads_z,radii_1,radii_2):
     
         num_beads = len(aList_beads_x)
     
-        xsum = 0.0
-        ysum = 0.0
-        zsum = 0.0
-        count_beads = 0.0
-    
-        i = 0
-        while i < num_beads:
+#        xsum = 0.0
+#        ysum = 0.0
+#        zsum = 0.0
+#        count_beads = 0.0
+#    
+#        i = 0
+#        while i < num_beads:
+#            
+#            dr = get_dr(x,y,z,aList_beads_x[i],aList_beads_y[i],aList_beads_z[i])
+#    
+#            if dr > radii_1 and dr < radii_2:
+#                count_beads = count_beads + 1.0
+#                xsum = xsum + float(aList_beads_x[i])
+#                ysum = ysum + float(aList_beads_y[i])
+#                zsum = zsum + float(aList_beads_z[i])           
+#    
+#            i = i + 1
+#    
+#        if count_beads > 0.0:
+#            xsum = xsum/count_beads
+#            ysum = ysum/count_beads
+#            zsum = zsum/count_beads
+#            delta = (xsum - x)**2 + (ysum - y)**2 + (zsum - z)**2
+#            delta = math.sqrt(delta)
+#        else:
+#            delta = 0.0
             
-            dr = get_dr(x,y,z,aList_beads_x[i],aList_beads_y[i],aList_beads_z[i])
-    
-            if dr > radii_1 and dr < radii_2:
-                count_beads = count_beads + 1.0
-                xsum = xsum + float(aList_beads_x[i])
-                ysum = ysum + float(aList_beads_y[i])
-                zsum = zsum + float(aList_beads_z[i])           
-    
-            i = i + 1
-    
-        if count_beads > 0.0:
-            xsum = xsum/count_beads
-            ysum = ysum/count_beads
-            zsum = zsum/count_beads
-            delta = (xsum - x)**2 + (ysum - y)**2 + (zsum - z)**2
-            delta = math.sqrt(delta)
-        else:
-            delta = 0.0
+        XYZ = np.array([aList_beads_x,aList_beads_y,aList_beads_z]).T
+        xyz = np.array([x,y,z])
+        drs = get_drs(xyz,XYZ)
+        sumXYZ = np.array([XYZ[i] for i in range(num_beads) if radii_1<drs[i]<radii_2])
+        count_beads = sumXYZ.shape[0]
         
+        delta = 0.0
+        if count_beads:
+            delta = np.sqrt(np.sum(((np.sum(sumXYZ,axis=0)/count_beads)-xyz)**2))
+            
         return delta;
     
     # Obtain mean of total VDW energy 
@@ -1026,35 +1042,52 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         num_hist = len(aList_r)
         max_dr = (float(num_hist)-1.0)*hist_grid
-        num_beads = len(aList_beads_x)
+#        num_beads = len(aList_beads_x)
+        
+        aList_pr_model_test2 = num_hist*[0.0,]
+        
+        XYZ = np.array([aList_beads_x,aList_beads_y,aList_beads_z]).T
+        xyz = np.array([x1,y1,z1])
+        drs = get_drs(xyz,XYZ)
+        drs_grid = np.where(drs>max_dr,max_dr,drs)/hist_grid
+        int_drs_grid = np.array(drs_grid,dtype=np.int)
+        int_drs_grid = np.where(int_drs_grid>num_hist-2,num_hist-2,int_drs_grid)                
+        ip_lows = int_drs_grid
+        ip_highs = ip_lows + 1            
+        ip_high_fracs = drs_grid - int_drs_grid
+        ip_low_fracs = 1.0 - ip_high_fracs
+        for ip_low in ip_lows:
+            aList_pr_model_test2[ip_low] += ip_low_fracs[ip_low]
+        for ip_high in ip_highs:
+            aList_pr_model_test2[ip_high] += ip_high_fracs[ip_high]
     
-        i = 0
-        while i < num_hist:
-            aList_pr_model_test2[i] = 0.0
-            i = i + 1
-    
-        i = 0
-        while i < num_beads:
-    
-            if i != ii:
-                x2 = float(aList_beads_x[i])
-                y2 = float(aList_beads_y[i])
-                z2 = float(aList_beads_z[i])
-                dr = get_dr(x1,y1,z1,x2,y2,z2)
-                dr = min(dr,max_dr)
-                dr_grid = dr/hist_grid
-                int_dr_grid = int(dr_grid)
-                int_dr_grid = max(int_dr_grid,0)
-                int_dr_grid = min(int_dr_grid,num_hist-2)                
-                ip_low = int_dr_grid
-                ip_high = ip_low + 1            
-                ip_high_frac = dr_grid - float(int_dr_grid)
-                ip_low_frac = 1.0 - ip_high_frac
-                aList_pr_model_test2[ip_low] = float(aList_pr_model_test2[ip_low]) + ip_low_frac
-                aList_pr_model_test2[ip_high] = float(aList_pr_model_test2[ip_high]) + ip_high_frac
-    
-            i = i + 1
-    
+#        i = 0
+#        while i < num_hist:
+#            aList_pr_model_test2[i] = 0.0
+#            i = i + 1
+#    
+#        i = 0
+#        while i < num_beads:
+#    
+#            if i != ii:
+#                x2 = float(aList_beads_x[i])
+#                y2 = float(aList_beads_y[i])
+#                z2 = float(aList_beads_z[i])
+#                dr = get_dr(x1,y1,z1,x2,y2,z2)
+#                dr = min(dr,max_dr)
+#                dr_grid = dr/hist_grid
+#                int_dr_grid = int(dr_grid)
+#                int_dr_grid = max(int_dr_grid,0)
+#                int_dr_grid = min(int_dr_grid,num_hist-2)                
+#                ip_low = int_dr_grid
+#                ip_high = ip_low + 1            
+#                ip_high_frac = dr_grid - float(int_dr_grid)
+#                ip_low_frac = 1.0 - ip_high_frac
+#                aList_pr_model_test2[ip_low] = float(aList_pr_model_test2[ip_low]) + ip_low_frac
+#                aList_pr_model_test2[ip_high] = float(aList_pr_model_test2[ip_high]) + ip_high_frac
+#    
+#            i = i + 1
+#    
         return;
     
     # Recenter set of beads to origin

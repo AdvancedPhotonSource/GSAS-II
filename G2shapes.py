@@ -30,8 +30,9 @@ import time
 import cProfile,pstats
 import io as StringIO
 import numpy as np
+nxs = np.newaxis
 
-def G2shapes(Profile,ProfDict,Limits,data):    
+def G2shapes(Profile,ProfDict,Limits,data,dlg=None):    
 
 ########## FUNCTIONS ########################
 
@@ -395,7 +396,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
         xyz = np.array((aList_beads_y,aList_beads_x,aList_beads_z)).T
         for XYZi in XYZ:
             dsq = np.sum((xyz-XYZi)**2,axis=1)
-            count = int(np.sum(np.array([1 for dist in dsq if dist < search_sq])))
+            count = int(np.sum(np.where(dsq<search_sq,1,0)))
             if count>1:
                 aList_box_x_all.append(XYZi[0])
                 aList_box_y_all.append(XYZi[1])
@@ -616,6 +617,15 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
         return vdw;
     
+    def vdw_energies(econ12,econ6,e_width,drs,bead_sep3):
+
+        drs_e6 = drs**6
+        drs_e12 = drs_e6**2
+        vdws = econ12/drs_e12 - 2.0*econ6/drs_e6
+        vdws = np.where(drs>bead_sep3,0.,vdws)
+        vdws = np.where(vdws>e_width,vdws,e_width)
+        return vdws
+        
     # Set a random distribution of beads in a box with maximum extent dmax
     
     def random_beads(aList_beads_x,aList_beads_y,aList_beads_z,\
@@ -857,16 +867,26 @@ def G2shapes(Profile,ProfDict,Limits,data):
         nbeads = len(aList_beads_x)
         vdw_all = 0.0
         
+        
         i = 0
         while i < nbeads:
-            j = 0
-            while j < i:
-                dr = get_dr(aList_beads_x[i],aList_beads_y[i],aList_beads_z[i],\
-                            aList_beads_x[j],aList_beads_y[j],aList_beads_z[j])
-                vdw = vdw_energy(econ12,econ6,e_width,dr,bead_sep3)            
-                vdw_all = vdw_all + vdw
-                j = j + 1
-            i = i + 1
+            xyz = np.array([aList_beads_x[i],aList_beads_y[i],aList_beads_z[i]])
+            XYZ = np.array([aList_beads_x[:i],aList_beads_y[:i],aList_beads_z[:i]]).T
+            drs = get_drs(xyz,XYZ)
+            vdws = vdw_energies(econ12,econ6,e_width,drs,bead_sep3)
+            vdw_all += np.sum(vdws)
+            i += 1
+        
+#        i = 0
+#        while i < nbeads:
+#            j = 0
+#            while j < i:
+#                dr = get_dr(aList_beads_x[i],aList_beads_y[i],aList_beads_z[i],\
+#                            aList_beads_x[j],aList_beads_y[j],aList_beads_z[j])
+#                vdw = vdw_energy(econ12,econ6,e_width,dr,bead_sep3)            
+#                vdw_all = vdw_all + vdw
+#                j = j + 1
+#            i = i + 1
             
         vdw_all = vdw_all/float(nbeads)
     
@@ -905,9 +925,30 @@ def G2shapes(Profile,ProfDict,Limits,data):
                 yold = float(aList_beads_y[k])
                 zold = float(aList_beads_z[k])
     
+                
+#                fxyz = np.zeros(3)
+#                XYZ = np.array([aList_beads_x,aList_beads_y,aList_beads_z]).T
+#                xyz = np.array([xold,yold,zold])
+#                drs = get_drs(xyz,XYZ)
+#                drs = np.where(drs>eps,drs,eps)
+#                drs_sq = drs*drs
+#                drs12 = drs_sq**6
+#                drs6 = drs_sq**3
+#                dxs = xyz-XYZ
+#                forces = np.where(drs<bead_sep3,(1.0/drs_sq)*(eps12/drs12 - 0.5*eps6/drs6),0.0)
+#                fxyz = np.sum(forces[:,nxs]*dxs,axis=0)
+#                sum_forces_scale = np.sum(np.abs(fxyz))
+#                
+#                xstep = scale*fxyz[0]
+#                ystep = scale*fxyz[1]
+#                zstep = scale*fxyz[2]
+                
+                
+                
                 fx = 0.0
                 fy = 0.0
                 fz = 0.0
+                
                 j = 0
                 while j < nbeads:
     
@@ -1044,8 +1085,13 @@ def G2shapes(Profile,ProfDict,Limits,data):
         max_dr = (float(num_hist)-1.0)*hist_grid
 #        num_beads = len(aList_beads_x)
         
-        aList_pr_model_test2 = num_hist*[0.0,]
-        
+#        aList_pr_model_test2 = num_hist*[0.0,]
+#        
+#        i = 0
+#        while i < num_hist:
+#            aList_pr_model_test2[i] = 0.0
+#            i = i + 1
+            
         XYZ = np.array([aList_beads_x,aList_beads_y,aList_beads_z]).T
         xyz = np.array([x1,y1,z1])
         drs = get_drs(xyz,XYZ)
@@ -1061,11 +1107,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
         for ip_high in ip_highs:
             aList_pr_model_test2[ip_high] += ip_high_fracs[ip_high]
     
-#        i = 0
-#        while i < num_hist:
-#            aList_pr_model_test2[i] = 0.0
-#            i = i + 1
-#    
+    
 #        i = 0
 #        while i < num_beads:
 #    
@@ -1671,6 +1713,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
                 # Get initial contributions to P(r)  
     
+                aList_pr_model_test2 = num_hist*[0.0,]
                 pr_shift_atom(aList_pr_model_test2,xold,yold,zold,aList_beads_x,\
                               aList_beads_y,aList_beads_z,hist_grid,ii)
     
@@ -1712,6 +1755,7 @@ def G2shapes(Profile,ProfDict,Limits,data):
     
                 # Get shifted contributions to P(r)  
     
+                aList_pr_model_test2 = num_hist*[0.0,]
                 pr_shift_atom(aList_pr_model_test2,xtest,ytest,ztest,aList_beads_x,\
                               aList_beads_y,aList_beads_z,hist_grid,ii)
     
@@ -1805,11 +1849,14 @@ def G2shapes(Profile,ProfDict,Limits,data):
             count_hist_yes = count_hist_yes*float(num_symm)/float(nbeads)
             success_rate = success*float(num_symm)/float(nbeads)
             success_rate_all = success_rate_all + success_rate
-    
-            aString = 'Cycle ' + str(count_it+1) + ' Moves ' + str('%.2f'%(success_rate)) + \
-                      ' Possibles ' + str('%.2f'%(count_hist_yes)) + ' rms P(r) '+ str('%4.3f'%(hist_score)) + \
-                      ' Energy ' + str('%4.2f'%(vdw_all))
-            print (aString)
+
+            if not (count_it+1)%10:   
+                aString = 'Cycle ' + str(count_it+1) + ' Moves ' + str('%.2f'%(success_rate)) + \
+                          ' Possibles ' + str('%.2f'%(count_hist_yes)) + ' rms P(r) '+ str('%4.3f'%(hist_score)) + \
+                          ' Energy ' + str('%4.2f'%(vdw_all))
+                print (aString)
+            if dlg:
+                dlg.Update(count_it+1,newmsg='Cycle no.: '+str(count_it)+' of 160')
     
             # Debug statitics. Weight of 10 gives about 1.0
             #sum_delta_pack = sum_delta_pack/float(nbeads)

@@ -5436,8 +5436,11 @@ def UpdateModelsGrid(G2frame,data):
       J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, xxx-xxx.
       doi: 10.1107/S1600576719009774''',
       caption='Program Shapes',style=wx.ICON_INFORMATION)
+            dlg = wx.ProgressDialog('Running SHAPES','Cycle no.: 0 of 160',161, 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)
+                
             data['Pair']['Result'] = []       #clear old results (if any) for now
-            data['Pair']['Result'] = G2shapes.G2shapes(Profile,ProfDict,Limits,data)
+            data['Pair']['Result'] = G2shapes.G2shapes(Profile,ProfDict,Limits,data,dlg)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
     def OnUnDo(event):

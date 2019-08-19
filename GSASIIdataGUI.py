@@ -6268,7 +6268,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def OnAveSelSeq(event):
         'average the selected columns from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
-        useCol =  ~np.array(G2frame.SeqTable.GetColValues(0),dtype=bool)
+        useCol =  ~np.array(G2frame.SeqTable.GetColValues(1),dtype=bool)
         if cols:
             for col in cols:
                 items = GetColumnInfo(col)[1]

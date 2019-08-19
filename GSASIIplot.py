@@ -6460,13 +6460,16 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         Plot.clear()
         colors=['b','g','r','c','m','k']
         uselist = G2frame.SeqTable.GetColValues(1)
-        if G2frame.seqXaxis is not None:    
-            xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
-            if G2frame.seqReverse and not G2frame.seqXaxis:
-                X = X[::-1]
-        else:
-            X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
-            xName = 'Data sequence number'
+        X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
+        xName = 'Data sequence number'
+        if G2frame.seqXaxis is not None:
+            try: # fails if selected X column is no longer in table
+                xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
+                if G2frame.seqReverse and not G2frame.seqXaxis:
+                    X = X[::-1]
+            except:
+                print('X column no longer in table, resetting')
+                G2frame.seqXaxis = None
         for ic,col in enumerate(Page.seqYaxisList):
             Ncol = colors[ic%6]
             name,Y,sig = Page.seqTableGet(col)

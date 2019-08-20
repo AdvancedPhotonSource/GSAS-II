@@ -5526,7 +5526,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         ImageParams.Append(G2G.wxID_SAVESELECTEDCONTROLS,'Save Multiple Controls','Save controls from selected images to file')
         ImageParams.Append(G2G.wxID_IMLOADCONTROLS,'Load Controls','Load image controls from file')
         ImageParams.Append(G2G.wxID_LOADELECTEDCONTROLS,'Load Multiple Controls','Load multiple image controls from multiple files')
-        ImageParams.Append(G2G.wxID_IMXFERCONTROLS,'Xfer angles','Transfer integration range for other detector distances')
+        ImageParams.Append(G2G.wxID_IMXFERCONTROLS,'Xfer controls','Transfer integration controls to other detector distances')
         ImageParams.Append(G2G.wxID_IMRESETDIST,'Reset dist','Reset all detector dist to set dist')
         self.PostfillDataMenu()
             

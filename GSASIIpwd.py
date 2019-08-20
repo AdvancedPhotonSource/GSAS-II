@@ -1133,7 +1133,7 @@ def ellipseSizeDerv(H,Sij,GB):
         dRdS[i] = (lenP-lenM)/(2.*delt)
     return lenR,dRdS
 
-def getHKLpeak(dmin,SGData,A,Inst=None):
+def getHKLpeak(dmin,SGData,A,Inst=None,nodup=False):
     '''
     Generates allowed by symmetry reflections with d >= dmin
     NB: GenHKLf & checkMagextc return True for extinct reflections
@@ -1147,11 +1147,15 @@ def getHKLpeak(dmin,SGData,A,Inst=None):
     '''
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
+    ds = []
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
         if ext and 'MagSpGrp' in SGData:
             ext = G2spc.checkMagextc([h,k,l],SGData)
         if not ext:
+            if nodup and int(10000*d) in ds:
+                continue
+            ds.append(int(10000*d))
             if Inst == None:
                 HKLs.append([h,k,l,d,0,-1])
             else:

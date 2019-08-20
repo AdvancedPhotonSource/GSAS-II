@@ -193,7 +193,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(G2frame,G2frame.ImageZ,data,masks)
-        wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
+        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
         
     def OnRecalibAll(event):
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
@@ -542,12 +542,13 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         extraopts = {"label_1":"Xfer scaled calib d-min", "value_1":False,
                      "label_2":"Xfer scaled 2-theta min", "value_2":False,
                      "label_3":"Xfer scaled 2-theta max", "value_3":True,
+                     "label_4":"Xfer fixed background  ", "value_4":False,
                      }
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Xfer angles','Transfer integration range from '+Source+' to:',
             Names,extraOpts=extraopts)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                for i in '_1','_2','_3':
+                for i in '_1','_2','_3','_4':
                     if extraopts['value'+i]: break
                 else:
                     G2G.G2MessageBox(G2frame,'Nothing to do!')
@@ -561,6 +562,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                 dist0 = data['distance']
                 wave0 = data['wavelength']
                 dsp0 = data['calibdmin']
+                flatBkg = data['Flat Bkg']
                 print('distance = {:.2f} integration range: [{:.4f}, {:.4f}], calib dmin {:.3f}'
                             .format(dist0,ttmin0,ttmax0,dsp0))
                 for item in items:
@@ -577,6 +579,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         data['calibdmin'] = data['wavelength']/(2.*sind(ang1/2.))
                         print('distance = {:.2f} integration range: [{:.4f}, {:.4f}], calib dmin {:.3f}'
                             .format(dist1,data['IOtth'][0],data['IOtth'][1],data['calibdmin']))
+                    if extraopts['value_4']:
+                        data['Flat Bkg'] = flatBkg*(dist0/dist1)**2
                     else:
                         print('distance = {:.2f} integration range: [{:.4f}, {:.4f}]'
                             .format(dist1,data['IOtth'][0],data['IOtth'][1]))

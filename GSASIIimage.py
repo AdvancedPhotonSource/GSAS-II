@@ -592,12 +592,12 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         A = G2lat.cell2A(cell)
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
-            hkl = G2pwd.getHKLpeak(dmin,SGData,A)
+            hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
             HKL += list(hkl)
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
             HKL += list(hkl)
-    if len(calibrant) > 4:
+    if len(calibrant) > 5:
         absent = calibrant[5]
     else:
         absent = ()
@@ -620,7 +620,10 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
             G2fil.G2Print ('next line is a hyperbola - search stopped')
             break
         ellipse = GetEllipse(dsp,data)
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+        if iH not in absent and iH >= skip:
+            Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
+        else:
+            Ring = makeRing(dsp,ellipse,pixLimit,1000.0,scalex,scaley,ma.array(ImageZ,mask=tam))[0]
         if Ring:
             if iH not in absent and iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -720,7 +723,7 @@ def ImageCalibrate(G2frame,data):
         A = G2lat.cell2A(cell)
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
-            hkl = G2pwd.getHKLpeak(dmin,SGData,A)
+            hkl = G2pwd.getHKLpeak(dmin,SGData,A,Inst=None,nodup=True)
             #G2fil.G2Print(hkl)
             HKL += list(hkl)
         else:

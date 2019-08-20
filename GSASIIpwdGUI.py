@@ -5247,6 +5247,9 @@ def UpdateModelsGrid(G2frame,data):
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
         elif 'Size' in PlotText:
             G2plt.PlotSASDSizeDist(G2frame)
+        elif 'Pair' in PlotText:
+            G2plt.PlotSASDPairDist(G2frame)
+            
                 
     def OnAddModel(event):
         if data['Current'] == 'Particle fit':
@@ -5692,9 +5695,9 @@ def UpdateModelsGrid(G2frame,data):
             print('%s %d'%('num. beads',len(selAtoms[1])))
             print('%s %.3f'%('selected r value',pattern[-1]))
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
-            G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
             RefreshPlots(True)
             G2plt.PlotSASDPairDist(G2frame)
+            G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
         
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
         shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)

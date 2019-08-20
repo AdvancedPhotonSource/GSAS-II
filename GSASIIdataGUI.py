@@ -8325,8 +8325,11 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         elif prfx1 == 'REFD':
             G2pdG.UpdateREFDModelsGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame,plotType=prfx1)
-        if prfx1 == 'SASD' and len(data['Size']['Distribution']):
-            G2plt.PlotSASDSizeDist(G2frame)
+        if prfx1 == 'SASD':
+            if len(data['Size']['Distribution']):
+                G2plt.PlotSASDSizeDist(G2frame)
+            if len(data['Pair']['Distribution']):
+                G2plt.PlotSASDPairDist(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Substances':
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         data = G2frame.GPXtree.GetItemPyData(item)

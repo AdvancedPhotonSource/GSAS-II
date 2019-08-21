@@ -5685,8 +5685,13 @@ def UpdateModelsGrid(G2frame,data):
                     shapeTable.SetValue(j,i,False)
             shapeTable.SetValue(r,c,True)
             ShapesResult.ForceRefresh()
-            selAtoms = Atoms[2*r+(c-1)]
+            Limits = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Limits'))[1]
+            ProfDict,Profile = G2frame.GPXtree.GetItemPyData(G2frame.PatternId)[:2]
+            iBeg = np.searchsorted(Profile[0],Limits[0])
+            iFin = np.searchsorted(Profile[0],Limits[1])
             pattern = Patterns[r]
+            Profile[3][iBeg:iFin+1] = np.array(pattern[2])
+            selAtoms = Atoms[2*r+(c-1)]
             prCalc = PRcalc[r][2]
             prDelt= np.diff(PRcalc[r][0])[0]
             prsum = np.sum(prCalc)
@@ -5695,7 +5700,8 @@ def UpdateModelsGrid(G2frame,data):
             print('%s %d'%('num. beads',len(selAtoms[1])))
             print('%s %.3f'%('selected r value',pattern[-1]))
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
-            RefreshPlots(True)
+#            RefreshPlots(True)
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             G2plt.PlotSASDPairDist(G2frame)
             G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
         

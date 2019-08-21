@@ -1541,6 +1541,12 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
         hist_score_best = pr_dif(aList_pr,aList_pr_model,skip)
         aString = 'Initial rms P(r): ' + str('%4.3f'%(hist_score_best))
         print (aString)
+        
+        aList_i_calc = []
+        ft_to_intensity(aList_q,aList_i_calc,aList_r,aList_pr_model,nbeads)
+        (chi_sq,rvalue) = score_Ic(aList_q,aList_i,aList_i_sd,aList_i_calc)
+        aString = 'Initial Rvalue: ' + str('%4.3f'%(rvalue)) + ' CHI-squared: ' + str('%4.3f'%(chi_sq))
+        print (aString)
     
         ###########################
         # Iterate                 #
@@ -1621,6 +1627,10 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
     
                 calc_pr(aList_beads_x,aList_beads_y,aList_beads_z,aList_pr_model,hist_grid)
                 hist_score_best = pr_dif(aList_pr,aList_pr_model,skip)
+                
+#                aList_i_calc = []
+#                ft_to_intensity(aList_q,aList_i_calc,aList_r,aList_pr_model,nbeads)
+#                (chi_sq,rvalue) = score_Ic(aList_q,aList_i,aList_i_sd,aList_i_calc)
     
                 # Reset SA deviation if mean success rate over last trials is under 0.1
     
@@ -1774,6 +1784,10 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                     i = i + 1
     
                 hist_score = pr_dif(aList_pr,aList_pr_model_test,skip)
+                
+#                aList_i_calc = []
+#                ft_to_intensity(aList_q,aList_i_calc,aList_r,aList_pr_model,nbeads)
+#                (chi_sq,rvalue) = score_Ic(aList_q,aList_i,aList_i_sd,aList_i_calc)
     
                 # Scoring shifts
     
@@ -1855,6 +1869,8 @@ def G2shapes(Profile,ProfDict,Limits,data,dlg=None):
                           ' Possibles ' + str('%.2f'%(count_hist_yes)) + ' rms P(r) '+ str('%4.3f'%(hist_score)) + \
                           ' Energy ' + str('%4.2f'%(vdw_all))
                 print (aString)
+#                print('Rvalue: %4.3f CHI-squared: %4.3f'%(rvalue,chi_sq))
+
             if dlg:
                 dlg.Update(count_it+1,newmsg='Cycle no.: '+str(count_it)+' of 160')
     

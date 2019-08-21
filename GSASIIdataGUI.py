@@ -5508,6 +5508,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.ImageEdit.Append(G2G.wxID_IMCALIBRATE,'Calibrate','Calibrate detector by fitting to calibrant lines')
         self.ImageEdit.Append(G2G.wxID_IMRECALIBRATE,'Recalibrate','Recalibrate detector by fitting to calibrant lines')
         self.ImageEdit.Append(G2G.wxID_IMRECALIBALL,'Recalibrate all','Recalibrate all images by fitting to calibrant lines')
+        G2G.Define_wxId('wxID_IMDISTRECALIB')
+        self.ImageEdit.Append(G2G.wxID_IMDISTRECALIB,'Multi-distance Recalibrate','Recalibrate all images varying delta-distance and fitting wavelength')
         self.ImageEdit.Append(G2G.wxID_IMCLEARCALIB,'Clear calibration','Clear calibration data points and rings')
         
         ImageIntegrate = wx.Menu(title='')

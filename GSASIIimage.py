@@ -137,7 +137,7 @@ def FitEllipse(xy):
     return cent,phi,radii
 
 def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
-    '''Fit detector calibration paremeters
+    '''Fit detector calibration parameters
 
     :param np.array rings: vector of ring positions
     :param list varyList: calibration parameters to be refined
@@ -224,6 +224,134 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     else:
         return [chisq,vals,sigList]
 
+def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
+    '''Fit detector calibration parameters with multi-distance data
+
+    :param np.array rings: vector of ring positions (x,y,dist,d-space)
+    :param list varyList: calibration parameters to be refined
+    :param dict parmDict: calibration parameters
+    :param bool Print: set to True (default) to print the results
+    :param bool covar: set to True to return the covariance matrix (default is False)
+    :returns: [chisq,vals,sigDict] unless covar is True, then 
+        [chisq,vals,sigDict,coVarMatrix] is returned
+    '''
+        
+    def CalibPrint(parmDict,sigDict,chisq,Npts):
+        print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        names = ['wavelength', 'dep', 'phi', 'tilt']
+        if 'deltaDist' in parmDict:
+            names += ['deltaDist']
+        for name in names:
+            if name == 'wavelength':
+                fmt = '%12.6f'
+            elif name == 'dep':
+                fmt = '%12.4f'
+            else:
+                fmt = '%12.3f'
+                
+            ptlbls += "%s" % (name.rjust(12))
+            if name == 'phi':
+                ptstr += fmt % (parmDict[name]%360.)
+            else:
+                ptstr += fmt % (parmDict[name])
+            if name in sigDict:
+                sigstr += fmt % (sigDict[name])
+            else:
+                sigstr += 12*' '
+        print (ptlbls)
+        print (ptstr)
+        print (sigstr)
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        for d in sorted(set([i[5:] for i in parmDict.keys() if 'det-X' in i]),key=lambda x:int(x)):
+            fmt = '%12.3f'
+            for key in 'det-X','det-Y','delta':
+                name = key+d
+                if name not in parmDict: continue
+                ptlbls += "%12s" % name
+                ptstr += fmt % (parmDict[name])
+                if name in sigDict:
+                    sigstr += fmt % (sigDict[name])
+                else:
+                    sigstr += 12*' '
+                if len(ptlbls) > 68:
+                    print()
+                    print (ptlbls)
+                    print (ptstr)
+                    print (sigstr)
+                    ptlbls = 'names :'
+                    ptstr =  'values:'
+                    sigstr = 'esds  :'
+        if len(ptlbls) > 0:
+            print()
+            print (ptlbls)
+            print (ptstr)
+            print (sigstr)
+
+    def ellipseCalcD(B,xyd,varyList,parmDict):
+        x,y,dist,dsp = xyd
+        varyDict = dict(zip(varyList,B))
+        parms = {}
+        for parm in parmDict:
+            if parm in varyList:
+                parms[parm] = varyDict[parm]
+            else:
+                parms[parm] = parmDict[parm]
+        # create arrays with detector center values
+        detX = np.array([parms['det-X'+str(int(d))] for d in dist])
+        detY = np.array([parms['det-Y'+str(int(d))] for d in dist])
+        if 'deltaDist' in parms:
+            deltaDist = parms['deltaDist']
+        else:
+            deltaDist = np.array([parms['delta'+str(int(d))] for d in dist])
+                
+        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+        tth = 2.0*npasind(parms['wavelength']/(2.*dsp))
+        phi0 = npatan2d(y-detY,x-detX)
+        dxy = peneCorr(tth,parms['dep'],dist-deltaDist,parms['tilt'],phi0)
+        stth = npsind(tth)
+        cosb = npcosd(parms['tilt'])
+        tanb = nptand(parms['tilt'])        
+        tbm = nptand((tth-parms['tilt'])/2.)
+        tbp = nptand((tth+parms['tilt'])/2.)
+        d = (dist-deltaDist)+dxy
+        fplus = d*tanb*stth/(cosb+stth)
+        fminus = d*tanb*stth/(cosb-stth)
+        vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
+        vminus = d*(tanb+(1-tbp)/(1+tbp))*stth/(cosb-stth)
+        R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
+        R1 = (vplus+vminus)/2.                                    #major axis
+        zdis = (fplus-fminus)/2.
+        Robs = np.sqrt((x-detX)**2+(y-detY)**2)
+        rsqplus = R0**2+R1**2
+        rsqminus = R0**2-R1**2
+        R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
+        Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
+        P = 2.*R0**2*zdis*npcosd(phi0-phi)
+        Rcalc = (P+Q)/R
+        return (Robs-Rcalc)*10.        #why 10? does make "chi**2" more reasonable
+        
+    p0 = [parmDict[key] for key in varyList]
+    result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
+    chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
+    parmDict.update(zip(varyList,result[0]))
+    vals = list(result[0])
+    if chisq > 1:
+        sig = list(np.sqrt(chisq*np.diag(result[1])))
+    else:
+        sig = list(np.sqrt(np.diag(result[1])))
+    sigDict = {name:s for name,s in zip(varyList,sig)}
+    if Print:
+        CalibPrint(parmDict,sigDict,chisq,rings.shape[0])
+    if covar:
+        return [chisq,vals,sigDict,result[1]]
+    else:
+        return [chisq,vals,sigDict]
+    
 def ImageLocalMax(image,w,Xpix,Ypix):
     'Needs a doc string'
     w2 = w*2
@@ -555,7 +683,7 @@ def MakeFrameMask(data,frame):
                 tam[iBeg:iFin,jBeg:jFin] = True
     return tam.T
     
-def ImageRecalibrate(G2frame,ImageZ,data,masks):
+def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
     '''Called to repeat the calibration on an image, usually called after
     calibration is done initially to improve the fit.
 
@@ -563,10 +691,13 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
     :param np.Array ImageZ: the image to calibrate
     :param dict data: the Controls dict for the image
     :param dict masks: a dict with masks
-    :returns: a list containing vals,varyList,sigList,parmDict,covar
+    :returns: a list containing vals,varyList,sigList,parmDict,covar or rings
+      (with an array of x, y, and d-space values) if getRingsOnly is True
+      or an empty list, in case of an error
     '''
     import ImageCalibrants as calFile
-    G2fil.G2Print ('Image recalibration:')
+    if not getRingsOnly:
+        G2fil.G2Print ('Image recalibration:')
     time0 = time.time()
     pixelSize = data['pixelSize']
     scalex = 1000./pixelSize[0]
@@ -639,6 +770,8 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks):
         return []    
         
     rings = np.concatenate((data['rings']),axis=0)
+    if getRingsOnly:
+        return rings
     [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']

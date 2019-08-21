@@ -201,7 +201,7 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
         Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
         P = 2.*R0**2*zdis*npcosd(phi0-phi)
         Rcalc = (P+Q)/R
-        M = (Robs-Rcalc)*10.        #why 10? does make "chi**2" more reasonable
+        M = (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
         return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
@@ -333,7 +333,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
         P = 2.*R0**2*zdis*npcosd(phi0-phi)
         Rcalc = (P+Q)/R
-        return (Robs-Rcalc)*10.        #why 10? does make "chi**2" more reasonable
+        return (Robs-Rcalc)*25.        #why 25? does make "chi**2" more reasonable
         
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)

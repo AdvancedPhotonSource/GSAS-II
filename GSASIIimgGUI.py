@@ -324,7 +324,12 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                             varList += [v+key]
                 #GSASIIpath.IPyBreak()
                 print('\nFitting',obsArr.shape[0],'ring picks...')
-                result = G2img.FitMultiDist(obsArr,varList,parmDict)
+                result = G2img.FitMultiDist(obsArr,varList,parmDict,covar=True)
+                covar = result[3]
+                covData = {'title':'Multi-distance recalibrate','covMatrix':covar,'varyList':varList,'variables':result[1]}
+                Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance')
+                G2frame.GPXtree.SetItemPyData(Id,covData)
+                
                 # create a sequential table?
 #                Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
 #                if Id:

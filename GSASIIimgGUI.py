@@ -263,8 +263,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
         try:
-            wx.BeginBusyCursor()
             if dlg.ShowModal() == wx.ID_OK:
+                wx.BeginBusyCursor()
                 items = dlg.GetSelections()
                 print('Scanning for ring picks...')
 #                G2frame.EnablePlot = False
@@ -323,7 +323,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         if Data['varyList'][v]:
                             varList += [v+key]
                 #GSASIIpath.IPyBreak()
-                print('\nFitting',len(obsArr.shape[0]),'ring picks...')
+                print('\nFitting',obsArr.shape[0],'ring picks...')
                 result = G2img.FitMultiDist(obsArr,varList,parmDict)
                 # create a sequential table?
 #                Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential image calibration results')
@@ -351,6 +351,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
 #                        'covMatrix':covar,'title':name,'parmDict':parmDict}
 #                SeqResult['histNames'] = Names                
 #                G2frame.GPXtree.SetItemPyData(Id,SeqResult)
+            else:
+                wx.BeginBusyCursor()
         finally:
             dlg.Destroy()
             wx.EndBusyCursor()

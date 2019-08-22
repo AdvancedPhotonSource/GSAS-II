@@ -359,7 +359,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     Data['ellipses'] = []           #clear away individual ellipse fits
                     for H in HKL[key][:N]:
                         ellipse = G2img.GetEllipse(H[3],Data)
-                        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
+                        Data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
                 G2frame.EnablePlot = True
                 G2frame.GPXtree.SelectItem(G2frame.root) # there is probably a better way to force the reload of the current page
                 wx.CallAfter(G2frame.GPXtree.SelectItem,startID)
@@ -1004,9 +1004,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         if 'PWDR' in data['type']:
             Names.append('dep') 
         Parms = {'dist':['Distance',(10,3),data,'distance'],'det-X':['Beam center X',(10,3),data['center'],0],
-            'det-Y':['Beam center Y',(10,3),data['center'],1],'tilt':['Tilt angle',(10,3),data,'tilt'],
-            'phi':['Tilt rotation',(10,2),data,'rotation'],'dep':['Penetration',(10,4),data,'DetDepth'],
-            'wave':['Wavelength',(10,6),data,'wavelength']}
+            'det-Y':['Beam center Y',(10,3),data['center'],1],'tilt':['Tilt angle*',(10,3),data,'tilt'],
+            'phi':['Tilt rotation*',(10,2),data,'rotation'],'dep':['Penetration*',(10,4),data,'DetDepth'],
+            'wave':['Wavelength*',(10,6),data,'wavelength']}
         for name in Names:
             calSel = wx.CheckBox(parent=G2frame.dataWindow,label=Parms[name][0])
             calibSizer.Add(calSel,0,WACV)
@@ -1432,6 +1432,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         OnIntegrate(None,useTA=useTA,useMask=useMask)
         return
     
+    G2frame.GetStatusBar().SetStatusText('* Global parameters in Multi-dist recalib.',1)
     colorList = sorted([m for m in mpl.cm.datad.keys() ],key=lambda s: s.lower())   #if not m.endswith("_r")
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',]

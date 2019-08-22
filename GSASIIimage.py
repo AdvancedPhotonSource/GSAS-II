@@ -212,13 +212,21 @@ def FitDetector(rings,varyList,parmDict,Print=True,covar=False):
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
-    sig = list(np.sqrt(chisq*np.diag(result[1])))
-    sigList = np.zeros(7)
-    for i,name in enumerate(varyList):
-        sigList[i] = sig[varyList.index(name)]
-    ValSig = zip(varyList,vals,sig)
+    if not len(vals):
+        sig = []
+        ValSig = []
+        sigList = []
+    else:    
+        sig = list(np.sqrt(chisq*np.diag(result[1])))
+        sigList = np.zeros(7)
+        for i,name in enumerate(varyList):
+            sigList[i] = sig[varyList.index(name)]
+        ValSig = zip(varyList,vals,sig)
     if Print:
-        CalibPrint(ValSig,chisq,rings.shape[0])
+        if len(sig):
+            CalibPrint(ValSig,chisq,rings.shape[0])
+        else:
+            print(' Nothing refined')
     if covar:
         return [chisq,vals,sigList,result[1]]
     else:

@@ -3918,7 +3918,11 @@ class GSASII(wx.Frame):
         while item:
             name = self.GPXtree.GetItemText(item)
             if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD','REFD']:
-                if not Id: Id = item
+                if not Id:
+                    if name[:4] == 'IMG ':
+                        Id = GetGPXtreeItemId(self,item,'Image Controls')
+                    else:
+                        Id = item
             elif name == "Phases":
                 phaseId = item
             elif name == 'Controls':
@@ -3934,8 +3938,11 @@ class GSASII(wx.Frame):
             SelectDataTreeItem(self,Id)
             self.GPXtree.SelectItem(Id)  # needed on OSX or item is not selected in tree; perhaps not needed elsewhere
         elif phaseId:
-            SelectDataTreeItem(self,phaseId)
-            self.GPXtree.SelectItem(phaseId) # as before for OSX
+            Id = phaseId
+            # open 1st phase
+            Id, unused = self.GPXtree.GetFirstChild(phaseId)
+            SelectDataTreeItem(self,Id)
+            self.GPXtree.SelectItem(Id) # as before for OSX
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
         pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
@@ -4094,8 +4101,7 @@ class GSASII(wx.Frame):
         elif result == wx.ID_CANCEL:
             return
         else:
-            if not self.OnFileSave(event):
-                return
+            if not self.OnFileSave(event): return
         FrameInfo = {'Main_Pos':tuple(self.GetPosition()),
                      'Main_Size':tuple(self.GetSize()),
                      'Plot_Pos':tuple(self.plotFrame.GetPosition()),

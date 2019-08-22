@@ -202,6 +202,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         '''Use existing calibration values as starting point for a calibration
         fit for a selected series of images
         '''
+        Id = None
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
         try:
@@ -251,7 +252,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         print ('All selected images recalibrated - results in Sequential image calibration results')
         G2frame.G2plotNB.Delete('Sequential refinement')    #clear away probably invalid plot
         G2plt.PlotExposedImage(G2frame,event=None)
-        G2frame.GPXtree.SelectItem(Id)
+        if Id: G2frame.GPXtree.SelectItem(Id)
 
     def OnDistRecalib(event):
         '''Assemble rings & calibration input for a series of images with
@@ -260,7 +261,9 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         obsArr = np.array([]).reshape(0,4)
         parmDict = {}
         varList = []
+        HKL = {}
         Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        startID = G2frame.GPXtree.GetSelection()
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -273,28 +276,17 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     print ('getting rings for',name)
                     G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
                     Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
-                    G2frame.ImageZ = GetImageZ(G2frame,Data)
-                    Data['setRings'] = True
-                    Mid = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')
-                    Masks = G2frame.GPXtree.GetItemPyData(Mid)
-                    result = G2img.ImageRecalibrate(G2frame,G2frame.ImageZ,Data,Masks,getRingsOnly=True)
-                    if not len(result):
-                        print('calibrant missing from local image calibrants files')
-                        return
-                    # add detector set dist into data array, create a single really large array
-                    distarr = np.zeros_like(result[:,2:3])
-                    if 'setdist' not in Data:
-                        print('Distance (setdist) not in image metadata')
-                        return
-                    distarr += Data['setdist']
-                    obsArr = np.concatenate((
-                        obsArr,
-                        np.concatenate((result[:,0:2],distarr,result[:,2:3]),axis=1)),axis=0)
+                    key = str(int(Data['setdist']))
                     # create a parameter dict for combined fit
                     if 'wavelength' not in parmDict:
                         parmDict['wavelength'] = Data['wavelength']
                         if Data['varyList']['wave']:
                             varList += ['wavelength']
+                            if Data['varyList']['dist']:
+                                G2G.G2MessageBox(G2frame,
+                                'You cannot vary individual detector positions and the global wavelength.\n\nChange flags for 1st image.',
+                                'Conflicting vars')
+                                return
                         parmDict['dep'] = Data['DetDepth']
                         if Data['varyList']['dep']:
                             varList += ['dep']
@@ -309,7 +301,24 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         parmDict['tilt'] = Data['tilt']
                         if Data['varyList']['tilt']:
                             varList += ['tilt']
-                    key = str(int(Data['setdist']))
+                    G2frame.ImageZ = GetImageZ(G2frame,Data)
+                    Data['setRings'] = True
+                    Mid = G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks')
+                    Masks = G2frame.GPXtree.GetItemPyData(Mid)
+                    result = G2img.ImageRecalibrate(G2frame,G2frame.ImageZ,Data,Masks,getRingsOnly=True)
+                    if not len(result):
+                        print('calibrant missing from local image calibrants files')
+                        return
+                    rings,HKL[key] = result
+                    # add detector set dist into data array, create a single really large array
+                    distarr = np.zeros_like(rings[:,2:3])
+                    if 'setdist' not in Data:
+                        print('Distance (setdist) not in image metadata')
+                        return
+                    distarr += Data['setdist']
+                    obsArr = np.concatenate((
+                        obsArr,
+                        np.concatenate((rings[:,0:2],distarr,rings[:,2:3]),axis=1)),axis=0)
                     if 'deltaDist' not in parmDict:
                         # starts as zero, variable refined for each image
                          parmDict['delta'+key] = 0
@@ -323,12 +332,39 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                         if Data['varyList'][v]:
                             varList += [v+key]
                 #GSASIIpath.IPyBreak()
-                print('\nFitting',obsArr.shape[0],'ring picks...')
+                print('\nFitting',obsArr.shape[0],'ring picks and',len(varList),'variables...')
                 result = G2img.FitMultiDist(obsArr,varList,parmDict,covar=True)
                 covar = result[3]
                 covData = {'title':'Multi-distance recalibrate','covMatrix':covar,'varyList':varList,'variables':result[1]}
                 Id = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Covariance')
                 G2frame.GPXtree.SetItemPyData(Id,covData)
+                
+                for item in items:
+                    name = Names[item]
+                    print ('updating',name)
+                    G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    Data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
+                    Data['wavelength'] = parmDict['wavelength']
+                    key = str(int(Data['setdist']))
+                    Data['center'] = [parmDict['det-X'+key],parmDict['det-Y'+key]]
+                    if 'deltaDist' in parmDict:
+                        Data['distance'] = Data['setdist'] - parmDict['deltaDist']
+                    else:
+                        Data['distance'] = Data['setdist'] - parmDict['delta'+key]
+                    Data['rotation'] = np.mod(parmDict['phi'],360.0)
+                    Data['tilt'] = parmDict['tilt']
+                    Data['DetDepth'] = parmDict['dep']
+                    #Data['chisq'] = chisq
+                    N = len(Data['ellipses'])
+                    Data['ellipses'] = []           #clear away individual ellipse fits
+                    for H in HKL[key][:N]:
+                        ellipse = G2img.GetEllipse(H[3],Data)
+                        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
+                G2frame.EnablePlot = True
+                G2frame.GPXtree.SelectItem(G2frame.root) # there is probably a better way to force the reload of the current page
+                wx.CallAfter(G2frame.GPXtree.SelectItem,startID)
+                    #GSASIIpath.IPyBreak()
+                    
                 
                 # create a sequential table?
 #                Id =  G2gd.GetGPXtreeItemId(G2frame,G2frame.root,'Sequential image calibration results')

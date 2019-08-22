@@ -237,7 +237,34 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
     '''
         
     def CalibPrint(parmDict,sigDict,chisq,Npts):
-        print ('Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        for d in sorted(set([i[5:] for i in parmDict.keys() if 'det-X' in i]),key=lambda x:int(x)):
+            fmt = '%12.3f'
+            for key in 'det-X','det-Y','delta':
+                name = key+d
+                if name not in parmDict: continue
+                ptlbls += "%12s" % name
+                ptstr += fmt % (parmDict[name])
+                if name in sigDict:
+                    sigstr += fmt % (sigDict[name])
+                else:
+                    sigstr += 12*' '
+                if len(ptlbls) > 68:
+                    print()
+                    print (ptlbls)
+                    print (ptstr)
+                    print (sigstr)
+                    ptlbls = 'names :'
+                    ptstr =  'values:'
+                    sigstr = 'esds  :'
+        if len(ptlbls) > 8:
+            print()
+            print (ptlbls)
+            print (ptstr)
+            print (sigstr)
+        print ('\nImage Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts))
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -264,33 +291,7 @@ def FitMultiDist(rings,varyList,parmDict,Print=True,covar=False):
         print (ptlbls)
         print (ptstr)
         print (sigstr)
-        ptlbls = 'names :'
-        ptstr =  'values:'
-        sigstr = 'esds  :'
-        for d in sorted(set([i[5:] for i in parmDict.keys() if 'det-X' in i]),key=lambda x:int(x)):
-            fmt = '%12.3f'
-            for key in 'det-X','det-Y','delta':
-                name = key+d
-                if name not in parmDict: continue
-                ptlbls += "%12s" % name
-                ptstr += fmt % (parmDict[name])
-                if name in sigDict:
-                    sigstr += fmt % (sigDict[name])
-                else:
-                    sigstr += 12*' '
-                if len(ptlbls) > 68:
-                    print()
-                    print (ptlbls)
-                    print (ptstr)
-                    print (sigstr)
-                    ptlbls = 'names :'
-                    ptstr =  'values:'
-                    sigstr = 'esds  :'
-        if len(ptlbls) > 0:
-            print()
-            print (ptlbls)
-            print (ptstr)
-            print (sigstr)
+        print()
 
     def ellipseCalcD(B,xyd,varyList,parmDict):
         x,y,dist,dsp = xyd
@@ -771,7 +772,7 @@ def ImageRecalibrate(G2frame,ImageZ,data,masks,getRingsOnly=False):
         
     rings = np.concatenate((data['rings']),axis=0)
     if getRingsOnly:
-        return rings
+        return rings,HKL
     [chisq,vals,sigList,covar] = FitDetector(rings,varyList,parmDict,True,True)
     data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']

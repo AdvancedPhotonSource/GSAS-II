@@ -2771,7 +2771,9 @@ class GSASII(wx.Frame):
     def _init_ctrls(self, parent):
         try:
             size = GSASIIpath.GetConfigValue('Main_Size')
-            if type(size) is str:
+            if type(size) is tuple:
+                pass
+            elif type(size) is str:
                 size = eval(size)
             else:
                 raise Exception
@@ -2834,7 +2836,9 @@ class GSASII(wx.Frame):
 
         try:
             size = GSASIIpath.GetConfigValue('Plot_Size')
-            if type(size) is str:
+            if type(size) is tuple:
+                pass
+            elif type(size) is str:
                 size = eval(size)
             else:
                 raise Exception

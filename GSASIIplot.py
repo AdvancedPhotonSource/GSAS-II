@@ -9355,6 +9355,7 @@ def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
             for iatm,xyz in enumerate(XYZ):
                 PDB.write('ATOM   %4d  CA  ALA A%4d    %8.3f%8.3f%8.3f  1.00  0.00\n'%(iatm+1,iatm+1,xyz[0],xyz[1],xyz[2]))
             PDB.close()
+            G2frame.G2plotNB.status.SetStatusText('PDB model saved to: '+Fname,1)
     # PlotRigidBody execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
     if new:

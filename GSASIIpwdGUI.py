@@ -5675,8 +5675,8 @@ def UpdateModelsGrid(G2frame,data):
     
     def ShapesSizer():
         
-        def OnPDBout(event):
-            data['Shapes']['pdbOut'] = not data['Shapes']['pdbOut']
+#        def OnPDBout(event):
+#            data['Shapes']['pdbOut'] = not data['Shapes']['pdbOut']
             
         def OnShapeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -5700,10 +5700,11 @@ def UpdateModelsGrid(G2frame,data):
             print('%s %d'%('num. beads',len(selAtoms[1])))
             print('%s %.3f'%('selected r value',pattern[-1]))
             print('%s %.3f'%('selected Delta P(r)',PRcalc[r][-1]))
+            PDBtext = 'P(R) dif: %.3f r-value: %.3f Nbeads: %d'%(PRcalc[r][-1],pattern[-1],len(selAtoms[1]))
 #            RefreshPlots(True)
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             G2plt.PlotSASDPairDist(G2frame)
-            G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults)
+            G2plt.PlotBeadModel(G2frame,selAtoms,plotDefaults,PDBtext)
         
         shapeSizer = wx.BoxSizer(wx.VERTICAL)
         shapeSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Shape parameters:'),0,WACV)
@@ -5740,10 +5741,10 @@ def UpdateModelsGrid(G2frame,data):
         parmSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Bead separation (3.5-5): '),0,WACV)
         beadsep = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data['Shapes'],'boxStep',min=3.5,max=5,nDig=(10,1))
         parmSizer.Add(beadsep,0,WACV)        
-        pdb = wx.CheckBox(G2frame.dataWindow,label=' Save as pdb files?: ')
-        pdb.SetValue(data['Shapes']['pdbOut'])
-        pdb.Bind(wx.EVT_CHECKBOX, OnPDBout)       
-        parmSizer.Add(pdb,0,WACV)
+#        pdb = wx.CheckBox(G2frame.dataWindow,label=' Save as pdb files?: ')
+#        pdb.SetValue(data['Shapes']['pdbOut'])
+#        pdb.Bind(wx.EVT_CHECKBOX, OnPDBout)       
+#        parmSizer.Add(pdb,0,WACV)
         
         shapeSizer.Add(parmSizer)
         

@@ -9150,7 +9150,7 @@ def PlotStructure(G2frame,data,firstCall=False):
 #### Plot Bead Model
 ################################################################################
 
-def PlotBeadModel(G2frame,Atoms,defaults):
+def PlotBeadModel(G2frame,Atoms,defaults,PDBtext):
     '''Bead modelplotting package. For bead models from SHAPES
     '''
 
@@ -9348,14 +9348,20 @@ def PlotBeadModel(G2frame,Atoms,defaults):
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
             G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
-
+        elif mode == 'pdb':
+            Fname = os.path.join(Mydir,Page.name+'.'+mode)
+            PDB = open(Fname,'w')
+            PDB.write('REMARK    '+PDBtext+'\n')
+            for iatm,xyz in enumerate(XYZ):
+                PDB.write('ATOM   %4d  CA  ALA A%4d    %8.3f%8.3f%8.3f  1.00  0.00\n'%(iatm+1,iatm+1,xyz[0],xyz[1],xyz[2]))
+            PDB.close()
     # PlotRigidBody execution starts here (N.B. initialization above)
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab('Bead model','ogl')
     if new:
         Page.views = False
     Page.name = Atoms[0]
     Page.Choice = None
-    choice = [' save as:','jpeg','tiff','bmp',]
+    choice = [' save as:','jpeg','tiff','bmp','pdb',]
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')

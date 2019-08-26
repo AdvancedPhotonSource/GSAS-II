@@ -208,8 +208,8 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
-        G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,
+         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
@@ -236,9 +236,9 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         return False,'Unable to interpret multiplier(s): '+msg
     try:
         G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict)
-        #print G2mv.VarRemapShow(varyList)
-        #print 'DependentVars',G2mv.GetDependentVars()
-        #print 'IndependentVars',G2mv.GetIndependentVars()
+        #print(G2mv.VarRemapShow(varyList))
+        #print('DependentVars',G2mv.GetDependentVars())
+        #print('IndependentVars',G2mv.GetIndependentVars())
     except G2mv.ConstraintException:
         G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
         #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
@@ -348,8 +348,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
-        G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile,seqRef=True)
+    G2mv.InitVars()
+    (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,
+         maxSSwave) = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,
+                                    Print=False,pFile=printFile,seqRef=True)
     for item in phaseVary:
         if '::A0' in item:
             G2fil.G2Print ('**** WARNING - lattice parameters should not be refined in a sequential refinement ****')
@@ -374,6 +376,13 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
     for ihst,histogram in enumerate(histNames):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
+        G2mv.InitVars()
+        #print('before load',{i:phaseDict[i] for i in phaseDict if 'Ax:2' in i})
+        (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
+             FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
+                 Phases,restraintDict,rbIds,
+                 Print=False,pFile=printFile,seqRef=True)
+        #print('before fit ',{i:phaseDict[i] for i in phaseDict if 'Ax:2' in i})
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -422,7 +431,6 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         #reload(G2mv) # debug
-        G2mv.InitVars()
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         msg = G2mv.EvaluateMultipliers(constrDict,parmDict)
@@ -432,6 +440,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             groups,parmlist = G2mv.GenerateConstraints(varyList,constrDict,fixedList,parmDict,SeqHist=hId)
 #            if GSASIIpath.GetConfigValue('debug'): print("DBG_"+
 #                G2mv.VarRemapShow(varyList,True))
+#            print('DependentVars',G2mv.GetDependentVars())
+#            print('IndependentVars',G2mv.GetIndependentVars())
             constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
         except G2mv.ConstraintException:
             G2fil.G2Print (' *** ERROR - your constraints are internally inconsistent ***')
@@ -533,6 +543,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
 #            printFile.close()
 #            G2fil.G2Print (' ***** Refinement aborted *****')
 #            return False,Msg.msg
+        #print('after fit',{i:parmDict[i] for i in parmDict if 'Ax:2' in i})
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))

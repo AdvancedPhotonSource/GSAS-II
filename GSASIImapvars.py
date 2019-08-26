@@ -1284,7 +1284,12 @@ def MoveConfEquiv(constrDict,fixedList):
 
 def StoreEquivalence(independentVar,dependentList,symGen=True):
     '''Takes a list of dependent parameter(s) and stores their
-    relationship to a single independent parameter (independentVar)
+    relationship to a single independent parameter (independentVar).
+
+    Called with user-supplied constraints by :func:`GSASIIstrIO.ProcessConstraints,
+    with Pawley constraints from :func:`GSASIIstrIO.GetPawleyConstr`, 
+    with Unit Cell constraints from :func:`GSASIIstrIO.cellVary`
+    with symmetry-generated atom constraints from :func:`GSASIIstrIO.GetPhaseData`
 
     :param str independentVar: name of master parameter that will be used to determine the value
       to set the dependent variables

@@ -1044,10 +1044,12 @@ def SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,pFile=None):
         
 ################################################################################
 ##### Phase data
-################################################################################        
-                    
+################################################################################                    
 def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRef=False):
-    'needs a doc string'
+    '''Setup the phase information for a structural refinement, used for 
+    regular and sequential refinements, optionally printing information 
+    to the .lst file (if Print is True)
+    '''
             
     def PrintFFtable(FFtable):
         pFile.write('\n X-ray scattering factors:\n')

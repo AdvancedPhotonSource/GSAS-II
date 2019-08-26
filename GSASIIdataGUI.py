@@ -4153,9 +4153,9 @@ class GSASII(wx.Frame):
                         if wave:
                             file.write('#wavelength = %10.6f\n'%(wave))
                         if 'T' in Type:
-                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))                                    
+                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','esd','alp','bet','sig','gam','FWHM'))                                    
                         else:
-                            file.write('#%9s %10s %10s %12s %10s %10s %10s\n'%('pos','dsp','esd','int','sig','gam','FWHM'))
+                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','esd','sig','gam','FWHM'))
                         for ip,peak in enumerate(peaks):
                             dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
@@ -4164,10 +4164,10 @@ class GSASII(wx.Frame):
                                     esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[8])
                                 gam = peak[10]
-                                esddsp = G2lat.Pos2dsp(Inst,esds['pos'])
+                                esddsp = abs(G2lat.Pos2dsp(Inst,peak[0]-esds['pos'])-G2lat.Pos2dsp(Inst,peak[0]+esds['pos']))/2.
                                 FWHM = G2pwd.getgamFW(gam,sig) +(peak[4]+peak[6])*np.log(2.)/(peak[4]*peak[6])     #to get delta-TOF from Gam(peak)
-                                file.write("%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                    (peak[0],dsp,esddsp,peak[2],peak[4],peak[6],peak[8],peak[10],FWHM))
+                                file.write("%10.2f %10.5f %10.5f %12.2f%10.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                    (peak[0],dsp,esddsp,peak[2],esds['int'],peak[4],peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
                                 #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
                                 esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}
@@ -4175,10 +4175,10 @@ class GSASII(wx.Frame):
                                     esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[4]) #var -> sig
                                 gam = peak[6]
-                                esddsp = 0.5*esds['pos']*dsp/nptand(peak[0]/2.)
+                                esddsp = abs(G2lat.Pos2dsp(Inst,peak[0]-esds['pos'])-G2lat.Pos2dsp(Inst,peak[0]+esds['pos']))/2.
                                 FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
-                                file.write("%10.4f %10.5f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
-                                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+                                file.write("%10.4f %10.5f %10.5f %12.2f %10.2f %10.5f %10.5f %10.5f \n" % \
+                                    (peak[0],dsp,esddsp,peak[2],esds['int'],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                     item, cookie = self.GPXtree.GetNextChild(self.root, cookie)                            
                 file.close()
         finally:

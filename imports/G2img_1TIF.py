@@ -362,7 +362,8 @@ def GetTifData(filename):
     if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
         lines = ['not a known detector tiff file',]
         return lines,0,0,0
-    G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))
+    if GSASIIpath.GetConfigValue('debug'):
+        G2fil.G2Print ('image read time: %.3f'%(time.time()-time0))
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
     wavelength = (not wavelength) and 0.10 or wavelength

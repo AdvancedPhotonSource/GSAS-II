@@ -95,7 +95,8 @@ def GetMAR345Data(filename,imageOnly=False):
     else:
         raw = np.frombuffer(File.read(),dtype=np.uint8)
         image = np.flipud(pf.pack_f3(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
-    print ('image read time: %.3f'%(time.time()-time0))
+    if GSASIIpath.GetConfigValue('debug'):
+        print ('image read time: %.3f'%(time.time()-time0))
     File.close()
     if imageOnly:
         return image

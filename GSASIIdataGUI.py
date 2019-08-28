@@ -4122,7 +4122,6 @@ class GSASII(wx.Frame):
         sys.exit()
         
     def OnExportPeakList(self,event):
-        nptand = lambda x: np.tan(x*math.pi/180.)
         pth = G2G.GetExportPath(self)
         dlg = wx.FileDialog(self, 'Choose output peak list file name', pth, '', 
             '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)

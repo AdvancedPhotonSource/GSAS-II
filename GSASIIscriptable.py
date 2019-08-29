@@ -684,6 +684,7 @@ and here is an example for HAP parameters:
     some_phase.set_HAP_refinements(params)
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
+
 =================================
 Code Examples
 =================================
@@ -1268,6 +1269,27 @@ def make_empty_project(author=None, filename=None):
 
     return output, names
 
+def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
+    import GSASIIlattice as G2lat
+    if len(cell) != 6:
+        raise G2ScriptException("GenerateReflections: Invalid unit cell:" + str(cell))
+    opts = (Qmax is not None) + (dmin is not None) + (TTmax is not None)
+    if Qmax:
+        dmin = 2 * np.pi / Qmax
+        #print('Q,d',Qmax,dmin)
+    elif TTmax and wave is None:
+        raise G2ScriptException("GenerateReflections: specify a wavelength with TTmax")
+    elif TTmax:
+        dmin = wave / (2.0 * np.sin(np.pi*TTmax/360.))
+        #print('2theta,d',TTmax,dmin)
+    if opts != 1:
+        raise G2ScriptException("GenerateReflections: specify one Qmax, dmin or TTmax")
+    err,SGData = G2spc.SpcGroup(spcGrp)
+    if err != 0:
+        print('GenerateReflections space group error:',G2spc.SGErrors(err))
+        raise G2ScriptException("GenerateReflections: Invalid space group: " + str(spcGrp))
+    A = G2lat.cell2A(cell)
+    return G2lat.GenHLaue(dmin,SGData,A)
 
 class G2ImportException(Exception):
     pass

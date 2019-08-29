@@ -166,7 +166,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'CSV file',
+            formatName = 'histogram CSV file',
             extension='.csv',
             longFormatName = 'Export powder data as comma-separated (csv) file'
             )
@@ -292,6 +292,14 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         self.exporttype = ['powder']
         self.multiple = False # only allow one histogram to be selected
 
+    def Writer(self,TreeName,filename=None):
+        print(filename)
+        self.OpenFile(filename)
+        histblk = self.Histograms[TreeName]
+        self.write(TreeName,histblk)
+        self.CloseFile()
+        print(TreeName+' reflections written to file '+self.fullpath)
+        
     def Exporter(self,event=None):
         '''Export a set of powder reflections as a csv file
         '''
@@ -299,9 +307,14 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect(): return  # set export parameters, get file name
-        self.OpenFile()
         hist = list(self.histnam)[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
+        self.OpenFile()
+        self.write(hist,histblk)
+        self.CloseFile()
+        print(hist+' reflections written to file '+self.fullpath)
+        
+    def write(self,hist,histblk):
         self.Write('"Histogram"')
         self.Write('"'+hist+'"')
         self.Write('')
@@ -350,9 +363,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         s = np.sqrt(max(sig,0.0001))/100.
                         FWHM = G2pwd.getgamFW(g,s)
                         self.Write(fmt.format(h,k,l,dsp,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
-        self.CloseFile()
-        print(hist+' reflections written to file '+self.fullpath)
-
+        
 class ExportSASDCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file for a small angle data set
 

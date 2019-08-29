@@ -1832,16 +1832,6 @@ class ExportBaseclass(object):
             self.sigDict[i] = sig
         #GSASIIpath.IPyBreak()
 
-    def SetFromArray(self,hist,histname):
-        '''Load a histogram into the exporter in preparation for use of the .Writer
-        rather than the main tree. This is used in GSASIIscriptable when wx
-        is not present.
-        '''
-        self.Histograms[histname] =  {}
-        self.Histograms[histname]['Data'] = hist['data'][1]
-        self.Histograms[histname]['Instrument Parameters'] = hist['Instrument Parameters']
-        self.Histograms[histname]['Sample Parameters'] = hist['Sample Parameters']
-
     # Tools to pull information out of the data arrays
     def GetCell(self,phasenam):
         """Gets the unit cell parameters and their s.u.'s for a selected phase

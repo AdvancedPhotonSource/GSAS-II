@@ -183,6 +183,7 @@ method                                                Use
                                                       :meth:`G2PwdrData.ref_back_peak`.
 :meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
 :meth:`G2PwdrData.getdata`                            Provides access to the diffraction data associated with the histogram.
+:meth:`G2PwdrData.reflections`                        Provides access to the reflection lists for the histogram.
 :meth:`G2PwdrData.Export`                             Writes the diffraction data into a file
 :meth:`G2PwdrData.add_peak`                           Adds a peak to the peak list. Also see :ref:`PeakRefine`.
 :meth:`G2PwdrData.set_peakFlags`                      Sets refinement flags for peaks
@@ -683,12 +684,15 @@ and here is an example for HAP parameters:
     some_phase.set_HAP_refinements(params)
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
+=================================
+Code Examples
+=================================
 
 .. _PeakRefine:
 
-=================================
+--------------------
 Peak Refinement 
-=================================
+--------------------
 Peak refinement is performed with routines 
 :meth:`G2PwdrData.add_peak`, :meth:`G2PwdrData.set_peakFlags` and
 :meth:`G2PwdrData.refine_peaks`. Method :meth:`G2PwdrData.Export_peaks` and
@@ -730,6 +734,40 @@ peak refinement script, where the data files are taken from the
         print('peak',i,'pos=',hist.Peaks['peaks'][i][0],'sig=',hist.Peaks['sigDict']['pos'+str(i)])
     hist.Export_peaks('pkfit.txt')
     #gpx.save()  # gpx file is not written without this
+
+
+--------------------
+Pattern Simulation
+--------------------
+
+This shows an example where a structure is read from a CIF, a 
+pattern is computed and the pattern and reflection list are computed.
+
+.. code-block::  python
+
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    datadir = "/Users/toby/software/G2/Tutorials/PythonScript/data"
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    gpx = G2sc.G2Project(filename='PbSO4sim.gpx') # create a project
+    # add a phase to the project
+    phase0 = gpx.add_phase(PathWrap("PbSO4-Wyckoff.cif"),
+             phasename="PbSO4",fmthint='CIF')
+    # add a simulated histogram and link it to the previous phase(s)
+    hist1 = gpx.add_simulated_powder_histogram("PbSO4 simulation",
+                PathWrap("inst_d1a.prm"),5.,120.,0.01,
+                phases=gpx.phases())
+    # Set the scale factor to adjust the y scale
+    hist1.SampleParameters['Scale'][0] = 1000000.
+    # parameter optimization and calculate pattern
+    gpx.data['Controls']['data']['max cyc'] = 0 # refinement not needed
+    gpx.do_refinements([{}])
+    gpx.save()
+    # save results
+    gpx.histogram(0).Export('PbSO4data','.csv','hist') # data
+    gpx.histogram(0).Export('PbSO4refl','.csv','refl') # reflections
+
 
 .. _CommandlineInterface:
 
@@ -890,6 +928,13 @@ def LoadG2fil():
         for typ in obj.exporttype:
             if typ not in exportersByExtension:
                 exportersByExtension[typ] = {obj.extension:obj}
+            elif obj.extension in exportersByExtension[typ]:
+                if type(exportersByExtension[typ][obj.extension]) is list:
+                    exportersByExtension[typ][obj.extension].append(obj)
+                else:
+                    exportersByExtension[typ][obj.extension] = [
+                        exportersByExtension[typ][obj.extension],
+                        obj]
             else:
                 exportersByExtension[typ][obj.extension] = obj
 
@@ -3127,9 +3172,23 @@ class G2PwdrData(G2ObjectWrapper):
         return self.data['data'][1][enums.index(datatype.lower())]
         
     def y_calc(self):
+        '''Returns the calculated intensity values; better to 
+        use :meth:`getdata`
+        '''
         return self.data['data'][1][3]
 
-    def Export(self,fileroot,extension):
+    def reflections(self):
+        '''Returns a dict with an entry for every phase in the 
+        current histogram. Within each entry is a dict with keys
+        'RefList' (reflection list, see 
+        :ref:`Powder Reflections <PowderRefl_table>`), 
+        'Type' (histogram type), 'FF' 
+        (form factor information), 'Super' (True if this is superspace 
+        group). 
+        '''
+        return self.data['Reflection Lists']
+    
+    def Export(self,fileroot,extension,fmthint=None):
         '''Write the histogram into a file. The path is specified by fileroot and
         extension.
         
@@ -3137,6 +3196,10 @@ class G2PwdrData(G2ObjectWrapper):
            ignored)
         :param str extension: includes '.', must match an extension in global
            exportersByExtension['powder'] or a Exception is raised.
+        :param str fmthint: If specified, the first exporter where the format 
+           name (obj.formatName, as shown in Export menu) contains the
+          supplied string will be used. If not specified, an error 
+          will be generated showing the possible choices.
         :returns: name of file that was written
         '''
         if extension not in exportersByExtension.get('powder',[]):
@@ -3145,10 +3208,36 @@ class G2PwdrData(G2ObjectWrapper):
             raise G2ScriptException('No Writer for file type = "'+extension+'"')
         fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
         obj = exportersByExtension['powder'][extension]
-        obj.SetFromArray(hist=self.data,histname=self.name)
+        if type(obj) is list:
+            if fmthint is None:
+                print('Defined ',extension,'exporters are:')
+                for o in obj:
+                    print('\t',o.formatName)
+                raise G2ScriptException('No format hint for file type = "'+extension+'"')
+            for o in obj:
+              if fmthint.lower() in o.formatName.lower():
+                  obj = o
+                  break
+            else:
+                print('Hint ',fmthint,'not found. Defined ',extension,'exporters are:')
+                for o in obj:
+                    print('\t',o.formatName)
+                raise G2ScriptException('Bad format hint for file type = "'+exten+'"')
+        self._SetFromArray(obj)
         obj.Writer(self.name,fil)
         return fil
     
+    def _SetFromArray(self,expObj):
+        '''Load a histogram into the exporter in preparation for use of 
+        the .Writer method in the object. 
+
+        :param Exporter expObj: Exporter object
+        '''
+        expObj.Histograms[self.name] =  {}
+        expObj.Histograms[self.name]['Data'] = self.data['data'][1]
+        for key in 'Instrument Parameters','Sample Parameters','Reflection Lists':
+            expObj.Histograms[self.name][key] = self.data[key]
+            
     def plot(self, Yobs=True, Ycalc=True, Background=True, Residual=True):
         try:
             import matplotlib.pyplot as plt

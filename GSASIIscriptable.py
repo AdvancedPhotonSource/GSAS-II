@@ -46,47 +46,20 @@ in the :ref:`API` section. The typical API use will be with a Python script, suc
                                       'peaks':[[0,True]]}}}
     gpx.set_refinement(pardict)
 
-GSASIIscriptable can be used to setup and start sequential refinements. This script 
-is used to take the single-dataset fit at the end of Step 1 of the 
-`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`
-and turn off refinement flags, add histograms and setup the sequential fit, which is then run:
-
-.. code-block::  python
-
-    import os,sys,glob
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
-    import GSASIIscriptable as G2sc
-    datadir = os.path.expanduser("~/Scratch/SeqTut2019Mar")
-    PathWrap = lambda fil: os.path.join(datadir,fil)
-    # load and rename project
-    gpx = G2sc.G2Project(PathWrap('7Konly.gpx'))
-    gpx.save(PathWrap('SeqRef.gpx'))
-    # turn off some variables; turn on Dijs
-    for p in gpx.phases():
-        p.set_refinements({"Cell": False})
-    gpx.phase(0).set_HAP_refinements(
-        {'Scale': False,
-         "Size": {'type':'isotropic', 'refine': False},
-         "Mustrain": {'type':'uniaxial', 'refine': False},
-         "HStrain":True,})
-    gpx.phase(1).set_HAP_refinements({'Scale': False})
-    gpx.histogram(0).clear_refinements({'Background':False,
-                     'Sample Parameters':['DisplaceX'],})
-    gpx.histogram(0).ref_back_peak(0,[])
-    gpx.phase(1).set_HAP_refinements({"HStrain":(1,1,1,0)})
-    for fil in sorted(glob.glob(PathWrap('*.fxye'))): # load in remaining fxye files
-        if '00' in fil: continue
-        gpx.add_powder_histogram(fil, PathWrap('OH_00.prm'), fmthint="GSAS powder",phases='all')
-    # copy HAP values, background, instrument params. & limits, not sample params. 
-    gpx.copyHistParms(0,'all',['b','i','l']) 
-    for p in gpx.phases(): p.copyHAPvalues(0,'all')
-    # setup and launch sequential fit
-    gpx.set_Controls('sequential',gpx.histograms())
-    gpx.set_Controls('cycles',10)
-    gpx.set_Controls('seqCopy',True)
-    gpx.refine()  
-
 Most functionality is provided via the objects and methods described in this section. 
+
+---------------------
+Functions
+---------------------
+
+A small amount of the Scriptable code does not require use of objects. 
+
+==================================================    ===============================================================================================================
+method                                                Use
+==================================================    ===============================================================================================================
+:func:`GenerateReflections`                            Generates a list of unique powder reflections 
+:func:`SetPrintLevel`                                  Sets the amout of output generated when running a script
+==================================================    ===============================================================================================================
 
 ---------------------
 :class:`G2Project`
@@ -184,7 +157,7 @@ method                                                Use
 :meth:`G2PwdrData.fit_fixed_points`                   Fits background to the specified fixed points.
 :meth:`G2PwdrData.getdata`                            Provides access to the diffraction data associated with the histogram.
 :meth:`G2PwdrData.reflections`                        Provides access to the reflection lists for the histogram.
-:meth:`G2PwdrData.Export`                             Writes the diffraction data into a file
+:meth:`G2PwdrData.Export`                             Writes the diffraction data or reflection list into a file
 :meth:`G2PwdrData.add_peak`                           Adds a peak to the peak list. Also see :ref:`PeakRefine`.
 :meth:`G2PwdrData.set_peakFlags`                      Sets refinement flags for peaks
 :meth:`G2PwdrData.refine_peaks`                       Starts a peak/background fitting cycle
@@ -694,6 +667,7 @@ Code Examples
 --------------------
 Peak Refinement 
 --------------------
+
 Peak refinement is performed with routines 
 :meth:`G2PwdrData.add_peak`, :meth:`G2PwdrData.set_peakFlags` and
 :meth:`G2PwdrData.refine_peaks`. Method :meth:`G2PwdrData.Export_peaks` and
@@ -736,7 +710,6 @@ peak refinement script, where the data files are taken from the
     hist.Export_peaks('pkfit.txt')
     #gpx.save()  # gpx file is not written without this
 
-
 --------------------
 Pattern Simulation
 --------------------
@@ -769,6 +742,49 @@ pattern is computed and the pattern and reflection list are computed.
     gpx.histogram(0).Export('PbSO4data','.csv','hist') # data
     gpx.histogram(0).Export('PbSO4refl','.csv','refl') # reflections
 
+----------------------
+Sequential Refinement
+----------------------
+
+GSASIIscriptable can be used to setup and perform sequential refinements. This example script 
+is used to take the single-dataset fit at the end of Step 1 of the 
+`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`
+and turn on and off refinement flags, add histograms and setup the sequential fit, which is then run:
+
+.. code-block::  python
+
+    import os,sys,glob
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')
+    import GSASIIscriptable as G2sc
+    datadir = os.path.expanduser("~/Scratch/SeqTut2019Mar")
+    PathWrap = lambda fil: os.path.join(datadir,fil)
+    # load and rename project
+    gpx = G2sc.G2Project(PathWrap('7Konly.gpx'))
+    gpx.save(PathWrap('SeqRef.gpx'))
+    # turn off some variables; turn on Dijs
+    for p in gpx.phases():
+        p.set_refinements({"Cell": False})
+    gpx.phase(0).set_HAP_refinements(
+        {'Scale': False,
+         "Size": {'type':'isotropic', 'refine': False},
+         "Mustrain": {'type':'uniaxial', 'refine': False},
+         "HStrain":True,})
+    gpx.phase(1).set_HAP_refinements({'Scale': False})
+    gpx.histogram(0).clear_refinements({'Background':False,
+                     'Sample Parameters':['DisplaceX'],})
+    gpx.histogram(0).ref_back_peak(0,[])
+    gpx.phase(1).set_HAP_refinements({"HStrain":(1,1,1,0)})
+    for fil in sorted(glob.glob(PathWrap('*.fxye'))): # load in remaining fxye files
+        if '00' in fil: continue
+        gpx.add_powder_histogram(fil, PathWrap('OH_00.prm'), fmthint="GSAS powder",phases='all')
+    # copy HAP values, background, instrument params. & limits, not sample params. 
+    gpx.copyHistParms(0,'all',['b','i','l']) 
+    for p in gpx.phases(): p.copyHAPvalues(0,'all')
+    # setup and launch sequential fit
+    gpx.set_Controls('sequential',gpx.histograms())
+    gpx.set_Controls('cycles',10)
+    gpx.set_Controls('seqCopy',True)
+    gpx.refine()  
 
 .. _CommandlineInterface:
 
@@ -1270,6 +1286,27 @@ def make_empty_project(author=None, filename=None):
     return output, names
 
 def GenerateReflections(spcGrp,cell,Qmax=None,dmin=None,TTmax=None,wave=None):
+    """Generates the crystallographically unique powder diffraction reflections
+    for a lattice and space group (see :func:`GSASIIlattice.GenHLaue`). 
+
+    :param str spcGrp: A GSAS-II formatted space group (with spaces between 
+       axial fields, e.g. 'P 21 21 21' or 'P 42/m m c'). Note that non-standard
+       space groups, such as 'P 21/n' or 'F -1' are allowed (see 
+       :func:`GSASIIspc.SpcGroup`). 
+    :param list cell: A list/tuple with six unit cell constants, 
+      (a, b, c, alpha, beta, gamma) with values in Angstroms/degrees.
+      Note that the cell constants are not checked for consistency 
+      with the space group.
+    :param float Qmax: Reflections up to this Q value are computed 
+       (do not use with dmin or TTmax)
+    :param float dmin: Reflections with d-space above this value are computed 
+       (do not use with Qmax or TTmax)
+    :param float TTmax: Reflections up to this 2-theta value are computed 
+       (do not use with dmin or Qmax, use of wave is required.)
+    :param float wave: wavelength in Angstroms for use with TTmax (ignored
+       otherwise.)
+    """
+
     import GSASIIlattice as G2lat
     if len(cell) != 6:
         raise G2ScriptException("GenerateReflections: Invalid unit cell:" + str(cell))

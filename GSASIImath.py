@@ -1359,17 +1359,14 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,MSSdata,Mast):
         Mmod = 1.0
     return ngl,nWaves,Fmod,Xmod,Umod,Mmod,glTau,glWt
 
-def MagMod(ngl,XYZ,modQ,MSSdata,SGData,SSGData):
+def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     '''
     this needs to make magnetic moment modulations & magnitudes as 
-    fxn of ngl tau points
+    fxn of gTau points
     '''
     Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
     Bm = np.array(MSSdata[3:]).T  #...cos pos mods
     nWaves = Am.shape[1]
-    tau = np.arange(ngl)/ngl
-    if not nWaves:
-        return 0.0,0.0
     SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
     Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
     SGT = np.array([ops[1] for ops in SSGData['SSGOps']])
@@ -1385,21 +1382,20 @@ def MagMod(ngl,XYZ,modQ,MSSdata,SGData,SSGData):
     epsinv = Sinv[:,3,3]
     phi = np.inner(XYZ,modQ).T
     TA = np.sum(mst[nxs,:,:]*(XYZ-SGT[:,:3][nxs,:,:]),axis=-1).T
-    tauT =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(tau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
+    tauT =  TA[nxs,:,:] + epsinv[nxs,:,nxs]*(glTau[:,nxs,nxs]-SGT[:,3][nxs,:,nxs]+phi[nxs,:,:])
     modind = np.arange(nWaves)+1.
     phase = (modind[:,nxs,nxs]*tauT)     #Nops,Natm,Nwave
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)
-    MmodA = np.sum(Am[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)
+    MmodA = np.sum(Bm[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)
+    MmodB = np.sum(Am[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)
     if SGData['SGGray']:
         MmodA = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
         MmodB = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
     else:
         MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
         MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    Mmod = MmodA+MmodB
-    return Mmod,MmodA,MmodB    #Ntau,Nops,Natm,,Mxyz; sum,sin & cos parts
+    return MmodA,MmodB    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drwa
         
 def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     '''
@@ -1424,14 +1420,13 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
     mst = Sinv[:,3,:3]
     epsinv = Sinv[:,3,3]            #Nops
     kdr = np.inner(XYZ,modQ).T      #Nops,Natm
-#    phase = kdr+(epsinv*(np.inner(SGT[:,:3],modQ)-SGT[:,3]))[:,nxs]     #Nops,Natm
     
     phase = (np.sum(mst*(XYZ-SGT[nxs,:,:3]),axis=-1)).T+epsinv[:,nxs]*(kdr-SGT[:,nxs,3])
     
     psin = np.sin(twopi*phase)      #Nops,Natm
     pcos = np.cos(twopi*phase)
-    MmodA = np.sum(Am[nxs,:,:,:]*psin[:,:,nxs,nxs],axis=2)      #Nops,Natm,3
-    MmodB = np.sum(Bm[nxs,:,:,:]*pcos[:,:,nxs,nxs],axis=2)
+    MmodA = np.sum(Bm[nxs,:,:,:]*pcos[:,:,nxs,nxs],axis=2)
+    MmodB = np.sum(Am[nxs,:,:,:]*psin[:,:,nxs,nxs],axis=2)      #Nops,Natm,3
     MmodA = np.sum(SGMT[:,nxs,:,:]*MmodA[:,:,nxs,:],axis=-1)
     MmodB = np.sum(SGMT[:,nxs,:,:]*MmodB[:,:,nxs,:],axis=-1)
     if SGData['SGGray']:
@@ -1441,7 +1436,7 @@ def MagMod2(XYZ,modQ,MSSdata,SGData,SSGData):
         MmodA = MmodA*SGData['MagMom'][:,nxs,nxs]
         MmodB = MmodB*SGData['MagMom'][:,nxs,nxs]
 #MmodA+MmodB matches drawn tau=0 atom moments
-    return MmodA,MmodB    #Nops,Natm,Mxyz; sin & cos parts
+    return MmodA,MmodB    #Nops,Natm,Mxyz; cos & sin parts
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

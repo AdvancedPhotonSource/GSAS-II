@@ -752,7 +752,7 @@ Sequential Refinement
 
 GSASIIscriptable can be used to setup and perform sequential refinements. This example script 
 is used to take the single-dataset fit at the end of Step 1 of the 
-`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`
+`Sequential Refinement tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/SeqRefine/SequentialTutorial.htm>`_
 and turn on and off refinement flags, add histograms and setup the sequential fit, which is then run:
 
 .. code-block::  python
@@ -797,7 +797,7 @@ Image Processing
 A sample script where an image is read, assigned calibration values from a file 
 and then integrated follows. 
 The data files are found
-`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`.
+`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
 
 .. code-block::  python
 
@@ -814,7 +814,7 @@ The data files are found
     gpx.save()
 
 This example shows a computation similar to what is done in tutorial 
-`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`
+`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_
 
 .. code-block::  python
 
@@ -851,7 +851,7 @@ This example shows a computation similar to what is done in tutorial
 This example performs a number of cycles of constrained fitting. 
 A project is created with the images found in a directory, setting initial
 parameters as the images are read. The initial values 
-for the calibration are not very good, so a :meth:`G2Image.recalibrate` is done
+for the calibration are not very good, so a :meth:`G2Image.Recalibrate` is done
 to quickly improve the fit. Once that is done, a fit of all images is performed
 where the wavelength, an offset and detector orientation are constrained to 
 be the same for all images. The detector penetration correction is then added. 
@@ -860,9 +860,9 @@ points on diffraction rings to use for calibration and the number of "ring picks
 increase. The calibration is repeated until that stops increasing significantly (<10%). 
 Detector control files are then created. 
 The files used for this exercise are found
-`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/data/>`
+`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/data/>`_
 (the 
-`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>` 
+`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_ 
 tutorial). 
 
 .. code-block::  python
@@ -3512,8 +3512,8 @@ class G2PwdrData(G2ObjectWrapper):
            exportersByExtension['powder'] or a Exception is raised.
         :param str fmthint: If specified, the first exporter where the format 
            name (obj.formatName, as shown in Export menu) contains the
-          supplied string will be used. If not specified, an error 
-          will be generated showing the possible choices.
+           supplied string will be used. If not specified, an error 
+           will be generated showing the possible choices.
         :returns: name of file that was written
         '''
         if extension not in exportersByExtension.get('powder',[]):

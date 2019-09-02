@@ -18,9 +18,40 @@ index.
 
 from __future__ import print_function
 import os
-import requests
+#import requests
 import GSASIIpath
 #import GSASIIctrl as G2G
+onlineVideos = []
+'''a list of videos that are in box, since I don't know how to check if they
+are present anymore
+'''
+onlineVideos.append('https://anl.box.com/v/CalibrationofanareadetectorinG')
+onlineVideos.append('https://anl.box.com/v/CalibrationTutorial')
+onlineVideos.append('https://anl.box.com/v/CalibrationofaTOFpowderdiffrac')
+onlineVideos.append('https://anl.box.com/v/Combinedrefinement')
+onlineVideos.append('https://anl.box.com/v/TOFcombinedXNRietveldrefinemen')
+onlineVideos.append('https://anl.box.com/v/NeutronCWPowderData')
+onlineVideos.append('https://anl.box.com/v/FindProfParamCW')
+onlineVideos.append('https://anl.box.com/v/DeterminingWavelength')
+onlineVideos.append('https://anl.box.com/v/FitPeaks----')
+onlineVideos.append('https://anl.box.com/v/LaboratoryX-')
+onlineVideos.append('https://anl.box.com/v/FittingSmallAngleScatteringDat')
+onlineVideos.append('https://anl.box.com/v/FitBkgTut---')
+onlineVideos.append('https://anl.box.com/v/SmallAngleImageProcessing')
+onlineVideos.append('https://anl.box.com/v/Integrationofareadetectordatai')
+onlineVideos.append('https://anl.box.com/v/MerohedraltwinrefinementinGSAS')
+onlineVideos.append('https://anl.box.com/v/ParametricFitting')
+onlineVideos.append('https://anl.box.com/v/SequentialRefinementofSmallAng')
+onlineVideos.append('https://anl.box.com/v/SequentialTutorial')
+onlineVideos.append('https://anl.box.com/v/SimpleMagnetic')
+onlineVideos.append('https://anl.box.com/v/SimTutorial-')
+onlineVideos.append('https://anl.box.com/v/SmallAngleSizeDistribution')
+onlineVideos.append('https://anl.box.com/v/StackingFaults-I')
+onlineVideos.append('https://anl.box.com/v/StartingGSAS')
+onlineVideos.append('https://anl.box.com/v/Strainfittingof2DdatainGSAS-II')
+onlineVideos.append('https://anl.box.com/v/Textureanalysisof2DdatainGSAS-')
+onlineVideos.append('https://anl.box.com/v/TOFSequentialSinglePeakFit')
+#onlineVideos.append('
 
 if __name__ == '__main__':
     GSASIIpath.SetBinaryPath()
@@ -70,15 +101,18 @@ if __name__ == '__main__':
                 print('<LI><A href="{}">{}</A>'.format(pageURL,l[2].strip()),file=out)
             
             # check for video tutorial
-            vname = 'https://anl.box.com/v/' + os.path.splitext(l[1])[0].replace(' ','')[:30]
-            if requests.get(vname).status_code == 200:
+            videoName = '{:-<12s}'.format(
+                os.path.splitext(l[1])[0].replace(' ','')[:30])            
+            vname = 'https://anl.box.com/v/{}'.format(videoName)
+            #if requests.get(vname).status_code == 200:
+            if vname in onlineVideos:
                 video = '<A href="{}">video</A>'.format(vname)
                 #print(' [link: <A href="{}">video</A>]'.format(vname),file=out)
                 #print('Found video',vname)
                 videolist += '<LI><A href="{}">{}</A></LI>\n'.format(vname,l[2].strip())
             else:
                 video =''
-                print('No video for',vname)
+                print('No video for {:45s}{}'.format(videoName,l[2]))
             # check for data
             if GSASIIpath.svnList(dataURL,False):
                 exampledata = '<A href="{}">Exercise files</A>'.format(dataURL)

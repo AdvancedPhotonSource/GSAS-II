@@ -1593,7 +1593,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             cosm = np.cos(phasem)
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Fdata*Mdata*MF/(2.*Nops)     #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2.*Nops)     #Nref,Natm
 #                      
             HM = np.inner(Bmat,HP.T)                            #put into cartesian space
             eM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
@@ -1618,8 +1618,17 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             famqs = np.sum(np.sum(fams,axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
             fbmqs = np.sum(np.sum(fbms,axis=-2),axis=-2)
             
-            fass = np.sum(famqs,axis=-1)**2-np.sum(eM.T[:,nxs,:]*famqs,axis=-1)**2      #mag intensity calc F^2-(e.F)^2
-            fbss = np.sum(fbmqs,axis=-1)**2-np.sum(eM.T[:,nxs,:]*fbmqs,axis=-1)**2
+            famcs = np.swapaxes(np.inner(Amat,famqs).T,0,1)     #convert to cartesian
+            fbmcs = np.swapaxes(np.inner(Amat,fbmqs).T,0,1)     # as Nref,Ntau,Mxyz
+            
+            famcs /= np.sqrt(np.sum(famcs**2,axis=-1))[:,:,nxs]     #normalize
+            fbmcs /= np.sqrt(np.sum(fbmcs**2,axis=-1))[:,:,nxs]
+            
+            famcs = np.nan_to_num(famcs)    #nan --> 0.0
+            fbmcs = np.nan_to_num(fbmcs)
+            
+            fass = np.sum(famqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*famcs,axis=-1)**2)      #mag intensity calc F^2-(e.F)^2
+            fbss = np.sum(fbmqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*fbmcs,axis=-1)**2)
             
             fas = np.sum(glWt*fass,axis=1)
             fbs = np.sum(glWt*fbss,axis=1)

@@ -172,7 +172,7 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
                 self.dnames.append(os.path.basename(filename)+' sample '+(str(nBanks)))
         if nBanks:
             if not len(self.selections):
-                self.selections = range(nBanks)
+                self.selections = list(range(nBanks))
                 self.numbanks = nBanks
         fp.close()
         return True
@@ -214,7 +214,6 @@ class Rigaku_rasReaderClass(G2obj.ImportPowderData):
             np.zeros(N), # obs-calc profiles
             ]
         self.powderentry[0] = self.dnames[blockNum]
-        #self.powderentry[2] = 1 # xye file only has one bank
         self.idstring = self.dnames[blockNum]
         self.selections.remove(blockNum)
         self.repeat = False

@@ -369,7 +369,6 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         histNames.reverse()
     SeqResult = G2stIO.GetSeqResult(GPXfile)
 #    SeqResult = {'SeqPseudoVars':{},'SeqParFitEqList':[]}
-    makeBack = True
     Histo = {}
     NewparmDict = {}
     G2stIO.SetupSeqSavePhases(GPXfile)
@@ -377,12 +376,10 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         if GSASIIpath.GetConfigValue('Show_timing'): t1 = time.time()
         G2fil.G2Print('\nRefining with '+str(histogram))
         G2mv.InitVars()
-        #print('before load',{i:phaseDict[i] for i in phaseDict if 'Ax:2' in i})
         (Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,
              FFtables,BLtables,MFtables,maxSSwave) = G2stIO.GetPhaseData(
                  Phases,restraintDict,rbIds,
                  Print=False,pFile=printFile,seqRef=True)
-        #print('before fit ',{i:phaseDict[i] for i in phaseDict if 'Ax:2' in i})
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -423,11 +420,17 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)
-        if Controls['Copy2Next']:
+        if Controls['Copy2Next']:   # update with parms from last histogram
             #parmDict.update(NewparmDict) # don't use in case extra entries would cause a problem
             for parm in NewparmDict:
                 if parm in parmDict:
                     parmDict[parm] = NewparmDict[parm]
+        elif histogram in SeqResult:  # update phase from last seq ref
+            NewparmDict = SeqResult[histogram].get('parmDict',{})
+            for parm in NewparmDict:
+                if '::' in parm and parm in parmDict:
+                    parmDict[parm] = NewparmDict[parm]
+            
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         #reload(G2mv) # debug
@@ -525,7 +528,6 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
             G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile)
             G2stIO.SaveUpdatedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData)
-            makeBack = False
             NewparmDict = {}
             # make dict of varied parameters in current histogram, renamed to
             # next histogram, for use in next refinement.
@@ -534,16 +536,20 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                 nexthId = Histograms[histNames[ihst+1]]['hId']
                 for parm in set(list(varyList)+list(varyListStart)):
                     items = parm.split(':')
-                    if len(items) < 3: continue
+                    if len(items) < 3: 
+                        continue
                     if str(hId) in items[1]:
                         items[1] = str(nexthId)
                         newparm = ':'.join(items)
                         NewparmDict[newparm] = parmDict[parm]
+                    else:
+                        if items[2].startswith('dA'): parm = parm.replace(':dA',':A') 
+                        NewparmDict[parm] = parmDict[parm]
+                    
 #        except G2obj.G2Exception(Msg):
 #            printFile.close()
 #            G2fil.G2Print (' ***** Refinement aborted *****')
 #            return False,Msg.msg
-        #print('after fit',{i:parmDict[i] for i in parmDict if 'Ax:2' in i})
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))

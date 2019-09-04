@@ -107,6 +107,7 @@ method                                                Use
 :meth:`G2Project.get_Covariance`                      Retrieves values and covariance for a set of refined parameters
 :meth:`G2Project.set_Controls`                        Set overall GSAS-II control settings such as number of cycles and to set up a sequential
                                                       fit. (Also see :meth:`G2Project.get_Controls` to read values.)
+:meth:`G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
 ==================================================    ===============================================================================================================
 
 ---------------------
@@ -790,6 +791,8 @@ and turn on and off refinement flags, add histograms and setup the sequential fi
     gpx.set_Controls('seqCopy',True)
     gpx.refine()  
 
+.. _ImageProc:
+
 ----------------------
 Image Processing
 ----------------------
@@ -847,6 +850,8 @@ This example shows a computation similar to what is done in tutorial
         img = images[key]
         c = img.getControls()
         print(c['distance'],c['wavelength'])
+
+.. _MultiDist_Example:
 
 This example performs a number of cycles of constrained fitting. 
 A project is created with the images found in a directory, setting initial
@@ -2897,6 +2902,8 @@ class G2Project(G2ObjectWrapper):
         Note that for this to work properly, the initial calibration parameters 
         (center, wavelength, distance & tilts) must be close enough to converge.
         This may produce a better result if run more than once.
+
+        See :ref:`MultiDist_Example` for example code.
 
         :param str imageList: the images to include in the fit, if not specified 
           all images in the project will be included.
@@ -5023,6 +5030,8 @@ class G2Image(G2ObjectWrapper):
     >>> imlst[0].Recalibrate()
     >>> imlst[0].setControl('outAzimuths',3)
     >>> pwdrList = imlst[0].Integrate()
+ 
+    More detailed image processing examples are shown at :ref:`ImageProc`.
 
     '''
     # parameters in that can be accessed via setControl. This may need future attention

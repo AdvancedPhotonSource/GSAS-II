@@ -1711,17 +1711,18 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnCellRef(event):
                 generalData['Cell'][0] = cellRef.GetValue()
                 
-            def OnCellChange(event):
-                event.Skip()
+            def OnCellChange(invalid,value,tc):
+#                event.Skip()
                 SGData = generalData['SGData']
                 laue = SGData['SGLaue']
                 if laue == '2/m':
                     laue += SGData['SGUniq']
                 cell = generalData['Cell']
-                Obj = event.GetEventObject()
+                Obj = tc
+#                Obj = event.GetEventObject()
                 ObjId = cellList.index(Obj.GetId())
                 try:
-                    value = max(1.0,float(Obj.GetValue()))
+                    value = max(1.0,float(tc.GetValue()))
                 except ValueError:
                     if ObjId < 3:               #bad cell edge - reset
                         value = cell[ObjId+1]
@@ -1730,14 +1731,14 @@ def UpdatePhaseData(G2frame,Item,data):
                 if laue in ['m3','m3m']:
                     cell[1] = cell[2] = cell[3] = value
                     cell[4] = cell[5] = cell[6] = 90.0
-                    Obj.SetValue("%.5f"%(cell[1]))
+                    Obj.SetValue(cell[1])
                 elif laue in ['3R','3mR']:
                     if ObjId == 0:
                         cell[1] = cell[2] = cell[3] = value
-                        Obj.SetValue("%.5f"%(cell[1]))
+                        Obj.SetValue(cell[1])
                     else:
                         cell[4] = cell[5] = cell[6] = value
-                        Obj.SetValue("%.5f"%(cell[4]))
+                        Obj.SetValue(cell[4])
                 elif laue in ['3','3m1','31m','6/m','6/mmm','4/m','4/mmm']:                    
                     cell[4] = cell[5] = 90.
                     cell[6] = 120.
@@ -1745,44 +1746,41 @@ def UpdatePhaseData(G2frame,Item,data):
                         cell[6] = 90.
                     if ObjId == 0:
                         cell[1] = cell[2] = value
-                        Obj.SetValue("%.5f"%(cell[1]))
+                        Obj.SetValue(cell[1])
                     else:
                         cell[3] = value
-                        Obj.SetValue("%.5f"%(cell[3]))
+                        Obj.SetValue(cell[3])
                 elif laue in ['mmm']:
                     cell[ObjId+1] = value
                     cell[4] = cell[5] = cell[6] = 90.
-                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                    Obj.SetValue(cell[ObjId+1])
                 elif laue in ['2/m'+'a']:
                     cell[5] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                        Obj.SetValue(cell[ObjId+1])
                     else:
                         cell[4] = value
-                        Obj.SetValue("%.3f"%(cell[4]))
+                        Obj.SetValue(cell[4])
                 elif laue in ['2/m'+'b']:
                     cell[4] = cell[6] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                        Obj.SetValue(cell[ObjId+1])
                     else:
                         cell[5] = value
-                        Obj.SetValue("%.3f"%(cell[5]))
+                        Obj.SetValue(cell[5])
                 elif laue in ['2/m'+'c']:
                     cell[4] = cell[5] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
-                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                        Obj.SetValue(cell[ObjId+1])
                     else:
                         cell[6] = value
-                        Obj.SetValue("%.3f"%(cell[6]))
+                        Obj.SetValue(cell[6])
                 else:
                     cell[ObjId+1] = value
-                    if ObjId < 3:
-                        Obj.SetValue("%.5f"%(cell[1+ObjId]))
-                    else:
-                        Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
+                    Obj.SetValue(cell[1+ObjId])                        
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
                 volVal.SetValue("%.3f"%(cell[7]))
                 density,mattCoeff = G2mth.getDensity(generalData)
@@ -1807,11 +1805,12 @@ def UpdatePhaseData(G2frame,Item,data):
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
                 cellSizer.Add(wx.StaticText(General,label=txt),0,WACV)
+                Fmt = (10,5)
+                if '.3' in fmt:
+                    Fmt = (10,3)
                 if ifEdit:          #a,b,c,etc.
-                    cellVal = wx.TextCtrl(General,value=(fmt%(cell[Id+1])),
-                        style=wx.TE_PROCESS_ENTER)
-                    cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
-                    cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
+                    cellVal = G2G.ValidatedTxtCtrl(General,generalData['Cell'],Id+1,
+                            min=0.1,max=500.,nDig=Fmt,OnLeave=OnCellChange)
                     cellSizer.Add(cellVal,0,WACV)
                     cellList.append(cellVal.GetId())
                 else:               #volume
@@ -2109,6 +2108,8 @@ def UpdatePhaseData(G2frame,Item,data):
             if PWDR:
                 modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
                 indChoice = ['1','2','3','4','5','6','7']
+                if 'Magnetic' in name.capitalize():    #limit to one for now
+                    indChoice = ['1',]
                 Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][2]),choices=indChoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Max.Bind(wx.EVT_COMBOBOX,OnMax)        
@@ -5276,15 +5277,18 @@ def UpdatePhaseData(G2frame,Item,data):
                 waveSizer = wx.BoxSizer(wx.VERTICAL)
                 waveHead = wx.BoxSizer(wx.HORIZONTAL)
                 waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
-                waveAdd = wx.CheckBox(waveData,label='Add wave?   WaveType: ')
-                waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
-                Indx[waveAdd.GetId()] = Stype
-                waveHead.Add(waveAdd,0,WACV)
-                waveType = wx.ComboBox(waveData,value=waveTyp,choices=waveTypes[Stype],
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                Indx[waveType.GetId()] = Stype
-                waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
-                waveHead.Add(waveType,0,WACV)
+                if Stype == 'Smag' and len(waveBlk):    #only allow one magnetic wave - keeps it simple for now
+                    pass
+                else:
+                    waveAdd = wx.CheckBox(waveData,label='Add wave?   WaveType: ')
+                    waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
+                    Indx[waveAdd.GetId()] = Stype
+                    waveHead.Add(waveAdd,0,WACV)
+                    waveType = wx.ComboBox(waveData,value=waveTyp,choices=waveTypes[Stype],
+                        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    Indx[waveType.GetId()] = Stype
+                    waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
+                    waveHead.Add(waveType,0,WACV)
                 waveSizer.Add(waveHead)
                 if len(waveBlk):
                     nx = 0

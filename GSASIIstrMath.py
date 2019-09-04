@@ -1487,7 +1487,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
-    Nops = len(SGMT)*Ncen*(1+SGData['SGInv'])
+    Nops = len(SGMT)*(1+SGData['SGInv'])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     SSCen = SSGData['SSGCen']
@@ -1593,7 +1593,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             cosm = np.cos(phasem)
             sinm = np.sin(phasem)
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
-            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*MF/(2.*Nops)     #Nref,Natm
+            TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2.*Nops)     #Nref,Natm
 #                      
             HM = np.inner(Bmat,HP.T)                            #put into cartesian space
             eM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
@@ -1605,10 +1605,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]    
 #for modulated moments --> m != 0 reflections
         
-            fams = .5*TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]-    \
+            fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]-    \
                 np.sign(H[3,i])*MmodB*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
                         
-            fbms = .5*TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    \
+            fbms = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*sinm[i,nxs,:,:,nxs]+    \
                 np.sign(H[3,i])*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:

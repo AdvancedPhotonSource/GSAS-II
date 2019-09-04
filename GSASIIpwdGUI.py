@@ -4415,6 +4415,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
+        if 'MagSpGrp' in SGData:    #limit to one for magnetic SS for now
+            indChoice = ['1',]
         SpSg = controls[13]
         SGData = G2spc.SpcGroup(SpSg)[1]
         ssChoice = G2spc.SSChoice(SGData)

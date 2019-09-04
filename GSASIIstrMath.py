@@ -3896,7 +3896,12 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Dy = dy[xB:xF][nxs,:]
             dMdvh *= Wt
             if dlg:
-                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if type(GoOn) is tuple:
+                    if not GoOn[0]:
+                        raise G2obj.G2RefineCancel('Cancel pressed')
+                elif not GoOn:
+                    raise G2obj.G2RefineCancel('Cancel pressed')
                 dlg.Raise()
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
@@ -3919,7 +3924,12 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 #            print 'matrix build time: %.3f'%(time.time()-time0)
 
             if dlg:
-                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if type(GoOn) is tuple:
+                    if not GoOn[0]:
+                        raise G2obj.G2RefineCancel('Cancel pressed')
+                elif not GoOn:
+                    raise G2obj.G2RefineCancel('Cancel pressed')
                 dlg.Raise()
             if len(Hess):
                 Vec += wtFactor*np.sum(dMdvh*wdf,axis=1)
@@ -4000,7 +4010,12 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals']['wRb'] = min(100.,100.*ma.sqrt(sumwYB2/sumwYmB2))
             Histogram['Residuals']['wRmin'] = min(100.,100.*ma.sqrt(Histogram['Residuals']['Nobs']/Histogram['Residuals']['sumwYo']))
             if dlg:
-                dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if type(GoOn) is tuple:
+                    if not GoOn[0]:
+                        raise G2obj.G2RefineCancel('Cancel pressed')
+                elif not GoOn:
+                    raise G2obj.G2RefineCancel('Cancel pressed')
                 dlg.Raise()
             M = np.concatenate((M,wdy))
 #end of PWDR processing
@@ -4144,7 +4159,12 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Nrej += nrej
             Next += next
             if dlg:
-                dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                GoOn = dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
+                if type(GoOn) is tuple:
+                    if not GoOn[0]:
+                        raise G2obj.G2RefineCancel('Cancel pressed')
+                elif not GoOn:
+                    raise G2obj.G2RefineCancel('Cancel pressed')
                 dlg.Raise()
             M = np.concatenate((M,wtFactor*df))
 # end of HKLF processing
@@ -4155,11 +4175,15 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Histograms['Next'] = Next
     Rw = min(100.,np.sqrt(np.sum(M**2)/SumwYo)*100.)
     if dlg:
-        GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]
-        if not GoOn:
+        GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))
+        if type(GoOn) is tuple:
+            if not GoOn[0]:
+                parmDict['saved values'] = values
+                raise G2obj.G2RefineCancel('Cancel pressed')
+        elif not GoOn:
             parmDict['saved values'] = values
-            dlg.Destroy()
-            raise G2obj.G2Exception('User abort')         #Abort!!
+            raise G2obj.G2RefineCancel('Cancel pressed')
+        dlg.Raise()
     pDict,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if len(pVals):
         pSum = np.sum(pWt*pVals**2)

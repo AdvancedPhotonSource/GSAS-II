@@ -4831,6 +4831,7 @@ class GSASII(wx.Frame):
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
+        dlg.Show()
         # find 1st histogram to be refined
         if 'Seq Data' in Controls: 
             histNames = Controls['Seq Data']

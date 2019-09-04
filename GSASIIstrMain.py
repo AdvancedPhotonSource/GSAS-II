@@ -250,8 +250,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
     ifSeq = False
     printFile.write('\n Refinement results:\n')
     printFile.write(135*'-'+'\n')
-    if True:
-#    try:
+    try:
         covData = {}
         IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
@@ -279,9 +278,14 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         else:
             G2fil.G2Print ('****ERROR - Refinement failed')
             raise G2obj.G2Exception('****ERROR - Refinement failed')
-#    except G2obj.G2Exception(Msg):
-#        printFile.close()
-#        return False,Msg.msg
+    except G2obj.G2RefineCancel as Msg:
+        printFile.close()
+        G2fil.G2Print (' ***** Refinement stopped *****')
+        return False,Msg.msg
+    except G2obj.G2Exception as Msg:  # cell metric error, others?
+        printFile.close()
+        G2fil.G2Print (' ***** Refinement error *****')
+        return False,Msg.msg
 
 #for testing purposes, create a file for testderiv
     if GSASIIpath.GetConfigValue('debug'):   # and IfOK:
@@ -496,8 +500,7 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
         ifSeq = True
         printFile.write('\n Refinement results for histogram: %s\n'%histogram)
         printFile.write(135*'-'+'\n')
-        if True:
-#        try:
+        try:
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
@@ -546,10 +549,14 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
                         if items[2].startswith('dA'): parm = parm.replace(':dA',':A') 
                         NewparmDict[parm] = parmDict[parm]
                     
-#        except G2obj.G2Exception(Msg):
-#            printFile.close()
-#            G2fil.G2Print (' ***** Refinement aborted *****')
-#            return False,Msg.msg
+        except G2obj.G2RefineCancel as Msg:
+            printFile.close()
+            G2fil.G2Print (' ***** Refinement stopped *****')
+            return False,Msg.msg
+        except G2obj.G2Exception as Msg:  # cell metric error, others?
+            printFile.close()
+            G2fil.G2Print (' ***** Refinement error *****')
+            return False,Msg.msg
         if GSASIIpath.GetConfigValue('Show_timing'):
             t2 = time.time()
             G2fil.G2Print("Fit step time {:.2f} sec.".format(t2-t1))

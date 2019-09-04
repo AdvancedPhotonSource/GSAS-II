@@ -2763,11 +2763,19 @@ class ExpressionCalcObj(object):
         return val
 
 class G2Exception(Exception):
+    'A generic GSAS-II exception class'
     def __init__(self,msg):
         self.msg = msg
     def __str__(self):
         return repr(self.msg)
 
+class G2RefineCancel(Exception):
+    'Raised when Cancel is pressed in a refinement dialog'
+    def __init__(self,msg):
+        self.msg = msg
+    def __str__(self):
+        return repr(self.msg)
+    
 def HowDidIgetHere(wherecalledonly=False):
     '''Show a traceback with calls that brought us to the current location.
     Used for debugging.

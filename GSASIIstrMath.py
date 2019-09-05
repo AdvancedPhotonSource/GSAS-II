@@ -1509,11 +1509,9 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-#        TmagA,TmagB = G2mth.MagMod2(mXYZ,modQ,MSSdata,SGData,SSGData)   #Nops,Natm,Mxyz-TmagA+TmagB matches drawing moments @ tau=0.
         MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz sum matches drawing
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
-#            Mmod += Gdata.T[:,nxs,:]
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
             if SGData['SGInv'] and not SGData['SGFixed']:   #inversion if any
                 GSdata = np.hstack((GSdata,-GSdata))      
@@ -1612,6 +1610,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 np.sign(H[3,i])*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:
+                fams *= 0.5
+                fbms *= 0.5
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
                         

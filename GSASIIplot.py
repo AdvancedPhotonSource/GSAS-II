@@ -122,7 +122,8 @@ try:
     import wx.aui
     import wx.glcanvas
     import matplotlib as mpl
-    mpl.use('wxAgg')
+    if not mpl.get_backend():       #could be assigned by spyder debugger
+        mpl.use('wxAgg')
     import matplotlib.collections as mplC
     import mpl_toolkits.mplot3d.axes3d as mp3d
     from scipy.ndimage.interpolation import map_coordinates

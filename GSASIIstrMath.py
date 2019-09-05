@@ -2039,7 +2039,7 @@ def SStructureFactorDerv2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmD
     dM = 1.e-4
     dFdvDict = {}
     for parm in parmDict:
-        if parm == '0':
+        if ':' not in parm:
             continue
         if parm.split(':')[2] in ['Tmin','Tmax','Xmax','Ymax','Zmax','Fzero','Fwid',
             'MXsin','MXcos','MYsin','MYcos','MZsin','MZcos','AMx','AMy','AMz',]:

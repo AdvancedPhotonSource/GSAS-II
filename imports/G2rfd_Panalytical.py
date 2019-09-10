@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
+sind = lambda x: np.sin(x*np.pi/180.)
 GSASIIpath.SetVersionNumber("$Revision: $")
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import reflectivity data from a Pananalytical.xrdm (xml) file. 
@@ -105,12 +106,13 @@ class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
         else:
             print('Panalytical read error: Intensities could not be located')
             return False            
-        self.instdict['wave'] = wave
+        self.instdict['wave'] = float(wave.find(tag+'kAlpha1').text)
         self.instdict['type'] = 'RXC'
         self.reflectometryentry[0] = filename
         self.reflectometryentry[2] = blockNum 
         N = y.shape[0]
         x = np.linspace(startPos,endPos,N)
+        x = 4.*np.pi*sind(x/2.)/self.instdict['wave']
         w = np.where(y>0,1./y,1.)
         self.reflectometrydata = [
             np.array(x), # x-axis values

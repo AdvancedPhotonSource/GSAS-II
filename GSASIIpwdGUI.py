@@ -6159,7 +6159,7 @@ def UpdateREFDModelsGrid(G2frame,data):
         x,xr,y = G2pwd.makeSLDprofile(data,Substances)
         ModelPlot(data,x,xr,y)
         G2plt.PlotPatterns(G2frame,plotType='REFD')
-        wx.CallLater(100,UpdateREFDModelsGrid,G2frame,data)
+        wx.CallAfter(UpdateREFDModelsGrid,G2frame,data)
         
     def OnModelPlot(event):
         hst = G2frame.GPXtree.GetItemText(G2frame.PatternId)

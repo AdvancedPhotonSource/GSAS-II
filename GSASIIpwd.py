@@ -2346,6 +2346,8 @@ def REFDModelFxn(Profile,Inst,Limits,Substances,data):
     Ib[:] = data['FltBack'][0]
     Ic[:] = 0
     Scale = data['Scale'][0]
+    if data['Layer Seq'] == []:
+        return
     laySeq = ['0',]+data['Layer Seq'].split()+[str(len(data['Layers'])-1),]
     Nlayers = len(laySeq)
     depth = np.zeros(Nlayers)

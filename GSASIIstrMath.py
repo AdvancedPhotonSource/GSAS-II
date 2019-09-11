@@ -1101,7 +1101,7 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         mphase = np.concatenate(mphase,axis=1)              #Nref,full Nop,Natm
         sinm = np.sin(mphase)                               #ditto - match magstrfc.for
         cosm = np.cos(mphase)                               #ditto
-        HM = np.inner(Bmat.T,H)                             #put into cartesian space
+        HM = np.inner(Bmat,H)                             #put into cartesian space
         HM = HM/np.sqrt(np.sum(HM**2,axis=0))               #Kdata = MAGS & HM = UVEC in magstrfc.for both OK
         eDotK = np.sum(HM[:,:,nxs,nxs]*Kdata[:,nxs,:,:],axis=0)
         Q = HM[:,:,nxs,nxs]*eDotK[nxs,:,:,:]-Kdata[:,nxs,:,:] #xyz,Nref,Nop,Natm = BPM in magstrfc.for OK
@@ -1481,8 +1481,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     '''
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
-#    GS = G/np.outer(ast,ast)
-#    uAmat = G2lat.Gmat2AB(GS)[0]
+    GS = G/np.outer(ast,ast)
+    uAmat,uBmat = G2lat.Gmat2AB(GS)
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
@@ -1593,7 +1593,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2.*Nops)     #Nref,Natm
                       
-            HM = np.inner(Bmat.T,HP.T)                            #put into cartesian space
+            HM = np.inner(Bmat,HP.T)                            #put into cartesian space X||H,Z||H*L
             eM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
@@ -1614,12 +1614,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbms *= 0.5
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
-                        
+# do sum on ops, atms 1st                        
             famqs = np.sum(np.sum(fams,axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
             fbmqs = np.sum(np.sum(fbms,axis=-2),axis=-2)
             
-            famcs = np.swapaxes(np.inner(Amat,famqs).T,0,1)     #convert to cartesian
-            fbmcs = np.swapaxes(np.inner(Amat,fbmqs).T,0,1)     # as Nref,Ntau,Mxyz
+            famcs = np.inner(famqs,Bmat)    #convert to cartesian
+            fbmcs = np.inner(fbmqs,Bmat)     # as Nref,Ntau,Mxyz
             
             famcs /= np.sqrt(np.sum(famcs**2,axis=-1))[:,:,nxs]     #normalize
             fbmcs /= np.sqrt(np.sum(fbmcs**2,axis=-1))[:,:,nxs]
@@ -1630,6 +1630,23 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fass = np.sum(famqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*famcs,axis=-1)**2)      #mag intensity calc F^2-(e.F)^2
             fbss = np.sum(fbmqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*fbmcs,axis=-1)**2)
             
+# do sum on ops atoms last? No!
+#            famcs = np.inner(fams,Bmat)     #convert to cartesian
+#            fbmcs = np.inner(fbms,Bmat)     # as Nref,Ntau,Mxyz
+#            
+#            famcs /= np.sqrt(np.sum(famcs**2,axis=-1))[:,:,:,:,nxs]     #normalize
+#            fbmcs /= np.sqrt(np.sum(fbmcs**2,axis=-1))[:,:,:,:,nxs]
+#            
+#            famcs = np.nan_to_num(famcs)    #nan --> 0.0
+#            fbmcs = np.nan_to_num(fbmcs)
+#            
+#            famqs = np.sum(fams**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,nxs,nxs,:]*famcs,axis=-1)**2)      #mag intensity calc F^2-(e.F)^2
+#            fbmqs = np.sum(fbms**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,nxs,nxs,:]*fbmcs,axis=-1)**2)
+#            
+#            fass = np.sum(np.sum(famqs,axis=-1),axis=-1)      #Nref,Ntau,Mxyz; sum ops & atoms
+#            fbss = np.sum(np.sum(fbmqs,axis=-1),axis=-1)
+#            
+#do integration            
             fas = np.sum(glWt*fass,axis=1)
             fbs = np.sum(glWt*fbss,axis=1)
             

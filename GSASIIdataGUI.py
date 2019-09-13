@@ -365,78 +365,52 @@ def ShowVersions():
     except:
         pass
     print ("This is GSAS-II revision %s"%str(GSASIIpath.GetVersionNumber())+'\n')
-    
+
+def warnNumpyVersion(application):
+    dlg = wx.MessageDialog(application.main,
+                'version '+ np.__version__ +
+                ' of numpy produces .gpx files that are not compatible with older versions: please upgrade or downgrade numpy to avoid this version',
+                'numpy Warning',wx.OK)
+    try:
+        dlg.CenterOnParent()
+        dlg.ShowModal()
+    finally:
+        dlg.Destroy()
+        
 ###############################################################################
-# Main application
+# GUI creation
 ###############################################################################
-def GSASIImain():
-    '''Start up the GSAS-II application'''
+def GSASIImain(application):
+    '''Start up the GSAS-II GUI'''                        
     ShowVersions()
     GUIpatches()
-    #GSASIIpath.InvokeDebugOpts()
-    #application = GSASIImain() # don't redirect output, someday we
-    # may want to do this if we can 
-    application = GSASIIGUI(0)
+    knownVersions = ['2.7','3.6','3.7','3.8']
+    if platform.python_version()[:3] not in knownVersions: 
+        dlg = wx.MessageDialog(None, 
+                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
+                'Python version error',  wx.OK)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        sys.exit()
+            
+    application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
+    application.SetTopWindow(application.main)
+    # save the current package versions
+    application.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
+    if np.__version__ == '1.16.0':
+        wx.CallLater(100,warnNumpyVersion,application)
     if GSASIIpath.GetConfigValue('wxInspector'):
         import wx.lib.inspection as wxeye
         wxeye.InspectionTool().Show()
 
-    #application.main.OnRefine(None)
     try:
         application.SetAppDisplayName('GSAS-II')
     except:
         pass
     #application.GetTopWindow().SendSizeEvent()
     application.GetTopWindow().Show(True)
-    application.MainLoop()
-
-class GSASIIGUI(wx.App):
-    '''Defines a wxApp for GSAS-II
-
-    Creates a wx frame (self.main) which contains the display of the
-    data tree.
-    '''
-    def OnInit(self):
-        '''Called automatically when the app is created.'''
-        knownVersions = ['2.7','3.6','3.7','3.8']
-        if platform.python_version()[:3] not in knownVersions: 
-            dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x or 3.6+\n Yours is '+sys.version.split()[0],
-                'Python version error',  wx.OK)
-            try:
-                dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            sys.exit()
-        self.main = GSASII(None)
-        self.SetTopWindow(self.main)
-        # save the current package versions
-        self.main.PackageVersions = G2fil.get_python_versions([wx, mpl, np, sp, ogl])
-        if np.__version__ == '1.16.0':
-            wx.CallLater(100,self.warnNumpyVersion)
-        return True
-    def warnNumpyVersion(self):
-        dlg = wx.MessageDialog(self.main,
-                'version '+ np.__version__ +
-                ' of numpy produces .gpx files that are not compatible with older versions: please upgrade or downgrade numpy to avoid this version',
-                'numpy Warning',wx.OK)
-        try:
-            dlg.CenterOnParent()
-            dlg.ShowModal()
-        finally:
-            dlg.Destroy()
-    
-    # def MacOpenFile(self, filename):
-    #     '''Called on Mac every time a file is dropped on the app when it is running,
-    #     treat this like a File/Open project menu action.
-    #     Should be ignored on other platforms
-    #     '''
-    #     # PATCH: Canopy 1.4 script main seems dropped on app; ignore .py files
-    #     print 'MacOpen',filename
-    #     if os.path.splitext(filename)[1] == '.py': return
-    #     # end PATCH
-    #     self.main.OnFileOpen(None,filename)
-    # removed because this gets triggered when a file is on the command line in canopy 1.4 -- not likely used anyway
 
 ################################################################################
 # Create main frame (window) for GUI

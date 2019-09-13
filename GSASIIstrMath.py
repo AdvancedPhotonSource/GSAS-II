@@ -1050,9 +1050,9 @@ def MagStructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Gdata = np.hstack([Gdata for icen in range(Ncen)])        #dup over cell centering--> [Mxyz,nops,natms]
     Gdata = SGData['MagMom'][nxs,:,nxs]*Gdata   #flip vectors according to spin flip * det(opM)
     Mag = np.tile(Mag[:,nxs],Nops).T  #make Mag same length as Gdata
-    Kdata = np.inner(Gdata.T,uAmat).T     #Cartesian unit vectors
+    Kdata = np.inner(Gdata.T,uAmat).T
     Kmean = np.mean(np.sqrt(np.sum(Kdata**2,axis=0)),axis=0)
-    Kdata /= Kmean
+    Kdata /= Kmean     #Cartesian unit vectors
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     blkSize = 100       #no. of reflections in a block - size seems optimal
@@ -1510,6 +1510,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
         MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz sum matches drawing
+        Mmod = MmodA+MmodB
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
             GSdata = np.inner(Gdata.T,np.swapaxes(SGMT,1,2))  #apply sym. ops.--> Natm,Nops,Nxyz
@@ -1518,6 +1519,12 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             GSdata = np.hstack([GSdata for cen in SSCen])        #dup over cell centering - Natm,Nops,Mxyz
             GSdata = SGData['MagMom'][nxs,:,nxs]*GSdata   #flip vectors according to spin flip * det(opM)
             GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
+            Mmod += GSdata[nxs,:,:,:]
+            
+        Kdata = np.inner(Mmod,uAmat)    #Ntau,Nop,Natm,Mxyz
+        Mag = np.sqrt(np.sum(Kdata**2,axis=-1))
+        Kdata /= Mag[:,:,:,nxs]     #Cartesian unit vectors
+        Kdata = np.nan_to_num(Kdata)    #Ntau,Nops,Natm,Mxyz       
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1594,7 +1601,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2.*Nops)     #Nref,Natm
                       
             HM = np.inner(Bmat,HP.T)                            #put into cartesian space X||H,Z||H*L
-            eM = HM/np.sqrt(np.sum(HM**2,axis=0))               #& normalize
+            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               #& normalize    Nref,hkl
+            eDotK = np.sum(eM[:,nxs,nxs,nxs,:]*Kdata[nxs,:,:,:,:],axis=-1)    #Nref,Ntau,Nops,Natm
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
             fbm0 = 0.
@@ -1615,37 +1623,14 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
 # do sum on ops, atms 1st                        
-            famqs = np.sum(np.sum(fams,axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
-            fbmqs = np.sum(np.sum(fbms,axis=-2),axis=-2)
+            cos2 = np.sqrt(1.-eDotK**2)
             
-            famcs = np.inner(famqs,Bmat)    #convert to cartesian
-            fbmcs = np.inner(fbmqs,Bmat)     # as Nref,Ntau,Mxyz
+            famqs = np.sum(np.sum(fams*cos2[:,:,:,:,nxs],axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
+            fbmqs = np.sum(np.sum(fbms*cos2[:,:,:,:,nxs],axis=-2),axis=-2)
             
-            famcs /= np.sqrt(np.sum(famcs**2,axis=-1))[:,:,nxs]     #normalize
-            fbmcs /= np.sqrt(np.sum(fbmcs**2,axis=-1))[:,:,nxs]
+            fass = np.sum(famqs**2,axis=-1)      #mag intensity calc F^2-(e.F)^2
+            fbss = np.sum(fbmqs**2,axis=-1)
             
-            famcs = np.nan_to_num(famcs)    #nan --> 0.0
-            fbmcs = np.nan_to_num(fbmcs)
-            
-            fass = np.sum(famqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*famcs,axis=-1)**2)      #mag intensity calc F^2-(e.F)^2
-            fbss = np.sum(fbmqs**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,:]*fbmcs,axis=-1)**2)
-            
-# do sum on ops atoms last? No!
-#            famcs = np.inner(fams,Bmat)     #convert to cartesian
-#            fbmcs = np.inner(fbms,Bmat)     # as Nref,Ntau,Mxyz
-#            
-#            famcs /= np.sqrt(np.sum(famcs**2,axis=-1))[:,:,:,:,nxs]     #normalize
-#            fbmcs /= np.sqrt(np.sum(fbmcs**2,axis=-1))[:,:,:,:,nxs]
-#            
-#            famcs = np.nan_to_num(famcs)    #nan --> 0.0
-#            fbmcs = np.nan_to_num(fbmcs)
-#            
-#            famqs = np.sum(fams**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,nxs,nxs,:]*famcs,axis=-1)**2)      #mag intensity calc F^2-(e.F)^2
-#            fbmqs = np.sum(fbms**2,axis=-1)*(1.-np.sum(eM.T[:,nxs,nxs,nxs,:]*fbmcs,axis=-1)**2)
-#            
-#            fass = np.sum(np.sum(famqs,axis=-1),axis=-1)      #Nref,Ntau,Mxyz; sum ops & atoms
-#            fbss = np.sum(np.sum(fbmqs,axis=-1),axis=-1)
-#            
 #do integration            
             fas = np.sum(glWt*fass,axis=1)
             fbs = np.sum(glWt*fbss,axis=1)

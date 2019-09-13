@@ -1623,10 +1623,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
 # do sum on ops, atms 1st                        
-            cos2 = np.sqrt(1.-eDotK**2)
+            sinsq = np.sqrt(1.-eDotK**2)        #projection - Nref,Ntau,Nops,Natm
             
-            famqs = np.sum(np.sum(fams*cos2[:,:,:,:,nxs],axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
-            fbmqs = np.sum(np.sum(fbms*cos2[:,:,:,:,nxs],axis=-2),axis=-2)
+            famqs = np.sum(np.sum(fams*sinsq[:,:,:,:,nxs],axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
+            fbmqs = np.sum(np.sum(fbms*sinsq[:,:,:,:,nxs],axis=-2),axis=-2)
             
             fass = np.sum(famqs**2,axis=-1)      #mag intensity calc F^2-(e.F)^2
             fbss = np.sum(fbmqs**2,axis=-1)

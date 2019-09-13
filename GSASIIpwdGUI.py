@@ -4300,10 +4300,14 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Cell Test && Refinement: '),0,WACV)
     littleSizer.Add((5,5),0)
-    if 'X' in Inst['Type'][0]:
-        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
-        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
-        littleSizer.Add(hklShow,0,WACV)    
+    hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
+    hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
+    littleSizer.Add(hklShow,0,WACV)    
+    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=' cell step ',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
+    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
+    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
+    shiftSel.SetSelection(3)
+    littleSizer.Add(shiftSel)
     mainSizer.Add(littleSizer,0)
     
     mainSizer.Add((5,5),0)
@@ -4373,9 +4377,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             showSpins = wx.Button(G2frame.dataWindow,label=' Show spins?')
             showSpins.Bind(wx.EVT_BUTTON,OnShowSpins)
             neutSizer.Add(showSpins,0,WACV)
-        hklShow = wx.Button(G2frame.dataWindow,label="Show hkl positions")
-        hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
-        neutSizer.Add(hklShow,0,WACV)
         mainSizer.Add(neutSizer,0)
         mainSizer.Add((5,5),0)
     ibrav = SetLattice(controls)
@@ -4406,11 +4407,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal = wx.TextCtrl(G2frame.dataWindow,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
-    littleSizer.Add(wx.StaticText(G2frame.dataWindow,label='cell step',style=wx.ALIGN_RIGHT),0,WACV|wx.ALIGN_RIGHT)
-    shiftChoices = [ '0.01%','0.05%','0.1%','0.5%', '1.0%','2.5%','5.0%']
-    shiftSel = wx.Choice(G2frame.dataWindow,choices=shiftChoices)
-    shiftSel.SetSelection(3)
-    littleSizer.Add(shiftSel)
         
     mainSizer.Add(littleSizer,0)
     if ssopt.get('Use',False):        #super lattice display

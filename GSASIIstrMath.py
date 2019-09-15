@@ -1602,7 +1602,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                       
             HM = np.inner(Bmat,HP.T)                            #put into cartesian space X||H,Z||H*L
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               #& normalize    Nref,hkl
-            eDotK = np.sum(eM[:,nxs,nxs,nxs,:]*Kdata[nxs,:,:,:,:],axis=-1)    #Nref,Ntau,Nops,Natm
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
             fbm0 = 0.
@@ -1618,19 +1617,23 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 np.sign(H[3,i])*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:
-                fams *= 0.5
-                fbms *= 0.5
+#                fams *= 0.5
+#                fbms *= 0.5
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
+                
 # do sum on ops, atms 1st                        
-            sinsq = np.sqrt(1.-eDotK**2)        #projection - Nref,Ntau,Nops,Natm
+            fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
+            fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
             
-            famqs = np.sum(np.sum(fams*sinsq[:,:,:,:,nxs],axis=-2),axis=-2)      #Nref,Ntau,Mxyz; sum ops & atoms
-            fbmqs = np.sum(np.sum(fbms*sinsq[:,:,:,:,nxs],axis=-2),axis=-2)
-            
-            fass = np.sum(famqs**2,axis=-1)      #mag intensity calc F^2-(e.F)^2
-            fbss = np.sum(fbmqs**2,axis=-1)
-            
+#form e.F dot product
+
+            eDotFa = np.sum(eM[:,nxs,:]*fasm,axis=-1)    #Nref,Ntau        
+            eDotFb = np.sum(eM[:,nxs,:]*fbsm,axis=-1)
+#intensity
+            fass = np.sum(fasm**2,axis=-1)-eDotFa**2
+            fbss = np.sum(fbsm**2,axis=-1)-eDotFb**2
+                
 #do integration            
             fas = np.sum(glWt*fass,axis=1)
             fbs = np.sum(glWt*fbss,axis=1)
@@ -1652,7 +1655,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
             
             refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
-            refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+            refl.T[11] = atan2d(fbs[0],fas[0])  #use only tau=0; ignore f' & f"
         if 'P' not in calcControls[hfx+'histType']:
             refl.T[8] = np.copy(refl.T[10])                
         iBeg += blkSize

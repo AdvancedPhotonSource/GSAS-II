@@ -1617,8 +1617,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 np.sign(H[3,i])*MmodB*cosm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
             
             if not SGData['SGGray']:
-#                fams *= 0.5
-#                fbms *= 0.5
                 fams += fam0[:,nxs,:,:,:]
                 fbms += fbm0[:,nxs,:,:,:]
                 
@@ -1635,8 +1633,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbss = np.sum(fbsm**2,axis=-1)-eDotFb**2
                 
 #do integration            
-            fas = np.sum(glWt*fass,axis=1)
-            fbs = np.sum(glWt*fbss,axis=1)
+            fas = np.sum(glWt*fass,axis=1)/2.
+            fbs = np.sum(glWt*fbss,axis=1)/2.
             
             refl.T[10] = fas+fbs
             refl.T[11] = atan2d(fbs,fas)

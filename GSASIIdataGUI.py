@@ -3789,15 +3789,15 @@ class GSASII(wx.Frame):
     def OnFileReopen(self, event):
         files = GSASIIpath.GetConfigValue('previous_GPX_files')
         if not files:
-            print('no previous projects saved')
+            print('no previous projects found')
             return
         sellist = []
         for f in files:
             dirname,filroot = os.path.split(f)
             if os.path.exists(f):
                 sellist.append("{} from {}".format(filroot,dirname))
-            else:
-                sellist.append("not found: {}".format(f))
+#            else:
+#                sellist.append("not found: {}".format(f))
         
         dlg = G2G.G2SingleChoiceDialog(self,
                                            'Select previous project to open',

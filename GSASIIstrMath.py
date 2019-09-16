@@ -1600,8 +1600,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             MF = refDict['FF']['MF'][iBeg:iFin].T[Tindx].T   #Nref,Natm
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2.*Nops)     #Nref,Natm
                       
-            HM = np.inner(Bmat,HP.T)                            #put into cartesian space X||H,Z||H*L
-            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               #& normalize    Nref,hkl
+            HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
+            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               # normalize  HP  Nref,hkl
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
             fbm0 = 0.
@@ -1618,20 +1618,19 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             
             if not SGData['SGGray']:
                 fams += fam0[:,nxs,:,:,:]
-                fbms += fbm0[:,nxs,:,:,:]
-                
+                fbms += fbm0[:,nxs,:,:,:]                
 # do sum on ops, atms 1st                        
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
-            fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)
-            
+            fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)            
+#put into cartesian space
+            facm = np.inner(fasm,uBmat.T)
+            fbcm = np.inner(fbsm,uBmat.T)            
 #form e.F dot product
-
-            eDotFa = np.sum(eM[:,nxs,:]*fasm,axis=-1)    #Nref,Ntau        
-            eDotFb = np.sum(eM[:,nxs,:]*fbsm,axis=-1)
+            eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
+            eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
 #intensity
             fass = np.sum(fasm**2,axis=-1)-eDotFa**2
-            fbss = np.sum(fbsm**2,axis=-1)-eDotFb**2
-                
+            fbss = np.sum(fbsm**2,axis=-1)-eDotFb**2                
 #do integration            
             fas = np.sum(glWt*fass,axis=1)/2.
             fbs = np.sum(glWt*fbss,axis=1)/2.

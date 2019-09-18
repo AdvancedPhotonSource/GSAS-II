@@ -4980,12 +4980,19 @@ def UpdatePhaseData(G2frame,Item,data):
         debug = False       #set True to run DIFFax to compare/debug (must be in bin)
         idebug = 0
         if debug: idebug = 1
+        wx.MessageBox(''' For use of DIFFaX, please cite: 
+  A general recursion method for calculating diffracted intensities from crystals containing 
+  planar faults, 
+  M.M.J. Treacy, J.M. Newsam & M.W. Deem, Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
+  https://doi.org/10.1098/rspa.1991.0062
+      ''',caption='DIFFaX',style=wx.ICON_INFORMATION)
         ctrls = ''
         dlg = DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
             simCodes = dlg.GetSelection()
         else:
             return
+        
         if 'PWDR' in  simCodes[0]:    #powder pattern
             data['Layers']['selInst'] = simCodes[1]
             UseList = []

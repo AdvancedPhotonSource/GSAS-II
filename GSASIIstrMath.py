@@ -1509,7 +1509,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
         mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T])%1. #Natn,Nop,xyz
-        MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz sum matches drawing
+        MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
         Mmod = MmodA+MmodB
         
         if not SGData['SGGray']:    #for fixed Mx,My,Mz
@@ -1593,7 +1593,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??            
             
-            phasem = twopi*np.inner(H.T[:,:3],mXYZ)
+            phasem = twopi*np.inner(HP.T[:,:3],mXYZ)    #2pi(Q.r)
             phasem = np.swapaxes(phasem,1,2)            #Nref,Nops,Natm
             cosm = np.cos(phasem)
             sinm = np.sin(phasem)
@@ -1601,7 +1601,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             TMcorr = 0.539*(np.reshape(Tiso,Tuij.shape)*Tuij)[:,0,:]*Mdata*Fdata*MF/(2.*Nops)     #Nref,Natm
                       
             HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
-            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               # normalize  HP  Nref,hkl
+            eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               # normalize  HP  Nref,hkl=Unit vectors || Q
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
             fbm0 = 0.
@@ -1609,7 +1609,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fam0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*cosm[:,:,:,nxs]    #Nref,Nops,Natm,Mxyz
                 fbm0 = TMcorr[:,nxs,:,nxs]*GSdata[nxs,:,:,:]*sinm[:,:,:,nxs]    
 #for modulated moments --> m != 0 reflections
-        
+                        
             fams = TMcorr[:,nxs,nxs,:,nxs]*np.array([np.where(H[3,i]!=0,(MmodA*cosm[i,nxs,:,:,nxs]-    \
                 np.sign(H[3,i])*MmodB*sinm[i,nxs,:,:,nxs]),0.) for i in range(mRef)])          #Nref,Ntau,Nops,Natm,Mxyz
                         
@@ -1618,7 +1618,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             
             if not SGData['SGGray']:
                 fams += fam0[:,nxs,:,:,:]
-                fbms += fbm0[:,nxs,:,:,:]                
+                fbms += fbm0[:,nxs,:,:,:]
+                
 # do sum on ops, atms 1st                        
             fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
             fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)            

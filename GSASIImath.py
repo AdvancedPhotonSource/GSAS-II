@@ -1364,8 +1364,8 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     this needs to make magnetic moment modulations & magnitudes as 
     fxn of gTau points
     '''
-    Am = np.array(MSSdata[:3]).T   #atoms x waves x sin pos mods
-    Bm = np.array(MSSdata[3:]).T  #...cos pos mods
+    Am = np.array(MSSdata[3:]).T   #atoms x waves x cos pos mods
+    Bm = np.array(MSSdata[:3]).T  #...sin pos mods
     nWaves = Am.shape[1]
     SGMT = np.array([ops[0] for ops in SGData['SGOps']])        #not .T!!
     Sinv = np.array([nl.inv(ops[0]) for ops in SSGData['SSGOps']])
@@ -1387,8 +1387,8 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     phase = (modind[:,nxs,nxs]*tauT)     #Nops,Natm,Nwave
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    MmodA = np.sum(Bm[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)
-    MmodB = np.sum(Am[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)
+    MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)    #cos term
+    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)    #sin term
     if SGData['SGGray']:
         MmodA = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
         MmodB = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]

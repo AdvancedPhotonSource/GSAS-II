@@ -981,6 +981,37 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
             print("Error importing config.py file: "+str(err))
         configDict = {'Clip_on':True}
 
+def MacStartGSASII(g2script,project=''):
+    '''Start a new instance of GSAS-II by opening a new terminal window and starting
+    a new GSAS-II process. Used on Mac OS X only.
+
+    :param str g2script: file name for the GSASII.py script
+    :param str project: GSAS-II project (.gpx) file to be opened, default is blank
+      which opens a new project
+    '''
+    if project and os.path.splitext(project)[1] != '.gpx':
+        print('file {} cannot be used. Not GSAS-II project (.gpx) file'.format(project))
+        return
+    if project and not os.path.exists(project):
+        print('file {} cannot be found.'.format(project))
+        return 
+    elif project:
+        project = os.path.abspath(project)
+    g2script = os.path.abspath(g2script)
+    pythonapp = sys.executable
+    if os.path.exists(pythonapp+'w'): pythonapp += 'w'
+    script = '''
+set python to "{}"
+set appwithpath to "{}"
+set filename to "{}"
+
+tell application "Terminal"
+     activate
+     do script python & " " & appwithpath & " " & filename & "; exit"
+end tell
+'''.format(pythonapp,g2script,project)
+    subprocess.Popen(["osascript","-e",script])
+
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''

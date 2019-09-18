@@ -23,6 +23,8 @@ The wxPython app is then passed to :func:`GSASIIdataGUI.GSASIImain`,
 which creates the GSAS-II GUI and finally the event loop is started.
 '''
 
+import sys
+import os
 import platform
 import wx
 import GSASIIpath
@@ -30,8 +32,28 @@ GSASIIpath.SetVersionNumber("$Revision$")
 
 __version__ = '1.0.0'
 
+class G2App(wx.App):
+    '''Used to create a wx python application for the GUI for Mac.
+    Customized to implement drop of GPX files onto app.
+    '''
+    startupMode = True
+    def ClearStartup(self):
+        '''Call this after app startup complete because a Drop event is posted 
+        when GSAS-II is initially started.
+        '''
+        self.startupMode = False        
+    def MacOpenFiles(self, filenames):
+        if self.startupMode:
+            return
+        for project in filenames:
+            #print("Start GSAS-II with project file "+str(project))
+            GSASIIpath.MacStartGSASII(__file__,project)
+
 if __name__ == '__main__':
-    application = wx.App(0) # create the GUI framework
+    if sys.platform == "darwin": 
+        application = G2App(0) # create the GUI framework
+    else:
+        application = wx.App(0) # create the GUI framework
     try:
         GSASIIpath.SetBinaryPath(True)
     except:
@@ -52,4 +74,6 @@ if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
     import GSASIIdataGUI as G2gd    
     G2gd.GSASIImain(application) # start the GUI
+    if sys.platform == "darwin": 
+        wx.CallLater(100,application.ClearStartup)
     application.MainLoop()

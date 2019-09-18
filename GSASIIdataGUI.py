@@ -439,6 +439,9 @@ class GSASII(wx.Frame):
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
+        if sys.platform == "darwin": 
+            item = parent.Append(wx.ID_ANY,'&Open in new window...','Open a GSAS-II project file (*.gpx) in a separate process')
+            self.Bind(wx.EVT_MENU, self.OnNewGSASII, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Reopen recent...\tCtrl+E','Reopen a previously used GSAS-II project file (*.gpx)')
         self.Bind(wx.EVT_MENU, self.OnFileReopen, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'&Save project\tCtrl+S','Save project under current name')
@@ -3968,6 +3971,26 @@ class GSASII(wx.Frame):
         else:
             return self.OnFileSaveas(event)
             
+    def OnNewGSASII(self, event):
+        '''Gets a GSAS-II .gpx project file in response to the
+        File/Open new window menu button. Runs only on Mac.
+        '''
+        if self.LastGPXdir:
+            pth = self.LastGPXdir
+        else:
+            pth = '.'
+        GSASprojectfile = ''
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file', pth, 
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN)
+        try:
+            if dlg.ShowModal() == wx.ID_OK: 
+                GSASprojectfile = dlg.GetPath()
+                GSASprojectfile = G2IO.FileDlgFixExt(dlg,GSASprojectfile)
+        finally:
+            dlg.Destroy()
+        G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')
+        GSASIIpath.MacStartGSASII(G2script,GSASprojectfile)
+
     def SetTitleByGPX(self):
         '''Set the title for the two window frames
         '''

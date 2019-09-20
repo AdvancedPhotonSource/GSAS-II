@@ -881,7 +881,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
         Tmat *= 2.0
     else:
         return Tmat
-    SGData['SGSpin'].append(-1)
+    SGData['SGSpin'].append(-1)     #BNS centering are spin invrsion
     C = SGCen+A[:3]
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat

@@ -3819,18 +3819,18 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         else:
             continue        #skip non-histogram entries
         if First:
-            dMdv = np.sqrt(wtFactor)*dMdvh
+            dMdV = np.sqrt(wtFactor)*dMdvh
             First = False
         else:
-            dMdv = np.concatenate((dMdv.T,np.sqrt(wtFactor)*dMdvh.T)).T
+            dMdV = np.concatenate((dMdV.T,np.sqrt(wtFactor)*dMdvh.T)).T
             
     GetFobsSq(Histograms,Phases,parmDict,calcControls)
     pNames,pVals,pWt,pWsum,pWnum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
         dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
-        dMdv = np.concatenate((dMdv.T,(np.sqrt(pWt)*dpdv).T)).T
+        dMdV = np.concatenate((dMdV.T,(np.sqrt(pWt)*dpdv).T)).T
         
-    return dMdv
+    return dMdV
 
 def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):
     '''Loop over histograms and compute derivatives of the fitting

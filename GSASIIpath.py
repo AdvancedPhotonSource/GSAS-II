@@ -977,8 +977,11 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
     except ImportError:
         configDict = {'Clip_on':True}
     except Exception as err:
+        print(60*'*',"\nError reading config.py file")
         if printInfo:
-            print("Error importing config.py file: "+str(err))
+            import traceback
+            print(traceback.format_exc())
+        print(60*'*')
         configDict = {'Clip_on':True}
 
 def MacStartGSASII(g2script,project=''):

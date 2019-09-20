@@ -4717,6 +4717,22 @@ def SaveConfigVars(vars,parent=None):
         savefile = config.__file__
     except ImportError: # no config.py file yet
         savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
+    except Exception as err: # import failed
+        # find the bad file, save it in a new name and prepare to overwrite it
+        for p in sys.path:
+            savefile = os.path.join(p,'config.py')
+            if os.path.exists(savefile):
+                import distutils.file_util as dfu
+                keepfile = os.path.join(p,'config.py_corrupt')
+                print('Current config file contains an error:',savefile)
+                print('saving that file as',keepfile)
+                dfu.copy_file(savefile,keepfile)
+                print('preparing to overwrite...')
+                break
+        else:
+            print('unexpected error importing config.py')
+            savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
+        
     # try to open file for write
     try:
         savefile = os.path.splitext(savefile)[0]+'.py' # convert .pyc to .py

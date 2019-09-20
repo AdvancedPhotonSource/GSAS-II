@@ -2914,15 +2914,15 @@ def GetSSfxuinel(waveType,Stype,nH,XYZ,SGData,SSGData,debug=False):
                         [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
                     if dT:
                         if '(x)' in siteSym:
-                            CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
+                            CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
                                 CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
                         elif '(y)' in siteSym:
-                            CSI[1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                            CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
                                 CSI[1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
                         elif '(z)' in siteSym:
-                            CSI[1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                            CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                             if 'm' in siteSym and len(SdIndx) == 1:
                                 CSI[1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                     else:

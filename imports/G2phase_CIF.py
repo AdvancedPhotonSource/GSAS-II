@@ -467,6 +467,10 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         uisoval = cif.get_number_with_esd(val)[0]
                         if uisoval is not None: 
                             atomlist[10] = uisoval
+                    elif key == '_atom_site_b_iso_or_equiv':
+                        uisoval = cif.get_number_with_esd(val)[0]
+                        if uisoval is not None: 
+                            atomlist[10] = uisoval/(8*np.pi**2)
                 if not atomlist[1] and atomlist[0]:
                     typ = atomlist[0].rstrip('0123456789-+')
                     if G2elem.CheckElement(typ):

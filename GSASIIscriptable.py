@@ -799,8 +799,8 @@ Image Processing
 
 A sample script where an image is read, assigned calibration values from a file 
 and then integrated follows. 
-The data files are found
-`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
+The data files are found in the 
+`Scripting Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
 
 .. code-block::  python
 
@@ -868,11 +868,10 @@ Note that as the calibration values improve, the algorithm is able to find more
 points on diffraction rings to use for calibration and the number of "ring picks" 
 increase. The calibration is repeated until that stops increasing significantly (<10%). 
 Detector control files are then created. 
-The files used for this exercise are found
-`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/data/>`_
-(the 
-`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_ 
-tutorial). 
+The files used for this exercise are found in the
+`Area Detector Calibration Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/data/>`_
+(see 
+`Area Detector Calibration with Multiple Distances <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/DeterminingWavelength/DeterminingWavelength.html>`_ ). 
 
 .. code-block::  python
 

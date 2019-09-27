@@ -719,8 +719,8 @@ This shows an example where a structure is read from a CIF, a
 pattern is computed using a instrument parameter file to specify the 
 probe type (neutrons here) and wavelength. 
 The pattern and reflection list are computed.
-Data files are found
-`here <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`.
+Data files are found in the 
+`Scripting Tutorial <https://subversion.xray.aps.anl.gov/pyGSAS/Tutorials/PythonScript/data/>`_.
 
 .. code-block::  python
 
@@ -852,6 +852,10 @@ This example shows a computation similar to what is done in tutorial
         print(c['distance'],c['wavelength'])
 
 .. _MultiDist_Example:
+
+----------------------
+Image Calibration
+----------------------
 
 This example performs a number of cycles of constrained fitting. 
 A project is created with the images found in a directory, setting initial

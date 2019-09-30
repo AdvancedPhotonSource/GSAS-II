@@ -1508,7 +1508,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
-        mXYZ = np.array([[xyz[0] for xyz in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
+        mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
         MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
         Mmod = MmodA+MmodB
         
@@ -1602,7 +1602,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                       
             HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               # normalize  HP  Nref,hkl=Unit vectors || Q
-            eDotK = np.inner(HM.T,Kdata)                      #Nref,Ntau,Nops,Natm
+#            eDotK = np.inner(HM.T,Kdata)                      #Nref,Ntau,Nops,Natm
 #            Q = HM.T[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kdata[nxs,:,:,:,:] #Nref,Ntau,Nop,Nat,mxyz = BPM in magstrfc.for OK
             Q = 1.
 #for fixed moments --> m=0 reflections 

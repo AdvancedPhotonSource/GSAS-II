@@ -2240,10 +2240,11 @@ def UpdatePhaseData(G2frame,Item,data):
             cutOff = G2G.ValidatedTxtCtrl(General,Map,'cutOff',nDig=(10,1),min=1.0,max=100.)
             line2Sizer.Add(cutOff,0,WACV)
             if len(Map['RefList']) and not generalData['Modulated']:
-                Dysno = wx.CheckBox(General,-1,label=' Use Dysnomia (Max. Ent. Method)?')
-                Dysno.SetValue(generalData['doDysnomia'])
-                Dysno.Bind(wx.EVT_CHECKBOX,OnDysnomia)
-                line2Sizer.Add(Dysno,0,WACV)
+                if all(['PWDR' in map for map in Map['RefList']]):
+                    Dysno = wx.CheckBox(General,-1,label=' Use Dysnomia (Max. Ent. Method)?')
+                    Dysno.SetValue(generalData['doDysnomia'])
+                    Dysno.Bind(wx.EVT_CHECKBOX,OnDysnomia)
+                    line2Sizer.Add(Dysno,0,WACV)
             mapSizer.Add(line2Sizer,0,WACV)
             return mapSizer
                 

@@ -4169,9 +4169,9 @@ def UpdatePhaseData(G2frame,Item,data):
         reflSets = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,pId,'Reflection Lists'))
         reflData = reflSets[generalData['Name']]['RefList']
         refDmin = reflData[-1][4]
-        mulMin = np.argmin(reflData[:,3])
-        if reflData[mulMin,3] < 0:
-            refDmin = reflData[mulMin-1,4]
+        mulMin = np.argmin(reflData[:][3])
+        if reflData[mulMin][3] < 0:
+            refDmin = reflData[mulMin-1][4]
         MEMData = G2frame.MEMData
         if MEMData.GetSizer():
             MEMData.GetSizer().Clear(True)

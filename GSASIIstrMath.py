@@ -1486,7 +1486,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-    Ncen = len(SGData['SGCen'])
+#    Ncen = len(SGData['SGCen'])
     Nops = len(SGMT)*(1+SGData['SGInv'])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
@@ -1521,10 +1521,10 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             GSdata = np.swapaxes(GSdata,0,1)    #Nop,Natm,Mxyz
             Mmod += GSdata[nxs,:,:,:]
             
-        Kdata = np.inner(Mmod,uAmat)    #Ntau,Nop,Natm,Mxyz
-        Mag = np.sqrt(np.sum(Kdata**2,axis=-1))
-        Kdata /= Mag[:,:,:,nxs]     #Cartesian unit vectors
-        Kdata = np.nan_to_num(Kdata)    #Ntau,Nops,Natm,Mxyz       
+#        Kdata = np.inner(Mmod,uAmat)    #Ntau,Nop,Natm,Mxyz
+#        Mag = np.sqrt(np.sum(Kdata**2,axis=-1))
+#        Kdata /= Mag[:,:,:,nxs]     #Cartesian unit vectors
+#        Kdata = np.nan_to_num(Kdata)    #Ntau,Nops,Natm,Mxyz       
 
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1593,7 +1593,7 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 
         if 'N' in calcControls[hfx+'histType'] and parmDict[pfx+'isMag']:       #TODO: mag math here??            
             
-            phasem = twopi*np.inner(HP.T[:,:3],mXYZ)    #2pi(Q.r)
+            phasem = twopi*np.inner(HP.T,mXYZ)    #2pi(Q.r)
             phasem = np.swapaxes(phasem,1,2)            #Nref,Nops,Natm
             cosm = np.cos(phasem)
             sinm = np.sin(phasem)
@@ -1633,8 +1633,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
 #intensity
-            fass = np.sum(fasm**2,axis=-1)-eDotFa**2
-            fbss = np.sum(fbsm**2,axis=-1)-eDotFb**2                
+            fass = np.sum(facm**2,axis=-1)-eDotFa**2
+            fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2                
 #do integration            
             fas = np.sum(glWt*fass,axis=1)/2.
             fbs = np.sum(glWt*fbss,axis=1)/2.

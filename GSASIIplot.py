@@ -9017,7 +9017,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                     if mag > 0.:
                         RenderMapPeak(x,y,z,Wt,mag/peakMax)
                     else:
-                        RenderMapPeak(x,y,z,Rd,-mag/peakMax)
+                        RenderMapPeak(x,y,z,Or,-2*mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
         if len(testRBObj) and pageName == 'RB Models':

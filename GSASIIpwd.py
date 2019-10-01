@@ -3015,6 +3015,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
         mem.write('%10.3f 0.001\n'%sumpos)
         
     dmin = DysData['MEMdmin']
+    TOFlam = 2.0*dmin*npsind(80.0)
     refSet = G2lat.GenHLaue(dmin,SGData,A)      #list of h,k,l,d
     refDict = {'%d %d %d'%(ref[0],ref[1],ref[2]):ref for ref in refSet}
         
@@ -3025,7 +3026,13 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
             continue
         if 'T' in Type:
             h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = ref[:16]
-            FWHM = getgamFW(gam,sig)
+            s = np.sqrt(max(sig,0.0001))   #var -> sig in deg
+            FWHM = getgamFW(gam,s)
+            if dsp < dmin:
+                continue
+            theta = npasind(TOFlam/(2.*dsp))
+            FWHM *= nptand(theta)/pos
+            pos = 2.*theta
         else:
             h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = ref[:13]
             g = gam/100.    #centideg -> deg
@@ -3071,7 +3078,7 @@ def makeMEMfile(data,reflData,MEMtype,DYSNOMIA):
             del refDict[hkl]
         Fobs = np.sqrt(ref[6])
         mem.write('%5d%5d%5d%10.3f%10.3f%10.3f\n'%(h,k,l,Fobs*npcosd(ref[7]),Fobs*npsind(ref[7]),max(0.01*Fobs,0.1)))
-    while True:
+    while True and nref2:
         if not len(refs2[-1]):
             del refs2[-1]
         else:
@@ -3115,6 +3122,8 @@ def MEMupdateReflData(prfName,data,reflData):
     '''
     
     generalData = data['General']
+    Map = generalData['Map']
+    Type = Map['Type']
     cell = generalData['Cell'][1:7]
     A = G2lat.cell2A(cell)
     reflDict = {}
@@ -3144,7 +3153,10 @@ def MEMupdateReflData(prfName,data,reflData):
             refId = reflDict[hash('%5d%5d%5d'%(h,k,l))]
         except KeyError:    #added reflections at end skipped
             d = float(1/np.sqrt(G2lat.calc_rDsq([h,k,l],A)))
-            newRefs.append([h,k,l,-1,d,0.,0.01,1.0,Fosq,Fosq,phase,1.0,1.0,1.0,1.0])
+            if 'T' in Type:
+                newRefs.append([h,k,l,-1,d,0.,0.01,1.0,Fosq,Fosq,phase,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
+            else:
+                newRefs.append([h,k,l,-1,d,0.,0.01,1.0,Fosq,Fosq,phase,1.0,1.0,1.0,1.0])
             continue
         newRefs[refId][8] = Fosq
         newRefs[refId][10] = phase

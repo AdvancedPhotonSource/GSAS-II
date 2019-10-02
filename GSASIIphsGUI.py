@@ -1332,7 +1332,7 @@ def UpdatePhaseData(G2frame,Item,data):
         if generalData['Modulated']:
             if 'Super' not in generalData:
                 generalData['Super'] = 1
-                generalData['SuperVec'] = [[0.,0.,0.],False,4]
+                generalData['SuperVec'] = [[0.,0.,0.],False,1]
                 generalData['SSGData'] = {}
             if '4DmapData' not in generalData:
                 generalData['4DmapData'] = mapDefault.copy()
@@ -3190,6 +3190,8 @@ def UpdatePhaseData(G2frame,Item,data):
             Types = Types[:7]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[7:]
         SGData = data['General']['SGData']
         G2frame.GetStatusBar().SetStatusText('',1)
+        if SGData['SpGrp'] in G2spc.spg2origins:
+            G2frame.GetStatusBar().SetStatusText('Warning: Atom positions must correspond to 2nd setting for the space group '+SGData['SpGrp'],1)
         if SGData['SGPolax']:
             G2frame.GetStatusBar().SetStatusText('Warning: The location of the origin is arbitrary in '+SGData['SGPolax'],1)
         if 'phoenix' in wx.version():

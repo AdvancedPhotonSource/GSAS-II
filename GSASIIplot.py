@@ -5301,15 +5301,16 @@ def PlotSASDPairDist(G2frame):
     Page.Choice = None
     PatternId = G2frame.PatternId
     data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,PatternId, 'Models'))
-    Bins,Dbins,BinMag = data['Pair']['Distribution']
-    Plot.set_title('Pair Distribution')
-    Plot.set_xlabel(r'$R, \AA$',fontsize=14)
-    Plot.set_ylabel(r'$Pair\ distribution,\ P(R)$',fontsize=14)
-    Plot.bar(Bins-Dbins,BinMag,Dbins,facecolor='white',edgecolor='green')       #plot diameters
-    if 'Pair Calc' in data['Pair']:
-        [Rbins,Dist] = data['Pair']['Pair Calc'].T
-        Plot.plot(Rbins,Dist,color='r')       #plot radii
-    Page.canvas.draw()
+    if len(data['Pair']['Distribution']):
+        Bins,Dbins,BinMag = data['Pair']['Distribution']
+        Plot.set_title('Pair Distribution')
+        Plot.set_xlabel(r'$R, \AA$',fontsize=14)
+        Plot.set_ylabel(r'$Pair\ distribution,\ P(R)$',fontsize=14)
+        Plot.bar(Bins-Dbins,BinMag,Dbins,facecolor='white',edgecolor='green')       #plot diameters
+        if 'Pair Calc' in data['Pair']:
+            [Rbins,Dist] = data['Pair']['Pair Calc'].T
+            Plot.plot(Rbins,Dist,color='r')       #plot radii
+        Page.canvas.draw()
 
 ################################################################################
 ##### PlotPowderLines

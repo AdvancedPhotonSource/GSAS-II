@@ -1602,9 +1602,6 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                       
             HM = np.inner(uBmat,HP.T)                            #put into cartesian space X||H,Z||H*L
             eM = (HM/np.sqrt(np.sum(HM**2,axis=0))).T               # normalize  HP  Nref,hkl=Unit vectors || Q
-#            eDotK = np.inner(HM.T,Kdata)                      #Nref,Ntau,Nops,Natm
-#            Q = HM.T[:,nxs,nxs,nxs,:]*eDotK[:,:,:,:,nxs]-Kdata[nxs,:,:,:,:] #Nref,Ntau,Nop,Nat,mxyz = BPM in magstrfc.for OK
-            Q = 1.
 #for fixed moments --> m=0 reflections 
             fam0 = 0.
             fbm0 = 0.
@@ -1624,27 +1621,21 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 fbms += fbm0[:,nxs,:,:,:]
                 
 # do sum on ops, atms 1st                        
-            fasm = np.sum(np.sum(Q*fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
-            fbsm = np.sum(np.sum(Q*fbms,axis=-2),axis=-2)            
+            fasm = np.sum(np.sum(fams,axis=-2),axis=-2)    #Nref,Ntau,Mxyz; sum ops & atoms
+            fbsm = np.sum(np.sum(fbms,axis=-2),axis=-2)            
 #put into cartesian space
             facm = np.inner(fasm,uAmat.T)
-            fbcm = np.inner(fbsm,uAmat.T)            
+            fbcm = np.inner(fbsm,uAmat.T)
 #form e.F dot product
             eDotFa = np.sum(eM[:,nxs,:]*facm,axis=-1)    #Nref,Ntau        
             eDotFb = np.sum(eM[:,nxs,:]*fbcm,axis=-1)
 #intensity
             fass = np.sum(facm**2,axis=-1)-eDotFa**2
-            fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2                
+            fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
 #do integration            
             fas = np.sum(glWt*fass,axis=1)/2.
             fbs = np.sum(glWt*fbss,axis=1)/2.
             
-#            fams = np.sum(fasm**2,axis=-1)
-#            fbms = np.sum(fbsm**2,axis=-1)
-#            
-#            fas = np.sum(glWt[nxs,:]*fams,axis=1)/2.
-#            fbs = np.sum(glWt[nxs,:]*fbms,axis=1)/2.
-#            
             refl.T[10] = fas+fbs   #Sum(fams**2,Mxyz) Re + Im
             refl.T[11] = atan2d(fbs,fas) #- what is phase for mag refl?
 

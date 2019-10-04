@@ -513,26 +513,37 @@ def TextOps(text,table,reverse=False):
     '''
     OpText = []
     Inv = True
+    Super = False
     if 'noncentro' in text[1]:
         Inv = False
+    if 'Super' in text[0]:
+        Super = True
     Cent = [[0,0,0],]
+    if Super:
+        Cent = [[0,0,0,0],]
     if '0,0,0' in text[-1]:
         Cent = np.array(eval(text[-1].split('+')[0].replace(';','),(')))
     OpsM = []
     OpsT = []
     for item in table:
         if 'for' in item: continue
-        M,T = Text2MT(item.split(')')[1].replace(' ',''),CIF=True)
+        if Super:
+            M,T = MagSSText2MTS(item.split(')')[1].replace(' ',''),G2=True)[:2]
+        else:
+            M,T = Text2MT(item.split(')')[1].replace(' ',''),CIF=True)
         OpsM.append(M)
         OpsT.append(T)
     OpsM = np.array(OpsM)
     OpsT = np.array(OpsT)
-    if Inv:
+    if Inv and not Super:   #inversion ops altready listed in supersymmetries
         OpsM = np.concatenate((OpsM,-OpsM))
         OpsT = np.concatenate((OpsT,-OpsT%1.))
     for cent in Cent:
         for iop,opM in enumerate(list(OpsM)):
-            txt = MT2text([opM,(OpsT[iop]+cent[:3])%1.],reverse)
+            if Super:
+                txt = SSMT2text([opM,(OpsT[iop]+cent)%1.])
+            else:
+                txt = MT2text([opM,(OpsT[iop]+cent)%1.],reverse)
             OpText.append(txt.replace(' ','').lower())
     return OpText
 
@@ -1202,7 +1213,7 @@ def MagText2MTS(mcifOpr,CIF=True):
         spnflp = -1
     return np.array(M),np.array(T),spnflp
             
-def MagSSText2MTS(mcifOpr):
+def MagSSText2MTS(Opr,G2=False):
     "From magnetic super space group cif text returns matrix/translation + spin flip"
     XYZ = {'x1':[1,0,0,0],'-x1':[-1,0,0,0],
            'x2':[0,1,0,0],'-x2':[0,-1,0,0],
@@ -1212,20 +1223,36 @@ def MagSSText2MTS(mcifOpr):
            'x1-x4':[1,0,0,-1],'-x1+x4':[-1,0,0,1],
            'x2-x4':[0,1,0,-1],'-x2+x4':[0,-1,0,1],
            '-x1-x2+x4':[-1,-1,0,1],'x1+x2-x4':[1,1,0,-1]}
-    ops = mcifOpr.split(",")
+    if G2:
+        XYZ = {'x':[1,0,0,0],'+x':[1,0,0,0],'-x':[-1,0,0,0],
+               'y':[0,1,0,0],'+y':[0,1,0,0],'-y':[0,-1,0,0],
+               'z':[0,0,1,0],'+z':[0,0,1,0],'-z':[0,0,-1,0],
+               't':[0,0,0,1],'+t':[0,0,0,1],'-t':[0,0,0,-1],
+               'x-y':[1,-1,0,0],'-x+y':[-1,1,0,0],
+               'x-t':[1,0,0,-1],'-x+t':[-1,0,0,1],
+               'y-t':[0,1,0,-1],'-y+t':[0,-1,0,1],
+               '-x-y+t':[-1,-1,0,1],'x+y-t':[1,1,0,-1]}
+       
+    ops = Opr.split(",")
     M = []
     T = []
     for op in ops[:4]:
         ip = len(op)
         if '/' in op:
-            ip = op.index('/')-2
-            T.append(eval(op[ip:]))
+            ip = op.index('/')
+            if G2:
+                T.append(eval(op[:ip+2]))                
+                M.append(XYZ[op[ip+2:]])
+            else:
+                T.append(eval(op[ip-2:]))
+                M.append(XYZ[op[:ip-2]])
         else:
             T.append(0.)
-        M.append(XYZ[op[:ip]])
+            M.append(XYZ[op])
     spnflp = 1
-    if '-1' in ops[4]:
-        spnflp = -1
+    if len(ops) == 5:
+        if '-1' in ops[4]:
+            spnflp = -1
     return np.array(M),np.array(T),spnflp
 
 def GetSGSpin(SGData,MSgSym):

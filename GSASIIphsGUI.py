@@ -4302,7 +4302,7 @@ def UpdatePhaseData(G2frame,Item,data):
       Dysnomia, a computer program for maximum-entropy method (MEM) 
       analysis and its performance in the MEM-based pattern fitting,
       K. Moma, T. Ikeda, A.A. Belik & F. Izumi, Powder Diffr. 2013, 28, 184-193.
-      doi:10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1017/S088571561300002X''',caption='Dysnomia (MEM)',style=wx.ICON_INFORMATION)
         
         print('Run '+DYSNOMIA)        
         subp.call([DYSNOMIA,prfName])
@@ -4987,7 +4987,7 @@ def UpdatePhaseData(G2frame,Item,data):
   A general recursion method for calculating diffracted intensities from crystals containing 
   planar faults, 
   M.M.J. Treacy, J.M. Newsam & M.W. Deem, Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
-  https://doi.org/10.1098/rspa.1991.0062
+  doi: https://doi.org/10.1098/rspa.1991.0062
       ''',caption='DIFFaX',style=wx.ICON_INFORMATION)
         ctrls = ''
         dlg = DIFFaXcontrols(G2frame,ctrls)

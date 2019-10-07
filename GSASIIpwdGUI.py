@@ -3979,7 +3979,7 @@ def UpdateUnitCellsGrid(G2frame, data):
       Bilbao Crystallographic Server I: Databases and crystallographic computing programs,
       M. I. Aroyo, J. M. Perez-Mato, C. Capillas, E. Kroumova, S. Ivantchev, G. Madariaga, A. Kirov & H. Wondratschek
       Z. Krist. 221, 1, 15-27 (2006). 
-      doi:10.1524/zkri.2006.221.1.15''', 
+      doi: https://doi.org/doi:10.1524/zkri.2006.221.1.15''', 
         caption='Bilbao PSEUDOLATTICE',style=wx.ICON_INFORMATION)
         page = kSUB.subBilbaoCheckLattice(sgNum,cell,tolerance)
         wx.EndBusyCursor()
@@ -4042,7 +4042,7 @@ def UpdateUnitCellsGrid(G2frame, data):
       Symmetry-Based Computational Tools for Magnetic Crystallography,
       J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
       Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao SUBGROUPS',style=wx.ICON_INFORMATION)
             
             SubGroups,baseList = kSUB.GetNonStdSubgroups(SGData,kvec[:9],star,Landau)
 #            SUBGROUPS,baseList = kMAG.GetNonStdSubgroups(SGData,kvec[:9],star,Landau,maximal)
@@ -4147,7 +4147,7 @@ def UpdateUnitCellsGrid(G2frame, data):
       Symmetry-Based Computational Tools for Magnetic Crystallography,
       J.M. Perez-Mato, S.V. Gallego, E.S. Tasci, L. Elcoro, G. de la Flor, and M.I. Aroyo
       Annu. Rev. Mater. Res. 2015. 45,217-48.
-      doi: 10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
+      doi: https://doi.org/10.1146/annurev-matsci-070214-021008''',caption='Bilbao k-SUBGROUPSMAG',style=wx.ICON_INFORMATION)
             
             MAXMAGN,baseList = kSUB.GetNonStdSubgroupsmag(SGData,kvec[:9],star,Landau)
             wx.EndBusyCursor()
@@ -5434,8 +5434,8 @@ def UpdateModelsGrid(G2frame,data):
             wx.MessageBox(''' For use of SHAPES, please cite:
       A New Algroithm for the Reconstruction of Protein Molecular Envelopes
       from X-ray Solution Scattering Data, 
-      J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, xxx-xxx.
-      doi: 10.1107/S1600576719009774''',
+      J. Badger, Jour. of Appl. Chrystallogr. 2019, 52, 937-944.
+      doi: https://doi.org/10.1107/S1600576719009774''',
       caption='Program Shapes',style=wx.ICON_INFORMATION)
             dlg = wx.ProgressDialog('Running SHAPES','Cycle no.: 0 of 160',161, 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME)

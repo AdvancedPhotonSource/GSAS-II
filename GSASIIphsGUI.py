@@ -2023,7 +2023,7 @@ def UpdatePhaseData(G2frame,Item,data):
             
             def OnShowSOps(event):
                 SSGData = generalData['SSGData']
-                text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,True)
+                text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,not SGData['SGFixed'])
                 msg = 'Superspace Group Information'
                 G2G.SGMessageBox(General,msg,text,table).ShowModal()
             

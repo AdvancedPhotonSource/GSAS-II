@@ -407,9 +407,14 @@ def SGPrint(SGData,AddInv=False):
         Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
     SGText = []
     SGText.append(' Space Group: '+SGData['SpGrp'])
-    if SGData.get('SGGray',False): 
+    SGCen = list(SGData['SGCen'])
+    if SGData.get('SGGray',False):
         SGText[-1] += " 1'"
-        if SGData.get('SGFixed',False): Mult //= 2
+        if SGData.get('SGFixed',False): 
+            Mult //= 2
+        else:
+            SGCen += list(SGData['SGCen']+[0,0,0])
+            SGCen =  np.array(SGCen)%1.
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
@@ -432,7 +437,7 @@ def SGPrint(SGData,AddInv=False):
         SGText.append(' The equivalent positions are:\n')
     else:    
         SGText.append(' The equivalent positions are:\n')
-        SGText.append(' ('+Latt2text(SGData['SGCen'])+')+\n')
+        SGText.append(' ('+Latt2text(SGCen)+')+\n')
     SGTable = []
     for i,Opr in enumerate(SGData['SGOps']):
         SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
@@ -440,14 +445,6 @@ def SGPrint(SGData,AddInv=False):
         for i,Opr in enumerate(SGData['SGOps']):
             IOpr = [-Opr[0],-Opr[1]]
             SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
-#    if SGData.get('SGGray',False) and not SGData.get('SGFixed',False):
-#        SGTable.append("     for 1'")
-#        for i,Opr in enumerate(SGData['SGOps']):
-#            SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
-#        if AddInv and SGData['SGInv']:
-#            for i,Opr in enumerate(SGData['SGOps']):
-#                IOpr = [-Opr[0],-Opr[1]]
-#                SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
     return SGText,SGTable
 
 def AllOps(SGData):
@@ -892,7 +889,7 @@ def ApplyBNSlatt(SGData,BNSlatt):
         Tmat *= 2.0
     else:
         return Tmat
-    SGData['SGSpin'].append(-1)     #BNS centering are spin invrsion
+    SGData['SGSpin'].append(1)     #BNS centering are spin invrsion
     C = SGCen+A[:3]
     SGData['SGCen'] = np.vstack((SGCen,C))%1.
     return Tmat
@@ -1228,10 +1225,10 @@ def MagSSText2MTS(Opr,G2=False):
                'y':[0,1,0,0],'+y':[0,1,0,0],'-y':[0,-1,0,0],
                'z':[0,0,1,0],'+z':[0,0,1,0],'-z':[0,0,-1,0],
                't':[0,0,0,1],'+t':[0,0,0,1],'-t':[0,0,0,-1],
-               'x-y':[1,-1,0,0],'-x+y':[-1,1,0,0],
-               'x-t':[1,0,0,-1],'-x+t':[-1,0,0,1],
-               'y-t':[0,1,0,-1],'-y+t':[0,-1,0,1],
-               '-x-y+t':[-1,-1,0,1],'x+y-t':[1,1,0,-1]}
+               'x-y':[1,-1,0,0],'+x-y':[1,-1,0,0],'-x+y':[-1,1,0,0],
+               'x-t':[1,0,0,-1],'+x-t':[1,0,0,-1],'-x+t':[-1,0,0,1],
+               'y-t':[0,1,0,-1],'+y-t':[0,1,0,-1],'-y+t':[0,-1,0,1],
+               'x+y-t':[1,1,0,-1],'+x+y-t':[1,1,0,-1],'-x-y+t':[-1,-1,0,1]}
        
     ops = Opr.split(",")
     M = []
@@ -1858,8 +1855,13 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     SSsymb = SSGData['SSpGrp']
     if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:
         SSsymb = SGData['BNSlattsym'][0]+SSsymb[1:]
+    SSGCen = list(SSGData['SSGCen'])
     if SGData.get('SGGray',False):
-        if SGData.get('SGFixed',False): Mult //= 2
+        if SGData.get('SGFixed',False): 
+            Mult //= 2
+        else:
+            SSGCen += list(SSGData['SSGCen']+[0,0,0,0.5])
+            SSGCen =  np.array(SSGCen)%1.
     else:
         if "1'" in SSsymb:  #leftover in nonmag phase in mcif file
             nCen //= 2
@@ -1888,9 +1890,9 @@ def SSGPrint(SGData,SSGData,AddInv=False):
     if SGData['SGPolax']:
         SSGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
     SSGText.append(' ')
-    if len(SSGData['SSGCen']) > 1:
+    if len(SSGCen) > 1:
         SSGText.append(' The equivalent positions are:')
-        SSGText.append(' ('+SSLatt2text(SSGData['SSGCen'][:nCen])+')+\n')
+        SSGText.append(' ('+SSLatt2text(SSGCen)+')+\n')
     else:
         SSGText.append(' The equivalent positions are:\n')
     SSGTable = []

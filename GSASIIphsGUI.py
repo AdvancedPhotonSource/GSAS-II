@@ -2025,7 +2025,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 SSGData = generalData['SSGData']
                 text,table = G2spc.SSGPrint(generalData['SGData'],SSGData,not SGData['SGFixed'])
                 msg = 'Superspace Group Information'
-                G2G.SGMessageBox(General,msg,text,table).ShowModal()
+                G2G.SGMessageBox(General,msg,text,table,SGData.get('SpnFlp',[])).ShowModal()
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 'Respond to selection of a modulation group'
@@ -2088,7 +2088,7 @@ def UpdatePhaseData(G2frame,Item,data):
             modSizer = wx.BoxSizer(wx.HORIZONTAL)
             modSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
             SGData = generalData['SGData']
-            SpGrp = SGData['SpGrp']
+            SpGrp = SGData.get('MagSpGrp',SGData['SpGrp'])
             if SGData['SGGray']:
                 SpGrp += " 1'"
             if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:

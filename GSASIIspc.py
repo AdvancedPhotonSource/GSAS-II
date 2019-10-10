@@ -1308,17 +1308,21 @@ def GenMagOps(SGData):
     Nsym = len(SGData['SGOps'])
     Ncv = len(SGData['SGCen'])
     sgOp = [M for M,T in SGData['SGOps']]
+    detM = [nl.det(M) for M in sgOp]
     oprName = [GetOprPtrName(str(irtx)) for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv'] and not SGData['SGFixed']:
         Nsym *= 2
+        detM += [nl.det(-M) for M in sgOp]
         sgOp += [-M for M,T in SGData['SGOps']]
         oprName += [GetOprPtrName(str(-irtx)) for irtx in PackRot(SGData['SGOps'])]
     Nsyms = 0
     sgOps = []
     OprNames = []
+    detMs = []
     for incv in range(Ncv):
         Nsyms += Nsym
         sgOps += sgOp
+        detMs += detM
         OprNames += oprName
     if SGData['SGFixed']:
         SpnFlp = SGData['SpnFlp']
@@ -1337,9 +1341,11 @@ def GenMagOps(SGData):
                     SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
                 except IndexError:
                     FlpSpn = [1,]+FlpSpn
-                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))                    
-    detM = [nl.det(M) for M in sgOp]
-    MagMom = SpnFlp*np.array(Ncv*detM)      #duplicate for no. centerings
+                    SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
+        if SGData['SGGray']:
+           SpnFlp = np.concatenate((SpnFlp,-SpnFlp))
+           detMs =2*detMs                   
+    MagMom = SpnFlp*np.array(detMs)      #duplicate for no. centerings
     SGData['MagMom'] = MagMom
     return OprNames,SpnFlp
     

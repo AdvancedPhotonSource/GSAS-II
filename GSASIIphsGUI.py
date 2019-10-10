@@ -326,7 +326,7 @@ class TransformDialog(wx.Dialog):
                 A,B = G2lat.cell2AB(self.oldCell[:6])
                 self.newCell[2:5] = [A[2,2],90.,90.]
                 a,b = G2lat.cell2AB(self.newCell[:6])
-                self.Trans = np.inner(a.T,B).T    #correct!
+                self.Trans = np.inner(B,a).T    #correct!
                 self.ifConstr = False
                 self.newSpGrp = 'P 1'
                 SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)

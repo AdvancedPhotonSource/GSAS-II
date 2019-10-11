@@ -1395,7 +1395,7 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     else:
         MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
         MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    return MmodA,MmodB    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drawn atom moments
+    return MmodB,MmodA    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drawn atom moments
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

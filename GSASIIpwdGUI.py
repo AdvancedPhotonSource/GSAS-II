@@ -4319,7 +4319,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer.Add(bravSel,0,WACV)
     littleSizer.Add(wx.StaticText(G2frame.dataWindow,label=" Space  \n group  ",style=wx.ALIGN_CENTER),0,WACV,5)
     spcSel = wx.Choice(G2frame.dataWindow,choices=SPGlist[controls[5]],size=(100,-1))
-    spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
+    try:
+        spcSel.SetSelection(SPGlist[controls[5]].index(controls[13]))
+    except ValueError:
+        pass
     spcSel.Bind(wx.EVT_CHOICE,OnSpcSel)
     littleSizer.Add(spcSel,0,WACV)
     if ssopt.get('Use',False):        #zero for super lattice doesn't work!

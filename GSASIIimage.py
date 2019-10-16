@@ -1019,14 +1019,15 @@ def Make2ThetaAzimuthMap(data,iLim,jLim): #most expensive part of integration!
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
     scaley = pixelSize[1]/1000.
-    
     tay,tax = np.mgrid[iLim[0]+0.5:iLim[1]+.5,jLim[0]+.5:jLim[1]+.5]         #bin centers not corners
     tax = np.asfarray(tax*scalex,dtype=np.float32).flatten()
     tay = np.asfarray(tay*scaley,dtype=np.float32).flatten()
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
-    TA = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
+    TA = np.empty((4,nI,nJ))
+    TA[:3] = np.array(GetTthAzmG(np.reshape(tax,(nI,nJ)),np.reshape(tay,(nI,nJ)),data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
+    TA[3] = G2pwd.Polarization(data['PolaVal'][0],TA[0],TA[1]-90.)[0]
     return TA           #2-theta, azimuth & geom. corr. arrays
 
 def MakeMaskMap(data,masks,iLim,jLim,tamp):
@@ -1070,8 +1071,8 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
     arcs = masks['Arcs']
-    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2])))    #azimuth, 2-theta, dist
-    tax,tay,tad = np.dsplit(TA,3)    #azimuth, 2-theta, dist**2/d0**2
+    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
+    tax,tay,tad,pol = np.dsplit(TA,4)    #azimuth, 2-theta, dist**2/d0**2
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
@@ -1086,7 +1087,8 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))   #intensity
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
     tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
-    return tax,tay,taz,tad,tabs
+    pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
+    return tax,tay,taz,tad,tabs,pol
 
 def MakeUseTA(data,blkSize=128):
     Nx,Ny = data['size']
@@ -1181,8 +1183,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             else:
                 tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
             Block = image[iBeg:iFin,jBeg:jFin]
-            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
-            pol = G2pwd.Polarization(data['PolaVal'][0],tay,tax-90.)[0]         #for pixel pola correction
+            tax,tay,taz,tad,tabs,pol = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
+#            pol = TA[3].flatten()     #G2pwd.Polarization(data['PolaVal'][0],tay,tax-90.)[0]         #for pixel pola correction
             times[0] += time.time()-t0
             t0 = time.time()
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible

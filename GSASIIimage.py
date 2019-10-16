@@ -1088,7 +1088,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
     tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     pol = ma.compressed(ma.array(pol.flatten(),mask=tam))   #polarization
-    return tax,tay,taz,tad,tabs,pol
+    return tax,tay,taz/pol,tad,tabs
 
 def MakeUseTA(data,blkSize=128):
     Nx,Ny = data['size']
@@ -1188,7 +1188,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
 
             t0 = time.time()
             Block = image[iBeg:iFin,jBeg:jFin]
-            tax,tay,taz,tad,tabs,pol = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
+            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -1204,7 +1204,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             times[2] += time.time()-t0          #fill map
 
             t0 = time.time()
-            taz = np.array((taz*tad/tabs),dtype='float32')/pol
+            taz = np.array((taz*tad/tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)

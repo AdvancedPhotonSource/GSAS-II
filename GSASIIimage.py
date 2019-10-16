@@ -1072,7 +1072,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     rings = masks['Rings']
     arcs = masks['Arcs']
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2]),ma.getdata(TA[3])))    #azimuth, 2-theta, dist, pol
-    tax,tay,tad,pol = np.dsplit(TA,4)    #azimuth, 2-theta, dist**2/d0**2
+    tax,tay,tad,pol = np.dsplit(TA,4)    #azimuth, 2-theta, dist**2/d0**2, pol
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
@@ -1171,22 +1171,24 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
+
             t0 = time.time()
             if useTA:
                 TA = useTA[iBlk][jBlk]
             else:
                 TA = Make2ThetaAzimuthMap(data,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
-            times[1] += time.time()-t0
+            times[1] += time.time()-t0      #xy->th,azm
+
             t0 = time.time()
             if useMask:
                 tam = useMask[iBlk][jBlk]
             else:
                 tam = MakeMaskMap(data,Masks,(iBeg,iFin),(jBeg,jFin),tamp)
+            times[0] += time.time()-t0      #apply masks
+
+            t0 = time.time()
             Block = image[iBeg:iFin,jBeg:jFin]
             tax,tay,taz,tad,tabs,pol = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
-#            pol = TA[3].flatten()     #G2pwd.Polarization(data['PolaVal'][0],tay,tax-90.)[0]         #for pixel pola correction
-            times[0] += time.time()-t0
-            t0 = time.time()
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -1199,14 +1201,16 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data.get('binType','').lower():
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
-            times[2] += time.time()-t0
+            times[2] += time.time()-t0          #fill map
+
             t0 = time.time()
             taz = np.array((taz*tad/tabs),dtype='float32')/pol
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
-            times[3] += time.time()-t0
+            times[3] += time.time()-t0          #binning
     G2fil.G2Print('End integration loops')
+
     t0 = time.time()
     #prepare masked arrays of bins with pixels for interpolation setup
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
@@ -1231,7 +1235,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
-    times[4] += time.time()-t0
+    times[4] += time.time()-t0          #cleanup
+
     G2fil.G2Print ('Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))
     G2fil.G2Print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))

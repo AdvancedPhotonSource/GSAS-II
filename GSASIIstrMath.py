@@ -1488,6 +1488,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     Ncen = len(SGData['SGCen'])
     Nops = len(SGMT)*(1+SGData['SGInv'])
+    if SGData['SGGray']:
+        Nops *= 2
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     SSCen = SSGData['SSGCen']
@@ -1509,6 +1511,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     if parmDict[pfx+'isMag']:       #This part correct for making modulated mag moments on equiv atoms
         
         mXYZ = np.array([[XYZ[0] for XYZ in list(G2spc.GenAtom(xyz,SGData,All=True,Move=True))] for xyz in (Xdata+dXdata).T]) #Natn,Nop,xyz
+        if SGData['SGGray']:
+            mXYZ = np.hstack((mXYZ,mXYZ))
         MmodA,MmodB = G2mth.MagMod(glTau,mXYZ,modQ,MSSdata,SGData,SSGData)  #Ntau,Nops,Natm,Mxyz cos,sim parts sum matches drawing
         Mmod = MmodA+MmodB
         
@@ -1635,12 +1639,17 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
 #intensity
             fass = np.sum(facm**2,axis=-1)-eDotFa**2
             fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
-#do integration            
+#do integration
+            
             fas = np.sum(glWt*fass,axis=1)/2.
             fbs = np.sum(glWt*fbss,axis=1)/2.
             
+            if SGData['SGInv']:
+                fbs *= 4.
+                fas = 0.
+            
             refl.T[10] = fas+fbs   #Sum(fams**2,Mxyz) Re + Im
-            refl.T[11] = atan2d(fbs,fas) #- what is phase for mag refl?
+            refl.T[11] = atan2d(fbs,fas)
 
         else:
             GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms

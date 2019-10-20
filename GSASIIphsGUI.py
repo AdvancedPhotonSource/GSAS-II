@@ -9742,8 +9742,8 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateLayerData()
         elif text == 'Wave Data' and data['General']['Modulated']:
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.WavesData)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
             UpdateWavesData()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Dysnomia':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMMenu)
             UpdateDysnomia()

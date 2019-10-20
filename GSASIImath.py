@@ -1381,7 +1381,6 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
         SGMT = np.vstack((SGMT,SGMT))
         Sinv =np.vstack((Sinv,Sinv))
         SGT = np.vstack((SGT,SGT+.5))%1.
-    detSM = nl.det(SGMT)
     mst = Sinv[:,3,:3]
     epsinv = Sinv[:,3,3]
     phi = np.inner(XYZ,modQ).T
@@ -1393,13 +1392,9 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     pcos = np.cos(twopi*phase)
     MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)    #cos term
     MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)    #sin term
-#    if SGData['SGGray']:
-#        MmodA = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
-#        MmodB = -np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*detSM[nxs,:,nxs,nxs]
-#    else:
     MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
     MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
-    return MmodB,MmodA    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drawn atom moments
+    return MmodA,MmodB    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drawn atom moments
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     '''

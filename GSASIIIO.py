@@ -581,14 +581,20 @@ def objectScan(data,tag,indexStack=[]):
     '''
     if type(data) is list or type(data) is tuple:
         for i in range(len(data)):
-            objectScan(data[i],tag,indexStack+[i])
+            val = objectScan(data[i],tag,indexStack+[i])
+            if val:
+                data[i] = val
+                print('...fixed')
     elif type(data) is dict:
         for key in data:
-            objectScan(data[key],tag,indexStack+[key])
+            val = objectScan(data[key],tag,indexStack+[key])
+            if val:
+                data[key] = val
+                print('...fixed')
     elif data is None:
-        return
+        return None
     elif type(data) in objectScanIgnore:
-        return
+        return None
     else:
         s = 'unexpected object in '+tag
         for i in indexStack:
@@ -597,6 +603,10 @@ def objectScan(data,tag,indexStack=[]):
         print(s,type(data))
         global unexpectedObject
         unexpectedObject = True
+        # fix bad objects
+        if "gdi.Colour" in str(type(data)):
+            return tuple(data)
+        return
     
 def cPickleLoad(fp):
     if '2' in platform.python_version_tuple()[0]:

@@ -1641,8 +1641,8 @@ def SStructureFactor(refDict,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             fbss = np.sum(fbcm**2,axis=-1)-eDotFb**2
 #do integration
             
-            fas = np.sum(glWt*fass,axis=1)/2.
-            fbs = np.sum(glWt*fbss,axis=1)/2.
+            fas = np.sum(glWt*fass,axis=1)
+            fbs = np.sum(glWt*fbss,axis=1)
             
             if SGData['SGInv']:
                 fbs *= 4.

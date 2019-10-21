@@ -5040,9 +5040,9 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
     
     def OnMotion(event):
         xpos = event.xdata
-        if Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
+        if xpos and Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            if Ymin<ypos<Ymax:
+            if ypos and Ymin<ypos<Ymax:
                 Xwd = Xmax-Xmin
                 Ywd = Ymax-Ymin
                 SetCursor(Page)

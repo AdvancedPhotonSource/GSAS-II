@@ -1390,8 +1390,8 @@ def MagMod(glTau,XYZ,modQ,MSSdata,SGData,SSGData):
     phase = (modind[:,nxs,nxs]*tauT)     #Nops,Natm,Nwave
     psin = np.sin(twopi*phase)
     pcos = np.cos(twopi*phase)
-    MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)    #cos term
-    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)    #sin term
+    MmodA = np.sum(Am[nxs,nxs,:,:,:]*pcos[:,:,:,nxs,nxs],axis=3)/2.    #cos term
+    MmodB = np.sum(Bm[nxs,nxs,:,:,:]*psin[:,:,:,nxs,nxs],axis=3)/2.    #sin term
     MmodA = np.sum(SGMT[nxs,:,nxs,:,:]*MmodA[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
     MmodB = np.sum(SGMT[nxs,:,nxs,:,:]*MmodB[:,:,:,nxs,:],axis=-1)*SGData['MagMom'][nxs,:,nxs,nxs]
     return MmodA,MmodB    #Ntau,Nops,Natm,,Mxyz; cos & sin parts; sum matches drawn atom moments

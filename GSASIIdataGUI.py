@@ -3083,11 +3083,11 @@ class GSASII(wx.Frame):
                 if item.IsOk(): self.GPXtree.SelectItem(item)
         elif key == wx.WXK_DOWN:
             if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
-                next = self.GPXtree.GetNextSibling(parent)
-                NewId = GetGPXtreeItemId(self,next,name)
+                prev = self.GPXtree.GetNextSibling(parent)
+                NewId = GetGPXtreeItemId(self,prev,name)
                 if NewId:
                     self.GPXtree.Collapse(parent)
-                    self.GPXtree.Expand(next)
+                    self.GPXtree.Expand(prev)
                     self.oldFocus = wx.Window.FindFocus()
                     wx.CallAfter(self.GPXtree.SelectItem,NewId)
                 else:

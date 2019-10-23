@@ -2947,7 +2947,7 @@ class GSASII(wx.Frame):
             try:
                 #open the file if possible
                 if sys.platform == "darwin": # on Mac delay a bit so GUI can open
-                    wx.CallLater(100,self.StartProject)
+                    wx.CallAfter(self.StartProject)
                 else:
                     self.StartProject()
                 return
@@ -3893,7 +3893,7 @@ class GSASII(wx.Frame):
         '''Opens a GSAS-II project file & selects the 1st available data set to 
         display (PWDR, HKLF, REFD or SASD)
         '''
-        
+
         Id = 0
         phaseId = None
         G2IO.ProjFileOpen(self)
@@ -4970,27 +4970,6 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     might be needed. There are some calls to G2frame.dataWindow.SendSizeEvent()
     that may be doing the same thing. 
     '''
-    # TODO: debug code ######################################################################
-#    def Bind(self,eventtype,handler,*args,**kwargs):  # PATCH: debug code: catch when a menu is bind'ed to
-#        # the dataWindow as this should not be done in the 2 frame version. 
-#        if eventtype == wx.wx.EVT_MENU:
-#            print 'wx.EVT_MENU Bind to dataWindow'
-#            G2obj.HowDidIgetHere(True)
-#            wx.Frame.Bind(self.GetTopLevelParent(),eventtype,handler,*args,**kwargs)
-#        else:
-#            wxscroll.ScrolledPanel.Bind(self,eventtype,handler,*args,**kwargs)
-#    def DestroyChildren(self):
-#        print 'Fix this: dataWindow.DestroyChildren called'
-#        G2obj.HowDidIgetHere()
-#    def SetTitle(self,*args):
-#        print('Warning: attempt to label dataWindow')
-#        G2obj.HowDidIgetHere(True)
-#        self.G2frame.SetTitle(*args)
-#    def SetLabel(self,*args):
-#        print('Warning: attempt to label dataWindow')
-#        G2obj.HowDidIgetHere(True)
-#        self.G2frame.SetTitle(*args)
-    # end TODO: remove this later ############################################################
 
     def __init__(self,parent):
 #        wxscroll.ScrolledPanel.__init__(self,parent,wx.ID_ANY,size=parent.GetSize())

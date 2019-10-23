@@ -2058,6 +2058,7 @@ class G2Project(G2ObjectWrapper):
             self.link_histogram_phase(histname, phase)
             
         self.set_Controls('cycles', 0)
+        self.data[histname]['data'][0]['Dummy'] = True
         return self.histogram(histname)
     
     def add_phase(self, phasefile, phasename=None, histograms=[], fmthint=None):

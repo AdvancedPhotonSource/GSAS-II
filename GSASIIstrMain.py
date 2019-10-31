@@ -300,6 +300,7 @@ def Refine(GPXfile,dlg=None,makeBack=True,refPlotUpdate=None):
         cPickle.dump(pawleyLookup,fl,1)
         fl.close()
     if dlg:
+        dlg.Raise()
         return True,Rvals
 
 def phaseCheck(phaseVary,Phases,histogram):

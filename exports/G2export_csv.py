@@ -187,6 +187,17 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             else:
                 line = '"Instparm: %s",%10.2f'%(parm,Parms[parm][1])
             self.Write(line)
+        Samp = self.Histograms[TreeName]['Sample Parameters']
+        for samp in Samp:
+            if samp in ['InstrName','Type']:
+                line = '"Samparm: %s",%s'%(samp,Samp[samp])
+            elif samp in ['Azimuth','Chi','Gonio. radius','Omega','Phi','Pressure','Temperature','Time']:
+                line = '"Samparm: %s",%10.2f'%(samp,Samp[samp])
+            elif samp in ['DisplaceX','DisplaceY','Scale','Shift','SurfRoughA','SurfRoughB','Transparency']:
+                line = '"Samparm: %s",%10.2f'%(samp,Samp[samp][0])
+            else:
+                continue
+            self.Write(line)
         WriteList(self,("x","y_obs","weight","y_calc","y_bkg","Q"))
         digitList = 2*((13,3),) + ((13,5),) + 3*((13,3),)
         for vallist in zip(histblk['Data'][0],

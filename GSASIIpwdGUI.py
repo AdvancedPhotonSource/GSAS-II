@@ -6910,7 +6910,10 @@ def UpdatePDFGrid(G2frame,data):
         sampleSizer.Add((5,5),0)
         geoBox = wx.BoxSizer(wx.HORIZONTAL)
         geoBox.Add(wx.StaticText(G2frame.dataWindow,label=' Sample geometry: '),0,WACV)
-        choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
+        if 'C' in inst['Type'][0]:
+            choice = ['Cylinder','Bragg-Brentano','Tilting flat plate in transmission','Fixed flat plate']
+        else:
+            choice = ['Cylinder',]
         geometry = wx.ComboBox(G2frame.dataWindow,value=data['Geometry'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
         geometry.Bind(wx.EVT_COMBOBOX, OnGeometry)
@@ -7045,17 +7048,18 @@ def UpdatePDFGrid(G2frame,data):
             typeHint=float,OnLeave=AfterChangeNoRefresh)
         bkBox.Add(backVal,0,WACV)    
         sfgSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
-    
-        sqBox = wx.BoxSizer(wx.HORIZONTAL)
-        sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Ruland width: '),0,WACV)    
-        rulandSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
-            value=int(1000*data['Ruland']))
-        sqBox.Add(rulandSldr,1,wx.EXPAND)
-        rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
-        rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
-            typeHint=float,OnLeave=AfterChangeNoRefresh)
-        sqBox.Add(rulandWdt,0,WACV)    
-        sfgSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+
+        if 'XC' in inst['Type'][0]:
+            sqBox = wx.BoxSizer(wx.HORIZONTAL)
+            sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Ruland width: '),0,WACV)    
+            rulandSldr = wx.Slider(parent=G2frame.dataWindow,style=wx.SL_HORIZONTAL,
+                value=int(1000*data['Ruland']))
+            sqBox.Add(rulandSldr,1,wx.EXPAND)
+            rulandSldr.Bind(wx.EVT_SLIDER, OnRulSlider)
+            rulandWdt = G2G.ValidatedTxtCtrl(G2frame.dataWindow,data,'Ruland',nDig=(10,3),min=0.001,max=1.0,
+                typeHint=float,OnLeave=AfterChangeNoRefresh)
+            sqBox.Add(rulandWdt,0,WACV)    
+            sfgSizer.Add(sqBox,0,wx.ALIGN_LEFT|wx.EXPAND)
         
         sqBox = wx.BoxSizer(wx.HORIZONTAL)
         sqBox.Add(wx.StaticText(G2frame.dataWindow,label=' Scaling Q-range: '),0,WACV)

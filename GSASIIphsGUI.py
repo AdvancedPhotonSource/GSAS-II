@@ -4325,8 +4325,33 @@ def UpdatePhaseData(G2frame,Item,data):
         else:
             wx.MessageBox('Dysnomia failed to make new structure factors','Dysnomia Error',
                 style=wx.ICON_ERROR)
+
+################################################################################
+#### fullrmc Data page
+################################################################################
+
+    def UpdateFullRMC():
+        ''' Present the controls for running fullrmc 
+        '''
+        generalData = data['General']
+        pName = generalData['Name'].replace(' ','_')
         
+    def OnSetupFullRMC(event):
+        print('Setup new run.py - not yet implemented')
+            
+    def OnLoadFullRMC(event):
+        print('Load run.py - not yet implemented')
         
+    def OnSaveFullRMC(event):
+        print('Save run.py - not yet implemented')
+
+    def OnEditFullRMC(event):
+        print('Edit run.py - not yet implemented')
+
+    def OnRunFullRMC(event):
+        print('Run run.py - not yet implemented')
+
+            
 ################################################################################
 #### Layer Data page
 ################################################################################
@@ -9747,6 +9772,9 @@ def UpdatePhaseData(G2frame,Item,data):
         elif text == 'Dysnomia':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMMenu)
             UpdateDysnomia()
+        elif text == 'fullrmc':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
+            UpdateFullRMC()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             UpdateDrawOptions()
@@ -9891,6 +9919,13 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnPeaksSave, id=G2G.wxID_PEAKSSAVE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
+        # fullrmc
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
+        G2frame.Bind(wx.EVT_MENU, OnSetupFullRMC, id=G2G.wxID_SETUPFULLRMC)
+        G2frame.Bind(wx.EVT_MENU, OnLoadFullRMC, id=G2G.wxID_LOADFULLRMC)
+        G2frame.Bind(wx.EVT_MENU, OnSaveFullRMC, id=G2G.wxID_SAVEFULLRMC)
+        G2frame.Bind(wx.EVT_MENU, OnEditFullRMC, id=G2G.wxID_EDITFULLRMC)
+        G2frame.Bind(wx.EVT_MENU, OnRunFullRMC, id=G2G.wxID_RUNFULLRMC)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
@@ -9982,6 +10017,9 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
+        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'fullrmc')
+        Pages.append('fullrmc')
     Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')

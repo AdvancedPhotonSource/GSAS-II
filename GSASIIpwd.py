@@ -334,6 +334,7 @@ def CalcPDF(data,inst,limits,xydata):
         Qpoints = np.linspace(0.,maxQ,nQpoints,endpoint=True)
         dq = Qpoints[1]-Qpoints[0]
         XY[0] = npT2q(XY[0],wave)
+        Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][0])    #interpolate I(Q)
     elif 'T' in inst['Type'][0]:
         difC = inst['difC'][1]
         minQ = 2.*np.pi*difC/Tth[-1]
@@ -341,12 +342,13 @@ def CalcPDF(data,inst,limits,xydata):
         Qpoints = np.linspace(0.,maxQ,nQpoints,endpoint=True)
         dq = Qpoints[1]-Qpoints[0]
         XY[0] = 2.*np.pi*difC/XY[0]
-    Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][0])    #interpolate I(Q)
+        Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][-1])    #interpolate I(Q)
     Qdata -= np.min(Qdata)*data['BackRatio']
     
     qLimits = data['QScaleLim']
-    minQ = np.searchsorted(Qpoints,qLimits[0])
-    maxQ = np.searchsorted(Qpoints,qLimits[1])+1
+    maxQ = np.searchsorted(Qpoints,min(Qpoints[-1],qLimits[1]))+1
+    minQ = np.searchsorted(Qpoints,min(qLimits[0],0.90*Qpoints[-1]))
+    qLimits = [Qpoints[minQ],Qpoints[maxQ-1]]
     newdata = []
     if len(IofQ) < 3:
         xydata['IofQ'] = [IofQ[0],[Qpoints,Qdata],'']
@@ -357,16 +359,23 @@ def CalcPDF(data,inst,limits,xydata):
     xydata['IofQ'][1] = newdata
     
     xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
-    FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
+    if 'XC' in inst['Type'][0]:
+        FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
+    else: #TOF
+        CF = np.zeros(len(xydata['SofQ'][1][0]))
+        FFSq = np.ones(len(xydata['SofQ'][1][0]))
+        SqFF = np.ones(len(xydata['SofQ'][1][0]))
     Q = xydata['SofQ'][1][0]
 #    auxPlot.append([Q,np.copy(CF),'CF-unCorr'])
-    ruland = Ruland(data['Ruland'],wave,Q,CF)
+    if 'XC' in inst['Type'][0]:
+        ruland = Ruland(data['Ruland'],wave,Q,CF)
 #    auxPlot.append([Q,ruland,'Ruland'])      
-    CF *= ruland
+        CF *= ruland
 #    auxPlot.append([Q,CF,'CF-Corr'])
     scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale
-    xydata['SofQ'][1][1] -= CF
+    if 'XC' in inst['Type'][0]:
+        xydata['SofQ'][1][1] -= CF
     xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
     scale = len(xydata['SofQ'][1][1][minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale

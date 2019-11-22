@@ -2065,6 +2065,97 @@ def calcIncident(Iparm,xdata):
     WYI = np.sum(M*DYI,axis=0)
     WYI = np.where(WYI>0.,WYI,0.)
     return YI,WYI
+
+################################################################################
+#### RMCutilities
+################################################################################
+    
+def MakeInst(G2frame,Name,PWId):
+    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    inst = PWDdata['Instrument Parameters'][0]
+    prms = ['Bank',
+            'difC','difA','Zero','2-theta',
+            'alpha','beta-0','beta-1','sig-0',
+            'sig-1','sig-2','X','Y']
+    fname = Name+'.inst'
+    fl = open(fname,'w')
+    fl.write('      1\n')
+    fl.write('%10d\n'%int(inst[prms[0]][1]))
+    fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
+    fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1]))
+    fl.write('%10.3f%10.3f%10.3f%10.4f\n'%(inst[prms[9]][1],inst[prms[10]][1],0.0,inst[prms[12]][1]))    
+    fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],0.0,0.0,0.0))
+    fl.close()
+    return fname
+    
+def MakeBack(G2frame,Name,PWId):
+    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    Back = PWDdata['Background'][0]
+    if 'chebyschev' not in Back[0]:
+        return None
+    Nback = Back[2]
+    BackVals = Back[3:]
+    fname = Name+'.back'
+    fl = open(fname,'w')
+    fl.write('%10d\n'%Nback)
+    for val in BackVals:
+        fl.write('%12.6g\n'%val)
+    fl.close()
+    return fname
+
+def MakeRMC6f(G2frame,Name,Phase,Meta,Supercell,PWId):
+    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    generalData = Phase['General']
+    Sample = PWDdata['Sample Parameters']
+    Meta['temperature'] = Sample['Temperature']
+    Meta['pressure'] = Sample['Pressure']
+    Cell = generalData['Cell'][1:7]
+    Trans = np.eye(3)*np.array(Supercell)
+    newPhase = copy.deepcopy(Phase)
+    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+    newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
+    Atoms = newPhase['Atoms']
+    Cell = newPhase['General']['Cell'][1:7]
+    fname = Name+'.rmc6f'
+    fl = open(fname,'w')
+    fl.write('(Version 6f format configuration file)\n')
+    for item in Meta:
+        fl.write('%-20s:  %s\n'%('Metadata '+item,Meta[item]))
+    fl.write('Supercell dimensions: %d %d %d\n'%(Supercell[0],Supercell[1],Supercell[2]))
+    fl.write('Cell (Ang/deg): %f %f %f %f %f %f\n'%(
+            Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+    fl.write('Atoms (fractional coordinates):\n')
+    for iat,atom in enumerate(Atoms):
+        atcode = Atcodes[iat].split(':')
+        cell = [0,0,0]
+        if '+' in atcode[1]:
+            cell = eval(atcode[1].split('+')[1])
+        fl.write('%6d%6s [%s]%10.6f%10.6f%10.6f%5d%5d%5d%5d\n'%(       
+                iat,atom[1],atcode[0],atom[3],atom[4],atom[5],0,cell[0],cell[1],cell[2]))
+    fl.close()
+    return fname
+
+def MakeBragg(G2frame,Name,Phase,PWId):
+    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    generalData = Phase['General']
+    Vol = generalData['Cell'][7]
+    Data = PWDdata['Data']
+    Inst = PWDdata['Instrument Parameters'][0]
+    Bank = int(Inst['Bank'][1])
+    Sample = PWDdata['Sample Parameters']
+    Scale = Sample['Scale'][0]
+    Limits = PWDdata['Limits'][1]
+    Ibeg = np.searchsorted(Data[0],Limits[0])
+    Ifin = np.searchsorted(Data[0],Limits[1])+1
+    fname = Name+'.bragg'
+    fl = open(fname,'w')
+    fl.write('%10d%10d%12.4f%12.4f\n'%(Ifin-Ibeg,Bank,Scale,Vol))
+    fl.write('%12s%12s\n'%('   TOF,ms','  I(obs)'))
+    for i in range(Ibeg,Ifin-1):
+        fl.write('%12.8f%12.6f\n'%(Data[0][i]/1000.,Data[1][i]))
+    fl.close()
+    return fname
     
 ################################################################################
 # Reflectometry calculations

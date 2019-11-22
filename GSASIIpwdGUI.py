@@ -49,6 +49,7 @@ import GSASIIplot as G2plt
 import GSASIIdataGUI as G2gd
 import GSASIIphsGUI as G2phsG
 import GSASIIctrlGUI as G2G
+import GSASIIIO as G2IO
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
@@ -1851,8 +1852,52 @@ def UpdateInstrumentGrid(G2frame,data):
         If instprm file has multiple banks each with header #Bank n: ..., this 
         finds matching bank no. to load - rejects nonmatches.
         
-        Note that similar code is found in ReadPowderInstprm (GSASII.py)
+        Note that similar code is found in ReadPowderInstprm (GSASIIdataGUI.py)
         '''
+        
+        def GetDefaultParms(rd):
+            '''Solicits from user a default set of parameters & returns Inst parm dict
+            param: self: refers to the GSASII main class
+            param: rd: importer data structure
+            returns: dict: Instrument parameter dictionary
+            '''       
+            import defaultIparms as dI
+            sind = lambda x: math.sin(x*math.pi/180.)
+            tand = lambda x: math.tan(x*math.pi/180.)
+            while True: # loop until we get a choice
+                choices = []
+                head = 'Select from default instrument parameters'
+    
+                for l in dI.defaultIparm_lbl:
+                    choices.append('Defaults for '+l)
+                res = G2IO.BlockSelector(choices,ParentFrame=G2frame,title=head,
+                    header='Select default inst parms',useCancel=True)
+                if res is None: return None
+                if 'Generic' in choices[res]:
+                    dlg = G2G.MultiDataDialog(G2frame,title='Generic TOF detector bank',
+                        prompts=['Total FP','2-theta',],values=[25.0,150.,],
+                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
+                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
+                        FP,tth = dlg.GetValues()
+                        difC = 505.632*FP*sind(tth/2.)
+                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                        bet1 = .00226+7.76e+11/difC**4
+                        Inst = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,1,rd)
+                        Inst[0]['difC'] = [difC,difC,0]
+                        Inst[0]['sig-1'] = [sig1,sig1,0]
+                        Inst[0]['beta-1'] = [bet1,bet1,0]
+                        return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    dlg.Destroy()
+                else:
+                    inst1,inst2 = G2frame.ReadPowderInstprm(dI.defaultIparms[res],bank,1,rd)
+                    return [inst1,inst2]
+                if 'lab data' in choices[res]:
+                    rd.Sample.update({'Type':'Bragg-Brentano','Shift':[0.,False],'Transparency':[0.,False],
+                        'SurfRoughA':[0.,False],'SurfRoughB':[0.,False]})
+                else:
+                    rd.Sample.update({'Type':'Debye-Scherrer','Absorption':[0.,False],'DisplaceX':[0.,False],
+                        'DisplaceY':[0.,False]})
+        
         data = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[0]
         bank = data['Bank'][0]
@@ -1902,8 +1947,12 @@ def UpdateInstrumentGrid(G2frame,data):
                     RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
                 else:
                     G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame)
+            else:
+                rd = G2frame
+                rd.Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
+                data = GetDefaultParms(rd)[0]
                 UpdateInstrumentGrid(G2frame,data)
-                G2plt.PlotPeakWidths(G2frame)
+            G2plt.PlotPeakWidths(G2frame)
         finally:
             dlg.Destroy()
         

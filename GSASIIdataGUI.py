@@ -2904,7 +2904,8 @@ class GSASII(wx.Frame):
         self.SeqTblHideList = None
         self.newGPXfile = ''
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
-        self.testRBObjSizers = {}   #rigid body sizer data
+        self.testRBObjSizers = {}   #rigid body sizer datafile contents
+        self.RMCchoice = 'fullrmc' 
         
     def __init__(self, parent):
         self.ExportLookup = {}
@@ -3816,7 +3817,8 @@ class GSASII(wx.Frame):
         else:
             dlg.Destroy()
             return
-        f = files[sel]
+        filroot,dirname = sellist[sel].split(' from ')
+        f = os.path.join(dirname,filroot)
         if os.path.exists(f):
             self.OnFileOpen(event, filename=f)
         else:
@@ -5704,18 +5706,17 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MEMDataEdit.Append(G2G.wxID_RUNDYSNOMIA,'Run Dysonmia','Run Dysnomia to make new Fobs map')
         self.PostfillDataMenu()
         
-        #Phase / fullrmc (Reverse Monte Carlo method) tab
-        G2G.Define_wxId('wxID_SETUPFULLRMC','wxID_LOADFULLRMC','wxID_SAVEFULLRMC','wxID_EDITFULLRMC','wxID_RUNFULLRMC', )       
+        #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
+        G2G.Define_wxId('wxID_SETUPRMC','wxID_LOADRMC','wxID_SAVERMC','wxID_RUNRMC', )       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.FRMCDataEdit = wx.Menu(title='')
         self.FRMCMenu.Append(menu=self.FRMCDataEdit, title='Operations')
-        self.FRMCDataEdit.Append(G2G.wxID_SETUPFULLRMC,'Setup run.py','Setup new fullrmc run.py file')
-        self.FRMCDataEdit.Append(G2G.wxID_LOADFULLRMC,'Load run.py','Load fullrmc run.py file')
-        self.FRMCDataEdit.Append(G2G.wxID_SAVEFULLRMC,'Save run.py','Save fullrmc run.py file')
-        self.FRMCDataEdit.Append(G2G.wxID_EDITFULLRMC,'Edit run.py','Edit fullrmc run.py file')
-        self.FRMCDataEdit.Append(G2G.wxID_RUNFULLRMC,'Execute run.py','Run fullrmc run.py file')
+        self.FRMCDataEdit.Append(G2G.wxID_SETUPRMC,'Setup RMC','Setup new fullrmc or RMCprofile file')
+        self.FRMCDataEdit.Append(G2G.wxID_LOADRMC,'Load','Load fullrmc or RMCprofile file')
+        self.FRMCDataEdit.Append(G2G.wxID_SAVERMC,'Save','Save fullrmc or RMCprofile file')
+        self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
         self.PostfillDataMenu()
         
         # Phase / Layer tab 

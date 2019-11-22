@@ -29,6 +29,7 @@ Other top-level routines are:
 to control scrolling. 
 '''
 from __future__ import division, print_function
+import os
 import os.path
 import wx
 import wx.grid as wg
@@ -1079,6 +1080,73 @@ class AddHatomDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+
+################################################################################
+class SetUpRMCProfileDialog(wx.Dialog):
+    ''' Get from user the super cell size & selected histogram to make various files
+    '''
+    def __init__(self,parent,Name,Phase):
+        title = 'RMCProfile setup'
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+        self.Name = Name
+        self.Phase = Phase
+        self.SuperCell = [1,1,1]
+        self.histogram = ''
+        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),
+                         'material':'nothing','comment':'none ','source':'nowhere'}
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnHisto(event):
+            self.histogram = histo.GetStringSelection()
+        
+        self.panel.Destroy()
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Setup for: %s'%self.Name),0,WACV)
+        superSizer = wx.BoxSizer(wx.HORIZONTAL)
+        axes = ['X','Y','Z']
+        for i,ax in enumerate(axes):
+            superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
+            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.SuperCell,i,min=1,max=10,size=(50,25)),0,WACV)
+        mainSizer.Add(superSizer,0,WACV)
+        histograms = self.Phase['Histograms']
+        histNames = list(histograms.keys())
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for processing:'),0,WACV)
+        histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)        
+        histo.Bind(wx.EVT_COMBOBOX,OnHisto)
+        mainSizer.Add(histo,0,WACV)
+        metalist = ['title','owner','material','comment','source']
+        metaSizer = wx.FlexGridSizer(0,2,5,5)
+        for item in metalist:
+            metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
+            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
+        mainSizer.Add(metaSizer,0,WACV)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        OKBtn = wx.Button(self.panel,-1,"OK")
+        OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
+        btnSizer.Add(OKBtn)            
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        self.panel.SetAutoLayout(1)
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        
+    def GetData(self):
+        'Returns the values from the dialog'
+        return self.SuperCell,self.histogram,self.metadata
+        
+    def OnOK(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+            
 
 ################################################################################
 ################################################################################
@@ -4330,26 +4398,171 @@ def UpdatePhaseData(G2frame,Item,data):
 #### fullrmc Data page
 ################################################################################
 
-    def UpdateFullRMC():
-        ''' Present the controls for running fullrmc 
+    def UpdateRMC():
+        ''' Present the controls for running fullrmc or RMCprofile
         '''
+        global runFile
+        def OnRMCselect(event):
+            G2frame.RMCchoice = RMCsel.GetStringSelection()
+            G2frame.runtext.SetValue('')
+            UpdateRMC()
+        
+        G2frame.GetStatusBar().SetStatusText('',1)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        runFile = ' '
+        choice = ['fullrmc','RMCProfile']
+        RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
+        RMCsel.SetStringSelection(G2frame.RMCchoice)
+        RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
+        mainSizer.Add(RMCsel,0,WACV)
+        if G2frame.RMCchoice == 'fullrmc':
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
+#            font1 = wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
+            G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
+#            G2frame.runtext.SetFont(font1)
+        else:
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile input file preparation:'),0,WACV)
+            
+        
+        mainSizer.Add((5,5),0,WACV)
+        mainSizer.Add(G2frame.runtext)
+        SetPhaseWindow(G2frame.FRMC,mainSizer)
+        
+    def OnSetupRMC(event):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
-        
-    def OnSetupFullRMC(event):
-        print('Setup new run.py - not yet implemented')
+        if G2frame.RMCchoice == 'fullrmc':
+            rundata = '''
+##########################################################################################
+##############################  IMPORTING USEFUL DEFINITIONS  ############################
+# standard libraries imports
+import os
+
+# external libraries imports
+import numpy as np
+
+# fullrmc library imports - these are some examples; others may be needed for your problem
+from fullrmc.Globals import LOGGER, FLOAT_TYPE
+from fullrmc.Engine import Engine
+from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
+from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
+from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
+from fullrmc.Constraints.BondConstraints import BondConstraint
+from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
+from fullrmc.Constraints.ImproperAngleConstraints import ImproperAngleConstraint
+from fullrmc.Core.Collection import convert_Gr_to_gr
+from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
+from fullrmc.Core.GroupSelector import RecursiveGroupSelector
+from fullrmc.Selectors.RandomSelectors import RandomSelector
+from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
+from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
+from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutSymmetryAxisGenerator
+from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
+
+
+##########################################################################################
+#####################################  CREATE ENGINE  ####################################
+# dirname
+DIR_PATH = os.path.dirname( os.path.realpath(__file__) )
+
+# engine file names - replace name with phase name
+engineFileName = "name_engine.rmc"
+expFileName    = "name_pdf.exp"
+pdbFileName    = "nme.pdb" 
+freshStart     = False      #make TRUE for a restart
+
+            '''            
+            G2frame.runtext.SetValue(rundata)
+        else:
+            dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
+            if dlg.ShowModal() == wx.ID_OK:
+                superCell,histoName,meta = dlg.GetData()
+                PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
+                if PWId:
+                    print(G2pwd.MakeInst(G2frame,pName,PWId)+ ' written')
+                    backfile = G2pwd.MakeBack(G2frame,pName,PWId)
+                    if backfile is None:
+                        print(' Chebyschev background not used; no .back file written')
+                    else:
+                        print(backfile+ ' written')
+                    print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
+                    print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,superCell,PWId)+ ' written')
+                    print('RMCProfile file build completed')
+                else:
+                    print('RMCProfile file build failed - no histogram selected')
+            else:
+                pass
+            dlg.Destroy()          
             
-    def OnLoadFullRMC(event):
-        print('Load run.py - not yet implemented')
+    def OnLoadRMC(event):
+        global runFile
+        if G2frame.RMCchoice == 'fullrmc':
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run file to open', '.', runFile,
+                wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
+        else:
+            dlg = wx.FileDialog(G2frame, 'Choose RMCProfile control file to open',  '.', runFile,
+                wildcard='RMCProfile control file (*.dat)|*.dat|All files (*.*)|*.*',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                runFile = dlg.GetPath()
+                runpy = open(runFile,'r')
+                G2frame.runtext.SetValue(runpy.read())
+                runpy.close()
+            else:
+                return
+        finally:
+            dlg.Destroy()
         
-    def OnSaveFullRMC(event):
-        print('Save run.py - not yet implemented')
+    def OnSaveRMC(event):
+        global runFile
+        if G2frame.RMCchoice == 'fullrmc':
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run.py file to save',  '.', runFile,
+                wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        else:
+            dlg = wx.FileDialog(G2frame, 'Choose RMCProfile control file to save',  '.', runFile,
+                wildcard='RMCProfile control file (*.dat)|*.dat|All files (*.*)|*.*',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                runFile = dlg.GetPath()
+                runpy = open(runFile,'w')
+                runpy.write(G2frame.runtext.GetValue())
+                runpy.close()
+            else:
+                return
+        finally:
+            dlg.Destroy()
 
-    def OnEditFullRMC(event):
-        print('Edit run.py - not yet implemented')
-
-    def OnRunFullRMC(event):
-        print('Run run.py - not yet implemented')
+    def OnRunRMC(event):
+        
+        if G2frame.RMCchoice == 'fullrmc':
+            wx.MessageBox(''' For use of fullrmc, please cite:
+      Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with
+      Machine Learning and Artificial Intelligence,
+      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111.
+      doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', 
+                wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
+        else:
+            wx.MessageBox(''' For use of RMCProfile, please cite:
+      RMCProfile: Reverse Monte Carlo for polycrystalline materials,
+      M.G. Tucker, D.A. keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
+      Jour. Phys.: Cond. matter 2007, 19, 335218.
+      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',caption='RMCProfile',style=wx.ICON_INFORMATION)
+            return
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                import subprocess as sb
+                batch = open('fullrmc.bat','w')
+                batch.write(sys.exec_prefix+'\\activate\n')
+                batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
+                batch.write('pause')
+                batch.close()
+                sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+            else:
+                return
+        finally:
+            dlg.Destroy()
+                
 
             
 ################################################################################
@@ -9772,9 +9985,9 @@ def UpdatePhaseData(G2frame,Item,data):
         elif text == 'Dysnomia':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MEMMenu)
             UpdateDysnomia()
-        elif text == 'fullrmc':
+        elif text == 'RMC':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.FRMCMenu)
-            UpdateFullRMC()
+            UpdateRMC()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
             UpdateDrawOptions()
@@ -9920,12 +10133,15 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
         # fullrmc
-        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
-        G2frame.Bind(wx.EVT_MENU, OnSetupFullRMC, id=G2G.wxID_SETUPFULLRMC)
-        G2frame.Bind(wx.EVT_MENU, OnLoadFullRMC, id=G2G.wxID_LOADFULLRMC)
-        G2frame.Bind(wx.EVT_MENU, OnSaveFullRMC, id=G2G.wxID_SAVEFULLRMC)
-        G2frame.Bind(wx.EVT_MENU, OnEditFullRMC, id=G2G.wxID_EDITFULLRMC)
-        G2frame.Bind(wx.EVT_MENU, OnRunFullRMC, id=G2G.wxID_RUNFULLRMC)
+        try:
+            import fullrmc
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
+            G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
+            G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_LOADRMC)
+            G2frame.Bind(wx.EVT_MENU, OnSaveRMC, id=G2G.wxID_SAVERMC)
+            G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
+        except:
+            pass
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
@@ -10017,9 +10233,13 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
-        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'fullrmc')
-        Pages.append('fullrmc')
+        try:
+            import fullrmc
+            G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+            G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+            Pages.append('RMC')
+        except:
+            pass
     Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')

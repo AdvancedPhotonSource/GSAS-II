@@ -1948,7 +1948,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 else:
                     G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame)
             else:
-                rd = G2frame
+                rd = G2obj.ImportPowderData('Dummy')
                 rd.Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
                 data = GetDefaultParms(rd)[0]
                 UpdateInstrumentGrid(G2frame,data)

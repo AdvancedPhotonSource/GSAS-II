@@ -92,7 +92,7 @@ def PhaseWtSum(G2frame,histo):
     return wtSum
     
 ################################################################################
-#GSASII pdf calculation routines
+#### GSASII pwdr & pdf calculation routines
 ################################################################################
         
 def Transmission(Geometry,Abs,Diam):
@@ -297,10 +297,10 @@ def CalcPDF(data,inst,limits,xydata):
     The return value is at present an empty list.
     '''
     auxPlot = []
+    qLimits = data['QScaleLim']
     Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
     Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
-#    GSASIIpath.IPyBreak()
     IofQ = copy.deepcopy(xydata['Sample'])
     IofQ[1] = np.array(IofQ[1])[:,Ibeg:Ifin]
     if data['Sample Bkg.']['Name']:
@@ -345,7 +345,6 @@ def CalcPDF(data,inst,limits,xydata):
         Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][-1])    #interpolate I(Q)
     Qdata -= np.min(Qdata)*data['BackRatio']
     
-    qLimits = data['QScaleLim']
     maxQ = np.searchsorted(Qpoints,min(Qpoints[-1],qLimits[1]))+1
     minQ = np.searchsorted(Qpoints,min(qLimits[0],0.90*Qpoints[-1]))
     qLimits = [Qpoints[minQ],Qpoints[maxQ-1]]
@@ -597,7 +596,7 @@ def SetupPDFEval(data,xydata,limits,inst,numbDen):
     return EvalLowPDF,GetCurrentVals,SetFinalVals
 
 ################################################################################        
-#GSASII peak fitting routines: Finger, Cox & Jephcoat model        
+#### GSASII peak fitting routines: Finger, Cox & Jephcoat model        
 ################################################################################
 
 def factorize(num):
@@ -2158,7 +2157,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     return fname
     
 ################################################################################
-# Reflectometry calculations
+#### Reflectometry calculations
 ################################################################################
 
 def REFDRefine(Profile,ProfDict,Inst,Limits,Substances,data):
@@ -2594,7 +2593,7 @@ def makeRefdFFT(Limits,Profile):
 
     
 ################################################################################
-# Stacking fault simulation codes
+#### Stacking fault simulation codes
 ################################################################################
 
 def GetStackParms(Layers):
@@ -3265,7 +3264,7 @@ def MEMupdateReflData(prfName,data,reflData):
     newRefs = np.array(newRefs)
     return True,newRefs
     
-#testing data
+#### testing data
 NeedTestData = True
 def TestData():
     'needs a doc string'

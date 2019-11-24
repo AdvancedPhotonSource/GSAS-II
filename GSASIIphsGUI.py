@@ -1149,7 +1149,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
             
 
 ################################################################################
-################################################################################
+#### Phase editing routines
 ################################################################################
 def GetSpGrpfromUser(parent,SpGrp):
     helptext = '''\t\t\tGSAS-II space group information
@@ -1299,8 +1299,6 @@ def FindBondsDrawCell(data,cell):
                                 Faces.append([face,norm])
                     atomData[i][-1] = Faces
                         
-################################################################################
-################################################################################
 def SetDrawingDefaults(drawingData):
     """Add required items into data['drawing'] array if not present. This does not add
     all the items in SetupDrawingData, but it seems that this is not a problem. Perhaps the

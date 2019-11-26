@@ -1950,7 +1950,10 @@ def UpdateInstrumentGrid(G2frame,data):
             else:
                 rd = G2obj.ImportPowderData('Dummy')
                 rd.Sample = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId,'Sample Parameters'))
-                data = GetDefaultParms(rd)[0]
+                try:
+                    data = GetDefaultParms(rd)[0]
+                except TypeError:   #Cancel - got None 
+                    pass
                 UpdateInstrumentGrid(G2frame,data)
             G2plt.PlotPeakWidths(G2frame)
         finally:

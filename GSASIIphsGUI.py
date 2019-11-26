@@ -4393,7 +4393,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 style=wx.ICON_ERROR)
 
 ################################################################################
-#### fullrmc Data page
+#### RMC Data page
 ################################################################################
 
     def UpdateRMC():
@@ -4540,6 +4540,7 @@ freshStart     = False      #make TRUE for a restart
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
             dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', 
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
+            
         else:
             wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,

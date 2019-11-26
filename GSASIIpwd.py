@@ -188,7 +188,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     Sth2 = npsind(Tth/2.0)**2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
         if 'array' in str(type(MuR)):
-            MuRSTh2 = np.concatenate((MuR,Sth2))
+            MuRSTh2 = np.vstack((MuR,Sth2))
             AbsCr = np.where(MuRSTh2[0]<=3.0,muRunder3(MuRSTh2[0],MuRSTh2[1]),muRover3(MuRSTh2[0],MuRSTh2[1]))
             return AbsCr
         else:
@@ -297,9 +297,12 @@ def CalcPDF(data,inst,limits,xydata):
     The return value is at present an empty list.
     '''
     auxPlot = []
-    qLimits = data['QScaleLim']
-    Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
-    Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
+    if 'T' in inst['Type'][0]:
+        Ibeg = 0
+        Ifin = len(xydata['Sample'][1][0])
+    else:
+        Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
+        Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])+1
     #subtract backgrounds - if any & use PWDR limits
     IofQ = copy.deepcopy(xydata['Sample'])
     IofQ[1] = np.array(IofQ[1])[:,Ibeg:Ifin]
@@ -314,15 +317,30 @@ def CalcPDF(data,inst,limits,xydata):
     IofQ[1][1] -= data.get('Flat Bkg',0.)
     #get element data & absorption coeff.
     ElList = data['ElList']
-    Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
-    #Apply angle dependent corrections
-    Tth = IofQ[1][0]
-    MuR = Abs*data['Diam']/20.0
-    IofQ[1][1] /= Absorb(data['Geometry'],MuR,Tth)
+    Tth = IofQ[1][0]    #2-theta or TOF!
     if 'X' in inst['Type'][0]:
+        Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
+        #Apply angle dependent corrections
+        MuR = Abs*data['Diam']/20.0
+        IofQ[1][1] /= Absorb(data['Geometry'],MuR,Tth)
         IofQ[1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
-    if data['DetType'] == 'Image plate':
-        IofQ[1][1] *= Oblique(data['ObliqCoeff'],Tth)
+        if data['DetType'] == 'Image plate':
+            IofQ[1][1] *= Oblique(data['ObliqCoeff'],Tth)
+    elif 'T' in inst['Type'][0]:    #neutron TOF normalized data - needs wavelength dependent absorption
+        wave = 2.*G2lat.TOF2dsp(inst,IofQ[1][0])*npsind(inst['2-theta'][1]/2.)
+        Els = ElList.keys()
+        Isotope = {El:'Nat. abund.' for El in Els}
+        GD = {'AtomTypes':ElList,'Isotope':Isotope}
+        BLtables = G2elem.GetBLtable(GD)
+        FP,FPP = G2elem.BlenResTOF(Els,BLtables,wave)
+        Abs = np.zeros(len(wave))
+        for iel,El in enumerate(Els):
+            BL = BLtables[El][1]
+            SA = BL['SA']*wave/1.798197+4.0*np.pi*FPP[iel]**2 #+BL['SL'][1]?
+            SA *= ElList[El]['FormulaNo']/data['Form Vol']
+            Abs += SA
+        MuR = Abs*data['Diam']/2.
+        IofQ[1][1] /= Absorb(data['Geometry'],MuR,inst['2-theta'][1]*np.ones(len(wave)))        
     XY = IofQ[1]    
     #convert to Q
 #    nQpoints = len(XY[0])     #points for Q interpolation
@@ -345,6 +363,7 @@ def CalcPDF(data,inst,limits,xydata):
         Qdata = si.griddata(XY[0],XY[1],Qpoints,method='linear',fill_value=XY[1][-1])    #interpolate I(Q)
     Qdata -= np.min(Qdata)*data['BackRatio']
     
+    qLimits = data['QScaleLim']
     maxQ = np.searchsorted(Qpoints,min(Qpoints[-1],qLimits[1]))+1
     minQ = np.searchsorted(Qpoints,min(qLimits[0],0.90*Qpoints[-1]))
     qLimits = [Qpoints[minQ],Qpoints[maxQ-1]]

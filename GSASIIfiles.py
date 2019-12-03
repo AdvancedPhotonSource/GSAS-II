@@ -68,6 +68,13 @@ def G2SetPrintLevel(level):
         G2Print('G2SetPrintLevel Error: level={} cannot be interpreted.',
                     'Use all, warn, error or none.')
         
+def find(name, path):
+    '''find 1st occurance of file in path
+    '''
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+        
 def G2Print(*args,**kwargs):
     '''Print with filtering based level of output (see :func:`G2SetPrintLevel`).
     Use G2Print() as replacement for print(). 

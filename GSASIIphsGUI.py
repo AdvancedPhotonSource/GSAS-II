@@ -58,6 +58,7 @@ import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIctrlGUI as G2G
+import GSASIIfiles as G2fl
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
@@ -1093,6 +1094,8 @@ class SetUpRMCProfileDialog(wx.Dialog):
         self.Name = Name
         self.Phase = Phase
         self.SuperCell = [1,1,1]
+        self.aTypes = self.Phase['General']['AtomTypes']
+        self.atSeq = self.aTypes[:]
         self.histogram = ''
         self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),
                          'material':'nothing','comment':'none ','source':'nowhere'}
@@ -1102,6 +1105,16 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
         def OnHisto(event):
             self.histogram = histo.GetStringSelection()
+            
+        def OnAtSel(event):
+            Obj = event.GetEventObject()
+            itype = Indx[Obj.GetId()]
+            tid = Obj.GetSelection()
+            if itype < nTypes-1:
+                if itype == tid:
+                    tid += 1
+                self.atSeq = G2lat.SwapItems(self.atSeq,itype,tid)
+            wx.CallAfter(self.Draw)
         
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
@@ -1113,6 +1126,18 @@ class SetUpRMCProfileDialog(wx.Dialog):
             superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
             superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.SuperCell,i,min=1,max=10,size=(50,25)),0,WACV)
         mainSizer.Add(superSizer,0,WACV)
+        nTypes = len(self.aTypes)
+        atmChoice = wx.BoxSizer(wx.HORIZONTAL)
+        atmChoice.Add(wx.StaticText(self.panel,label=' Set atom ordering: '),0,WACV)
+        Indx = {}
+        for iType in range(nTypes):
+            atChoice = self.atSeq[iType:]
+            atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+            atmSel.SetStringSelection(self.atSeq[iType])
+            atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+            Indx[atmSel.GetId()] = iType
+            atmChoice.Add(atmSel,0,WACV)
+        mainSizer.Add(atmChoice,0,WACV)
         histograms = self.Phase['Histograms']
         histNames = list(histograms.keys())
         mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for processing:'),0,WACV)
@@ -1125,6 +1150,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
             metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
             metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
         mainSizer.Add(metaSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         OKBtn = wx.Button(self.panel,-1,"OK")
         OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
@@ -1140,7 +1166,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
-        return self.SuperCell,self.histogram,self.metadata
+        return self.SuperCell,self.histogram,self.metadata,self.atSeq
         
     def OnOK(self,event):
         parent = self.GetParent()
@@ -4474,9 +4500,10 @@ freshStart     = False      #make TRUE for a restart
         else:
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
-                superCell,histoName,meta = dlg.GetData()
+                superCell,histoName,meta,atSeq = dlg.GetData()
                 PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                 if PWId:
+#                    Progress
                     print(G2pwd.MakeInst(G2frame,pName,PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
@@ -4484,7 +4511,7 @@ freshStart     = False      #make TRUE for a restart
                     else:
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
-                    print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,superCell,PWId)+ ' written')
+                    print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,atSeq,superCell,PWId)+ ' written')
                     print('RMCProfile file build completed')
                 else:
                     print('RMCProfile file build failed - no histogram selected')
@@ -4540,28 +4567,62 @@ freshStart     = False      #make TRUE for a restart
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
             dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', 
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    import subprocess as sb
+                    batch = open('fullrmc.bat','w')
+                    batch.write(sys.exec_prefix+'\\activate\n')
+                    batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
+                    batch.write('pause')
+                    batch.close()
+                    sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+                
             
         else:
+            rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
+            rmcexe = os.path.split(rmcfile)[0]
+            print(rmcexe)
+            if rmcfile is None:
+                wx.MessageBox(''' RMCProfile is not correctly installed for use in GSAS-II
+      Obtain the zip file distribution from www.rmcprofile.org, 
+      unzip it and place the RMCProfile main directory in the main GSAS-II directory ''',
+          caption='RMCProfile',style=wx.ICON_INFORMATION)
+                return
             wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
       M.G. Tucker, D.A. keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
       Jour. Phys.: Cond. matter 2007, 19, 335218.
-      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',caption='RMCProfile',style=wx.ICON_INFORMATION)
-            return
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                import subprocess as sb
-                batch = open('fullrmc.bat','w')
-                batch.write(sys.exec_prefix+'\\activate\n')
-                batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
-                batch.write('pause')
-                batch.close()
-                sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
-            else:
-                return
-        finally:
-            dlg.Destroy()
-                
+      doi: https://doi.org/10.1088/0953-8984/19/33/335218''',
+      caption='RMCProfile',style=wx.ICON_INFORMATION)
+            import subprocess as sb
+            generalData = data['General']
+            pName = generalData['Name'].replace(' ','_')
+            batch = open('runrmc.bat','w')
+            batch.write('::PATH=%PATH%;'+rmcexe+';c:'+rmcexe+'\cygwin_libs\n')
+            batch.write('SET RMCPROFILE_DIR='+G2frame.dirname+'\n')
+            batch.write('SET RMCPROFILE_DRIVE=%~d1\n')
+            batch.write('::PATH=%PATH%;%RMCPROFILE_DIR%\exe;%RMCPROFILE_DIR%\exe\cygwin_libs\n')
+            batch.write('PATH=%RMCPROFILE_DIR%\exe;%RMCPROFILE_DIR%\exe\cygwin_libs;%PATH%\n')
+            batch.write('PATH\n')
+            batch.write('Title RMCProfile\n')
+            batch.write(rmcexe+'\\rmcprofile.exe '+pName+'\n')
+            batch.write('pause\n')
+            batch.close()
+            sb.Popen('runrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+
+#            dlg = wx.FileDialog(G2frame, 'Find rmcprofile.bat file to execute', 
+#                wildcard='RMCProfile (rmcprofile.bat)|*.bat',style=wx.FD_CHANGE_DIR)
+#            try:
+#                if dlg.ShowModal() == wx.ID_OK:
+#                    pass
+#                else:
+#                    return
+#            finally:
+#                dlg.Destroy()
 
             
 ################################################################################

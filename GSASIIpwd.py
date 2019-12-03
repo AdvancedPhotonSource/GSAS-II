@@ -2091,19 +2091,35 @@ def calcIncident(Iparm,xdata):
 def MakeInst(G2frame,Name,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
-    prms = ['Bank',
-            'difC','difA','Zero','2-theta',
-            'alpha','beta-0','beta-1','sig-0',
-            'sig-1','sig-2','X','Y']
-    fname = Name+'.inst'
-    fl = open(fname,'w')
-    fl.write('      1\n')
-    fl.write('%10d\n'%int(inst[prms[0]][1]))
-    fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
-    fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1]))
-    fl.write('%10.3f%10.3f%10.3f%10.4f\n'%(inst[prms[9]][1],inst[prms[10]][1],0.0,inst[prms[12]][1]))    
-    fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],0.0,0.0,0.0))
-    fl.close()
+    if 'T' in inst['Type'][1]:
+        prms = ['Bank',
+                'difC','difA','Zero','2-theta',
+                'alpha','beta-0','beta-1','sig-0',
+                'sig-1','sig-2','X','Y']
+        fname = Name+'.inst'
+        fl = open(fname,'w')
+        fl.write('1\n')
+        fl.write('%d\n'%int(inst[prms[0]][1]))
+        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
+        fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1]))
+        fl.write('%10.3f%10.3f%10.3f%10.4f\n'%(inst[prms[9]][1],inst[prms[10]][1],0.0,inst[prms[12]][1]))    
+        fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],0.0,0.0,0.0))
+        fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0,0.0))
+        fl.close()
+    else:
+        prms = ['Bank',
+                'Lam','Zero',
+                'U','V','W',
+                'X','Y',]
+        fname = Name+'.inst'
+        fl = open(fname,'w')
+        fl.write('1\n')
+        fl.write('%d\n'%int(inst[prms[0]][1]))
+        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],0.0,0.0))
+        fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[3]][1],inst[prms[4]][1],inst[prms[5]][1],0.0))
+        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[6]][1],inst[prms[7]][1],0.0,0.0))    
+        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0,0.0))
+        fl.close()
     return fname
     
 def MakeBack(G2frame,Name,PWId):
@@ -2121,7 +2137,7 @@ def MakeBack(G2frame,Name,PWId):
     fl.close()
     return fname
 
-def MakeRMC6f(G2frame,Name,Phase,Meta,Supercell,PWId):
+def MakeRMC6f(G2frame,Name,Phase,Meta,Atseq,Supercell,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     generalData = Phase['General']
     Sample = PWDdata['Sample Parameters']
@@ -2139,18 +2155,28 @@ def MakeRMC6f(G2frame,Name,Phase,Meta,Supercell,PWId):
     fl = open(fname,'w')
     fl.write('(Version 6f format configuration file)\n')
     for item in Meta:
-        fl.write('%-20s:  %s\n'%('Metadata '+item,Meta[item]))
-    fl.write('Supercell dimensions: %d %d %d\n'%(Supercell[0],Supercell[1],Supercell[2]))
-    fl.write('Cell (Ang/deg): %f %f %f %f %f %f\n'%(
+        fl.write('%-20s%s\n'%('Metadata '+item+':',Meta[item]))
+    fl.write('%-35s%3d%3d%3d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
+    fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+    A,B = G2lat. cell2AB(Cell)
+    fl.write('Lattice vectors (Ang):\n')
+    for i in [0,1,2]:
+        fl.write('%12.6f%12.6f%12.6f\n'%(A[i,0],A[i,1],A[i,2]))
     fl.write('Atoms (fractional coordinates):\n')
-    for iat,atom in enumerate(Atoms):
-        atcode = Atcodes[iat].split(':')
-        cell = [0,0,0]
-        if '+' in atcode[1]:
-            cell = eval(atcode[1].split('+')[1])
-        fl.write('%6d%6s [%s]%10.6f%10.6f%10.6f%5d%5d%5d%5d\n'%(       
-                iat,atom[1],atcode[0],atom[3],atom[4],atom[5],0,cell[0],cell[1],cell[2]))
+    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
+    Natm = np.count_nonzero(Natm-1)
+    nat = 0
+    for atm in Atseq:
+        for iat,atom in enumerate(Atoms):
+            if atom[1] == atm:
+                nat += 1
+                atcode = Atcodes[iat].split(':')
+                cell = [0,0,0]
+                if '+' in atcode[1]:
+                    cell = eval(atcode[1].split('+')[1])
+                fl.write('%6d%4s  [%s]%19.15f%19.15f%19.15f%6d%4d%4d%4d\n'%(       
+                        nat,atom[1],atcode[0],atom[3],atom[4],atom[5],(iat)%Natm+1,cell[0],cell[1],cell[2]))
     fl.close()
     return fname
 
@@ -2168,10 +2194,15 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     Ifin = np.searchsorted(Data[0],Limits[1])+1
     fname = Name+'.bragg'
     fl = open(fname,'w')
-    fl.write('%10d%10d%12.4f%12.4f\n'%(Ifin-Ibeg,Bank,Scale,Vol))
-    fl.write('%12s%12s\n'%('   TOF,ms','  I(obs)'))
-    for i in range(Ibeg,Ifin-1):
-        fl.write('%12.8f%12.6f\n'%(Data[0][i]/1000.,Data[1][i]))
+    fl.write('%12d%6d%15.7f%15.4f\n'%(Ifin-Ibeg-1,Bank,Scale,Vol))
+    if 'T' in Inst['Type'][0]:
+        fl.write('%12s%12s\n'%('   TOF,ms','  I(obs)'))
+        for i in range(Ibeg,Ifin-1):
+            fl.write('%12.8f%12.6f\n'%(Data[0][i]/1000.,Data[1][i]))
+    else:
+        fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
+        for i in range(Ibeg,Ifin-1):
+            fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
     fl.close()
     return fname
     

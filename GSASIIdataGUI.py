@@ -2841,7 +2841,9 @@ class GSASII(wx.Frame):
                 if GSASIIpath.GetConfigValue(var):
                     print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
                     win.Center()
-
+################################################################################
+#### init_vars
+################################################################################
     def init_vars(self):
         # initialize default values for GSAS-II "global" variables (saved in main Frame)
         self.oldFocus = None

@@ -277,25 +277,21 @@ def TransformU6(U6,Trans):
     return UijtoU6(Uij)
 
 def ExpandCell(Atoms,atCodes,cx,Trans):
-    Unit =[int(max(abs(np.array(unit)))-1) for unit in Trans.T]
-    for i,unit in enumerate(Unit):
-        if unit > 0:
-            for j in range(unit):
-                moreAtoms = copy.deepcopy(Atoms)
-                moreCodes = []
-                for atom,code in zip(moreAtoms,atCodes):
-                    atom[cx+i] += 1.
-                    if '+' in code:
-                        cell = list(eval(code.split('+')[1]))
-                        ops = code.split('+')[0]
-                    else:
-                        cell = [0,0,0]
-                        ops = code
-                    cell[i] += 1
-                    moreCodes.append('%s+%d,%d,%d'%(ops,cell[0],cell[1],cell[2])) 
-                Atoms += moreAtoms
-                atCodes += moreCodes
-    return Atoms,atCodes
+    Unit = [int(max(abs(np.array(unit)))-1) for unit in Trans.T]
+    nUnit = (Unit[0]+1)*(Unit[1]+1)*(Unit[2]+1)
+    Ugrid = np.mgrid[0:Unit[0]+1,0:Unit[1]+1,0:Unit[2]+1]
+    Ugrid = np.reshape(Ugrid,(3,nUnit)).T
+    Codes = copy.deepcopy(atCodes)
+    newAtoms = copy.deepcopy(Atoms)
+    for unit in Ugrid[1:]:
+        moreAtoms = copy.deepcopy(Atoms)
+        for atom in moreAtoms:
+            atom[cx:cx+3] += unit
+        newAtoms += moreAtoms
+        codes = copy.deepcopy(atCodes)
+        moreCodes = [code+'+%d,%d,%d'%(unit[0],unit[1],unit[2]) for code in codes]
+        Codes += moreCodes
+    return newAtoms,Codes
     
 def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     '''Transform atoms from oldPhase to newPhase
@@ -991,6 +987,15 @@ def SwapIndx(Axis,H):
         return [H[1],H[2],H[0]]
     else:
         return [H[2],H[0],H[1]]
+    
+def SwapItems(Alist,pos1,pos2):
+    'exchange 2 items in a list'
+    try:
+        get = Alist[pos1],Alist[pos2]
+        Alist[pos2],Alist[pos1] = get
+    except IndexError:
+        pass
+    return Alist
         
 def Rh2Hx(Rh):
     'needs doc string'

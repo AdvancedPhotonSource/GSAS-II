@@ -1172,6 +1172,97 @@ class SetUpRMCProfileDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
+        
+class SetUpFullrmcDialog(wx.Dialog):
+    ''' Get from user the super cell size & selected histogram to make various files
+    '''
+    def __init__(self,parent,Name,Phase):
+        title = 'fullrmc setup'
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+        self.Name = Name
+        self.Phase = Phase
+        self.SuperCell = [1,1,1]
+        self.aTypes = self.Phase['General']['AtomTypes']
+        self.atSeq = self.aTypes[:]
+#        self.histogram = ''
+#        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),
+#                         'material':'nothing','comment':'none ','source':'nowhere'}
+        self.Draw()
+        
+    def Draw(self):
+        
+#        def OnHisto(event):
+#            self.histogram = histo.GetStringSelection()
+            
+        def OnAtSel(event):
+            Obj = event.GetEventObject()
+            itype = Indx[Obj.GetId()]
+            tid = Obj.GetSelection()
+            if itype < nTypes-1:
+                if itype == tid:
+                    tid += 1
+                self.atSeq = G2lat.SwapItems(self.atSeq,itype,tid)
+            wx.CallAfter(self.Draw)
+        
+        self.panel.Destroy()
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Setup for: %s'%self.Name),0,WACV)
+        superSizer = wx.BoxSizer(wx.HORIZONTAL)
+        axes = ['X','Y','Z']
+        for i,ax in enumerate(axes):
+            superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
+            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.SuperCell,i,min=1,max=15,size=(50,25)),0,WACV)
+        mainSizer.Add(superSizer,0,WACV)
+        nTypes = len(self.aTypes)
+        atmChoice = wx.BoxSizer(wx.HORIZONTAL)
+        atmChoice.Add(wx.StaticText(self.panel,label=' Set atom ordering: '),0,WACV)
+        Indx = {}
+        for iType in range(nTypes):
+            atChoice = self.atSeq[iType:]
+            atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+            atmSel.SetStringSelection(self.atSeq[iType])
+            atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+            Indx[atmSel.GetId()] = iType
+            atmChoice.Add(atmSel,0,WACV)
+        mainSizer.Add(atmChoice,0,WACV)
+#        histograms = self.Phase['Histograms']
+#        histNames = list(histograms.keys())
+#        mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for processing:'),0,WACV)
+#        histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)        
+#        histo.Bind(wx.EVT_COMBOBOX,OnHisto)
+#        mainSizer.Add(histo,0,WACV)
+#        metalist = ['title','owner','material','comment','source']
+#        metaSizer = wx.FlexGridSizer(0,2,5,5)
+#        for item in metalist:
+#            metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
+#            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
+#        mainSizer.Add(metaSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        OKBtn = wx.Button(self.panel,-1,"OK")
+        OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
+        btnSizer.Add(OKBtn)            
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        self.panel.SetAutoLayout(1)
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        
+    def GetData(self):
+        'Returns the values from the dialog'
+        return self.SuperCell,self.atSeq
+        
+    def OnOK(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+        
             
 
 ################################################################################
@@ -4456,6 +4547,15 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         if G2frame.RMCchoice == 'fullrmc':
+            dlg = SetUpFullrmcDialog(G2frame,Name=pName,Phase=data)
+            if dlg.ShowModal() == wx.ID_OK:
+                superCell,atSeq = dlg.GetData()
+#                    Progress
+                print(G2pwd.MakePDB(G2frame,pName,data,atSeq,superCell)+ ' written')
+                print('fullrmc file build completed')
+            else:
+                pass
+            dlg.Destroy()          
             rundata = '''
 ##########################################################################################
 ##############################  IMPORTING USEFUL DEFINITIONS  ############################
@@ -4580,8 +4680,6 @@ freshStart     = False      #make TRUE for a restart
                     return
             finally:
                 dlg.Destroy()
-                
-            
         else:
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
             rmcexe = os.path.split(rmcfile)[0]

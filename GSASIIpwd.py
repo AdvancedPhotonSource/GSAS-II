@@ -928,9 +928,9 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
     while True:
         try:
             pkP = parmDict[pfx+'BkPkpos;'+str(iD)]
-            pkI = parmDict[pfx+'BkPkint;'+str(iD)]
-            pkS = parmDict[pfx+'BkPksig;'+str(iD)]
-            pkG = parmDict[pfx+'BkPkgam;'+str(iD)]
+            pkI = max(parmDict[pfx+'BkPkint;'+str(iD)],0.1)
+            pkS = max(parmDict[pfx+'BkPksig;'+str(iD)],1.)
+            pkG = max(parmDict[pfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
                 Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
             else: #'T'OF
@@ -1061,9 +1061,9 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     while True:
         try:
             pkP = parmDict[hfx+'BkPkpos;'+str(iD)]
-            pkI = parmDict[hfx+'BkPkint;'+str(iD)]
-            pkS = parmDict[hfx+'BkPksig;'+str(iD)]
-            pkG = parmDict[hfx+'BkPkgam;'+str(iD)]
+            pkI = max(parmDict[hfx+'BkPkint;'+str(iD)],0.1)
+            pkS = max(parmDict[hfx+'BkPksig;'+str(iD)],1.0)
+            pkG = max(parmDict[hfx+'BkPkgam;'+str(iD)],0.1)
             if 'C' in dataType:
                 Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
             else: #'T'OF
@@ -2203,6 +2203,40 @@ def MakeBragg(G2frame,Name,Phase,PWId):
         fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
         for i in range(Ibeg,Ifin-1):
             fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
+    fl.close()
+    return fname
+
+def MakePDB(G2frame,Name,Phase,Atseq,Supercell):
+    generalData = Phase['General']
+    Cell = generalData['Cell'][1:7]
+    Trans = np.eye(3)*np.array(Supercell)
+    newPhase = copy.deepcopy(Phase)
+    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+    newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
+    Atoms = newPhase['Atoms']
+    Cell = newPhase['General']['Cell'][1:7]
+    A,B = G2lat. cell2AB(Cell)
+    fname = Name+'.pdb'
+    fl = open(fname,'w')
+    fl.write('REMARK    this file is generated using GSASII\n')
+    fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
+            Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+    fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
+    fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
+    fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
+
+    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
+    Natm = np.count_nonzero(Natm-1)
+    nat = 0
+    for atm in Atseq:
+        for iat,atom in enumerate(Atoms):
+            if atom[1] == atm:
+                nat += 1
+                XYZ = np.inner(A,np.array(atom[3:6])-0.5)    #shift origin to middle & make Cartesian
+#ATOM      1 Ni   RMC     1     -22.113 -22.113 -22.113  1.00  0.00          ni                      
+                fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
+                        nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1]))
     fl.close()
     return fname
     

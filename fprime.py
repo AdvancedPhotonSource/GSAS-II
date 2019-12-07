@@ -596,5 +596,6 @@ Operator of Argonne National Laboratory.        '''
 For calculating real and resonant X-ray scattering factors to 250keV;       
 based on Fortran program of Cromer & Liberman corrected for 
 Kissel & Pratt energy term; Jensen term not included
+(D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
         '''
         wxadv.AboutBox(info)

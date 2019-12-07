@@ -673,6 +673,7 @@ Operator of Argonne National Laboratory.        '''
         info.Description = '''
 For calculating X-ray absorption factors to 250keV for cylindrical      
 powder samples; based on Fortran program Fprime of Cromer & Liberman 
+(D. T. Cromer and D. A. Liberman, Acta Cryst. (1981). A37, 267-268.)
 corrected for Kissel & Pratt energy term; Jensen term not included
         '''
         wxadv.AboutBox(info)

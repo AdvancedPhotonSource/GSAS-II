@@ -15,9 +15,9 @@ The entries here are:
 Sources:
   
            Exponential scattering factor curve coeficients, Cromer and
-           Waber(1971) Int. Tables Vol. IV. Delta f' and delta f" terms,
-           Cromer(1971) Int. Tables Vol. IV Atomic weights from CRC 56th
-           Edition.
+           Waber(1971) Int. Tables Vol. IV. Delta f' and delta f" terms calcd via
+           D.T. Cromer & D.A. Liberman (1981), Acta Cryst. A37, 267-268.
+           Atomic weights from CRC 56th Edition 
 
            Neutron scattering lengths & abs. cross sections from
            H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  X-ray

@@ -355,7 +355,7 @@ def GetFprime(controlDict,Histograms):
                     FFtables[El][hfx+'FPP'] = FPP
                     
 def PrintFprime(FFtables,pfx,pFile):
-    pFile.write('\n Resonant form factors:\n')
+    pFile.write('\n Resonant form factors:(ref: D.T. Cromer & D.A. Liberman (1981), Acta Cryst. A37, 267-268.)\n')
     Elstr = ' Element:'
     FPstr = " f'     :"
     FPPstr = ' f"     :'

@@ -15,14 +15,14 @@
 This module defines and/or documents the data structures used in GSAS-II, as well
 as provides misc. support routines.
 
-Constraints Tree Item
-----------------------
-
 .. _Constraints_table:
 
 .. index::
    single: Constraints object description
    single: Data object descriptions; Constraints
+
+Constraints Tree Item
+----------------------
 
 Constraints are stored in a dict, separated into groups.
 Note that parameter are named in the following pattern,
@@ -96,14 +96,14 @@ Note that the last three items in the list play a special role:
     * 'f' defines a new variable (function) according to relationship
       :math:`newvar = m_1 \\times var_1 + m_2 \\times var_2 + ...`
 
-Covariance Tree Item
---------------------
-
 .. _Covariance_table:
 
 .. index::
    single: Covariance description
    single: Data object descriptions; Covariance
+
+Covariance Tree Item
+--------------------
 
 The Covariance tree item has results from the last least-squares run. They
 are stored in a dict with these keys:
@@ -139,14 +139,14 @@ Rvals          \                R-factors, GOF, Marquardt value for last
 covMatrix      \                The (NxN) covVariance matrix (np.array)
 =============  ===============  ====================================================
 
-Phase Tree Items
-----------------
-
 .. _Phase_table:
 
 .. index::
    single: Phase object description
    single: Data object descriptions; Phase
+
+Phase Tree Items
+----------------
 
 Phase information is stored in the GSAS-II data tree as children of the
 Phases item in a dict with keys:
@@ -296,14 +296,14 @@ MCSA            \            Monte-Carlo simulated annealing parameters (dict)
 \
 ==========  ===============  ====================================================
 
-Rigid Body Objects
-------------------
-
 .. _RBData_table:
 
 .. index::
    single: Rigid Body Data description
    single: Data object descriptions; Rigid Body Data
+
+Rigid Body Objects
+------------------
 
 Rigid body descriptions are available for two types of rigid bodies: 'Vector'
 and 'Residue'. Vector rigid bodies are developed by a sequence of translations each
@@ -344,14 +344,14 @@ RBIds           \            unique Ids generated upon creation of each rigid bo
 \           Residue          Ids for each Residue rigid body (list)
 ==========  ===============  ====================================================
 
-Space Group Objects
--------------------
-
 .. _SGData_table:
 
 .. index::
    single: Space Group Data description
    single: Data object descriptions; Space Group Data
+
+Space Group Objects
+-------------------
 
 Space groups are interpreted by :func:`GSASIIspc.SpcGroup`
 and the information is placed in a SGdata object
@@ -415,15 +415,14 @@ SSGOps      4D symmetry operations as [M,T] so that M*x+T = x'
 ==========  ====================================================
 
 
-Atom Records
-------------
-
 .. _Atoms_table:
 
 .. index::
    single: Atoms record description
    single: Data object descriptions; Atoms record
 
+Atom Records
+------------
 
 If ``phasedict`` points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
@@ -454,15 +453,14 @@ atom[cia+8]       unique atom identifier (int)
 
 ==============   ====================================================
 
-Drawing Atom Records
---------------------
-
 .. _Drawing_atoms_table:
 
 .. index::
    single: Drawing atoms record description
    single: Data object descriptions; Drawing atoms record
 
+Drawing Atom Records
+--------------------
 
 If ``phasedict`` points to the phase information in the data tree, then
 drawing atoms are contained in a list of drawing atom records (list) in
@@ -492,14 +490,14 @@ cs+5...cs+11      U11, U22, U33, U12, U13, U23 (6 floats)
 ci                unique atom identifier; matches source atom Id in Atom Records (int)
 ==============   ====================================================
 
-Powder Diffraction Tree Items
------------------------------
-
 .. _Powder_table:
 
 .. index::
    single: Powder data object description
    single: Data object descriptions; Powder Data
+
+Powder Diffraction Tree Items
+-----------------------------
 
 Every powder diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "PWDR ". The
@@ -626,14 +624,14 @@ Data                          \           The data consist of a list of 6 np.arr
                                            5. Yobs-Ycalc
 ======================  ===============  ====================================================
 
-Powder Reflection Data Structure
---------------------------------
-
 .. _PowderRefl_table:
 
 .. index::
    single: Powder reflection object description
    single: Data object descriptions; Powder Reflections
+
+Powder Reflection Data Structure
+--------------------------------
 
 For every phase in a histogram, the ``Reflection Lists`` value is a dict
 one element of which is `'RefList'`, which is a np.array containing
@@ -655,14 +653,14 @@ reflections. The columns in that array are documented below.
              :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
 ==========  ====================================================
 
-Single Crystal Tree Items
--------------------------
-
 .. _Xtal_table:
 
 .. index::
    single: Single Crystal data object description
    single: Data object descriptions; Single crystal data
+
+Single Crystal Tree Items
+-------------------------
 
 Every single crystal diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "HKLF ". The
@@ -713,14 +711,14 @@ ranId                         \           A random number id for the histogram
                                           that does not change
 ======================  ===============  ====================================================
 
-Single Crystal Reflection Data Structure
-----------------------------------------
-
 .. _XtalRefl_table:
 
 .. index::
    single: Single Crystal reflection object description
    single: Data object descriptions; Single Crystal Reflections
+
+Single Crystal Reflection Data Structure
+----------------------------------------
 
 For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
@@ -743,14 +741,14 @@ The columns in that array are documented below.
              gives Iobs or Icalc
 ==========  ====================================================
 
-Image Data Structure
---------------------
-
 .. _Image_table:
 
 .. index::
    image: Image data object description
    image: Image object descriptions
+
+Image Data Structure
+--------------------
 
 Every 2-dimensional image is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "IMG ". The
@@ -870,13 +868,13 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
 
 ======================  ======================  ====================================================
 
-Parameter Dictionary
--------------------------
-
 .. _parmDict_table:
 
 .. index::
    single: Parameter dictionary
+
+Parameter Dictionary
+-------------------------
 
 The parameter dictionary contains all of the variable parameters for the refinement.
 The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>).

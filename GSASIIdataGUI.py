@@ -416,8 +416,11 @@ def GSASIImain(application):
 # Create main frame (window) for GUI
 ################################################################################
 class GSASII(wx.Frame):
-    '''Define the main GSAS-II frame and its associated menu items
-    '''
+    '''Define the main GSAS-II frame and its associated menu items.
+
+    :param parent: reference to parent application
+
+    '''                
     def MenuBinding(self,event):
         '''Called when a menu is clicked upon; looks up the binding in table
         '''
@@ -437,6 +440,8 @@ class GSASII(wx.Frame):
 #        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
     
     def _Add_FileMenuItems(self, parent):
+        '''Add items to File menu
+        '''
         item = parent.Append(wx.ID_ANY,'&Open project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.OnFileOpen, id=item.GetId())
         if sys.platform == "darwin": 
@@ -470,6 +475,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.ExitMain, id=item.GetId())
         
     def _Add_DataMenuItems(self,parent):
+        '''Add items to Data menu
+        '''
         # item = parent.Append(
         #     help='',id=wx.ID_ANY,
         #     kind=wx.ITEM_NORMAL,
@@ -576,7 +583,7 @@ class GSASII(wx.Frame):
 
         
     def PreviewFile(self,filename):
-        'confirm we have the right file'
+        'utility to confirm we have the right file'
         fp = open(filename,'r')
         rdmsg = u'File '+ filename +u' begins:\n\n'
         try:

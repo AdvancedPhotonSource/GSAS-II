@@ -1530,6 +1530,7 @@ class ExportBaseclass(object):
         This could be made faster for sequential fits by reducing the histogram list to only
         the active histogram being exported.
         '''
+        self.G2frame.CheckNotebook()
         self.parmDict = {}
         self.sigDict = {}
         rigidbodyDict = {}

@@ -485,13 +485,13 @@ Background                                  Sample background. Value will be a d
                                             supply any of the following keys:
 \                     type                  The background model, e.g. 'chebyschev'
 \                     refine                The value of the refine flag, boolean
-\                     no. coeffs            Number of coefficients to use, integer
+\                     'no. coeffs'          Number of coefficients to use, integer
 \                     coeffs                List of floats, literal values for background
 \                     FixedPoints           List of (2-theta, intensity) values for fixed points
-\                     fit fixed points      If True, triggers a fit to the fixed points to
+\                     'fit fixed points'    If True, triggers a fit to the fixed points to
                                             be calculated. It is calculated when this key is
                                             detected, regardless of calls to refine.
-                      peaks                 Specifies a set of flags for refining 
+\                     peaks                 Specifies a set of flags for refining 
                                             background peaks as a nested list. There may
                                             be an item for each defined background peak
                                             (or fewer) and each item is a list with the flag 
@@ -1813,7 +1813,25 @@ class G2ObjectWrapper(object):
 
 
 class G2Project(G2ObjectWrapper):    
-    """Represents an entire GSAS-II project.
+    """Represents an entire GSAS-II project. The object contains these 
+    class variables:
+
+     * G2Project.filename: contains the .gpx filename
+     * G2Project.names: contains the contents of the project "tree" as a list 
+       of lists. Each top-level entry in the tree is an item in the list. The 
+       name of the top-level item is the first item in the inner list. Children
+       of that item, if any, are subsequent entries in that list.
+     * G2Project.data: contains the entire project as a dict. The keys 
+       for the dict are the top-level names in the project tree (initial items
+       in the G2Project.names inner lists) and each top-level item is stored
+       as a dict. 
+
+         * The contents of Top-level entries will be found in the item 
+           named 'data', as an example, ``G2Project.data['Notebook']['data']`` 
+
+         * The contents of child entries will be found in the item
+           using the names of the parent and child, for example 
+           ``G2Project.data['Phases']['NaCl']``
 
     :param str gpxfile: Existing .gpx file to be loaded. If nonexistent,
             creates an empty project.
@@ -3020,7 +3038,9 @@ class G2Project(G2ObjectWrapper):
 
             * cycles: the maximum number of cycles (returns int)
             * sequential: the histograms used for a sequential refinement as a list
-              of histogram names or an empty list when in non-sequential mode. 
+              of histogram names or an empty list when in non-sequential mode.
+            * Reverse Seq: returns True or False. True indicates that fitting of the
+              sequence of histograms proceeds in reversed order.
             * seqCopy: returns True or False. True indicates that results from 
               each sequential fit are used as the starting point for the next
               histogram.
@@ -3034,6 +3054,8 @@ class G2Project(G2ObjectWrapper):
             return self.data['Controls']['data']['max cyc']
         elif control == 'sequential':
             return self.data['Controls']['data']['Seq Data']
+        elif control == 'Reverse Seq':
+            return self.data['Controls']['data']['Reverse Seq']
         elif control in self.data['Controls']['data']:
             return self.data['Controls']['data'][control]
         elif control == 'seqCopy':
@@ -3058,6 +3080,8 @@ class G2Project(G2ObjectWrapper):
             * seqCopy: when True, the results from each sequential fit are used as
               the starting point for the next. After each fit is is set to False. 
               Ignored for non-sequential fits. 
+            * Reverse Seq: when True, sequential refinement is performed on the
+              reversed list of histograms.
 
         .. seealso::
             :meth:`get_Controls`
@@ -3066,6 +3090,8 @@ class G2Project(G2ObjectWrapper):
             self.data['Controls']['data']['max cyc'] = int(value)
         elif control == 'seqCopy':
             self.data['Controls']['data']['Copy2Next'] = bool(value)
+        elif control == 'Reverse Seq':
+            self.data['Controls']['data']['Reverse Seq'] = bool(value)
         elif control == 'sequential':
             histlist = []
             for i,j in enumerate(value):
@@ -3290,7 +3316,18 @@ class G2AtomRecord(G2ObjectWrapper):
             self.data[self.cia+2:self.cia+8] = [float(v) for v in value]
 
 class G2PwdrData(G2ObjectWrapper):
-    """Wraps a Powder Data Histogram."""
+    """Wraps a Powder Data Histogram. 
+    The object contains these class variables:
+
+        * G2PwdrData.proj: contains a reference to the :class:`G2Project`
+          object that contains this histogram 
+        * G2PwdrData.name: contains the name of the histogram
+        * G2PwdrData.data: contains the histogram's associated data in a dict,
+          as documented for the :ref:`Powder Diffraction Tree<Powder_table>`.
+          The actual histogram values are contained in the 'data' dict item,
+          as documented for Data. 
+
+    """
     def __init__(self, data, proj, name):
         self.data = data
         self.proj = proj
@@ -3586,6 +3623,52 @@ class G2PwdrData(G2ObjectWrapper):
         """
         return self['data'][0].get('wR')
 
+    def _decodeHist(self,hist):
+        '''Convert a histogram reference to a histogram name string
+        '''
+        if isinstance(hist, G2PwdrData):
+            return hist.name
+        elif hist in [h.name for h in self.proj.histograms()]:
+            return hist
+        elif type(hist) is int:
+            return self.proj.histograms()[hist].name
+        else:
+            raise G2ScriptException("Invalid histogram reference: "+str(hist))
+        
+    def set_background(self, key, value):
+        '''Set background parameters (this serves a similar function as in 
+        :meth:`set_refinements`, but with a simplified interface). 
+
+        :param str key: a string that defines the background parameter that will 
+           be changed. Must appear in the table below.
+
+           =================   ==============   ===========================================
+           key name            type of value     meaning of value
+           =================   ==============   ===========================================
+           fixedHist           int, str,         reference to a histogram in the current
+                               None or           project or None to remove the reference.
+                               G2PwdrData        
+           fixedFileMult       float             multiplier applied to intensities in 
+                                                 the background histogram where a value 
+                                                 of -1.0 means full subtraction of 
+                                                 the background histogram.
+           =================   ==============   ===========================================
+
+        :param value: a value to set the selected background parameter. The meaning 
+           and type for this parameter is listed in the table above.
+
+        '''
+        bkgPrms, bkgDict = self.data['Background']
+        if key == 'fixedHist':
+            if value is None:
+                bkgDict['background PWDR'][0] = ''
+                return
+            bkgDict['background PWDR'][0] = self._decodeHist(value)
+        elif key == 'fixedFileMult':
+            bkgDict['background PWDR'][1] = float(value)
+        else:
+            raise ValueError("Invalid key in set_background:", key)
+        
     def set_refinements(self, refs):
         """Sets the histogram refinement parameter 'key' to the specification 'value'.
 
@@ -3917,6 +4000,13 @@ class G2PwdrData(G2ObjectWrapper):
         
 class G2Phase(G2ObjectWrapper):
     """A wrapper object around a given phase.
+    The object contains these class variables:
+
+        * G2Phase.proj: contains a reference to the :class:`G2Project`
+          object that contains this phase 
+        * G2Phase.name: contains the name of the phase
+        * G2Phase.data: contains the phases's associated data in a dict,
+          as documented for the :ref:`Phase Tree items<Phase_table>`.
 
     Author: Jackson O'Donnell (jacksonhodonnell .at. gmail.com)
     """
@@ -5023,6 +5113,13 @@ class G2Image(G2ObjectWrapper):
     Note that in a GSASIIscriptable script, instances of G2Image will be created by 
     calls to :meth:`G2Project.add_image` or :meth:`G2Project.images`. 
     Scripts will not use ``G2Image()`` to call :meth:`G2Image.__init__` directly. 
+    The object contains these class variables:
+
+        * G2Image.proj: contains a reference to the :class:`G2Project`
+          object that contains this image 
+        * G2Image.name: contains the name of the image
+        * G2Image.data: contains the image's associated data in a dict,
+          as documented for the :ref:`Image Data Structure<Image_table>`.
 
     Example use of G2Image:
 

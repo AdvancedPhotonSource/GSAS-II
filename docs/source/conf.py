@@ -17,7 +17,7 @@ class wx(MagicMock):
     #@classmethod
     #def __getattr__(cls, name):
     #    return wx()
-    Menu = Panel = Dialog = CheckBox = Choice = ComboBox = object
+    Frame = Menu = Panel = Dialog = CheckBox = Choice = ComboBox = object
     Button = PyValidator = TextCtrl = TreeCtrl = object
     DEFAULT_DIALOG_STYLE = RESIZE_BORDER = CENTRE = OK = CANCEL = True
     ID_ANY = -1

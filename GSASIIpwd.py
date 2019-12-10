@@ -2149,23 +2149,30 @@ def MakeRMC6f(G2frame,Name,Phase,Meta,Atseq,Supercell,PWId):
     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
     newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
+    Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
+    Natm = np.count_nonzero(Natm-1)
     Atoms = newPhase['Atoms']
+    NAtype = np.zeros(len(Atseq))
+    for atom in Atoms:
+        NAtype[Atseq.index(atom[1])] += 1
+    NAstr = ['%d'%i for i in NAtype]
     Cell = newPhase['General']['Cell'][1:7]
     fname = Name+'.rmc6f'
     fl = open(fname,'w')
     fl.write('(Version 6f format configuration file)\n')
     for item in Meta:
         fl.write('%-20s%s\n'%('Metadata '+item+':',Meta[item]))
+    fl.write('Atom types present:             %s\n'%'    '.join(Atseq))
+    fl.write('Number of each atom type:       %s\n'%'  '.join(NAstr))
+    fl.write('Number of atoms:                %d\n'%len(Atoms))
     fl.write('%-35s%3d%3d%3d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
     A,B = G2lat. cell2AB(Cell)
-    fl.write('Lattice vectors (Ang):\n')
+    fl.write('Lattice vectors (Ang):\n')   
     for i in [0,1,2]:
         fl.write('%12.6f%12.6f%12.6f\n'%(A[i,0],A[i,1],A[i,2]))
     fl.write('Atoms (fractional coordinates):\n')
-    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
-    Natm = np.count_nonzero(Natm-1)
     nat = 0
     for atm in Atseq:
         for iat,atom in enumerate(Atoms):

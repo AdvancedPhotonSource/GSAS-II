@@ -1094,6 +1094,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
         self.Name = Name
         self.Phase = Phase
         self.SuperCell = [1,1,1]
+        self.UseSampBrd = [True,True]
         self.aTypes = self.Phase['General']['AtomTypes']
         self.atSeq = self.aTypes[:]
         self.histogram = ''
@@ -1115,6 +1116,12 @@ class SetUpRMCProfileDialog(wx.Dialog):
                     tid += 1
                 self.atSeq = G2lat.SwapItems(self.atSeq,itype,tid)
             wx.CallAfter(self.Draw)
+            
+        def OnSize(event):
+            self.UseSampBrd[0] = samSize.GetValue()
+            
+        def OnStrain(event):
+            self.UseSampBrd[1] = strain.GetValue()
         
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
@@ -1144,6 +1151,16 @@ class SetUpRMCProfileDialog(wx.Dialog):
         histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)        
         histo.Bind(wx.EVT_COMBOBOX,OnHisto)
         mainSizer.Add(histo,0,WACV)
+        samSizer = wx.BoxSizer(wx.HORIZONTAL)
+        samSize = wx.CheckBox(self.panel,label=' Use size broadening?')
+        samSize.SetValue(self.UseSampBrd[0])
+        samSize.Bind(wx.EVT_CHECKBOX,OnSize)
+        strain = wx.CheckBox(self.panel,label=' Use mustrain broadening?')
+        strain.SetValue(self.UseSampBrd[1])
+        strain.Bind(wx.EVT_CHECKBOX,OnStrain)
+        samSizer.Add(samSize,0,WACV)
+        samSizer.Add(strain,0,WACV)
+        mainSizer.Add(samSizer,0,WACV)
         metalist = ['title','owner','material','comment','source']
         metaSizer = wx.FlexGridSizer(0,2,5,5)
         for item in metalist:
@@ -1166,7 +1183,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
-        return self.SuperCell,self.histogram,self.metadata,self.atSeq
+        return self.SuperCell,self.histogram,self.metadata,self.atSeq,self.UseSampBrd
         
     def OnOK(self,event):
         parent = self.GetParent()
@@ -4530,17 +4547,19 @@ def UpdatePhaseData(G2frame,Item,data):
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
         mainSizer.Add(RMCsel,0,WACV)
+        mainSizer.Add((5,5),0,WACV)
         if G2frame.RMCchoice == 'fullrmc':
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
 #            font1 = wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
             G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
 #            G2frame.runtext.SetFont(font1)
+            mainSizer.Add(G2frame.runtext)
         else:
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile input file preparation:'),0,WACV)
+            G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
+            mainSizer.Add(G2frame.runtext)
             
         
-        mainSizer.Add((5,5),0,WACV)
-        mainSizer.Add(G2frame.runtext)
         SetPhaseWindow(G2frame.FRMC,mainSizer)
         
     def OnSetupRMC(event):
@@ -4600,10 +4619,13 @@ freshStart     = False      #make TRUE for a restart
         else:
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
-                superCell,histoName,meta,atSeq = dlg.GetData()
+                superCell,histoName,meta,atSeq,useSamBrd = dlg.GetData()
                 PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                 if PWId:
 #                    Progress
+#                    print(useSamBrd)
+#                    print(data['Histograms'][histoName]['Size'])
+#                    print(data['Histograms'][histoName]['Mustrain'])
                     print(G2pwd.MakeInst(G2frame,pName,PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
@@ -4700,11 +4722,12 @@ freshStart     = False      #make TRUE for a restart
             generalData = data['General']
             pName = generalData['Name'].replace(' ','_')
             batch = open('runrmc.bat','w')
-            batch.write('::PATH=%PATH%;'+rmcexe+';c:'+rmcexe+'\cygwin_libs\n')
+            batch.write('ECHO OFF\n')
+            batch.write('::PATH=%PATH%;'+rmcexe+'\n')
             batch.write('SET RMCPROFILE_DIR='+G2frame.dirname+'\n')
             batch.write('SET RMCPROFILE_DRIVE=%~d1\n')
-            batch.write('::PATH=%PATH%;%RMCPROFILE_DIR%\exe;%RMCPROFILE_DIR%\exe\cygwin_libs\n')
-            batch.write('PATH=%RMCPROFILE_DIR%\exe;%RMCPROFILE_DIR%\exe\cygwin_libs;%PATH%\n')
+            batch.write('::PATH=%PATH%;%RMCPROFILE_DIR%\exe\n')
+            batch.write('PATH=%RMCPROFILE_DIR%\exe;%PATH%\n')
             batch.write('PATH\n')
             batch.write('Title RMCProfile\n')
             batch.write(rmcexe+'\\rmcprofile.exe '+pName+'\n')
@@ -4721,7 +4744,81 @@ freshStart     = False      #make TRUE for a restart
 #                    return
 #            finally:
 #                dlg.Destroy()
-
+            
+    def OnViewRMC(event):
+        if G2frame.RMCchoice == 'fullrmc':
+            print('view fullrmc results - TBD')
+        else:
+            generalData = data['General']
+            pName = generalData['Name'].replace(' ','_')
+            files =  {'_PDF1.csv':[],'_PDFpartials.csv':[],'_SQ1.csv':[],'_XFQ1.csv':[],
+                      '_SQ1partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
+                      '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
+            for item in files:
+                if os.path.exists(pName+item):
+                    OutFile = open(pName+item,'r')
+                    files[item] = OutFile.readlines()
+                    OutFile.close()
+                    print('RMCProfile file %s read'%(pName+item))
+                else:
+                    print('RMCProfile file %s not found'%(pName+item))
+#total result plots
+            Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile G(R) for '],
+                '_SQ1.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCprofile S(Q) for '],
+                '_FQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile F(Q) for '],
+                '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile x-ray G(R) for '],
+                '_XFQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile x-ray F(Q) for '],
+                '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCprofile bragg for ']}
+            for label in Labels:
+                X = []
+                Yobs = []
+                Ycalc = []
+                if len(files[label]):
+                    Names = files[label][0][:-1].split(',')
+                    for line in files[label][1:]:
+                        items = line.split(',')
+                        X.append(float(items[0]))
+                        Yobs.append(float(items[1]))
+                        Ycalc.append(float(items[2]))
+                    Yobs = np.array([X,Yobs])
+                    Ycalc = np.array([X,Ycalc])                        
+                    G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
+                        labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                        lines=True,names=Names[1:])
+#partials plots
+            Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile G(R) partials for '],
+                '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCprofile S(Q) partials for '],
+                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile F(Q) partials for ']}
+            for label in Labels:
+                X = []
+                Partials = []
+                if len(files[label]):
+                    Names = files[label][0][:-1].split(',')
+                    for line in files[label][1:]:
+                        items = line.split(',')[:-1]
+                        X.append(float(items[0]))
+                        Partials.append([float(item) for item in items[1:]])
+                    X = np.array(X)
+                    Partials = np.array(Partials).T
+                    XY = [[X.T,Y.T] for Y in Partials]
+                    G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
+                        labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                        lines=True,names=Names[1:])
+#chi**2 plot
+            X = []
+            Chi = []
+            Names = files['.chi2'][0][:-1].split()
+            if len(files['.chi2']) > 2:
+                for line in files['.chi2'][1:]:
+                    items = line[:-1].split()
+                    X.append(float(items[1]))
+                    Chi.append([float(item) for item in items[3:]])
+                X = np.array(X)
+                Chi = np.array(Chi).T
+                XY = [[X.T,Y.T] for Y in Chi]
+                G2plt.PlotXY(G2frame,XY,labelX='no. generated',
+                    labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCProfile Chi^2 for '+pName,
+                    lines=True,names=Names[3:])
             
 ################################################################################
 #### Layer Data page
@@ -10298,6 +10395,7 @@ freshStart     = False      #make TRUE for a restart
             G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_LOADRMC)
             G2frame.Bind(wx.EVT_MENU, OnSaveRMC, id=G2G.wxID_SAVERMC)
             G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
+            G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
         except:
             pass
         # MC/SA

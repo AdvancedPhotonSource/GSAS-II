@@ -2094,37 +2094,38 @@ def MakeInst(G2frame,Name,PWId):
     if 'T' in inst['Type'][1]:
         prms = ['Bank',
                 'difC','difA','Zero','2-theta',
-                'alpha','beta-0','beta-1','sig-0',
-                'sig-1','sig-2','X','Y']
+                'alpha','beta-0','beta-1',
+                'sig-0','sig-1','sig-2',
+                'Z','X','Y']
         fname = Name+'.inst'
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
         fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
-        fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1],inst[prms[8]][1]))
-        fl.write('%10.3f%10.3f%10.3f%10.4f\n'%(inst[prms[9]][1],inst[prms[10]][1],0.0,inst[prms[12]][1]))    
-        fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],0.0,0.0,0.0))
-        fl.write('%10.4f%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0,0.0))
+        fl.write('%10.3f%10.6f%10.6f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
+        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
+        fl.write('%10.4f%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],inst[prms[12]][1],inst[prms[13]][1],0.0,0.0))
         fl.close()
     else:
         prms = ['Bank',
-                'Lam','Zero',
+                'Lam','Zero','Polariz.',
                 'U','V','W',
-                'X','Y',]
+                'X','Y']
         fname = Name+'.inst'
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
-        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],0.0,0.0))
-        fl.write('%10.3f%10.6f%10.6f%10.3f\n'%(inst[prms[3]][1],inst[prms[4]][1],inst[prms[5]][1],0.0))
-        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[6]][1],inst[prms[7]][1],0.0,0.0))    
-        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0,0.0))
+        fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],inst[prms[2]][1]/100.,inst[prms[3]][1],0))
+        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
+        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1],inst[prms[8]][1],0.0))    
+        fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))
         fl.close()
     return fname
     
 def MakeBack(G2frame,Name,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     Back = PWDdata['Background'][0]
+    inst = PWDdata['Instrument Parameters'][0]
     if 'chebyschev' not in Back[0]:
         return None
     Nback = Back[2]
@@ -2133,7 +2134,10 @@ def MakeBack(G2frame,Name,PWId):
     fl = open(fname,'w')
     fl.write('%10d\n'%Nback)
     for val in BackVals:
-        fl.write('%12.6g\n'%val)
+        if 'T' in inst['Type'][1]:
+            fl.write('%12.6g\n'%(float(val)))
+        else:
+            fl.write('%12.6g\n'%val)
     fl.close()
     return fname
 

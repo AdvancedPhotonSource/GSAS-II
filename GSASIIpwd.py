@@ -854,12 +854,15 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata,fixedBkg={}):
         else:
             break
 #empirical functions
-    if bakType in ['chebyschev','cosine']:
+    if bakType in ['chebyschev','cosine','chebyschev-1']:
         dt = xdata[-1]-xdata[0]    
         for iBak in range(nBak):
             key = pfx+'Back;'+str(iBak)
             if bakType == 'chebyschev':
                 ybi = parmDict[key]*(-1.+2.*(xdata-xdata[0])/dt)**iBak
+            elif bakType == 'chebyschev-1':
+                xpos = -1.+2.*(xdata-xdata[0])/dt
+                ybi = parmDict[key]*np.cos(iBak*np.arccos(xpos))
             elif bakType == 'cosine':
                 ybi = parmDict[key]*npcosd(180.*xdata*iBak/xdata[-1])
             yb += ybi
@@ -988,11 +991,14 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
 
-    if bakType in ['chebyschev','cosine']:
+    if bakType in ['chebyschev','cosine','chebyschev-1']:
         dt = xdata[-1]-xdata[0]    
         for iBak in range(nBak):    
             if bakType == 'chebyschev':
                 dydb[iBak] = (-1.+2.*(xdata-xdata[0])/dt)**iBak
+            elif bakType == 'chebyschev-1':
+                xpos = -1.+2.*(xdata-xdata[0])/dt
+                dydb[iBak] = np.cos(iBak*np.arccos(xpos))
             elif bakType == 'cosine':
                 dydb[iBak] = npcosd(180.*xdata*iBak/xdata[-1])
     elif bakType in ['Q^2 power series','Q^-2 power series']:

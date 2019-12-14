@@ -1667,7 +1667,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataWindow.wxID_BackPts['Fit'])
     G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataWindow.wxID_BackPts['Clear'])    
     BackId = G2gd.GetGPXtreeItemId(G2frame,G2frame.PatternId, 'Background')
-    Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 power series','lin interpolate','inv interpolate','log interpolate']
+    Choices = ['chebyschev','chebyschev-1','cosine','Q^2 power series','Q^-2 power series','lin interpolate','inv interpolate','log interpolate']
     G2frame.dataWindow.ClearData()
     mainSizer = G2frame.dataWindow.GetSizer()
     mainSizer.Add(BackSizer())

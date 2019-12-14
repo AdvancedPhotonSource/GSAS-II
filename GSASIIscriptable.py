@@ -42,7 +42,7 @@ in the :ref:`API` section. The typical API use will be with a Python script, suc
     gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
     gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
     pardict = {'set': {'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True,
+                       'Background': {'type': 'chebyschev-1', 'refine': True,
                                       'peaks':[[0,True]]}}}
     gpx.set_refinement(pardict)
 
@@ -272,7 +272,7 @@ As an example:
 
     pardict = {'set': { 'Limits': [0.8, 12.0],
                        'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True,
+                       'Background': {'type': 'chebyschev-1', 'refine': True,
                                       'peaks':[[0,True],[1,1,1]] }},
               'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
     my_project.set_refinement(pardict)
@@ -293,7 +293,7 @@ As an example, this code performs the same actions as in the example in the sect
 
     pardict = {'set': { 'Limits': [0.8, 12.0],
                        'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev', 'refine': True}},
+                       'Background': {'type': 'chebyschev-1', 'refine': True}},
               'clear': {'Instrument Parameters': ['U', 'V', 'W']}}
     my_project.do_refinements([pardict])
 
@@ -483,7 +483,7 @@ Background                                  Sample background. Value will be a d
                                             :meth:`G2PwdrData.ref_back_peak` instead.
                                             When value is a dict,
                                             supply any of the following keys:
-\                     type                  The background model, e.g. 'chebyschev'
+\                     type                  The background model, e.g. 'chebyschev-1'
 \                     refine                The value of the refine flag, boolean
 \                     'no. coeffs'          Number of coefficients to use, integer
 \                     coeffs                List of floats, literal values for background
@@ -616,7 +616,7 @@ for phase parameters; and :meth:`G2Phase.set_HAP_refinements` or
 
     params = { 'Limits': [0.8, 12.0],
                'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-               'Background': {'type': 'chebyschev', 'refine': True}}
+               'Background': {'type': 'chebyschev-1', 'refine': True}}
     some_histogram.set_refinements(params)
 
 Likewise to turn refinement flags on, use code such as this:
@@ -693,7 +693,7 @@ peak refinement script, where the data files are taken from the
     hist = gpx.add_powder_histogram(PathWrap('FAP.XRA'), PathWrap('INST_XRY.PRM'),
                                     fmthint='GSAS powder')
     hist.set_refinements({'Limits': [16.,24.],
-          'Background': {"no. coeffs": 2,'type': 'chebyschev', 'refine': True}
+          'Background': {"no. coeffs": 2,'type': 'chebyschev-1', 'refine': True}
                          })
     peak1 = hist.add_peak(1, ttheta=16.8)
     peak2 = hist.add_peak(1, ttheta=18.9)
@@ -1652,7 +1652,7 @@ def load_pwd_from_reader(reader, instprm, existingnames=[],bank=None):
     Tmin = np.min(reader.powderdata[0])
     Tmax = np.max(reader.powderdata[0])
 
-    default_background = [['chebyschev', False, 3, 1.0, 0.0, 0.0],
+    default_background = [['chebyschev-1', False, 3, 1.0, 0.0, 0.0],
                           {'nDebye': 0, 'debyeTerms': [], 'nPeaks': 0, 'peaksList': []}]
 
     output_dict = {u'Reflection Lists': {},
@@ -5548,7 +5548,7 @@ class G2Image(G2ObjectWrapper):
             if 'PWDR' in Aname:
                 section = 'Background'
                 histItems += [section]
-                HistDict[section] = [['chebyschev',1,3,1.0,0.0,0.0],
+                HistDict[section] = [['chebyschev-1',1,3,1.0,0.0,0.0],
                     {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}]
             inst = [dict(zip(names,zip(parms,parms,codes))),{}]
             for item in inst[0]:

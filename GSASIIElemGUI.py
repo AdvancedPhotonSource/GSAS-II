@@ -58,7 +58,6 @@ class PickElement(wx.Dialog):
             b.Bind(wx.EVT_BUTTON, self.OnClose)
 
     def __init__(self, parent,oneOnly=False,ifNone=False,ifMag=False,multiple=False):
-        'Needs a doc string'
         self.oneOnly = oneOnly
         self.ifNone = ifNone
         self.multiple = multiple

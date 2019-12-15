@@ -30,23 +30,27 @@ section.
 Application Interface (API) Summary
 ==================================================
 This section of the documentation provides an overview to API, with full documentation 
-in the :ref:`API` section. The typical API use will be with a Python script, such as this:
+in the :ref:`API` section. The typical API use will be with a Python script, such as 
+what is found in :ref:`CodeExamples`. Most functionality is provided via the objects and methods
+summarized below.
 
-.. code-block::  python
+---------------------
+Overview of Classes 
+---------------------
 
-    from __future__ import division, print_function
-    import os,sys
-    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
-    import GSASIIscriptable as G2sc
-    datadir = "/Users/Scratch/"
-    gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
-    gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
-    pardict = {'set': {'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
-                       'Background': {'type': 'chebyschev-1', 'refine': True,
-                                      'peaks':[[0,True]]}}}
-    gpx.set_refinement(pardict)
-
-Most functionality is provided via the objects and methods described in this section. 
+===============================    ===============================================================================================================
+class                              Encapsulates 
+===============================    ===============================================================================================================
+:class:`G2Project`                  a GSAS-II project file, provides references to objects below,
+                                    each corresponding to a tree item 
+                                    (excepting :class:`G2AtomRecord`)
+:class:`G2Phase`                    a phase
+:class:`G2PwdrData`                 a powder histogram
+:class:`G2Image`                    an image
+:class:`G2PDF`                      a PDF histogram
+:class:`G2SeqRefRes`                the sequential results table
+:class:`G2AtomRecord`               an atom within a phase
+===============================    ===============================================================================================================
 
 ---------------------
 Functions
@@ -61,9 +65,9 @@ method                                                Use
 :func:`SetPrintLevel`                                  Sets the amout of output generated when running a script
 ==================================================    ===============================================================================================================
 
----------------------
-:class:`G2Project`
----------------------
+---------------------------------
+Class :class:`G2Project`
+---------------------------------
 
   All GSASIIscriptable scripts will need to create a :class:`G2Project` object 
   either for a new GSAS-II project or to read in an existing project (.gpx) file. 
@@ -110,9 +114,10 @@ method                                                Use
 :meth:`G2Project.imageMultiDistCalib`                 Performs a global calibration fit with images at multiple distance settings.
 ==================================================    ===============================================================================================================
 
----------------------
-:class:`G2Phase`
----------------------
+---------------------------------
+Class :class:`G2Phase`
+---------------------------------
+
 
   Another common object in GSASIIscriptable scripts is :class:`G2Phase`, used to encapsulate each phase in a project, with commonly used methods:
 
@@ -138,9 +143,9 @@ method                                                Use
 :meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
 ==================================================    ===============================================================================================================
 
----------------------
-:class:`G2PwdrData`
----------------------
+---------------------------------
+Class :class:`G2PwdrData`
+---------------------------------
 
   Another common object in GSASIIscriptable scripts is :class:`G2PwdrData`, which encapsulate each powder diffraction histogram in a project, with commonly used methods:
 
@@ -167,9 +172,9 @@ method                                                Use
 :meth:`G2PwdrData.Export_peaks`                       Writes the peak parameters to a text file 
 ==================================================    ===============================================================================================================
 
----------------------
-:class:`G2Image`
----------------------
+---------------------------------
+Class :class:`G2Image`
+---------------------------------
 
   When working with images, there will be a :class:`G2Image` object for each image (also see :meth:`G2Project.add_image`  and :meth:`G2Project.images`).
 
@@ -191,9 +196,9 @@ method                                                Use
 ==================================================    ===============================================================================================================
 
 
----------------------
-:class:`G2PDF`
----------------------
+---------------------------------
+Class :class:`G2PDF`
+---------------------------------
 
   To work with PDF entries, object :class:`G2PDF`, encapsulates a PDF entry with methods:
 
@@ -209,9 +214,9 @@ method                                                Use
 :meth:`G2PDF.set_formula`                              Sets the chemical formula for the sample
 ==================================================    ===============================================================================================================
 
----------------------
-:class:`G2SeqRefRes`
----------------------
+---------------------------------
+Class :class:`G2SeqRefRes`
+---------------------------------
 
   To work with Sequential Refinement results, object :class:`G2SeqRefRes`, encapsulates the sequential refinement table with methods:
 
@@ -226,9 +231,9 @@ method                                                Use
 :meth:`G2SeqRefRes.get_Covariance`                     Retrieves values and covariance for a set of refined parameters for a particular histogram 
 ==================================================    ===============================================================================================================
 
-----------------------
-:class:`G2AtomRecord`
-----------------------
+---------------------------------
+Class :class:`G2AtomRecord`
+---------------------------------
 
   When working with phases, :class:`G2AtomRecord` objects provide access to the contents of each atom in a phase. This provides access to "properties" that can be 
   used to get values of much of the atoms associated settings: label, type, refinement_flags, coordinates, occupancy, ranId, adp_flag, and uiso. In addition, 
@@ -659,6 +664,8 @@ and here is an example for HAP parameters:
 
 Note that the parameters must match the object type and method (phase vs. histogram vs. HAP).
 
+.. _CodeExamples:
+
 =================================
 Code Examples
 =================================
@@ -746,6 +753,28 @@ Data files are found in the
     # save results
     gpx.histogram(0).Export('PbSO4data','.csv','hist') # data
     gpx.histogram(0).Export('PbSO4refl','.csv','refl') # reflections
+
+----------------------
+Simple Refinement
+----------------------
+
+GSASIIscriptable can be used to setup and perform simple refinements. 
+This example reads in an existing project (.gpx) file, adds a background
+peak, changes some refinement flags and performs a refinement.
+
+.. code-block::  python
+
+    from __future__ import division, print_function
+    import os,sys
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII') # needed to "find" GSAS-II modules
+    import GSASIIscriptable as G2sc
+    datadir = "/Users/Scratch/"
+    gpx = G2sc.G2Project(os.path.join(datadir,'test2.gpx'))
+    gpx.histogram(0).add_back_peak(4.5,30000,5000,0)
+    pardict = {'set': {'Sample Parameters': ['Absorption', 'Contrast', 'DisplaceX'],
+                       'Background': {'type': 'chebyschev-1', 'refine': True,
+                                      'peaks':[[0,True]]}}}
+    gpx.set_refinement(pardict)
 
 ----------------------
 Sequential Refinement
@@ -978,8 +1007,9 @@ JSON website: `Introducing JSON <http://json.org/>`_.
 API: Complete Documentation
 ============================================================
 
-The large number of classes and modules in this module are described below.
-A script will have one or more G2Project objects using :class:`G2Project` and then
+The classes and modules in this module are described below.
+A script will create one or more :class:`G2Project` objects by reading 
+a GSAS-II project (.gpx) file or creating a new one and will then
 perform actions such as adding a histogram (method :meth:`G2Project.add_powder_histogram`),
 adding a phase (method :meth:`G2Project.add_phase`),
 or setting parameters and performing a refinement
@@ -990,7 +1020,7 @@ methods inside :class:`G2PwdrData`, :class:`G2Image` or :class:`G2Phase`.
 """
 
 #============================================================================
-# adding a new object type
+# Notes for adding a new object type
 # 1) add a new object class (e.g. G2PDF)
 # 2) add the wrapper into G2Project (e.g. _pdfs, pdf, pdfs)
 # 3) add a new method to add the object into a project (G2Project.add_PDF)
@@ -1992,6 +2022,62 @@ class G2Project(G2ObjectWrapper):
 
         return self.histogram(histname)
 
+    def clone_powder_histogram(self, histref, newname, Y, Yerr=None):
+        '''Creates a copy of a powder diffraction histogram with new Y values.
+        The X values are not changed. The number of Y values must match the
+        number of X values.         
+
+        :param histref: The histogram object, the name of the histogram (str), or ranId 
+           or histogram index.
+        :param str newname: The name to be assigned to the new histogram
+        :param list Y: A set of intensity values
+        :param list Yerr: A set of uncertainties for the intensity values (may be None,
+           sets all weights to unity)
+        :returns: the new histogram object (type G2PwdrData)
+        '''
+        hist = self.histogram(histref)
+        for i in self.names:
+            if i[0] == hist.name:
+                subkeys = i[1:]
+                break
+        else:
+            raise Exception("error in self.names, hist not found")
+        orighist = hist.name
+        newhist = 'PWDR '+newname
+        if len(Y) != len(self[orighist]['data'][1][0]):
+            raise Exception("clone error: length of Y does not match number of X values ({})"
+                                .format(len(self[orighist]['data'][1][0])))            
+        if Yerr is not None and len(Yerr) != len(self[orighist]['data'][1][0]):
+            raise Exception("clone error: length of Yerr does not match number of X values ({})"
+                                .format(len(self[orighist]['data'][1][0])))
+        
+        self[newhist] = copy.deepcopy(self[orighist])
+        # intensities
+        yo = self[newhist]['data'][1][1] = ma.MaskedArray(Y,mask=self[orighist]['data'][1][1].mask)
+        
+        Ymin,Ymax = yo.min(),yo.max()
+        # set to zero: weights, calc, bkg, obs-calc
+        for i in [2,3,4,5]:
+            self[newhist]['data'][1][i] *= 0
+        # weights
+        if Yerr is not None:
+            self[newhist]['data'][1][2] += 1./np.array(Yerr)**2
+        else:
+            self[newhist]['data'][1][2] += 1            # set all weights to 1
+        self[newhist]['data'][0] = {'wtFactor': 1.0, 'Dummy': False,
+                  'ranId': ran.randint(0, sys.maxsize),
+                  'Offset': [0.0, 0.0], 'delOffset': 0.02*Ymax,
+                  'refOffset': -0.1*Ymax, 'refDelt': 0.1*Ymax,
+                  'Yminmax': [Ymin, Ymax]}
+        self[newhist]['Comments'].insert(0,'Cloned from '+orighist)
+        self[newhist]['Reflection Lists'] = {}
+        self[newhist]['Index Peak List'] = [[], []]
+        self[newhist]['Unit Cells List'] = []
+        self[newhist]['Peak List'] = {'peaks': [], 'sigDict': {}}
+        self.names.append([newhist]+subkeys)
+        self.update_ids()
+        return self.histogram(newhist)
+        
     def add_simulated_powder_histogram(self, histname, iparams, Tmin, Tmax, Tstep,
                                        wavelength=None, scale=None, phases=[]):
         """Loads a powder data histogram into the project.
@@ -3256,6 +3342,17 @@ class G2AtomRecord(G2ObjectWrapper):
         return self.data[self.ct]
 
     @property
+    def element(self):
+        '''Get the associated atom's element symbol
+        '''
+        import re
+        try:
+            return re.match('^([A-Z][a-z]?)',self.data[self.ct]).group(1)
+        except:
+            raise Exception("element parse error with type {}".
+                                format(self.data[self.ct]))
+
+    @property
     def refinement_flags(self):
         '''Get or set refinement flags for the associated atom
         '''
@@ -3280,11 +3377,17 @@ class G2AtomRecord(G2ObjectWrapper):
         '''Get or set the associated atom's occupancy fraction
         '''
         return self.data[self.cx+3]
-
+    
     @occupancy.setter
     def occupancy(self, val):
         self.data[self.cx+3] = float(val)
 
+    @property
+    def mult(self):
+        '''Get the associated atom's multiplicity value
+        '''
+        return self.data[self.cs+1]
+    
     @property
     def ranId(self):
         '''Get the associated atom's Random Id number
@@ -4052,18 +4155,29 @@ class G2Phase(G2ObjectWrapper):
             :class:`G2AtomRecord`
         """
         ptrs = self.data['General']['AtomPtrs']
-        output = []
-        atoms = self.data['Atoms']
-        for atom in atoms:
-            output.append(G2AtomRecord(atom, ptrs, self.proj))
-        return output
+        return [G2AtomRecord(atom, ptrs, self.proj) for atom in self.data['Atoms']]
 
     def histograms(self):
         '''Returns a list of histogram names associated with the current phase ordered 
         as they appear in the tree (see :meth:`G2Project.histograms`).
         '''
-        return [i.name for i in self.proj.histograms() if i.name in self.data.get('Histograms', {})] 
-
+        return [i.name for i in self.proj.histograms() if i.name in self.data.get('Histograms', {})]
+    
+    @property
+    def composition(self):
+        '''Returns a dict where keys are atom types and values are the number of 
+        atoms of that type in cell (such as {'H': 2.0, 'O': 1.0})
+        '''
+        out = {}
+        for a in self.atoms():
+            typ = a.element
+            if typ in out:
+                out[typ] += a.mult*a.occupancy
+            else:
+                out[typ] = a.mult*a.occupancy
+        return out
+            
+    
     @property
     def ranId(self):
         return self.data['ranId']

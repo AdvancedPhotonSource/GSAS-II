@@ -4629,7 +4629,7 @@ freshStart     = False      #make TRUE for a restart
                     print(G2pwd.MakeInst(G2frame,pName,PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
-                        print(' Chebyschev background not used; no .back file written')
+                        print(' Chebyschev-1 background not used; no .back file written')
                     else:
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')

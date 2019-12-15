@@ -2132,7 +2132,7 @@ def MakeBack(G2frame,Name,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     Back = PWDdata['Background'][0]
     inst = PWDdata['Instrument Parameters'][0]
-    if 'chebyschev' not in Back[0]:
+    if 'chebyschev-1' not in Back[0]:
         return None
     Nback = Back[2]
     BackVals = Back[3:]

@@ -2094,10 +2094,22 @@ def calcIncident(Iparm,xdata):
 #### RMCutilities
 ################################################################################
     
-def MakeInst(G2frame,Name,PWId):
+def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    histoName = G2frame.GPXtree.GetItemPyData(PWId)[2]
+    Size = Phase['Histograms'][histoName]['Size']
+    Mustrain = Phase['Histograms'][histoName]['Mustrain']
     inst = PWDdata['Instrument Parameters'][0]
+    Xsb = 0.
+    Ysb = 0.
     if 'T' in inst['Type'][1]:
+        difC = inst['DifC'][1]
+        if useSamBrd[0]:
+            if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
+                Xsb = 1.e-4*difC/Size[1][0]
+        if useSamBrd[1]:
+            if 'generalized' not in Mustrain[0]:    #take the isotropic term only
+                Ysb = 1.e-6*difC*Mustrain[1][0]
         prms = ['Bank',
                 'difC','difA','Zero','2-theta',
                 'alpha','beta-0','beta-1',
@@ -2110,9 +2122,16 @@ def MakeInst(G2frame,Name,PWId):
         fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
         fl.write('%10.3f%10.6f%10.6f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
-        fl.write('%10.4f%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],inst[prms[12]][1],inst[prms[13]][1],0.0,0.0))
+        fl.write('%10.4f%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],inst[prms[12]][1]+Xsb,inst[prms[13]][1]+Ysb,0.0,0.0))
         fl.close()
     else:
+        if useSamBrd[0]:
+            wave = G2mth.getWave(inst)
+            if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
+                Xsb = 1.8*wave/(np.pi*Size[1][0])
+        if useSamBrd[1]:
+            if 'generalized' not in Mustrain[0]:    #take the isotropic term only
+                Ysb = 0.018*np.pi*Mustrain[1][0]
         prms = ['Bank',
                 'Lam','Zero','Polariz.',
                 'U','V','W',
@@ -2123,7 +2142,7 @@ def MakeInst(G2frame,Name,PWId):
         fl.write('%d\n'%int(inst[prms[0]][1]))
         fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],inst[prms[2]][1]/100.,inst[prms[3]][1],0))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
-        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1],inst[prms[8]][1],0.0))    
+        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))    
         fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))
         fl.close()
     return fname

@@ -4626,7 +4626,7 @@ freshStart     = False      #make TRUE for a restart
 #                    print(useSamBrd)
 #                    print(data['Histograms'][histoName]['Size'])
 #                    print(data['Histograms'][histoName]['Mustrain'])
-                    print(G2pwd.MakeInst(G2frame,pName,PWId)+ ' written')
+                    print(G2pwd.MakeInst(G2frame,pName,data,useSamBrd,PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
                         print(' Chebyschev-1 background not used; no .back file written')
@@ -4763,12 +4763,12 @@ freshStart     = False      #make TRUE for a restart
                 else:
                     print('RMCProfile file %s not found'%(pName+item))
 #total result plots
-            Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile G(R) for '],
-                '_SQ1.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCprofile S(Q) for '],
-                '_FQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile F(Q) for '],
-                '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile x-ray G(R) for '],
-                '_XFQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile x-ray F(Q) for '],
-                '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCprofile bragg for ']}
+            Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
+                '_SQ1.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) for '],
+                '_FQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) for '],
+                '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
+                '_XFQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP x-ray F(Q) for '],
+                '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCP bragg for ']}
             for label in Labels:
                 X = []
                 Yobs = []
@@ -4786,9 +4786,9 @@ freshStart     = False      #make TRUE for a restart
                         labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                         lines=True,names=Names[1:])
 #partials plots
-            Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCprofile G(R) partials for '],
-                '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCprofile S(Q) partials for '],
-                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCprofile F(Q) partials for ']}
+            Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
+                '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
+                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) partials for ']}
             for label in Labels:
                 X = []
                 Partials = []
@@ -4807,8 +4807,8 @@ freshStart     = False      #make TRUE for a restart
 #chi**2 plot
             X = []
             Chi = []
-            Names = files['.chi2'][0][:-1].split()
             if len(files['.chi2']) > 2:
+                Names = files['.chi2'][0][:-1].split()
                 for line in files['.chi2'][1:]:
                     items = line[:-1].split()
                     X.append(float(items[1]))
@@ -4817,7 +4817,7 @@ freshStart     = False      #make TRUE for a restart
                 Chi = np.array(Chi).T
                 XY = [[X.T,Y.T] for Y in Chi]
                 G2plt.PlotXY(G2frame,XY,labelX='no. generated',
-                    labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCProfile Chi^2 for '+pName,
+                    labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCP Chi^2 for '+pName,
                     lines=True,names=Names[3:])
             
 ################################################################################

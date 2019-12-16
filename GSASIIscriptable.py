@@ -4165,7 +4165,7 @@ class G2Phase(G2ObjectWrapper):
     
     @property
     def composition(self):
-        '''Returns a dict where keys are atom types and values are the number of 
+        '''Provides a dict where keys are atom types and values are the number of 
         atoms of that type in cell (such as {'H': 2.0, 'O': 1.0})
         '''
         out = {}
@@ -4177,6 +4177,14 @@ class G2Phase(G2ObjectWrapper):
                 out[typ] = a.mult*a.occupancy
         return out
             
+    @property
+    def density(self):
+        '''Provides a scalar with the density of the phase. In case of a 
+        powder this assumes a 100% packing fraction.
+        '''
+        import GSASIImath as G2mth
+        density,mattCoeff = G2mth.getDensity(self.data['General'])
+        return density
     
     @property
     def ranId(self):

@@ -1,4 +1,4 @@
-# GSAS phase information template file
+# GSAS-II phase information template file
 
 data_Phase_Template
 #==============================================================================
@@ -35,5 +35,5 @@ _computing_structure_solution     ?
 
 #==============================================================================
 
-# 8. Phase information from GSAS
+# 8. Phase information from GSAS-II
 

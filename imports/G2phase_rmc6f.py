@@ -16,11 +16,12 @@ current project.
 '''
 from __future__ import division, print_function
 import sys
+import os.path
 import numpy as np
 import random as ran
 import GSASIIobj as G2obj
-import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
+import GSASIIctrlGUI as G2G
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1812 $")
 
@@ -55,7 +56,9 @@ class PhaseReaderClass(G2obj.ImportPhase):
         self.errors = 'Error opening file'
         fp = open(filename, 'Ur')
         Phase = {}
-        Title = 'RMCProfile box'
+        Title = os.path.split(filename)
+        G2G.SaveGPXdirectory(Title[0])
+        Title = os.path.splitext(Title[1])[0]
         Atoms = []
         S = fp.readline()
         line = 1

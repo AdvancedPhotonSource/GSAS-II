@@ -4751,11 +4751,20 @@ freshStart     = False      #make TRUE for a restart
         else:
             generalData = data['General']
             pName = generalData['Name'].replace(' ','_')
+            dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
+                style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
+            if dlg.ShowModal() == wx.ID_OK:
+                path = os.path.split(dlg.GetPath())[0]
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            
             files =  {'_PDF1.csv':[],'_PDFpartials.csv':[],'_SQ1.csv':[],'_XFQ1.csv':[],
                       '_SQ1partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
                       '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
             for item in files:
-                if os.path.exists(pName+item):
+                if os.path.exists(os.path.join(path,pName+item)):
                     OutFile = open(pName+item,'r')
                     files[item] = OutFile.readlines()
                     OutFile.close()

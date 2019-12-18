@@ -4176,7 +4176,24 @@ class G2Phase(G2ObjectWrapper):
             else:
                 out[typ] = a.mult*a.occupancy
         return out
-            
+
+    def mu(self,wave):
+        '''Provides mu values for a phase at the supplied wavelength in A.
+        Uses GSASIImath.XScattDen which seems to be off by an order of 
+        magnitude, which has been corrected here.
+        '''
+        import GSASIImath as G2mth
+        vol = self.data['General']['Cell'][7]
+        out = {}
+        for typ in self.data['General']['NoAtoms']:
+            if typ in out:
+                out[typ]['Num'] += self.data['General']['NoAtoms'][typ]
+            else:
+                out[typ] = {}
+                out[typ]['Num'] = self.data['General']['NoAtoms'][typ]
+                out[typ]['Z'] = 0 # wrong but not needed
+        return 10*G2mth.XScattDen(out,vol,wave)[1]
+    
     @property
     def density(self):
         '''Provides a scalar with the density of the phase. In case of a 

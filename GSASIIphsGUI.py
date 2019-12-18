@@ -1088,7 +1088,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
     '''
     def __init__(self,parent,Name,Phase):
         title = 'RMCProfile setup'
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=(500,500),
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
         self.Name = Name
@@ -1098,8 +1098,13 @@ class SetUpRMCProfileDialog(wx.Dialog):
         self.aTypes = self.Phase['General']['AtomTypes']
         self.atSeq = self.aTypes[:]
         self.histogram = ''
-        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),
-                         'material':'nothing','comment':'none ','source':'nowhere'}
+        self.files = {'Neutron real space data; G(r): ':['',0.01,'G(R)'],
+                      'Neutron reciprocal space data; F(Q): ':['',0.01,'F(Q)'],
+                      'Neutron reciprocal space data; S(Q): ':['',0.01,'S(Q)'],
+                      'Xray real space data; G(r): ':['',0.01,'G(R)'],
+                      'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)'],}
+        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
+            'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
         self.Draw()
         
     def Draw(self):
@@ -1122,9 +1127,25 @@ class SetUpRMCProfileDialog(wx.Dialog):
             
         def OnStrain(event):
             self.UseSampBrd[1] = strain.GetValue()
+            
+        def OnFileSel(event):
+            Obj = event.GetEventObject()
+            fil = Indx[Obj.GetId()]
+            dlg = wx.FileDialog(self.panel, 'Choose '+fil+'NB: do not change directory; must be a local file',
+                '.',style=wx.FD_OPEN,wildcard=fil+'(*.*)|*.*')
+            if dlg.ShowModal() == wx.ID_OK:
+                fName = os.path.split(dlg.GetPath())[1]
+                if os.path.exists(fName):
+                    self.files[fil][0] = fName
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            self.Draw()
+            
         
         self.panel.Destroy()
-        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE,size=(500,500))
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=' Setup for: %s'%self.Name),0,WACV)
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1147,7 +1168,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
         mainSizer.Add(atmChoice,0,WACV)
         histograms = self.Phase['Histograms']
         histNames = list(histograms.keys())
-        mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for processing:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for Bragg processing:'),0,WACV)
         histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)        
         histo.Bind(wx.EVT_COMBOBOX,OnHisto)
         mainSizer.Add(histo,0,WACV)
@@ -1161,7 +1182,17 @@ class SetUpRMCProfileDialog(wx.Dialog):
         samSizer.Add(samSize,0,WACV)
         samSizer.Add(strain,0,WACV)
         mainSizer.Add(samSizer,0,WACV)
-        metalist = ['title','owner','material','comment','source']
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select data for processing:'),0,WACV)
+        fileSizer = wx.FlexGridSizer(2,5,5)
+        for fil in self.files:
+            filSel = wx.Button(self.panel,label='Select')
+            filSel.Bind(wx.EVT_BUTTON,OnFileSel)
+            Indx[filSel.GetId()] = fil
+            fileSizer.Add(filSel,0,WACV)
+            fileSizer.Add(wx.StaticText(self.panel,label=fil+self.files[fil][0]),0,WACV)
+        mainSizer.Add(fileSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Enter metadata items:'),0,WACV)
+        metalist = ['title','owner','material','phase','comment','source','temperature',]
         metaSizer = wx.FlexGridSizer(0,2,5,5)
         for item in metalist:
             metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
@@ -1183,7 +1214,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
-        return self.SuperCell,self.histogram,self.metadata,self.atSeq,self.UseSampBrd
+        return self.SuperCell,self.histogram,self.metadata,self.atSeq,self.UseSampBrd,self.files
         
     def OnOK(self,event):
         parent = self.GetParent()
@@ -4619,13 +4650,9 @@ freshStart     = False      #make TRUE for a restart
         else:
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
-                superCell,histoName,meta,atSeq,useSamBrd = dlg.GetData()
+                superCell,histoName,meta,atSeq,useSamBrd,files = dlg.GetData()
                 PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName)
                 if PWId:
-#                    Progress
-#                    print(useSamBrd)
-#                    print(data['Histograms'][histoName]['Size'])
-#                    print(data['Histograms'][histoName]['Mustrain'])
                     print(G2pwd.MakeInst(G2frame,pName,data,useSamBrd,PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
@@ -4634,6 +4661,7 @@ freshStart     = False      #make TRUE for a restart
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
                     print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,atSeq,superCell,PWId)+ ' written')
+                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,meta,atSeq,superCell,files,PWId)+ ' written')
                     print('RMCProfile file build completed')
                 else:
                     print('RMCProfile file build failed - no histogram selected')

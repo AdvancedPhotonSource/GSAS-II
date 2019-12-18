@@ -2103,7 +2103,7 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
     Xsb = 0.
     Ysb = 0.
     if 'T' in inst['Type'][1]:
-        difC = inst['DifC'][1]
+        difC = inst['difC'][1]
         if useSamBrd[0]:
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
                 Xsb = 1.e-4*difC/Size[1][0]
@@ -2241,6 +2241,36 @@ def MakeBragg(G2frame,Name,Phase,PWId):
             fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
     fl.close()
     return fname
+
+def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Supercell,Files,PWId):
+    fname = Name+'.testdat'
+    fl = open(fname,'w')
+    fl.write('TITLE :: '+Name+'\n')
+    fl.write('MATERIAL :: '+Meta['material']+'\n')
+    fl.write('PHASE :: '+Meta['phase']+'\n')
+    fl.write('TEMPERATURE :: '+str(Meta['temperature'])+'\n')
+    fl.write('INVESTIGATOR :: '+Meta['owner']+'\n')
+    fl.write(' %% edit the following as needed\n')
+    fl.write('MINIMUM_DISTANCES ::   4.00  1.37  2.0    Angstrom\n')
+    fl.write('MAXIMUM_MOVES ::   0.05  0.10 Angstrom\n')
+    fl.write('R_SPACING ::  0.0200 Angstrom\n')
+    fl.write('PRINT_PERIOD :: 100\n')
+    fl.write('TIME_LIMIT ::     10.00 MINUTES\n')
+    fl.write('SAVE_PERIOD ::     1.00 MINUTES\n')
+    fl.write('ATOMS :: '+' '.join(Atseq)+'\n')
+    fl.write('FLAGS ::\n')
+    fl.write('  > NO_MOVEOUT\n')
+    fl.write('  > NO_SAVE_CONFIGURATIONS\n')
+    fl.write('  > NO_RESOLUTION_CONVOLUTION\n')
+    fl.write('INPUT_CONFIGURATION_FORMAT ::  rmc6f\n')
+    fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
+    
+    
+    
+    
+    fl.close()
+    return fname
+    
 
 def MakePDB(G2frame,Name,Phase,Atseq,Supercell):
     generalData = Phase['General']

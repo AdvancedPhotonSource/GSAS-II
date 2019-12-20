@@ -144,7 +144,10 @@ import GSASIIspc as G2spc
 import GSASIImath as G2mth
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
-import pytexture as ptx
+try:
+    import pytexture as ptx
+except ImportError:
+    print('binary load error: pytexture not found')
 #from  OpenGL.GL import *
 import OpenGL.GL as GL
 import OpenGL.GLU as GLU
@@ -181,7 +184,10 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
-sq8ln2 = np.sqrt(8.0*np.log(2.0))
+try:  # fails on doc build
+    sq8ln2 = np.sqrt(8.0*np.log(2.0))
+except TypeError:
+    pass
 if '2' in platform.python_version_tuple()[0]:
     GkDelta = unichr(0x0394)
     Gkrho = unichr(0x03C1)

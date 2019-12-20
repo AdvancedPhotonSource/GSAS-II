@@ -20,10 +20,6 @@ version = "$Id$"
 import os, sys
 import datetime
 import wx
-try:
-    import _winreg as winreg
-except ImportError:
-    import winreg
 
 Script = '''@echo ========================================================================
 @echo                General Structure Analysis System-II
@@ -47,6 +43,10 @@ pause
 '''
 
 if __name__ == '__main__':
+    try:
+        import _winreg as winreg
+    except ImportError:
+        import winreg
     app = wx.App()
     app.MainLoop()
     gsaspath = os.path.split(sys.argv[0])[0]

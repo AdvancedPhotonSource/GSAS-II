@@ -167,9 +167,9 @@ DULL_YELLOW = (230,230,190)
 try:
     VERY_LIGHT_GREY = wx.Colour(235,235,235)
     WACV = wx.ALIGN_CENTER_VERTICAL
-except:
-    # Don't depend on GUI
-    pass
+    wxaui_NB_TOPSCROLL = wx.aui.AUI_NB_TOP | wx.aui.AUI_NB_SCROLL_BUTTONS
+except:     # Don't depend on GUI
+    wxaui_NB_TOPSCROLL = None
 
 try:
     wx.NewIdRef
@@ -4133,8 +4133,7 @@ def askSaveDirectory(G2frame):
 class GSNoteBook(wx.aui.AuiNotebook):
     '''Notebook used in various locations; implemented with wx.aui extension
     '''
-    def __init__(self, parent, name='',size = None,style=wx.aui.AUI_NB_TOP |
-        wx.aui.AUI_NB_SCROLL_BUTTONS):
+    def __init__(self, parent, name='',size = None,style=wxaui_NB_TOPSCROLL):
         wx.aui.AuiNotebook.__init__(self, parent, style=style)
         if size: self.SetSize(size)
         self.parent = parent

@@ -18,7 +18,6 @@ import GSASIIobj as G2obj
 import GSASIIpath
 import struct as st
 import numpy as np
-import unpack_cbf as cbf
 GSASIIpath.SetVersionNumber("$Revision$")
 class CBF_ReaderClass(G2obj.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
@@ -49,6 +48,7 @@ class CBF_ReaderClass(G2obj.ImportImage):
 def GetCbfData(self,filename):    
     'Read cif binarydetector data cbf file'
     
+    import unpack_cbf as cbf
     if GSASIIpath.GetConfigValue('debug'):
         print ('Read cif binary detector data cbf file: '+filename)
     File = open(filename,'rb')

@@ -4932,8 +4932,7 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     the binding for the menus is done later in various GSASII*GUI modules,
     where the functions to be called are defined.
 
-    Use of the dataWindow scrolled panel
-    ====================================
+    Use of the dataWindow scrolled panel:
     
     dataWindow has a “master” vertical BoxSizer: find it with
     G2frame.dataWindow.GetSizer() and always use it. A call to
@@ -4971,13 +4970,19 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
     which repaints the window. For routines [such as GSASIIpwdGUI.UpdatePeakGrid()]
     that are called repeatedly to update the entire contents of dataWindow
     themselves, it is important to add calls to 
+
         G2frame.dataWindow.ClearData()
+
     and
+
     	 G2frame.dataWindow.SetDataSize()
+
     at the beginning and end respectively to clear and refresh. This is not
     needed for GSNoteBook repaints, which seem to be working mostly
     automatically. If there is a problem, a call like 
+
          wx.CallAfter(G2frame.phaseDisplay.SendSizeEvent)
+
     might be needed. There are some calls to G2frame.dataWindow.SendSizeEvent()
     that may be doing the same thing. 
     '''

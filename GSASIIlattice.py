@@ -50,11 +50,14 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 cosd = lambda x: np.cos(x*np.pi/180.)
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
-rpd = np.pi/180.
-RSQ2PI = 1./np.sqrt(2.*np.pi)
-SQ2 = np.sqrt(2.)
-RSQPI = 1./np.sqrt(np.pi)
-R2pisq = 1./(2.*np.pi**2)
+try:  # fails on doc build
+    rpd = np.pi/180.
+    RSQ2PI = 1./np.sqrt(2.*np.pi)
+    SQ2 = np.sqrt(2.)
+    RSQPI = 1./np.sqrt(np.pi)
+    R2pisq = 1./(2.*np.pi**2)
+except TypeError:
+    pass
 nxs = np.newaxis
 
 def sec2HMS(sec):

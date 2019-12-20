@@ -37,8 +37,11 @@ GSASIIpath.SetBinaryPath()
 import GSASIIstrMath as G2stMth
 import GSASIItestplot as plot
 import GSASIImapvars as G2mv
-import pytexture as ptx
-ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
+try:  # fails on doc build
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
+except ImportError:
+    pass
 
 try:
     wx.NewId

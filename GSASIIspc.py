@@ -28,7 +28,6 @@ GSASIIpath.SetVersionNumber("$Revision$")
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
 nxs = np.newaxis
-twopi = 2.0*np.pi
 DEBUG = False
     
 ################################################################################
@@ -2260,7 +2259,7 @@ def checkMagextc(HKL,SGData):
     Spn = SGData['SpnFlp'][:len(OpM)]
     Mag = np.array([nl.det(opm) for opm in OpM])*Spn
     DHKL = np.reshape(np.inner(HKL,OpM),(-1,3))
-    PHKL = np.reshape(np.cos(twopi*np.inner(HKL,OpT))*Mag,(-1,))[:,nxs,nxs]*OpM     #compute T(R,theta) eq(7)
+    PHKL = np.reshape(np.cos(2.0*np.pi*np.inner(HKL,OpT))*Mag,(-1,))[:,nxs,nxs]*OpM     #compute T(R,theta) eq(7)
     Ftest = np.random.rand(3)       #random magnetic moment
     Psum = np.zeros(3)
     nsum = 0.

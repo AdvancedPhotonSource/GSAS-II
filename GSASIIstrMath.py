@@ -37,9 +37,12 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
-ateln2 = 8.0*np.log(2.0)
-twopi = 2.0*np.pi
-twopisq = 2.0*np.pi**2
+try:  # fails on doc build
+    ateln2 = 8.0*np.log(2.0)
+    twopi = 2.0*np.pi
+    twopisq = 2.0*np.pi**2
+except TypeError:
+    pass
 nxs = np.newaxis
 
 ################################################################################

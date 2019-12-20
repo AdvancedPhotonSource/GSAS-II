@@ -44,7 +44,10 @@ npcosd = lambda x: np.cos(x*math.pi/180.)
 nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-rpd = np.pi/180.
+try:  # fails on doc build
+    rpd = np.pi/180.
+except TypeError:
+    pass
     
 def scaleAbyV(A,V):
     'needs a doc string'

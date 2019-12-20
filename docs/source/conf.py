@@ -11,96 +11,6 @@
 # serve to show the default.
 
 import sys, os
-# set up dummy packages for misc imports not on readthedocs
-from mock import Mock as MagicMock
-class wx(MagicMock):
-    #@classmethod
-    #def __getattr__(cls, name):
-    #    return wx()
-    Frame = Menu = Panel = Dialog = CheckBox = Choice = ComboBox = object
-    Button = PyValidator = TextCtrl = TreeCtrl = object
-    DEFAULT_DIALOG_STYLE = RESIZE_BORDER = CENTRE = OK = CANCEL = True
-    ID_ANY = -1
-    def __getitem__(self,*args):
-        return '3.0.0'
-    class grid(object):
-        PyGridTableBase = PyGridCellEditor = Grid = object
-    class html(object):
-        HtmlWindow = object
-    class aui(MagicMock):
-        AuiNotebook = HtmlWindow = object
-    class lib(MagicMock):
-        class scrolledpanel(MagicMock):
-            ScrolledPanel = object
-        class gridmovers(MagicMock): pass
-        class colourselect(MagicMock): pass
-        class resizewidget(MagicMock): pass
-        class mixins(MagicMock):
-            class listctrl(MagicMock):
-                ListCtrlAutoWidthMixin = object
-                TextEditMixin = object
-
-sys.modules.update({'wx':wx(),
-    'wx.aui':wx.aui(),
-    'wx.html':wx.html(),
-	'wx.grid':wx.grid(),
-	'wx.lib':wx.lib(),
-	'wx.wizard':wx.grid(),
-	'wx.glcanvas':wx.lib(),
-	'wx.lib.scrolledpanel':wx.lib.scrolledpanel(),
-	'wx.lib.gridmovers':wx.lib.gridmovers(),
-	'wx.lib.colourselect':wx.lib.gridmovers(),
-	'wx.lib.resizewidget':wx.lib.resizewidget(),
-	'wx.lib.mixins':wx.lib.mixins(),
-	'wx.lib.mixins.listctrl':wx.lib.mixins.listctrl()})
-wx.aui.AUI_NB_TOP = 0
-wx.aui.AUI_NB_SCROLL_BUTTONS = 0
-
-class numpy(MagicMock):
-    pi = 3.0
-    def log(self,*args): return 0
-    def sqrt(self,*args): return 1
-    class ma(MagicMock):pass
-    class linalg(MagicMock):pass
-sys.modules.update({'numpy':numpy()})
-sys.modules.update({'numpy.ma':numpy.ma()})
-sys.modules.update({'numpy.linalg':numpy.linalg()})
-sys.modules.update({'numpy.fft':numpy.linalg()})
-
-class scipy(MagicMock):
-    class optimize(MagicMock):pass
-sys.modules.update({'scipy':scipy()})
-sys.modules.update({'scipy.optimize':scipy.optimize()})
-sys.modules.update({'scipy.stats':scipy.optimize()})
-sys.modules.update({'scipy.interpolate':scipy.optimize()})
-sys.modules.update({'scipy.special':scipy.optimize()})
-sys.modules.update({'scipy.misc':scipy.optimize()})
-sys.modules.update({'scipy.signal':scipy.optimize()})
-sys.modules.update({'scipy.cluster':scipy.optimize()})
-sys.modules.update({'scipy.cluster.vq':scipy.optimize()})
-
-class OpenGL(MagicMock):
-    class GL(MagicMock):pass
-    class GLU(MagicMock):pass
-sys.modules.update({'OpenGL':OpenGL()})
-sys.modules.update({'OpenGL.GL':OpenGL.GL()})
-sys.modules.update({'OpenGL.GLU':OpenGL.GLU()})
-sys.modules.update({'OpenGL.GLE':OpenGL.GL()})
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
-
-MOCK_MODULES = [
-                'pypowder', 'pyspg', 'pytexture', 'polymask', 'fellipse',
-                'matplotlib', 'matplotlib.backends', 'matplotlib.backends.backend_wx',
-                'matplotlib.colors',
-                'matplotlib.backends.backend_wxagg','pylab','matplotlib.collections',
-                'mpl_toolkits', 'mpl_toolkits.mplot3d', 'mpl_toolkits.mplot3d.axes3d',
-                'winreg','unpack_cbf','h5py'
-                ]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -110,16 +20,23 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','exports')))
 sys.path.insert(1, os.path.abspath(os.path.join('..', '..','imports')))
 #print(sys.path)
-# import all files to set version number
+# scan all files to get version number
 import glob
-for fil in glob.glob(os.path.abspath(os.path.join('..', '..','*.py'))):
-    pkg = os.path.splitext(os.path.split(fil)[1])[0]
+version = 0
+for fil in (glob.glob(os.path.abspath(os.path.join('..', '..','*.py')))+
+    glob.glob(os.path.abspath(os.path.join('..', '..','exports','*.py')))+
+    glob.glob(os.path.abspath(os.path.join('..', '..','imports','*.py')))):
+    fp = open(fil,'r')
+    c = fp.read()
+    fp.close()
+    s = c.find('SetVersionNumber')
+    if s<0: continue
+    if c.find('$Revision:',s,s+50)<0: continue
     try:
-        exec('import '+pkg)
+        v = int(c[c.find('(',s,s+40):c.find(')',s,s+50)].split()[1])
+        version = max(version,v)
     except:
         pass
-import GSASIIpath
-version = GSASIIpath.GetVersionNumber()
 print('Found highest version as {}'.format(version))
 # -- General configuration -----------------------------------------------------
 
@@ -350,3 +267,6 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+# set up dummy packages for misc imports not on readthedocs
+autodoc_mock_imports = "wx numpy scipy matplotlib pillow OpenGL h5py".split()

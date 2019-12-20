@@ -31,7 +31,10 @@ import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-R2pisq = 1./(2.*np.pi**2)
+try:  # fails on doc build
+    R2pisq = 1./(2.*np.pi**2)
+except TypeError:
+    pass
 
 class PDB_ReaderClass(G2obj.ImportPhase):
     'Routine to import Phase information from a PDB file'

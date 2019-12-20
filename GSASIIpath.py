@@ -858,7 +858,7 @@ def SetBinaryPath(printInfo=False, loadBinary=True):
     if BinaryPathLoaded: return
     try:
         inpver = intver(np.__version__)
-    except AttributeError: # happens on building docs
+    except (AttributeError,TypeError): # happens on building docs
         return
     binpath = None
     binprfx = GetBinaryPrefix()

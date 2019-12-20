@@ -43,8 +43,13 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-twopi = 2.0*np.pi
-twopisq = 2.0*np.pi**2
+try:  # fails on doc build
+    twopi = 2.0*np.pi
+    twopisq = 2.0*np.pi**2
+    _double_min = np.finfo(float).min
+    _double_max = np.finfo(float).max
+except TypeError:
+    pass
 nxs = np.newaxis
     
 ################################################################################
@@ -4106,8 +4111,6 @@ from numpy import random
 
 #__all__ = ['anneal']
 
-_double_min = numpy.finfo(float).min
-_double_max = numpy.finfo(float).max
 class base_schedule(object):
     def __init__(self):
         self.dwell = 20

@@ -23,7 +23,12 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 2738 $")
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npsind = lambda x: np.sin(np.pi*x/180.)
-fourpi = 4.0*np.pi
+try:  # fails on doc build
+    fourpi = 4.0*np.pi
+    _double_min = np.finfo(float).min
+    _double_max = np.finfo(float).max
+except TypeError:
+    pass
 
 class txt_XRayReaderClass(G2obj.ImportReflectometryData):
     'Routines to import X-ray q REFD data from a .xrfd or .xdat file'

@@ -2242,32 +2242,80 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Supercell,Files,PWId):
-    fname = Name+'.testdat'
+def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
+    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+    inst = PWDdata['Instrument Parameters'][0]
+    refList = PWDdata['Reflection Lists'][Name]['RefList']
+    dMin = refList[-1][4]
+    gsasType = 'xray2'
+    if 'T' in inst['Type'][1]:
+        gsasType = 'gsas3'
+    elif 'X' in inst['Type'][1]:
+        XFF = G2elem.GetFFtable(Atseq)
+        Xfl = open(Name+'.xray','w')
+        for atm in Atseq:
+            fa = XFF[atm]['fa']
+            fb = XFF[atm]['fb']
+            fc = XFF[atm]['fc']
+            Xfl.write('%2s  %8.4f%8.4f%8.4f%8.4f%8.4f%8.4f%8.4f%8.4f%8.4f\n'%(
+                    atm.upper(),fa[0],fb[0],fa[1],fb[1],fa[2],fb[2],fa[3],fb[3],fc))
+        Xfl.close()
+    lenA = len(Atseq)
+    Pairs = []
+    for pair in [[' %s-%s'%(Atseq[i],Atseq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+        Pairs += pair
+    pairMin = [atPairs[pair] for pair in Pairs]
+    maxMoves = [Atypes[atm] for atm in Atseq]
+    fname = Name+'.dat'
     fl = open(fname,'w')
+    fl.write(' %% hand edit the following as needed\n')
     fl.write('TITLE :: '+Name+'\n')
     fl.write('MATERIAL :: '+Meta['material']+'\n')
     fl.write('PHASE :: '+Meta['phase']+'\n')
     fl.write('TEMPERATURE :: '+str(Meta['temperature'])+'\n')
     fl.write('INVESTIGATOR :: '+Meta['owner']+'\n')
-    fl.write(' %% edit the following as needed\n')
-    fl.write('MINIMUM_DISTANCES ::   4.00  1.37  2.0    Angstrom\n')
-    fl.write('MAXIMUM_MOVES ::   0.05  0.10 Angstrom\n')
+    minD = ' '.join(['%6.3f'%dist for dist in pairMin])
+    fl.write('MINIMUM_DISTANCES ::   %s  Angstrom\n'%minD)
+    maxMv = ' '.join(['%6.3f'%mov for mov in maxMoves])
+    fl.write('MAXIMUM_MOVES ::   %s Angstrom\n'%maxMv)
     fl.write('R_SPACING ::  0.0200 Angstrom\n')
     fl.write('PRINT_PERIOD :: 100\n')
     fl.write('TIME_LIMIT ::     10.00 MINUTES\n')
     fl.write('SAVE_PERIOD ::     1.00 MINUTES\n')
+    fl.write('\n')
     fl.write('ATOMS :: '+' '.join(Atseq)+'\n')
+    fl.write('\n')
     fl.write('FLAGS ::\n')
     fl.write('  > NO_MOVEOUT\n')
     fl.write('  > NO_SAVE_CONFIGURATIONS\n')
     fl.write('  > NO_RESOLUTION_CONVOLUTION\n')
+    fl.write('\n')
     fl.write('INPUT_CONFIGURATION_FORMAT ::  rmc6f\n')
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
-    
-    
-    
-    
+    for File in Files:
+        if Files[File][0]:
+            fl.write('\n')
+            fl.write('%s ::\n'%File.split(';')[0].upper().replace(' ','_'))
+            fl.write('  > FILENAME :: %s\n'%Files[File][0])
+            fl.write('  > DATA_TYPE :: %s\n'%Files[File][2])
+            fl.write('  > FIT_TYPE :: %s\n'%Files[File][2])
+            fl.write('  > START_POINT :: 1\n')
+            fl.write('  > END_POINT :: 3000\n')
+            fl.write('  > CONSTANT_OFFSET 0.000\n')
+            fl.write('  > WEIGHT :: %.4f\n'%Files[File][1])
+            if 'reciprocal' in File:
+                fl.write('  > CONVOLVE ::\n')
+                fl.write('  > NO_FITTED_SCALE\n')
+            fl.write('  > NO_FITTED_OFFSET\n')
+            if Files[File][3] !='RMC':
+                fl.write('  > %s\n'%Files[File][3])
+    fl.write('BRAGG ::\n')
+    fl.write('  > BRAGG_SHAPE :: %s\n'%gsasType)
+    fl.write('  > RECALCUATE\n')
+    fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
+    fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
+    fl.write('\n')
+    fl.write('END  ::\n')
     fl.close()
     return fname
     

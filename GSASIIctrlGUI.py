@@ -586,8 +586,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
         self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
-        self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
+        self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         # patch for wx 2.9 on Mac
         i,j= wx.__version__.split('.')[0:2]
         if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:

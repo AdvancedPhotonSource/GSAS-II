@@ -42,6 +42,16 @@ import GSASIIobj as G2obj
 import GSASIIpy3 as G2py3
 import ImageCalibrants as calFile
 
+# documentation build kludge. This prevents an error with sphinx 1.8.5 (fixed by 2.3) where all mock objects are of type _MockObject
+if (type(wx.ListCtrl).__name__ ==
+        type(listmix.ListCtrlAutoWidthMixin).__name__ ==
+        type(listmix.TextEditMixin).__name__):
+    print('Using Sphinx 1.8.5 _MockObject kludge fix in GSASIIimgGUI')
+    class Junk1(object): pass
+    listmix.ListCtrlAutoWidthMixin = Junk1
+    class Junk2(object): pass
+    listmix.TextEditMixin = Junk2
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 
@@ -3648,7 +3658,7 @@ class IntegParmTable(wx.Dialog):
         lbl = 'filenames'
         fp.write(lbl+': '+str(self.IMfileList)+'\n')
         fp.close()
-    
+
 class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEditMixin):
     '''Creates a custom ListCtrl for editing Image Integration parameters
     '''

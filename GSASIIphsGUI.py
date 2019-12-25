@@ -1087,7 +1087,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
     ''' Get from user the super cell size & selected histogram to make various files
     '''
     def __init__(self,parent,Name,Phase):
-        title = 'RMCProfile setup'
+        title = 'RMCProfile setup for '+Name
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=(700,500),
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
@@ -1104,6 +1104,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
             self.Pairs += pair
         self.Pairs = dict(zip(self.Pairs,len(self.Pairs)*[0.0,]))
         self.histogram = ['',1.0]
+        self.RB = ['',0]
         self.files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
                       'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
                       'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
@@ -1153,12 +1154,22 @@ class SetUpRMCProfileDialog(wx.Dialog):
             Obj = event.GetEventObject()
             fil = Indx[Obj.GetId()]
             self.files[fil][3] = Obj.GetStringSelection()
+            
+        def OnRBchoice(event):
+            self.RB = [rigBod.GetStringSelection(),rigBod.GetSelection()+1]
         
         Indx = {}
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE,size=(700,500))
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Setup for: %s'%self.Name),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Enter metadata items:'),0,WACV)
+        metalist = ['title','owner','material','phase','comment','source','temperature',]
+        metaSizer = wx.FlexGridSizer(0,2,5,5)
+        for item in metalist:
+            metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
+            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
+        mainSizer.Add(metaSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers:'),0,WACV)
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
         axes = ['X','Y','Z']
         for i,ax in enumerate(axes):
@@ -1234,13 +1245,15 @@ class SetUpRMCProfileDialog(wx.Dialog):
                 fileSizer.Add((5,5),0)
                 fileSizer.Add((5,5),0)
         mainSizer.Add(fileSizer,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Enter metadata items:'),0,WACV)
-        metalist = ['title','owner','material','phase','comment','source','temperature',]
-        metaSizer = wx.FlexGridSizer(0,2,5,5)
-        for item in metalist:
-            metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
-            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
-        mainSizer.Add(metaSizer,0,WACV)
+        
+        RBchoice = ['SiO2','SrTiO3','CD4','SF6','AlPO4','PZT','ZrP2O7','ZrW2O8',
+            'Na3PO4','NaNO3','KCN','AgCN','Zn(CN)2','C4F8']
+        RBSizer = wx.BoxSizer(wx.HORIZONTAL)
+        RBSizer.Add(wx.StaticText(self.panel,label=' Select rigid body restraint(if any): '),0,WACV)
+        rigBod = wx.ComboBox(self.panel,choices=RBchoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+        rigBod.Bind(wx.EVT_COMBOBOX,OnRBchoice)
+        RBSizer.Add(rigBod,0,WACV)
+        mainSizer.Add(RBSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         OKBtn = wx.Button(self.panel,-1,"OK")
@@ -1257,8 +1270,8 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
-        return self.SuperCell,self.histogram,self.UseSampBrd,       \
-            self.atSeq,self.aTypes,self.Pairs,self.files,self.metadata
+        return self.SuperCell,self.histogram,self.UseSampBrd,self.atSeq,self.aTypes,       \
+            self.Pairs,self.files,self.RB,self.metadata
         
     def OnOK(self,event):
         parent = self.GetParent()
@@ -4694,7 +4707,7 @@ freshStart     = False      #make TRUE for a restart
         else:
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
-                superCell,histoName,useSamBrd,atSeq,aTypes,atPairs,files,meta = dlg.GetData()
+                superCell,histoName,useSamBrd,atSeq,aTypes,atPairs,files,rigBod,meta = dlg.GetData()
                 PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName[0])
                 if PWId:
                     print(G2pwd.MakeInst(G2frame,pName,data,useSamBrd,PWId)+ ' written')
@@ -4705,7 +4718,9 @@ freshStart     = False      #make TRUE for a restart
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
                     print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,atSeq,superCell,PWId)+ ' written')
-                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,meta,atSeq,aTypes,atPairs,superCell,files,PWId,histoName[1])+ ' written')
+                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,meta,atSeq,aTypes,atPairs,superCell,files,rigBod,PWId,histoName[1])+ ' written')
+                    if rigBod:
+                        print(' Make rigid body restraint files for %s - TBD'%rigBod)
                     print('RMCProfile file build completed')
                 else:
                     print('RMCProfile file build failed - no histogram selected')

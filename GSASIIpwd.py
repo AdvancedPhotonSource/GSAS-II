@@ -2119,10 +2119,10 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
-        fl.write('%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
-        fl.write('%10.3f%10.6f%10.6f\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
-        fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
-        fl.write('%10.4f%10.3f%10.3f%10.3f%10.3f\n'%(inst[prms[11]][1],inst[prms[12]][1]+Xsb,inst[prms[13]][1]+Ysb,0.0,0.0))
+        fl.write('%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
+        fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
+        fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
+        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Ysb,inst[prms[13]][1]+Xsb,0.0,0.0))
         fl.close()
     else:
         if useSamBrd[0]:
@@ -2242,7 +2242,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
+def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,rigBod,PWId,BraggWt):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
     refList = PWDdata['Reflection Lists'][Name]['RefList']
@@ -2268,7 +2268,7 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWI
     maxMoves = [Atypes[atm] for atm in Atseq]
     fname = Name+'.dat'
     fl = open(fname,'w')
-    fl.write(' %% hand edit the following as needed\n')
+    fl.write(' %% Hand edit the following as needed\n')
     fl.write('TITLE :: '+Name+'\n')
     fl.write('MATERIAL :: '+Meta['material']+'\n')
     fl.write('PHASE :: '+Meta['phase']+'\n')
@@ -2302,23 +2302,28 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWI
             fl.write('  > START_POINT :: 1\n')
             fl.write('  > END_POINT :: 3000\n')
             fl.write('  > CONSTANT_OFFSET 0.000\n')
+            fl.write('  > NO_FITTED_OFFSET\n')
+            if Files[File][3] !='RMC':
+                fl.write('  > %s\n'%Files[File][3])
             fl.write('  > WEIGHT :: %.4f\n'%Files[File][1])
             if 'reciprocal' in File:
                 fl.write('  > CONVOLVE ::\n')
                 fl.write('  > NO_FITTED_SCALE\n')
-            fl.write('  > NO_FITTED_OFFSET\n')
-            if Files[File][3] !='RMC':
-                fl.write('  > %s\n'%Files[File][3])
+                if 'Xray' in File:
+                    fl.write('  > REAL_SPACE_FIT :: 1 3000 1\n')
+                    fl.write('  > REAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
     fl.write('BRAGG ::\n')
     fl.write('  > BRAGG_SHAPE :: %s\n'%gsasType)
     fl.write('  > RECALCUATE\n')
     fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
     fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
     fl.write('\n')
+    if rigBod[1]:
+        fl.write('  %% future? POLYHEDRAL_RESTRAINT ::  %d\n'%rigBod[1])
+    fl.write('\n')
     fl.write('END  ::\n')
     fl.close()
-    return fname
-    
+    return fname    
 
 def MakePDB(G2frame,Name,Phase,Atseq,Supercell):
     generalData = Phase['General']

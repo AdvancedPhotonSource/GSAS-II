@@ -4554,7 +4554,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar,start=True):
                 limits = item['Pos'][2][i]
                 lower.append(limits[0])
                 upper.append(limits[1])
-        parmDict[pfx+'Amul'] = len(G2spc.GenAtom(XYZ,SGData))
+        parmDict[pfx+'Amul'] = len(list(G2spc.GenAtom(XYZ,SGData)))
             
     def getRBparms(item,mfx,aTypes,RBdata,SGData,atNo,parmDict,varyList):
         parmDict[mfx+'MolCent'] = item['MolCent']

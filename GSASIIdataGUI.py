@@ -8069,12 +8069,15 @@ def GetGPXtreeItemId(G2frame, parentId, itemText):
     :param wx.TreeItemId parentId: tree item to start search with
     :param str itemText: text for tree item
     '''
-    item, cookie = G2frame.GPXtree.GetFirstChild(parentId)
-    while item:
-        if G2frame.GPXtree.GetItemText(item) == itemText:
-            return item
-        item, cookie = G2frame.GPXtree.GetNextChild(parentId, cookie)
-    return 0                
+    try:
+        item, cookie = G2frame.GPXtree.GetFirstChild(parentId)
+        while item:
+            if G2frame.GPXtree.GetItemText(item) == itemText:
+                return item
+            item, cookie = G2frame.GPXtree.GetNextChild(parentId, cookie)
+        return 0
+    except:         #trap C++ error?
+        return 0
 
 def SelectDataTreeItem(G2frame,item,oldFocus=None):
     '''Called from :meth:`GSASIIdataGUI.GSASII.OnDataTreeSelChanged` when a item is selected on the tree.

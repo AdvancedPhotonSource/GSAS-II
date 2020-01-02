@@ -66,12 +66,16 @@ if __name__ == '__main__':
     fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
         datetime.datetime.now()))
     activate = os.path.join(os.path.split(pythonexe)[0],'Scripts','activate')
-    print(activate)
+    print("Looking for",activate)
     if os.path.exists(activate):
-        print('adding activate to .bat file')
-        activate = "call "+os.path.realpath(activate) + '\n'
+        activate = os.path.realpath(activate)
+        if ' ' in activate:
+            activate = 'call "'+ activate + '"\n'
+        else:
+            activate = 'call '+ activate + '\n'
+        print('adding activate to .bat file ({})'.format(activate))
     else:
-        print('activate not found')
+        print('Anaconda activate not found')
         activate = ''
     pexe = pythonexe
     if ' ' in pythonexe: pexe = '"'+pythonexe+'"'

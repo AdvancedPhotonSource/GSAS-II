@@ -1045,7 +1045,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
-    Plot.set_aspect(aspect='equal')
+    try:
+        Plot.set_aspect(aspect='equal')
+    except:  #broken in mpl 3.1.1; worked in mpl 3.0.3
+        pass
     
     Type = Data['Type']            
     scale = Data['Scale']
@@ -5738,7 +5741,11 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_xlim3d(XYZlim)
             Plot.set_ylim3d(XYZlim)
             Plot.set_zlim3d(XYZlim)
-            Plot.set_aspect('equal')
+            try:
+                Plot.set_aspect('equal')
+            except: #broken in mpl 3.1.1; worked in mpl 3.0.3
+                pass
+#            Plot.autoscale()
         if plotType == 'Size':
             Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
             Plot.set_xlabel(r'X, $\mu$m')
@@ -6007,7 +6014,10 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.set_xlim3d(XYZlim)
                 Plot.set_ylim3d(XYZlim)
                 Plot.set_zlim3d(XYZlim)
-                Plot.set_aspect('equal')                        
+                try:
+                    Plot.set_aspect('equal')
+                except: #broken in mpl 3.1.1; worked in mpl 3.0.3
+                    pass                       
                 Plot.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))
                 Plot.set_xlabel(r'X, MRD')
                 Plot.set_ylabel(r'Y, MRD')

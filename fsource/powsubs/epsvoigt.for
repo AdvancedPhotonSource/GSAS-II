@@ -124,13 +124,13 @@
 
       DFDS = DEDF*DFRDG*(TL-TG)
       DFDS = DFDS+(ETA*DTLDFW+(1.0-ETA)*DTGDFW)*DFWDG
-      DFDS = 0.5*DFDS*STOFW/SQSGT                        !OK?
+      DFDS = 0.5*DFDS*STOFW/SQSGT                        !OK
 
       DFWDL = 0.2*DSDL*FWHM/SUMHM
       DFRDL = (1.0-FRAC*DFWDL)/FWHM
 
       DFDG = DEDF*DFRDL*(TL-TG)
-      DFDG = DFDG+(ETA*DTLDFW+(1.0-ETA)*DTGDFW)*DFWDL            !WRONG
+      DFDG = DFDG+(ETA*DTLDFW+(1.0-ETA)*DTGDFW)*DFWDL            !OK
 
       DFDA = ETA*DTLDA+(1.0-ETA)*DTGDA                  !OK
 

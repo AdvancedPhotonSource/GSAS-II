@@ -1844,7 +1844,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
             return
         newPlot = False
-        if event.key == 'w' and not Page.plotStyle['qPlot'] and not Page.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
+        if event.key == 'w':    # and not Page.plotStyle['qPlot'] and not Page.plotStyle['dPlot']:  #can't do weight plots when x-axis is different
             G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
@@ -3233,7 +3233,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (Y-B-Z)*np.sqrt(wtFactor*xye[2])
                     else:
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
-                    DifLine = Plot1.plot(X[Ibeg:Ifin],DZ[Ibeg:Ifin],colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
+                    DifLine = Plot1.plot(X,DZ,colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
 
                 if Page.plotStyle['logPlot']:

@@ -17,6 +17,7 @@ version = "$Id$"
 #   creates RunGSASII.bat and a desktop shortcut to that file
 #   registers the filetype .gpx so that the GSAS-II project files exhibit the
 #     GSAS-II icon and so that double-clicking on them opens them in GSAS-II
+#
 import os, sys
 import datetime
 import wx
@@ -47,8 +48,7 @@ if __name__ == '__main__':
         import _winreg as winreg
     except ImportError:
         import winreg
-    app = wx.App()
-    app.MainLoop()
+    app = None # delay starting wx until we need it. Likely not needed. 
     gsaspath = os.path.split(sys.argv[0])[0]
     if not gsaspath: gsaspath = os.path.curdir
     gsaspath = os.path.abspath(os.path.expanduser(gsaspath))
@@ -92,6 +92,7 @@ if __name__ == '__main__':
     
     new = False
     oldBat = ''
+    # this code does not appear to work properly when paths have spaces
     try:
         oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
         oldopen = winreg.OpenKey(oldgpx,r'shell\open\command')
@@ -105,6 +106,9 @@ if __name__ == '__main__':
     if not new:
         try:
             if oldBat != G2bat:
+                if app is None:
+                    app = wx.App()
+                    app.MainLoop()
                 dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
                         wx.YES_NO | wx.ICON_QUESTION)
                 if dlg.ShowModal() == wx.ID_YES:
@@ -151,6 +155,9 @@ if __name__ == '__main__':
         save = True
         if win32com.shell.shell.SHGetFileInfo(shortcut,0,0)[0]:
             print('GSAS-II shortcut exists!')
+            if app is None:
+                app = wx.App()
+                app.MainLoop()
             dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
                 wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             try:

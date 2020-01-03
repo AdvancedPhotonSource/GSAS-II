@@ -1856,7 +1856,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         elif event.key == '.':
             Page.plotStyle['WgtDiagnostic'] = not Page.plotStyle.get('WgtDiagnostic',False)
             newPlot = True
-        elif event.key == 'b' and plottype not in ['SASD','REFD']:
+        elif event.key == 'b' and plottype not in ['SASD','REFD'] and not Page.plotStyle['logPlot'] and not Page.plotStyle['sqrtPlot']:
             G2frame.SubBack = not G2frame.SubBack
         elif event.key == 'n':
             if G2frame.Contour:
@@ -1872,6 +1872,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['sqrtPlot'] = not Page.plotStyle['sqrtPlot']
             if Page.plotStyle['sqrtPlot']:
                 Page.plotStyle['logPlot'] = False
+                G2frame.SubBack = False
             Ymax = max(Pattern[1][1])
             if Page.plotStyle['sqrtPlot']:
                 Page.plotStyle['delOffset'] = .02*np.sqrt(Ymax)
@@ -1962,7 +1963,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             if 'PWDR' in plottype:
                 Page.plotStyle['qPlot'] = not Page.plotStyle['qPlot']
                 if Page.plotStyle['qPlot']:
-                    G2frame.Weight = False
                     G2frame.Contour = False
                 Page.plotStyle['dPlot'] = False
             elif plottype in ['SASD','REFD']:
@@ -1974,11 +1974,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Page.plotStyle['dPlot'] = not Page.plotStyle['dPlot']
                 if Page.plotStyle['dPlot']:
                     G2frame.Contour = False                
-                    G2frame.Weight = False
                 Page.plotStyle['qPlot'] = False
                 newPlot = True      
         elif event.key == 'm':
-#            Page.plotStyle['sqrtPlot'] = False
             if not G2frame.Contour:                
                 G2frame.SinglePlot = not G2frame.SinglePlot                
             G2frame.Contour = False
@@ -2836,47 +2834,34 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             'o: reset contour limits','g: toggle grid',
             'i: interpolation method','S: color scheme','c: contour off','t: temperature for y-axis','s: toggle sqrt plot')
     else:
-        if Page.plotStyle['logPlot']:
-            if 'PWDR' in plottype:
-                if G2frame.SinglePlot:
-                    Page.Choice = (' key press','n: log(I) off','g: toggle grid',
-                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
-                            'm: toggle multidata plot','+: toggle selection')
-                else:
-                    Page.Choice = (' key press','n: log(I) off','g: toggle grid',
-                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'c: contour on','q: toggle q plot','t: toggle d-spacing plot','f: select data',
-                        'm: toggle multidata plot','+: toggle selection')
-            elif plottype in ['SASD','REFD']:
-                if G2frame.SinglePlot:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on','g: toggle grid',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
-                else:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on','g: toggle grid',
-                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
-        else:
-            if 'PWDR' in plottype:
-                if G2frame.SinglePlot:
-                    Page.Choice = (' key press',
-                        'b: toggle subtract background','n: log(I) on','s: toggle sqrt plot','c: contour on',
-                        'q: toggle q plot','t: toggle d-spacing plot','m: toggle multidata plot','g: toggle grid',
-                        'w: toggle (Io-Ic)/sig plot','+: no selection')
-                else:
-                    Page.Choice = (' key press','l: offset left','r: offset right','d/D: offset down/10x','u/U: offset up/10x','o: reset offset',
-                        'b: toggle subtract background','n: log(I) on','c: contour on','q: toggle q plot','t: toggle d-spacing plot','g: toggle grid',
-                        'm: toggle multidata plot','w: toggle (Io-Ic)/sig plot','s: toggle sqrt plot','f: select data','S: color scheme','+: no selection')
-            elif plottype in ['SASD','REFD']:
-                if G2frame.SinglePlot:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars','g: toggle grid',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
-                else:
-                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars','g: toggle grid',
-                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
-    if 'PWDR' in plottype and G2frame.SinglePlot and not (
-                Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot'] or G2frame.Contour):
-        Page.Choice = Page.Choice + ('a: add magnification region',)
+        if 'PWDR' in plottype:
+            Page.Choice = [' key press',
+                'a: add magnification region','b: toggle subtract background',
+                'c: contour on','g: toggle grid','m: toggle multidata plot',
+                'n: toggle log(I)','q: toggle q plot','s: toggle sqrt plot',
+                't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
+                '+: no selection']
+            if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
+                del Page.Choice[1]
+                del Page.Choice[1]
+            elif not G2frame.SinglePlot:
+                del Page.Choice[1]
+
+            if not G2frame.SinglePlot:
+                Page.Choice = Page.Choice+ \
+                    ['u/U: offset up/10x','d/D: offset down/10x','l: offset left','r: offset right',
+                     'o: reset offset','f: select data',]
+            
+        elif plottype in ['SASD','REFD']:
+            Page.Choice = [' key press',
+                'b: toggle subtract background file','n: toggle semilog/loglog',
+                'g: toggle grid','q: toggle S(q) plot','m: toggle multidata plot',
+                'w: toggle (Io-Ic)/sig plot','+: toggle selection',]
+            if not G2frame.SinglePlot:
+                Page.Choice = Page.Choice+ \
+                    ['u: offset up','d: offset down','l: offset left',
+                     'r: offset right','o: reset offset',]
+                    
     for KeyItem in extraKeys:
         Page.Choice = Page.Choice + (KeyItem[0] + ': '+KeyItem[2],)
     magLineList = [] # null value indicates no magnification
@@ -3172,8 +3157,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 Xum = ma.getdata(X) # unmasked version of X, use for data limits (only)
             else:
                 Xum = X[:]
-            Ibeg = np.searchsorted(X,limits[1][0])
-            Ifin = np.searchsorted(X,limits[1][1])
             if ifpicked:
                 ZI = copy.copy(xye[3])      #Yc
                 if Page.plotStyle['sqrtPlot']:
@@ -4071,7 +4054,7 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         elif fil:
             if hcfigure.canvas is None:
                 if GSASIIpath.GetConfigValue('debug'): print('creating canvas')
-                hccanvas = hcCanvas(hcfigure)
+                hcCanvas(hcfigure)
             hcfigure.savefig(fil,format=typ.strip())
             dlg.EndModal(wx.ID_OK)
             

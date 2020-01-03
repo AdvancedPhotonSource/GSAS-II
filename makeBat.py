@@ -56,6 +56,8 @@ if __name__ == '__main__':
     G2bat = os.path.join(gsaspath,'RunGSASII.bat')
     G2icon = os.path.join(gsaspath,'gsas2.ico')
     pythonexe = os.path.realpath(sys.executable)
+    print('Python installed at',pythonexe)
+    print('GSAS-II installed at',gsaspath)
     # Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
     if pythonexe.lower().endswith('pythonw.exe'):
         print("  using python.exe rather than "+pythonexe)
@@ -94,15 +96,18 @@ if __name__ == '__main__':
     oldBat = ''
     # this code does not appear to work properly when paths have spaces
     try:
-        oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project')
+        oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project') # throws FileNotFoundError
         oldopen = winreg.OpenKey(oldgpx,r'shell\open\command')
-        oldBat = winreg.QueryValue(oldopen,None).split()[0]
+        # get previous value & strip %1 off end
+        oldBat = winreg.QueryValue(oldopen,None).strip()
+        pos = oldBat.rfind(' ')
+        if pos > 1:
+            oldBat = oldBat[:pos]
         os.stat(oldBat)     #check if it is still around
     except FileNotFoundError:
         if oldBat:
-            print('old '+oldBat+ 'not found; registry entry will be made for new one')
-        else:
-            new = True
+            print('old GPX assignment',oldBat, 'not found; registry entry will be made for new one')
+        new = True
     if not new:
         try:
             if oldBat != G2bat:

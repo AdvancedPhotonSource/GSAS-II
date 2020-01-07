@@ -115,7 +115,8 @@ if __name__ == '__main__':
                     app = wx.App()
                     app.MainLoop()
                 dlg = wx.MessageDialog(None,'gpx files already assigned in registry to: \n'+oldBat+'\n Replace with: '+G2bat+'?','GSAS-II gpx in use', 
-                        wx.YES_NO | wx.ICON_QUESTION)
+                        wx.YES_NO | wx.ICON_QUESTION | wx.STAY_ON_TOP)
+                dlg.Raise()
                 if dlg.ShowModal() == wx.ID_YES:
                     new = True
                 dlg.Destroy()
@@ -165,6 +166,7 @@ if __name__ == '__main__':
                 app.MainLoop()
             dlg = wx.FileDialog(None, 'Choose new GSAS-II shortcut name',  desktop, shortbase,
                 wildcard='GSAS-II shortcut (*.lnk)|*.lnk',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            dlg.Raise()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     shortcut = dlg.GetPath()

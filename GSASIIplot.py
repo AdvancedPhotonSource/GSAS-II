@@ -2854,9 +2854,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             
         elif plottype in ['SASD','REFD']:
             Page.Choice = [' key press',
-                'b: toggle subtract background file','n: toggle semilog/loglog',
-                'g: toggle grid','q: toggle S(q) plot','m: toggle multidata plot',
-                'w: toggle (Io-Ic)/sig plot','+: toggle selection',]
+                'b: toggle subtract background file','g: toggle grid',
+                'm: toggle multidata plot','n: toggle semilog/loglog',
+                'q: toggle S(q) plot','w: toggle (Io-Ic)/sig plot','+: toggle selection',]
             if not G2frame.SinglePlot:
                 Page.Choice = Page.Choice+ \
                     ['u: offset up','d: offset down','l: offset left',

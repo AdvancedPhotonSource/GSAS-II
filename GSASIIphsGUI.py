@@ -4630,7 +4630,7 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GetStatusBar().SetStatusText('',1)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         runFile = ' '
-        choice = ['fullrmc','RMCProfile']
+        choice = ['RMCProfile','fullrmc',]
         RMCsel = wx.RadioBox(G2frame.FRMC,-1,' Select RMC method:',choices=choice)
         RMCsel.SetStringSelection(G2frame.RMCchoice)
         RMCsel.Bind(wx.EVT_RADIOBOX, OnRMCselect)
@@ -10497,16 +10497,12 @@ freshStart     = False      #make TRUE for a restart
         G2frame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2G.wxID_PEAKSDELETE)
         G2frame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2G.wxID_PEAKSCLEAR)
         # fullrmc
-        try:
-            import fullrmc
-            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
-            G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
-            G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_LOADRMC)
-            G2frame.Bind(wx.EVT_MENU, OnSaveRMC, id=G2G.wxID_SAVERMC)
-            G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
-            G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
-        except:
-            pass
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
+        G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
+        G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_LOADRMC)
+        G2frame.Bind(wx.EVT_MENU, OnSaveRMC, id=G2G.wxID_SAVERMC)
+        G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
+        G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
         # MC/SA
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.MCSAMenu)
         G2frame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2G.wxID_ADDMCSAATOM)
@@ -10598,13 +10594,9 @@ freshStart     = False      #make TRUE for a restart
         G2frame.MCSA = wx.ScrolledWindow(G2frame.phaseDisplay)
         G2frame.phaseDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')
-        try:
-            import fullrmc
-            G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
-            G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
-            Pages.append('RMC')
-        except:
-            pass
+        G2frame.FRMC = wx.ScrolledWindow(G2frame.phaseDisplay)
+        G2frame.phaseDisplay.AddPage(G2frame.FRMC,'RMC')
+        Pages.append('RMC')
     Texture = wx.ScrolledWindow(G2frame.phaseDisplay)
     G2frame.phaseDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')

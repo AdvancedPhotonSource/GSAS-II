@@ -2194,7 +2194,7 @@ def MakeRMC6f(G2frame,Name,Phase,Meta,Atseq,Supercell,PWId):
     fl.write('Atom types present:             %s\n'%'    '.join(Atseq))
     fl.write('Number of each atom type:       %s\n'%'  '.join(NAstr))
     fl.write('Number of atoms:                %d\n'%len(Atoms))
-    fl.write('%-35s%3d%3d%3d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
+    fl.write('%-35s%4d%4d%4d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
     A,B = G2lat. cell2AB(Cell)

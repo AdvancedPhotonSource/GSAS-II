@@ -2914,7 +2914,7 @@ class GSASII(wx.Frame):
         self.newGPXfile = ''
         self.lastSelectedPhaseTab = None # track the last tab pressed on a phase window
         self.testRBObjSizers = {}   #rigid body sizer datafile contents
-        self.RMCchoice = 'fullrmc' 
+        self.RMCchoice = 'RMCProfile' 
         
     def __init__(self, parent):
         self.ExportLookup = {}

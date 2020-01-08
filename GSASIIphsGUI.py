@@ -4809,28 +4809,11 @@ freshStart     = False      #make TRUE for a restart
             generalData = data['General']
             pName = generalData['Name'].replace(' ','_')
             batch = open('runrmc.bat','w')
-            batch.write('ECHO OFF\n')
-            batch.write('::PATH=%PATH%;'+rmcexe+'\n')
-            batch.write('SET RMCPROFILE_DIR='+G2frame.dirname+'\n')
-            batch.write('SET RMCPROFILE_DRIVE=%~d1\n')
-            batch.write('::PATH=%PATH%;%RMCPROFILE_DIR%\exe\n')
-            batch.write('PATH=%RMCPROFILE_DIR%\exe;%PATH%\n')
-            batch.write('PATH\n')
             batch.write('Title RMCProfile\n')
             batch.write(rmcexe+'\\rmcprofile.exe '+pName+'\n')
             batch.write('pause\n')
             batch.close()
             sb.Popen('runrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
-
-#            dlg = wx.FileDialog(G2frame, 'Find rmcprofile.bat file to execute', 
-#                wildcard='RMCProfile (rmcprofile.bat)|*.bat',style=wx.FD_CHANGE_DIR)
-#            try:
-#                if dlg.ShowModal() == wx.ID_OK:
-#                    pass
-#                else:
-#                    return
-#            finally:
-#                dlg.Destroy()
             
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':

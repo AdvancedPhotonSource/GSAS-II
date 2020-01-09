@@ -1763,7 +1763,10 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     Controls = ImgObj.data['Image Controls']
     formatName = Controls.get('formatName','')
     imagefile = ImgObj.data['data'][1]
-    ImageTag = None # fix this for multiimage files
+    if isinstance(imagefile, tuple) or isinstance(imagefile, list):
+        imagefile, ImageTag =  imagefile # fix for multiimage files
+    else:
+        ImageTag = None # single-image file
     sumImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
     if sumImg is None:
         return []

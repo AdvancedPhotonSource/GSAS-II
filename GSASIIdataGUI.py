@@ -364,7 +364,13 @@ def ShowVersions():
         print ("  Max threads:%s"%mkl.get_max_threads())
     except:
         pass
-    print ("This is GSAS-II revision %s"%str(GSASIIpath.GetVersionNumber())+'\n')
+    rev = GSASIIpath.svnGetRev()
+    if rev is None: 
+        "no SVN"
+    else:
+        rev = "SVN version {}".format(rev)
+    print ("This is GSAS-II revision {} ({})\n".format(
+        GSASIIpath.GetVersionNumber(),rev))
 
 def warnNumpyVersion(application):
     dlg = wx.MessageDialog(application.main,

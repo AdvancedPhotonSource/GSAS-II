@@ -1092,32 +1092,32 @@ class SetUpRMCProfileDialog(wx.Dialog):
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
         self.Name = Name
-        self.Phase = Phase
-        self.SuperCell = [1,1,1]
-        self.UseSampBrd = [True,True]
-        Atypes = self.Phase['General']['AtomTypes']
-        self.aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
-        self.atSeq = list(self.aTypes.keys())
-        lenA = len(self.atSeq)
-        self.Pairs = []
-        for pair in [[' %s-%s'%(self.atSeq[i],self.atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
-            self.Pairs += pair
-        self.Pairs = dict(zip(self.Pairs,len(self.Pairs)*[0.0,]))
-        self.histogram = ['',1.0]
-        self.RB = ['',0]
-        self.files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
+        if not Phase['RMC']['RMCProfile']:
+            Atypes = Phase['General']['AtomTypes']
+            aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+            atSeq = list(aTypes.keys())
+            lenA = len(atSeq)
+            Pairs= []
+            for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                Pairs += pair
+            Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+            files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
                       'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
                       'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
                       'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
                       'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
-        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
-            'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
+            metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
+                'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
+            Phase['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
+                 'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata}
+        self.RMCPdict = Phase['RMC']['RMCProfile']
+        self.Phase = Phase
         self.Draw()
         
     def Draw(self):
         
         def OnHisto(event):
-            self.histogram[0] = histo.GetStringSelection()
+            self.RMCPdict['histogram'][0] = histo.GetStringSelection()
             
         def OnAtSel(event):
             Obj = event.GetEventObject()
@@ -1126,14 +1126,14 @@ class SetUpRMCProfileDialog(wx.Dialog):
             if itype < nTypes-1:
                 if itype == tid:
                     tid += 1
-                self.atSeq = G2lat.SwapItems(self.atSeq,itype,tid)
+                self.RMCPdict['atSeq'] = G2lat.SwapItems(self.RMCPdict['atSeq'],itype,tid)
             wx.CallAfter(self.Draw)
             
         def OnSize(event):
-            self.UseSampBrd[0] = samSize.GetValue()
+            self.RMCPdict['UseSampBrd'][0] = samSize.GetValue()
             
         def OnStrain(event):
-            self.UseSampBrd[1] = strain.GetValue()
+            self.RMCPdict['UseSampBrd'][1] = strain.GetValue()
             
         def OnFileSel(event):
             Obj = event.GetEventObject()
@@ -1143,7 +1143,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
             if dlg.ShowModal() == wx.ID_OK:
                 fName = os.path.split(dlg.GetPath())[1]
                 if os.path.exists(fName):
-                    self.files[fil][0] = fName
+                    self.RMCPdict['files'][fil][0] = fName
                 dlg.Destroy()
             else:
                 dlg.Destroy()
@@ -1153,12 +1153,14 @@ class SetUpRMCProfileDialog(wx.Dialog):
         def OnFileFormat(event):
             Obj = event.GetEventObject()
             fil = Indx[Obj.GetId()]
-            self.files[fil][3] = Obj.GetStringSelection()
-            
-        def OnRBchoice(event):
-            self.RB = [rigBod.GetStringSelection(),rigBod.GetSelection()+1]
-        
+            self.RMCPdict['files'][fil][3] = Obj.GetStringSelection()
+                   
         Indx = {}
+        lenA = len(self.RMCPdict['atSeq'])
+        Pairs= []
+        for pair in [[' %s-%s'%(self.RMCPdict['atSeq'][i],self.RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
+            Pairs += pair
+        self.RMCPdict['Pairs'] = dict(zip(Pairs,[self.RMCPdict['Pairs'].get(pair,[0.0,0.0,0.0]) for pair in Pairs]))
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE,size=(700,500))
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1167,55 +1169,67 @@ class SetUpRMCProfileDialog(wx.Dialog):
         metaSizer = wx.FlexGridSizer(0,2,5,5)
         for item in metalist:
             metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
-            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
+            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['metadata'],item),0,WACV)
         mainSizer.Add(metaSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers:'),0,WACV)
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
         axes = ['X','Y','Z']
         for i,ax in enumerate(axes):
             superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
-            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.SuperCell,i,min=1,max=10,size=(50,25)),0,WACV)
+            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['SuperCell'],i,min=1,max=20,size=(50,25)),0,WACV)
         mainSizer.Add(superSizer,0,WACV)
-        nTypes = len(self.aTypes)
+        nTypes = len(self.RMCPdict['aTypes'])
         atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
         atmChoice.Add(wx.StaticText(self.panel,label=' Set atom ordering: '),0,WACV)
         for iType in range(nTypes):
-            atChoice = self.atSeq[iType:]
+            atChoice = self.RMCPdict['atSeq'][iType:]
             atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-            atmSel.SetStringSelection(self.atSeq[iType])
+            atmSel.SetStringSelection(self.RMCPdict['atSeq'][iType])
             atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
             Indx[atmSel.GetId()] = iType
             atmChoice.Add(atmSel,0,WACV)
         atmChoice.Add(wx.StaticText(self.panel,label=' Set max shift: '),0,WACV)
         for iType in range(nTypes):
-            atId = self.atSeq[iType]
-            atmChoice.Add(G2G.ValidatedTxtCtrl(self.panel,self.aTypes,atId,min=0.,max=1.),0,WACV)
+            atId = self.RMCPdict['atSeq'][iType]
+            atmChoice.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
         mainSizer.Add(atmChoice,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Set minimum distances for:'),0,WACV)
-        pairSizer = wx.FlexGridSizer(len(self.Pairs),5,5)
-        for pair in self.Pairs:
+        mainSizer.Add(wx.StaticText(self.panel,label=' Enter constraints && restraints:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Set minimum && maximum distances for:'),0,WACV)
+        pairSizer = wx.FlexGridSizer(len(self.RMCPdict['Pairs'])+1,5,5)
+        pairSizer.Add((5,5),0)
+        for pair in self.RMCPdict['Pairs']:
             pairSizer.Add(wx.StaticText(self.panel,label=pair),0,WACV)
-        for pair in self.Pairs:
-            pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.Pairs,pair,min=0.,max=10.,size=(50,25)),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label=' Hard min: '),0,WACV)
+        for pair in self.RMCPdict['Pairs']:
+            pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label=' Search from: '),0,WACV)
+        for pair in self.RMCPdict['Pairs']:
+            pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],1,min=self.RMCPdict['Pairs'][pair][0],max=10.,size=(50,25)),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label='       to: '),0,WACV)
+        for pair in self.RMCPdict['Pairs']:
+            pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
         mainSizer.Add(pairSizer,0,WACV)
+        
+        
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select data:'),0,WACV)
         histograms = self.Phase['Histograms']
         histNames = list(histograms.keys())
         mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for Bragg processing:'),0,WACV)
         histoSizer = wx.BoxSizer(wx.HORIZONTAL)
         histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY) 
-        histo.SetStringSelection(self.histogram[0])
+        histo.SetStringSelection(self.RMCPdict['histogram'][0])
         histo.Bind(wx.EVT_COMBOBOX,OnHisto)
         histoSizer.Add(histo,0,WACV)
         histoSizer.Add(wx.StaticText(self.panel,label=' Weight '),0,WACV)
-        histoSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.histogram,1,min=0.,max=10000.,size=(50,25)),0,WACV)
+        histoSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['histogram'],1,min=0.,max=10000.,size=(50,25)),0,WACV)
         
         mainSizer.Add(histoSizer,0,WACV)
         samSizer = wx.BoxSizer(wx.HORIZONTAL)
         samSize = wx.CheckBox(self.panel,label=' Use size broadening?')
-        samSize.SetValue(self.UseSampBrd[0])
+        samSize.SetValue(self.RMCPdict['UseSampBrd'][0])
         samSize.Bind(wx.EVT_CHECKBOX,OnSize)
         strain = wx.CheckBox(self.panel,label=' Use mustrain broadening?')
-        strain.SetValue(self.UseSampBrd[1])
+        strain.SetValue(self.RMCPdict['UseSampBrd'][1])
         strain.Bind(wx.EVT_CHECKBOX,OnStrain)
         samSizer.Add(samSize,0,WACV)
         samSizer.Add(strain,0,WACV)
@@ -1224,36 +1238,28 @@ class SetUpRMCProfileDialog(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label=title),0,WACV)
         fileSizer = wx.FlexGridSizer(5,5,5)
         Formats = ['RMC','GUDRUN','STOG']
-        for fil in self.files:
+        for fil in self.RMCPdict['files']:
             filSel = wx.Button(self.panel,label='Select')
             filSel.Bind(wx.EVT_BUTTON,OnFileSel)
             Indx[filSel.GetId()] = fil
             fileSizer.Add(filSel,0,WACV)
-            if self.files[fil][0]:
+            if self.RMCPdict['files'][fil][0]:
                 fileSizer.Add(wx.StaticText(self.panel,label=' Format, Weight: '),0,WACV)
                 nform = 3
                 if 'Xray' in fil: nform = 1
                 fileFormat = wx.ComboBox(self.panel,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                fileFormat.SetStringSelection(self.files[fil][3])
+                fileFormat.SetStringSelection(self.RMCPdict['files'][fil][3])
                 Indx[fileFormat.GetId()] = fil
                 fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
                 fileSizer.Add(fileFormat,0,WACV)
-                fileSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.files[fil],1),0,WACV)
-            fileSizer.Add(wx.StaticText(self.panel,label=fil+self.files[fil][0]),0,WACV)
-            if not self.files[fil][0]:
+                fileSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['files'][fil],1),0,WACV)
+            fileSizer.Add(wx.StaticText(self.panel,label=fil+self.RMCPdict['files'][fil][0]),0,WACV)
+            if not self.RMCPdict['files'][fil][0]:
                 fileSizer.Add((5,5),0)
                 fileSizer.Add((5,5),0)
                 fileSizer.Add((5,5),0)
         mainSizer.Add(fileSizer,0,WACV)
         
-        RBchoice = ['SiO2','SrTiO3','CD4','SF6','AlPO4','PZT','ZrP2O7','ZrW2O8',
-            'Na3PO4','NaNO3','KCN','AgCN','Zn(CN)2','C4F8']
-        RBSizer = wx.BoxSizer(wx.HORIZONTAL)
-        RBSizer.Add(wx.StaticText(self.panel,label=' Select rigid body restraint(if any): '),0,WACV)
-        rigBod = wx.ComboBox(self.panel,choices=RBchoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-        rigBod.Bind(wx.EVT_COMBOBOX,OnRBchoice)
-        RBSizer.Add(rigBod,0,WACV)
-        mainSizer.Add(RBSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         OKBtn = wx.Button(self.panel,-1,"OK")
@@ -1270,8 +1276,8 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
-        return self.SuperCell,self.histogram,self.UseSampBrd,self.atSeq,self.aTypes,       \
-            self.Pairs,self.files,self.RB,self.metadata
+        self.Phase.update(self.RMCPdict)
+        return self.Phase
         
     def OnOK(self,event):
         parent = self.GetParent()
@@ -4707,20 +4713,21 @@ freshStart     = False      #make TRUE for a restart
         else:
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
-                superCell,histoName,useSamBrd,atSeq,aTypes,atPairs,files,rigBod,meta = dlg.GetData()
-                PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,histoName[0])
+                phase = dlg.GetData()
+                RMCPdict = phase['RMC']['RMCProfile']
+                PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,RMCPdict['histogram'][0])
                 if PWId:
-                    print(G2pwd.MakeInst(G2frame,pName,data,useSamBrd,PWId)+ ' written')
+                    print(G2pwd.MakeInst(G2frame,pName,data,RMCPdict['UseSampBrd'],PWId)+ ' written')
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
                         print(' Chebyschev-1 background not used; no .back file written')
                     else:
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
-                    print(G2pwd.MakeRMC6f(G2frame,pName,data,meta,atSeq,superCell,PWId)+ ' written')
-                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,meta,atSeq,aTypes,atPairs,superCell,files,rigBod,PWId,histoName[1])+ ' written')
-                    if rigBod:
-                        print(' Make rigid body restraint files for %s - TBD'%rigBod)
+                    print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
+                        RMCPdict['SuperCell'],PWId)+ ' written')
+                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
+                        RMCPdict['aTypes'],RMCPdict['Pairs'],RMCPdict['SuperCell'],RMCPdict['files'],PWId,RMCPdict['histogram'][1])+ ' written')
                     print('RMCProfile file build completed')
                 else:
                     print('RMCProfile file build failed - no histogram selected')
@@ -4840,8 +4847,8 @@ freshStart     = False      #make TRUE for a restart
                         ifXray = True
             except:
                 pass
-            files =  {'_PDF1.csv':[],'_PDFpartials.csv':[],'_SQ1.csv':[],'_XFQ1.csv':[],
-                      '_SQ1partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
+            files =  {'_PDF1.csv':[],'_PDF2.csv':[],'_PDFpartials.csv':[],'_SQ1.csv':[],'_SQ2.csv':[],'_XFQ1.csv':[],
+                      '_SQ1partials.csv':[],'_SQ2partials.csv':[],'_FQ1.csv':[],'_FT_XFQ1.csv':[],
                       '_FQ1partials.csv':[],'_bragg.csv':[],'.chi2':[]}
             for item in files:
                 if os.path.exists(os.path.join(path,pName+item)):
@@ -4853,7 +4860,9 @@ freshStart     = False      #make TRUE for a restart
                     print('RMCProfile file %s not found'%(pName+item))
 #total result plots
             Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
+                '_PDF2.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
                 '_SQ1.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) for '],
+                '_SQ2.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) for '],
                 '_FQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) for '],
                 '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
                 '_XFQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP x-ray F(Q) for '],
@@ -4871,15 +4880,24 @@ freshStart     = False      #make TRUE for a restart
                         Ycalc.append(float(items[2]))
                     Yobs = np.array([X,Yobs])
                     Ycalc = np.array([X,Ycalc])
-                    if 'bragg' in label and ifXray:
-                        Labels[label][0] = r'$\mathsf{2\theta ,deg}$'
-                        Labels[label][1] = 'Intensity'
-                    G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
-                        labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
-                        lines=True,names=Names[1:])
+                    if 'bragg' in label: 
+                        Ydiff = np.array([X,(Yobs-Ycalc)[1]])
+                        Yoff = np.max(Ydiff[1])-np.min(Yobs[1])
+                        Ydiff[1] -= Yoff
+                        if ifXray:
+                            Labels[label][0] = r'$\mathsf{2\theta ,deg}$'
+                            Labels[label][1] = 'Intensity'
+                        G2plt.PlotXY(G2frame,[Yobs,Ycalc],XY2=[Ydiff,],labelX=Labels[label][0],
+                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            lines=True,names=Names[1:])
+                    else:
+                        G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
+                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            lines=True,names=Names[1:])
 #partials plots
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
+                '_SQ2partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
                 '_FQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) partials for ']}
             for label in Labels:
                 X = []
@@ -10522,7 +10540,9 @@ freshStart     = False      #make TRUE for a restart
         data['General']['doDysnomia'] = False
     if 'modulated' in data['General']['Type']:
         data['General']['Modulated'] = True
-        data['General']['Type'] = 'nuclear'     
+        data['General']['Type'] = 'nuclear' 
+    if 'RMC' not in data:
+        data['RMC'] = {'RMCProfile':{},'fullrmc':{}}
 #end patch    
 
     global rbAtmDict   

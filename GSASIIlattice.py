@@ -31,6 +31,7 @@ The "*A* tensor" terms are defined as
 ########### SVN repository information ###################
 from __future__ import division, print_function
 import math
+import time
 import copy
 import sys
 import random as ran
@@ -315,7 +316,6 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
     :return: atCodes list atom transformation codes
         
     '''
-    
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
     cm = 0
     if oldPhase['General']['Type'] == 'magnetic':
@@ -357,7 +357,8 @@ def TransformPhase(oldPhase,newPhase,Trans,Uvec,Vvec,ifMag):
                 mom /= np.sqrt(np.sum(mom**2))
                 atom[cm:cm+3] = mom*mag
     newPhase['Atoms'] = newAtoms
-    newPhase['Atoms'],atCodes = GetUnique(newPhase,atCodes)
+    if SGData['SpGrp'] != 'P 1':
+        newPhase['Atoms'],atCodes = GetUnique(newPhase,atCodes)
     newPhase['Drawing'] = []
     newPhase['ranId'] = ran.randint(0,sys.maxsize)
     return newPhase,atCodes

@@ -2242,7 +2242,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,rigBod,PWId,BraggWt):
+def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
     refList = PWDdata['Reflection Lists'][Name]['RefList']
@@ -2274,8 +2274,10 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,rig
     fl.write('PHASE :: '+Meta['phase']+'\n')
     fl.write('TEMPERATURE :: '+str(Meta['temperature'])+'\n')
     fl.write('INVESTIGATOR :: '+Meta['owner']+'\n')
-    minD = ' '.join(['%6.3f'%dist for dist in pairMin])
-    fl.write('MINIMUM_DISTANCES ::   %s  Angstrom\n'%minD)
+    minHD = ' '.join(['%6.3f'%dist[0] for dist in pairMin])
+    minD = ' '.join(['%6.3f'%dist[1] for dist in pairMin])
+    maxD = ' '.join(['%6.3f'%dist[2] for dist in pairMin])
+    fl.write('MINIMUM_DISTANCES ::   %s  Angstrom\n'%minHD)
     maxMv = ' '.join(['%6.3f'%mov for mov in maxMoves])
     fl.write('MAXIMUM_MOVES ::   %s Angstrom\n'%maxMv)
     fl.write('R_SPACING ::  0.0200 Angstrom\n')
@@ -2292,6 +2294,9 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,rig
     fl.write('\n')
     fl.write('INPUT_CONFIGURATION_FORMAT ::  rmc6f\n')
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
+    fl.write('DISTANCE_WINDOW ::\n')
+    fl.write('  > MNDIST :: %s\n'%minD)
+    fl.write('  > MXDIST :: %s\n'%maxD)
     for File in Files:
         if Files[File][0]:
             fl.write('\n')
@@ -2317,9 +2322,6 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,rig
     fl.write('  > RECALCUATE\n')
     fl.write('  > DMIN :: %.2f\n'%(dMin-0.02))
     fl.write('  > WEIGHT :: %10.3f\n'%BraggWt)
-    fl.write('\n')
-    if rigBod[1]:
-        fl.write('  %% future? POLYHEDRAL_RESTRAINT ::  %d\n'%rigBod[1])
     fl.write('\n')
     fl.write('END  ::\n')
     fl.close()

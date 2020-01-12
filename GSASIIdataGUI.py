@@ -343,21 +343,27 @@ def ShowVersions():
     print ("  numpy:      %s"%np.__version__)
     print ("  scipy:      %s"%sp.__version__)
     print ("  OpenGL:     %s"%ogl.__version__)
-    # TODO: not sure this prints the right message with pillow
+    Image = None
+    version = '?'
     try:
         from PIL import Image
-        try:
-            from PIL import PILLOW_VERSION
-            version = PILLOW_VERSION
-        except:
-            version = Image.VERSION
-        print ("  PIL.Image:  %s"%version)
     except ImportError:
         try:
             import Image
-            print ("Image (PIL):%s"%Image.VERSION)
         except ImportError:
-            print ("Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations")
+            pass
+    if Image is None:
+        print ("Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations")
+    else:
+        # version # can be in various places, try standard dunderscore first
+        for ver in '__version__','VERSION','PILLOW_VERSION':
+            if hasattr(Image,ver):
+                try:
+                    version = eval('Image.'+ver)
+                    break
+                except:
+                    pass
+        print ("  Image:      %s (PIL or Pillow)"%version)
     print ("  Platform:   %s %s %s"%(sys.platform,platform.architecture()[0],platform.machine()))
     try:
         import mkl

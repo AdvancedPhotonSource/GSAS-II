@@ -9,6 +9,11 @@ withing the GSAS-II framework, those planning to understand how
 GSAS-II works, or for people wishing to develop scripting applications
 using the API (:mod:`GSASIIscriptable`).
 
+For information on obtaining or learning to use GSAS-II, please see
+the information on the GSAS-II home page:
+https://subversion.xray.aps.anl.gov/trac/pyGSAS
+and pages referenced there. 
+
 Contents
 ---------
 

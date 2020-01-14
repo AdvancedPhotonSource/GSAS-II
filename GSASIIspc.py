@@ -3288,6 +3288,8 @@ def SytSym(XYZ,SGData):
      * dupDir Dict - dictionary of overlapping operators
 
     '''
+    if SGData['SpGrp'] == 'P 1':
+        return '1',1,1,{}
     Mult = 1
     Isym = 0
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:

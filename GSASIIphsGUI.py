@@ -1106,10 +1106,12 @@ class SetUpRMCProfileDialog(wx.Dialog):
                       'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
                       'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
                       'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
+            runTimes = [10.,1.]
             metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
                 'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
             Phase['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
-                 'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata}
+                 'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
+                 'runTimes':runTimes,'ReStart':False}
         self.RMCPdict = Phase['RMC']['RMCProfile']
         self.Phase = Phase
         self.Draw()
@@ -1154,8 +1156,14 @@ class SetUpRMCProfileDialog(wx.Dialog):
             Obj = event.GetEventObject()
             fil = Indx[Obj.GetId()]
             self.RMCPdict['files'][fil][3] = Obj.GetStringSelection()
+            
+        def SetRestart(invalid,value,tc):
+            self.RMCPdict['ReStart'] = True
+            self.OKBtn.SetLabel('Restart')
                    
         Indx = {}
+        if 'runTimes' not in self.RMCPdict:
+            self.RMCPdict['runTimes'] = [10.0,1.0]
         lenA = len(self.RMCPdict['atSeq'])
         Pairs= []
         for pair in [[' %s-%s'%(self.RMCPdict['atSeq'][i],self.RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
@@ -1171,12 +1179,18 @@ class SetUpRMCProfileDialog(wx.Dialog):
             metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
             metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['metadata'],item),0,WACV)
         mainSizer.Add(metaSizer,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers:'),0,WACV)
+        timeSizer = wx.BoxSizer(wx.HORIZONTAL)
+        timeSizer.Add(wx.StaticText(self.panel,label=' Total running time (min): '),0,WACV)
+        timeSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['runTimes'],0,min=0.),0,WACV)
+        timeSizer.Add(wx.StaticText(self.panel,label=' Save interval time (min): '),0,WACV)
+        timeSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['runTimes'],1,min=0.1,max=20.),0,WACV)
+        mainSizer.Add(timeSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers; if changed will force restart of RMCProfile:'),0,WACV)
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
         axes = ['X','Y','Z']
         for i,ax in enumerate(axes):
             superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
-            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['SuperCell'],i,min=1,max=20,size=(50,25)),0,WACV)
+            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['SuperCell'],i,min=1,max=20,size=(50,25),OnLeave=SetRestart),0,WACV)
         mainSizer.Add(superSizer,0,WACV)
         nTypes = len(self.RMCPdict['aTypes'])
         atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
@@ -1262,9 +1276,13 @@ class SetUpRMCProfileDialog(wx.Dialog):
         
         mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        OKBtn = wx.Button(self.panel,-1,"OK")
-        OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
-        btnSizer.Add(OKBtn)            
+        self.OKBtn = wx.Button(self.panel,-1,"OK")
+        self.OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
+        btnSizer.Add(self.OKBtn)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer.Add(CancelBtn)
+                    
         
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)
@@ -1283,6 +1301,12 @@ class SetUpRMCProfileDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
         
 class SetUpFullrmcDialog(wx.Dialog):
     ''' Get from user the super cell size & selected histogram to make various files
@@ -1339,18 +1363,6 @@ class SetUpFullrmcDialog(wx.Dialog):
             Indx[atmSel.GetId()] = iType
             atmChoice.Add(atmSel,0,WACV)
         mainSizer.Add(atmChoice,0,WACV)
-#        histograms = self.Phase['Histograms']
-#        histNames = list(histograms.keys())
-#        mainSizer.Add(wx.StaticText(self.panel,label=' Select one histogram for processing:'),0,WACV)
-#        histo = wx.ComboBox(self.panel,choices=histNames,style=wx.CB_DROPDOWN|wx.TE_READONLY)        
-#        histo.Bind(wx.EVT_COMBOBOX,OnHisto)
-#        mainSizer.Add(histo,0,WACV)
-#        metalist = ['title','owner','material','comment','source']
-#        metaSizer = wx.FlexGridSizer(0,2,5,5)
-#        for item in metalist:
-#            metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
-#            metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.metadata,item),0,WACV)
-#        mainSizer.Add(metaSizer,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         OKBtn = wx.Button(self.panel,-1,"OK")
@@ -3370,7 +3382,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetColAttr(c, attr)
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            
-            for row in range(Atoms.GetNumberRows()):
+            for row in range(Atoms.GetNumberRows()):    #this is slow for large numbers of atoms
                 atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
                 if Atoms.GetCellValue(row,colIA) == 'A':
@@ -3405,8 +3417,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     CSI = []
                     if not SGData['SGGray']:
                         CSI = G2spc.GetCSpqinel(SpnFlp,dupDir)
-#                    print (SytSym,Nop,SpnFlp[Nop],CSI,dupDir)
-#                    print('CSI:',CSI)
                     saveCSI = 0
                     for i in range(3):
                         ci = i+colM
@@ -3427,15 +3437,11 @@ def UpdatePhaseData(G2frame,Item,data):
             Atoms.AutoSizeColumns(False)
             SetPhaseWindow(Atoms)
 
-        # FillAtomsGrid executable code starts here
+# FillAtomsGrid executable code starts here
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
         SpnFlp = generalData['SGData'].get('SpnFlp',[])
-#        OprNames = generalData['SGData'].get('OprNames',[])
-#        print OprNames
-#        print SpnFlp
-#        print generalData['SGData'].get('MagMom',[])
         atomData = data['Atoms']
         resRBData = data['RBModels'].get('Residue',[])
         vecRBData = data['RBModels'].get('Vector',[])
@@ -4634,6 +4640,12 @@ def UpdatePhaseData(G2frame,Item,data):
             UpdateRMC()
         
         G2frame.GetStatusBar().SetStatusText('',1)
+        if G2frame.RMCchoice == 'RMCProfile':
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,False)
+        elif G2frame.RMCchoice == 'fullrmc':
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         runFile = ' '
         choice = ['RMCProfile','fullrmc',]
@@ -4649,9 +4661,7 @@ def UpdatePhaseData(G2frame,Item,data):
 #            G2frame.runtext.SetFont(font1)
             mainSizer.Add(G2frame.runtext)
         else:
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile input file preparation:'),0,WACV)
-            G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
-            mainSizer.Add(G2frame.runtext)
+            pass
             
         
         SetPhaseWindow(G2frame.FRMC,mainSizer)
@@ -4724,9 +4734,10 @@ freshStart     = False      #make TRUE for a restart
                     else:
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
-                    print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
-                        RMCPdict['SuperCell'],PWId)+ ' written')
-                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
+                    if RMCPdict.get('ReStart',False):
+                        print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
+                            RMCPdict['SuperCell'],PWId)+ ' written')
+                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['runTimes'],RMCPdict['atSeq'],
                         RMCPdict['aTypes'],RMCPdict['Pairs'],RMCPdict['SuperCell'],RMCPdict['files'],PWId,RMCPdict['histogram'][1])+ ' written')
                     print('RMCProfile file build completed')
                 else:
@@ -4894,6 +4905,7 @@ freshStart     = False      #make TRUE for a restart
                         G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
                             labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                             lines=True,names=Names[1:])
+                        print(' %s scale Ycalc/Yobs: %.4f'%(label,np.sum(Ycalc[1])/np.sum(Yobs[1])))
 #partials plots
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],

@@ -2186,6 +2186,10 @@ def MakeRMC6f(G2frame,Name,Phase,Meta,Atseq,Supercell,PWId):
         NAtype[Atseq.index(atom[1])] += 1
     NAstr = ['%d'%i for i in NAtype]
     Cell = newPhase['General']['Cell'][1:7]
+    if os.path.exists(Name+'.his6f'):
+        os.remove(Name+'.his6f')
+    if os.path.exists(Name+'.neigh'):
+        os.remove(Name+'.neigh')
     fname = Name+'.rmc6f'
     fl = open(fname,'w')
     fl.write('(Version 6f format configuration file)\n')
@@ -2242,7 +2246,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
+def MakeRMCPdat(G2frame,Name,Phase,Meta,Times,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
     refList = PWDdata['Reflection Lists'][Name]['RefList']
@@ -2282,8 +2286,8 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Atseq,Atypes,atPairs,Supercell,Files,PWI
     fl.write('MAXIMUM_MOVES ::   %s Angstrom\n'%maxMv)
     fl.write('R_SPACING ::  0.0200 Angstrom\n')
     fl.write('PRINT_PERIOD :: 100\n')
-    fl.write('TIME_LIMIT ::     10.00 MINUTES\n')
-    fl.write('SAVE_PERIOD ::     1.00 MINUTES\n')
+    fl.write('TIME_LIMIT ::     %.2f MINUTES\n'%Times[0])
+    fl.write('SAVE_PERIOD ::    %.2f MINUTES\n'%Times[1])
     fl.write('\n')
     fl.write('ATOMS :: '+' '.join(Atseq)+'\n')
     fl.write('\n')

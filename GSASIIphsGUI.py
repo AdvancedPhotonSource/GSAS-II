@@ -62,6 +62,7 @@ import GSASIIfiles as G2fl
 import GSASIIconstrGUI as G2cnstG
 import numpy as np
 import numpy.linalg as nl
+import atmdata
 
 try:
     wx.NewIdRef
@@ -1096,11 +1097,17 @@ class SetUpRMCProfileDialog(wx.Dialog):
             Atypes = Phase['General']['AtomTypes']
             aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
             atSeq = list(aTypes.keys())
+            atOxid = [[atmdata.BVSoxid[atm][0],0.001] for atm in atSeq]
             lenA = len(atSeq)
             Pairs= []
             for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
                 Pairs += pair
             Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+            BVSpairs = []
+            if lenA > 1:
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+                    BVSpairs += pair
+                BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
             files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
                       'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
                       'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
@@ -1111,7 +1118,8 @@ class SetUpRMCProfileDialog(wx.Dialog):
                 'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
             Phase['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
                  'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
-                 'runTimes':runTimes,'ReStart':False}
+                 'runTimes':runTimes,'ReStart':False,'BVS':BVS,'Oxid':atOxid,'useBVS':False,
+                 'AveCN':[],'FxCN':[]}
         self.RMCPdict = Phase['RMC']['RMCProfile']
         self.Phase = Phase
         self.Draw()
@@ -1124,13 +1132,19 @@ class SetUpRMCProfileDialog(wx.Dialog):
         def OnAtSel(event):
             Obj = event.GetEventObject()
             itype = Indx[Obj.GetId()]
-            tid = Obj.GetSelection()
-            if itype < nTypes-1:
+            tid = self.RMCPdict['atSeq'].index(Obj.GetStringSelection())
+            if itype < nTypes:
                 if itype == tid:
                     tid += 1
                 self.RMCPdict['atSeq'] = G2lat.SwapItems(self.RMCPdict['atSeq'],itype,tid)
             wx.CallAfter(self.Draw)
             
+        def OnValSel(event):
+            Obj = event.GetEventObject()
+            itype = Indx[Obj.GetId()]
+            self.RMCPdict['Oxid'][itype][0] = Obj.GetStringSelection()            
+            wx.CallAfter(self.Draw)
+
         def OnSize(event):
             self.RMCPdict['UseSampBrd'][0] = samSize.GetValue()
             
@@ -1150,7 +1164,7 @@ class SetUpRMCProfileDialog(wx.Dialog):
             else:
                 dlg.Destroy()
                 return
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnFileFormat(event):
             Obj = event.GetEventObject()
@@ -1160,15 +1174,78 @@ class SetUpRMCProfileDialog(wx.Dialog):
         def SetRestart(invalid,value,tc):
             self.RMCPdict['ReStart'] = True
             self.OKBtn.SetLabel('Restart')
+            
+        def OnUseBVS(event):
+            self.RMCPdict['useBVS'] = not self.RMCPdict['useBVS']
+            wx.CallAfter(self.Draw)
+            
+        def OnResetBVS(event):
+            Obj = event.GetEventObject()
+            pair = Indx[Obj.GetId()]
+            pId = [key for key in self.RMCPdict['BVS']].index(pair)+1
+            nId = len(self.RMCPdict['BVS'])+1
+            dist = G2elem.GetBVS(pair,self.RMCPdict['atSeq'],self.RMCPdict['Oxid'])
+            if dist:
+                self.RMCPdict['BVS'][pair] = [dist,0.37,3.0]
+                bvsCh = bvsSizer.GetChildren()
+                addr = 2*nId+pId
+                bvsCh[addr].Window.SetValue('%6.3f'%dist)
+                bvsCh[addr+nId].Window.SetValue('0.37')
+                bvsCh[addr+2*nId].Window.SetValue('3.00')
+            
+        def OnAddFxCN(event):
+            self.RMCPdict['FxCN'].append(['','',0.0,2.0,6,1.0,0.001])
+            wx.CallAfter(self.Draw)
+            
+        def OnDelFxCN(event):
+            Obj = event.GetEventObject()
+            fxCN = Indx[Obj.GetId()]
+            del self.RMCPdict['FxCN'][fxCN]
+            wx.CallAfter(self.Draw)
+            
+        def OnFxcnAtSel(event):
+            Obj = event.GetEventObject()
+            ifxCN,i = Indx[Obj.GetId()]
+            self.RMCPdict['FxCN'][ifxCN][i] = Obj.GetStringSelection()
+
+        def OnAddAveCN(event):
+            self.RMCPdict['AveCN'].append(['','',0.0,2.0,6.,0.001])
+            wx.CallAfter(self.Draw)
                    
+        def OnDelAvCN(event):
+            Obj = event.GetEventObject()
+            fxCN = Indx[Obj.GetId()]
+            del self.RMCPdict['AveCN'][fxCN]
+            wx.CallAfter(self.Draw)
+            
+        def OnAvcnAtSel(event):
+            Obj = event.GetEventObject()
+            ifxCN,i = Indx[Obj.GetId()]
+            self.RMCPdict['AveCN'][ifxCN][i] = Obj.GetStringSelection()
+
         Indx = {}
+#patches
         if 'runTimes' not in self.RMCPdict:
             self.RMCPdict['runTimes'] = [10.0,1.0]
         lenA = len(self.RMCPdict['atSeq'])
+        if 'Oxid' not in self.RMCPdict:
+            self.RMCPdict['Oxid'] = [[atmdata.BVSoxid[atm][0],0.001] for atm in self.RMCPdict['atSeq']]
         Pairs= []
         for pair in [[' %s-%s'%(self.RMCPdict['atSeq'][i],self.RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
             Pairs += pair
         self.RMCPdict['Pairs'] = dict(zip(Pairs,[self.RMCPdict['Pairs'].get(pair,[0.0,0.0,0.0]) for pair in Pairs]))
+        BVSpairs = []
+        if 'BVS' not in self.RMCPdict:
+            self.RMCPdict['useBVS'] = False
+            self.RMCPdict['BVS'] = {}
+        if lenA > 1:
+            for pair in [[' %s-%s'%(self.RMCPdict['atSeq'][i],self.RMCPdict['atSeq'][j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+                BVSpairs += pair
+            self.RMCPdict['BVS'] = dict(zip(BVSpairs,[self.RMCPdict['BVS'].get(pair,[0.0,0.0,0.0]) for pair in BVSpairs]))
+        if 'FxCN' not in self.RMCPdict:
+            self.RMCPdict.update({'AveCN':[],'FxCN':[]})            
+            
+#end patches
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE,size=(700,500))
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1179,19 +1256,22 @@ class SetUpRMCProfileDialog(wx.Dialog):
             metaSizer.Add(wx.StaticText(self.panel,label=' Metadata item: '+item+' '),0,WACV)
             metaSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['metadata'],item),0,WACV)
         mainSizer.Add(metaSizer,0,WACV)
+        
+        G2G.HorizontalLine(mainSizer,self.panel)
         timeSizer = wx.BoxSizer(wx.HORIZONTAL)
         timeSizer.Add(wx.StaticText(self.panel,label=' Total running time (min): '),0,WACV)
         timeSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['runTimes'],0,min=0.),0,WACV)
         timeSizer.Add(wx.StaticText(self.panel,label=' Save interval time (min): '),0,WACV)
         timeSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['runTimes'],1,min=0.1,max=20.),0,WACV)
         mainSizer.Add(timeSizer,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers; if changed will force restart of RMCProfile:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Lattice multipliers; if changed will force reset of atom positions:'),0,WACV)
         superSizer = wx.BoxSizer(wx.HORIZONTAL)
         axes = ['X','Y','Z']
         for i,ax in enumerate(axes):
             superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
             superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['SuperCell'],i,min=1,max=20,size=(50,25),OnLeave=SetRestart),0,WACV)
         mainSizer.Add(superSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' NB: be sure to set cations first && anions last in atom ordering'),0,WACV)
         nTypes = len(self.RMCPdict['aTypes'])
         atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
         atmChoice.Add(wx.StaticText(self.panel,label=' Set atom ordering: '),0,WACV)
@@ -1202,29 +1282,131 @@ class SetUpRMCProfileDialog(wx.Dialog):
             atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
             Indx[atmSel.GetId()] = iType
             atmChoice.Add(atmSel,0,WACV)
+        if self.RMCPdict['useBVS']:    
+            atmChoice.Add(wx.StaticText(self.panel,label=' Select valence: '),0,WACV)
+            for itype in range(nTypes):
+                valChoice = atmdata.BVSoxid[self.RMCPdict['atSeq'][itype]]
+                valSel = wx.ComboBox(self.panel,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                valSel.SetStringSelection(self.RMCPdict['Oxid'][itype][0])
+                valSel.Bind(wx.EVT_COMBOBOX,OnValSel)
+                Indx[valSel.GetId()] = itype
+                atmChoice.Add(valSel,0,WACV)
+            atmChoice.Add(wx.StaticText(self.panel,label=' BVS weight: '),0,WACV)
+            for itype in range(nTypes):
+                atmChoice.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Oxid'][itype],1,min=0.),0,WACV)
         atmChoice.Add(wx.StaticText(self.panel,label=' Set max shift: '),0,WACV)
         for iType in range(nTypes):
             atId = self.RMCPdict['atSeq'][iType]
             atmChoice.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
         mainSizer.Add(atmChoice,0,WACV)
+        
+        G2G.HorizontalLine(mainSizer,self.panel)
         mainSizer.Add(wx.StaticText(self.panel,label=' Enter constraints && restraints:'),0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Set minimum && maximum distances for:'),0,WACV)
         pairSizer = wx.FlexGridSizer(len(self.RMCPdict['Pairs'])+1,5,5)
         pairSizer.Add((5,5),0)
         for pair in self.RMCPdict['Pairs']:
             pairSizer.Add(wx.StaticText(self.panel,label=pair),0,WACV)
-        pairSizer.Add(wx.StaticText(self.panel,label=' Hard min: '),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label='%14s'%' Hard min: '),0,WACV)
         for pair in self.RMCPdict['Pairs']:
             pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
-        pairSizer.Add(wx.StaticText(self.panel,label=' Search from: '),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label='%14s'%' Search from: '),0,WACV)
         for pair in self.RMCPdict['Pairs']:
             pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],1,min=self.RMCPdict['Pairs'][pair][0],max=10.,size=(50,25)),0,WACV)
-        pairSizer.Add(wx.StaticText(self.panel,label='       to: '),0,WACV)
+        pairSizer.Add(wx.StaticText(self.panel,label='%14s'%'to: '),0,WACV)
         for pair in self.RMCPdict['Pairs']:
             pairSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['Pairs'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
         mainSizer.Add(pairSizer,0,WACV)
         
+        G2G.HorizontalLine(mainSizer,self.panel)
+        useBVS = wx.CheckBox(self.panel,label=' Use bond valence sum restraints for (set to 0 for non-bonded ones):')
+        useBVS.SetValue(self.RMCPdict.get('useBVS',False))
+        useBVS.Bind(wx.EVT_CHECKBOX,OnUseBVS)
+        mainSizer.Add(useBVS,0,WACV)
+        if self.RMCPdict.get('useBVS',False):
+            bvsSizer = wx.FlexGridSizer(len(self.RMCPdict['BVS'])+1,5,5)
+            bvsSizer.Add((5,5),0)
+            for pair in self.RMCPdict['BVS']:
+                bvsSizer.Add(wx.StaticText(self.panel,label=pair),0,WACV)
+            bvsSizer.Add(wx.StaticText(self.panel,label=' Reset:'),0,WACV)
+            for pair in self.RMCPdict['BVS']:
+                reset = wx.Button(self.panel,label='Yes')
+                bvsSizer.Add(reset,0,WACV)
+                reset.Bind(wx.EVT_BUTTON,OnResetBVS)
+                Indx[reset.GetId()] = pair
+            bvsSizer.Add(wx.StaticText(self.panel,label=' Bond length:'),0,WACV)
+            for pair in self.RMCPdict['BVS']:
+                bvsSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['BVS'][pair],0,min=0.,max=10.,size=(50,25)),0,WACV)
+            bvsSizer.Add(wx.StaticText(self.panel,label=' B constant (0.37): '),0,WACV)
+            for pair in self.RMCPdict['BVS']:
+                bvsSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['BVS'][pair],1,min=0.,max=10.,size=(50,25)),0,WACV)
+            bvsSizer.Add(wx.StaticText(self.panel,label=' Cut off: '),0,WACV)
+            for pair in self.RMCPdict['BVS']:
+                bvsSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['BVS'][pair],2,min=0.,max=10.,size=(50,25)),0,WACV)
+            mainSizer.Add(bvsSizer,0,WACV)
+            
+        G2G.HorizontalLine(mainSizer,self.panel)
+        fxcnBox = wx.BoxSizer(wx.HORIZONTAL)
+        fxcnAdd = wx.Button(self.panel,label='Add')
+        fxcnAdd.Bind(wx.EVT_BUTTON,OnAddFxCN)
+        fxcnBox.Add(fxcnAdd,0,WACV)
+        fxcnBox.Add(wx.StaticText(self.panel,label=' Fixed coordination number restraint: '),0,WACV)
+        mainSizer.Add(fxcnBox,0,WACV)
+        if len(self.RMCPdict['FxCN']):
+            atChoice = self.RMCPdict['atSeq']
+            fxcnSizer = wx.FlexGridSizer(8,5,5)
+            fxcnLabels = [' ','Atom-1','Atom-2','min dist','max dist','CN','fraction','weight']
+            for lab in fxcnLabels:
+                fxcnSizer.Add(wx.StaticText(self.panel,label=lab),0,WACV)
+            for ifx,fxCN in enumerate(self.RMCPdict['FxCN']):
+                delBtn = wx.Button(self.panel,label='Delete')
+                delBtn.Bind(wx.EVT_BUTTON,OnDelFxCN)
+                Indx[delBtn.GetId()] = ifx
+                fxcnSizer.Add(delBtn,0,WACV)
+                for i in [0,1]:
+                    atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    atmSel.SetStringSelection(fxCN[i])
+                    atmSel.Bind(wx.EVT_COMBOBOX,OnFxcnAtSel)
+                    Indx[atmSel.GetId()] = [ifx,i]
+                    fxcnSizer.Add(atmSel,0,WACV)
+                fxcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,2,min=0.,max=5.,size=(50,25)),0,WACV)
+                fxcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,3,min=0.,max=5.,size=(50,25)),0,WACV)
+                fxcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,4,min=1,max=12,size=(50,25)),0,WACV)
+                fxcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,5,min=0.,max=1.,size=(50,25)),0,WACV)
+                fxcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,6,min=0.,size=(50,25)),0,WACV)
+            mainSizer.Add(fxcnSizer,0,WACV)
         
+        G2G.HorizontalLine(mainSizer,self.panel)
+        avcnBox = wx.BoxSizer(wx.HORIZONTAL)
+        avcnAdd = wx.Button(self.panel,label='Add')
+        avcnAdd.Bind(wx.EVT_BUTTON,OnAddAveCN)
+        avcnBox.Add(avcnAdd,0,WACV)
+        avcnBox.Add(wx.StaticText(self.panel,label=' Average coordination number restraint: '),0,WACV)
+        mainSizer.Add(avcnBox,0,WACV)
+        if len(self.RMCPdict['AveCN']):
+            atChoice = self.RMCPdict['atSeq']
+            avcnSizer = wx.FlexGridSizer(7,5,5)
+            fxcnLabels = [' ','Atom-1','Atom-2','min dist','max dist','CN','weight']
+            for lab in fxcnLabels:
+                avcnSizer.Add(wx.StaticText(self.panel,label=lab),0,WACV)
+            for ifx,fxCN in enumerate(self.RMCPdict['FxCN']):
+                delBtn = wx.Button(self.panel,label='Delete')
+                delBtn.Bind(wx.EVT_BUTTON,OnDelAvCN)
+                Indx[delBtn.GetId()] = ifx
+                avcnSizer.Add(delBtn,0,WACV)
+                for i in [0,1]:
+                    atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    atmSel.SetStringSelection(fxCN[i])
+                    atmSel.Bind(wx.EVT_COMBOBOX,OnAvcnAtSel)
+                    Indx[atmSel.GetId()] = [ifx,i]
+                    avcnSizer.Add(atmSel,0,WACV)
+                avcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,2,min=0.,max=5.,size=(50,25)),0,WACV)
+                avcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,3,min=0.,max=5.,size=(50,25)),0,WACV)
+                avcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,4,min=1.,max=12.,size=(50,25)),0,WACV)
+                avcnSizer.Add(G2G.ValidatedTxtCtrl(self.panel,fxCN,5,min=0.,size=(50,25)),0,WACV)
+            mainSizer.Add(avcnSizer,0,WACV)
+
+        G2G.HorizontalLine(mainSizer,self.panel)
         mainSizer.Add(wx.StaticText(self.panel,label=' Select data:'),0,WACV)
         histograms = self.Phase['Histograms']
         histNames = list(histograms.keys())
@@ -1250,15 +1432,17 @@ class SetUpRMCProfileDialog(wx.Dialog):
         mainSizer.Add(samSizer,0,WACV)
         title = ' Select data for processing:'
         mainSizer.Add(wx.StaticText(self.panel,label=title),0,WACV)
-        fileSizer = wx.FlexGridSizer(5,5,5)
+        fileSizer = wx.FlexGridSizer(4,5,5)
         Formats = ['RMC','GUDRUN','STOG']
+        Heads = [' ','Format','Weight','Name']
+        for head in Heads:
+            fileSizer.Add(wx.StaticText(self.panel,label=head),0,WACV)
         for fil in self.RMCPdict['files']:
             filSel = wx.Button(self.panel,label='Select')
             filSel.Bind(wx.EVT_BUTTON,OnFileSel)
             Indx[filSel.GetId()] = fil
             fileSizer.Add(filSel,0,WACV)
             if self.RMCPdict['files'][fil][0]:
-                fileSizer.Add(wx.StaticText(self.panel,label=' Format, Weight: '),0,WACV)
                 nform = 3
                 if 'Xray' in fil: nform = 1
                 fileFormat = wx.ComboBox(self.panel,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
@@ -1267,11 +1451,10 @@ class SetUpRMCProfileDialog(wx.Dialog):
                 fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
                 fileSizer.Add(fileFormat,0,WACV)
                 fileSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.RMCPdict['files'][fil],1),0,WACV)
-            fileSizer.Add(wx.StaticText(self.panel,label=fil+self.RMCPdict['files'][fil][0]),0,WACV)
             if not self.RMCPdict['files'][fil][0]:
                 fileSizer.Add((5,5),0)
                 fileSizer.Add((5,5),0)
-                fileSizer.Add((5,5),0)
+            fileSizer.Add(wx.StaticText(self.panel,label=fil+self.RMCPdict['files'][fil][0]),0,WACV)
         mainSizer.Add(fileSizer,0,WACV)
         
         mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
@@ -4721,6 +4904,7 @@ freshStart     = False      #make TRUE for a restart
             '''            
             G2frame.runtext.SetValue(rundata)
         else:
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             dlg = SetUpRMCProfileDialog(G2frame,Name=pName,Phase=data)
             if dlg.ShowModal() == wx.ID_OK:
                 phase = dlg.GetData()
@@ -4731,17 +4915,21 @@ freshStart     = False      #make TRUE for a restart
                     backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                     if backfile is None:
                         print(' Chebyschev-1 background not used; no .back file written')
+                        wx.MessageDialog(G2frame,' Chebyschev-1 background not used; '+ \
+                            'no .back file written & RMCProfile will not run','Wrong background function',wx.OK).ShowModal()
+                        G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+                        return
                     else:
                         print(backfile+ ' written')
                     print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
                     if RMCPdict.get('ReStart',False):
-                        print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['atSeq'],
-                            RMCPdict['SuperCell'],PWId)+ ' written')
-                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict['metadata'],RMCPdict['runTimes'],RMCPdict['atSeq'],
-                        RMCPdict['aTypes'],RMCPdict['Pairs'],RMCPdict['SuperCell'],RMCPdict['files'],PWId,RMCPdict['histogram'][1])+ ' written')
+                        print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict,PWId)+ ' written')
+                    print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict,PWId)+ ' written')
                     print('RMCProfile file build completed')
+                    RMCPdict['ReStart'] = False
                 else:
                     print('RMCProfile file build failed - no histogram selected')
+                    G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             else:
                 pass
             dlg.Destroy()          
@@ -4838,6 +5026,7 @@ freshStart     = False      #make TRUE for a restart
             print('view fullrmc results - TBD')
         else:
             generalData = data['General']
+            RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
                 style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
@@ -4905,7 +5094,8 @@ freshStart     = False      #make TRUE for a restart
                         G2plt.PlotXY(G2frame,[Yobs,Ycalc],labelX=Labels[label][0],
                             labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                             lines=True,names=Names[1:])
-                        print(' %s scale Ycalc/Yobs: %.4f'%(label,np.sum(Ycalc[1])/np.sum(Yobs[1])))
+                        RMCPdict[pName+label] = np.sum(Ycalc[1])/np.sum(Yobs[1])
+                        print(' %s scale Ycalc/Yobs: %.4f'%(label,RMCPdict[pName+label]))
 #partials plots
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
@@ -4941,6 +5131,7 @@ freshStart     = False      #make TRUE for a restart
                 G2plt.PlotXY(G2frame,XY,labelX='no. generated',
                     labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCP Chi^2 for '+pName,
                     lines=True,names=Names[3:])
+        UpdateRMC()
             
 ################################################################################
 #### Layer Data page

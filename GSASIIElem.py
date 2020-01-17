@@ -156,6 +156,26 @@ def GetFFC5(ElSym):
     El['cmpa'] = Cmp5[1:6]
     El['cmpb'] = Cmp5[6:]
     return El
+
+def GetBVS(Pair,atSeq,Valences):
+    Els = Pair.strip().split('-')
+    iAt = atSeq.index(Els[0])
+    jAt = atSeq.index(Els[1])
+    iVal = Valences[iAt][0]
+    if Els[1] in ['O','F','Cl']:
+        iEls = ['O','F','Cl'].index(Els[1])
+        if iVal in atmdata.BVScoeff:
+            return atmdata.BVScoeff[iVal][iEls]
+        else:
+            return 0.0
+    elif Els[1] in ['Br','I','S','Se','Te','N','P','As','H','D']:
+        iEls = ['Br','I','S','Se','Te','N','P','As','H','D'].index(Els[1])
+        if Els[0] in atmdata.BVSnotOFCl:
+            return atmdata.BVSnotOFCl[Els[0]][iEls]
+        else:
+            return 0.0
+    else:
+        return 0.0
     
 def CheckElement(El):
     '''Check if element El is in the periodic table

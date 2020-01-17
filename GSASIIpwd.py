@@ -2166,7 +2166,10 @@ def MakeBack(G2frame,Name,PWId):
     fl.close()
     return fname
 
-def MakeRMC6f(G2frame,Name,Phase,Meta,Atseq,Supercell,PWId):
+def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
+    Meta = RMCPdict['metadata']
+    Atseq = RMCPdict['atSeq']
+    Supercell =  RMCPdict['SuperCell']
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     generalData = Phase['General']
     Sample = PWDdata['Sample Parameters']
@@ -2246,7 +2249,14 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,Meta,Times,Atseq,Atypes,atPairs,Supercell,Files,PWId,BraggWt):
+def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
+    Meta = RMCPdict['metadata']
+    Times = RMCPdict['runTimes']
+    Atseq = RMCPdict['atSeq']
+    Atypes = RMCPdict['aTypes']
+    atPairs = RMCPdict['Pairs']
+    Files = RMCPdict['files']
+    BraggWt = RMCPdict['histogram'][1]
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
     refList = PWDdata['Reflection Lists'][Name]['RefList']
@@ -2301,6 +2311,36 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Times,Atseq,Atypes,atPairs,Supercell,Fil
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)
     fl.write('  > MXDIST :: %s\n'%maxD)
+    if RMCPdict['useBVS']:
+        fl.write('BVS ::\n')
+        fl.write('  > ATOM :: '+' '.join(Atseq)+'\n')
+        fl.write('  > WEIGHTS :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][2] for bvs in RMCPdict['BVS']]))
+        oxid = []
+        for val in RMCPdict['Oxid']:
+            if len(val) == 3:
+                oxid.append(val[0][1:])
+            else:
+                oxid.append(val[0][2:])
+        fl.write('  > OXID :: %s\n'%' '.join(oxid))
+        fl.write('  > RIJ :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][0] for bvs in RMCPdict['BVS']]))
+        fl.write('  > BVAL :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][1] for bvs in RMCPdict['BVS']]))
+        fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][3] for bvs in RMCPdict['BVS']]))        
+        fl.write('  > SAVE :: 100000\n')
+        fl.write('  > UPDATE :: 100000\n')
+    for ifx,fxcn in enumerate(RMCPdict['FxCN']):
+        try:
+            at1 = Atseq.index(fxcn[0])
+            at2 = Atseq.index(fxcn[1])
+        except ValueError:
+            break
+        fl.write('CSTR%d :: %d %d %.2f %.2f %d %.2d %.6f\n'%(ifx+1,at1,at2,fxcn[2],fxcn[3],fxcn[4],fxcn[5],fxcn[6]))
+    for iav,avcn in enumerate(RMCPdict['AveCN']):
+        try:
+            at1 = Atseq.index(avcn[0])
+            at2 = Atseq.index(avcn[1])
+        except ValueError:
+            break
+        fl.write('CAVSTR%d :: %d %d %.2f %.2f %d %.2d %.6f\n'%(iav+1,at1,at2,avcn[2],avcn[3],avcn[4],avcn[5]))
     for File in Files:
         if Files[File][0]:
             fl.write('\n')
@@ -2319,6 +2359,8 @@ def MakeRMCPdat(G2frame,Name,Phase,Meta,Times,Atseq,Atypes,atPairs,Supercell,Fil
                 fl.write('  > CONVOLVE ::\n')
                 fl.write('  > NO_FITTED_SCALE\n')
                 if 'Xray' in File:
+                    fl.write('  > RECIPROCAL_SPACE_FIT :: 1 3000 1\n')
+                    fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
                     fl.write('  > REAL_SPACE_FIT :: 1 3000 1\n')
                     fl.write('  > REAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
     fl.write('BRAGG ::\n')

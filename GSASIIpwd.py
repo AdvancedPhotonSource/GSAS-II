@@ -2106,10 +2106,10 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         difC = inst['difC'][1]
         if useSamBrd[0]:
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
-                Xsb = 1.e-4*difC/Size[1][0]
+                Xsb = 1.e-4*difC/Size[1][0]/2.
         if useSamBrd[1]:
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
-                Ysb = 1.e-6*difC*Mustrain[1][0]
+                Ysb = 1.e-6*difC*Mustrain[1][0]/2.
         prms = ['Bank',
                 'difC','difA','Zero','2-theta',
                 'alpha','beta-0','beta-1',
@@ -2122,16 +2122,16 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         fl.write('%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
-        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Ysb,inst[prms[13]][1]+Xsb,0.0,0.0))
+        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Xsb,inst[prms[13]][1]+Ysb,0.0,0.0))
         fl.close()
     else:
         if useSamBrd[0]:
             wave = G2mth.getWave(inst)
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
-                Xsb = 1.8*wave/(np.pi*Size[1][0])
+                Xsb = 1.8*wave/(np.pi*Size[1][0])/2.
         if useSamBrd[1]:
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
-                Ysb = 0.018*np.pi*Mustrain[1][0]
+                Ysb = 0.018*np.pi*Mustrain[1][0]/2.
         prms = ['Bank',
                 'Lam','Zero','Polariz.',
                 'U','V','W',
@@ -2167,11 +2167,29 @@ def MakeBack(G2frame,Name,PWId):
     return fname
 
 def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
+    
+    def findDup(Atoms):
+        Dup = []
+        Fracs = []
+        for iat1,at1 in enumerate(Atoms):
+            if any([at1[0] in dup for dup in Dup]):
+                continue
+            else:
+                Dup.append([at1[0],])
+                Fracs.append([at1[6],])
+            for iat2,at2 in enumerate(Atoms[(iat1+1):]):
+                if np.sum((np.array(at1[3:6])-np.array(at2[3:6]))**2) < 0.00001:
+                    Dup[-1] += [at2[0],]
+                    Fracs[-1]+= [at2[6],]
+        return Dup,Fracs
+    
     Meta = RMCPdict['metadata']
     Atseq = RMCPdict['atSeq']
     Supercell =  RMCPdict['SuperCell']
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     generalData = Phase['General']
+    Dups,Fracs = findDup(Phase['Atoms'])
+    Sfracs = [np.cumsum(fracs) for fracs in Fracs]
     Sample = PWDdata['Sample Parameters']
     Meta['temperature'] = Sample['Temperature']
     Meta['pressure'] = Sample['Pressure']
@@ -2184,8 +2202,24 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
     Natm = np.count_nonzero(Natm-1)
     Atoms = newPhase['Atoms']
+    Satoms = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms,5),4),3)
+    Datoms = [[atom for atom in Satoms if atom[0] in dup] for dup in Dups]
+    Natoms = []
+    for idup,dup in enumerate(Dups):
+        ldup = len(dup)
+        datoms = Datoms[idup]
+        natm = len(datoms)
+        i = 0
+        while i < natm:
+            atoms = datoms[i:i+ldup]
+            try:
+                atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
+                Natoms.append(atom)
+            except IndexError:      #what about vacancies?
+                pass
+            i += ldup
     NAtype = np.zeros(len(Atseq))
-    for atom in Atoms:
+    for atom in Natoms:
         NAtype[Atseq.index(atom[1])] += 1
     NAstr = ['%d'%i for i in NAtype]
     Cell = newPhase['General']['Cell'][1:7]
@@ -2200,7 +2234,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
         fl.write('%-20s%s\n'%('Metadata '+item+':',Meta[item]))
     fl.write('Atom types present:             %s\n'%'    '.join(Atseq))
     fl.write('Number of each atom type:       %s\n'%'  '.join(NAstr))
-    fl.write('Number of atoms:                %d\n'%len(Atoms))
+    fl.write('Number of atoms:                %d\n'%len(Natoms))
     fl.write('%-35s%4d%4d%4d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
@@ -2211,7 +2245,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('Atoms (fractional coordinates):\n')
     nat = 0
     for atm in Atseq:
-        for iat,atom in enumerate(Atoms):
+        for iat,atom in enumerate(Natoms):
             if atom[1] == atm:
                 nat += 1
                 atcode = Atcodes[iat].split(':')
@@ -2237,15 +2271,16 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     Ifin = np.searchsorted(Data[0],Limits[1])+1
     fname = Name+'.bragg'
     fl = open(fname,'w')
-    fl.write('%12d%6d%15.7f%15.4f\n'%(Ifin-Ibeg-1,Bank,Scale,Vol))
+    fl.write('%12d%6d%15.7f%15.4f\n'%(Ifin-Ibeg-2,Bank,Scale,Vol))
     if 'T' in Inst['Type'][0]:
         fl.write('%12s%12s\n'%('   TOF,ms','  I(obs)'))
         for i in range(Ibeg,Ifin-1):
             fl.write('%12.8f%12.6f\n'%(Data[0][i]/1000.,Data[1][i]))
     else:
         fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
+        DT = np.diff(Data[0])
         for i in range(Ibeg,Ifin-1):
-            fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
+            fl.write('%11.6f%15.2f\n'%(Data[0][i]-DT[i],Data[1][i]))        
     fl.close()
     return fname
 
@@ -2308,9 +2343,22 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('\n')
     fl.write('INPUT_CONFIGURATION_FORMAT ::  rmc6f\n')
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
+    fl.write('\n')
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)
     fl.write('  > MXDIST :: %s\n'%maxD)
+    if len(RMCPdict['Potentials']['Stretch']) or len(RMCPdict['Potentials']['Stretch']):
+        fl.write('\n')
+        fl.write('POTENTIALS ::\n')
+        if len(RMCPdict['Potentials']['Stretch']):
+            fl.write('  > STRETCH_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Stretch search'])
+            for bond in RMCPdict['Potentials']['Stretch']:
+                fl.write('  > STRETCH :: %s %s %.2f eV %.2f Ang\n'%(bond[0],bond[1],bond[3],bond[2]))        
+        if len(RMCPdict['Potentials']['Angles']):
+            fl.write('  > ANGLE_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Angle search'])
+            for angle in RMCPdict['Potentials']['Angles']:
+                fl.write('  > ANGLE :: %s %s %s %.2f eV %.2f deg %.2f Ang %.2f Ang\n'%
+                    (angle[1],angle[0],angle[2],angle[6],angle[3],angle[4],angle[5]))
     if RMCPdict['useBVS']:
         fl.write('BVS ::\n')
         fl.write('  > ATOM :: '+' '.join(Atseq)+'\n')
@@ -2363,6 +2411,7 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
                     fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
                     fl.write('  > REAL_SPACE_FIT :: 1 3000 1\n')
                     fl.write('  > REAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
+    fl.write('\n')
     fl.write('BRAGG ::\n')
     fl.write('  > BRAGG_SHAPE :: %s\n'%gsasType)
     fl.write('  > RECALCUATE\n')

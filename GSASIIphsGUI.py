@@ -1161,12 +1161,18 @@ class SetUpFullrmcDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_OK)
-        
-            
 
 ################################################################################
 #### Phase editing routines
 ################################################################################
+def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
+    if mainSizer is not None:
+        phasePage.SetSizer(mainSizer)
+    phasePage.SetAutoLayout(True)
+    phasePage.SetScrollRate(10,10)
+    phasePage.SendSizeEvent()
+    phasePage.Scroll(0,Scroll)
+    
 def GetSpGrpfromUser(parent,SpGrp):
     helptext = '''\t\t\tGSAS-II space group information
                 
@@ -1219,14 +1225,6 @@ entered the right symbol for your structure.
             dlg.Destroy()
     return SpcGp
     
-    
-def SetPhaseWindow(phasePage,mainSizer=None,Scroll=0):
-    if mainSizer is not None:
-        phasePage.SetSizer(mainSizer)
-    phasePage.SetAutoLayout(True)
-    phasePage.SetScrollRate(10,10)
-    phasePage.SendSizeEvent()
-    phasePage.Scroll(0,Scroll)
     
 def FindBondsDraw(data):
     '''Generally used routine where cell is from data
@@ -2956,12 +2954,12 @@ def UpdatePhaseData(G2frame,Item,data):
             def chkUij(Uij,CSI): #needs to do something!!!
                 return Uij
 
+            SGData = generalData['SGData']
             r,c =  event.GetRow(),event.GetCol()
             replot = True
             if r >= 0 and c >= 0:
                 ci = colLabels.index('I/A')
                 ID = atomData[r][ci+8]
-                SGData = generalData['SGData']
                 if Atoms.GetColLabelValue(c) in ['x','y','z']:
                     ci = colLabels.index('x')
                     XYZ = atomData[r][ci:ci+3]
@@ -3033,7 +3031,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     ci = colLabels.index('I/A')
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                     G2plt.PlotStructure(G2frame,data)
-                wx.CallAfter(Paint)
+                if SGData['SpGrp'] != 'P 1':    #no need to update P 1 structures!
+                    wx.CallAfter(Paint)
 
         def AtomTypeSelect(event):
             r,c =  event.GetRow(),event.GetCol()
@@ -3158,6 +3157,12 @@ def UpdatePhaseData(G2frame,Item,data):
                 Atoms.SetColAttr(c, attr)
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            
+                attr = wx.grid.GridCellAttr()
+                attr.IncRef()               #fix from Jim Hester
+                attr.SetBackgroundColour(VERY_LIGHT_GREY)
+                attr.SetTextColour(VERY_LIGHT_GREY)
+                attr.SetReadOnly(True)
+                Atoms.SetColAttr(i, attr)
             for row in range(Atoms.GetNumberRows()):    #this is slow for large numbers of atoms
                 atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
@@ -3182,10 +3187,6 @@ def UpdatePhaseData(G2frame,Item,data):
                     Atoms.SetCellTextColour(row,colUiso,BLACK)
                     if 'U' in rbExcl:
                         Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
-                    for i in range(6):
-                        cj = colU11+i
-                        Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
-                        Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if colM:
                     SytSym,Mul,Nop,dupDir = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
                     MagSytSym = G2spc.MagSytSym(SytSym,dupDir,SGData)
@@ -4464,9 +4465,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
                     'material':'nothing','phase':'vacuum','comment':'none ','source':'nowhere'}
                 data['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
-                     'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
-                     'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,
-                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.}}
+                    'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
+                    'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,'Swaps':[],
+                    'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,
+                    }}
             RMCPdict = data['RMC']['RMCProfile']
 #patches
             if 'runTimes' not in RMCPdict:
@@ -4490,6 +4492,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 RMCPdict.update({'AveCN':[],'FxCN':[]})
             if 'Potentials' not in RMCPdict:
                 RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.}})
+            if 'Swaps' not in RMCPdict:
+                RMCPdict['Swaps'] = []
 #end patches
                 
             def OnHisto(event):
@@ -4526,6 +4530,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 
             def OnUseBVS(event):
                 RMCPdict['useBVS'] = not RMCPdict['useBVS']
+                wx.CallAfter(UpdateRMC)
+                
+            def OnAddSwap(event):
+                RMCPdict['Swaps'].append(['','',0.0,])
                 wx.CallAfter(UpdateRMC)
                 
             def OnAddFxCN(event):
@@ -4814,6 +4822,38 @@ def UpdatePhaseData(G2frame,Item,data):
                     bondSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,bond,3,min=0.,size=(50,25)),0,WACV)
                 return bondSizer
 
+            def GetSwapSizer():
+    
+                def OnDelSwap(event):
+                    Obj = event.GetEventObject()
+                    swap = Indx[Obj.GetId()]
+                    del RMCPdict['Swaps'][swap]
+                    wx.CallAfter(UpdateRMC)
+                    
+                def OnSwapAtSel(event):
+                    Obj = event.GetEventObject()
+                    swap,i = Indx[Obj.GetId()]
+                    RMCPdict['Swaps'][swap][i] = Obj.GetStringSelection()
+                                           
+                atChoice = RMCPdict['atSeq']
+                swapSizer = wx.FlexGridSizer(4,5,5)
+                swapLabels = [' ','Atom-A','Atom-B',' Swap prob.']
+                for lab in swapLabels:
+                    swapSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
+                for ifx,swap in enumerate(RMCPdict['Swaps']):
+                    delBtn = wx.Button(G2frame.FRMC,label='Delete')
+                    delBtn.Bind(wx.EVT_BUTTON,OnDelSwap)
+                    Indx[delBtn.GetId()] = ifx
+                    swapSizer.Add(delBtn,0,WACV)
+                    for i in [0,1]:
+                        atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                        atmSel.SetStringSelection(swap[i])
+                        atmSel.Bind(wx.EVT_COMBOBOX,OnSwapAtSel)
+                        Indx[atmSel.GetId()] = [ifx,i]
+                        swapSizer.Add(atmSel,0,WACV)
+                    swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
+                return swapSizer
+            
             Indx = {}
 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0,WACV)
@@ -4827,6 +4867,16 @@ def UpdatePhaseData(G2frame,Item,data):
             
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' NB: be sure to set cations first && anions last in atom ordering'),0,WACV)
             mainSizer.Add(GetAtmChoice(),0,WACV)
+            
+            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            swapBox = wx.BoxSizer(wx.HORIZONTAL)
+            swapAdd = wx.Button(G2frame.FRMC,label='Add')
+            swapAdd.Bind(wx.EVT_BUTTON,OnAddSwap)
+            swapBox.Add(swapAdd,0,WACV)
+            swapBox.Add(wx.StaticText(G2frame.FRMC,label=' Atom swap probabiities: '),0,WACV)
+            mainSizer.Add(swapBox,0,WACV)        
+            if len(RMCPdict['Swaps']):
+                mainSizer.Add(GetSwapSizer(),0,WACV)            
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter constraints && restraints:'),0,WACV)
@@ -4995,6 +5045,7 @@ freshStart     = False      #make TRUE for a restart
             RMCPdict = data['RMC']['RMCProfile']
             PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,RMCPdict['histogram'][0])
             if PWId:
+                reset = False
                 print(G2pwd.MakeInst(G2frame,pName,data,RMCPdict['UseSampBrd'],PWId)+ ' written')
                 backfile = G2pwd.MakeBack(G2frame,pName,PWId)
                 if backfile is None:
@@ -5009,10 +5060,15 @@ freshStart     = False      #make TRUE for a restart
                 if RMCPdict['ReStart'][0]:
                     if os.path.isfile(pName+'.his6f'):
                         os.remove(pName+'.his6f')
-                    print(G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict,PWId)+ ' written')
+                    RMC6f,reset = G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict,PWId)
+                    print(RMC6f+ ' written')
                 print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict,PWId)+ ' written')
                 print('RMCProfile file build completed')
                 RMCPdict['ReStart'] = [False,False]
+                if reset:
+                    wx.MessageDialog(G2frame,' Vacancies found & "Va" atoms added to list. '+ \
+                        'You may need to revise RMCProfile setup parameters.','Repeat Setup RMC',wx.OK).ShowModal()
+                    wx.CallAfter(UpdateRMC)
             else:
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
@@ -10580,6 +10636,10 @@ freshStart     = False      #make TRUE for a restart
     def OnTextureClear(event):
         print ('clear texture? - does nothing')
 
+###############################################################################
+##### Phase page routines
+###############################################################################
+        
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
         bindings to the menu item to switch between phase tabs

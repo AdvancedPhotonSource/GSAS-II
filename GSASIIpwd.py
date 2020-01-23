@@ -2205,6 +2205,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     Satoms = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Atoms,5),4),3)
     Datoms = [[atom for atom in Satoms if atom[0] in dup] for dup in Dups]
     Natoms = []
+    reset = False
     for idup,dup in enumerate(Dups):
         ldup = len(dup)
         datoms = Datoms[idup]
@@ -2216,12 +2217,18 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
                 atom = atoms[np.searchsorted(Sfracs[idup],rand.random())]
                 Natoms.append(atom)
             except IndexError:      #what about vacancies?
-                pass
+                if 'Va' not in Atseq:
+                    reset = True
+                    Atseq.append('Va')
+                    RMCPdict['aTypes']['Va'] = 0.0
+                atom = atoms[0]
+                atom[1] = 'Va'
+                Natoms.append(atom)
             i += ldup
     NAtype = np.zeros(len(Atseq))
     for atom in Natoms:
         NAtype[Atseq.index(atom[1])] += 1
-    NAstr = ['%d'%i for i in NAtype]
+    NAstr = ['%6d'%i for i in NAtype]
     Cell = newPhase['General']['Cell'][1:7]
     if os.path.exists(Name+'.his6f'):
         os.remove(Name+'.his6f')
@@ -2232,8 +2239,8 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('(Version 6f format configuration file)\n')
     for item in Meta:
         fl.write('%-20s%s\n'%('Metadata '+item+':',Meta[item]))
-    fl.write('Atom types present:             %s\n'%'    '.join(Atseq))
-    fl.write('Number of each atom type:       %s\n'%'  '.join(NAstr))
+    fl.write('Atom types present:                 %s\n'%'    '.join(Atseq))
+    fl.write('Number of each atom type:       %s\n'%''.join(NAstr))
     fl.write('Number of atoms:                %d\n'%len(Natoms))
     fl.write('%-35s%4d%4d%4d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
@@ -2255,7 +2262,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
                 fl.write('%6d%4s  [%s]%19.15f%19.15f%19.15f%6d%4d%4d%4d\n'%(       
                         nat,atom[1],atcode[0],atom[3],atom[4],atom[5],(iat)%Natm+1,cell[0],cell[1],cell[2]))
     fl.close()
-    return fname
+    return fname,reset
 
 def MakeBragg(G2frame,Name,Phase,PWId):
     PWDdata = G2frame.GetPWDRdatafromTree(PWId)
@@ -2313,8 +2320,8 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     Pairs = []
     for pair in [[' %s-%s'%(Atseq[i],Atseq[j]) for j in range(i,lenA)] for i in range(lenA)]:
         Pairs += pair
-    pairMin = [atPairs[pair] for pair in Pairs]
-    maxMoves = [Atypes[atm] for atm in Atseq]
+    pairMin = [atPairs[pair]for pair in Pairs if pair in atPairs]
+    maxMoves = [Atypes[atm] for atm in Atseq if atm in Atypes]
     fname = Name+'.dat'
     fl = open(fname,'w')
     fl.write(' %% Hand edit the following as needed\n')
@@ -2375,6 +2382,17 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
         fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][3] for bvs in RMCPdict['BVS']]))        
         fl.write('  > SAVE :: 100000\n')
         fl.write('  > UPDATE :: 100000\n')
+        if len(RMCPdict['Swap']):
+            fl.write('\n')
+            fl.write('SWAP_MULTI ::\n')
+            for swap in RMCPdict['Swap']:
+                try:
+                    at1 = Atseq.index(swap[0])
+                    at2 = Atseq.index(swap[1])
+                except ValueError:
+                    break
+                fl.write('  > SWAP_ATOMS :: %d %d %.2f\n'%(at1,at2,swap[2]))
+        
     for ifx,fxcn in enumerate(RMCPdict['FxCN']):
         try:
             at1 = Atseq.index(fxcn[0])

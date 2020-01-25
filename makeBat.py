@@ -94,6 +94,10 @@ if __name__ == '__main__':
     
     new = False
     oldBat = ''
+    try: # patch for FileNotFoundError not in Python 2.7
+        FileNotFoundError
+    except NameError:
+        FileNotFoundError = Exception
     # this code does not appear to work properly when paths have spaces
     try:
         oldgpx = winreg.OpenKey(winreg.HKEY_CURRENT_USER,r'Software\CLASSES\GSAS-II.project') # throws FileNotFoundError

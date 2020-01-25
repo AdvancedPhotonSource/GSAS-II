@@ -3554,6 +3554,10 @@ def MEMupdateReflData(prfName,data,reflData):
             newRefs.append(ref)
             reflDict[hash('%5d%5d%5d'%(ref[0],ref[1],ref[2]))] = iref
     fbaName = os.path.splitext(prfName)[0]+'.fba'
+    try: # patch for FileNotFoundError not in Python 2.7
+        FileNotFoundError
+    except NameError:
+        FileNotFoundError = Exception
     try:
         fba = open(fbaName,'r')
     except FileNotFoundError:

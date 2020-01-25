@@ -2357,6 +2357,8 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     if len(RMCPdict['Potentials']['Stretch']) or len(RMCPdict['Potentials']['Stretch']):
         fl.write('\n')
         fl.write('POTENTIALS ::\n')
+        fl.write('  > TEMPERATURE :: %.1f K\n'%RMCPdict['Potentials']['Pot. Temp.'])
+        fl.write('  > PLOT :: pixels=400, colour=red, zangle=90, zrotation=45 deg\n')
         if len(RMCPdict['Potentials']['Stretch']):
             fl.write('  > STRETCH_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Stretch search'])
             for bond in RMCPdict['Potentials']['Stretch']:

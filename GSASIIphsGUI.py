@@ -4467,7 +4467,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 data['RMC']['RMCProfile'] = {'SuperCell':[1,1,1],'UseSampBrd':[True,True],'aTypes':aTypes,
                     'atSeq':atSeq,'Pairs':Pairs,'histogram':['',1.0],'files':files,'metadata':metadata,
                     'runTimes':runTimes,'ReStart':[False,False],'BVS':BVS,'Oxid':atOxid,'useBVS':False,'Swaps':[],
-                    'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,
+                    'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
+                    'Stretch search':10.,'Pot. Temp.':300.,
                     }}
             RMCPdict = data['RMC']['RMCProfile']
 #patches
@@ -4491,7 +4492,9 @@ def UpdatePhaseData(G2frame,Item,data):
             if 'FxCN' not in RMCPdict:
                 RMCPdict.update({'AveCN':[],'FxCN':[]})
             if 'Potentials' not in RMCPdict:
-                RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.}})
+                RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,'Pot. Temp.':300.,}})
+            if 'Pot. Temp.' not in RMCPdict['Potentials']:
+                RMCPdict['Potentials']['Pot. Temp.'] = 300.
             if 'Swaps' not in RMCPdict:
                 RMCPdict['Swaps'] = []
 #end patches
@@ -4912,17 +4915,10 @@ def UpdatePhaseData(G2frame,Item,data):
                 mainSizer.Add(GetAvcnSizer(),0,WACV)
                 
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
-            angpotBox = wx.BoxSizer(wx.HORIZONTAL)
-            angpotAdd = wx.Button(G2frame.FRMC,label='Add')
-            angpotAdd.Bind(wx.EVT_BUTTON,OnAddAnglePot)
-            angpotBox.Add(angpotAdd,0,WACV)
-            angpotBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle potential restraints, search range (%): '),0,WACV)
-            angpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Angle search',min=0.,max=100.,size=(50,25)),0,WACV)
-            mainSizer.Add(angpotBox,0,WACV)
-            if len(RMCPdict['Potentials']['Angles']):
-                mainSizer.Add(GetAngleSizer(),0,WACV)
-                
-            G2G.HorizontalLine(mainSizer,G2frame.FRMC)
+            pottempBox = wx.BoxSizer(wx.HORIZONTAL)
+            pottempBox.Add(wx.StaticText(G2frame.FRMC,label=' Potential temperature (K): '),0,WACV)
+            pottempBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Pot. Temp.',min=0.,max=1000.,size=(50,25)),0,WACV)
+            mainSizer.Add(pottempBox,0,WACV)
             bondpotBox = wx.BoxSizer(wx.HORIZONTAL)
             bondpotAdd = wx.Button(G2frame.FRMC,label='Add')
             bondpotAdd.Bind(wx.EVT_BUTTON,OnAddBondPot)
@@ -4933,6 +4929,16 @@ def UpdatePhaseData(G2frame,Item,data):
             if len(RMCPdict['Potentials']['Stretch']):
                 mainSizer.Add(GetBondSizer(),0,WACV)
 
+            angpotBox = wx.BoxSizer(wx.HORIZONTAL)
+            angpotAdd = wx.Button(G2frame.FRMC,label='Add')
+            angpotAdd.Bind(wx.EVT_BUTTON,OnAddAnglePot)
+            angpotBox.Add(angpotAdd,0,WACV)
+            angpotBox.Add(wx.StaticText(G2frame.FRMC,label=' A-B-C angle potential restraints, search range (%): '),0,WACV)
+            angpotBox.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Potentials'],'Angle search',min=0.,max=100.,size=(50,25)),0,WACV)
+            mainSizer.Add(angpotBox,0,WACV)
+            if len(RMCPdict['Potentials']['Angles']):
+                mainSizer.Add(GetAngleSizer(),0,WACV)
+                
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Select data:'),0,WACV)
             histograms = data['Histograms']
@@ -5170,6 +5176,7 @@ freshStart     = False      #make TRUE for a restart
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
+            atSeq = RMCPdict['atSeq']
             pName = generalData['Name'].replace(' ','_')
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
                 style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
@@ -5274,7 +5281,19 @@ freshStart     = False      #make TRUE for a restart
                 G2plt.PlotXY(G2frame,XY,labelX='no. generated',
                     labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCP Chi^2 for '+pName,
                     lines=True,names=Names[3:])
-        
+#bond odf plots                
+            nPot = len(RMCPdict['Potentials']['Stretch'])
+            for iPot in range(nPot):
+                fname = pName+'.bondodf_%d'%(iPot+1)
+                bond = RMCPdict['Potentials']['Stretch'][iPot]
+                if os.path.exists(os.path.join(path,fname)):
+                    OutFile = open(fname,'r')
+                    odfFile = OutFile.readlines()
+                    if len(odfFile) > 1:
+                        OutFile.seek(0)
+                        odfData = np.fromfile(OutFile,sep=' ')
+                        numx,numy = odfData[:2]
+                        G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]))        
         
             
 ################################################################################

@@ -5108,6 +5108,58 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Page.canvas.draw()
         
 ################################################################################
+##### Plot3dXYZ
+################################################################################
+        
+def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,Title=''):
+    
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            G2frame.G2plotNB.status.SetStatusText('X =%.3f Y =%.4f'%(xpos,ypos),1)                   
+            
+    def OnKeyPress(event):
+        if event.key == 'g':
+            mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
+
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(Title,'3d')
+    if not new:
+        if not Page.IsShown():
+            Page.Show()
+    else:
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = None
+    G2frame.G2plotNB.status.SetStatusText('',1)
+    Zmul = Zdat.reshape((nX,-1)).T
+    PHI = np.linspace(0.,360.,int(nY),True)
+    PSI = np.linspace(0.,180.,int(nX),True)
+    X = Zmul*np.outer(npcosd(PHI),npsind(PSI))/2.
+    Y = Zmul*np.outer(npsind(PHI),npsind(PSI))/2.
+    Z = Zmul*np.outer(np.ones(np.size(PHI)),npcosd(PSI))/2.
+    
+    if np.any(X) and np.any(Y) and np.any(Z):
+        np.seterr(all='ignore')
+        Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+        xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+        XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+        Plot.set_xlim3d(XYZlim)
+        Plot.set_ylim3d(XYZlim)
+        Plot.set_zlim3d(XYZlim)
+        try:
+            Plot.set_aspect('equal')
+        except: #broken in mpl 3.1.1; worked in mpl 3.0.3
+            pass
+        Plot.set_title(Title)
+        Plot.set_xlabel(labelX)
+        Plot.set_ylabel(labelY)
+        Plot.set_zlabel(labelZ)
+    Page.canvas.draw()
+        
+################################################################################
 ##### PlotHist
 ################################################################################
 def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):

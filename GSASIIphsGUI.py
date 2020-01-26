@@ -5211,11 +5211,11 @@ freshStart     = False      #make TRUE for a restart
 #total result plots
             Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
                 '_PDF2.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
-                '_SQ1.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) for '],
-                '_SQ2.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) for '],
-                '_FQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) for '],
+                '_SQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
+                '_SQ2.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
+                '_FQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) for '],
                 '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
-                '_XFQ1.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP x-ray F(Q) for '],
+                '_XFQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP x-ray F(Q) for '],
                 '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCP bragg for ']}
             for label in Labels:
                 X = []
@@ -5248,9 +5248,9 @@ freshStart     = False      #make TRUE for a restart
                         print(' %s scale Ycalc/Yobs: %.4f'%(label,RMCPdict[pName+label]))
 #partials plots
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
-                '_SQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
-                '_SQ2partials.csv':[r'$\mathsf{Q,\AA^-1}$','S(Q)','RMCP S(Q) partials for '],
-                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^-1}$','F(Q)','RMCP F(Q) partials for ']}
+                '_SQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
+                '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
+                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}$','F(Q)','RMCP F(Q) partials for ']}
             for label in Labels:
                 X = []
                 Partials = []
@@ -5262,7 +5262,11 @@ freshStart     = False      #make TRUE for a restart
                         Partials.append([float(item) for item in items[1:]])
                     X = np.array(X)
                     Partials = np.array(Partials).T
-                    XY = [[X.T,Y.T] for Y in Partials]
+                    if 'Q' in label:
+                        XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
+                        Names = [name for name in Names if 'Va' not in name]
+                    else:
+                        XY = [[X.T,Y.T] for Y in Partials]
                     G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
                         labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
                         lines=True,names=Names[1:])

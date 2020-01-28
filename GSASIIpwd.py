@@ -2140,7 +2140,7 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         fl = open(fname,'w')
         fl.write('1\n')
         fl.write('%d\n'%int(inst[prms[0]][1]))
-        fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],inst[prms[2]][1]/100.,inst[prms[3]][1],0))
+        fl.write('%10.5f%10.5f%10.4f%10d\n'%(inst[prms[1]][1],-100.*inst[prms[2]][1],inst[prms[3]][1],0))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[4]][1],inst[prms[5]][1],inst[prms[6]][1]))
         fl.write('%10.3f%10.3f%10.3f\n'%(inst[prms[7]][1]+Xsb,inst[prms[8]][1]+Ysb,0.0))    
         fl.write('%10.3f%10.3f%10.3f\n'%(0.0,0.0,0.0))
@@ -2197,7 +2197,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     Trans = np.eye(3)*np.array(Supercell)
     newPhase = copy.deepcopy(Phase)
     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans)
     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
     Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
     Natm = np.count_nonzero(Natm-1)
@@ -2245,7 +2245,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('%-35s%4d%4d%4d\n'%('Supercell dimensions:',Supercell[0],Supercell[1],Supercell[2]))
     fl.write('Cell (Ang/deg): %12.6f%12.6f%12.6f%12.6f%12.6f%12.6f\n'%(
             Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
-    A,B = G2lat. cell2AB(Cell)
+    A,B = G2lat.cell2AB(Cell,True)
     fl.write('Lattice vectors (Ang):\n')   
     for i in [0,1,2]:
         fl.write('%12.6f%12.6f%12.6f\n'%(A[i,0],A[i,1],A[i,2]))
@@ -2273,6 +2273,8 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     Bank = int(Inst['Bank'][1])
     Sample = PWDdata['Sample Parameters']
     Scale = Sample['Scale'][0]
+    if 'X' in Inst['Type'][0]:
+        Scale *= 2.
     Limits = PWDdata['Limits'][1]
     Ibeg = np.searchsorted(Data[0],Limits[0])
     Ifin = np.searchsorted(Data[0],Limits[1])+1
@@ -2287,7 +2289,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
         fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
         DT = np.diff(Data[0])
         for i in range(Ibeg,Ifin-1):
-            fl.write('%11.6f%15.2f\n'%(Data[0][i]-DT[i],Data[1][i]))        
+            fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
     fl.close()
     return fname
 
@@ -2411,26 +2413,30 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
         fl.write('CAVSTR%d :: %d %d %.2f %.2f %d %.2d %.6f\n'%(iav+1,at1,at2,avcn[2],avcn[3],avcn[4],avcn[5]))
     for File in Files:
         if Files[File][0]:
+            if 'Xray' in File and 'F(Q)' in File:
+                fqdata = open(Files[File][0],'r')
+                lines = int(fqdata.readline()[:-1])
             fl.write('\n')
             fl.write('%s ::\n'%File.split(';')[0].upper().replace(' ','_'))
             fl.write('  > FILENAME :: %s\n'%Files[File][0])
             fl.write('  > DATA_TYPE :: %s\n'%Files[File][2])
             fl.write('  > FIT_TYPE :: %s\n'%Files[File][2])
-            fl.write('  > START_POINT :: 1\n')
-            fl.write('  > END_POINT :: 3000\n')
+            if 'Xray' not in File:
+                fl.write('  > START_POINT :: 1\n')
+                fl.write('  > END_POINT :: 3000\n')
+                fl.write('  > WEIGHT :: %.4f\n'%Files[File][1])
             fl.write('  > CONSTANT_OFFSET 0.000\n')
             fl.write('  > NO_FITTED_OFFSET\n')
             if Files[File][3] !='RMC':
                 fl.write('  > %s\n'%Files[File][3])
-            fl.write('  > WEIGHT :: %.4f\n'%Files[File][1])
             if 'reciprocal' in File:
                 fl.write('  > CONVOLVE ::\n')
                 fl.write('  > NO_FITTED_SCALE\n')
                 if 'Xray' in File:
-                    fl.write('  > RECIPROCAL_SPACE_FIT :: 1 3000 1\n')
-                    fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
-                    fl.write('  > REAL_SPACE_FIT :: 1 3000 1\n')
-                    fl.write('  > REAL_SPACE_PARAMETERS :: 1 3000 %.4f\n'%Files[File][1])
+                    fl.write('  > RECIPROCAL_SPACE_FIT :: 1 %d 1\n'%lines)
+                    fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(lines,Files[File][1]))
+                    fl.write('  > REAL_SPACE_FIT :: 1 %d 1\n'%(3*lines//2))
+                    fl.write('  > REAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(3*lines//2,Files[File][1]))
     fl.write('\n')
     fl.write('BRAGG ::\n')
     fl.write('  > BRAGG_SHAPE :: %s\n'%gsasType)

@@ -5111,7 +5111,7 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ##### Plot3dXYZ
 ################################################################################
         
-def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,Title=''):
+def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,Title='',Centro=False):
     
     def OnMotion(event):
         xpos = event.xdata
@@ -5132,6 +5132,8 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,
     Page.Choice = None
     G2frame.G2plotNB.status.SetStatusText('',1)
     Zmul = Zdat.reshape((nX,-1)).T
+    if Centro:
+        Zmul = Zmul+np.fliplr(np.roll(Zmul,nY//2,0))
     PHI = np.linspace(0.,360.,int(nY),True)
     PSI = np.linspace(0.,180.,int(nX),True)
     X = Zmul*np.outer(npcosd(PHI),npsind(PSI))/2.
@@ -5157,7 +5159,7 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,
         Plot.set_xlabel(labelX)
         Plot.set_ylabel(labelY)
         Plot.set_zlabel(labelZ)
-    Page.canvas.draw()
+        Page.canvas.draw()
         
 ################################################################################
 ##### PlotHist

@@ -605,7 +605,7 @@ def Gmat2AB(G):
 #    B = nl.inv(A)
 #    return A,B
     
-def cell2AB(cell):
+def cell2AB(cell,alt=False):
     """Computes orthogonalization matrix from unit cell constants
 
     :param tuple cell: a,b,c, alpha, beta, gamma (degrees)
@@ -616,6 +616,15 @@ def cell2AB(cell):
     G,g = cell2Gmat(cell) 
     cellstar = Gmat2cell(G)
     A = np.zeros(shape=(3,3))
+    if alt: #as used in RMCProfile!!
+        A[0][0] = 1./cellstar[0]
+        A[0][1] = cell[0]*cosd(cell[5])*sind(cell[3])
+        A[0][2] = cell[0]*cosd(cell[4])
+        A[1][1] = cell[1]*sind(cell[3])
+        A[1][2] = cell[1]*cosd(cell[3])
+        A[2][2] = cell[2]
+        B = nl.inv(A)
+        return A,B
     # from Giacovazzo (Fundamentals 2nd Ed.) p.75
     A[0][0] = cell[0]                # a
     A[0][1] = cell[1]*cosd(cell[5])  # b cos(gamma)

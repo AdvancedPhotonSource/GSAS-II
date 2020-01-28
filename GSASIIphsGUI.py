@@ -2652,7 +2652,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 break
             else:
                 phaseName = newPhase['General']['Name']
-                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
+                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans.T,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
                 generalData = newPhase['General']
                 SGData = generalData['SGData']
@@ -5176,7 +5176,6 @@ freshStart     = False      #make TRUE for a restart
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
-            atSeq = RMCPdict['atSeq']
             pName = generalData['Name'].replace(' ','_')
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
                 style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
@@ -5250,7 +5249,7 @@ freshStart     = False      #make TRUE for a restart
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
                 '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
-                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}$','F(Q)','RMCP F(Q) partials for ']}
+                '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) partials for ']}
             for label in Labels:
                 X = []
                 Partials = []
@@ -5297,7 +5296,8 @@ freshStart     = False      #make TRUE for a restart
                         OutFile.seek(0)
                         odfData = np.fromfile(OutFile,sep=' ')
                         numx,numy = odfData[:2]
-                        G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]))        
+                        G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],
+                            newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]),Centro=True)        
         
             
 ################################################################################

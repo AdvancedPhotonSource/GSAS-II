@@ -2128,10 +2128,10 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         if useSamBrd[0]:
             wave = G2mth.getWave(inst)
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
-                Xsb = 1.8*wave/(np.pi*Size[1][0])/2.
+                Xsb = 1.8*wave/(np.pi*Size[1][0])
         if useSamBrd[1]:
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
-                Ysb = 0.018*np.pi*Mustrain[1][0]/2.
+                Ysb = 0.0180*Mustrain[1][0]/np.pi
         prms = ['Bank',
                 'Lam','Zero','Polariz.',
                 'U','V','W',

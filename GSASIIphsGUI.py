@@ -5158,6 +5158,14 @@ freshStart     = False      #make TRUE for a restart
                 os.remove(pName+'.bonds')
             if os.path.isfile(pName+'.triplets'):
                 os.remove(pName+'.triplets')
+            i = 1
+            while True:
+                if os.path.isfile(pName+'.bondodf_%d'%i):
+                    os.remove(pName+'.bondodf_%d'%i)
+                    os.remove(pName+'_bondplot_%d.ppm'%i)
+                    i += 1
+                else:
+                    break                
             G2frame.OnFileSave(event)
             print (' GSAS-II project saved')
             import subprocess as sb
@@ -5214,8 +5222,9 @@ freshStart     = False      #make TRUE for a restart
                 '_SQ2.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
                 '_FQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) for '],
                 '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
-                '_XFQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP x-ray F(Q) for '],
+#                '_XFQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP x-ray F(Q) for '],
                 '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCP bragg for ']}
+            Ysave = []
             for label in Labels:
                 X = []
                 Yobs = []
@@ -5229,6 +5238,9 @@ freshStart     = False      #make TRUE for a restart
                         Ycalc.append(float(items[2]))
                     Yobs = np.array([X,Yobs])
                     Ycalc = np.array([X,Ycalc])
+                    if 'G(R)' in Labels[label][1]:
+                        Ysave.append(Yobs)
+                        Ymin = Ysave[0][1][0]
                     if 'bragg' in label: 
                         Ydiff = np.array([X,(Yobs-Ycalc)[1]])
                         Yoff = np.max(Ydiff[1])-np.min(Yobs[1])
@@ -5260,15 +5272,22 @@ freshStart     = False      #make TRUE for a restart
                         X.append(float(items[0]))
                         Partials.append([float(item) for item in items[1:]])
                     X = np.array(X)
+                    DX = X[1]-X[0]  #should be 0.02
                     Partials = np.array(Partials).T
                     if 'Q' in label:
                         XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                         Names = [name for name in Names if 'Va' not in name]
                     else:
-                        XY = [[X.T,Y.T] for Y in Partials]
-                    G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
-                        labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
-                        lines=True,names=Names[1:])
+                        XY = [[X.T,(DX*Y.T)+Ymin] for Y in Partials]
+                    if 'G(R)' in Labels[label][1]:
+                        Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
+                        G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
+                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            lines=False,names=[r'   $G(R)_{obs}$',]+Names[1:])
+                    else:                        
+                        G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
+                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            lines=True,names=Names[1:])
 #chi**2 plot
             X = []
             Chi = []

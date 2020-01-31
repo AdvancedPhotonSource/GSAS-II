@@ -5259,8 +5259,8 @@ tutorialIndex = (
      via Monte Carlo/Simulated Annealing (MC/SA).'''],
      
     ['Reverse Monte Carlo Modeling'],
-    ['RMCProfile-I', 'RMCProfile-I.htm','Disorder modeling for sulfur hexafluoride',
-     '''This is the first exercise of a big box modelling for real and reciprocal space diffraction data'''],
+    ['RMCProfile-I', 'RMCProfile-I.htm','RMC Modeling with RMCProfile-I',
+     '''Big box modelling for real and reciprocal space diffraction data for SF6'''],
 
     ['Stacking Fault Modeling'],
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',

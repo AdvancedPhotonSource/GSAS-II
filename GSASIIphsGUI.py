@@ -4516,9 +4516,10 @@ def UpdatePhaseData(G2frame,Item,data):
                     style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
                 if dlg.ShowModal() == wx.ID_OK:
                     fpath,fName = os.path.split(dlg.GetPath())
-                    disfile.copy_file(dlg.GetPath(),os.path.join(G2G.GetImportPath(G2frame),fName))
+                    disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
                     if os.path.exists(fName):
                         RMCPdict['files'][fil][0] = fName
+                    G2frame.LastImportDir = fpath    #set so next file is found in same place
                     dlg.Destroy()
                 else:
                     dlg.Destroy()
@@ -5192,7 +5193,7 @@ freshStart     = False      #make TRUE for a restart
             RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
-                defaultDir=G2G.GetImportPath(G2frame),style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
+                defaultDir=G2frame.LastGPXdir,style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
             if dlg.ShowModal() == wx.ID_OK:
                 path = os.path.split(dlg.GetPath())[0]
                 dlg.Destroy()

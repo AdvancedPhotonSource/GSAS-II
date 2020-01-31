@@ -5257,6 +5257,10 @@ tutorialIndex = (
     ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure determination',
      '''Solving the structures of 3-aminoquinoline and α-d-lactose monohydrate from powder diffraction data 
      via Monte Carlo/Simulated Annealing (MC/SA).'''],
+     
+    ['Reverse Monte Carlo Modeling'],
+    ['RMCProfile-I', 'RMCProfile-I.htm','Disorder modeling for sulfur hexafluoride',
+     '''This is the first exercise of a big box modelling for real and reciprocal space diffraction data'''],
 
     ['Stacking Fault Modeling'],
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',

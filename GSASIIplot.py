@@ -5431,7 +5431,7 @@ def PlotPeakWidths(G2frame,PatternName=None):
             mpl.rcParams['axes.grid'] = not mpl.rcParams['axes.grid']
         elif event.key == 's':
             # write the function values (not peaks) onto a file
-            dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', 
+            dlg = wx.FileDialog(G2frame, 'Choose CSV file to write', G2G.GetExportPath(G2frame),
                     wildcard='column-separated file (*.csv)|.csv',
                     style=wx.FD_CHANGE_DIR|wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             try:
@@ -7988,7 +7988,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             if projFile:
                 Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             else:
-                dlg = wx.FileDialog(G2frame, 'Choose graphics save file', 
+                dlg = wx.FileDialog(G2frame, 'Choose graphics save file',G2G.GetExportPath(G2frame),  
                     wildcard='Graphics file (*.'+mode+')|*.'+mode,style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:

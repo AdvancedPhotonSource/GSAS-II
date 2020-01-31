@@ -41,6 +41,7 @@ import time
 import sys
 import random as ran
 import subprocess as subp
+import distutils.file_util as disfile
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -4472,31 +4473,31 @@ def UpdatePhaseData(G2frame,Item,data):
                     }}
             RMCPdict = data['RMC']['RMCProfile']
 #patches
-            if 'runTimes' not in RMCPdict:
-                RMCPdict['runTimes'] = [10.0,1.0]
-            lenA = len(RMCPdict['atSeq'])
-            if 'Oxid' not in RMCPdict:
-                RMCPdict['Oxid'] = [[atmdata.BVSoxid[atm][0],0.001] for atm in RMCPdict['atSeq']]
-            Pairs= []
-            for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
-                Pairs += pair
-            RMCPdict['Pairs'] = dict(zip(Pairs,[RMCPdict['Pairs'].get(pair,[0.0,0.0,0.0]) for pair in Pairs]))
-            BVSpairs = []
-            if 'BVS' not in RMCPdict:
-                RMCPdict['useBVS'] = False
-                RMCPdict['BVS'] = {}
-            if lenA > 1:
-                for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i+1,lenA)] for i in range(lenA)]:
-                    BVSpairs += pair
-                RMCPdict['BVS'] = dict(zip(BVSpairs,[RMCPdict['BVS'].get(pair,[0.0,0.0,0.0]) for pair in BVSpairs]))
-            if 'FxCN' not in RMCPdict:
-                RMCPdict.update({'AveCN':[],'FxCN':[]})
-            if 'Potentials' not in RMCPdict:
-                RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,'Pot. Temp.':300.,}})
-            if 'Pot. Temp.' not in RMCPdict['Potentials']:
-                RMCPdict['Potentials']['Pot. Temp.'] = 300.
-            if 'Swaps' not in RMCPdict:
-                RMCPdict['Swaps'] = []
+#            if 'runTimes' not in RMCPdict:
+#                RMCPdict['runTimes'] = [10.0,1.0]
+#            lenA = len(RMCPdict['atSeq'])
+#            if 'Oxid' not in RMCPdict:
+#                RMCPdict['Oxid'] = [[atmdata.BVSoxid[atm][0],0.001] for atm in RMCPdict['atSeq']]
+#            Pairs= []
+#            for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
+#                Pairs += pair
+#            RMCPdict['Pairs'] = dict(zip(Pairs,[RMCPdict['Pairs'].get(pair,[0.0,0.0,0.0]) for pair in Pairs]))
+#            BVSpairs = []
+#            if 'BVS' not in RMCPdict:
+#                RMCPdict['useBVS'] = False
+#                RMCPdict['BVS'] = {}
+#            if lenA > 1:
+#                for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+#                    BVSpairs += pair
+#                RMCPdict['BVS'] = dict(zip(BVSpairs,[RMCPdict['BVS'].get(pair,[0.0,0.0,0.0]) for pair in BVSpairs]))
+#            if 'FxCN' not in RMCPdict:
+#                RMCPdict.update({'AveCN':[],'FxCN':[]})
+#            if 'Potentials' not in RMCPdict:
+#                RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,'Pot. Temp.':300.,}})
+#            if 'Pot. Temp.' not in RMCPdict['Potentials']:
+#                RMCPdict['Potentials']['Pot. Temp.'] = 300.
+#            if 'Swaps' not in RMCPdict:
+#                RMCPdict['Swaps'] = []
 #end patches
                 
             def OnHisto(event):
@@ -4511,10 +4512,11 @@ def UpdatePhaseData(G2frame,Item,data):
             def OnFileSel(event):
                 Obj = event.GetEventObject()
                 fil = Indx[Obj.GetId()]
-                dlg = wx.FileDialog(G2frame.FRMC, 'Choose '+fil+'NB: do not change directory; must be a local file',
-                    '.',style=wx.FD_OPEN,wildcard=fil+'(*.*)|*.*')
+                dlg = wx.FileDialog(G2frame.FRMC, 'Choose '+fil,G2G.GetImportPath(G2frame),
+                    style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
                 if dlg.ShowModal() == wx.ID_OK:
-                    fName = os.path.split(dlg.GetPath())[1]
+                    fpath,fName = os.path.split(dlg.GetPath())
+                    disfile.copy_file(dlg.GetPath(),os.path.join(G2G.GetImportPath(G2frame),fName))
                     if os.path.exists(fName):
                         RMCPdict['files'][fil][0] = fName
                     dlg.Destroy()
@@ -4975,7 +4977,8 @@ def UpdatePhaseData(G2frame,Item,data):
                 filSel.Bind(wx.EVT_BUTTON,OnFileSel)
                 Indx[filSel.GetId()] = fil
                 fileSizer.Add(filSel,0,WACV)
-                if RMCPdict['files'][fil][0]:
+                Rfile = RMCPdict['files'][fil][0]
+                if Rfile and os.path.exists(Rfile): #incase .gpx file is moved away from G(R), F(Q), etc. files
                     nform = 3
                     if 'Xray' in fil: nform = 1
                     fileFormat = wx.ComboBox(G2frame.FRMC,choices=Formats[:nform],style=wx.CB_DROPDOWN|wx.TE_READONLY)
@@ -4984,7 +4987,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     fileFormat.Bind(wx.EVT_COMBOBOX,OnFileFormat)
                     fileSizer.Add(fileFormat,0,WACV)
                     fileSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['files'][fil],1),0,WACV)
-                if not RMCPdict['files'][fil][0]:
+                else:
+                    RMCPdict['files'][fil][0] = ''
                     fileSizer.Add((5,5),0)
                     fileSizer.Add((5,5),0)
                 fileSizer.Add(wx.StaticText(G2frame.FRMC,label=fil+RMCPdict['files'][fil][0]),0,WACV)
@@ -5082,7 +5086,7 @@ freshStart     = False      #make TRUE for a restart
     def OnLoadRMC(event):
         global runFile
         if G2frame.RMCchoice == 'fullrmc':
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run file to open', '.', runFile,
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run file to open', G2G.GetImportPath(G2frame), runFile,
                 wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5098,7 +5102,7 @@ freshStart     = False      #make TRUE for a restart
     def OnSaveRMC(event):
         global runFile
         if G2frame.RMCchoice == 'fullrmc':
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run.py file to save',  '.', runFile,
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run.py file to save',  G2G.GetImportPath(G2frame), runFile,
                 wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5121,7 +5125,7 @@ freshStart     = False      #make TRUE for a restart
       Machine Learning and Artificial Intelligence,
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111.
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', 
+            dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -5148,10 +5152,12 @@ freshStart     = False      #make TRUE for a restart
                 return
             wx.MessageBox(''' For use of RMCProfile, please cite:
       RMCProfile: Reverse Monte Carlo for polycrystalline materials,
-      M.G. Tucker, D.A. keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
-      Jour. Phys.: Cond. matter 2007, 19, 335218.
+      M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui, 
+      Jour. Phys.: Cond. Matter 2007, 19, 335218.
       doi: https://doi.org/10.1088/0953-8984/19/33/335218''',
       caption='RMCProfile',style=wx.ICON_INFORMATION)
+            if os.path.isfile(pName+'.his6f'):
+                os.remove(pName+'.his6f')
             if os.path.isfile(pName+'.neigh'):
                 os.remove(pName+'.neigh')
             if os.path.isfile(pName+'.bonds'):
@@ -5186,7 +5192,7 @@ freshStart     = False      #make TRUE for a restart
             RMCPdict = data['RMC']['RMCProfile']
             pName = generalData['Name'].replace(' ','_')
             dlg = wx.FileDialog(G2frame, "Choose any RMCProfile csv results file for "+pName+":",
-                style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
+                defaultDir=G2G.GetImportPath(G2frame),style=wx.FD_CHANGE_DIR,wildcard='RMCProfile result csv files|'+pName+'*.csv')
             if dlg.ShowModal() == wx.ID_OK:
                 path = os.path.split(dlg.GetPath())[0]
                 dlg.Destroy()
@@ -5475,7 +5481,7 @@ freshStart     = False      #make TRUE for a restart
             wx.CallAfter(UpdateLayerData)
                 
         def OnImportLayer(event):
-            dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
+            dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', G2G.GetImportPath(G2frame),
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -5931,7 +5937,7 @@ freshStart     = False      #make TRUE for a restart
         SetPhaseWindow(G2frame.layerData,mainSizer,Scroll=Scroll)
         
     def OnCopyPhase(event):
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', G2G.GetImportPath(G2frame),
             wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -5961,7 +5967,7 @@ freshStart     = False      #make TRUE for a restart
                     return
             finally:
                 dlg.Destroy()
-        dlg = wx.FileDialog(G2frame, 'Choose DIFFaX file name to read', '.', '',
+        dlg = wx.FileDialog(G2frame, 'Choose DIFFaX file name to read', G2G.GetImportPath(G2frame), '',
             'DIFFaX file (*.*)|*.*',style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         try:
             if dlg.ShowModal() == wx.ID_OK:

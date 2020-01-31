@@ -1571,7 +1571,7 @@ def UpdateRigidBodies(G2frame,data):
         return macro        #advanced past 1st line
         
     def getTextFile():
-        dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
+        dlg = wx.FileDialog(G2frame,'Choose rigid body text file', G2frame.LastGPXdir, '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
             "Sybyl mol2 file (*.mol2)|*.mol2|PDB file (*.pdb;*.ent)|*.pdb;*.ent",
             wx.FD_OPEN | wx.FD_CHANGE_DIR)

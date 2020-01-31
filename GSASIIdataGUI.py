@@ -3842,6 +3842,7 @@ class GSASII(wx.Frame):
         f = os.path.join(dirname,filroot)
         if os.path.exists(f):
             self.OnFileOpen(event, filename=f)
+            self.LastGPXdir = dirname
         else:
             print('file not found',f)        
         
@@ -3884,7 +3885,7 @@ class GSASII(wx.Frame):
                 if dlg.ShowModal() != wx.ID_OK: return
                 self.GSASprojectfile = dlg.GetPath()
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
-                self.dirname = dlg.GetDirectory()
+                self.LastGPXdir = dlg.GetDirectory()
             finally:
                 dlg.Destroy()
             
@@ -4014,6 +4015,7 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK: 
                 GSASprojectfile = dlg.GetPath()
                 GSASprojectfile = G2IO.FileDlgFixExt(dlg,GSASprojectfile)
+                self.LastGPXdir = dlg.GetDirectory()
         finally:
             dlg.Destroy()
         G2script = os.path.join(os.path.split(__file__)[0],'GSASII.py')

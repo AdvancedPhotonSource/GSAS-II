@@ -3161,9 +3161,10 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="",
 
 def GetImportPath(G2frame):
     '''Determines the default location to use for importing files. Tries sequentially
-    G2frame.TutorialImportDir, config var Import_directory and G2frame.LastImportDir.
+    G2frame.TutorialImportDir, config var Import_directory, G2frame.LastImportDir
+    and G2frame.LastGPXdir
     
-    :returns: a string containing the path to be used when reading files or None
+    :returns: a string containing the path to be used when reading files or '.'
       if none of the above are specified.
     '''
     if G2frame.TutorialImportDir:
@@ -3184,7 +3185,10 @@ def GetImportPath(G2frame):
             return G2frame.LastImportDir
         elif GSASIIpath.GetConfigValue('debug'):
             print('DBG_Warning: G2frame.LastImportDir not found = '+G2frame.LastImportDir)
-    return None
+    elif G2frame.LastGPXdir:
+        return G2frame.LastGPXdir
+    print('Import path not found - set to current directory')      #now shouldn't happen
+    return '.'
 
 def GetExportPath(G2frame):
     '''Determines the default location to use for writing files. Tries sequentially
@@ -3197,8 +3201,9 @@ def GetExportPath(G2frame):
         return G2frame.LastExportDir
     elif G2frame.LastGPXdir:
         return G2frame.LastGPXdir
-    else:
-        return '.'
+    print('Export path not found - set to current directory')      #now shouldn't happen
+    return '.'
+
 
 ################################################################################
 class SGMessageBox(wx.Dialog):

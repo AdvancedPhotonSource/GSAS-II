@@ -2352,6 +2352,7 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('\n')
     fl.write('INPUT_CONFIGURATION_FORMAT ::  rmc6f\n')
     fl.write('SAVE_CONFIGURATION_FORMAT  ::  rmc6f\n')
+    fl.write('IGNORE_HISTORY_FILE ::\n')
     fl.write('\n')
     fl.write('DISTANCE_WINDOW ::\n')
     fl.write('  > MNDIST :: %s\n'%minD)

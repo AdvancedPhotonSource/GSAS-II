@@ -407,7 +407,7 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
     except:
         pass            
     nAtom = len(atomData)
-    Indx = range(nAtom)
+    Indx = list(range(nAtom))
     UAtoms = []
     Radii = []
     for atom in atomData:

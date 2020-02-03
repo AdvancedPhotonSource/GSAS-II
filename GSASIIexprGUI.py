@@ -777,7 +777,6 @@ class BondDialog(wx.Dialog):
         atomSizer.Add(wx.StaticText(self.panel,label=' distance to: '),0,WACV)
         neigh = []
         if self.Oatom:
-#            GSASIIpath.IPyBreak()
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
         bNames = ['',]
         if neigh:
@@ -889,7 +888,6 @@ class AngleDialog(wx.Dialog):
         cx,ct = Phase['General']['AtomPtrs'][:2]
         Atoms = Phase['Atoms']
         aNames = [atom[ct-1] for atom in Atoms]
-#        GSASIIpath.IPyBreak()
         atomSizer = wx.BoxSizer(wx.HORIZONTAL)
         atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom (O in A-O-B): '),0,WACV)
         origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
@@ -903,7 +901,6 @@ class AngleDialog(wx.Dialog):
             mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
             bNames = ['',]
             if neigh:
-#                GSASIIpath.IPyBreak()
                 for iA,aName in enumerate(neigh):
                     for cName in neigh[iA+1:]:
                         bNames.append('%s;%s'%(aName[0].replace(' ',''),cName[0].replace(' ','')))

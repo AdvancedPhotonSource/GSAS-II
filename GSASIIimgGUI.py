@@ -79,7 +79,7 @@ def GetImageZ(G2frame,data,newRange=False):
     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
     if imagefile is None: return []
     formatName = data.get('formatName','')
-    sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName)
+    sumImg = np.array(G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName),dtype='int32')
     if sumImg is None:
         return []
     darkImg = False

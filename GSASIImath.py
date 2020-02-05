@@ -231,13 +231,14 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
         Bmat,Nzero = pinv(Amatlam,xtol)    #Moore-Penrose inversion (via SVD) & count of zeros
         if Print: G2fil.G2Print('Found %d SVD zeros'%(Nzero), mode='warn')
         Bmat = Bmat/Anorm
-        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2}]
+        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[],
+            'SVD0':Nzero,'Converged': ifConverged, 'DelChi2':deltaChi2,'Xvec':Xvec}]
     except nl.LinAlgError:
         G2fil.G2Print('ouch #2 linear algebra error in making v-cov matrix', mode='error')
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])
-        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1}]          
+        return [x0,None,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':psing,'SVD0':-1,'Xvec':None}]          
             
 def HessianSVD(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-3,Print=False,refPlotUpdate=None):
     
@@ -672,7 +673,6 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
                 dx = np.inner(Dx,Amat)
                 dist = np.sqrt(np.sum(dx**2,axis=1))
                 IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))
-        #        GSASIIpath.IPyBreak()
                 for iU in IndB[0]:
                     if AtNames[iA] != notName:
                         unit = Units[iU]

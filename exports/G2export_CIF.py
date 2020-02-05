@@ -509,7 +509,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             if self.ifPWDR:
                 WriteCIFitem(self.fp, '_pd_proc_info_datetime', self.CIFdate)
                 WriteCIFitem(self.fp, '_pd_calc_method', 'Rietveld Refinement')
-            #WriteCIFitem(self.fp, '_refine_ls_shift/su_max',DAT1)
+                
             #WriteCIFitem(self.fp, '_refine_ls_shift/su_mean',DAT2)
             WriteCIFitem(self.fp, '_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             if self.ifHKLF:
@@ -529,6 +529,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             except:
                 GOF = '?'
             WriteCIFitem(self.fp, '_refine_ls_goodness_of_fit_all',GOF)
+            DAT1 = self.OverallParms['Covariance']['Rvals'].get('Max shft/sig',0.0)
+            if DAT1:
+                WriteCIFitem(self.fp, '_refine_ls_shift/su_max','%.4f'%DAT1)
 
             # get restraint info
             # restraintDict = self.OverallParms.get('Restraints',{})

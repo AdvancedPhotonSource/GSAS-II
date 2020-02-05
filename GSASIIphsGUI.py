@@ -282,6 +282,109 @@ class SphereEnclosure(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+        
+################################################################################
+class CompareDialog(wx.Dialog):
+    def __init__(self,parent,phase):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup polyhedron comparison', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+        self.OPhase = copy.deepcopy(phase)   #will be a new phase!
+        self.OName = self.OPhase['General']['Name']
+        self.TPhase = copy.deepcopy(phase)
+        self.TName = self.OName
+        self.PhaseNames = parent.GetPhaseNames()
+        self.PhaseData = parent.GetPhaseData()
+        self.Oatoms = ['','']
+        self.Tatoms = ['','']
+        self.ONeighbors = []
+        self.Tneighbors = []
+        self.Draw()
+            
+    def Draw(self):
+        
+        def OnPhaseSel(event):
+            self.TName = phasesel.GetStringSelection()
+            self.Tphase = self.PhaseData[self.TName]
+            wx.CallAfter(self.Draw)
+            
+        def OnOatmOsel(event):
+            self.Oatoms[0] = oatmosel.GetStringSelection()
+            
+        def OnTatmOsel(event):
+            self.Tatoms[0] = tatmosel.GetStringSelection()
+            print(G2mth.FindAllNeighbors(self.OPhase,self.Oatoms[0],self.Tatoms[0])[0])
+
+        self.panel.Destroy()
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        OgeneralData = self.OPhase['General']
+        OatTypes = OgeneralData['AtomTypes']
+        TgeneralData = self.OPhase['General']
+        TatTypes = TgeneralData['AtomTypes']
+        
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label='Compare polyhedra in %s to target phase %s:(TBD)'%(self.OName,self.TName)),0,WACV)
+        
+        Pchoice = self.PhaseNames
+        phaseselSizer = wx.BoxSizer(wx.HORIZONTAL)
+        phaseselSizer.Add(wx.StaticText(self.panel,label=' Select target phase: '),0,WACV)
+        phasesel = wx.ComboBox(self.panel,choices=Pchoice,value=self.OName,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        phasesel.Bind(wx.EVT_COMBOBOX,OnPhaseSel)
+        phaseselSizer.Add(phasesel,0,WACV)
+        mainSizer.Add(phaseselSizer,0,WACV)
+        
+        mainSizer.Add(wx.StaticText(self.panel,label=' For origin phase %s:'%self.OName),0,WACV)
+        oatmoselSizer = wx.BoxSizer(wx.HORIZONTAL)
+        oatmoselSizer.Add(wx.StaticText(self.panel,label=' Select origin atom type: '),0,WACV)
+        oatmosel = wx.ComboBox(self.panel,choices=OatTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        oatmosel.Bind(wx.EVT_COMBOBOX,OnOatmOsel)
+        oatmoselSizer.Add(oatmosel,0,WACV)
+        mainSizer.Add(oatmoselSizer,0,WACV)
+        
+        tatmoselSizer = wx.BoxSizer(wx.HORIZONTAL)
+        tatmoselSizer.Add(wx.StaticText(self.panel,label=' Select target atom type: '),0,WACV)
+        tatmosel = wx.ComboBox(self.panel,choices=OatTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        tatmosel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
+        tatmoselSizer.Add(tatmosel,0,WACV)
+        mainSizer.Add(tatmoselSizer,0,WACV)
+        
+        mainSizer.Add(wx.StaticText(self.panel,label=' For target phase %s:'%self.TName),0,WACV)
+        
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        
+        self.panel.SetSizer(mainSizer)
+        self.panel.SetAutoLayout(1)
+        self.panel.SetScrollRate(10,10)
+        size = np.array(self.GetSize())
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        
+    def GetSelection(self):
+        return None
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
 
 ################################################################################
 class TransformDialog(wx.Dialog):
@@ -2681,7 +2784,7 @@ def UpdatePhaseData(G2frame,Item,data):
                         dlg.Destroy()
                 else:
                     break
-                
+                                
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
         UseList = newPhase['Histograms']
@@ -2698,6 +2801,19 @@ def UpdatePhaseData(G2frame,Item,data):
             G2cnstG.TransConstraints(G2frame,data,newPhase,Trans,Vvec,atCodes)     #data is old phase
         G2frame.GPXtree.SelectItem(sub)
                 
+    def OnCompare(event):
+        while True:
+            dlg = CompareDialog(G2frame,data)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    print('Compare polyhedra in structures - TBD')
+                    return
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+        
+        
     def OnUseBilbao(event):
         PatternName = data['magPhases']
         PatternId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,PatternName)
@@ -4414,7 +4530,7 @@ def UpdatePhaseData(G2frame,Item,data):
         global runFile
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
-            G2frame.runtext.SetValue('')
+#            G2frame.runtext.SetValue('')
             UpdateRMC()
         
         G2frame.GetStatusBar().SetStatusText('',1)
@@ -5132,7 +5248,8 @@ freshStart     = False      #make TRUE for a restart
                 if dlg.ShowModal() == wx.ID_OK:
                     import subprocess as sb
                     batch = open('fullrmc.bat','w')
-                    batch.write(sys.exec_prefix+'\\activate\n')
+                    batch.write('run '+sys.exec_prefix+'\\Scripts\\activate\n')
+                    batch.write('SET PYTHONPATH=%s\\fullrmc\n'%GSASIIpath.path2GSAS2)
                     batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
                     batch.write('pause')
                     batch.close()
@@ -10795,6 +10912,7 @@ freshStart     = False      #make TRUE for a restart
         G2frame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2G.wxID_SINGLEMCSA)
         G2frame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2G.wxID_MULTIMCSA)
         G2frame.Bind(wx.EVT_MENU, OnTransform, id=G2G.wxID_TRANSFORMSTRUCTURE)
+        G2frame.Bind(wx.EVT_MENU, OnCompare, id=G2G.wxID_COMPARESTRUCTURE)
         G2frame.Bind(wx.EVT_MENU, OnUseBilbao, id=G2G.wxID_USEBILBAOMAG)
         G2frame.Bind(wx.EVT_MENU, OnValidProtein, id=G2G.wxID_VALIDPROTEIN)
         # Data

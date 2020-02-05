@@ -323,6 +323,7 @@ def test():
     
     print('test SUBGROUPSMAG')            
     results,baseList = GetNonStdSubgroupsmag(SGData,('0','0','0',' ',' ',' ',' ',' ',' ',' '))
+    print(results)
     if results:
         for [spgp,bns,mv,gid,altList,supList] in results:
             if gid in baseList:
@@ -333,6 +334,7 @@ def test():
                 
     print('test SUBGROUPS')
     results,baseList = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
+    print(results)
     if results:
         for [spgp,mv,gid,altList,supList] in results:
             if gid in baseList:

@@ -140,7 +140,9 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
     try:
+        print(postdict)
         r = requests.post(submagSite,postdict)
+        print(r)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -213,7 +215,9 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
     try:
+        print(postdict)
         r = requests.post(submagSite,postdict)
+        print(r)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -243,7 +247,7 @@ def test():
                 print('Space group:',spgp, 'BNS:',bns)
                 print('MV')
                 print(mv)
-    results,baseList = GetNonStdSubgroups(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
+    results,baseList = GetNonStdSubgroupsmag(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     if results:
         for [spgp,mv,gid,altList,supList] in results:
             if gid in baseList:

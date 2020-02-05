@@ -145,6 +145,11 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
+            Lastshft = result[2]['Xvec']
+            if Lastshft is None:
+                Rvals['Max shft/sig'] = 0.0
+            else:
+                Rvals['Max shft/sig'] = np.max(Lastshft/sig)
             if np.any(np.isnan(sig)) or not sig.shape:
                 G2fil.G2Print ('*** Least squares aborted - some invalid esds possible ***',mode='error')
 #            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
@@ -504,8 +509,8 @@ def SeqRefine(GPXfile,dlg,refPlotUpdate=None):
             IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
                 rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifSeq,printFile,dlg,
                 refPlotUpdate=refPlotUpdate)
-            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
-                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2']))
+            G2fil.G2Print ('  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f, last shft/sig = %.4f'%(
+                Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2,Rvals['DelChi2'],Rvals['Max shft/sig']))
             # add the uncertainties into the esd dictionary (sigDict)
             if not IfOK:
                 G2fil.G2Print('***** Sequential refinement failed at histogram '+histogram,mode='warn')

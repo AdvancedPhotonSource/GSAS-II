@@ -67,9 +67,12 @@ class TIF_ReaderClass(G2obj.ImportImage):
         '''
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:
-            G2fil.G2Print("GetTifData failed to read "+str(filename)+" Trying SciPy")
-            import scipy.misc
-            self.Image = scipy.misc.imread(filename,flatten=True)
+            G2fil.G2Print("GetTifData failed to read "+str(filename)+" Trying PIL")
+#            import scipy.misc
+#            self.Image = scipy.misc.imread(filename,flatten=True)
+            import PIL.Image as PI
+            self.Image = PI.open(filename,mode='r')
+            
             # for scipy 1.2 & later  scipy.misc.imread will be removed
             # with note to use imageio.imread instead 
             # (N.B. scipy.misc.imread uses PIL/pillow perhaps better to just use pillow)
@@ -347,6 +350,13 @@ def GetTifData(filename):
         dt = np.dtype(np.float32)
         dt = dt.newbyteorder(byteOrd)
         image = np.array(np.frombuffer(File.read(Npix*4),dtype=dt),dtype=np.int32)
+    elif sizexy == [3070,1102]:
+        G2fil.G2Print ('Read Dectris Eiger 1M tiff file: '+filename)
+        pixy = [75.,75.]
+        File.seek(8)
+        dt = np.dtype(np.float32)
+        dt = dt.newbyteorder(byteOrd)
+        image = np.array(np.frombuffer(File.read(Npix*4),dtype=np.uint32),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
 #        pixy = (200,200)

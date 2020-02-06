@@ -2863,7 +2863,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                      'r: offset right','o: reset offset',]
                     
     for KeyItem in extraKeys:
-        Page.Choice = Page.Choice + (KeyItem[0] + ': '+KeyItem[2],)
+        Page.Choice = Page.Choice + [KeyItem[0] + ': '+KeyItem[2],]
     magLineList = [] # null value indicates no magnification
     Page.toolbar.updateActions = None # no update actions
     G2frame.cid = None

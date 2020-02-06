@@ -23,7 +23,7 @@ except ImportError:
 import GSASIIspc as G2spc
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general.pl'
+submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_k.pl'
 
 class TableParser(HTML.HTMLParser):
     def __init__(self):
@@ -140,9 +140,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
     try:
-        print(postdict)
-        r = requests.post(submagSite,postdict)
-        print(r)
+        r = requests.get(submagSite,params=postdict)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -215,9 +213,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
     try:
-        print(postdict)
-        r = requests.post(submagSite,postdict)
-        print(r)
+        r = requests.get(submagSite,params=postdict)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -242,14 +238,15 @@ def test():
     SGData = G2spc.SpcGroup('p -3 m 1')[1]
     results,baseList = GetNonStdSubgroupsmag(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     if results:
-        for [spgp,mv,bns,gid,altList,supList] in results:
+        print(results)
+        for [spgp,mv,bns,gid,altList,supList] in results.text:
             if gid in baseList:
                 print('Space group:',spgp, 'BNS:',bns)
                 print('MV')
                 print(mv)
     results,baseList = GetNonStdSubgroupsmag(SGData,('1/3','1/3','1/2',' ',' ',' ',' ',' ',' ',' '))
     if results:
-        for [spgp,mv,gid,altList,supList] in results:
+        for [spgp,mv,gid,altList,supList] in results.text:
             if gid in baseList:
                 print('Space group:',spgp)
                 print('MV')

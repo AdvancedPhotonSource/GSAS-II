@@ -288,6 +288,7 @@ class CompareDialog(wx.Dialog):
     def __init__(self,parent,phase):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup polyhedron comparison', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.parent = parent
         self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
         self.OPhase = copy.deepcopy(phase)   #will be a new phase!
         self.OName = self.OPhase['General']['Name']
@@ -313,7 +314,13 @@ class CompareDialog(wx.Dialog):
             
         def OnTatmOsel(event):
             self.Tatoms[0] = tatmosel.GetStringSelection()
-            print(G2mth.FindAllNeighbors(self.OPhase,self.Oatoms[0],self.Tatoms[0])[0])
+            generalData = self.OPhase['General']
+            DisAglCtls = generalData['DisAglCtls']
+            dlg = G2G.DisAglDialog(self.parent,DisAglCtls,generalData)
+            if dlg.ShowModal() == wx.ID_OK:
+                generalData['DisAglCtls'] = dlg.GetData()
+            dlg.Destroy()
+            print(G2mth.FindNeighbors(self.OPhase,self.Oatoms[0],self.Tatoms[0])[0])
 
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)

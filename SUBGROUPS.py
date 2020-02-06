@@ -21,7 +21,7 @@ import numpy.linalg as nl
 import GSASIIspc as G2spc
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl'
+submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 
@@ -83,7 +83,7 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
     try:
-        r = requests.post(submagSite,postdict)
+        r = requests.get(submagSite,params=postdict)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -211,7 +211,7 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
     try:
-        r = requests.post(submagSite,postdict)
+        r = requests.get(submagSite,params=postdict)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')
@@ -283,7 +283,7 @@ def subBilbaoCheckLattice(spgNum,cell,tol=5):
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
     try:
-        r = requests.post(psSite,data=datastr)
+        r = requests.get(psSite,params=datastr)
     except:     #ConnectionError?
         page = ''
         print('connection error - not on internet')

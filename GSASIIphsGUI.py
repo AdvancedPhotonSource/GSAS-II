@@ -2694,6 +2694,7 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_SINGLEMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_MULTIMCSA,True)
             G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_4DCHARGEFLIP,False)
+            
 
         mainSizer.Add(PawleySizer())
         G2G.HorizontalLine(mainSizer,General)
@@ -2705,7 +2706,9 @@ def UpdatePhaseData(G2frame,Item,data):
         if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
+        G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,False)
         if generalData['SGData']['SpGrp'] == 'P 1':
+            G2frame.dataWindow.GeneralCalc.Enable(G2G.wxID_COMPARESTRUCTURE,True)
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(compareSizer())
         if SkipDraw: 

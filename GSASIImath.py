@@ -638,22 +638,79 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
                 Neigh.append([AtNames[j],dist[j],True])
                 Ids.append(Atoms[j][cia+8])
     return Neigh,[OId,Ids]
+
+def FindOctahedron(results):
+    Octahedron = np.array([[1.,0,0],[0,1.,0],[0,0,1.],[-1.,0,0],[0,-1.,0],[0,0,-1.]])
+    Polygon = np.array([result[3] for result in results])
+    Dists = np.array([np.sqrt(np.sum(axis**2)) for axis in Polygon])
+    bond = np.mean(Dists)
+    std = np.std(Dists)
+    Norms = Polygon/Dists[:,nxs]
+    Tilts = acosd(np.dot(Norms,Octahedron[0]))
+    iAng = np.argmin(Tilts)
+    Qavec = np.cross(Norms[iAng],Octahedron[0])
+    QA = AVdeg2Q(Tilts[iAng],Qavec)
+    newNorms = prodQVQ(QA,Norms)
+    Rots = acosd(np.dot(newNorms,Octahedron[1]))
+    jAng = np.argmin(Rots)
+    Qbvec = np.cross(Norms[jAng],Octahedron[1])
+    QB = AVdeg2Q(Rots[jAng],Qbvec)
+    QQ = prodQQ(QA,QB)    
+    newNorms = prodQVQ(QQ,Norms)
+    dispVecs = np.array([norm[:,nxs]-Octahedron.T for norm in newNorms])
+    disp = np.sqrt(np.sum(dispVecs**2,axis=1))
+    dispids = np.argmin(disp,axis=1)
+    vecDisp = np.array([dispVecs[i,:,dispid] for i,dispid in enumerate(dispids)])
+    Disps = np.array([disp[i,dispid] for i,dispid in enumerate(dispids)])
+    meanDisp = np.mean(Disps)
+    stdDisp = np.std(Disps)
+    A,V = Q2AVdeg(QQ)
+    return bond,std,meanDisp,stdDisp,A,V,vecDisp
+    
+def FindTetrahedron(results):
+    Tetrahedron = np.array([[1.,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]])/np.sqrt(3.)
+    Polygon = np.array([result[3] for result in results])
+    Dists = np.array([np.sqrt(np.sum(axis**2)) for axis in Polygon])
+    bond = np.mean(Dists)
+    std = np.std(Dists)
+    Norms = Polygon/Dists[:,nxs]
+    Tilts = acosd(np.dot(Norms,Tetrahedron[0]))
+    iAng = np.argmin(Tilts)
+    Qavec = np.cross(Norms[iAng],Tetrahedron[0])
+    QA = AVdeg2Q(Tilts[iAng],Qavec)
+    newNorms = prodQVQ(QA,Norms)
+    Rots = acosd(np.dot(newNorms,Tetrahedron[1]))
+    jAng = np.argmin(Rots)
+    Qbvec = np.cross(Norms[jAng],Tetrahedron[1])
+    QB = AVdeg2Q(Rots[jAng],Qbvec)
+    QQ = prodQQ(QA,QB)    
+    newNorms = prodQVQ(QQ,Norms)
+    dispVecs = np.array([norm[:,nxs]-Tetrahedron.T for norm in newNorms])
+    disp = np.sqrt(np.sum(dispVecs**2,axis=1))
+    dispids = np.argmin(disp,axis=1)
+    vecDisp = np.array([dispVecs[i,:,dispid] for i,dispid in enumerate(dispids)])
+    Disps = np.array([disp[i,dispid] for i,dispid in enumerate(dispids)])
+    meanDisp = np.mean(Disps)
+    stdDisp = np.std(Disps)
+    A,V = Q2AVdeg(QQ)
+    return bond,std,meanDisp,stdDisp,A,V,vecDisp
     
 def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
     cx,ct,cs,cia = General['AtomPtrs']
     Atoms = phase['Atoms']
     atNames = [atom[ct-1] for atom in Atoms]
+    atTypes = [atom[ct] for atom in Atoms]
     Cell = General['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(Cell)
     SGData = General['SGData']
     indices = (-1,0,1)
     Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
-    atTypes = General['AtomTypes']
+    AtTypes = General['AtomTypes']
     Radii = np.array(General['BondRadii'])
     DisAglCtls = General['DisAglCtls']    
     radiusFactor = DisAglCtls['Factors'][0]
-    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+    AtInfo = dict(zip(AtTypes,Radii)) #or General['BondRadii']
     Orig = atNames.index(FrstName)
     OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
@@ -680,7 +737,7 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
                             Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
                         else:
                             Topstr = ' +(%4d)'%(Top)
-                        Neigh.append([AtNames[iA]+Topstr,dist[iU]])
+                        Neigh.append([AtNames[iA]+Topstr,atTypes[iA],dist[iU],dx[iU]])
                         Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
     

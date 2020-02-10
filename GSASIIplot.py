@@ -441,7 +441,6 @@ class G2PlotMpl(_tabPlotWin):
         else:
             return self.canvas.SetToolTipString(text)
         
-        
 class G2PlotOgl(_tabPlotWin):
     'Creates an OpenGL plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -537,7 +536,6 @@ class G2PlotNoteBook(wx.Panel):
             return
         page = self.panelList[self.plotList.index(name)]
         page.plotRequiresRedraw = False # plot should not be deleted even if not redrawn
-        
 
     def RegisterRedrawRoutine(self,name,routine=None,args=(),kwargs={}):
         '''Save information to determine how to redraw a plot
@@ -5116,10 +5114,47 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
         Page.canvas.draw()
         
 ################################################################################
+##### PlotXYZvect
+################################################################################
+        
+def PlotXYZvect(G2frame,X,Y,Z,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
+    
+#    def OnPageChanged(event):
+#        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+#        if PlotText == PlotName:
+#            PlotXYZvect(G2frame,X,Y,Z,labelX,labelY,labelZ,Title,PlotText)        
+        
+    def OnMotion(event):
+        G2frame.G2plotNB.status.SetStatusText('',1)
+    
+    if PlotName is None or not len(X):
+        return
+    G2frame.G2plotNB.Delete(PlotName)       #A cluge: to avoid AccessExceptions on replot
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'3d')
+    if new:
+#        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    G2frame.G2plotNB.status.SetStatusText('',1)
+    Page.Choice = None
+    np.seterr(all='ignore')
+    Plot.scatter(X,Y,Z,marker='x')
+    xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+    XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+    Plot.set_xlim3d(XYZlim)
+    Plot.set_ylim3d(XYZlim)
+    Plot.set_zlim3d(XYZlim)
+    Plot.set_aspect('equal')
+    Plot.set_xlabel(labelX,fontsize=14)
+    Plot.set_ylabel(labelY,fontsize=14)
+    Plot.set_zlabel(labelZ,fontsize=14)
+    Plot.set_title(Title)
+    Page.canvas.draw()
+        
+################################################################################
 ##### Plot3dXYZ
 ################################################################################
         
-def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,Title='',Centro=False):
+def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=False,Title='',Centro=False):
     
     def OnMotion(event):
         xpos = event.xdata
@@ -5153,9 +5188,9 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,
         Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
         xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
         XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+#        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+#        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+#        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
         Plot.set_xlim3d(XYZlim)
         Plot.set_ylim3d(XYZlim)
         Plot.set_zlim3d(XYZlim)
@@ -5170,7 +5205,7 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX='X',labelY='Y',labelZ='Z',newPlot=False,
         Page.canvas.draw()
         
 ################################################################################
-##### PlotHist
+##### PlotAAProb
 ################################################################################
 def PlotAAProb(G2frame,resNames,Probs1,Probs2,Title='',thresh=None,pickHandler=None):
     'Needs a description'
@@ -5276,6 +5311,44 @@ def PlotStrain(G2frame,data,newPlot=False):
     else:
         Page.canvas.draw()
         
+################################################################################
+##### PlotBarGraph
+################################################################################
+            
+def PlotBarGraph(G2frame,Xarray,Xname='',Title='',PlotName=None):
+    'Needs a description'
+    
+    def OnPageChanged(event):
+        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+        if PlotText == PlotName:
+            PlotBarGraph(G2frame,Xarray,Xname,Title,PlotText)
+    
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            SetCursor(Page)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f Number =%9.3g'%(xpos,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select %s first'%PlotName,1)
+
+    if PlotName is None or not len(Xarray):
+        return
+    new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'mpl')
+    if new:
+        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = None
+    nBins= max(10,len(Xarray)//25)
+    Bins,Dbins = np.histogram(Xarray,nBins)
+    wid = Dbins[1]-Dbins[0]
+    Plot.set_title(Title)
+    Plot.set_xlabel(Xname,fontsize=14)
+    Plot.set_ylabel(r'$Number$',fontsize=14)
+    Plot.bar(Dbins[:-1],Bins,width=wid,align='edge',facecolor='red',edgecolor='black')
+    Page.canvas.draw()
+
 ################################################################################
 ##### PlotSASDSizeDist
 ################################################################################

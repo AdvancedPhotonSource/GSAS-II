@@ -29,6 +29,7 @@ Other top-level routines are:
 to control scrolling. 
 '''
 from __future__ import division, print_function
+import platform
 import os
 import os.path
 import wx
@@ -86,6 +87,10 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
+if '2' in platform.python_version_tuple()[0]:
+    GkDelta = unichr(0x0394)
+else:
+    GkDelta = chr(0x0394)
 ################################################################################
 #### phase class definitions
 ################################################################################
@@ -283,116 +288,6 @@ class SphereEnclosure(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
-################################################################################
-class CompareDialog(wx.Dialog):
-    def __init__(self,parent,phase):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup polyhedron comparison', 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.parent = parent
-        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
-        self.OPhase = copy.deepcopy(phase)   #will be a new phase!
-        self.OName = self.OPhase['General']['Name']
-        self.TPhase = copy.deepcopy(phase)
-        self.TName = self.OName
-        self.PhaseNames = parent.GetPhaseNames()
-        self.PhaseData = parent.GetPhaseData()
-        self.Oatoms = ['','']
-        self.Tatoms = ['','']
-        self.ONeighbors = []
-        self.Tneighbors = []
-        self.Draw()
-            
-    def Draw(self):
-        
-        def OnPhaseSel(event):
-            self.TName = phasesel.GetStringSelection()
-            self.Tphase = self.PhaseData[self.TName]
-            wx.CallAfter(self.Draw)
-            
-        def OnOatmOsel(event):
-            self.Oatoms[0] = oatmosel.GetStringSelection()
-            
-        def OnTatmOsel(event):
-            self.Tatoms[0] = tatmosel.GetStringSelection()
-            generalData = self.OPhase['General']
-            DisAglCtls = generalData['DisAglCtls']
-            dlg = G2G.DisAglDialog(self.parent,DisAglCtls,generalData)
-            if dlg.ShowModal() == wx.ID_OK:
-                generalData['DisAglCtls'] = dlg.GetData()
-            dlg.Destroy()
-            print(G2mth.FindNeighbors(self.OPhase,self.Oatoms[0],self.Tatoms[0])[0])
-
-        self.panel.Destroy()
-        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
-        OgeneralData = self.OPhase['General']
-        OatTypes = OgeneralData['AtomTypes']
-        TgeneralData = self.OPhase['General']
-        TatTypes = TgeneralData['AtomTypes']
-        
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label='Compare polyhedra in %s to target phase %s:(TBD)'%(self.OName,self.TName)),0,WACV)
-        
-        Pchoice = self.PhaseNames
-        phaseselSizer = wx.BoxSizer(wx.HORIZONTAL)
-        phaseselSizer.Add(wx.StaticText(self.panel,label=' Select target phase: '),0,WACV)
-        phasesel = wx.ComboBox(self.panel,choices=Pchoice,value=self.OName,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        phasesel.Bind(wx.EVT_COMBOBOX,OnPhaseSel)
-        phaseselSizer.Add(phasesel,0,WACV)
-        mainSizer.Add(phaseselSizer,0,WACV)
-        
-        mainSizer.Add(wx.StaticText(self.panel,label=' For origin phase %s:'%self.OName),0,WACV)
-        oatmoselSizer = wx.BoxSizer(wx.HORIZONTAL)
-        oatmoselSizer.Add(wx.StaticText(self.panel,label=' Select origin atom type: '),0,WACV)
-        oatmosel = wx.ComboBox(self.panel,choices=OatTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        oatmosel.Bind(wx.EVT_COMBOBOX,OnOatmOsel)
-        oatmoselSizer.Add(oatmosel,0,WACV)
-        mainSizer.Add(oatmoselSizer,0,WACV)
-        
-        tatmoselSizer = wx.BoxSizer(wx.HORIZONTAL)
-        tatmoselSizer.Add(wx.StaticText(self.panel,label=' Select target atom type: '),0,WACV)
-        tatmosel = wx.ComboBox(self.panel,choices=OatTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        tatmosel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
-        tatmoselSizer.Add(tatmosel,0,WACV)
-        mainSizer.Add(tatmoselSizer,0,WACV)
-        
-        mainSizer.Add(wx.StaticText(self.panel,label=' For target phase %s:'%self.TName),0,WACV)
-        
-        
-        OkBtn = wx.Button(self.panel,-1,"Ok")
-        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        cancelBtn = wx.Button(self.panel,-1,"Cancel")
-        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
-        btnSizer.Add((20,20),1)
-        btnSizer.Add(cancelBtn)
-        btnSizer.Add((20,20),1)
-        
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        
-        self.panel.SetSizer(mainSizer)
-        self.panel.SetAutoLayout(1)
-        self.panel.SetScrollRate(10,10)
-        size = np.array(self.GetSize())
-        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
-        self.panel.SetSize(size)
-        
-    def GetSelection(self):
-        return None
-        
-    def OnOk(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_OK)
-
-    def OnCancel(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_CANCEL)
-        
-
 ################################################################################
 class TransformDialog(wx.Dialog):
     ''' Phase transformation X' = M*(X-U)+V
@@ -1559,6 +1454,10 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Flip']['GridStep'] = generalData['Flip']['Resolution']/2.
             del generalData['Map']['Resolution']
             del generalData['Flip']['Resolution']
+        if 'Compare' not in generalData:
+            generalData['Compare'] = {'Oatoms':'','Tatoms':'','Tilts':{'Otilts':[],'Ttilts':[]},
+                'Bonds':{'Obonds':[],'Tbonds':[]},'Vects':{'Ovec':[],'Tvec':[]},
+                'dVects':{'Ovec':[],'Tvec':[]}}
                 
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2643,6 +2542,100 @@ def UpdatePhaseData(G2frame,Item,data):
             line3Sizer.Add(G2G.ValidatedTxtCtrl(General,MCSAdata['Annealing'],2),0,WACV)
             mcsaSizer.Add(line3Sizer)            
             return mcsaSizer
+        
+        def compareSizer():
+            
+#            generalData['Compare'] = {'Oatom':'','Tatom':'','Tilts':{'Otilts':[],'Ttilts':[]},
+#                'Bonds':{'Obonds':[],'Tbonds':[]},'Vects':{'Ovec':[],'Tvec':[]},
+#                'dVects':{'Ovec':[],'Tvec':[]}}
+            def OnOatmOsel(event):
+                generalData['Compare']['Oatoms'] = oatmsel.GetStringSelection()
+                
+            def OnTatmOsel(event):
+                generalData['Compare']['Tatoms'] = tatmsel.GetStringSelection()
+                
+            def OnCompPlots(event):
+                Bonds = generalData['Compare']['Bonds']
+                Tilts = generalData['Compare']['Tilts']
+                Vects = generalData['Compare']['Vects']
+                Oatoms = generalData['Compare']['Oatoms']
+                Tatoms = generalData['Compare']['Tatoms']
+                dVects = generalData['Compare']['dVects']
+                if len(Bonds['Obonds']):
+                    print(' Octahedra:')
+                    Bonds['Obonds'] = np.array(Bonds['Obonds'])
+                    Bmean = np.mean(Bonds['Obonds'])
+                    Bstd = np.std(Bonds['Obonds'])
+                    title = '%s-%s Octahedral bond lengths'%(Oatoms,Tatoms)                    
+                    G2plt.PlotBarGraph(G2frame,Bonds['Obonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Bond')
+                    Tilts['Otilts'] = np.array(Tilts['Otilts'])
+                    Tmean = np.mean(Tilts['Otilts'])
+                    Tstd = np.std(Tilts['Otilts'])                    
+                    G2plt.PlotBarGraph(G2frame,Tilts['Otilts'],Xname='Tilts, deg',
+                        Title='Octahedral %s tilts'%Oatoms,PlotName='Tilts')
+                    dVects['Ovec'] = np.reshape(np.array(dVects['Ovec']),(-1,3))
+                    for ix,aX in enumerate(['X','Y','Z']):                        
+                        G2plt.PlotBarGraph(G2frame,dVects['Ovec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
+                            Title='%s Octahedral distortion'%Oatoms,PlotName='%s-Delta'%aX)
+                    Vects['Ovec'] = np.array(Vects['Ovec'])                    #3D plot of tilt vectors                    
+                    X = Vects['Ovec'].T[0]
+                    Y = Vects['Ovec'].T[1]
+                    Z = Vects['Ovec'].T[2]                    
+                    G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
+                        Title=r'%s Octahedral tilt vectors'%Oatoms,PlotName='Oct tilts')
+                    print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
+                    print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
+                
+                if len(Bonds['Tbonds']):
+                    print('Tetrahedra:')
+                    Bonds['Tbonds'] = np.array(Bonds['Tbonds'])
+                    Bmean = np.mean(Bonds['Tbonds'])
+                    Bstd = np.std(Bonds['Tbonds'])
+                    title = '%s-%s Terahedral bond lengths'%(Oatoms,Tatoms)
+                    G2plt.PlotBarGraph(G2frame,Bonds['Tbonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Bond')
+                    Tilts['Ttilts'] = np.array(Tilts['Ttilts'])
+                    Tmean = np.mean(Tilts['Ttilts'])
+                    Tstd = np.std(Tilts['Ttilts'])
+                    G2plt.PlotBarGraph(G2frame,Tilts['Ttilts'],Xname='Tilts, deg',
+                        Title='Tetrahedral %s tilts'%Oatoms,PlotName='Tilts')
+                    dVects['Tvec'] = np.reshape(np.array(dVects['Tvec']),(-1,3))
+                    for ix,aX in enumerate(['X','Y','Z']):
+                        G2plt.PlotBarGraph(G2frame,dVects['Tvec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
+                            Title='%s Tetrahedral distortion'%Oatoms,PlotName='%s-Delta'%aX)                
+                    Vects['Tvec'] = np.array(Vects['Ovec'])
+                    X = Vects['Tvec'].T[0]
+                    Y = Vects['Tvec'].T[1]
+                    Z = Vects['Tvec'].T[2]
+                    G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
+                        Title=r'%s Tetrahedral tilt vectors'%Oatoms,PlotName='Tet tilts')
+                    print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
+                    print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
+                
+
+            atTypes = generalData['AtomTypes']
+            compSizer = wx.BoxSizer(wx.VERTICAL)
+            compSizer.Add(wx.StaticText(General,label=' Compare polyhedra to ideal octahedra/tetrahedra:'),0,WACV)
+                    
+            atmselSizer = wx.BoxSizer(wx.HORIZONTAL)
+            atmselSizer.Add(wx.StaticText(General,label=' Select origin atom type: '),0,WACV)
+            oatmsel = wx.ComboBox(General,choices=atTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            oatmsel.SetStringSelection(generalData['Compare']['Oatoms'])
+            oatmsel.Bind(wx.EVT_COMBOBOX,OnOatmOsel)
+            atmselSizer.Add(oatmsel,0,WACV)
+            
+            atmselSizer.Add(wx.StaticText(General,label=' Select target atom type: '),0,WACV)
+            tatmsel = wx.ComboBox(General,choices=atTypes,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            tatmsel.SetStringSelection(generalData['Compare']['Tatoms'])
+            tatmsel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
+            atmselSizer.Add(tatmsel,0,WACV)
+            
+            if len(generalData['Compare']['Bonds']['Obonds']) or len(generalData['Compare']['Bonds']['Tbonds']):
+                plotBtn = wx.Button(General,label='Show plots?')
+                plotBtn.Bind(wx.EVT_BUTTON,OnCompPlots)
+                atmselSizer.Add(plotBtn)
+            compSizer.Add(atmselSizer,0,WACV)
+            return compSizer
+            
 
         # UpdateGeneral execution starts here
         phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
@@ -2712,6 +2705,9 @@ def UpdatePhaseData(G2frame,Item,data):
         if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
+        if generalData['SGData']['SpGrp'] == 'P 1':
+            G2G.HorizontalLine(mainSizer,General)
+            mainSizer.Add(compareSizer())
         if SkipDraw: 
             mainSizer.Clear(True)
             return
@@ -2809,17 +2805,53 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GPXtree.SelectItem(sub)
                 
     def OnCompare(event):
-        while True:
-            dlg = CompareDialog(G2frame,data)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    print('Compare polyhedra in structures - TBD')
-                    return
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        atNames = [atm[ct-1] for atm in data['Atoms']]
+        if not generalData['Compare']['Oatoms']:
+            G2frame.ErrorDialog('Compare atom selection error','Select atoms for polygon comparison first')
+            return
+        DisAglCtls = generalData.get('DisAglCtls',{})
+        dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
+        if dlg.ShowModal() == wx.ID_OK:
+            generalData['DisAglCtls'] = dlg.GetData()
+        dlg.Destroy()
+        Natm = len(data['Atoms'])
+        iAtm= 0
+        pgbar = wx.ProgressDialog('Process polyhedron compare for %d atoms'%Natm,'Atoms done=',Natm+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        Tilts = generalData['Compare']['Tilts'] 
+        Tilts.update({'Otilts':[],'Ttilts':[]})
+        Bonds = generalData['Compare']['Bonds']
+        Bonds.update({'Obonds':[],'Tbonds':[]})
+        Vects = generalData['Compare']['Vects']
+        Vects.update({'Ovec':[],'Tvec':[]})
+        dVects = generalData['Compare']['dVects']
+        dVects.update({'Ovec':[],'Tvec':[]})
+        Oatoms = generalData['Compare']['Oatoms']
+        for atom in data['Atoms']:
+            if atom[ct] == Oatoms:
+                results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames)[0]      #slow step
+                if len(results) == 4:
+                    bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindTetrahedron(results)
+                    Bonds['Tbonds'].append(bond)
+                    Tilts['Ttilts'].append(A)
+                    Vects['Tvec'].append(V)
+                    dVects['Tvec'].append(dVec)
+                elif len(results) == 6:
+                    bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindOctahedron(results)
+                    Bonds['Obonds'].append(bond)
+                    Tilts['Otilts'].append(A)
+                    Vects['Ovec'].append(V)
+                    dVects['Ovec'].append(dVec)
                 else:
-                    return
-            finally:
-                dlg.Destroy()
-        
+                    print('%s is something else with %d vertices'%(atom[ct-1],len(results)))
+            GoOn = pgbar.Update(iAtm,newmsg='Atoms done=%d'%(iAtm))
+            iAtm += 1
+            if not GoOn[0]:
+                break
+        pgbar.Destroy()
+        wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
         
     def OnUseBilbao(event):
         PatternName = data['magPhases']
@@ -4190,7 +4222,6 @@ def UpdatePhaseData(G2frame,Item,data):
         subSizer2.Add((-1,-1))
         subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'Mode name  '))
         subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
-        
         if 'G2VarList' in ISO:
             deltaList = []
             for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):

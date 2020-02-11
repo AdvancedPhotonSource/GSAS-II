@@ -3251,14 +3251,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     else:
                         if 'PWDR' in plottype:
                             ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='obs')    #Io
-                            if np.any(Z):
-                                CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='calc')                 #Ic
+                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='calc')                 #Ic
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[2],picker=False,label='calc')
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        if np.any(W):
-                            BackLine = Plot.plot(X,W,colors[2],picker=False,label='bkg')                 #Ib
+                        BackLine = Plot.plot(X,W,colors[2],picker=False,label='bkg')                 #Ib
                         if not G2frame.Weight and np.any(Z): 
                             DifLine = Plot.plot(X,D,colors[3],picker=1.,label='diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')

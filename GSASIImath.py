@@ -164,6 +164,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.e-6, maxcyc=0,lamda=-
     if Print:
         G2fil.G2Print(' Hessian Levenberg-Marquardt SVD refinement on %d variables:'%(n))
     Lam = np.zeros((n,n))
+    Xvec = np.zeros(len(x0))
     while icycle < maxcyc:
         time0 = time.time()
         M = func(x0,*args)

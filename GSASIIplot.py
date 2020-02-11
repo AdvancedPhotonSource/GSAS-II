@@ -3242,23 +3242,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label='obs-bkg')  #Io-Ib
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs-bkg')  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='calc-bkg')               #Ic-Ib
+                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc-bkg')               #Ic-Ib
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
                             Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='obs')    #Io
-                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='calc')                 #Ic
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')    #Io
+                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='_calc')                 #Ic
                         else:
                             Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,ZB,colors[2],picker=False,label='calc')
+                            Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W,colors[2],picker=False,label='bkg')                 #Ib
+                        BackLine = Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
                         if not G2frame.Weight and np.any(Z): 
-                            DifLine = Plot.plot(X,D,colors[3],picker=1.,label='diff')                 #Io-Ic
+                            DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
                 if PickId:
@@ -3365,13 +3365,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     Page.tickDict[phase],j = Plot.plot(peak.T[1],pos,plsym,mew=w,ms=l,picker=3.,label=phase)
             handles,legends = Plot.get_legend_handles_labels()  #got double entries in the phase legends for some reason
             if handles:
-                if len(Phases):
-                    labels = dict(zip(legends,handles))     #this removes duplicate phase entries
-                    handles = [labels[item] for item in labels]
-                    legends = list(labels.keys())
-                    Plot.legend(handles,legends,title='Data & Phases',loc='best')
-                else:
-                    Plot.legend(handles,legends,title='Data',loc='best')
+                labels = dict(zip(legends,handles))     #this removes duplicate phase entries
+                handles = [labels[item] for item in labels]
+                legends = list(labels.keys())
+                Plot.legend(handles,legends,title='Phases',loc='best')
             
     if G2frame.Contour:
         time0 = time.time()

@@ -2602,7 +2602,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     for ix,aX in enumerate(['X','Y','Z']):
                         G2plt.PlotBarGraph(G2frame,dVects['Tvec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
                             Title='%s Tetrahedral distortion'%Oatoms,PlotName='%s-Delta'%aX)                
-                    Vects['Tvec'] = np.array(Vects['Ovec'])
+                    Vects['Tvec'] = np.array(Vects['Tvec'])
                     X = Vects['Tvec'].T[0]
                     Y = Vects['Tvec'].T[1]
                     Z = Vects['Tvec'].T[2]

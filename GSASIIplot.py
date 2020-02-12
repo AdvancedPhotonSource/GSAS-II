@@ -200,9 +200,11 @@ else:
     super2 = chr(0xb2)
     Angstr = chr(0x00c5)
     Pwrm1 = chr(0x207b)+chr(0x0b9)
+# misc global vars
 nxs = np.newaxis
 plotDebug = False
 timeDebug = GSASIIpath.GetConfigValue('Show_timing',False)
+obsInCaption = True # include the observed, calc,... items in the plot caption (PlotPatterns)
 
 #matplotlib 2.0.x dumbed down Paired to 16 colors - 
 #   this restores the pre 2.0 Paired color map found in matplotlib._cm.py
@@ -1822,9 +1824,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         if G2frame.Contour or not G2frame.SinglePlot:
             if msg: msg += '\n'
             msg += " * only when a single histogram is plotted"
-        if Page.plotStyle['logPlot'] or Page.plotStyle['sqrtPlot']:
+        if Page.plotStyle['logPlot']:
             if msg: msg += '\n'
-            msg += " * only when the intensity scale is linear (not log or sqrt)"
+            msg += " * only when the intensity scale is linear/sqrt (not log)"
         if G2frame.Weight:
             if msg: msg += '\n'
             msg += " * only when weight plot is set to no weight plot"
@@ -1918,10 +1920,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.plotStyle['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
             Page.plotStyle['Offset'][1] += 1.
-        elif event.key == 'o' and not G2frame.SinglePlot:
-            G2frame.Cmax = 1.0
-            G2frame.Cmin = 0.0
-            Page.plotStyle['Offset'] = [0,0]
+        elif event.key == 'o':
+            if G2frame.SinglePlot and not G2frame.Contour:
+                global obsInCaption # include the observed, calc,... items in the plot caption (PlotPatterns)
+                obsInCaption = not obsInCaption
+            elif not G2frame.SinglePlot: 
+                G2frame.Cmax = 1.0
+                G2frame.Cmin = 0.0
+                Page.plotStyle['Offset'] = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
@@ -2013,7 +2019,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                     break
         else:
             #print('no binding for key',event.key)
-            #GSASIIpath.IPyBreak()
             return
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype,extraKeys=extraKeys)
         
@@ -2719,6 +2724,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         else:
             Plot.set_title(Title)
         Page.canvas.draw()
+    def incCptn(string):
+        '''Adds a underscore to "hide" a MPL object from the legend if 
+        obsInCaption is False
+        '''
+        if obsInCaption:
+            return string
+        else:
+            return '_'+string
 
     #=====================================================================================
     # beginning PlotPatterns execution
@@ -2783,7 +2796,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
         newPlot = True
         G2frame.Cmin = 0.0
         G2frame.Cmax = 1.0
-#        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
@@ -2836,7 +2848,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
             Page.Choice = [' key press',
                 'a: add magnification region','b: toggle subtract background',
                 'c: contour on','g: toggle grid','m: toggle multidata plot',
-                'n: toggle log(I)','q: toggle q plot','s: toggle sqrt plot',
+                'n: toggle log(I)',]
+            if obsInCaption:
+                Page.Choice += ['o: remove obs, calc,... from legend',]
+            else:
+                Page.Choice += ['o: add obs, calc,... to legend',]
+            Page.Choice += ['q: toggle q plot','s: toggle sqrt plot',
                 't: toggle d-spacing plot','w: toggle (Io-Ic)/sig plot',
                 '+: no selection']
             if Page.plotStyle['sqrtPlot'] or Page.plotStyle['logPlot']:
@@ -3214,17 +3231,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                         DZ = (Y-B-Z)*np.sqrt(wtFactor*xye[2])
                     else:
                         DZ = (xye[1]-xye[3])*np.sqrt(wtFactor*xye[2])
-                    DifLine = Plot1.plot(X,DZ,colors[3],picker=1.,label='_diff')                    #(Io-Ic)/sig(Io)
+                    DifLine = Plot1.plot(X,DZ,colors[3],picker=1.,label=incCptn('diff'))                    #(Io-Ic)/sig(Io)
                     Plot1.axhline(0.,color='k')
 
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
-                        Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
+                        Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
-                            Plot.plot(X,Z,colors[1],picker=False,label='_calc')
+                            Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))
                             if G2frame.plusPlot:
-                                Plot.plot(X,W,colors[2],picker=False,label='_bkg')     #background
+                                Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))     #background
                     elif plottype in ['SASD','REFD']:
                         Plot.set_xscale("log",nonposx='mask')
                         Plot.set_yscale("log",nonposy='mask')
@@ -3234,31 +3251,31 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                     ecolor=colors[0],picker=3.,clip_on=Clip_on)
                             else:
                                 Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                    ecolor=colors[0],picker=3.,clip_on=Clip_on,label='_obs')
+                                    ecolor=colors[0],picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                        Plot.plot(X,W,colors[1],picker=False,label='_bkg')     #const. background
-                        Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                        Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'))     #const. background
+                        Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label='_obs-bkg')  #Io-Ib
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
-                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label='_calc-bkg')               #Ic-Ib
+                                CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label=incCptn('calc-bkg'))               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')    #Io
-                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label='_calc')                 #Ic
+                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
+                            CalcLine = Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))                 #Ic
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label='_obs')
-                            Plot.plot(X,ZB,colors[2],picker=False,label='_calc')
+                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
-                        BackLine = Plot.plot(X,W,colors[2],picker=False,label='_bkg')                 #Ib
-                        if not G2frame.Weight and np.any(Z): 
-                            DifLine = Plot.plot(X,D,colors[3],picker=1.,label='_diff')                 #Io-Ic
+                        BackLine = Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))                 #Ib
+                        if not G2frame.Weight and np.any(Z):
+                            DifLine = Plot.plot(X,D,colors[3],picker=1.,label=incCptn('diff'))                 #Io-Ic
                     Plot.axhline(0.,color='k',label='_zero')
                 Page.SetToolTipString('')
                 if PickId:
@@ -3368,8 +3385,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 labels = dict(zip(legends,handles))     #this removes duplicate phase entries
                 handles = [labels[item] for item in labels]
                 legends = list(labels.keys())
-                Plot.legend(handles,legends,title='Phases',loc='best')
-            
+                if len(Phases) and obsInCaption: 
+                    Plot.legend(handles,legends,title='Phases & Data',loc='best')
+                else:
+                    Plot.legend(handles,legends,title='Data',loc='best')
+                    
     if G2frame.Contour:
         time0 = time.time()
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
@@ -3489,10 +3509,14 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             lbl = l.get_label()
             if 'mag' in lbl:
                 pass
-            elif lbl[1:] in plotOpt['lineList']:
+            elif lbl[1:] in plotOpt['lineList']: # item not in legend
                 if lbl[1:] in plotOpt['colors']: continue
                 plotOpt['colors'][lbl[1:]] = MPL2rgba(l.get_color())
                 plotOpt['legend'][lbl[1:]] = False
+            elif lbl in plotOpt['lineList']:
+                if lbl in plotOpt['colors']: continue
+                plotOpt['colors'][lbl] = MPL2rgba(l.get_color())
+                plotOpt['legend'][lbl] = True
             elif l in Page.tickDict.values():
                 plotOpt['phaseList'] .append(lbl)
                 if lbl in plotOpt['colors']: continue
@@ -3602,7 +3626,10 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
         yticks = Plot.get_yaxis().get_majorticklocs()    
         fp.write('@{}axis tick major {}\n'.format('y',yticks[1]-yticks[0]))
         fp.write('@{}axis ticklabel char size {}\n'.format('x',0)) # turns off axis labels
-        ylbl = Plot.get_ylabel().replace('$','')
+        if 'sqrt' in Plot.yaxis.get_label().get_text():
+            ylbl = 'sqrt(Intensity)' # perhaps there is a way to get the symbol in xmgrace but I did not find it
+        else:
+            ylbl = 'Intensity'
         fp.write('@{0}axis label "{1}"\n@{0}axis label char size {2}\n'.format(
             'y',ylbl,float(plotOpt['labelSize'])/8.))
         fp.write('@{0}axis label place spec\n@{0}axis label place {1}, {2}\n'.format('y',0.0,0.1))
@@ -3640,9 +3667,13 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
     # ======================================================================
     # plot data 
         for l in Plot.lines:
-            lbl = l.get_label()
-            if lbl[1:] not in ('obs','calc','bkg','zero','diff'): continue
-            c = plotOpt['colors'].get(lbl[1:],l.get_color())
+            if l.get_label() in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()
+            elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()[1:]
+            else:
+                continue
+            c = plotOpt['colors'].get(lbl,l.get_color())
             gc = ClosestColorNumber(c)
             if sum(c) == 4.0: # white on white, skip
                 continue
@@ -3651,7 +3682,7 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             siz = l.get_markersize()
             mkwid = l.get_mew()
             glinetyp = 1
-            if lbl[1:] == 'obs':
+            if lbl == 'obs':
                 obsartist = l
                 gsiz = float(plotOpt['markerSiz'])/8.
                 marker = plotOpt['markerSym']
@@ -3663,13 +3694,13 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
                 gsiz = 0
                 gmw = 0
                 lineWid = float(plotOpt['lineWid'])
-            if plotOpt['legend'].get(lbl[1:]):
-                glbl = lbl[1:]
+            if plotOpt['legend'].get(lbl):
+                glbl = lbl
             else:
                 glbl = ""
             datnum += 1
             fp.write("@type xy\n")
-            if lbl[1:] == 'zero':
+            if lbl == 'zero':
                 fp.write("{} {}\n".format(Plot.get_xlim()[0],0))
                 fp.write("{} {}\n".format(Plot.get_xlim()[1],0))
             elif not ma.any(l.get_xdata().mask):
@@ -3806,29 +3837,32 @@ def PublishRietveldPlot(G2frame,Pattern,Plot,Page):
             lbl = l.get_label()
             if plotOpt['legend'].get(lbl[1:]):
                 legends.append((InameDict[lbl[1:]],lbl[1:]))
-            if 'mag' in lbl:
-                pass
-            elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
-                if lbl[1:] == 'obs':
-                    x = l.get_xdata()
-                    valueList.append(x)
-                    zerovals = (x.min(),x.max())
-                    gsiz = 5*float(plotOpt['markerSiz'])/8.
-                    marker = plotOpt['markerSym']
-                    gsym = igor_symbols.get(marker,12)
-                    gmw = float(plotOpt['markerWid'])
-                    markerSettings.append(
-                        'mode({0})=3,marker({0})={1},msize({0})={2},mrkThick({0})={3}'
-                        .format('Intensity',gsym,gsiz,gmw))
-                else:
-                    markerSettings.append(
-                        'mode({0})=0, lsize({0})={1}'
-                        .format(InameDict[lbl[1:]],plotOpt['lineWid']))
-                c = plotOpt['colors'].get(lbl[1:],l.get_color())
-                #if sum(c) == 4.0: continue
-                Icolor[InameDict[lbl[1:]]] = [j*65535 for j in c[0:3]]
-                if lbl[1:] != 'zero':
-                    valueList.append(l.get_ydata())
+            if l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()[1:]
+            if plotOpt['legend'].get(lbl) and lbl in InameDict:
+                legends.append((InameDict[lbl],lbl))
+            if lbl == 'obs':
+                x = l.get_xdata()
+                valueList.append(x)
+                zerovals = (x.min(),x.max())
+                gsiz = 5*float(plotOpt['markerSiz'])/8.
+                marker = plotOpt['markerSym']
+                gsym = igor_symbols.get(marker,12)
+                gmw = float(plotOpt['markerWid'])
+                markerSettings.append(
+                    'mode({0})=3,marker({0})={1},msize({0})={2},mrkThick({0})={3}'
+                    .format('Intensity',gsym,gsiz,gmw))
+            elif lbl in ('calc','bkg','zero','diff'):
+                markerSettings.append(
+                    'mode({0})=0, lsize({0})={1}'
+                    .format(InameDict[lbl],plotOpt['lineWid']))
+            else:
+                continue
+            c = plotOpt['colors'].get(lbl,l.get_color())
+            #if sum(c) == 4.0: continue
+            Icolor[InameDict[lbl]] = [j*65535 for j in c[0:3]]
+            if lbl != 'zero':
+                valueList.append(l.get_ydata())
         valueList.append(Pattern[1][5]*np.sqrt(Pattern[1][2]))
         # invert lists into columns, use iterator for all values
         if hasattr(itertools,'zip_longest'): #Python 3+
@@ -3884,12 +3918,16 @@ X ModifyGraph btLen=5
         fp.write('WAVES /D/O ZeroX, Zero\nBEGIN\n')
         fp.write(' {0} 0.0\n {1} 0.0\n'.format(*zerovals))
         fp.write('END\nX AppendToGraph Zero vs ZeroX\n')
+        if 'sqrt' in Plot.yaxis.get_label().get_text():
+            ylabel = '\u221AIntensity'            
+        else:
+            ylabel = 'Intensity'
         fp.write('''X //  ***   add axis labels and position them
 X Label left "{1}"
 X Label Res_left "{2}"
 X Label bottom "{0}"
 X ModifyGraph lblPosMode=0,lblPos(Res_left)=84
-'''.format("2Θ","Intensity","∆/σ"))
+'''.format("2Θ",ylabel,"∆/σ"))
         fp.write('''X //  ***   set display limits. 
 X SetAxis left {2}, {3}
 X SetAxis bottom {0}, {1}
@@ -3984,14 +4022,19 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
 
         tickpos = {}
         for i,l in enumerate(Plot.lines):
-            lbl = l.get_label()
+            if l.get_label() in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()
+            elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+                lbl = l.get_label()[1:]
+            else:
+                lbl = l.get_label()
             if 'mag' in lbl:
                 pass
-            elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
-                if lbl[1:] == 'obs':
+            elif lbl in ('obs','calc','bkg','zero','diff'):
+                if lbl == 'obs':
                     lblList.append('x')
                     valueList.append(l.get_xdata())
-                c = plotOpt['colors'].get(lbl[1:],l.get_color())
+                c = plotOpt['colors'].get(lbl,l.get_color())
                 if sum(c) == 4.0: continue
                 lblList.append(lbl)
                 valueList.append(l.get_ydata())
@@ -4148,12 +4191,16 @@ X ModifyGraph marker({0})=10,rgb({0})=({2},{3},{4})
         gsizer.Add(val,0,wx.ALL)
     gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Include in legend'),0,wx.ALL)
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList'] ):
+        if lbl not in plotOpt['legend']:
+            plotOpt['legend'][lbl] = False
         ch = G2G.G2CheckBox(dlg,'',plotOpt['legend'],lbl,RefreshPlot)
         gsizer.Add(ch,0,wx.ALL|wx.ALIGN_CENTER)
     gsizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Color'),0,wx.ALL)
     plotOpt['colorButtons'] = {}
     for lbl in list(plotOpt['lineList']) + list(plotOpt['phaseList']):
         import  wx.lib.colourselect as csel
+        if lbl not in  plotOpt['colors']:
+            plotOpt['colors'][lbl] = (0.5, 0.5, 0.5, 1)
         color = wx.Colour(*[int(255*i) for i in plotOpt['colors'][lbl]])
         b = csel.ColourSelect(dlg, -1, '', color)
         b.Bind(csel.EVT_COLOURSELECT, OnSelectColour)
@@ -4248,28 +4295,33 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
     legLine = []
     obsartist = None
     for i,l in enumerate(Plot.lines):
-        lbl = l.get_label()
+        if l.get_label() in ('obs','calc','bkg','zero','diff'):
+            lbl = l.get_label()
+        elif l.get_label()[1:] in ('obs','calc','bkg','zero','diff'):
+            lbl = l.get_label()[1:]
+        else:
+            lbl = l.get_label()
         if 'mag' in lbl:
             ax0.axvline(l.get_data()[0][0],color='0.5',dashes=(1,1))
-        elif lbl[1:] in ('obs','calc','bkg','zero','diff'):
+        elif lbl in ('obs','calc','bkg','zero','diff'):
             marker = l.get_marker()
             lineWid = l.get_lw()
             siz = l.get_markersize()
             mew = l.get_mew()
-            if lbl[1:] == 'obs':
+            if lbl == 'obs':
                 obsartist = l
                 siz = float(plotOpt['markerSiz'])
                 marker = plotOpt['markerSym']
                 mew = float(plotOpt['markerWid'])
             else:
                 lineWid = float(plotOpt['lineWid'])
-            c = plotOpt['colors'].get(lbl[1:],l.get_color())
+            c = plotOpt['colors'].get(lbl,l.get_color())
             if sum(c) == 4.0: continue
-            if plotOpt['legend'].get(lbl[1:]):
-                uselbl = lbl[1:]
-            else:
+            if plotOpt['legend'].get(lbl):
                 uselbl = lbl
-            if lbl[1:] == 'zero':
+            else:
+                uselbl = '_'+lbl
+            if lbl == 'zero':
                 art = [ax0.axhline(0.,color=c,
                      lw=lineWid,label=uselbl,ls=l.get_ls(),
                      marker=marker,ms=siz,mew=mew)]
@@ -4278,7 +4330,7 @@ def CopyRietveldPlot(G2frame,Pattern,Plot,Page,figure):
                      lw=lineWid,label=uselbl,ls=l.get_ls(),
                      marker=marker,ms=siz,mew=mew,
                      )
-            if plotOpt['legend'].get(lbl[1:]):
+            if plotOpt['legend'].get(lbl):
                 legLbl.append(uselbl)
                 legLine.append(art[0])
         elif l in Page.tickDict.values():

@@ -27,6 +27,7 @@ import wx.lib.mixins.listctrl  as  listmix
 import wx.grid as wg
 import matplotlib as mpl
 import numpy as np
+import numpy.ma as ma
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
@@ -1643,7 +1644,10 @@ def UpdateMasks(G2frame,data):
             'Auto Spot Masks', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
             Controls = copy.deepcopy(G2frame.GPXtree.GetItemPyData( 
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
-            Error = G2img.AutoSpotMasks(G2frame.ImageZ,data,Controls)
+            nChans = Controls['outChannels']
+            dlg = wx.ProgressDialog("Auto spot masking","Processed 2-theta rings = ",nChans+1,
+                style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+            Error = G2img.AutoSpotMasks2(G2frame.ImageZ,data,Controls,dlg)
             if not Error is None:
                 G2frame.ErrorDialog('Auto spot search error',Error)
             wx.CallAfter(UpdateMasks,G2frame,data)
@@ -1841,7 +1845,12 @@ def UpdateMasks(G2frame,data):
         autoSizer.Add(scaleSel,0,WACV)
         maxSizer.Add(autoSizer)
         return maxSizer
-
+    
+    def OnDelBtn(event):
+        data['SpotMask'] = {'esdMul':2,'spotMask':None}
+        wx.CallAfter(UpdateMasks,G2frame,data)
+                
+    
     G2frame.dataWindow.ClearData()
     startScroll = None
     if G2frame.dataWindow:
@@ -1890,6 +1899,8 @@ def UpdateMasks(G2frame,data):
     Ylines = data['Ylines']
     if 'Frames' not in data:
         data['Frames'] = []
+    if 'SpotMask' not in data:
+        data['SpotMask'] = {'esdMul':2,'spotMask':None}
     frame = data['Frames']             #3+ x,y pairs
     Arcs = data['Arcs']                 #radius, start/end azimuth, thickness
 
@@ -1916,6 +1927,18 @@ def UpdateMasks(G2frame,data):
         max=thresh[0][1],OnLeave=newReplot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
+    spotSizer = wx.BoxSizer(wx.HORIZONTAL)
+    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select spot range factor (1-10): '),0,WACV)
+    spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
+        key='esdMul',min=1,max=10,size=(40,25)),0,WACV)
+    numPix = 0
+    if data['SpotMask']['spotMask'] is not None:
+        numPix = np.count_nonzero(data['SpotMask']['spotMask'])
+    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Number of pixels in spot mask: %d  '%numPix),0,WACV)
+    delbtn = wx.Button(G2frame.dataWindow,label='Clear spot mask')
+    delbtn.Bind(wx.EVT_BUTTON,OnDelBtn)
+    spotSizer.Add(delbtn,0,WACV)
+    mainSizer.Add(spotSizer,0,WACV)
     if len(Spots):
         lbl = wx.StaticText(parent=G2frame.dataWindow,label=' Spot masks(on plot LB drag to move, shift-LB drag to resize, RB to delete)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))

@@ -1187,7 +1187,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
             times[0] += time.time()-t0      #apply masks
 
             t0 = time.time()
-            Block = image[iBeg:iFin,jBeg:jFin]
+            Block = image[iBeg:iFin,jBeg:jFin]          #apply image spotmask here
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(Masks,TA,tam,Block)    #and apply masks
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
@@ -1516,4 +1516,26 @@ def AutoSpotMasks(Image,Masks,Controls):
 #            G2fil.G2Print (' Spot found: %s'%str(peak))
     G2fil.G2Print ('Spots found: %d time %.2fs'%(len(Peaks),time.time()-time0))
     Masks['Points'] = Peaks
+    return None
+
+def AutoSpotMasks2(Image,Masks,Controls,dlg=None):
+    
+    LUtth = np.array(Controls['IOtth'])
+    numChans = Controls['outChannels']
+    dtth = (LUtth[1]-LUtth[0])/numChans
+    esdMul = Masks['SpotMask']['esdMul']
+    mask = ma.make_mask_none(Image.shape)    
+    TA = Make2ThetaAzimuthMap(Controls,(0,Image.shape[0]),(0,Image.shape[1]))[0]    #2-theta array
+    TThs = np.linspace(LUtth[0],LUtth[1],numChans,False)
+    for it,TTh in enumerate(TThs):
+        band = ma.array(Image,mask=ma.getmask(ma.masked_outside(TA,TTh,TTh+dtth)))
+        std = ma.std(band)
+        anom = band.anom()/std
+        anom = ma.masked_greater(anom,esdMul,copy=False)
+        mask ^= (ma.getmask(anom)^ma.getmask(band))
+        if not dlg is None:
+            GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
+            if not GoOn[0]:
+                break
+    Masks['SpotMask']['spotMask'] = mask
     return None

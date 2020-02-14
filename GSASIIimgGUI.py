@@ -436,6 +436,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         '''
         CleanupMasks(masks)
         sumImg = GetImageZ(G2frame,data)
+        if not masks['SpotMask']['spotMask'] is None:
+            sumImg = ma.array(sumImg,mask=masks['SpotMask']['spotMask'])
         G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,useTA=useTA,useMask=useMask)            
         G2frame.PauseIntegration = G2frame.Integrate[-1]
         del sumImg  #force cleanup
@@ -1644,10 +1646,16 @@ def UpdateMasks(G2frame,data):
             'Auto Spot Masks', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
             Controls = copy.deepcopy(G2frame.GPXtree.GetItemPyData( 
                 G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
-            nChans = Controls['outChannels']
-            dlg = wx.ProgressDialog("Auto spot masking","Processed 2-theta rings = ",nChans+1,
+            wave = Controls['wavelength']
+            LUtth = np.array(Controls['IOtth'])
+            dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
+            dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
+            x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+            x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]    
+            nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])
+            dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+1,
                 style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
-            Error = G2img.AutoSpotMasks2(G2frame.ImageZ,data,Controls,dlg)
+            Error = G2img.AutoSpotMasks2(G2frame.ImageZ,data,Controls,nChans,dlg)
             if not Error is None:
                 G2frame.ErrorDialog('Auto spot search error',Error)
             wx.CallAfter(UpdateMasks,G2frame,data)

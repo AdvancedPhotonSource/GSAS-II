@@ -1518,10 +1518,9 @@ def AutoSpotMasks(Image,Masks,Controls):
     Masks['Points'] = Peaks
     return None
 
-def AutoSpotMasks2(Image,Masks,Controls,dlg=None):
+def AutoSpotMasks2(Image,Masks,Controls,numChans,dlg=None):
     
     LUtth = np.array(Controls['IOtth'])
-    numChans = Controls['outChannels']
     dtth = (LUtth[1]-LUtth[0])/numChans
     esdMul = Masks['SpotMask']['esdMul']
     mask = ma.make_mask_none(Image.shape)    

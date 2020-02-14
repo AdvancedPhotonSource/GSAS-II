@@ -1897,6 +1897,7 @@ def UpdateMasks(G2frame,data):
         data['Ylines'] = []
     Xlines = data['Xlines']
     Ylines = data['Ylines']
+    # not a good place for patch -- this not always called
     if 'Frames' not in data:
         data['Frames'] = []
     if 'SpotMask' not in data:
@@ -3185,7 +3186,9 @@ class AutoIntFrame(wx.Frame):
             if list(self.ImageMasks['Thresholds'][0]) == self.ImageMasks['Thresholds'][1]:     #avoid copy of unchanged thresholds
                 del self.ImageMasks['Thresholds']
         else:
-            self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
+            self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
+                                     'SpotMask':{'esdMul':2,'spotMask':None},
+                                   }
         
     def StartLoop(self):
         '''Prepare to start autointegration timer loop. 

@@ -7677,8 +7677,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             try:
                 MaskA = ma.getmaskarray(MA)^Masks['SpotMask']['spotMask']
                 MA = ma.array(MA,mask=MaskA)
-            except KeyError:
-                MaskA = ma.getmaskarray(MA) 
+            except KeyError: # should not be needed if initializtion is proper
+                if GSASIIpath.GetConfigValue('debug'): print('SpotMask missing')
+                MaskA = ma.getmaskarray(MA)
+            except TypeError: # needed if spotMasks set to initial value (None)
+                if GSASIIpath.GetConfigValue('debug'): print('spotMask is None')
+                MaskA = ma.getmaskarray(MA)
             for xline in Masks.get('Xlines',[]):
                 MaskA[xline,:] = True
             for yline in Masks.get('Ylines',[]):

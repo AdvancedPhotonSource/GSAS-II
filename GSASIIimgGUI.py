@@ -71,11 +71,15 @@ atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
 ################################################################################
 
 def GetImageZ(G2frame,data,newRange=False):
-    '''Gets image & applies dark, background & flat background corrections
+    '''Gets image & applies dark, background & flat background corrections. 
+
     :param wx.Frame G2frame: main GSAS-II frame
-    param: dict data: Image Controls dictionary
-    return: array sumImg: corrected image for background/dark/flat back
+    :param: dict data: Image Controls dictionary
+
+    :returns: array sumImg: corrected image for background/dark/flat back
     '''
+    # Note that routine GSASIIscriptable._getCorrImage is based on this
+    # so changes made here should be repeated there. 
     
     Npix,imagefile,imagetag = G2IO.GetCheckImageFile(G2frame,G2frame.Image)
     if imagefile is None: return []

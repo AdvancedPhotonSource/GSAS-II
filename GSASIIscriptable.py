@@ -1770,6 +1770,7 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
     sumImg = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
     if sumImg is None:
         return []
+    sumImg = np.array(sumImg,dtype='int32')
     darkImg = False
     if 'dark image' in Controls:
         darkImg,darkScale = Controls['dark image']
@@ -1777,7 +1778,8 @@ def _getCorrImage(ImageReaderlist,proj,imageRef):
             dImgObj = proj.image(darkImg)
             formatName = dImgObj.data['Image Controls'].get('formatName','')
             imagefile = dImgObj.data['data'][1]
-            ImageTag = None # fix this for multiimage files
+            if type(imagefile) is tuple:
+                imagefile,ImageTag  = imagefile
             darkImage = G2fil.RereadImageData(ImageReaderlist,imagefile,ImageTag=ImageTag,FormatName=formatName)
             if darkImg is None:
                 raise Exception('Error reading dark image {}'.format(imagefile))
@@ -2888,7 +2890,7 @@ class G2Project(G2ObjectWrapper):
 
         return G2obj.G2VarObj(phase, hist, varname, atomId)
 
-    def add_image(self, imagefile, fmthint=None, defaultImage=None):
+    def add_image(self, imagefile, fmthint=None, defaultImage=None, indexList=None):
         """Load an image into a project
 
         :param str imagefile: The image file to read, a filename.
@@ -2899,15 +2901,21 @@ class G2Project(G2ObjectWrapper):
           (equivalent to "guess format" in menu).
         :param str defaultImage: The name of an image to use as a default for 
           setting parameters for the image file to read. 
+        :param list indexList: specifies the image numbers (counting from zero) 
+          to be used from the file when a file has multiple images. A value of
+          ``[0,2,3]`` will cause the only first, third and fourth images in the file
+          to be included in the project. 
 
-        :returns: a list of G2Image object for the added image(s) [this routine 
-          has not yet been tested with files with multiple images...]
+        :returns: a list of :class:`G2Image` object(s) for the added image(s) 
         """
         LoadG2fil()
         imagefile = os.path.abspath(os.path.expanduser(imagefile))
         readers = import_generic(imagefile, Readers['Image'], fmthint=fmthint)
         objlist = []
-        for rd in readers:
+        for i,rd in enumerate(readers):
+            if indexList is not None and i not in indexList:
+                G2fil.G2Print("Image {} skipped".format(i))
+                continue
             if rd.SciPy:        #was default read by scipy; needs 1 time fixes
                 G2fil.G2Print('Warning: Image {} read by generic SciPy import. Image parameters likely wrong'.format(imagefile))
                 #see this: G2IO.EditImageParms(self,rd.Data,rd.Comments,rd.Image,imagefile)

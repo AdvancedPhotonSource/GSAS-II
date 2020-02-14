@@ -651,6 +651,9 @@ reflections. The columns in that array are documented below.
  10          reflection phase, in degrees
  11          intensity correction for reflection, this times
              :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
+ 12          Prfo
+ 13          Trans
+ 14          ExtP  
 ==========  ====================================================
 
 .. _Xtal_table:

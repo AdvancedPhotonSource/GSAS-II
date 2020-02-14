@@ -7674,8 +7674,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if newImage:
             Imin,Imax = Data['range'][1]
             MA = ma.masked_outside(G2frame.ImageZ,Zlim[0],Zlim[1])
-            MaskA = ma.getmaskarray(MA)^Masks['SpotMask']['spotMask']
-            MA = ma.array(MA,mask=MaskA)
+            try:
+                MaskA = ma.getmaskarray(MA)^Masks['SpotMask']['spotMask']
+                MA = ma.array(MA,mask=MaskA)
+            except KeyError:
+                MaskA = ma.getmaskarray(MA) 
             for xline in Masks.get('Xlines',[]):
                 MaskA[xline,:] = True
             for yline in Masks.get('Ylines',[]):

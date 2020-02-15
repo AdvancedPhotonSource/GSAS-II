@@ -4727,6 +4727,68 @@ class G2Phase(G2ObjectWrapper):
                 G2fil.G2Print('Unexpected Warning: histogram {} not in phase {}'.format(h,self.name))
                 continue
             self.data['Histograms'][h].update(copy.deepcopy(copydict))
+            
+    def setSampleProfile(self, histname, parmType, mode, val1, val2=None, axis=None, LGmix=None):
+        """Sets sample broadening parameters for a histogram associated with the 
+        current phase. This currently supports isotropic and uniaxial broadening 
+        modes only. 
+
+        :param histogram: is a histogram object (:class:`G2PwdrData`) or
+            a histogram name or the index number of the histogram.
+            The index number is relative to all histograms in the tree, not to 
+            those in the phase.
+        :param str parmType: should be 'size' or 'microstrain' (can be abbreviated to 's' or 'm')
+        :mode str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
+        :param float val1: value for isotropic size (in microns) or  
+           microstrain (delta Q/Q x 10**6, unitless) or the equatorial value in the uniaxial case
+        :param float val2: value for axial size (in microns) or  
+           microstrain (delta Q/Q x 10**6, unitless) in uniaxial case; not used for isotropic 
+        :param list axis: tuple or list with three values indicating the preferred direction
+          for uniaxial broadening; not used for isotropic 
+        :param float LGmix: value for broadening type (1=Lorentzian, 0=Gaussian or a value
+          between 0 and 1. Default value (None) is ignored.
+
+        Examples::
+
+            phase0.setSampleProfile(0,'size','iso',1.2)
+            phase0.setSampleProfile(0,'micro','isotropic',1234)
+            phase0.setSampleProfile(0,'m','u',1234,4567,[1,1,1],.5) 
+            phase0.setSampleProfile(0,'s','u',1.2,2.3,[0,0,1])
+        """
+        if parmType.lower().startswith('s'):
+            key = 'Size'
+        elif parmType.lower().startswith('m'):
+            key = 'Mustrain'
+        else:
+            G2fil.G2Print('setSampleProfile Error: value for parmType of {} is not size or microstrain'.
+                              format(parmType))
+            raise Exception('Invalid parameter in setSampleProfile')
+        if mode.lower().startswith('i'):
+            iso = True
+        elif mode.lower().startswith('u'):
+            iso = False
+            if val2 is None:
+                G2fil.G2Print('setSampleProfile Error: value for val2 is required with mode of uniaxial')
+                raise Exception('Invalid val2 parameter in setSampleProfile')
+            if axis is None:
+                G2fil.G2Print('setSampleProfile Error: value for axis is required with mode of uniaxial')
+                raise Exception('Invalid axis parameter in setSampleProfile')
+        else:
+            G2fil.G2Print('setSampleProfile Error: value for mode of {} is not isotropic or uniaxial'.
+                              format(mode))
+            raise Exception('Invalid parameter in setSampleProfile')
+        
+        d = self.data['Histograms'][self._decodeHist(histname)][key]
+        if iso:
+            d[0] = 'isotropic'
+            d[1][0] = float(val1)
+            if LGmix is not None: d[1][2] = float(LGmix)
+        else:
+            d[3] = [int(axis[0]),int(axis[1]),int(axis[2])]            
+            d[0] = 'uniaxial'
+            d[1][0] = float(val1)
+            d[1][1] = float(val2)
+            if LGmix is not None: d[1][2] = float(LGmix)            
 
     def setHAPvalues(self, HAPdict, targethistlist='all', skip=[], use=None):
         """Copies HAP parameters for one histogram to a list of other histograms.

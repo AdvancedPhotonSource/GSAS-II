@@ -4740,10 +4740,11 @@ class G2Phase(G2ObjectWrapper):
             those in the phase.
         :param str parmType: should be 'size' or 'microstrain' (can be abbreviated to 's' or 'm')
         :param str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
-        :param float val1: value for isotropic size (in microns) or  
-           microstrain (delta Q/Q x 10**6, unitless) or the equatorial value in the uniaxial case
-        :param float val2: value for axial size (in microns) or  
-           microstrain (delta Q/Q x 10**6, unitless) in uniaxial case; not used for isotropic 
+        :param float val1: value for isotropic size (in :math:`\mu m`) or  
+           microstrain (unitless, :math:`\Delta Q/Q \\times 10^6`) or the equatorial value in the uniaxial case
+        :param float val2: value for axial size (in :math:`\mu m`) or  
+           axial microstrain (unitless, :math:`\Delta Q/Q \\times 10^6`) 
+           in uniaxial case; not used for isotropic 
         :param list axis: tuple or list with three values indicating the preferred direction
           for uniaxial broadening; not used for isotropic 
         :param float LGmix: value for broadening type (1=Lorentzian, 0=Gaussian or a value

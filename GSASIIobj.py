@@ -130,8 +130,9 @@ Rvals          \                R-factors, GOF, Marquardt value for last
                                 refinement cycle (dict)
 \              Nobs             Number of observed data points (int)
 \              Rwp              overall weighted profile R-factor (%, float)
-\              chisq            sum[w*(Iobs-Icalc)**2] for all data
-                                note this is not the reduced chi squared (float)
+\              chisq            :math:`\sum w*(I_{obs}-I_{calc})^2`                                
+                                for all data.
+                                Note: this is not the reduced :math:`\chi^2`. (float)
 \              lamMax           Marquardt value applied to Hessian diagonal
                                 (float)
 \              GOF              The goodness-of-fit, aka square root of
@@ -167,9 +168,9 @@ General         \            Overall information for the phase (dict)
   \         BondRadii        Default radius for each atom used to compute
                              interatomic distances (list of floats)
   \         Cell             List with 8 items: cell refinement flag (bool)
-                             a, b, c, (Angstrom, float)
+                             a, b, c, (:math:`\\unicode{x212B}`, float)
                              alpha, beta & gamma (degrees, float)
-                             volume (A^3, float)
+                             volume (:math:`\\unicode{x212B}^3`, float)
   \         Color            Colors for atoms (list of (r,b,g) triplets)
   \         Compare          dict of polygon comparison parameters
   \         Data plot type   data plot type ('Mustrain', 'Size' or
@@ -235,7 +236,7 @@ Drawing         \            Display parameters (dict)
 \           bondList         dict with bonds
 \           bondRadius       Size of binds in A (float)
 \           cameraPos        Viewing position in A for plot (float)
-\           contourLevel     map contour level in e/A^3 (float)
+\           contourLevel     map contour level in :math:`e/\\unicode{x212B}^3` (float)
 \           contourMax       float map contour maximum
 \           depthFog         True if use depthFog on plot - set currently as False (bool)
 \           ellipseProb      Probability limit for display of thermal
@@ -386,9 +387,9 @@ which is a dict with these keys. Magnetic ones are marked "mag"
 
 .. tabularcolumns:: |l|p{4.5in}|
 
-==========  ====================================================
+==========  ========================================================================================
   key         explanation
-==========  ====================================================
+==========  ========================================================================================
 BNSlattsym  mag - BNS magnetic space group symbol and centering vector
 GenFlg      mag - list of symmetry generators indices
 GenSym      mag - list of names for each generator
@@ -397,9 +398,8 @@ MagPtGp     mag  Magnetic point group symbol
 MagSpGrp    mag - Magnetic space group symbol
 OprNames    mag - names for each space group operation
 SGCen       Symmetry cell centering vectors. A (n,3) np.array
-            of centers. Will always have at least one row:
-            ``np.array([[0, 0, 0]])``
-SGFixed     bool only True if phase mported from a magnetic cif file
+            of centers. Will always have at least one row: ``np.array([[0, 0, 0]])``
+SGFixed     bool, only True if phase mported from a magnetic cif file
             then the space group can not be changed by the user because 
             operator set from cif may be nonstandard
 SGGen       list of generators
@@ -407,9 +407,9 @@ SGGray      True if space group is a gray group (incommensurate magnetic structu
 SGInv       True if centrosymmetric, False if not (bool)
 SGLatt      Lattice centering type. Will be one of
             P, A, B, C, I, F, R (str)
-SGLaue        one of the following 14 Laue classes:
-            -1, 2/m, mmm, 4/m, 4/mmm, 3R,
-            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)
+SGLaue      str, one of the following 14 Laue classes:
+              -1, 2/m, mmm, 4/m, 4/mmm, 3R,
+              3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m
 SGOps       symmetry operations as a list of form
             ``[[M1,T1], [M2,T2],...]``
             where :math:`M_n` is a 3x3 np.array
@@ -434,8 +434,7 @@ SGSys       symmetry unit cell: type one of
 SSGK1       list of superspace multipliers
 SpGrp       space group symbol (str)
 SpnFlp      mag - list of magnetic spin flips for every magnetic space group operator
-            
-==========  ====================================================
+==========  ========================================================================================
 
 .. _SSGData_table:
 
@@ -518,9 +517,9 @@ and those for magnetic structures are marked 'mg'
 
 .. tabularcolumns:: |l|p{4.5in}|
 
-==============   ====================================================
+==============   ===================================================================================
 location         explanation
-==============   ====================================================
+==============   ===================================================================================
 ct-4              mm - residue number (str)
 ct-3              mm - residue name (e.g. ALA) (str)
 ct-2              mm - chain label (str)
@@ -536,7 +535,7 @@ cs+3              ADP flag: Isotropic ('I') or Anisotropic ('A')
 cs+4              Uiso (float)
 cs+5...cs+11      U11, U22, U33, U12, U13, U23 (6 floats)
 ci                unique atom identifier; matches source atom Id in Atom Records (int)
-==============   ====================================================
+==============   ===================================================================================
 
 .. _Powder_table:
 
@@ -559,9 +558,9 @@ a key of ``Data``, as outlined below.
 
 .. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
 
-======================  ===============  ====================================================
+======================  ===============  ===========================================================
   key                      sub-key        explanation
-======================  ===============  ====================================================
+======================  ===============  ===========================================================
 Comments                      \           Text strings extracted from the original powder
                                           data header. These cannot be changed by the user;
                                           it may be empty.
@@ -575,70 +574,9 @@ Reflection Lists              \           A dict with an entry for each phase in
                                           is a dict containing reflections, as described in
                                           the :ref:`Powder Reflections <PowderRefl_table>`
                                           description.
-Instrument Parameters (CW)    \           A list containing two dicts for constant wavelength 
-                                          data where the possible keys in each dict are listed 
-                                          below. The value for each item is a list containing 
-                                          three values: the initial value, the current value
-                                          and a refinement flag which can have a value of
-                                          True, False or 0 where 0 indicates a value that
-                                          cannot be refined. The first and second
-                                          values are floats unless otherwise noted.
-                                          Items in the first dict are noted as [1]
-\                         Type            Histogram type (str) [1]:
-                                           * 'PXC' for constant wavelength x-ray
-                                           * 'PNC' for constant wavelength neutron
-\                         Bank            Data set number in a multidata file (usually 1)
-\                         Lam             Specifies a wavelength in Angstroms [1]
-\                         Lam1            Specifies the primary wavelength in
-                                          Angstrom, when an alpha1, alpha2
-                                          source is used [1]
-\                         Lam2            Specifies the secondary wavelength in
-                                          Angstrom, when an alpha1, alpha2
-                                          source is used [1]
-                          I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]
-\                         Zero            Two-theta zero correction in *degrees* [1]
-\                         Azimuth         Azimuthal setting angle for data recorded
-                                          with differing setting angles [1]
-\                         U, V, W         Cagliotti profile coefficients
-                                          for Gaussian instrumental broadening, where the
-                                          FWHM goes as
-                                          :math:`U \\tan^2\\theta + V \\tan\\theta + W` [1]
-\                         X, Y, Z         Cauchy (Lorentzian) instrumental broadening
-                                          coefficients [1]
-\                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric
-                                          peak broadening ratio. Note that this is the
-                                          sum of S/L and H/L where S is
-                                          sample height, H is the slit height and
-                                          L is the goniometer diameter. [1]
-\                         Polariz.        Polarization coefficient. [1]
-Instrument Parameters (TOF)   \           A list containing two dicts for neutron time-of-flight 
-                                          (TOF) data where the possible keys in each dict are listed 
-                                          below. The value for each item is a list containing 
-                                          three values: the initial value, the current value
-                                          and a refinement flag which can have a value of
-                                          True, False or 0 where 0 indicates a value that
-                                          cannot be refined. The first and second
-                                          values are floats unless otherwise noted.
-                                          Items in the first dict are noted as [1]
-\                         Type            Histogram type (str) [1]:
-                                           * 'PNT' for time of flight neutron
-\                         Bank            Data set number in a multidata file
-\                         2-theta         Nominal scattering angle for the detector
-\                         fltPath         Total flight path source-sample-detector
-\                         Azimuth         Azimuth angle for detector righ hand rotation 
-                                          from horizontal away from source
-\                         difC,difA,difB  Diffractometer constants for conversion of d-spacing to TOF
-                                          in microseconds
-\                         Zero            Zero point offset (microseconds)
-\                         alpha           Exponential rise profile coefficients
-\                         beta-0          Exponential decay profile coefficients
-                          beta-1
-                          beta-q
-\                         sig-0           Gaussian profile coefficients
-                          sig-1
-                          sig-2
-                          sig-q    
-\                         X,Y,Z           Lorentzian profile coefficients  
+Instrument Parameters         \           The instrument parameters uses different dicts 
+                                          for the constant wavelength (CW) and time-of-flight (TOF)
+                                          cases. See below for the descriptions of each. 
 wtFactor                      \           A weighting factor to increase or decrease
                                           the leverage of data in the histogram (float).
                                           A value of 1.0 weights the data with their
@@ -698,7 +636,94 @@ Data                          \           The data consist of a list of 6 np.arr
                                            3. the computed intensity values (Ycalc)
                                            4. the background values
                                            5. Yobs-Ycalc
-======================  ===============  ====================================================
+======================  ===============  ===========================================================
+
+
+-----------------------------
+CW Instrument Parameters
+-----------------------------
+
+Instrument Parameters are placed in a list of two dicts, 
+where the keys in each dict listed below. Note that the dict contents are different for 
+constant wavelength (CW) vs. time-of-flight (TOF) histograms. 
+The value for each item is a list containing three values: the initial value, the current value
+and a refinement flag which can have a value of True, False or 0 where 0 indicates a value that
+cannot be refined. The first and second values are floats unless otherwise noted.
+Items in the first dict are noted as [1]
+
+.. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
+
+======================  ===============  ===========================================================
+  key                      sub-key        explanation
+======================  ===============  ===========================================================
+Instrument Parameters     Type [1]        Histogram type (str):
+                                           * 'PXC' for constant wavelength x-ray
+                                           * 'PNC' for constant wavelength neutron
+\                         Bank            Data set number in a multidata file (usually 1)
+\                         Lam [1]         Specifies a wavelength in :math:`\\unicode{x212B}`
+\                         Lam1 [1]        Specifies the primary wavelength in
+                                          :math:`\\unicode{x212B}`, used in place of Lam 
+                                          when an :math:`\\alpha_1, \\alpha_2`
+                                          source is used.
+\                         Lam2 [1]        Specifies the secondary wavelength in
+                                          :math:`\\unicode{x212B}`, used with Lam1
+\                         I(L2)/I(L1)     Ratio of Lam2 to Lam1,
+                          [1]             used with Lam1
+\                         Zero [1]        Two-theta zero correction in *degrees*
+\                         Azimuth         Azimuthal setting angle for data recorded
+                          [1]             with differing setting angles
+\                         U, V, W         Cagliotti profile coefficients
+                          [1]             for Gaussian instrumental broadening, where the
+                                          FWHM goes as
+                                          :math:`U \\tan^2\\theta + V \\tan\\theta + W`
+\                         X, Y, Z         Cauchy (Lorentzian) instrumental broadening
+                          [1]             coefficients
+\                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric
+                          [1]             peak broadening ratio. Note that this is the
+                                          sum of S/L and H/L where S is
+                                          sample height, H is the slit height and
+                                          L is the goniometer diameter.
+\                         Polariz.        Polarization coefficient. 
+                          [1]
+======================  ===============  ===========================================================
+
+-----------------------------
+TOF Instrument Parameters
+-----------------------------
+
+Instrument Parameters are also placed in a list of two dicts, 
+where the keys in each dict listed below, but here for 
+time-of-flight (TOF) histograms. 
+The value for each item is a list containing three values: the initial value, the current value
+and a refinement flag which can have a value of True, False or 0 where 0 indicates a value that
+cannot be refined. The first and second values are floats unless otherwise noted.
+Items in the first dict are noted as [1]
+
+.. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
+
+======================  ===============  ===========================================================
+  key                      sub-key        explanation
+======================  ===============  ===========================================================
+Instrument Parameters     Type [1]        Histogram type (str):
+                                           * 'PNT' for time of flight neutron
+\                         Bank            Data set number in a multidata file
+\                         2-theta         Nominal scattering angle for the detector
+\                         fltPath         Total flight path source-sample-detector
+\                         Azimuth         Azimuth angle for detector right hand rotation 
+                                          from horizontal away from source
+\                         difC,difA,      Diffractometer constants for conversion of d-spacing to TOF
+                          difB            in microseconds
+\                         Zero            Zero point offset (microseconds)
+\                         alpha           Exponential rise profile coefficients
+\                         beta-0          Exponential decay profile coefficients
+                          beta-1
+                          beta-q
+\                         sig-0           Gaussian profile coefficients
+                          sig-1
+                          sig-2
+                          sig-q    
+\                         X,Y,Z           Lorentzian profile coefficients  
+======================  ===============  ===========================================================
 
 .. _PowderRefl_table:
 
@@ -718,7 +743,7 @@ reflections. The columns in that array are documented below.
 ==========  ====================================================
  0,1,2       h,k,l (float)
  3           multiplicity
- 4           d-space, Angstrom
+ 4           d-space, :math:`\\unicode{x212B}`
  5           pos, two-theta
  6           sig, Gaussian width
  7           gam, Lorenzian width
@@ -769,7 +794,8 @@ Instrument Parameters         \           A list containing two dicts where the 
                                           the initial value, the current value.
                                           The first and second
                                           values are floats unless otherwise noted.
-\                         Lam             Specifies a wavelength in Angstroms (two floats)
+\                         Lam             Specifies a wavelength in :math:`\\unicode{x212B}` 
+                                          (two floats)
 \                         Type            Histogram type (two str values):
                                            * 'SXC' for constant wavelength x-ray
                                            * 'SNC' for constant wavelength neutron
@@ -808,7 +834,7 @@ The columns in that array are documented below.
 ==========  ====================================================
  0,1,2       h,k,l (float)
  3           multiplicity
- 4           d-space, Angstrom
+ 4           d-space, :math:`\\unicode{x212B}`
  5           :math:`F_{obs}^2`
  6           :math:`\sigma(F_{obs}^2)`
  7           :math:`F_{calc}^2`
@@ -913,8 +939,8 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           size                (list:int) The number of pixels on the image x & y axes
 \                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
-\                           wavelength          (float) Tha radiation wavelength (Angstroms) as entered by the user (or someday obtained from the image header).
-
+\                           wavelength          (float) The radiation wavelength (:math:`\\unicode{x212B}`) as entered by the user 
+                                                (or someday obtained from the image header).
 Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
                                                 to be excluded from integration
 \                           Frames              (list:lists) Each entry describes the x,y points (3 or more - mm) that describe a frame outside
@@ -2345,7 +2371,7 @@ class ImportImage(ImportBaseclass):
         data items are needed:
 
          * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
-         * 'wavelength': wavelength in Angstoms.
+         * 'wavelength': wavelength in :math:`\\unicode{x212B}`.
          * 'distance': distance of detector from sample in cm.
          * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
          * 'size': size of image (such as ``[2048,2048]``).

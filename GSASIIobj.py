@@ -157,46 +157,23 @@ Phases item in a dict with keys:
   key         sub-key        explanation
 ==========  ===============  ====================================================
 General         \            Overall information for the phase (dict)
-  \         AtomPtrs         list of four locations to use to pull info
+  \         3Dproj           projections for 3D pole distribution plots
+  \         AngleRadii       Default radius for each atom used to compute
+                             interatomic angles (list of floats)
+  \         AtomMass         List of masses for atoms
+  \         AtomPtrs         list of four locations (cx,ct,cs & cu) to use to pull info
                              from the atom records (list)
-  \         F000X            x-ray F(000) intensity (float)
-  \         F000N            neutron F(000) intensity (float)
-  \         Mydir            directory of current .gpx file (str)
-  \         MCSA controls    Monte Carlo-Simulated Annealing controls (dict)
+  \         AtomTypes        List of atom types
+  \         BondRadii        Default radius for each atom used to compute
+                             interatomic distances (list of floats)
   \         Cell             List with 8 items: cell refinement flag (bool)
                              a, b, c, (Angstrom, float)
                              alpha, beta & gamma (degrees, float)
                              volume (A^3, float)
-  \         Type             'nuclear' or 'macromolecular' for now (str)
-  \         Map              dict of map parameters
-  \         SH Texture       dict of spherical harmonic preferred orientation
-                             parameters
-  \         Isotope          dict of isotopes for each atom type
-  \         Isotopes         dict of scattering lengths for each isotope
-                             combination for each element in phase
-  \         Name             phase name (str)
-  \         SGData           Space group details as a :ref:`space group (SGData) object <SGData_table>`
-                             as defined in :func:`GSASIIspc.SpcGroup`.
-  \         Pawley neg wt    Restraint value for negative Pawley intensities
-                             (float)
-  \         Flip             dict of Charge flip controls
+  \         Color            Colors for atoms (list of (r,b,g) triplets)
+  \         Compare          dict of polygon comparison parameters
   \         Data plot type   data plot type ('Mustrain', 'Size' or
                              'Preferred orientation') for powder data (str)
-  \         Mass             Mass of unit cell contents in g/mol
-  \         POhkl            March-Dollase preferred orientation direction
-  \         Z                dict of atomic numbers for each atom type
-  \         vdWRadii         dict of van der Waals radii for each atom type
-  \         Color            Colors for atoms (list of (r,b,g) triplets)
-  \         AtomTypes        List of atom types
-  \         AtomMass         List of masses for atoms
-  \         doPawley         Flag for Pawley intensity extraction (bool)
-  \         NoAtoms          Number of atoms per unit cell of each type (dict)
-  \         Pawley dmin      maximum Q (as d-space) to use for Pawley
-                             extraction (float)
-  \         BondRadii        Default radius for each atom used to compute
-                             interatomic distances (list of floats)
-  \         AngleRadii       Default radius for each atom used to compute
-                             interatomic angles (list of floats)
   \         DisAglCtls       Dict with distance/angle search controls,
                              which has keys 'Name', 'AtomTypes',
                              'BondRadii', 'AngleRadii' which are as above
@@ -204,6 +181,38 @@ General         \            Overall information for the phase (dict)
                              'Factors', which is a 2 element list with
                              a multiplier for bond and angle search range
                              [typically (0.85,0.85)].
+  \         F000X            x-ray F(000) intensity (float)
+  \         F000N            neutron F(000) intensity (float)
+  \         Flip             dict of Charge flip controls
+  \         HydIds           dict geometrically generated hydrogen atoms
+  \         Isotope          dict of isotopes for each atom type
+  \         Isotopes         dict of scattering lengths for each isotope
+                             combination for each element in phase
+  \         MCSA controls    Monte Carlo-Simulated Annealing controls (dict)
+  \         Map              dict of map parameters
+  \         Mass             Mass of unit cell contents in g/mol
+  \         Modulated        bool True if phase modulated
+  \         Mydir            directory of current .gpx file (str)
+  \         Name             phase name (str)
+  \         Type             'nuclear' or 'macromolecular' for now (str)
+  \         NoAtoms          Number of atoms per unit cell of each type (dict)
+  \         POhkl            March-Dollase preferred orientation direction
+  \         Pawley dmin      maximum Q (as d-space) to use for Pawley
+                             extraction (float)
+  \         Pawley dmax      minimum Q (as d-space) to use for Pawley
+                             extraction (float)
+  \         Pawley neg wt    Restraint value for negative Pawley intensities
+                             (float)
+  \         SGData           Space group details as a :ref:`space group (SGData) object <SGData_table>`
+                             as defined in :func:`GSASIIspc.SpcGroup`.
+  \         SH Texture       dict of spherical harmonic preferred orientation
+                             parameters
+  \         Super            int dimension of super group (0,1 only)
+  \         Type             str phase type (e.g. 'nuclear')
+  \         Z                dict of atomic numbers for each atom type
+  \         doDysnomia       bool flag for max ent map modification via Dysnomia
+  \         doPawley         bool Flag for Pawley intensity extraction
+  \         vdWRadii         dict of van der Waals radii for each atom type
 ranId           \            unique random number Id for phase (int)
 pId             \            Phase Id number for current project (int).
 Atoms           \            Atoms in phase as a list of lists. The outer list
@@ -212,43 +221,50 @@ Atoms           \            Atoms in phase as a list of lists. The outer list
                              the :ref:`Atom Records <Atoms_table>` description.
                              (list of lists)
 Drawing         \            Display parameters (dict)
-\           ballScale        Size of spheres in ball-and-stick display (float)
-\           bondList         dict with bonds
-\           contourLevel     map contour level in e/A^3 (float)
-\           showABC          Flag to show view point triplet (bool). True=show.
-\           viewDir          cartesian viewing direction (np.array with three
-                             elements)
+\           Atoms            A list of lists with an entry for each atom
+                             that is plotted.
+\           Plane            list Controls for contour density plane display
+\           Quaternion       Viewing quaternion (4 element np.array)
 \           Zclip            clipping distance in A (float)
+\           Zstep            Step to de/increase Z-clip (float)
+\           atomPtrs         positions of x, type, site sym, ADP flag in Draw Atoms (list)
 \           backColor        background for plot as and R,G,B triplet
                              (default = [0, 0, 0], black).
                              (list with three atoms)
-\           selectedAtoms    List of selected atoms (list of int values)
-\           showRigidBodies  Flag to highlight rigid body placement
-\           sizeH            Size ratio for H atoms (float)
+\           ballScale        Size of spheres in ball-and-stick display (float)
+\           bondList         dict with bonds
 \           bondRadius       Size of binds in A (float)
-\           atomPtrs         positions of x, type, site sym, ADP flag in Draw Atoms (list)
+\           cameraPos        Viewing position in A for plot (float)
+\           contourLevel     map contour level in e/A^3 (float)
+\           contourMax       float map contour maximum
+\           depthFog         True if use depthFog on plot - set currently as False (bool)
+\           ellipseProb      Probability limit for display of thermal
+                             ellipsoids in % (float).
+\           magMult          float multiplier for magnetic moment arrows
+\           mapSize          float x & y dimensions of contourmap (fixed internally)
+\           modelView        4,4 array from openGL drawing transofmation matrix
+\           oldxy            previous view point (list with two floats)
+\           radiusFactor     Distance ratio for searching for bonds. ? Bonds
+                             are located that are within r(Ra+Rb) and (Ra+Rb)/r
+                             where Ra and Rb are the atomic radii.
+\           selectedAtoms    List of selected atoms (list of int values)
+\           showABC          Flag to show view point triplet (bool). True=show.
+\           showHydrogen     Flag to control plotting of H atoms.
+\           showRigidBodies  Flag to highlight rigid body placement
+\           showSlice        flag to show contour map
+\           sizeH            Size ratio for H atoms (float)
+\           unitCellBox      Flag to control display of the unit cell.
+\           vdwScale         Multiplier of van der Waals radius for
+                             display of vdW spheres.
+\           viewDir          cartesian viewing direction (np.array with three
+                             elements)
 \           viewPoint        list of lists. First item in list is [x,y,z]
                              in fractional coordinates for the center of
                              the plot. Second item list of previous & current
                              atom number viewed (may be [0,0])
-\           showHydrogen     Flag to control plotting of H atoms.
-\           unitCellBox      Flag to control display of the unit cell.
-\           ellipseProb      Probability limit for display of thermal
-                             ellipsoids in % (float).
-\           vdwScale         Multiplier of van der Waals radius for
-                             display of vdW spheres.
-\           Atoms            A list of lists with an entry for each atom
-                             that is plotted.
-\           Zstep            Step to de/increase Z-clip (float)
-\           Quaternion       Viewing quaternion (4 element np.array)
-\           radiusFactor     Distance ratio for searching for bonds. ? Bonds
-                             are located that are within r(Ra+Rb) and (Ra+Rb)/r
-                             where Ra and Rb are the atomic radii.
-\           oldxy            previous view point (list with two floats)
-\           cameraPos        Viewing position in A for plot (float)
-\           depthFog         True if use depthFog on plot - set currently as False (bool)
 RBModels        \            Rigid body assignments (note Rigid body definitions
                              are stored in their own main top-level tree entry.)
+RMC             \            dict RMCProfile & rmcfull controls
 Pawley ref      \            Pawley reflections
 Histograms      \            A dict of dicts. The key for the outer dict is
                              the histograms tied to this phase. The inner
@@ -267,8 +283,8 @@ Histograms      \            A dict of dicts. The key for the outer dict is
 \           LeBail           Flag for LeBail extraction (bool)
 \           Mustrain         List of microstrain parameters, in order:
 
-                               0. Type, one of u'generalized', u'isotropic',
-                                  u'uniaxial'
+                               0. Type, one of  u'isotropic', u'uniaxial',
+                                  u'generalized'
                                1. Isotropic/uniaxial parameters - list of 3 floats
                                2. Refinement flags - list of 3 bools
                                3. Microstrain axis - list of 3 ints, [h, k, l]
@@ -290,6 +306,17 @@ Histograms      \            A dict of dicts. The key for the outer dict is
                                7. SH - float
 \           Scale            Phase fraction, list of [float, bool].
 \           Show             bool
+\           Size             List of crystallite size parameters, in order:
+    
+                               0. Type, one of  u'isotropic', u'uniaxial',
+                                  u'ellipsoidal'
+                               1. Isotropic/uniaxial parameters - list of 3 floats
+                               2. Refinement flags - list of 3 bools
+                               3. Size axis - list of 3 ints, [h, k, l]
+                               4. Ellipsoidal size parameters - list of 6
+                                  floats
+                               5. Ellipsoidal refinement flags - list of bools,
+                                  corresponding to the parameters of (4)
 \           Use              bool
 \           newLeBail        Whether to perform a new LeBail extraction
 MCSA            \            Monte-Carlo simulated annealing parameters (dict)
@@ -355,26 +382,34 @@ Space Group Objects
 
 Space groups are interpreted by :func:`GSASIIspc.SpcGroup`
 and the information is placed in a SGdata object
-which is a dict with these keys:
+which is a dict with these keys. Magnetic ones are marked "mag"
 
 .. tabularcolumns:: |l|p{4.5in}|
 
 ==========  ====================================================
   key         explanation
 ==========  ====================================================
-SpGrp       space group symbol (str)
-Laue        one of the following 14 Laue classes:
-            -1, 2/m, mmm, 4/m, 4/mmm, 3R,
-            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)
-SGInv       True if centrosymmetric, False if not (bool)
-SGLatt      Lattice centering type. Will be one of
-            P, A, B, C, I, F, R (str)
-SGUniq      unique axis if monoclinic. Will be
-            a, b, or c for monoclinic space groups.
-            Will be blank for non-monoclinic. (str)
+BNSlattsym  mag - BNS magnetic space group symbol and centering vector
+GenFlg      mag - list of symmetry generators indices
+GenSym      mag - list of names for each generator
+MagMom      mag - list of "time reversals" for each magnetic operator
+MagPtGp     mag  Magnetic point group symbol
+MagSpGrp    mag - Magnetic space group symbol
+OprNames    mag - names for each space group operation
 SGCen       Symmetry cell centering vectors. A (n,3) np.array
             of centers. Will always have at least one row:
             ``np.array([[0, 0, 0]])``
+SGFixed     bool only True if phase mported from a magnetic cif file
+            then the space group can not be changed by the user because 
+            operator set from cif may be nonstandard
+SGGen       list of generators
+SGGray      True if space group is a gray group (incommensurate magnetic structures)
+SGInv       True if centrosymmetric, False if not (bool)
+SGLatt      Lattice centering type. Will be one of
+            P, A, B, C, I, F, R (str)
+SGLaue        one of the following 14 Laue classes:
+            -1, 2/m, mmm, 4/m, 4/mmm, 3R,
+            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m (str)
 SGOps       symmetry operations as a list of form
             ``[[M1,T1], [M2,T2],...]``
             where :math:`M_n` is a 3x3 np.array
@@ -383,14 +418,23 @@ SGOps       symmetry operations as a list of form
             Asymmetric unit coordinates [X is (x,y,z)]
             are transformed using
             :math:`X^\prime = M_n*X+T_n`
-SGSys       symmetry unit cell: type one of
-            'triclinic', 'monoclinic', 'orthorhombic',
-            'tetragonal', 'rhombohedral', 'trigonal',
-            'hexagonal', 'cubic' (str)
 SGPolax     Axes for space group polarity. Will be one of
             '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
             'xyz'. In the case where axes are arbitrary
             '111' is used (P 1, and ?).
+SGPtGrp     Point group f the space group
+SGUniq      unique axis if monoclinic. Will be
+            a, b, or c for monoclinic space groups.
+            Will be blank for non-monoclinic. (str)
+SGSpin      mag - list of spin flip operatiors (+1 or -1) for the space group operations
+SGSys       symmetry unit cell: type one of
+            'triclinic', 'monoclinic', 'orthorhombic',
+            'tetragonal', 'rhombohedral', 'trigonal',
+            'hexagonal', 'cubic' (str)
+SSGK1       list of superspace multipliers
+SpGrp       space group symbol (str)
+SpnFlp      mag - list of magnetic spin flips for every magnetic space group operator
+            
 ==========  ====================================================
 
 .. _SSGData_table:
@@ -429,7 +473,8 @@ atoms are contained in a list of atom records (list) in
 ``phasedict['Atoms']``. Also needed to read atom information
 are four pointers, ``cx,ct,cs,cia = phasedict['General']['AtomPtrs']``,
 which define locations in the atom record, as shown below. Items shown are
-always present; additional ones for macromolecular phases are marked 'mm'
+always present; additional ones for macromolecular phases are marked 'mm', 
+and those for magnetic structures are marked 'mg'
 
 .. tabularcolumns:: |l|p{4.5in}|
 
@@ -441,9 +486,10 @@ ct-3              mm - residue name (e.g. ALA) (str)
 ct-2              mm - chain label (str)
 ct-1              atom label (str)
 ct                atom type (str)
-ct+1              refinement flags; combination of 'F', 'X', 'U' (str)
+ct+1              refinement flags; combination of 'F', 'X', 'U', 'M' (str)
 cx,cx+1,cx+2      the x,y and z coordinates (3 floats)
 cx+3              site occupancy (float)
+cx+4,5,6          mg - atom magnetic moment along a,b,c in Bohr magnetons 
 cs                site symmetry (str)
 cs+1              site multiplicity (int)
 cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
@@ -467,7 +513,8 @@ drawing atoms are contained in a list of drawing atom records (list) in
 ``phasedict['Drawing']['Atoms']``. Also needed to read atom information
 are four pointers, ``cx,ct,cs,ci = phasedict['Drawing']['AtomPtrs']``,
 which define locations in the atom record, as shown below. Items shown are
-always present; additional ones for macromolecular phases are marked 'mm'
+always present; additional ones for macromolecular phases are marked 'mm',
+and those for magnetic structures are marked 'mg'
 
 .. tabularcolumns:: |l|p{4.5in}|
 
@@ -480,6 +527,7 @@ ct-2              mm - chain label (str)
 ct-1              atom label (str)
 ct                atom type (str)
 cx,cx+1,cx+2      the x,y and z coordinates (3 floats)
+cx+3,4,5          mg - atom magnetic moment along a,b,c in Bohr magnetons 
 cs-1              Sym Op symbol; sym. op number + unit cell id (e.g. '1,0,-1') (str)
 cs                atom drawing style; e.g. 'balls & sticks' (str)
 cs+1              atom label style (e.g. 'name') (str)
@@ -527,15 +575,19 @@ Reflection Lists              \           A dict with an entry for each phase in
                                           is a dict containing reflections, as described in
                                           the :ref:`Powder Reflections <PowderRefl_table>`
                                           description.
-Instrument Parameters         \           A list containing two dicts where the possible
-                                          keys in each dict are listed below. The value
-                                          for each item is a list containing three values:
-                                          the initial value, the current value and a
-                                          refinement flag which can have a value of
+Instrument Parameters (CW)    \           A list containing two dicts for constant wavelength 
+                                          data where the possible keys in each dict are listed 
+                                          below. The value for each item is a list containing 
+                                          three values: the initial value, the current value
+                                          and a refinement flag which can have a value of
                                           True, False or 0 where 0 indicates a value that
                                           cannot be refined. The first and second
                                           values are floats unless otherwise noted.
                                           Items in the first dict are noted as [1]
+\                         Type            Histogram type (str) [1]:
+                                           * 'PXC' for constant wavelength x-ray
+                                           * 'PNC' for constant wavelength neutron
+\                         Bank            Data set number in a multidata file (usually 1)
 \                         Lam             Specifies a wavelength in Angstroms [1]
 \                         Lam1            Specifies the primary wavelength in
                                           Angstrom, when an alpha1, alpha2
@@ -544,10 +596,6 @@ Instrument Parameters         \           A list containing two dicts where the 
                                           Angstrom, when an alpha1, alpha2
                                           source is used [1]
                           I(L2)/I(L1)     Ratio of Lam2 to Lam1 [1]
-\                         Type            Histogram type (str) [1]:
-                                           * 'PXC' for constant wavelength x-ray
-                                           * 'PNC' for constant wavelength neutron
-                                           * 'PNT' for time of flight neutron
 \                         Zero            Two-theta zero correction in *degrees* [1]
 \                         Azimuth         Azimuthal setting angle for data recorded
                                           with differing setting angles [1]
@@ -555,14 +603,42 @@ Instrument Parameters         \           A list containing two dicts where the 
                                           for Gaussian instrumental broadening, where the
                                           FWHM goes as
                                           :math:`U \\tan^2\\theta + V \\tan\\theta + W` [1]
-\                         X, Y            Cauchy (Lorentzian) instrumental broadening
+\                         X, Y, Z         Cauchy (Lorentzian) instrumental broadening
                                           coefficients [1]
 \                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric
                                           peak broadening ratio. Note that this is the
-                                          average between S/L and H/L where S is
+                                          sum of S/L and H/L where S is
                                           sample height, H is the slit height and
                                           L is the goniometer diameter. [1]
 \                         Polariz.        Polarization coefficient. [1]
+Instrument Parameters (TOF)   \           A list containing two dicts for neutron time-of-flight 
+                                          (TOF) data where the possible keys in each dict are listed 
+                                          below. The value for each item is a list containing 
+                                          three values: the initial value, the current value
+                                          and a refinement flag which can have a value of
+                                          True, False or 0 where 0 indicates a value that
+                                          cannot be refined. The first and second
+                                          values are floats unless otherwise noted.
+                                          Items in the first dict are noted as [1]
+\                         Type            Histogram type (str) [1]:
+                                           * 'PNT' for time of flight neutron
+\                         Bank            Data set number in a multidata file
+\                         2-theta         Nominal scattering angle for the detector
+\                         fltPath         Total flight path source-sample-detector
+\                         Azimuth         Azimuth angle for detector righ hand rotation 
+                                          from horizontal away from source
+\                         difC,difA,difB  Diffractometer constants for conversion of d-spacing to TOF
+                                          in microseconds
+\                         Zero            Zero point offset (microseconds)
+\                         alpha           Exponential rise profile coefficients
+\                         beta-0          Exponential decay profile coefficients
+                          beta-1
+                          beta-q
+\                         sig-0           Gaussian profile coefficients
+                          sig-1
+                          sig-2
+                          sig-q    
+\                         X,Y,Z           Lorentzian profile coefficients  
 wtFactor                      \           A weighting factor to increase or decrease
                                           the leverage of data in the histogram (float).
                                           A value of 1.0 weights the data with their
@@ -651,9 +727,9 @@ reflections. The columns in that array are documented below.
  10          reflection phase, in degrees
  11          intensity correction for reflection, this times
              :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
- 12          Prfo
- 13          Trans
- 14          ExtP  
+ 12          Preferred orientation correction
+ 13          Transmission (absorption correction)
+ 14          Extinction correction
 ==========  ====================================================
 
 .. _Xtal_table:
@@ -851,6 +927,8 @@ Masks                       Arcs                (list: lists) Each entry [2-thet
                                                 to be excluded from integration.
 \                           Thresholds          (list:[tuple,list]) [(Imin,Imax),[Imin,Imax]] This gives lower and upper limits for points on the image to be included
                                                 in integrsation. The tuple is the image intensity limits and the list are those set by the user.
+\                           SpotMask            dict: 'esdMul'(int) number of standard deviations above mean ring intensity to mask
+                                                'spotMask' (bool array) the spot mask for every pixel in image         
 
 Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.
 \                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)

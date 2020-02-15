@@ -141,6 +141,7 @@ method                                                Use
 :meth:`G2Phase.histograms`                            Returns a list of histograms linked to the phase
 :meth:`G2Phase.get_cell`                              Returns unit cell parameters (also see :meth:`G2Phase.get_cell_and_esd`)
 :meth:`G2Phase.export_CIF`                            Writes a CIF for the phase
+:meth:`G2Phase.setSampleProfile`                      Sets sample broadening parameters
 ==================================================    ===============================================================================================================
 
 ---------------------------------
@@ -4738,7 +4739,7 @@ class G2Phase(G2ObjectWrapper):
             The index number is relative to all histograms in the tree, not to 
             those in the phase.
         :param str parmType: should be 'size' or 'microstrain' (can be abbreviated to 's' or 'm')
-        :mode str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
+        :param str mode: should be 'isotropic' or 'uniaxial' (can be abbreviated to 'i' or 'u')
         :param float val1: value for isotropic size (in microns) or  
            microstrain (delta Q/Q x 10**6, unitless) or the equatorial value in the uniaxial case
         :param float val2: value for axial size (in microns) or  
@@ -4753,7 +4754,7 @@ class G2Phase(G2ObjectWrapper):
             phase0.setSampleProfile(0,'size','iso',1.2)
             phase0.setSampleProfile(0,'micro','isotropic',1234)
             phase0.setSampleProfile(0,'m','u',1234,4567,[1,1,1],.5) 
-            phase0.setSampleProfile(0,'s','u',1.2,2.3,[0,0,1])
+            phase0.setSampleProfile(0,'s','uni',1.2,2.3,[0,0,1])
         """
         if parmType.lower().startswith('s'):
             key = 'Size'

@@ -113,8 +113,8 @@ are stored in a dict with these keys:
 =============  ===============  ====================================================
   key            sub-key        explanation
 =============  ===============  ====================================================
-newCellDict    \                dict with lattice parameters computed by
-                                :func:`GSASIIstrMath.GetNewCellParms` (dict)
+newCellDict    \                (dict) lattice parameters computed by
+                                :func:`GSASIIstrMath.GetNewCellParms`
 title          \                Name of gpx file(?) (str)
 variables      \                Values for all N refined variables
                                 (list of float values, length N,
@@ -154,9 +154,9 @@ Phases item in a dict with keys:
 
 .. tabularcolumns:: |l|l|p{4in}|
 
-==========  ===============     ====================================================
+==========  ===============     =====================================================================================================
   key         sub-key           explanation
-==========  ===============     ====================================================
+==========  ===============     =====================================================================================================
 General         \               Overall information for the phase (dict)
   \         3Dproj              projections for 3D pole distribution plots
   \         AngleRadii          Default radius for each atom used to compute
@@ -168,9 +168,9 @@ General         \               Overall information for the phase (dict)
   \         BondRadii           Default radius for each atom used to compute
                                 interatomic distances (list of floats)
   \         Cell                List with 8 items: cell refinement flag (bool)
-                             a, b, c, (:math:`\\unicode{x212B}`, float)
+                                a, b, c, (:math:`\\unicode{x212B}`, float)
                                 alpha, beta & gamma (degrees, float)
-                             volume (:math:`\\unicode{x212B}^3`, float)
+                                volume (:math:`\\unicode{x212B}^3`, float)
   \         Color               Colors for atoms (list of (r,b,g) triplets)
   \         Compare             dict of polygon comparison parameters
   \         Data plot type      data plot type ('Mustrain', 'Size' or
@@ -204,7 +204,8 @@ General         \               Overall information for the phase (dict)
                                 extraction (float)
   \         Pawley neg wt       Restraint value for negative Pawley intensities
                                 (float)
-  \         SGData              Space group details as a :ref:`space group (SGData) object <SGData_table>`
+  \         SGData              Space group details as a 
+                                :ref:`space group (SGData) object <SGData_table>`
                                 as defined in :func:`GSASIIspc.SpcGroup`.
   \         SH Texture          dict of spherical harmonic preferred orientation
                                 parameters
@@ -236,7 +237,7 @@ Drawing         \               Display parameters (dict)
 \           bondList            dict with bonds
 \           bondRadius          Size of binds in A (float)
 \           cameraPos           Viewing position in A for plot (float)
-\           contourLevel     map contour level in :math:`e/\\unicode{x212B}^3` (float)
+\           contourLevel        map contour level in :math:`e/\\unicode{x212B}^3` (float)
 \           contourMax          float map contour maximum
 \           depthFog            True if use depthFog on plot - set currently as False (bool)
 \           ellipseProb         Probability limit for display of thermal
@@ -283,42 +284,34 @@ Histograms      \               A dict of dicts. The key for the outer dict is
 \           Histogram           The name of the associated histogram (str)
 \           LeBail              Flag for LeBail extraction (bool)
 \           Mustrain            List of microstrain parameters, in order:
-
-                                0. Type, one of  u'isotropic', u'uniaxial', u'generalized'
-                                1. Isotropic/uniaxial parameters - list of 3 floats
-                                2. Refinement flags - list of 3 bools
-                                3. Microstrain axis - list of 3 ints, [h, k, l]
-                                4. Generalized mustrain parameters - list of 2-6
-                                  floats, depending on space group
-                                5. Generalized refinement flags - list of bools,
-                                  corresponding to the parameters of (4)
-\           Pref.Ori.           Preferred Orientation. List of eight parameters.
-                                Items marked SH are only used for Spherical Harmonics.
-
-                                0. Type, 'MD' for March-Dollase or 'SH' for Spherical Harmonics
-                                1. Value, float
-                                2. Refinement flag, bool
-                                3. Preferred direction, list of ints, [h, k, l]
-                                4. SH - number of terms, int
-                                5. SH - dict
-                                6. SH - list
-                                7. SH - float
+                                 0. Type, one of  u'isotropic', u'uniaxial', u'generalized'
+                                 1. Isotropic/uniaxial parameters - list of 3 floats
+                                 2. Refinement flags - list of 3 bools
+                                 3. Microstrain axis - list of 3 ints, [h, k, l]
+                                 4. Generalized mustrain parameters - list of 2-6 floats, depending on space group
+                                 5. Generalized refinement flags - list of bools, corresponding to the parameters of (4)
+\           Pref.Ori.           Preferred Orientation (8 parameters in list, Items marked SH are used only for Spherical Harmonics).
+                                  0. Type, 'MD' for March-Dollase or 'SH' for Spherical Harmonics
+                                  1. Value, float
+                                  2. Refinement flag, bool
+                                  3. Preferred direction, list of ints, [h, k, l]
+                                  4. SH - number of terms, int
+                                  5. SH - dict
+                                  6. SH - list
+                                  7. SH - float
 \           Scale               Phase fraction, list of [float, bool].
 \           Show                bool
 \           Size                List of crystallite size parameters, in order:
-    
-                                0. Type, one of  u'isotropic', u'uniaxial', u'ellipsoidal'
-                                1. Isotropic/uniaxial parameters - list of 3 floats
-                                2. Refinement flags - list of 3 bools
-                                3. Size axis - list of 3 ints, [h, k, l]
-                                4. Ellipsoidal size parameters - list of 6 floats
-                                5. Ellipsoidal refinement flags - list of bools,
-                                  corresponding to the parameters of (4)
+                                  0. Type, one of  u'isotropic', u'uniaxial', u'ellipsoidal'
+                                  1. Isotropic/uniaxial parameters - list of 3 floats
+                                  2. Refinement flags - list of 3 bools
+                                  3. Size axis - list of 3 ints, [h, k, l]
+                                  4. Ellipsoidal size parameters - list of 6 floats
+                                  5. Ellipsoidal refinement flags - list of bools, corresponding to the parameters of (4)
 \           Use                 bool
 \           newLeBail           Whether to perform a new LeBail extraction
 MCSA            \               Monte-Carlo simulated annealing parameters (dict)
-\
-==========  ===============     ====================================================
+==========  ===============     =====================================================================================================
 
 .. _RBData_table:
 
@@ -345,7 +338,7 @@ Vector      RBId                vector rigid bodies (dict of dict)
 \           VectMag             vector magnitudes in A (list)
 \           rbXYZ               Cartesian coordinates for Vector rigid body (list of 3 float)
 \           rbRef               3 assigned reference atom nos. in rigid body for origin
-                                 definition, use center of atoms flag (list of 3 int & 1 bool)
+                                definition, use center of atoms flag (list of 3 int & 1 bool)
 \           VectRef             refinement flags for VectMag values (list of bool)
 \           rbTypes             Atom types for each atom in rigid body (list of str)
 \           rbVect              Cartesian vectors for each translation used to build rigid body (list of lists)
@@ -386,13 +379,13 @@ which is a dict with these keys. Magnetic ones are marked "mag"
 ==========  ========================================================================================
   key         explanation
 ==========  ========================================================================================
-BNSlattsym  mag - BNS magnetic space group symbol and centering vector
-GenFlg      mag - list of symmetry generators indices
-GenSym      mag - list of names for each generator
-MagMom      mag - list of "time reversals" for each magnetic operator
-MagPtGp     mag  Magnetic point group symbol
-MagSpGrp    mag - Magnetic space group symbol
-OprNames    mag - names for each space group operation
+BNSlattsym  BNS magnetic space group symbol and centering vector (mag)
+GenFlg      list of symmetry generators indices (mag)
+GenSym      list of names for each generator (mag)
+MagMom      list of "time reversals" for each magnetic operator (mag)
+MagPtGp     Magnetic point group symbol (mag)
+MagSpGrp    Magnetic space group symbol (mag)
+OprNames    names for each space group operation (mag)
 SGCen       Symmetry cell centering vectors. A (n,3) np.array
             of centers. Will always have at least one row: ``np.array([[0, 0, 0]])``
 SGFixed     bool, only True if phase mported from a magnetic cif file
@@ -401,35 +394,33 @@ SGFixed     bool, only True if phase mported from a magnetic cif file
 SGGen       list of generators
 SGGray      True if space group is a gray group (incommensurate magnetic structures)
 SGInv       True if centrosymmetric, False if not (bool)
-SGLatt      Lattice centering type. Will be one of
-            P, A, B, C, I, F, R (str)
-SGLaue      str, one of the following 14 Laue classes:
-            -1, 2/m, mmm, 4/m, 4/mmm, 3R,
-              3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m
-SGOps       symmetry operations as a list of form
-            ``[[M1,T1], [M2,T2],...]``
-            where :math:`M_n` is a 3x3 np.array
-            and :math:`T_n` is a length 3 np.array.
+SGLatt      (str) Lattice centering type. Will be one of:
+               P, A, B, C, I, F, R
+
+SGLaue      (str) one of the following 14 Laue classes:
+              -1, 2/m, mmm, 4/m, 4/mmm, 3R, 3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m
+
+SGOps       symmetry operations as a list of form ``[[M1,T1], [M2,T2],...]``
+            where :math:`M_n` is a 3x3 np.array and :math:`T_n` is a length 3 np.array.
             Atom coordinates are transformed where the
             Asymmetric unit coordinates [X is (x,y,z)]
-            are transformed using
-            :math:`X^\prime = M_n*X+T_n`
-SGPolax     Axes for space group polarity. Will be one of
-            '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
-            'xyz'. In the case where axes are arbitrary
-            '111' is used (P 1, and ?).
+            are transformed using :math:`X^\prime = M_n*X+T_n`
+SGPolax     Axes for space group polarity. Will be one of:
+               '', 'x', 'y', 'x y', 'z', 'x z', 'y z','xyz'. 
+
+            In the case where axes are arbitrary, '111' is used (P 1, and ?).
 SGPtGrp     Point group f the space group
 SGUniq      unique axis if monoclinic. Will be
             a, b, or c for monoclinic space groups.
             Will be blank for non-monoclinic. (str)
-SGSpin      mag - list of spin flip operatiors (+1 or -1) for the space group operations
-SGSys       symmetry unit cell: type one of
-            'triclinic', 'monoclinic', 'orthorhombic',
-            'tetragonal', 'rhombohedral', 'trigonal',
-            'hexagonal', 'cubic' (str)
+SGSpin      list of spin flip operatiors (+1 or -1) for the space group operations (mag)
+SGSys       (str) symmetry unit cell: type one of:
+              'triclinic', 'monoclinic', 'orthorhombic',
+              'tetragonal', 'rhombohedral', 'trigonal',
+              'hexagonal', 'cubic'
 SSGK1       list of superspace multipliers
-SpGrp       space group symbol (str)
-SpnFlp      mag - list of magnetic spin flips for every magnetic space group operator
+SpGrp       (str) space group symbol
+SpnFlp      list of magnetic spin flips for every magnetic space group operator (mag)
 ==========  ========================================================================================
 
 .. _SSGData_table:
@@ -570,9 +561,13 @@ Reflection Lists            \               A dict with an entry for each phase 
                                             is a dict containing reflections, as described in
                                             the :ref:`Powder Reflections <PowderRefl_table>`
                                             description.
-Instrument Parameters         \           The instrument parameters uses different dicts 
-                                          for the constant wavelength (CW) and time-of-flight (TOF)
-                                          cases. See below for the descriptions of each. 
+Instrument Parameters         \             The instrument parameters contains a list of two dicts.
+                                            The contents of the first dict differs between  
+                                            the :ref:`constant wavelength (CW) <CWPowder_table>`
+                                            and the :ref:`time-of-flight (TOF) <TOFPowder_table>`
+                                            cases. See below for the descriptions of 
+                                            the :ref:`CW <CWPowder_table>`
+                                            and :ref:`TOF <TOFPowder_table>` contents.
 wtFactor                    \               A weighting factor to increase or decrease
                                             the leverage of data in the histogram (float).
                                             A value of 1.0 weights the data with their
@@ -585,34 +580,34 @@ Sample Parameters           \               Specifies a dict with parameters tha
                                             a float and a bool, where the second value
                                             specifies if the value is refined, otherwise
                                             the value is a float unless otherwise noted.
-\                           Scale           The histogram scale factor (refinable)
-\                           Absorption      The sample absorption coefficient as
+\                       Scale               The histogram scale factor (refinable)
+\                       Absorption          The sample absorption coefficient as
                                             :math:`\\mu r` where r is the radius
                                             (refinable). Only valid for Debye-Scherrer geometry.
-\                           SurfaceRoughA   Surface roughness parameter A as defined by
-                                            Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable -
+\                       SurfaceRoughA       Surface roughness parameter A as defined by
+                                            Surotti, *J. Appl. Cryst*, **5**, 325-331, 1972.
+                                            (refinable - only valid for Bragg-Brentano geometry)
+\                       SurfaceRoughB       Surface roughness parameter B (refinable -
                                             only valid for Bragg-Brentano geometry)
-\                           SurfaceRoughB   Surface roughness parameter B (refinable -
-                                            only valid for Bragg-Brentano geometry)
-\                           DisplaceX,      Sample displacement from goniometer center
-                            DisplaceY       where Y is along the beam direction and
+\                       DisplaceX,          Sample displacement from goniometer center
+                        DisplaceY           where Y is along the beam direction and
                                             X is perpendicular. Units are :math:`\\mu m`
                                             (refinable).
-\                           Phi, Chi,       Goniometer sample setting angles, in degrees.
-                            Omega
-\                           Gonio. radius   Radius of the diffractometer in mm
-\                           InstrName       A name for the instrument, used in preparing
+\                       Phi, Chi,           Goniometer sample setting angles, in degrees.
+                        Omega
+\                       Gonio. radius       Radius of the diffractometer in mm
+\                       InstrName           A name for the instrument, used in preparing
                                             a CIF (str).
-\                           Force,          Variables that describe how the measurement
-                            Temperature,    was performed. Not used directly in
-                            Humidity,       any computations.
-                            Pressure,
-                            Voltage
-\                           ranId           The random-number Id for the histogram
+\                       Force,              Variables that describe how the measurement
+                        Temperature,        was performed. Not used directly in
+                        Humidity,           any computations.
+                        Pressure,
+                        Voltage
+\                       ranId               The random-number Id for the histogram
                                             (same value as where top-level key is ranId)
-\                           Type            Type of diffraction data, may be 'Debye-Scherrer'
+\                       Type                Type of diffraction data, may be 'Debye-Scherrer'
                                             or 'Bragg-Brentano' (str).
-\                           Diffuse         not in use?
+\                       Diffuse             not in use?
 hId                         \               The number assigned to the histogram when
                                             the project is loaded or edited (can change)
 ranId                       \               A random number id for the histogram
@@ -626,62 +621,68 @@ Background                  \               The background is stored as a list w
 Data                        \               The data consist of a list of 6 np.arrays
                                             containing in order:
 
-                                            0. the x-postions (two-theta in degrees),
-                                            1. the intensity values (Yobs),
-                                            2. the weights for each Yobs value
-                                            3. the computed intensity values (Ycalc)
-                                            4. the background values
-                                            5. Yobs-Ycalc
+                                              0. the x-postions (two-theta in degrees),
+                                              1. the intensity values (Yobs),
+                                              2. the weights for each Yobs value
+                                              3. the computed intensity values (Ycalc)
+                                              4. the background values
+                                              5. Yobs-Ycalc
 ======================  ===============  ===========================================================
 
+.. _CWPowder_table:
+
+.. index::
+   single: Powder data CW Instrument Parameters
 
 -----------------------------
 CW Instrument Parameters
 -----------------------------
 
 Instrument Parameters are placed in a list of two dicts, 
-where the keys in each dict listed below. Note that the dict contents are different for 
+where the keys in the first dict are listed below. Note that the dict contents are different for 
 constant wavelength (CW) vs. time-of-flight (TOF) histograms. 
 The value for each item is a list containing three values: the initial value, the current value
 and a refinement flag which can have a value of True, False or 0 where 0 indicates a value that
 cannot be refined. The first and second values are floats unless otherwise noted.
-Items in the first dict are noted as [1]
 
-.. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
+.. tabularcolumns:: |p{1in}|p{4in}|
 
-======================  ===============  ===========================================================
-  key                      sub-key        explanation
-======================  ===============  ===========================================================
-Instrument Parameters     Type [1]        Histogram type (str):
-                                           * 'PXC' for constant wavelength x-ray
-                                           * 'PNC' for constant wavelength neutron
-\                         Bank            Data set number in a multidata file (usually 1)
-\                         Lam [1]         Specifies a wavelength in :math:`\\unicode{x212B}`
-\                         Lam1 [1]        Specifies the primary wavelength in
-                                          :math:`\\unicode{x212B}`, used in place of Lam 
-                                          when an :math:`\\alpha_1, \\alpha_2`
-                                          source is used.
-\                         Lam2 [1]        Specifies the secondary wavelength in
-                                          :math:`\\unicode{x212B}`, used with Lam1
-\                         I(L2)/I(L1)     Ratio of Lam2 to Lam1,
-                          [1]             used with Lam1
-\                         Zero [1]        Two-theta zero correction in *degrees*
-\                         Azimuth         Azimuthal setting angle for data recorded
-                          [1]             with differing setting angles
-\                         U, V, W         Cagliotti profile coefficients
-                          [1]             for Gaussian instrumental broadening, where the
-                                          FWHM goes as
-                                          :math:`U \\tan^2\\theta + V \\tan\\theta + W`
-\                         X, Y, Z         Cauchy (Lorentzian) instrumental broadening
-                          [1]             coefficients
-\                         SH/L            Variant of the Finger-Cox-Jephcoat asymmetric
-                          [1]             peak broadening ratio. Note that this is the
-                                          sum of S/L and H/L where S is
-                                          sample height, H is the slit height and
-                                          L is the goniometer diameter.
-\                         Polariz.        Polarization coefficient. 
-                          [1]
-======================  ===============  ===========================================================
+======================  ===========================================================
+  key                   explanation
+======================  ===========================================================
+Type                     Histogram type (str):
+                          * 'PXC' for constant wavelength x-ray
+                          * 'PNC' for constant wavelength neutron
+Bank                     Data set number in a multidata file (usually 1)
+Lam                      Specifies a wavelength in :math:`\\unicode{x212B}`
+Lam1                     Specifies the primary wavelength in
+                         :math:`\\unicode{x212B}`, used in place of Lam 
+                         when an :math:`\\alpha_1, \\alpha_2`
+                         source is used.
+Lam2                     Specifies the secondary wavelength in
+                         :math:`\\unicode{x212B}`, used with Lam1
+I(L2)/I(L1)              Ratio of Lam2 to Lam1, used with Lam1
+Zero                     Two-theta zero correction in *degrees*
+Azimuth                  Azimuthal setting angle for data recorded
+                         with differing setting angles
+U, V, W                  Cagliotti profile coefficients
+                         for Gaussian instrumental broadening, where the
+                         FWHM goes as
+                         :math:`U \\tan^2\\theta + V \\tan\\theta + W`
+X, Y, Z                  Cauchy (Lorentzian) instrumental broadening
+                         coefficients
+SH/L                     Variant of the Finger-Cox-Jephcoat asymmetric
+                         peak broadening ratio. Note that this is the
+                         sum of S/L and H/L where S is
+                         sample height, H is the slit height and
+                         L is the goniometer diameter.
+Polariz                  Polarization coefficient. 
+======================  ===========================================================
+
+.. _TOFPowder_table:
+
+.. index::
+   single: Powder data TOF Instrument Parameters
 
 -----------------------------
 TOF Instrument Parameters
@@ -693,33 +694,27 @@ time-of-flight (TOF) histograms.
 The value for each item is a list containing three values: the initial value, the current value
 and a refinement flag which can have a value of True, False or 0 where 0 indicates a value that
 cannot be refined. The first and second values are floats unless otherwise noted.
-Items in the first dict are noted as [1]
 
-.. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
+.. tabularcolumns:: |p{1.5in}|p{4in}|
 
-======================  ===============  ===========================================================
-  key                      sub-key        explanation
-======================  ===============  ===========================================================
-Instrument Parameters     Type [1]        Histogram type (str):
-                                           * 'PNT' for time of flight neutron
-\                         Bank            Data set number in a multidata file
-\                         2-theta         Nominal scattering angle for the detector
-\                         fltPath         Total flight path source-sample-detector
-\                         Azimuth         Azimuth angle for detector right hand rotation 
-                                          from horizontal away from source
-\                         difC,difA,      Diffractometer constants for conversion of d-spacing to TOF
-                          difB            in microseconds
-\                         Zero            Zero point offset (microseconds)
-\                         alpha           Exponential rise profile coefficients
-\                         beta-0          Exponential decay profile coefficients
-                          beta-1
-                          beta-q
-\                         sig-0           Gaussian profile coefficients
-                          sig-1
-                          sig-2
-                          sig-q    
-\                         X,Y,Z           Lorentzian profile coefficients  
-======================  ===============  ===========================================================
+=========================  ===========================================================
+  key                       explanation
+=========================  ===========================================================
+Type                        (str) Histogram type:
+                              * 'PNT' for time of flight neutron
+Bank                        (int) Data set number in a multidata file
+2-theta                     Nominal scattering angle for the detector
+fltPath                     Total flight path source-sample-detector
+Azimuth                     Azimuth angle for detector right hand rotation 
+                            from horizontal away from source
+difC,difA,difB              Diffractometer constants for conversion of d-spacing to TOF
+                            in microseconds
+Zero                        Zero point offset (microseconds)
+alpha                       Exponential rise profile coefficients
+beta-0,beta-1,beta-q        Exponential decay profile coefficients
+sig-0,sig-1,sig-2,sig-q     Gaussian profile coefficients
+X,Y,Z                       Lorentzian profile coefficients  
+=========================  ===========================================================
 
 .. _PowderRefl_table:
 
@@ -739,7 +734,7 @@ reflections. The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4           d-space, :math:`\\unicode{x212B}`
+ 4              d-space, :math:`\\unicode{x212B}`
  5              pos, two-theta
  6              sig, Gaussian width
  7              gam, Lorenzian width
@@ -747,7 +742,7 @@ reflections. The columns in that array are documented below.
  9              :math:`F_{calc}^2`
  10             reflection phase, in degrees
  11             intensity correction for reflection, this times
-                 :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
+                :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc
  12             Preferred orientation correction
  13             Transmission (absorption correction)
  14             Extinction correction
@@ -790,12 +785,12 @@ Instrument Parameters       \               A list containing two dicts where th
                                             the initial value, the current value.
                                             The first and second
                                             values are floats unless otherwise noted.
-\                         Lam             Specifies a wavelength in :math:`\\unicode{x212B}` 
-                                          (two floats)
+\                         Lam               Specifies a wavelength in :math:`\\unicode{x212B}` 
+                                            (two floats)
 \                           Type            Histogram type (two str values):
-                                            * 'SXC' for constant wavelength x-ray
-                                            * 'SNC' for constant wavelength neutron
-                                            * 'SNT' for time of flight neutron
+                                             * 'SXC' for constant wavelength x-ray
+                                             * 'SNC' for constant wavelength neutron
+                                             * 'SNT' for time of flight neutron
 \                           InstrName       A name for the instrument, used in preparing
                                             a CIF (str).
 
@@ -830,7 +825,7 @@ The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4           d-space, :math:`\\unicode{x212B}`
+ 4              d-space, :math:`\\unicode{x212B}`
  5              :math:`F_{obs}^2`
  6              :math:`\sigma(F_{obs}^2)`
  7              :math:`F_{calc}^2`
@@ -838,8 +833,8 @@ The columns in that array are documented below.
  9              :math:`F_{calc}^2T`
  10             reflection phase, in degrees
  11             intensity correction for reflection, this times
-                 :math:`F_{obs}^2` or :math:`F_{calc}^2`
-                 gives Iobs or Icalc
+                :math:`F_{obs}^2` or :math:`F_{calc}^2`
+                gives Iobs or Icalc
 ==========  ====================================================
 
 .. _Image_table:

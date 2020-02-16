@@ -168,9 +168,9 @@ General         \               Overall information for the phase (dict)
   \         BondRadii           Default radius for each atom used to compute
                                 interatomic distances (list of floats)
   \         Cell                List with 8 items: cell refinement flag (bool)
-                                a, b, c, (:math:`\\unicode{x212B}`, float)
+                                a, b, c, (Angstrom, float)
                                 alpha, beta & gamma (degrees, float)
-                                volume (:math:`\\unicode{x212B}^3`, float)
+                                volume (:math:`A^3`, float)
   \         Color               Colors for atoms (list of (r,b,g) triplets)
   \         Compare             dict of polygon comparison parameters
   \         Data plot type      data plot type ('Mustrain', 'Size' or
@@ -237,7 +237,7 @@ Drawing         \               Display parameters (dict)
 \           bondList            dict with bonds
 \           bondRadius          Size of binds in A (float)
 \           cameraPos           Viewing position in A for plot (float)
-\           contourLevel        map contour level in :math:`e/\\unicode{x212B}^3` (float)
+\           contourLevel        map contour level in :math:`e/A^3` (float)
 \           contourMax          float map contour maximum
 \           depthFog            True if use depthFog on plot - set currently as False (bool)
 \           ellipseProb         Probability limit for display of thermal
@@ -654,13 +654,13 @@ Type                     Histogram type (str):
                           * 'PXC' for constant wavelength x-ray
                           * 'PNC' for constant wavelength neutron
 Bank                     Data set number in a multidata file (usually 1)
-Lam                      Specifies a wavelength in :math:`\\unicode{x212B}`
+Lam                      Specifies a wavelength in Angstrom
 Lam1                     Specifies the primary wavelength in
-                         :math:`\\unicode{x212B}`, used in place of Lam 
+                         Angstrom, used in place of Lam 
                          when an :math:`\\alpha_1, \\alpha_2`
                          source is used.
 Lam2                     Specifies the secondary wavelength in
-                         :math:`\\unicode{x212B}`, used with Lam1
+                         Angstrom, used with Lam1
 I(L2)/I(L1)              Ratio of Lam2 to Lam1, used with Lam1
 Zero                     Two-theta zero correction in *degrees*
 Azimuth                  Azimuthal setting angle for data recorded
@@ -734,7 +734,7 @@ reflections. The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4              d-space, :math:`\\unicode{x212B}`
+ 4              d-space, Angstrom
  5              pos, two-theta
  6              sig, Gaussian width
  7              gam, Lorenzian width
@@ -785,7 +785,7 @@ Instrument Parameters       \               A list containing two dicts where th
                                             the initial value, the current value.
                                             The first and second
                                             values are floats unless otherwise noted.
-\                         Lam               Specifies a wavelength in :math:`\\unicode{x212B}` 
+\                         Lam               Specifies a wavelength in Angstrom 
                                             (two floats)
 \                           Type            Histogram type (two str values):
                                              * 'SXC' for constant wavelength x-ray
@@ -825,7 +825,7 @@ The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4              d-space, :math:`\\unicode{x212B}`
+ 4              d-space, Angstrom
  5              :math:`F_{obs}^2`
  6              :math:`\sigma(F_{obs}^2)`
  7              :math:`F_{calc}^2`
@@ -930,7 +930,7 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           size                (list:int) The number of pixels on the image x & y axes
 \                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
-\                           wavelength          (float) The radiation wavelength (:math:`\\unicode{x212B}`) as entered by the user 
+\                           wavelength          (float) The radiation wavelength (Angstrom) as entered by the user 
                                                 (or someday obtained from the image header).
 Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
                                                 to be excluded from integration
@@ -2363,7 +2363,7 @@ class ImportImage(ImportBaseclass):
         data items are needed:
 
          * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
-         * 'wavelength': wavelength in :math:`\\unicode{x212B}`.
+         * 'wavelength': wavelength in Angstrom.
          * 'distance': distance of detector from sample in cm.
          * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
          * 'size': size of image (such as ``[2048,2048]``).

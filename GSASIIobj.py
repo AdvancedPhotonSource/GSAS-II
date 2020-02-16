@@ -172,9 +172,9 @@ General         \               Overall information for the phase (dict)
   \         BondRadii           Default radius for each atom used to compute
                                 interatomic distances (list of floats)
   \         Cell                List with 8 items: cell refinement flag (bool)
-                                a, b, c, (:math:`\AA`, float)
+                                a, b, c, (:math:`\\AA`, float)
                                 alpha, beta & gamma (degrees, float)
-                                volume (:math:`\AA^3`, float)
+                                volume (:math:`\\AA^3`, float)
   \         Color               Colors for atoms (list of (r,b,g) triplets)
   \         Compare             dict of polygon comparison parameters
   \         Data plot type      data plot type ('Mustrain', 'Size' or
@@ -231,7 +231,7 @@ Drawing         \               Display parameters (dict)
                                 that is plotted.
 \           Plane               list Controls for contour density plane display
 \           Quaternion          Viewing quaternion (4 element np.array)
-\           Zclip               clipping distance in :math:`\AA` (float)
+\           Zclip               clipping distance in :math:`\\AA` (float)
 \           Zstep               Step to de/increase Z-clip (float)
 \           atomPtrs            positions of x, type, site sym, ADP flag in Draw Atoms (list)
 \           backColor           background for plot as and R,G,B triplet
@@ -239,9 +239,9 @@ Drawing         \               Display parameters (dict)
                                 (list with three atoms)
 \           ballScale           Size of spheres in ball-and-stick display (float)
 \           bondList            dict with bonds
-\           bondRadius          Size of bonds in :math:`\AA` (float)
-\           cameraPos           Viewing position in :math:`\AA` for plot (float)
-\           contourLevel        map contour level in :math:`e/\AA^3` (float)
+\           bondRadius          Size of bonds in :math:`\\AA` (float)
+\           cameraPos           Viewing position in :math:`\\AA` for plot (float)
+\           contourLevel        map contour level in :math:`e/\\AA^3` (float)
 \           contourMax          float map contour maximum
 \           depthFog            True if use depthFog on plot - set currently as False (bool)
 \           ellipseProb         Probability limit for display of thermal
@@ -339,7 +339,7 @@ with defined refinable torsion angles.
 Vector      RBId                vector rigid bodies (dict of dict)
 \           AtInfo              Drad, Color: atom drawing radius & color for each atom type (dict)
 \           RBname              Name assigned by user to rigid body (str)
-\           VectMag             vector magnitudes in :math:`\AA` (list)
+\           VectMag             vector magnitudes in :math:`\\AA` (list)
 \           rbXYZ               Cartesian coordinates for Vector rigid body (list of 3 float)
 \           rbRef               3 assigned reference atom nos. in rigid body for origin
                                 definition, use center of atoms flag (list of 3 int & 1 bool)
@@ -658,13 +658,13 @@ Type                     Histogram type (str):
                           * 'PXC' for constant wavelength x-ray
                           * 'PNC' for constant wavelength neutron
 Bank                     Data set number in a multidata file (usually 1)
-Lam                      Specifies a wavelength in :math:`\AA`
+Lam                      Specifies a wavelength in :math:`\\AA`
 Lam1                     Specifies the primary wavelength in
-                         :math:`\AA`, used in place of Lam 
+                         :math:`\\AA`, used in place of Lam 
                          when an :math:`\\alpha_1, \\alpha_2`
                          source is used.
 Lam2                     Specifies the secondary wavelength in
-                         :math:`\AA`, used with Lam1
+                         :math:`\\AA`, used with Lam1
 I(L2)/I(L1)              Ratio of Lam2 to Lam1, used with Lam1
 Zero                     Two-theta zero correction in *degrees*
 Azimuth                  Azimuthal setting angle for data recorded
@@ -738,7 +738,7 @@ reflections. The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4              d-space, :math:`\AA`
+ 4              d-space, :math:`\\AA`
  5              pos, two-theta
  6              sig, Gaussian width
  7              gam, Lorenzian width
@@ -789,7 +789,7 @@ Instrument Parameters       \               A list containing two dicts where th
                                             the initial value, the current value.
                                             The first and second
                                             values are floats unless otherwise noted.
-\                         Lam               Specifies a wavelength in :math:`\AA` 
+\                         Lam               Specifies a wavelength in :math:`\\AA` 
                                             (two floats)
 \                           Type            Histogram type (two str values):
                                              * 'SXC' for constant wavelength x-ray
@@ -829,7 +829,7 @@ The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              multiplicity
- 4              d-space, :math:`\AA`
+ 4              d-space, :math:`\\AA`
  5              :math:`F_{obs}^2`
  6              :math:`\sigma(F_{obs}^2)`
  7              :math:`F_{calc}^2`
@@ -934,7 +934,7 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           size                (list:int) The number of pixels on the image x & y axes
 \                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
-\                           wavelength          (float) The radiation wavelength (:math:`\AA`) as entered by the user 
+\                           wavelength          (float) The radiation wavelength (:math:`\\AA`) as entered by the user 
                                                 (or someday obtained from the image header).
 Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
                                                 to be excluded from integration
@@ -2367,7 +2367,7 @@ class ImportImage(ImportBaseclass):
         data items are needed:
 
          * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
-         * 'wavelength': wavelength in :math:`\AA`.
+         * 'wavelength': wavelength in :math:`\\AA`.
          * 'distance': distance of detector from sample in cm.
          * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
          * 'size': size of image (such as ``[2048,2048]``).

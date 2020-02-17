@@ -1523,15 +1523,16 @@ def AutoSpotMasks2(Image,Masks,Controls,numChans,dlg=None):
     LUtth = np.array(Controls['IOtth'])
     dtth = (LUtth[1]-LUtth[0])/numChans
     esdMul = Masks['SpotMask']['esdMul']
-    mask = ma.make_mask_none(Image.shape)    
+    mask = ma.make_mask_none(Image.shape)
+    band = ma.array(Image,mask=ma.nomask)
     TA = Make2ThetaAzimuthMap(Controls,(0,Image.shape[0]),(0,Image.shape[1]))[0]    #2-theta array
     TThs = np.linspace(LUtth[0],LUtth[1],numChans,False)
     for it,TTh in enumerate(TThs):
-        band = ma.array(Image,mask=ma.getmask(ma.masked_outside(TA,TTh,TTh+dtth)))
+        band.mask = ma.masked_outside(TA,TTh,TTh+dtth).mask
         std = ma.std(band)
         anom = band.anom()/std
         anom = ma.masked_greater(anom,esdMul,copy=False)
-        mask ^= (ma.getmask(anom)^ma.getmask(band))
+        mask ^= (anom.mask^band.mask)
         if not dlg is None:
             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
             if not GoOn[0]:

@@ -19,7 +19,7 @@ as provides misc. support routines.
 
 .. only:: html
 
-   html :math:`\\require{mediawiki-texvc}`
+   :math:`\\require{mediawiki-texvc}`
 
 .. _Constraints_table:
 
@@ -172,10 +172,11 @@ General         \               (dict) Overall information for the phase
   \         AtomTypes           (llist of str) Atom types
   \         BondRadii           (list of floats) Default radius for each atom used to compute
                                 interatomic distances 
-  \         Cell                (list with 8 items) cell refinement flag (bool)
-                                a, b, c, (:math:`\\AA`, float)
-                                alpha, beta & gamma (degrees, float)
-                                volume (:math:`\AA^3`, float)
+  \         Cell                (list with 8 items, all float, except first 
+                                item is bool) cell refinement flag
+                                a, b, c, (:math:`\\AA`)
+                                alpha, beta & gamma (degrees)
+                                volume (:math:`\AA^3`)
   \         Color               (list of (r,b,g) triplets) Colors for atoms 
   \         Compare             (dict) Polygon comparison parameters
   \         Data plot type      (str) data plot type ('Mustrain', 'Size' or
@@ -205,9 +206,9 @@ General         \               (dict) Overall information for the phase
   \         Pawley dmin         (float) maximum Q (as d-space) to use for Pawley extraction 
   \         Pawley dmax         (float) minimum Q (as d-space) to use for Pawley extraction 
   \         Pawley neg wt       (float) Restraint value for negative Pawley intensities
-  \         SGData              (object <SGData_table>`) Space group details as a 
+  \         SGData              (object) Space group details as a 
                                 :ref:`space group (SGData) <SGData_table>` 
-                                as defined in :func:`GSASIIspc.SpcGroup`.
+                                object, as defined in :func:`GSASIIspc.SpcGroup`.
   \         SH Texture          (dict) Spherical harmonic preferred orientation parameters
   \         Super               (int) dimension of super group (0,1 only)
   \         Type                (str) phase type (e.g. 'nuclear')

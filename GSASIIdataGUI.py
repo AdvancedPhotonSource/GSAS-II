@@ -3614,7 +3614,7 @@ class GSASII(wx.Frame):
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Image Controls'),Data)                                            
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],
                             'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]],
-                                     'SpotMask':{'esdMul':2,'spotMask':None}}
+                                     'SpotMask':{'esdMul':2.,'spotMask':None}}
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Masks'),Masks)
                         self.GPXtree.SetItemPyData(self.GPXtree.AppendItem(Id,text='Stress/Strain'),
                             {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})

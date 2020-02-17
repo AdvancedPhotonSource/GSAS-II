@@ -3008,7 +3008,7 @@ class G2Project(G2ObjectWrapper):
             ImgDict['Image Controls'] = Data
             ImgDict['Masks'] = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],
                                 'Frames':[],'Thresholds':[(0,Imax),[0,Imax]],
-                                'SpotMask':{'esdMul':2,'spotMask':None},
+                                'SpotMask':{'esdMul':2.,'spotMask':None},
                                     }
             ImgDict['Stress/Strain']  = {'Type':'True','d-zero':[],'Sample phi':0.0,
                                              'Sample z':0.0,'Sample load':0.0}

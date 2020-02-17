@@ -1638,6 +1638,7 @@ def UpdateMasks(G2frame,data):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
+                
                 G2fil.readMasks(filename,data,ignoreThreshold)
                 wx.CallAfter(UpdateMasks,G2frame,data)
                 G2plt.PlotExposedImage(G2frame,event=event)                
@@ -1659,7 +1660,9 @@ def UpdateMasks(G2frame,data):
             nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])
             dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+1,
                 style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+            time0 = time.time()
             Error = G2img.AutoSpotMasks2(G2frame.ImageZ,data,Controls,nChans,dlg)
+            print(' Autospot processing time: %.2f'%(time.time()-time0))
             if not Error is None:
                 G2frame.ErrorDialog('Auto spot search error',Error)
             wx.CallAfter(UpdateMasks,G2frame,data)
@@ -1859,7 +1862,7 @@ def UpdateMasks(G2frame,data):
         return maxSizer
     
     def OnDelBtn(event):
-        data['SpotMask'] = {'esdMul':2,'spotMask':None}
+        data['SpotMask'] = {'esdMul':2.,'spotMask':None}
         wx.CallAfter(UpdateMasks,G2frame,data)
                 
     
@@ -1913,7 +1916,7 @@ def UpdateMasks(G2frame,data):
     if 'Frames' not in data:
         data['Frames'] = []
     if 'SpotMask' not in data:
-        data['SpotMask'] = {'esdMul':2,'spotMask':None}
+        data['SpotMask'] = {'esdMul':2.,'spotMask':None}
     frame = data['Frames']             #3+ x,y pairs
     Arcs = data['Arcs']                 #radius, start/end azimuth, thickness
 
@@ -1941,6 +1944,7 @@ def UpdateMasks(G2frame,data):
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     spotSizer = wx.BoxSizer(wx.HORIZONTAL)
+    data['SpotMask']['esdMul'] = float(data['SpotMask']['esdMul'])
     spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select spot range factor (1-10): '),0,WACV)
     spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
         key='esdMul',min=1,max=10,size=(40,25)),0,WACV)
@@ -3199,8 +3203,7 @@ class AutoIntFrame(wx.Frame):
                 del self.ImageMasks['Thresholds']
         else:
             self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
-                                     'SpotMask':{'esdMul':2,'spotMask':None},
-                                   }
+                'SpotMask':{'esdMul':2.,'spotMask':None},}
         
     def StartLoop(self):
         '''Prepare to start autointegration timer loop. 

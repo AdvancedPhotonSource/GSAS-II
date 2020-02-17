@@ -612,14 +612,6 @@ class G2PlotNoteBook(wx.Panel):
                 Plot = mp3d.Axes3D(self.add3D(label))
             plotNum = self.plotList.index(label)
             Page = self.nb.GetPage(plotNum)
-            #def OnKeyTest(event): print('OnKeyTest Up')
-            #Page.canvas.Bind(wx.EVT_KEY_UP, OnKeyTest)
-            def OnKeyTest(event):
-                #event.Skip()
-                print('OnKeyTest down')
-                Page.canvas.SetFocus()
-                wx.PostEvent(Page.canvas,event)
-            Page.canvas.Bind(wx.EVT_KEY_DOWN, OnKeyTest)
 
         Page.plotInvalid = False # plot has just been drawn
         self.lastRaisedPlotTab = label

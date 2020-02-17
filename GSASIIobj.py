@@ -15,6 +15,12 @@
 This module defines and/or documents the data structures used in GSAS-II, as well
 as provides misc. support routines.
 
+.. Next command allows \AA to be used in HTML
+
+.. only:: html
+
+   html :math:`\\require{mediawiki-texvc}`
+
 .. _Constraints_table:
 
 .. index::
@@ -167,9 +173,9 @@ General         \               (dict) Overall information for the phase
   \         BondRadii           (list of floats) Default radius for each atom used to compute
                                 interatomic distances 
   \         Cell                (list with 8 items) cell refinement flag (bool)
-                                a, b, c, (Angstrom, float)
+                                a, b, c, (:math:`\\AA`, float)
                                 alpha, beta & gamma (degrees, float)
-                                volume (:math:`A^3`, float)
+                                volume (:math:`\AA^3`, float)
   \         Color               (list of (r,b,g) triplets) Colors for atoms 
   \         Compare             (dict) Polygon comparison parameters
   \         Data plot type      (str) data plot type ('Mustrain', 'Size' or
@@ -199,7 +205,8 @@ General         \               (dict) Overall information for the phase
   \         Pawley dmin         (float) maximum Q (as d-space) to use for Pawley extraction 
   \         Pawley dmax         (float) minimum Q (as d-space) to use for Pawley extraction 
   \         Pawley neg wt       (float) Restraint value for negative Pawley intensities
-  \         SGData              (object <SGData_table>`) Space group details as a :ref:`space group (SGData) 
+  \         SGData              (object <SGData_table>`) Space group details as a 
+                                :ref:`space group (SGData) <SGData_table>` 
                                 as defined in :func:`GSASIIspc.SpcGroup`.
   \         SH Texture          (dict) Spherical harmonic preferred orientation parameters
   \         Super               (int) dimension of super group (0,1 only)
@@ -218,16 +225,16 @@ Drawing         \               (dict) Display parameters
 \           Atoms               (list of lists) with an entry for each atom that is drawn
 \           Plane               (list) Controls for contour density plane display
 \           Quaternion          (4 element np.array) Viewing quaternion 
-\           Zclip               (float) clipping distance in A 
+\           Zclip               (float) clipping distance in :math:`\\AA`
 \           Zstep               (float) Step to de/increase Z-clip 
 \           atomPtrs            (list) positions of x, type, site sym, ADP flag in Draw Atoms 
 \           backColor           (list) background for plot as and R,G,B triplet
                                 (default = [0, 0, 0], black).
 \           ballScale           (float) Radius of spheres in ball-and-stick display 
 \           bondList            (dict) Bonds
-\           bondRadius          (float) Radius of binds in A 
-\           cameraPos           (float) Viewing position in A for plot 
-\           contourLevel        (float) map contour level in :math:`e/\\unicode{x212B}^3` 
+\           bondRadius          (float) Radius of binds in :math:`\\AA` 
+\           cameraPos           (float) Viewing position in :math:`\\AA` for plot 
+\           contourLevel        (float) map contour level in :math:`e/\\AA^3` 
 \           contourMax          (float) map contour maximum
 \           depthFog            (bool) True if use depthFog on plot - set currently as False 
 \           ellipseProb         (float) Probability limit for display of thermal
@@ -277,10 +284,8 @@ Histograms      \               (dict of dicts) The key for the outer dict is
                                 1. Isotropic/uniaxial parameters - list of 3 floats
                                 2. Refinement flags - list of 3 bools
                                 3. Microstrain axis - list of 3 ints, [h, k, l]
-                                4. Generalized mustrain parameters - list of 2-6
-                                  floats, depending on space group
-                                5. Generalized refinement flags - list of bools,
-                                  corresponding to the parameters of (4)
+                                4. Generalized mustrain parameters - list of 2-6 floats, depending on space group
+                                5. Generalized refinement flags - list of bools, corresponding to the parameters of (4)
 \           Pref.Ori.           (list) Preferred Orientation. List of eight parameters.
                                 Items marked SH are only used for Spherical Harmonics.
                                 
@@ -291,16 +296,16 @@ Histograms      \               (dict of dicts) The key for the outer dict is
                                 4. (int) SH - number of terms
                                 5. (dict) SH -  
                                 6. (list) SH
-                                7. (float) SH
+                                7. (float) SH 
 \           Scale               (list of [float, bool]) Phase fraction & refine flag
 \           Size                List of crystallite size parameters, in order:
+
                                 0. (str) Type, one of  u'isotropic', u'uniaxial', u'ellipsoidal'
                                 1. (list) Isotropic/uniaxial parameters - list of 3 floats
                                 2. (list) Refinement flags - list of 3 bools
                                 3. (list) Size axis - list of 3 ints, [h, k, l]
                                 4. (list) Ellipsoidal size parameters - list of 6 floats
-                                5. (list) Ellipsoidal refinement flags - list of bools,
-                                  corresponding to the parameters of (4)
+                                5. (list) Ellipsoidal refinement flags - list of bools, corresponding to the parameters of (4)
 \           Use                 (bool) True if this histogram is to be used in refinement
 \           newLeBail           (bool) Whether to perform a new LeBail extraction
 MCSA            \               (dict) Monte-Carlo simulated annealing parameters 
@@ -328,10 +333,10 @@ with defined refinable torsion angles.
 Vector      RBId                (dict of dict) vector rigid bodies 
 \           AtInfo              (dict) Drad, Color: atom drawing radius & color for each atom type 
 \           RBname              (str) Name assigned by user to rigid body 
-\           VectMag             (list) vector magnitudes in A 
+\           VectMag             (list) vector magnitudes in :math:`\\AA` 
 \           rbXYZ               (list of 3 float Cartesian coordinates for Vector rigid body )
 \           rbRef               (list of 3 int & 1 bool) 3 assigned reference atom nos. in rigid body for origin
-                                 definition, use center of atoms flag 
+                                definition, use center of atoms flag 
 \           VectRef             (list of bool refinement flags for VectMag values )
 \           rbTypes             (list of str) Atom types for each atom in rigid body 
 \           rbVect              (list of lists) Cartesian vectors for each translation used to build rigid body 
@@ -391,7 +396,7 @@ SGLatt      (str)Lattice centering type. Will be one of
             P, A, B, C, I, F, R 
 SGLaue      (str) one of the following 14 Laue classes:
             -1, 2/m, mmm, 4/m, 4/mmm, 3R,
-              3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m
+            3mR, 3, 3m1, 31m, 6/m, 6/mmm, m3, m3m
 SGOps       (list) symmetry operations as a list of form
             ``[[M1,T1], [M2,T2],...]``
             where :math:`M_n` is a 3x3 np.array
@@ -543,9 +548,9 @@ a key of ``Data``, as outlined below.
 
 .. tabularcolumns:: |p{1in}|p{1in}|p{4in}|
 
-======================  ===============  ===========================================================
-  key                      sub-key          explanation
-======================  ===============  ===========================================================
+======================     ===============  ===========================================================
+  key                       sub-key          explanation
+======================     ===============  ===========================================================
 Comments                    \               (list of str) Text strings extracted from the original powder
                                             data header. These cannot be changed by the user;
                                             it may be empty.
@@ -620,7 +625,7 @@ Data                        \               (list) The data consist of a list of
                                             3. the computed intensity values (Ycalc)
                                             4. the background values
                                             5. Yobs-Ycalc
-======================  ===============  ===========================================================
+======================     ===============  ===========================================================
 
 .. _CWPowder_table:
 
@@ -639,22 +644,22 @@ and a refinement flag which can have a value of True, False or 0 where 0 indicat
 cannot be refined. The first and second values are floats unless otherwise noted.
 Items not refined are noted as [*]
 
-.. tabularcolumns:: |p{1in}|p{4in}|
+.. tabularcolumns:: |l|p{1in}|p{4in}|
 
-======================      ===============  ===========================================================
-  key                           sub-key        explanation
-======================      ===============  ===========================================================
+========================    ===============  ===========================================================
+  key                       sub-key           explanation
+========================    ===============  ===========================================================
 Instrument Parameters[0]    Type [*]            (str) Histogram type:
                                                 * 'PXC' for constant wavelength x-ray
                                                 * 'PNC' for constant wavelength neutron
 \                           Bank [*]            (int) Data set number in a multidata file (usually 1)
-\                           Lam                 (float) Specifies a wavelength in :math:`\\unicode{x212B}`
+\                           Lam                 (float) Specifies a wavelength in :math:`\\AA`
 \                           Lam1 [*]            (float) Specifies the primary wavelength in
-                                                :math:`\\unicode{x212B}`, used in place of Lam 
+                                                :math:`\\AA`, used in place of Lam 
                                                 when an :math:`\\alpha_1, \\alpha_2`
                                                 source is used.
 \                           Lam2 [*]            (float) Specifies the secondary wavelength in
-                                                :math:`\\unicode{x212B}`, used with Lam1
+                                                :math:`\\AA`, used with Lam1
 \                           I(L2)/I(L1)         (float) Ratio of Lam2 to Lam1, used with Lam1
 \                           Zero                (float) Two-theta zero correction in *degrees*
 \                           Azimuth [*]         (float) Azimuthal setting angle for data recorded with differing setting angles
@@ -670,7 +675,7 @@ Instrument Parameters[0]    Type [*]            (str) Histogram type:
                                                 L is the goniometer diameter.
 \                           Polariz.            (float) Polarization coefficient. 
 Instrument Parameters[1]                        (empty dict)
-======================  ===============      ===========================================================
+========================    ===============  ===========================================================
 
 .. _TOFPowder_table:
 
@@ -689,11 +694,11 @@ and a refinement flag which can have a value of True, False or 0 where 0 indicat
 cannot be refined. The first and second values are floats unless otherwise noted.
 Items not refined are noted as [*]
 
-.. tabularcolumns:: |p{1.5in}|p{4in}|
+.. tabularcolumns:: |l|p{1.5in}|p{4in}|
 
-======================      ===============  ===========================================================
-  key                           sub-key         explanation
-======================      ===============  ===========================================================
+========================    ===============  ===========================================================
+  key                        sub-key          explanation
+========================    ===============  ===========================================================
 Instrument Parameters[0]    Type [*]            (str) Histogram type:
                                                 * 'PNT' for time of flight neutron
 \                           Bank                (int) Data set number in a multidata file
@@ -716,8 +721,8 @@ Instrument Parameters[0]    Type [*]            (str) Histogram type:
 Instrument Parameters[1]    Pdabc               (list of 4 float lists) Originally created for use in gsas as optional tables 
                                                 of d, alp, bet, d-true; for a reflection alpha & beta are obtained via interpolation
                                                 from the d-spacing and these tables. The d-true column is apparently unused.
- 
-======================      ===============  ===========================================================
+========================    ===============  ===========================================================
+
 
 .. _PowderRefl_table:
 
@@ -737,7 +742,7 @@ reflections. The columns in that array are documented below.
 ==========  ====================================================
  0,1,2          h,k,l (float)
  3              (int) multiplicity
- 4              (float) d-space, :math:`\\unicode{x212B}`
+ 4              (float) d-space, :math:`\\AA`
  5              (float) pos, two-theta
  6              (float) sig, Gaussian width
  7              (float) gam, Lorenzian width
@@ -788,7 +793,7 @@ Instrument Parameters       \               (list) containing two dicts where th
                                             the initial value, the current value.
                                             The first and second
                                             values are floats unless otherwise noted.
-\                           Lam             (two floats) Specifies a wavelength in :math:`\\unicode{x212B}` 
+\                           Lam             (two floats) Specifies a wavelength in :math:`\\AA` 
 \                           Type            (two str values) Histogram type :
                                             * 'SXC' for constant wavelength x-ray
                                             * 'SNC' for constant wavelength neutron
@@ -820,12 +825,14 @@ For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
 The columns in that array are documented below.
 
+.. tabularcolumns:: |l|p{4in}|
+
 ==========  ====================================================
   index         explanation
 ==========  ====================================================
  0,1,2          (float) h,k,l 
  3              (int) multiplicity
- 4              (float) d-space, :math:`\\unicode{x212B}`
+ 4              (float) d-space, :math:`\\AA`
  5              (float) :math:`F_{obs}^2`
  6              (float) :math:`\sigma(F_{obs}^2)`
  7              (float) :math:`F_{calc}^2`
@@ -833,8 +840,8 @@ The columns in that array are documented below.
  9              (float) :math:`F_{calc}^2T`
  10             (float) reflection phase, in degrees
  11             (float) intensity correction for reflection, this times
-                 :math:`F_{obs}^2` or :math:`F_{calc}^2`
-                 gives Iobs or Icalc
+                :math:`F_{obs}^2` or :math:`F_{calc}^2`
+                gives Iobs or Icalc
 ==========  ====================================================
 
 .. _Image_table:
@@ -930,7 +937,7 @@ Image Controls              azmthOff            (float) The offset to be applied
 \                           size                (list:int) The number of pixels on the image x & y axes
 \                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
 \                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
-\                           wavelength          (float) The radiation wavelength (Angstrom) as entered by the user 
+\                           wavelength          (float) The radiation wavelength (:math:`\\AA`) as entered by the user 
                                                 (or someday obtained from the image header).
 Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
                                                 to be excluded from integration
@@ -2363,7 +2370,7 @@ class ImportImage(ImportBaseclass):
         data items are needed:
 
          * 'pixelSize': size of each pixel in microns (such as ``[200.,200.]``.
-         * 'wavelength': wavelength in Angstrom.
+         * 'wavelength': wavelength in :math:`\\AA`.
          * 'distance': distance of detector from sample in cm.
          * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
          * 'size': size of image (such as ``[2048,2048]``).

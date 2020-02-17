@@ -205,6 +205,9 @@ latex_elements = {
 
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
+
+#this allows \AA to be used in equations 
+'preamble': '\\global\\renewcommand{\\AA}{\\text{\\r{A}}}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

@@ -8387,7 +8387,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-                'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,
+                'DisplaceY':[0.0,False],'Temperature':300.,'Pressure':1.0,
                     'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
                     'Gonio. radius':200.0}
             G2frame.GPXtree.SetItemPyData(item,data)

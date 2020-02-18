@@ -2567,16 +2567,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     Bmean = np.mean(Bonds['Obonds'])
                     Bstd = np.std(Bonds['Obonds'])
                     title = '%s-%s Octahedral bond lengths'%(Oatoms,Tatoms)                    
-                    G2plt.PlotBarGraph(G2frame,Bonds['Obonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Bond')
+                    G2plt.PlotBarGraph(G2frame,Bonds['Obonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Oct-Bond')
                     Tilts['Otilts'] = np.array(Tilts['Otilts'])
                     Tmean = np.mean(Tilts['Otilts'])
                     Tstd = np.std(Tilts['Otilts'])                    
                     G2plt.PlotBarGraph(G2frame,Tilts['Otilts'],Xname='Tilts, deg',
-                        Title='Octahedral %s tilts'%Oatoms,PlotName='Tilts')
+                        Title='Octahedral %s tilts'%Oatoms,PlotName='Oct-Tilts')
                     dVects['Ovec'] = np.reshape(np.array(dVects['Ovec']),(-1,3))
                     for ix,aX in enumerate(['X','Y','Z']):                        
                         G2plt.PlotBarGraph(G2frame,dVects['Ovec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
-                            Title='%s Octahedral distortion'%Oatoms,PlotName='%s-Delta'%aX)
+                            Title='%s Octahedral distortion'%Oatoms,PlotName='Oct %s-Delta'%aX)
                     Vects['Ovec'] = np.array(Vects['Ovec'])                    #3D plot of tilt vectors                    
                     X = Vects['Ovec'].T[0]
                     Y = Vects['Ovec'].T[1]
@@ -2592,16 +2592,16 @@ def UpdatePhaseData(G2frame,Item,data):
                     Bmean = np.mean(Bonds['Tbonds'])
                     Bstd = np.std(Bonds['Tbonds'])
                     title = '%s-%s Terahedral bond lengths'%(Oatoms,Tatoms)
-                    G2plt.PlotBarGraph(G2frame,Bonds['Tbonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Bond')
+                    G2plt.PlotBarGraph(G2frame,Bonds['Tbonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Tet-Bond')
                     Tilts['Ttilts'] = np.array(Tilts['Ttilts'])
                     Tmean = np.mean(Tilts['Ttilts'])
                     Tstd = np.std(Tilts['Ttilts'])
                     G2plt.PlotBarGraph(G2frame,Tilts['Ttilts'],Xname='Tilts, deg',
-                        Title='Tetrahedral %s tilts'%Oatoms,PlotName='Tilts')
+                        Title='Tetrahedral %s tilts'%Oatoms,PlotName='Tet-Tilts')
                     dVects['Tvec'] = np.reshape(np.array(dVects['Tvec']),(-1,3))
                     for ix,aX in enumerate(['X','Y','Z']):
                         G2plt.PlotBarGraph(G2frame,dVects['Tvec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
-                            Title='%s Tetrahedral distortion'%Oatoms,PlotName='%s-Delta'%aX)                
+                            Title='%s Tetrahedral distortion'%Oatoms,PlotName='Tet %s-Delta'%aX)                
                     Vects['Tvec'] = np.array(Vects['Tvec'])
                     X = Vects['Tvec'].T[0]
                     Y = Vects['Tvec'].T[1]

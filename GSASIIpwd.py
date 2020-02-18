@@ -2260,7 +2260,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
                 if '+' in atcode[1]:
                     cell = eval(atcode[1].split('+')[1])
                 fl.write('%6d%4s  [%s]%19.15f%19.15f%19.15f%6d%4d%4d%4d\n'%(       
-                        nat,atom[1],atcode[0],atom[3],atom[4],atom[5],(iat)%Natm+1,cell[0],cell[1],cell[2]))
+                        nat,atom[1].strip(),atcode[0],atom[3],atom[4],atom[5],(iat)%Natm+1,cell[0],cell[1],cell[2]))
     fl.close()
     return fname,reset
 

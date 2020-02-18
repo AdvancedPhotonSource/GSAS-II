@@ -5443,8 +5443,28 @@ freshStart     = False      #make TRUE for a restart
                         XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                         Names = [name for name in Names if 'Va' not in name]
                     else:
-                        XY = [[X.T,(DX*Y.T)+Ymin] for Y in Partials]
-                    if 'G(R)' in Labels[label][1]:
+                        XY = [[X.T,(DX*Y.T)] for Y in Partials]
+                    if 'G(R)' in Labels[label][1]:      #only for neutrons
+                        sumAtm = 0
+                        BLtables = G2elem.GetBLtable(generalData)
+                        AtNum = generalData['NoAtoms']
+                        for atm in AtNum: sumAtm += AtNum[atm]
+                        bfac = {}
+                        bcorr = []
+                        for atm in AtNum:
+                            if 'SL' in BLtables[atm][1]:
+                                bfac[atm] = BLtables[atm][1]['SL'][0]*AtNum[atm]/sumAtm
+                            else:   #resonant scatters (unlikely!)
+                                bfac[atm] = AtNum[atm]/sumAtm
+                        for name in Names:
+                            if '-' in name:
+                                at1,at2 = name.strip().split('-')
+                                bcorr.append(100.*bfac[at1]*bfac[at2])  #scale to pm^2
+                                if at1 == at2:
+                                    bcorr[-1] /= 2.         #no double counting
+                        for ixy,xy in enumerate(XY):
+                            xy[1] *= bcorr[ixy]
+                            xy[1] += Ymin
                         Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
                         G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
                             labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,

@@ -4700,11 +4700,11 @@ def UpdatePhaseData(G2frame,Item,data):
                 wx.CallAfter(UpdateRMC)
                 
             def OnAddFxCN(event):
-                RMCPdict['FxCN'].append(['','',0.0,2.0,6,1.0,0.001])
+                RMCPdict['FxCN'].append(['','',0.5,2.0,6,1.0,0.00001])
                 wx.CallAfter(UpdateRMC)
                 
             def OnAddAveCN(event):
-                RMCPdict['AveCN'].append(['','',0.0,2.0,6.,0.001])
+                RMCPdict['AveCN'].append(['','',0.5,2.0,6.,0.00001])
                 wx.CallAfter(UpdateRMC)
                 
             def OnAddAnglePot(event):
@@ -4894,7 +4894,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 fxcnLabels = [' ','Atom-1','Atom-2','min dist','max dist','CN','weight']
                 for lab in fxcnLabels:
                     avcnSizer.Add(wx.StaticText(G2frame.FRMC,label=lab),0,WACV)
-                for ifx,fxCN in enumerate(RMCPdict['FxCN']):
+                for ifx,fxCN in enumerate(RMCPdict['AveCN']):
                     delBtn = wx.Button(G2frame.FRMC,label='Delete')
                     delBtn.Bind(wx.EVT_BUTTON,OnDelAvCN)
                     Indx[delBtn.GetId()] = ifx

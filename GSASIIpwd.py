@@ -2287,7 +2287,6 @@ def MakeBragg(G2frame,Name,Phase,PWId):
             fl.write('%12.8f%12.6f\n'%(Data[0][i]/1000.,Data[1][i]))
     else:
         fl.write('%12s%12s\n'%('   2-theta, deg','  I(obs)'))
-        DT = np.diff(Data[0])
         for i in range(Ibeg,Ifin-1):
             fl.write('%11.6f%15.2f\n'%(Data[0][i],Data[1][i]))        
     fl.close()
@@ -2398,20 +2397,24 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
                     break
                 fl.write('  > SWAP_ATOMS :: %d %d %.2f\n'%(at1,at2,swap[2]))
         
-    for ifx,fxcn in enumerate(RMCPdict['FxCN']):
-        try:
-            at1 = Atseq.index(fxcn[0])
-            at2 = Atseq.index(fxcn[1])
-        except ValueError:
-            break
-        fl.write('CSTR%d :: %d %d %.2f %.2f %d %.2d %.6f\n'%(ifx+1,at1,at2,fxcn[2],fxcn[3],fxcn[4],fxcn[5],fxcn[6]))
-    for iav,avcn in enumerate(RMCPdict['AveCN']):
-        try:
-            at1 = Atseq.index(avcn[0])
-            at2 = Atseq.index(avcn[1])
-        except ValueError:
-            break
-        fl.write('CAVSTR%d :: %d %d %.2f %.2f %d %.2d %.6f\n'%(iav+1,at1,at2,avcn[2],avcn[3],avcn[4],avcn[5]))
+    if len(RMCPdict['FxCN']):
+        fl.write('FIXED_COORDINATION_CONSTRAINTS ::  %d\n'%len(RMCPdict['FxCN']))        
+        for ifx,fxcn in enumerate(RMCPdict['FxCN']):
+            try:
+                at1 = Atseq.index(fxcn[0])
+                at2 = Atseq.index(fxcn[1])
+            except ValueError:
+                break
+            fl.write('  > CSTR%d ::   %d %d %.2f %.2f %.2f %.2f %.6f\n'%(ifx+1,at1+1,at2+1,fxcn[2],fxcn[3],fxcn[4],fxcn[5],fxcn[6]))
+    if len(RMCPdict['AveCN']):
+        fl.write('AVERAGE_COORDINATION_CONSTRAINTS ::  %d\n'%len(RMCPdict['AveCN']))
+        for iav,avcn in enumerate(RMCPdict['AveCN']):
+            try:
+                at1 = Atseq.index(avcn[0])
+                at2 = Atseq.index(avcn[1])
+            except ValueError:
+                break
+            fl.write('  > CAVSTR%d ::   %d %d %.2f %.2f %.2f %.6f\n'%(iav+1,at1+1,at2+1,avcn[2],avcn[3],avcn[4],avcn[5]))
     for File in Files:
         if Files[File][0]:
             if 'Xray' in File and 'F(Q)' in File:

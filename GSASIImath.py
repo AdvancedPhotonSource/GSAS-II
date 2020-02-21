@@ -3009,6 +3009,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             Mat = np.concatenate((Mat,mat))
         sumD = np.sum(np.abs(Mat))
         R = min(100.,100.*sumD/sumObs)
+        pgbar.Raise()
         pgbar.Update(R,newmsg='Residual = %5.2f'%(R))
         print (' Residual: %.3f%%'%(R))
         return Mat
@@ -3174,6 +3175,7 @@ def OmitMap(data,reflDict,pgbar=None):
         rho1 = np.real(fft.fftn(fft.fftshift(OFhkl)))*(1.+0j)
         rho_omit[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]] = np.copy(rho1[iB[0]:iF[0],iB[1]:iF[1],iB[2]:iF[2]])
         nBlk += 1
+        pgbar.Raise()
         pgbar.Update(nBlk)
     mapData['rho'] = np.real(rho_omit)/cell[6]
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))

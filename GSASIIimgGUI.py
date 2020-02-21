@@ -465,6 +465,7 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                     oldData = {'tilt':0.,'distance':0.,'rotation':0.,'center':[0.,0.],'DetDepth':0.,'azmthOff':0.}
                     oldMhash = 0
                     for icnt,item in enumerate(items):
+                        dlgp.Raise()
                         GoOn = dlgp.Update(icnt)
                         if not GoOn[0]:
                             break
@@ -1657,21 +1658,19 @@ def UpdateMasks(G2frame,data):
             dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
             x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
             x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]    
-            nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])
-            dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+1,
+            nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
+            dlg = wx.ProgressDialog("Auto spot masking for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
                 style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
             time0 = time.time()
-            Error = G2img.AutoSpotMasks2(G2frame.ImageZ,data,Controls,nChans,dlg)
-            print(' Autospot processing time: %.2f'%(time.time()-time0))
-            if not Error is None:
-                G2frame.ErrorDialog('Auto spot search error',Error)
+            data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
+            print(' Autospot processing time: %.2f m'%((time.time()-time0)/60.))
             wx.CallAfter(UpdateMasks,G2frame,data)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
     def OnDeleteSpotMask(event):
         data['Points'] = []
         wx.CallAfter(UpdateMasks,G2frame,data)
-        wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)          
+        G2plt.PlotExposedImage(G2frame,newPlot=True,event=event)          
             
     def ToggleSpotMaskMode(event):
         G2plt.ToggleMultiSpotMask(G2frame)
@@ -1862,7 +1861,7 @@ def UpdateMasks(G2frame,data):
         return maxSizer
     
     def OnDelBtn(event):
-        data['SpotMask'] = {'esdMul':2.,'spotMask':None}
+        data['SpotMask'] = {'esdMul':3.,'spotMask':None}
         wx.CallAfter(UpdateMasks,G2frame,data)
                 
     
@@ -1916,7 +1915,7 @@ def UpdateMasks(G2frame,data):
     if 'Frames' not in data:
         data['Frames'] = []
     if 'SpotMask' not in data:
-        data['SpotMask'] = {'esdMul':2.,'spotMask':None}
+        data['SpotMask'] = {'esdMul':3.,'spotMask':None}
     frame = data['Frames']             #3+ x,y pairs
     Arcs = data['Arcs']                 #radius, start/end azimuth, thickness
 
@@ -1945,7 +1944,7 @@ def UpdateMasks(G2frame,data):
     mainSizer.Add(littleSizer,0,)
     spotSizer = wx.BoxSizer(wx.HORIZONTAL)
     data['SpotMask']['esdMul'] = float(data['SpotMask']['esdMul'])
-    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select spot range factor (1-10): '),0,WACV)
+    spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select n*sigma spot rejection (n=1-10): '),0,WACV)
     spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
         key='esdMul',min=1,max=10,size=(40,25)),0,WACV)
     numPix = 0
@@ -2327,6 +2326,7 @@ def UpdateStressStrain(G2frame,data):
             variables = []
             for i,name in enumerate(names):
                 print (' Sequential strain fit for '+name)
+                dlg.Raise()
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     break
@@ -3203,7 +3203,7 @@ class AutoIntFrame(wx.Frame):
                 del self.ImageMasks['Thresholds']
         else:
             self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],
-                'SpotMask':{'esdMul':2.,'spotMask':None},}
+                'SpotMask':{'esdMul':3.,'spotMask':None},}
         
     def StartLoop(self):
         '''Prepare to start autointegration timer loop. 

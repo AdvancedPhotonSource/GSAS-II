@@ -864,6 +864,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         else:
             if dlg:
 #                GoOn,Skip = dlg.Update(100*Nc/ncMax)   #wx error doesn't work in 32 bit versions!
+                dlg.Raise()
                 GoOn = dlg.Update(100*Nc/ncMax)[0]
                 if Skip or not GoOn:
                     GoOn = False
@@ -955,6 +956,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
             cycle = 0
             while cycle < 5:
                 if dlg:
+                    dlg.Raise()
                     dlg.Update(0,newmsg=tries[cycle]+" cell search for "+bravaisNames[ibrav])
                 try:
                     GoOn = True

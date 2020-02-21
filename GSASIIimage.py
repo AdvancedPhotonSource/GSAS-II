@@ -22,6 +22,7 @@ import numpy.linalg as nl
 import numpy.ma as ma
 from scipy.optimize import leastsq
 import scipy.interpolate as scint
+import scipy.special as sc
 import copy
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -1459,83 +1460,32 @@ def FitImageSpots(Image,ImMax,ind,pixSize,nxy,spotSize=1.0):
         else:
             return None
     
-def AutoSpotMasks(Image,Masks,Controls):
+def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
     
-    G2fil.G2Print ('auto spot search')
-    nxy = 15
-    rollImage = lambda rho,roll: np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1)
-    pixelSize = Controls['pixelSize']
-    spotMask = ma.array(Image,mask=(Image<np.mean(Image)))
-    indices = (-1,0,1)
-    rolls = np.array([[ix,iy] for ix in indices for iy in indices])
-    time0 = time.time()
-    for roll in rolls:
-        if np.any(roll):        #avoid [0,0]
-            spotMask = ma.array(spotMask,mask=(spotMask-rollImage(Image,roll)<0.),dtype=float)
-    mags = spotMask[spotMask.nonzero()]
-    indx = np.transpose(spotMask.nonzero())
-    size1 = mags.shape[0]
-    magind = [[indx[0][0],indx[0][1],mags[0]],]
-    for ind,mag in list(zip(indx,mags))[1:]:        #remove duplicates
-#            ind[0],ind[1],I,J = ImageLocalMax(Image,nxy,ind[0],ind[1])
-        if (magind[-1][0]-ind[0])**2+(magind[-1][1]-ind[1])**2 > 16:
-            magind.append([ind[0],ind[1],Image[ind[0],ind[1]]])  
-    magind = np.array(magind).T
-    indx = np.array(magind[0:2],dtype=np.int32)
-    mags = magind[2]
-    size2 = mags.shape[0]
-    G2fil.G2Print ('Initial search done: %d -->%d %.2fs'%(size1,size2,time.time()-time0))
-    nx,ny = Image.shape
-    ImMax = np.max(Image)
-    peaks = []
-    nxy2 = nxy//2
-    mult = 0.001
-    num = 1e6
-    while num>500:
-        mult += .0001            
-        minM = mult*np.max(mags)
-        num = ma.count(ma.array(mags,mask=mags<=minM))
-        G2fil.G2Print('try',mult,minM,num)
-    minM = mult*np.max(mags)
-    G2fil.G2Print ('Find biggest spots:',mult,num,minM)
-    for i,mag in enumerate(mags):
-        if mag > minM:
-            if (nxy2 < indx[0][i] < nx-nxy2-1) and (nxy2 < indx[1][i] < ny-nxy2-1):
-#                    G2fil.G2Print ('try:%d %d %d %.2f'%(i,indx[0][i],indx[1][i],mags[i]))
-                peak = FitImageSpots(Image,ImMax,[indx[1][i],indx[0][i]],pixelSize,nxy)
-                if peak and not any(np.isnan(np.array(peak))):
-                    peaks.append(peak)
-#                    G2fil.G2Print (' Spot found: %s'%str(peak))
-    peaks = G2mth.sortArray(G2mth.sortArray(peaks,1),0)
-    Peaks = [peaks[0],]
-    for peak in peaks[1:]:
-        if GetDsp(peak[0],peak[1],Controls) >= 1.:      #toss non-diamond low angle spots
-            continue
-        if (peak[0]-Peaks[-1][0])**2+(peak[1]-Peaks[-1][1])**2 > peak[2]*Peaks[-1][2] :
-            Peaks.append(peak)
-#            G2fil.G2Print (' Spot found: %s'%str(peak))
-    G2fil.G2Print ('Spots found: %d time %.2fs'%(len(Peaks),time.time()-time0))
-    Masks['Points'] = Peaks
-    return None
-
-def AutoSpotMasks2(Image,Masks,Controls,numChans,dlg=None):
-    
+    frame = Masks['Frames']
+    tam = ma.make_mask_none(Image.shape)
+    if frame:
+        tam = ma.mask_or(tam,MakeFrameMask(Controls,frame))
     LUtth = np.array(Controls['IOtth'])
     dtth = (LUtth[1]-LUtth[0])/numChans
     esdMul = Masks['SpotMask']['esdMul']
+    prob = 100.*sc.erf(esdMul/np.sqrt(2.))
+    print(' Spots greater than %.2f of band intensity are masked'%prob)
     mask = ma.make_mask_none(Image.shape)
     band = ma.array(Image,mask=ma.nomask)
     TA = Make2ThetaAzimuthMap(Controls,(0,Image.shape[0]),(0,Image.shape[1]))[0]    #2-theta array
     TThs = np.linspace(LUtth[0],LUtth[1],numChans,False)
     for it,TTh in enumerate(TThs):
-        band.mask = ma.masked_outside(TA,TTh,TTh+dtth).mask
-        std = ma.std(band)
-        anom = band.anom()/std
-        anom = ma.masked_greater(anom,esdMul,copy=False)
+        band.mask = ma.masked_outside(TA,TTh,TTh+dtth).mask+tam
+        pcmax = np.percentile(band,prob)
+        mband = ma.masked_greater(band,pcmax)
+        mean = ma.median(mband)
+        std = ma.std(mband)
+        anom = ma.masked_greater((band-mean)/std,esdMul)
         mask ^= (anom.mask^band.mask)
         if not dlg is None:
+            dlg.Raise()
             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))
             if not GoOn[0]:
                 break
-    Masks['SpotMask']['spotMask'] = mask
-    return None
+    return mask

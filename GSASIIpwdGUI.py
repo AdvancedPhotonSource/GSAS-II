@@ -820,6 +820,7 @@ def UpdatePeakGrid(G2frame, data):
         try:
             for i,name in enumerate(names):
                 print (' Sequential fit for '+name)
+                dlg.Raise()
                 GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
                 if not GoOn:
                     dlg.Destroy()

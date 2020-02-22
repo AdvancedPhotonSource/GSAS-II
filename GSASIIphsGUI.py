@@ -5378,8 +5378,8 @@ freshStart     = False      #make TRUE for a restart
                     files[item] = OutFile.readlines()
                     OutFile.close()
                     print('RMCProfile file %s read'%(pName+item))
-                else:
-                    print('RMCProfile file %s not found'%(pName+item))
+#                else:
+#                    print('RMCProfile file %s not found'%(pName+item))
 #total result plots
             Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
                 '_PDF2.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
@@ -5501,7 +5501,8 @@ freshStart     = False      #make TRUE for a restart
                         odfData = np.fromfile(OutFile,sep=' ')
                         numx,numy = odfData[:2]
                         G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],
-                            newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]),Centro=True)        
+                            newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]),Centro=True)  
+                    OutFile.close()
         
             
 ################################################################################

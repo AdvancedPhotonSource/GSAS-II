@@ -1946,7 +1946,7 @@ def UpdateMasks(G2frame,data):
     data['SpotMask']['esdMul'] = float(data['SpotMask']['esdMul'])
     spotSizer.Add(wx.StaticText(G2frame.dataWindow,label=' Select n*sigma spot rejection (n=1-10): '),0,WACV)
     spotSizer.Add(G2G.ValidatedTxtCtrl(G2frame.dataWindow,loc=data['SpotMask'],
-        key='esdMul',min=1,max=10,size=(40,25)),0,WACV)
+        key='esdMul',min=1.,max=10.,size=(40,25)),0,WACV)
     numPix = 0
     if data['SpotMask']['spotMask'] is not None:
         numPix = np.count_nonzero(data['SpotMask']['spotMask'])

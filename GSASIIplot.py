@@ -5232,7 +5232,10 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
     
     if np.any(X) and np.any(Y) and np.any(Z):
         np.seterr(all='ignore')
-        Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+        try:
+            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+        except:
+            pass
         xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
         XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
 #        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])

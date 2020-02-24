@@ -948,6 +948,40 @@ The files used for this exercise are found in the
         img.saveControls(os.path.splitext(img.name)[0]+'.imctrl')
     gpx.save()
 
+.. _HistExport:
+
+--------------------
+Histogram Export
+--------------------
+
+This example shows how to export a series of histograms from a collection of 
+.gpx (project) files. The Python ``glob()`` function is used to find all files 
+matching a wildcard in the specified directory (``dataloc``). For each file 
+there is a loop over histograms in that project and for each histogram 
+:meth:`G2PwdrData.Export` is called to write out the contents of that histogram
+as CSV (comma-separated variable) file that contains data positions, 
+observed, computed and backgroun intensities as well as weighting for each 
+point and Q. Note that for the Export call, there is more than one choice of
+exporter that can write ``.csv`` extension files, so the export hint must 
+be specified. 
+
+.. code-block::  python
+
+    import os,sys,glob
+    sys.path.insert(0,'/Users/toby/software/G2/GSASII')  # change this
+    import GSASIIscriptable as G2sc
+
+    dataloc = "/Users/toby/Scratch/"                 # where to find data 
+    PathWrap = lambda fil: os.path.join(dataloc,fil) # EZ way 2 add dir to filename
+
+    for f in glob.glob(PathWrap('bkg*.gpx')):  # put filename prefix here
+        print(f)
+        gpx = G2sc.G2Project(f)
+        for i,h in enumerate(gpx.histograms()):
+            hfil = os.path.splitext(f)[0]+'_'+str(i) # file to write
+            print('\t',h.name,hfil+'.csv')
+            h.Export(hfil,'.csv','histogram CSV')
+
 .. _CommandlineInterface:
 
 =======================================

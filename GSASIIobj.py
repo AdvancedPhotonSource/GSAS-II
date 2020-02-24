@@ -172,11 +172,13 @@ General         \               (dict) Overall information for the phase
   \         AtomTypes           (llist of str) Atom types
   \         BondRadii           (list of floats) Default radius for each atom used to compute
                                 interatomic distances 
-  \         Cell                (list with 8 items, all float, except first 
-                                item is bool) cell refinement flag,
-                                a, b, c, (:math:`\\AA`)
-                                alpha, beta & gamma (degrees)
-                                volume (:math:`\AA^3`)
+  \         Cell                Unit cell parameters & ref. flag
+                                (list with 8 items. All but first item are float.)
+
+                                 0: cell refinement flag (True/False),
+                                 1-3: a, b, c, (:math:`\\AA`)
+                                 4-6: alpha, beta & gamma, (degrees)
+                                 7: volume (:math:`\\AA^3`)
   \         Color               (list of (r,b,g) triplets) Colors for atoms 
   \         Compare             (dict) Polygon comparison parameters
   \         Data plot type      (str) data plot type ('Mustrain', 'Size' or

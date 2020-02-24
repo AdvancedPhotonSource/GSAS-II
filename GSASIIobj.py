@@ -173,7 +173,7 @@ General         \               (dict) Overall information for the phase
   \         BondRadii           (list of floats) Default radius for each atom used to compute
                                 interatomic distances 
   \         Cell                (list with 8 items, all float, except first 
-                                item is bool) cell refinement flag
+                                item is bool) cell refinement flag,
                                 a, b, c, (:math:`\\AA`)
                                 alpha, beta & gamma (degrees)
                                 volume (:math:`\AA^3`)

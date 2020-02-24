@@ -3679,9 +3679,10 @@ class G2PwdrData(G2ObjectWrapper):
            will be generated showing the possible choices.
         :returns: name of file that was written
         '''
+        LoadG2fil()
         if extension not in exportersByExtension.get('powder',[]):
             print('Defined exporters are:')
-            print('  ',list(exportersByExtension.get('powder',[]).keys()))
+            print('  ',list(exportersByExtension.get('powder',[])))
             raise G2ScriptException('No Writer for file type = "'+extension+'"')
         fil = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
         obj = exportersByExtension['powder'][extension]

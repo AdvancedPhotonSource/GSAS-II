@@ -2545,9 +2545,6 @@ def UpdatePhaseData(G2frame,Item,data):
         
         def compareSizer():
             
-#            generalData['Compare'] = {'Oatom':'','Tatom':'','Tilts':{'Otilts':[],'Ttilts':[]},
-#                'Bonds':{'Obonds':[],'Tbonds':[]},'Vects':{'Ovec':[],'Tvec':[]},
-#                'dVects':{'Ovec':[],'Tvec':[]}}
             def OnOatmOsel(event):
                 generalData['Compare']['Oatoms'] = oatmsel.GetStringSelection()
                 
@@ -2832,6 +2829,9 @@ def UpdatePhaseData(G2frame,Item,data):
         dVects = generalData['Compare']['dVects']
         dVects.update({'Ovec':[],'Tvec':[]})
         Oatoms = generalData['Compare']['Oatoms']
+        nOct = 0
+        nTet = 0
+        nElse = 0
         for atom in data['Atoms']:
             if atom[ct] == Oatoms:
                 results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames)[0]      #slow step
@@ -2841,18 +2841,23 @@ def UpdatePhaseData(G2frame,Item,data):
                     Tilts['Ttilts'].append(A)
                     Vects['Tvec'].append(V)
                     dVects['Tvec'].append(dVec)
+                    nTet += 1
                 elif len(results) == 6:
                     bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindOctahedron(results)
                     Bonds['Obonds'].append(bond)
                     Tilts['Otilts'].append(A)
                     Vects['Ovec'].append(V)
                     dVects['Ovec'].append(dVec)
+                    nOct += 1
                 else:
                     print('%s is something else with %d vertices'%(atom[ct-1],len(results)))
+                    nElse += 1
             GoOn = pgbar.Update(iAtm,newmsg='Atoms done=%d'%(iAtm))
             iAtm += 1
             if not GoOn[0]:
+                print(' Compare aborted')
                 break
+        print(' Compare finished; nOct =  %d, nTet = %d, nOther = %d'%(nOct,nTet,nElse))
         pgbar.Destroy()
         wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
         
@@ -4617,7 +4622,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
                           'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
                           'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
-                          'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
+#                          'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
                           'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
                 runTimes = [10.,1.]
                 metadata = {'title':'none','owner':'no one','date':str(time.ctime()),'temperature':'300K',
@@ -4630,31 +4635,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     }}
             RMCPdict = data['RMC']['RMCProfile']
 #patches
-#            if 'runTimes' not in RMCPdict:
-#                RMCPdict['runTimes'] = [10.0,1.0]
-#            lenA = len(RMCPdict['atSeq'])
-#            if 'Oxid' not in RMCPdict:
-#                RMCPdict['Oxid'] = [[atmdata.BVSoxid[atm][0],0.001] for atm in RMCPdict['atSeq']]
-#            Pairs= []
-#            for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i,lenA)] for i in range(lenA)]:
-#                Pairs += pair
-#            RMCPdict['Pairs'] = dict(zip(Pairs,[RMCPdict['Pairs'].get(pair,[0.0,0.0,0.0]) for pair in Pairs]))
-#            BVSpairs = []
-#            if 'BVS' not in RMCPdict:
-#                RMCPdict['useBVS'] = False
-#                RMCPdict['BVS'] = {}
-#            if lenA > 1:
-#                for pair in [[' %s-%s'%(RMCPdict['atSeq'][i],RMCPdict['atSeq'][j]) for j in range(i+1,lenA)] for i in range(lenA)]:
-#                    BVSpairs += pair
-#                RMCPdict['BVS'] = dict(zip(BVSpairs,[RMCPdict['BVS'].get(pair,[0.0,0.0,0.0]) for pair in BVSpairs]))
-#            if 'FxCN' not in RMCPdict:
-#                RMCPdict.update({'AveCN':[],'FxCN':[]})
-#            if 'Potentials' not in RMCPdict:
-#                RMCPdict.update({'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],'Stretch search':10.,'Pot. Temp.':300.,}})
-#            if 'Pot. Temp.' not in RMCPdict['Potentials']:
-#                RMCPdict['Potentials']['Pot. Temp.'] = 300.
-#            if 'Swaps' not in RMCPdict:
-#                RMCPdict['Swaps'] = []
+            if 'FitScale' not in RMCPdict:
+                RMCPdict['FitScale'] = False
 #end patches
                 
             def OnHisto(event):
@@ -4750,6 +4732,17 @@ def UpdatePhaseData(G2frame,Item,data):
                         if itype == tid:
                             tid += 1
                         RMCPdict['atSeq'] = G2lat.SwapItems(RMCPdict['atSeq'],itype,tid)
+                    Pairs= []
+                    atSeq = RMCPdict['atSeq']
+                    lenA = len(atSeq)
+                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                        Pairs += pair
+                    RMCPdict['Pairs'] = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+                    if RMCPdict['useBVS']:
+                        BVSpairs = []
+                        for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+                            BVSpairs += pair
+                        RMCPdict['BVS'] = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
                     wx.CallAfter(UpdateRMC)            
                 
                 def OnValSel(event):
@@ -5017,6 +5010,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     swapSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,swap,2,min=0.,max=1.,size=(50,25)),0,WACV)
                 return swapSizer
             
+            def OnFitScale(event):
+                RMCPdict['FitScale'] = not RMCPdict['FitScale']
+            
             Indx = {}
 
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' Enter metadata items:'),0,WACV)
@@ -5123,8 +5119,13 @@ def UpdatePhaseData(G2frame,Item,data):
             samSizer.Add(samSize,0,WACV)
             samSizer.Add(strain,0,WACV)
             mainSizer.Add(samSizer,0,WACV)
-            title = ' Select data for processing:'
-            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=title),0,WACV)
+            titleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            titleSizer.Add(wx.StaticText(G2frame.FRMC,label=' Select data for processing: '),0,WACV)
+            fitscale = wx.CheckBox(G2frame.FRMC,label=' Fit scale factors?')
+            fitscale.SetValue(RMCPdict['FitScale'])
+            fitscale.Bind(wx.EVT_CHECKBOX,OnFitScale)
+            titleSizer.Add(fitscale,0,WACV)
+            mainSizer.Add(titleSizer,0,WACV)
             fileSizer = wx.FlexGridSizer(4,5,5)
             Formats = ['RMC','GUDRUN','STOG']
             Heads = [' ','Format','Weight','Name']
@@ -5360,6 +5361,7 @@ freshStart     = False      #make TRUE for a restart
                 return
             
             ifXray = False
+            ifNeut = False
             try:
                 datFile = open(os.path.join(path,pName+'.dat'),'r')
                 datLines = datFile.readlines()
@@ -5382,9 +5384,9 @@ freshStart     = False      #make TRUE for a restart
 #                    print('RMCProfile file %s not found'%(pName+item))
 #total result plots
             Labels = {'_PDF1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
-                '_PDF2.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) for '],
+                '_PDF2.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R)-2 for '],
                 '_SQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
-                '_SQ2.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
+                '_SQ2.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q)-2 for '],
                 '_FQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) for '],
                 '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
 #                '_XFQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP x-ray F(Q) for '],
@@ -5395,6 +5397,8 @@ freshStart     = False      #make TRUE for a restart
                 Yobs = []
                 Ycalc = []
                 if len(files[label]):
+                    if 'PDF1' in label:
+                        ifNeut = True
                     Names = files[label][0][:-1].split(',')
                     for line in files[label][1:]:
                         items = line.split(',')
@@ -5425,7 +5429,7 @@ freshStart     = False      #make TRUE for a restart
 #partials plots
             Labels = {'_PDFpartials.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP G(R) partials for '],
                 '_SQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
-                '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) partials for '],
+                '_SQ2partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)-2','RMCP S(Q) partials for '],
                 '_FQ1partials.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) partials for ']}
             for label in Labels:
                 X = []
@@ -5444,7 +5448,11 @@ freshStart     = False      #make TRUE for a restart
                         Names = [name for name in Names if 'Va' not in name]
                     else:
                         XY = [[X.T,(DX*Y.T)] for Y in Partials]
-                    if 'G(R)' in Labels[label][1]:      #only for neutrons
+                    if 'G(R)' in Labels[label][1]:
+                        if ifNeut:
+                            title = 'Neutron '+Labels[label][2]+pName
+                        else:
+                            title = 'X-ray '+Labels[label][2]+pName
                         sumAtm = 0
                         BLtables = G2elem.GetBLtable(generalData)
                         AtNum = generalData['NoAtoms']
@@ -5452,14 +5460,17 @@ freshStart     = False      #make TRUE for a restart
                         bfac = {}
                         bcorr = []
                         for atm in AtNum:
-                            if 'SL' in BLtables[atm][1]:
-                                bfac[atm] = BLtables[atm][1]['SL'][0]*AtNum[atm]/sumAtm
-                            else:   #resonant scatters (unlikely!)
-                                bfac[atm] = AtNum[atm]/sumAtm
+                            if ifNeut:
+                                if 'SL' in BLtables[atm][1]:
+                                    bfac[atm] = 10.*BLtables[atm][1]['SL'][0]*AtNum[atm]/sumAtm  #scale to pm
+                                else:   #resonant scatters (unlikely!)
+                                    bfac[atm] = AtNum[atm]/sumAtm
+                            else:
+                                bfac[atm] = G2elem.GetFFtable([atm,])[atm]['Z']*AtNum[atm]/sumAtm
                         for name in Names:
                             if '-' in name:
                                 at1,at2 = name.strip().split('-')
-                                bcorr.append(100.*bfac[at1]*bfac[at2])  #scale to pm^2
+                                bcorr.append(bfac[at1]*bfac[at2])
                                 if at1 == at2:
                                     bcorr[-1] /= 2.         #no double counting
                         for ixy,xy in enumerate(XY):
@@ -5467,7 +5478,7 @@ freshStart     = False      #make TRUE for a restart
                             xy[1] += Ymin
                         Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
                         G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
-                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            labelY=Labels[label][1],newPlot=True,Title=title,
                             lines=False,names=[r'   $G(R)_{obs}$',]+Names[1:])
                     else:                        
                         G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],

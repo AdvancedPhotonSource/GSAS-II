@@ -5234,16 +5234,16 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
         np.seterr(all='ignore')
         try:
             Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+            xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+            XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+    #        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
+    #        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
+    #        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
+            Plot.set_xlim3d(XYZlim)
+            Plot.set_ylim3d(XYZlim)
+            Plot.set_zlim3d(XYZlim)
         except:
             pass
-        xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
-        XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-#        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-#        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-#        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
-        Plot.set_xlim3d(XYZlim)
-        Plot.set_ylim3d(XYZlim)
-        Plot.set_zlim3d(XYZlim)
         try:
             Plot.set_aspect('equal')
         except: #broken in mpl 3.1.1; worked in mpl 3.0.3
@@ -5390,7 +5390,7 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Title='',PlotName=None):
         G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
-    nBins= max(10,len(Xarray)//25)
+    nBins= max(10,len(Xarray)//10)
     Bins,Dbins = np.histogram(Xarray,nBins)
     wid = Dbins[1]-Dbins[0]
     Plot.set_title(Title)

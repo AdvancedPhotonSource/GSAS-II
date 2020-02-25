@@ -2432,11 +2432,14 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
                 fl.write('  > WEIGHT :: %.4f\n'%Files[File][1])
             fl.write('  > CONSTANT_OFFSET 0.000\n')
             fl.write('  > NO_FITTED_OFFSET\n')
+            if RMCPdict['FitScale']:
+                fl.write('  > FITTED_SCALE\n')
+            else:
+                fl.write('  > NO_FITTED_SCALE\n')
             if Files[File][3] !='RMC':
                 fl.write('  > %s\n'%Files[File][3])
             if 'reciprocal' in File:
                 fl.write('  > CONVOLVE ::\n')
-                fl.write('  > NO_FITTED_SCALE\n')
                 if 'Xray' in File:
                     fl.write('  > RECIPROCAL_SPACE_FIT :: 1 %d 1\n'%lines)
                     fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(lines,Files[File][1]))

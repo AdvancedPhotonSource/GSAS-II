@@ -5261,6 +5261,8 @@ tutorialIndex = (
     ['Reverse Monte Carlo Modeling'],
     ['RMCProfile-I', 'RMCProfile-I.htm','RMC Modeling with RMCProfile-I',
      '''Big box modelling for real and reciprocal space diffraction data for SF6'''],
+    ['RMCProfile-II', 'RMCProfile-II.htm','RMC Modeling with RMCProfile-II',
+     '''Big box modelling for real and reciprocal space diffraction data for SrTiO3'''],
 
     ['Stacking Fault Modeling'],
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',

@@ -4655,7 +4655,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     style=wx.FD_OPEN ,wildcard=fil+'(*.*)|*.*')
                 if dlg.ShowModal() == wx.ID_OK:
                     fpath,fName = os.path.split(dlg.GetPath())
-                    disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
+                    if fpath != G2frame.LastGPXdir:
+                        disfile.copy_file(dlg.GetPath(),os.path.join(G2frame.LastGPXdir,fName))
                     if os.path.exists(fName):
                         RMCPdict['files'][fil][0] = fName
                     G2frame.LastImportDir = fpath    #set so next file is found in same place

@@ -1477,11 +1477,10 @@ def AutoSpotMask(Image,Masks,Controls,numChans,dlg=None):
     TThs = np.linspace(LUtth[0],LUtth[1],numChans,False)
     for it,TTh in enumerate(TThs):
         band.mask = ma.masked_outside(TA,TTh,TTh+dtth).mask+tam
-        pcmax = np.percentile(band.compressed(),prob)
-        mband = ma.masked_greater(band,pcmax)
-        mean = ma.median(mband)
+        pcmax = np.percentile(band.compressed(),[prob,50.])
+        mband = ma.masked_greater(band,pcmax[0])
         std = ma.std(mband)
-        anom = ma.masked_greater((band-mean)/std,esdMul)
+        anom = ma.masked_greater((band-pcmax[1])/std,esdMul)
         mask ^= (anom.mask^band.mask)
         if not dlg is None:
             GoOn = dlg.Update(it,newmsg='Processed 2-theta rings = %d'%(it))

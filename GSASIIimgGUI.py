@@ -495,6 +495,8 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
                             print(' Use new mask; make mask time: %.3f'%(time.time()-t0))
                             oldMhash = Mhash
                         image = GetImageZ(G2frame,Data)
+                        if not Masks['SpotMask']['spotMask'] is None:
+                            image = ma.array(image,mask=Masks['SpotMask']['spotMask'])
                         G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,useTA=useTA,useMask=useMask)
                         del image   #force cleanup
                         pId = G2IO.SaveIntegration(G2frame,CId,Data)

@@ -1648,12 +1648,12 @@ def UpdateMasks(G2frame,data):
         finally:
             dlg.Destroy()
             
-    def OnAutoSpotMask(event):
+    def OnFindSpotMask(event):
         'Do auto search for spot masks'
-        if wx.MessageDialog(G2frame.dataWindow,'NB: This will clear any old spot masks',
-            'Auto Spot Masks', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
-            Controls = copy.deepcopy(G2frame.GPXtree.GetItemPyData( 
-                G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls')))
+        if wx.MessageDialog(G2frame.dataWindow,'NB: This is slow (5-10min)',
+            'Spot mask search', wx.OK|wx.CANCEL).ShowModal() == wx.ID_OK:
+            Controls = G2frame.GPXtree.GetItemPyData( 
+                G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
             wave = Controls['wavelength']
             LUtth = np.array(Controls['IOtth'])
             dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
@@ -1665,9 +1665,42 @@ def UpdateMasks(G2frame,data):
                 style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
             time0 = time.time()
             data['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,data,Controls,nChans,dlg)
-            print(' Autospot processing time: %.2f m'%((time.time()-time0)/60.))
+            print(' Spot masksearch time: %.2f m'%((time.time()-time0)/60.))
             wx.CallAfter(UpdateMasks,G2frame,data)
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
+        else:
+            print(' Spot mask search not done')
+            
+    def OnAutoFindSpotMask(event):
+        Names = G2gd.GetGPXtreeDataNames(G2frame,['IMG ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Automatic spot mask search','Select images to spot mask:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                for item in items:
+                    name = Names[item]
+                    print ('Spot search for'+name)
+                    G2frame.Image = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,name)
+                    Controls = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Image Controls'))
+                    Mask = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,G2frame.Image,'Masks'))
+                    G2frame.ImageZ = GetImageZ(G2frame,Controls)
+                    wave = Controls['wavelength']
+                    LUtth = np.array(Controls['IOtth'])
+                    dsp0 = wave/(2.0*sind(LUtth[0]/2.0))
+                    dsp1 = wave/(2.0*sind(LUtth[1]/2.0))
+                    x0 = G2img.GetDetectorXY(dsp0,0.0,Controls)[0]
+                    x1 = G2img.GetDetectorXY(dsp1,0.0,Controls)[0]    
+                    nChans = int(1000*(x1-x0)/Controls['pixelSize'][0])//2
+                    dlg = wx.ProgressDialog("Spot mask search for %d bins"%nChans,"Processed 2-theta rings = ",nChans+3,
+                        style = wx.PD_ELAPSED_TIME|wx.PD_CAN_ABORT)
+                    time0 = time.time()
+                    Mask['SpotMask']['spotMask'] = G2img.AutoSpotMask(G2frame.ImageZ,Mask,Controls,nChans,dlg)
+                    print(' Spot mask search time: %.2f m'%((time.time()-time0)/60.))
+        finally:
+            dlg.Destroy()
+        G2plt.PlotExposedImage(G2frame,event=None)
+        
 
     def OnDeleteSpotMask(event):
         data['Points'] = []
@@ -1878,7 +1911,8 @@ def UpdateMasks(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOAD)
     G2frame.Bind(wx.EVT_MENU, OnLoadMask, id=G2G.wxID_MASKLOADNOT)
     G2frame.Bind(wx.EVT_MENU, OnSaveMask, id=G2G.wxID_MASKSAVE)
-    G2frame.Bind(wx.EVT_MENU, OnAutoSpotMask, id=G2G.wxID_FINDSPOTS)
+    G2frame.Bind(wx.EVT_MENU, OnFindSpotMask, id=G2G.wxID_FINDSPOTS)
+    G2frame.Bind(wx.EVT_MENU, OnAutoFindSpotMask, id=G2G.wxID_AUTOFINDSPOTS)
     G2frame.Bind(wx.EVT_MENU, OnDeleteSpotMask, id=G2G.wxID_DELETESPOTS)
     G2frame.Bind(wx.EVT_MENU, ToggleSpotMaskMode, id=G2G.wxID_NEWMASKSPOT)
     G2frame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2G.wxID_NEWMASKARC)

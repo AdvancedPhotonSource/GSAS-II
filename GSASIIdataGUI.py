@@ -5557,7 +5557,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
             
         # IMG / Masks
         G2G.Define_wxId('wxID_MASKCOPY', 'wxID_MASKSAVE', 'wxID_MASKLOAD', 'wxID_NEWMASKSPOT', 'wxID_NEWMASKARC', 'wxID_NEWMASKRING',
-            'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY','wxID_NEWMASKXLINE','wxID_NEWMASKYLINE','wxID_MASKLOADNOT', 'wxID_FINDSPOTS', 'wxID_DELETESPOTS',)
+            'wxID_NEWMASKFRAME', 'wxID_NEWMASKPOLY','wxID_NEWMASKXLINE','wxID_NEWMASKYLINE','wxID_MASKLOADNOT',
+            'wxID_FINDSPOTS', 'wxID_AUTOFINDSPOTS', 'wxID_DELETESPOTS',)
         self.MaskMenu = wx.MenuBar()
         self.PrefillDataMenu(self.MaskMenu)
         self.MaskEdit = wx.Menu(title='')
@@ -5568,7 +5569,8 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.MaskEdit.Append(G2G.wxID_MASKSAVE,'Save mask','Save mask to file')
         self.MaskEdit.Append(G2G.wxID_MASKLOADNOT,'Load mask','Load mask from file; ignoring threshold')
         self.MaskEdit.Append(G2G.wxID_MASKLOAD,'Load mask w/threshold','Load mask from file keeping the threshold value')
-        self.MaskEdit.Append(G2G.wxID_FINDSPOTS,'Auto spot masks','Auto search for spot masks; NB: will clear old spot masks')
+        self.MaskEdit.Append(G2G.wxID_FINDSPOTS,'Spot mask search','Search for spot mask; NB: slow')
+        self.MaskEdit.Append(G2G.wxID_AUTOFINDSPOTS,'Auto spot mask search','Auto spot mask ssearch; NB: slow')
         self.MaskEdit.Append(G2G.wxID_DELETESPOTS,'Delete spot masks','Delete all spot masks')
         submenu.Append(G2G.wxID_NEWMASKARC,'Arc mask','Create an arc mask with mouse input')
         submenu.Append(G2G.wxID_NEWMASKFRAME,'Frame mask','Create a frame mask with mouse input')

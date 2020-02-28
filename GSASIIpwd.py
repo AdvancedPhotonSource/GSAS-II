@@ -387,7 +387,7 @@ def CalcPDF(data,inst,limits,xydata):
 #    auxPlot.append([Q,np.copy(CF),'CF-unCorr'])
     if 'XC' in inst['Type'][0]:
         ruland = Ruland(data['Ruland'],wave,Q,CF)
-#    auxPlot.append([Q,ruland,'Ruland'])      
+#        auxPlot.append([Q,ruland,'Ruland'])      
         CF *= ruland
 #    auxPlot.append([Q,CF,'CF-Corr'])
     scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
@@ -406,8 +406,12 @@ def CalcPDF(data,inst,limits,xydata):
     Rmax = GSASIIpath.GetConfigValue('PDF_Rmax',100.)
     mul = int(round(2.*np.pi*nR/(Rmax*qLimits[1])))
 #    mul = int(round(2.*np.pi*nR/(data.get('Rmax',100.)*qLimits[1])))
-    xydata['GofR'][1][0] = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
-    xydata['GofR'][1][1] = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
+    R = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
+    xydata['GofR'][1][0] = R
+    GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
+    xydata['GofR'][1][1] = GR
+#    gr = GR/(4.*np.pi*R)
+#    auxPlot.append([R,gr,'g(r)'])
     if data.get('noRing',True):
         xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
     return auxPlot

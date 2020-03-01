@@ -9,6 +9,8 @@
 # $Id: $
 ########### SVN repository information ###################
 '''
+*G2compare: Tool for project comparison*
+---------------------------------------------
 '''
 
 #TODO: in OnDataTreeSelChanged want to plot patterns
@@ -45,6 +47,51 @@ import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj
 
 __version__ = '0.0.1'
+
+# math to do F-test 
+def RC2Ftest(npts,RChiSq0,nvar0,RChiSq1,nvar1):
+    '''Compute the F-test probability that a model expanded with added 
+    parameters (relaxed model) is statistically more likely than the 
+    constrained (base) model
+    :param int npts: number of observed diffraction data points
+    :param float RChiSq0: Reduced Chi**2 for the base model
+    :param int nvar0: number of refined variables in the base model
+    :param float RChiSq0: Reduced Chi**2 for the relaxed model
+    :param int nvar1: number of refined variables in the relaxed model
+    '''
+    if nvar1 == nvar0:
+        raise Exception("parameter # agree, test is not valid")
+    elif nvar1 < nvar0:
+        print("Warning: RwFtest used with base/relaxed models reversed")
+        RChiSq0,nvar0,RChiSq1,nvar1 = RChiSq1,nvar1,RChiSq0,nvar0
+    ratio = RChiSq0 / RChiSq1
+    nu1 = float(nvar1 - nvar0)
+    nu2 = float(npts - nvar1)
+    F = (ratio - 1.) * nu2 / nu1
+    import scipy.stats
+    return scipy.stats.f.cdf(F,nu1,nu2)
+
+def RwFtest(npts,Rwp0,nvar0,Rwp1,nvar1):
+    '''Compute the F-test probability that a model expanded with added 
+    parameters (relaxed model) is statistically more likely than the 
+    constrained (base) model
+    :param int npts: number of observed diffraction data points
+    :param float Rwp0: Weighted profile R-factor or GOF for the base model
+    :param int nvar0: number of refined variables in the base model
+    :param float Rwp1: Weighted profile R-factor or GOF for the relaxed model
+    :param int nvar1: number of refined variables in the relaxed model
+    '''
+    if nvar1 == nvar0:
+        raise Exception("parameter # agree, test is not valid")
+    elif nvar1 < nvar0:
+        print("Warning: RwFtest used with base/relaxed models reversed")
+        Rwp0,nvar0,Rwp1,nvar1 = Rwp1,nvar1,Rwp0,nvar0
+    ratio = (Rwp0 / Rwp1)**2
+    nu1 = float(nvar1 - nvar0)
+    nu2 = float(npts - nvar1)
+    F = (ratio - 1.) * nu2 / nu1
+    import scipy.stats
+    return scipy.stats.f.cdf(F,nu1,nu2)
 
 def cPickleLoad(fp):
     if '2' in platform.python_version_tuple()[0]:
@@ -88,19 +135,20 @@ class MakeTopWindow(wx.Frame):
         self.plotFrame = wx.Frame(None,-1,'dComp Plots',size=size,
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
-        self.plotFrame.Show()
+        #self.plotFrame.Show()
+        self.plotFrame.Show(False)  # until we have some graphics, hide the plot window
         # menus
         Frame = self.GetTopLevelParent() # same as self
-        Menu = wx.MenuBar()
+        self.MenuBar = wx.MenuBar()
         File = wx.Menu(title='')
-        Menu.Append(menu=File, title='&File')
+        self.MenuBar.Append(menu=File, title='&File')
         item = File.Append(wx.ID_ANY,'&Import project...\tCtrl+O','Open a GSAS-II project file (*.gpx)')            
         self.Bind(wx.EVT_MENU, self.onLoadGPX, id=item.GetId())
 #        item = File.Append(wx.ID_ANY,'&Import selected...','Open a GSAS-II project file (*.gpx)')
 #        self.Bind(wx.EVT_MENU, self.onLoadSel, id=item.GetId())
 
         self.Mode = wx.Menu(title='')
-        Menu.Append(menu=self.Mode, title='&Mode')
+        self.MenuBar.Append(menu=self.Mode, title='&Mode')
         self.wxID_Mode = {}
         for m in "Histogram","Phase","Project":
             i = self.wxID_Mode[m] = wx.NewId()
@@ -108,8 +156,12 @@ class MakeTopWindow(wx.Frame):
             self.Bind(wx.EVT_MENU, self.onRefresh, id=item.GetId())
         item = self.Mode.Append(wx.ID_ANY,'Set histogram filter','Set a filter for histograms to display')
         self.Bind(wx.EVT_MENU, self.onHistFilter, id=item.GetId())
+        modeMenu = wx.Menu(title='')
+        self.MenuBar.Append(menu=modeMenu, title='TBD')
+        self.modeMenuPos = self.MenuBar.FindMenu('TBD')
+        #item = modeMenu.Append(wx.ID_ANY,'test') # menu can't be empty
         
-        Frame.SetMenuBar(Menu)
+        Frame.SetMenuBar(self.MenuBar)
         # status bar
         self.Status = self.CreateStatusBar()
         self.Status.SetFieldsCount(2)
@@ -155,6 +207,7 @@ class MakeTopWindow(wx.Frame):
         self.histList = []  # list of histograms loaded for unique naming
 
         self.PWDRfilter = None
+        self.SetModeMenu()
         
     def SelectGPX(self):
         '''Select a .GPX file to be read
@@ -191,7 +244,22 @@ class MakeTopWindow(wx.Frame):
         self.histList = []  # clear list of loaded histograms
         for fil,mode in self.fileList:
             self.loadFile(fil)
-        
+        self.SetModeMenu()
+            
+    def SetModeMenu(self):
+        '''Create the mode-specific menu and its contents
+        '''
+        modeMenu = wx.Menu(title='')
+        oldmenu = self.MenuBar.Replace(self.modeMenuPos,modeMenu,self.getMode())
+        wx.CallAfter(oldmenu.Destroy)
+        if self.getMode() == "Histogram":
+            pass
+        elif self.getMode() == "Phase":
+            pass
+        elif self.getMode() == "Project":
+            item = modeMenu.Append(wx.ID_ANY,'F-test')
+            self.Bind(wx.EVT_MENU, self.onProjFtest, id=item.GetId())
+
     def loadFile(self,fil):
         '''read or reread a file
         '''
@@ -376,7 +444,7 @@ class MakeTopWindow(wx.Frame):
                     break
                 if not data[0][0].startswith('Covariance'): continue
                 Covar = data[0]
-                GSASIIpath.IPyBreak_base()
+                #GSASIIpath.IPyBreak_base()
                 #if self.PWDRfilter is not None: # implement filter
                 #    if self.PWDRfilter not in data[0][0]: continue
                 Covar[0] = shortname + ' Covariance'
@@ -423,7 +491,92 @@ class MakeTopWindow(wx.Frame):
     #         event.StopPropagation()
     #     else:
     #         event.Skip(False)
+    
+    def onProjFtest(self,event):
+        '''Compare two projects (selected here if more than two are present)
+        using the statistical F-test (aka Hamilton R-factor test), see:
 
+            * Hamilton, R. W. (1965), Acta Crystallogr. 18, 502-510.
+            * Prince, E., Mathematical Techniques in Crystallography and Materials Science, Second ed. (Springer-Verlag, New York, 1994).
+        '''
+        items = []
+        item, cookie = self.GPXtree.GetFirstChild(self.root)
+        while item:
+            items.append(item)
+            item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+        if len(items) < 2:
+            G2G.G2MessageBox(self,'F-test requires two more more projects','Need more projects')
+            return
+        elif len(items) == 2:
+            s0 = items[0]
+            baseDict = self.GPXtree.GetItemPyData(s0)
+            s1 = items[1]            
+            relxDict = self.GPXtree.GetItemPyData(s1)
+            # sort out the dicts in order of number of refined variables
+            if len(baseDict['varyList']) > len(relxDict['varyList']):
+                s0,s1,baseDict,relxDict = s1,s0,relxDict,baseDict
+        else:
+            # need to make selection here
+            sel = []
+            for i in items:
+                sel.append(self.GPXtree.GetItemText(i))
+            dlg = G2G.G2SingleChoiceDialog(self,'Select constrained refinement',
+                                             'Choose refinement',sel)
+            if dlg.ShowModal() == wx.ID_OK:
+                s0 = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            inds = list(range(len(items)))
+            del sel[s0]
+            del inds[s0]
+            dlg = G2G.G2SingleChoiceDialog(self,'Select relaxed refinement',
+                                             'Choose refinement',sel)
+            if dlg.ShowModal() == wx.ID_OK:
+                s1 = dlg.GetSelection()
+                s1 = inds[s1]
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            baseDict = self.GPXtree.GetItemPyData(items[s0])
+            relxDict = self.GPXtree.GetItemPyData(items[s1])
+            if len(baseDict['varyList']) > len(relxDict['varyList']):
+                G2G.G2MessageBox(self,
+                            'F-test warning: constrained refinement has more '+
+                            'variables ({}) than relaxed refinement ({}). Swapping'
+                            .format(len(baseDict['varyList']), len(relxDict['varyList'])),
+                            'Fits reversed?')
+                s0,s1,baseDict,relxDict = s1,s0,relxDict,baseDict
+                baseDict,relxDict = relxDict,baseDict
+        if len(baseDict['varyList']) == len(relxDict['varyList']):
+            G2G.G2MessageBox(self,'F-test requires differing numbers of variables','F-test not valid')
+            return
+        elif baseDict['Rvals']['Nobs'] != relxDict['Rvals']['Nobs']:
+            G2G.G2MessageBox(self,'F-test requires same number of observations in each refinement','F-test not valid')
+            return
+        prob = RwFtest(baseDict['Rvals']['Nobs'],
+                   baseDict['Rvals']['GOF'],len(baseDict['varyList']),
+                   relxDict['Rvals']['GOF'],len(relxDict['varyList']))
+        fmt = "{} model is \n*  {}\n*  {} variables and Reduced Chi**2 = {:.3f}"
+        msg = fmt.format('Constrained',self.GPXtree.GetItemText(s0)[:-11],
+                       len(baseDict['varyList']),
+                       baseDict['Rvals']['GOF']**2)
+        msg += '\n\n'
+        msg += fmt.format('Relaxed',self.GPXtree.GetItemText(s1)[:-11],
+                       len(relxDict['varyList']),
+                       relxDict['Rvals']['GOF']**2)
+        msg += '\n\nCumulative F-test probability {:.2f}%\n'.format(prob*100)
+        if prob > 0.95:
+            msg += "The relaxed model is statistically preferred to the constrained model."
+        elif prob > 0.75:
+            msg += "There is little ability to differentiate between the two models on a statistical basis."
+        else:
+            msg += "The constrained model is statistically preferred to the relaxed model."
+        G2G.G2MessageBox(self,msg,'F-test result')
+        #GSASIIpath.IPyBreak_base()
+    
 if __name__ == '__main__':
     #if sys.platform == "darwin": 
     #    application = G2App(0) # create the GUI framework
@@ -449,9 +602,6 @@ if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
     Frame = main(application) # start the GUI
     argLoadlist = sys.argv[1:]
-    if len(argLoadlist) == 0:
-        argLoadlist = ['/Users/toby/Scratch/copy.gpx',
-                       '/Users/toby/Scratch/CW_YAG.gpx']
     for arg in argLoadlist:
         fil = os.path.splitext(arg)[0] + '.gpx'
         if os.path.exists(fil):
@@ -459,4 +609,10 @@ if __name__ == '__main__':
             Frame.loadFile(fil)
         else:
             print('File {} not found. Skipping'.format(fil))
+
+    # debug code to select in initial mode
+    #self=Frame
+    #self.Mode.FindItemById(self.wxID_Mode['Project']).Check(True)
+    #self.onRefresh(None)
+    
     application.MainLoop()

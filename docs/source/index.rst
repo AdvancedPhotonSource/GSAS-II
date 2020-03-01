@@ -7,7 +7,8 @@ GSAS-II Developer's Documentation
 The following documentation is intended for those wishing to code
 withing the GSAS-II framework, those planning to understand how
 GSAS-II works, or for people wishing to develop scripting applications
-using the API (:mod:`GSASIIscriptable`).
+using the API (:mod:`GSASIIscriptable`). Note that many data structures
+used in GSAS-II are defined in module :mod:`GSASIIobj`.
 
 For information on obtaining or learning to use GSAS-II, please see
 the information on the GSAS-II home page:
@@ -37,4 +38,5 @@ Contents
   GSASIIscripts.rst
   imports.rst 
   exports.rst
+  G2tools.rst
 

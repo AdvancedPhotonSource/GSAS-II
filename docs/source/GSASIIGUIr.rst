@@ -1,4 +1,4 @@
-*GSAS-II GUI Support Routines*
+*GSAS-II GUI Utility Modules*
 ==============================
 
 .. automodule:: GSASIIctrlGUI

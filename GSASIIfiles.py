@@ -904,9 +904,11 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
       PDFsaves[1], if True writes a S(Q) file with a .sq extension
       PDFsaves[2], if True writes a F(Q) file with a .fq extension
       PDFsaves[3], if True writes a G(r) file with a .gr extension
-      PDFsaves[4], if True writes G(r) in a pdfGUI input file with 
+      PDFsaves[4], if True writes G(r) in a pdfGUI input file with
       a .gr extension. Note that if PDFsaves[3] and PDFsaves[4] are
       both True, the pdfGUI overwrites the G(r) file. 
+      PDFsaves[5], if True writes F(Q) & g(R) with .fq & .gr extensions
+      overwrites these if selected by option 2, 3 or 4
     :param dict PDFControls: The PDF parameters and computed results
     :param dict Inst: Instrument parameters from the PDWR entry used 
       to compute the PDF. Needed only when PDFsaves[4] is True.
@@ -1028,3 +1030,34 @@ def PDFWrite(PDFentry,fileroot,PDFsaves,PDFControls,Inst={},Limits=[]):
             grfile.write("%15.2F %15.6F\n" % (r,gr))
         grfile.close()
         G2Print (' G(R) saved to: '+grfilename)
+        
+    if PDFsaves[5]: #RMCProfile files for F(Q) & g(r) overwrites any above
+        
+        fqfilename = fileroot+'.fq'
+        fqdata = PDFControls['F(Q)'][1]
+        fqfxn = scintp.interp1d(fqdata[0],fqdata[1],kind='linear')
+        fqfile = open(fqfilename,'w')
+        qnew = np.arange(fqdata[0][0],fqdata[0][-1],0.005)
+        nq = qnew.shape[0]
+        fqfile.write('%20d\n'%nq-1)
+        fqfile.write(fqfilename+'\n')
+        fqnew = zip(qnew,fqfxn(qnew))
+        for q,fq in fqnew[1:]:
+            fqfile.write("%15.6g %15.6g\n" % (q,fq))
+        fqfile.close()
+        G2Print (' F(Q) saved to: '+fqfilename)
+        
+        grfilename = fileroot+'.gr'
+        grdata = PDFControls['g(r)'][1]
+        grfxn = scintp.interp1d(grdata[0],grdata[1],kind='linear')
+        grfile = open(grfilename,'w')
+        rnew = np.arange(grdata[0][0],grdata[0][-1],0.010)
+        nr = rnew.shape[0]
+        grfile.write('%20d\n'%nr-1)
+        grfile.write(grfilename+'\n')
+        grnew = zip(rnew,grfxn(rnew))
+        for r,gr in grnew[1:]:
+            grfile.write("%15.6g %15.6g\n" % (r,gr))
+        grfile.close()
+        G2Print (' G(R) saved to: '+grfilename)
+

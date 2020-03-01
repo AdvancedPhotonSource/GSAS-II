@@ -5319,6 +5319,8 @@ freshStart     = False      #make TRUE for a restart
       caption='RMCProfile',style=wx.ICON_INFORMATION)
             if os.path.isfile(pName+'.his6f'):
                 os.remove(pName+'.his6f')
+            if os.path.isfile(pName+'.xray'):
+                os.remove(pName+'.xray')
             if os.path.isfile(pName+'.neigh'):
                 os.remove(pName+'.neigh')
             if os.path.isfile(pName+'.bonds'):

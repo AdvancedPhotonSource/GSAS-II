@@ -402,18 +402,25 @@ def CalcPDF(data,inst,limits,xydata):
     if data['Lorch']:
         xydata['FofQ'][1][1] *= LorchWeight(Q)    
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
+    xydata['gofr'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
     Rmax = GSASIIpath.GetConfigValue('PDF_Rmax',100.)
     mul = int(round(2.*np.pi*nR/(Rmax*qLimits[1])))
 #    mul = int(round(2.*np.pi*nR/(data.get('Rmax',100.)*qLimits[1])))
     R = 2.*np.pi*np.linspace(0,nR,nR,endpoint=True)/(mul*qLimits[1])
     xydata['GofR'][1][0] = R
+    xydata['gofr'][1][0] = R
     GR = -dq*np.imag(fft.fft(xydata['FofQ'][1][1],mul*nR)[:nR])
     xydata['GofR'][1][1] = GR
-#    gr = GR/(4.*np.pi*R)
-#    auxPlot.append([R,gr,'g(r)'])
+    gr = GR/(np.pi*R)
+    xydata['gofr'][1][1] = gr
+    numbDen = 0.
+    if 'ElList' in data:
+        numbDen = GetNumDensity(data['ElList'],data['Form Vol'])
     if data.get('noRing',True):
-        xydata['GofR'][1][1] = np.where(xydata['GofR'][1][0]<0.5,0.,xydata['GofR'][1][1])
+        Rmin = data['Rmin']
+        xydata['gofr'][1][1] = np.where(R<Rmin,-4.*numbDen,xydata['gofr'][1][1])
+        xydata['GofR'][1][1] = np.where(R<Rmin,-4.*R*np.pi*numbDen,xydata['GofR'][1][1])
     return auxPlot
     
 def PDFPeakFit(peaks,data):
@@ -2278,8 +2285,6 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     Bank = int(Inst['Bank'][1])
     Sample = PWDdata['Sample Parameters']
     Scale = Sample['Scale'][0]
-    if 'X' in Inst['Type'][0]:
-        Scale *= 2.
     Limits = PWDdata['Limits'][1]
     Ibeg = np.searchsorted(Data[0],Limits[0])
     Ifin = np.searchsorted(Data[0],Limits[1])+1

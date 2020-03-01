@@ -4266,14 +4266,13 @@ class GSASII(wx.Frame):
     def OnExportPDF(self,event):
         'Save S(Q), G(R),... as selected by user'
         def PDFSave(G2frame,exports,PDFsaves):
-            'Save a PDF I(Q), S(Q), F(Q) and G(r)  in column formats'
+            'Save a PDF I(Q), S(Q), F(Q), G(r) and g(r)  in column formats'
             if len(exports) > 1:
                 dirname = G2G.askSaveDirectory(G2frame)
                 if not dirname: return
             else:
                 defnam = exports[0].replace(' ','_')[5:]
-                filename = G2G.askSaveFile(G2frame,defnam,'.gr',
-                                               'G(r) file, etc.')
+                filename = G2G.askSaveFile(G2frame,defnam,'.gr','G(r) file, etc.')
                 if not filename: return
                 dirname,filename = os.path.split(filename)
                 filename = os.path.splitext(filename)[0]
@@ -4299,7 +4298,8 @@ class GSASII(wx.Frame):
         if names:
             od = {'label_1':'Export I(Q)','value_1':False,'label_2':'Export S(Q)','value_2':False,
                   'label_3':'Export F(Q)','value_3':False,'label_4':'Export G(R)','value_4':True,
-                  'label_5':'Make G(R) for pdfGUI','value_5':False}
+                  'label_5':'Make G(R) for pdfGUI','value_5':False,
+                  'label_6':'Make F(Q) & g(r) for RMCProfile','value_6':False}
             dlg = G2G.G2MultiChoiceDialog(self,'Select','PDF patterns to export',names,extraOpts=od)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -4307,7 +4307,7 @@ class GSASII(wx.Frame):
                     exports.append(names[x])
             dlg.Destroy()
         if exports:
-            PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4'],od['value_5']]
+            PDFsaves = [od['value_1'],od['value_2'],od['value_3'],od['value_4'],od['value_5'],od['value_6']]
             PDFSave(self,exports,PDFsaves)
         
     def OnMakePDFs(self,event):

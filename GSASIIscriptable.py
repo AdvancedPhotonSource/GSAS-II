@@ -2578,7 +2578,7 @@ class G2Project(G2ObjectWrapper):
             PDFdict[i] = copy.deepcopy(PDFobj[i])
         self.names.append([PDFname]+['PDF Controls', 'PDF Peaks'])
         self.data[PDFname] = PDFdict
-        for i in 'I(Q)','S(Q)','F(Q)','G(R)':
+        for i in 'I(Q)','S(Q)','F(Q)','G(R)','g(r)':
             self.data[PDFname]['PDF Controls'][i] = []
         G2fil.G2Print('Adding "{}" to project'.format(PDFname))
         return G2PDF(self.data[PDFname], PDFname, self)
@@ -2607,7 +2607,7 @@ class G2Project(G2ObjectWrapper):
             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':0.0,'Flat Bkg':0,
             'DetType':'Area detector','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[20,25],
             'Lorch':False,'BackRatio':0.0,'Rmax':100.,'noRing':False,'IofQmin':1.0,'Rmin':1.0,
-            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[]}
+            'I(Q)':[],'S(Q)':[],'F(Q)':[],'G(R)':[],'g(r)':[]}
 
         fo = open(prmfile,'r')
         S = fo.readline()
@@ -5275,6 +5275,7 @@ class G2PDF(G2ObjectWrapper):
         data['S(Q)'] = xydata['SofQ']
         data['F(Q)'] = xydata['FofQ']
         data['G(R)'] = xydata['GofR']
+        data['g(r)'] = xydata['gofr']
 
     def optimize(self,showFit=True,maxCycles=5,
                      xydata=None,limits=None,inst=None):

@@ -6764,6 +6764,7 @@ def computePDF(G2frame,data):
     data['S(Q)'] = xydata['SofQ']
     data['F(Q)'] = xydata['FofQ']
     data['G(R)'] = xydata['GofR']
+    data['g(r)'] = xydata['gofr']
     return auxPlot
 
 def OptimizePDF(G2frame,data,showFit=True,maxCycles=5):
@@ -7313,6 +7314,7 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
             G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
+            G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
         else:
             G2plt.PlotISFG(G2frame,data,newPlot=True)
         
@@ -7383,6 +7385,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='S(Q)')
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='F(Q)')
         G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='G(R)')
+        G2plt.PlotISFG(G2frame,data,newPlot=True,plotType='g(r)')
 
     # Routine UpdatePDFGrid starts here
     global inst

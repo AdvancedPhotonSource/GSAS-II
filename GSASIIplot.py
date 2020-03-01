@@ -4437,7 +4437,7 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
     G2frame.ShiftDown = False
     if not plotType:
         plotType = G2frame.G2plotNB.plotList[G2frame.G2plotNB.nb.GetSelection()]
-    if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)','delt-G(R)']:
+    if plotType not in ['I(Q)','S(Q)','F(Q)','G(R)','g(r)','delt-G(R)']:
         return
     
     def OnPlotKeyUp(event):    
@@ -4674,9 +4674,9 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
             if Pattern:
                 PlotList.append(Pattern[plotType])
         name = plotType
-    if plotType == 'G(R)':
+    if plotType in ['G(R)','g(r)']:
         Plot.set_xlabel(r'r,$\AA$',fontsize=14)
-        Plot.set_ylabel(r'G(r), $\AA^{-2}$',fontsize=14)
+        Plot.set_ylabel(r'%s, $\AA^{-2}$'%plotType,fontsize=14)
         if lim is not None:
             lim[0] = list([lim[0][0],data['Rmax']])
             Plot.set_xlim(lim[0])
@@ -4785,11 +4785,14 @@ def PlotISFG(G2frame,data,newPlot=False,plotType='',peaks=None):
                     Plot.add_collection(line)
             wx.EndBusyCursor()
             if plotType == 'G(R)' and numbDen:
-                Xb = [0.,2.5]
-                Yb = [0.,-10.*np.pi*numbDen]
+                Xb = [0.,5.]
+                Yb = [0.,-20.*np.pi*numbDen]
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
                 Plot.set_xlim([0.,PDFdata['Rmax']])
             elif plotType == 'F(Q)':
+                Xb = [0.,5.0]
+                Yb = [0.,-20.*np.pi*numbDen]
+                Plot.plot(Xb,Yb,color='k',dashes=(5,5))
                 Plot.axhline(0.,color='k')
             elif plotType == 'S(Q)':
                 Plot.axhline(1.,color='k')

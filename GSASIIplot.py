@@ -23,6 +23,7 @@ plotting routine               action
 :func:`PlotCovariance`        Show covariance terms in 2D 
 :func:`PlotStructure`         Crystal structure plotting with balls, sticks, lines,
                               ellipsoids, polyhedra and magnetic moments
+:func:`PlotBeadModel`         Plots representation of protein shape from small angle scattering
 :func:`Plot1DSngl`            1D stick plots of structure factors                              
 :func:`PlotSngl`              Structure factor plotting
 :func:`Plot3DSngl`            3D Structure factor plotting
@@ -31,6 +32,8 @@ plotting routine               action
 :func:`PlotCalib`             CW or TOF peak calibration
 :func:`PlotXY`                Simple plot of xy data
 :func:`PlotXYZ`               Simple contour plot of xyz data
+:func:`PlotXYZvect`           Scatter Plot for 3D cartesian vectors
+:func:`Plot3Dxyz`             Surface Plot for 3D vectors
 :func:`PlotAAProb`            Protein "quality" plot 
 :func:`PlotStrain`            Plot of strain data, used for diagnostic purposes
 :func:`PlotSASDSizeDist`      Small angle scattering size distribution plot
@@ -3237,7 +3240,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                 if Page.plotStyle['logPlot']:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
-                        Plot.plot(X,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                        Plot.plot(X,Y,marker=pP,color=colors[0],picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         if G2frame.SinglePlot or G2frame.plusPlot:
                             Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))
                             if G2frame.plusPlot:
@@ -3253,24 +3256,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',data=None,
                                 Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                     ecolor=colors[0],picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,YB,marker=pP,color=colors[0],picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                         Plot.plot(X,W,colors[1],picker=False,label=incCptn('bkg'))     #const. background
                         Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                 else:  # not logPlot
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
+                            ObsLine = Plot.plot(Xum,Y,color=colors[0],marker=pP,picker=False,clip_on=Clip_on,label=incCptn('obs-bkg'))  #Io-Ib
                             if np.any(Z):       #only if there is a calc pattern
                                 CalcLine = Plot.plot(X,Z-W,colors[1],picker=False,label=incCptn('calc-bkg'))               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,YB,color=colors[0],marker=pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
+                            ObsLine = Plot.plot(Xum,Y,color=colors[0],marker=pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))    #Io
                             CalcLine = Plot.plot(X,Z,colors[1],picker=False,label=incCptn('calc'))                 #Ic
                         else:
-                            Plot.plot(X,YB,colors[0]+pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
+                            Plot.plot(X,YB,color=colors[0],marler=pP,picker=3.,clip_on=Clip_on,label=incCptn('obs'))
                             Plot.plot(X,ZB,colors[2],picker=False,label=incCptn('calc'))
                     if 'PWDR' in plottype and (G2frame.SinglePlot and G2frame.plusPlot):
                         BackLine = Plot.plot(X,W,colors[2],picker=False,label=incCptn('bkg'))                 #Ib
@@ -4972,7 +4975,9 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
         Plot.set_title(Title)
         Plot.set_xlabel(r''+labelX,fontsize=14)
         Plot.set_ylabel(r''+labelY,fontsize=14)
-        colors=['b','r','g','c','m','k']
+        colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+            'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+        NC = len(colors)
         Page.keyPress = OnKeyPress
         Xmax = 0.
         Ymax = 0.    
@@ -4984,25 +4989,25 @@ def PlotXY(G2frame,XY,XY2=[],labelX='X',labelY='Y',newPlot=False,
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 dY = Page.Offset[1]*(ixy)*Ymax/100.
                 if len(names):
-                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
+                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False,label=names[ixy])
                 else:
-                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False)
             else:
-                Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
+                Plot.plot(X,Y,marker='+',color=colors[ixy%NC],picker=False)
         if len(vertLines):
             for ixy,X in enumerate(vertLines):
                 dX = Page.Offset[0]*(ixy)*Xmax/500.
                 for x in X:
-                    Plot.axvline(x+dX,color=colors[ixy%6],dashes=(5,5),picker=False)
+                    Plot.axvline(x+dX,color=colors[ixy%NC],dashes=(5,5),picker=False)
         if XY2 is not None and len(XY2):
             for ixy,xy in enumerate(XY2):
                 X,Y = XY2[ixy]
                 dX = Page.Offset[0]*(ixy+1)*Xmax/500.
                 dY = Page.Offset[1]*(ixy+1)*Ymax/100.
                 if len(names2):
-                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names2[ixy])
+                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False,label=names2[ixy])
                 else:
-                    Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+                    Plot.plot(X+dX,Y+dY,colors[ixy%NC],picker=False)
         if len(names):
             Plot.legend(names,loc='best')
         if not newPlot:
@@ -5239,22 +5244,17 @@ def Plot3dXYZ(G2frame,nX,nY,Zdat,labelX=r'X',labelY=r'Y',labelZ=r'Z',newPlot=Fal
             Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
             xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
             XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-    #        Plot.contour(X,Y,Z,10,zdir='x',offset=XYZlim[0])
-    #        Plot.contour(X,Y,Z,10,zdir='y',offset=XYZlim[1])
-    #        Plot.contour(X,Y,Z,10,zdir='z',offset=XYZlim[0])
             Plot.set_xlim3d(XYZlim)
             Plot.set_ylim3d(XYZlim)
             Plot.set_zlim3d(XYZlim)
-        except:
-            pass
-        try:
+            Plot.set_title(Title)
+            Plot.set_xlabel(labelX)
+            Plot.set_ylabel(labelY)
+            Plot.set_zlabel(labelZ)
             Plot.set_aspect('equal')
-        except: #broken in mpl 3.1.1; worked in mpl 3.0.3
+        except:
+            print('Plot3dXYZ failure')
             pass
-        Plot.set_title(Title)
-        Plot.set_xlabel(labelX)
-        Plot.set_ylabel(labelY)
-        Plot.set_zlabel(labelZ)
         Page.canvas.draw()
         
 ################################################################################
@@ -5347,12 +5347,15 @@ def PlotStrain(G2frame,data,newPlot=False):
     Plot.set_title('Strain')
     Plot.set_ylabel(r'd-spacing',fontsize=14)
     Plot.set_xlabel(r'Azimuth',fontsize=14)
-    colors=['b','g','r','c','m','k']
+#    colors=['b','g','r','c','m','k']
+    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+    NC = len(colors)
     for N,item in enumerate(data['d-zero']):
         Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
-        Plot.plot(X,Y,colors[N%6]+'+',picker=False)
+        Plot.plot(X,Y,marker='+',color=colors[N%NC],picker=False)
         Y,X = np.array(item['ImtaCalc'])
-        Plot.plot(X,Y,colors[N%6],picker=False)
+        Plot.plot(X,Y,colors[N%NC],picker=False)
         Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],colors[5],dashes=(5,5))
     if not newPlot:
         Page.toolbar.push_current()
@@ -5443,12 +5446,15 @@ def PlotSASDSizeDist(G2frame):
         Plot.set_xscale("log",nonposx='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
     Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white',edgecolor='green')       #plot diameters
-    colors=['b','r','c','m','k']
+#    colors=['b','r','c','m','k']
+    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+    NC = len(colors)
     if 'Size Calc' in data:
         Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
             if len(Rbins[i]):
-                Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%5])       #plot diameters
+                Plot.plot(2.*Rbins[i],Dist[i],color=colors[i%NC])       #plot diameters
     Page.canvas.draw()
 
 ################################################################################
@@ -6650,7 +6656,10 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         G2frame.G2plotNB.status.SetStatusText(
             'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
-        colors=['b','g','r','c','m','k']
+#        colors=['b','g','r','c','m','k']
+        colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+            'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+        NC = len(colors)
         uselist = G2frame.SeqTable.GetColValues(1)
         X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
         xName = 'Data sequence number'
@@ -6663,7 +6672,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 print('X column no longer in table, resetting')
                 G2frame.seqXaxis = None
         for ic,col in enumerate(Page.seqYaxisList):
-            Ncol = colors[ic%6]
+            Ncol = colors[ic%NC]
             name,Y,sig = Page.seqTableGet(col)
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Y = Y[::-1]
@@ -6692,11 +6701,11 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                     Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name,linestyle='None',color=Ncol,marker='x')
             else:
                 Plot.plot(Xnew,Ynew,color=Ncol)
-                Plot.plot(Xnew,Ynew,'o',color=Ncol,label=name)
+                Plot.plot(Xnew,Ynew,marker='o',color=Ncol,label=name)
         if Page.fitvals: # TODO: deal with fitting of None values
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
-            Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%6])
+            Plot.plot(X,Page.fitvals,label='Fit',color=colors[(ic+2)%NC])
             
         Plot.legend(loc='best')
         if Title:
@@ -6885,7 +6894,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     G2frame.cid = None
     #Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks,StrSta,Plot1,Page  # RVD: these are needed for multiple image controls/masks 
-    colors=['b','g','r','c','m','k'] 
+#    colors=['b','g','r','c','m','k'] 
+    colors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
+    NC = len(colors)
     Data = G2frame.GPXtree.GetItemPyData(
         G2gd.GetGPXtreeItemId(G2frame,G2frame.Image, 'Image Controls'))
     G2frame.spotSize = GSASIIpath.GetConfigValue('Spot_mask_diameter',1.0)
@@ -7759,7 +7771,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 N = 0
                 for ring in Data['rings']:
                     xring,yring = np.array(ring).T[:2]
-                    Plot.plot(xring,yring,'.',color=colors[N%6])
+                    Plot.plot(xring,yring,'.',color=colors[N%NC])
                     N += 1
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
@@ -7770,9 +7782,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for N,ring in enumerate(StrSta['d-zero']):
                 if 'ImxyCalc' in ring:
                     xringc,yringc = ring['ImxyCalc']
-                    Plot.plot(xringc,yringc,colors[N%6])
+                    Plot.plot(xringc,yringc,colors[N%NC])
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,colors[N%6]+'.')
+                Plot.plot(xring,yring,'.',colors[N%NC])
         # display the Masks
         if 'Frames' not in Masks: Masks['Frames'] = []  # patch
         for i,spot in enumerate(Masks['Points']):   # drawing spot masks
@@ -10351,7 +10363,9 @@ def PlotFPAconvolutors(G2frame,NISTpk):
     Plot.set_title('Peak convolution functions @ 2theta={:.3f}'.format(cntr))
     Plot.set_xlabel(r'$\Delta 2\theta, deg$',fontsize=14)
     Plot.set_ylabel(r'Intensity (arbitrary)',fontsize=14)
-    refColors=['b','r','c','g','m','k']
+#    refColors=['b','r','c','g','m','k']
+    refColors = ['xkcd:blue','xkcd:red','xkcd:green','xkcd:cyan','xkcd:magenta','xkcd:black',
+        'xkcd:pink','xkcd:brown','xkcd:teal','xkcd:orange','xkcd:grey','xkcd:violet',]
     ttmin = ttmax = 0
     #GSASIIpath.IPyBreak()
     for i,conv in enumerate(NISTpk.convolvers):

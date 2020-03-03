@@ -2118,7 +2118,7 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         difC = inst['difC'][1]
         if useSamBrd[0]:
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
-                Xsb = 1.e-4*difC/Size[1][0]/2.
+                Xsb = 1.e-4*difC/(2.*Size[1][0])
         if useSamBrd[1]:
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
                 Ysb = 1.e-6*difC*Mustrain[1][0]/2.
@@ -2393,7 +2393,7 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
         fl.write('  > OXID :: %s\n'%' '.join(oxid))
         fl.write('  > RIJ :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][0] for bvs in RMCPdict['BVS']]))
         fl.write('  > BVAL :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][1] for bvs in RMCPdict['BVS']]))
-        fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][3] for bvs in RMCPdict['BVS']]))        
+        fl.write('  > CUTOFF :: %s\n'%' '.join(['%6.3f'%RMCPdict['BVS'][bvs][2] for bvs in RMCPdict['BVS']]))        
         fl.write('  > SAVE :: 100000\n')
         fl.write('  > UPDATE :: 100000\n')
         if len(RMCPdict['Swap']):

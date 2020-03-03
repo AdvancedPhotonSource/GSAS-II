@@ -4339,6 +4339,10 @@ def UpdatePhaseData(G2frame,Item,data):
         if len(rdlist) == 0: return
         # rdlist is only expected to have one element
         rd = rdlist[0]
+        Strict = True
+        if 'rmc6f' in rd.readfilename:
+            Strict = False
+            idx = -1
         G2frame.OnFileSave(event)
         # rd contains all info for a phase
         PhaseName = rd.Phase['General']['Name']
@@ -4350,7 +4354,10 @@ def UpdatePhaseData(G2frame,Item,data):
             atomNames.append(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
         for atom in rd.Phase['Atoms']:
             try:
-                idx = atomNames.index(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
+                if Strict:
+                    idx = atomNames.index(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
+                else:
+                    idx += 1
                 atId = atomData[idx][cia+8]                                 #save old Id
                 atomData[idx][:cia+8] = atom[:cia+8]+[atId,]
             except ValueError:
@@ -4767,7 +4774,10 @@ def UpdatePhaseData(G2frame,Item,data):
                     for itype in range(nTypes):
                         valChoice = atmdata.BVSoxid[RMCPdict['atSeq'][itype]]
                         valSel = wx.ComboBox(G2frame.FRMC,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        valSel.SetStringSelection(RMCPdict['Oxid'][itype][0])
+                        try:
+                            valSel.SetStringSelection(RMCPdict['Oxid'][itype][0])
+                        except IndexError:
+                            RMCPdict['Oxid'].append([RMCPdict['atSeq'][itype],0.0])
                         valSel.Bind(wx.EVT_COMBOBOX,OnValSel)
                         Indx[valSel.GetId()] = itype
                         atmChoice.Add(valSel,0,WACV)
@@ -5448,9 +5458,9 @@ freshStart     = False      #make TRUE for a restart
                     Partials = np.array(Partials).T
                     if 'Q' in label:
                         XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
-                        Names = [name for name in Names if 'Va' not in name]
                     else:
-                        XY = [[X.T,(DX*Y.T)] for Y in Partials]
+                        XY = [[X.T,(DX*Y.T)] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
+                    Names = [name for name in Names if 'Va' not in name]
                     if 'G(R)' in Labels[label][1]:
                         if ifNeut:
                             title = 'Neutron '+Labels[label][2]+pName
@@ -5473,7 +5483,10 @@ freshStart     = False      #make TRUE for a restart
                         for name in Names:
                             if '-' in name:
                                 at1,at2 = name.strip().split('-')
-                                bcorr.append(bfac[at1]*bfac[at2])
+                                if 'Va' in name:
+                                    bcorr.append(0.)
+                                else:
+                                    bcorr.append(bfac[at1]*bfac[at2])
                                 if at1 == at2:
                                     bcorr[-1] /= 2.         #no double counting
                         for ixy,xy in enumerate(XY):

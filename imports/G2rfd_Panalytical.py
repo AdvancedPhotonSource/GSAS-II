@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: $
-# $Author: von dreele $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 
 from __future__ import division, print_function
@@ -14,7 +14,7 @@ import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
 sind = lambda x: np.sin(x*np.pi/180.)
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class Panalytical_ReaderClass(G2obj.ImportReflectometryData):
     '''Routines to import reflectivity data from a Pananalytical.xrdm (xml) file. 
     

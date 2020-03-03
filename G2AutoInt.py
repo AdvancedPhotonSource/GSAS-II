@@ -16,7 +16,7 @@ import sys
 import os
 import wx
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIautoInt as G2imG
 import GSASIIfiles as G2fil
 GSASIIpath.InvokeDebugOpts()

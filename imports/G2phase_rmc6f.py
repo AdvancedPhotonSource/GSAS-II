@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2015-04-27 13:22:06 -0500 (Mon, 27 Apr 2015) $
-# $Author: vondreele $
-# $Revision: 1812 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase_GPX.py $
-# $Id: G2phase_GPX.py 1812 2015-04-27 18:22:06Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2phase_rmc6f: Import phase from RMCProfile rmc6f file*
@@ -23,7 +23,7 @@ import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIctrlGUI as G2G
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1812 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 class PhaseReaderClass(G2obj.ImportPhase):
     'Opens a .rmc6f file and pulls out the phase'

@@ -2,21 +2,22 @@
 # -*- coding: utf-8 -*-
 #GSAS-II Data/Model Comparison
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *G2compare: Tool for project comparison*
 ---------------------------------------------
 '''
 
-#TODO: in OnDataTreeSelChanged want to plot patterns
-# Make PWDR unique (use histlist)
-# add graphics
-# implement project
+#TODO:
+# Prince-test next
+# Make PWDR unique? (use histlist)
+# more graphics
+# display more in datawindow
 
 import sys
 import os
@@ -40,7 +41,7 @@ except ImportError:
 import scipy as sp
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 4154 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIfiles as G2fil
 import GSASIIplot as G2plt
 import GSASIIctrlGUI as G2G
@@ -131,7 +132,19 @@ class MakeTopWindow(wx.Frame):
         size = wx.Size(700,450)
         wx.Frame.__init__(self, name='dComp', parent=parent,
             size=size,style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data/model comparison')
+        # misc vars
+        self.VcovColor = 'RdYlGn'        
         # plot window
+        try:
+            size = GSASIIpath.GetConfigValue('Plot_Size')
+            if type(size) is tuple:
+                pass
+            elif type(size) is str:
+                size = eval(size)
+            else:
+                raise Exception
+        except:
+            size = wx.Size(700,600)                
         self.plotFrame = wx.Frame(None,-1,'dComp Plots',size=size,
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(self.plotFrame,G2frame=self)
@@ -207,6 +220,17 @@ class MakeTopWindow(wx.Frame):
         self.histList = []  # list of histograms loaded for unique naming
 
         self.PWDRfilter = None
+        for win,var in ((self.plotFrame,'Plot_Pos'),):
+        #for win,var in ((self,'Main_Pos'),(self.plotFrame,'Plot_Pos')):
+            try:
+                pos = GSASIIpath.GetConfigValue(var)
+                if type(pos) is str: pos = eval(pos)
+                win.SetPosition(pos)
+                if GetDisplay(pos) is None: win.Center()
+            except:
+                if GSASIIpath.GetConfigValue(var):
+                    print('Value for config {} {} is invalid'.format(var,GSASIIpath.GetConfigValue(var)))
+                    win.Center()
         self.SetModeMenu()
         
     def SelectGPX(self):
@@ -466,10 +490,48 @@ class MakeTopWindow(wx.Frame):
             filep.close()
             wx.EndBusyCursor()
         self.GPXtree.Expand(self.root)
-        
+
     def OnDataTreeSelChanged(self,event):
+        def ClearData(self):
+            '''Initializes the contents of the dataWindow panel
+            '''
+            self.Unbind(wx.EVT_SIZE)
+            self.SetBackgroundColour(wx.Colour(240,240,240))
+            Sizer = self.GetSizer()
+            if Sizer:
+                try:
+                    Sizer.Clear(True)
+                except:
+                    pass
+        G2frame = self
         item = event.GetItem()
-        print('selected',item)
+        #print('selected',item)
+        if self.getMode() == "Project":
+            ClearData(G2frame.dataWindow)
+            data = G2frame.GPXtree.GetItemPyData(item)
+            if data is None:
+                self.plotFrame.Show(False)
+                return
+            text = ''
+            if 'Rvals' in data:
+                Nvars = len(data['varyList'])
+                Rvals = data['Rvals']
+                text = ('Residuals after last refinement:\n'+
+                        '\twR = {:.3f}\n\tchi**2 = {:.1f}\n\tGOF = {:.2f}').format(
+                        Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+                text += '\n\tNobs = {}\n\tNvals = {}\n\tSVD zeros = {}'.format(
+                    Rvals['Nobs'],Nvars,Rvals.get('SVD0',0.))
+                text += '\n\tmax shift/esd = {:.3f}'.format(Rvals.get('Max shft/sig',0.0))
+                if 'lamMax' in Rvals:
+                    text += '\n\tlog10 MaxLambda = {:.1f}'.format(np.log10(Rvals['lamMax']))
+                G2frame.dataWindow.GetSizer().Add(
+                    wx.StaticText(G2frame.dataWindow,wx.ID_ANY,text)
+                )
+                self.plotFrame.Show(True)
+                G2plt.PlotCovariance(G2frame,data)
+        else:
+            self.plotFrame.Show(False)
+            ClearData(G2frame.dataWindow)
         
         #print(self.GPXtree._getTreeItemsList(item))
         # pltNum = self.G2plotNB.nb.GetSelection()
@@ -556,11 +618,38 @@ class MakeTopWindow(wx.Frame):
         elif baseDict['Rvals']['Nobs'] != relxDict['Rvals']['Nobs']:
             G2G.G2MessageBox(self,'F-test requires same number of observations in each refinement','F-test not valid')
             return
+        missingVars = []
+        for var in baseDict['varyList']: 
+            if var not in relxDict['varyList']: 
+                missingVars.append(var)
+        txt = ''
+        postmsg = ''
+        if missingVars:
+            txt = ('*** Possible invalid use of F-test: '+
+                'The F-test requires that the constrained model be a subset '+
+                'of the relaxed model. Review the parameters shown below to '+
+                'confirm missing var(s) have new names in the relaxed model. '+
+                '***\n\n')
+            postmsg = ('\n\nThese parameters are in the constrained '+
+              'fit and are not in the relaxed fit:\n*  ')
+            for i,var in enumerate(missingVars):
+                if i > 0: postmsg += ', '
+                postmsg += var
+            postmsg += ('\nThese parameters are in the relaxed fit and not'+
+                ' in the constrained fit:\n*  ')
+            i = 0
+            for var in relxDict['varyList']: 
+                if var not in baseDict['varyList']: 
+                    if i > 0: postmsg += ', '
+                    i += 1
+                    postmsg += var
+        #GSASIIpath.IPyBreak_base()
         prob = RwFtest(baseDict['Rvals']['Nobs'],
                    baseDict['Rvals']['GOF'],len(baseDict['varyList']),
                    relxDict['Rvals']['GOF'],len(relxDict['varyList']))
         fmt = "{} model is \n*  {}\n*  {} variables and Reduced Chi**2 = {:.3f}"
-        msg = fmt.format('Constrained',self.GPXtree.GetItemText(s0)[:-11],
+        msg = txt
+        msg += fmt.format('Constrained',self.GPXtree.GetItemText(s0)[:-11],
                        len(baseDict['varyList']),
                        baseDict['Rvals']['GOF']**2)
         msg += '\n\n'
@@ -574,8 +663,8 @@ class MakeTopWindow(wx.Frame):
             msg += "There is little ability to differentiate between the two models on a statistical basis."
         else:
             msg += "The constrained model is statistically preferred to the relaxed model."
+        msg += postmsg
         G2G.G2MessageBox(self,msg,'F-test result')
-        #GSASIIpath.IPyBreak_base()
     
 if __name__ == '__main__':
     #if sys.platform == "darwin": 

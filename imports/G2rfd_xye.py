@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2017-03-04 08:34:05 -0600 (Sat, 04 Mar 2017) $
-# $Author: vondreele $
-# $Revision: 2738 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sad_xye.py $
-# $Id: G2sad_xye.py 2738 2017-03-04 14:34:05Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2rfd_xye: read reflectometry data*
@@ -20,7 +20,7 @@ import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 2738 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npsind = lambda x: np.sin(np.pi*x/180.)
 try:  # fails on doc build

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: vondreele $
-# $Revision: 1620 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_xye.py $
-# $Id: G2pwd_xye.py 1620 2014-12-27 17:14:59Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2pwd_FP: FullProf .dat data*
@@ -19,7 +19,7 @@ import os.path as ospath
 import numpy as np
 import GSASIIobj as G2obj
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1620 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class fp_ReaderClass(G2obj.ImportPowderData):
     'Routines to import powder data from a FullProf 1-10 column .dat file'
     def __init__(self):

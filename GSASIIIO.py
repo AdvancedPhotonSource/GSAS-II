@@ -1961,21 +1961,25 @@ class ExportBaseclass(object):
 ######################################################################
 def ExportPowderList(G2frame):
     '''Returns a list of extensions supported by :func:`GSASIIIO:ExportPowder`
-    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only. 
+    along with their descriptions (note that a extension may be repeated
+    but descriptions are unique).
+    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only.
     
     :param wx.Frame G2frame: the GSAS-II main data tree window
     '''
     extList = []
+    extLabel = []
     for obj in G2frame.exporterlist:
         if 'powder' in obj.exporttype:
             try:
                 obj.Writer
                 extList.append(obj.extension)
+                extLabel.append(obj.formatName)
             except AttributeError:
                 pass
-    return extList
+    return extList,extLabel
 
-def ExportPowder(G2frame,TreeName,fileroot,extension):
+def ExportPowder(G2frame,TreeName,fileroot,extension,hint=''):
     '''Writes a single powder histogram using the Export routines.
     This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only. 
 
@@ -1984,10 +1988,12 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
     :param str fileroot: name for file to be written, extension ignored
     :param str extension: extension for file to be written (start with '.'). Must
       match a powder export routine that has a Writer object. 
+    :param str hint: a string that must match the export's format
     '''
     filename = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
     for obj in G2frame.exporterlist:
         if obj.extension == extension and 'powder' in obj.exporttype:
+            if hint and hint not in obj.formatName: continue
             obj.currentExportType = 'powder'
             obj.InitExport(None)
             obj.loadTree() # load all histograms in tree into dicts

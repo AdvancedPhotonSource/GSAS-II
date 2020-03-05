@@ -181,7 +181,34 @@ class AutoIntFrame(wx.Frame):
             showPDFctrls(None)
 
         def TestInput(*args,**kwargs):
-            'Determine if the start button should be enabled'
+            '''Determine if the start button should be enabled and 
+            ask for the exporter type with ambiguous extensions
+            '''
+            for dfmt,obj in self.fmtlist.items():
+                fmt = dfmt[1:]
+                if not self.params['outsel'][fmt]: continue
+                if fmt in self.multipleFmtChoices: continue
+                if type(obj) is not list: continue # only one exporter for this
+                choices = []
+                for e in obj: 
+                    choices.append(e.formatName)
+                if len(choices) == 0:
+                    print('Error: why 0 choices in TestInput?')
+                    continue
+                if len(choices) == 1:
+                    print('Error: why 1 choice in TestInput?')
+                    self.multipleFmtChoices[fmt] = obj[0].formatName
+                    continue
+                # select the format here
+                dlg = G2G.G2SingleChoiceDialog(self,
+                        'There is more than one format with a '+
+                        '.{} output. Choose the one to use'.format(fmt),
+                        'Choose output format',choices)
+                dlg.clb.SetSelection(0)  # force a selection
+                if dlg.ShowModal() == wx.ID_OK and dlg.GetSelection() >= 0:
+                    self.multipleFmtChoices[fmt] = choices[dlg.GetSelection()]
+                dlg.Destroy()
+                
             writingSomething = False
             writingPDF = False
             # is at least one output file selected?
@@ -425,6 +452,7 @@ class AutoIntFrame(wx.Frame):
         self.params['filter'] = '*.tif'
         self.params['outdir'] = os.getcwd()
         self.PDFformats = ('I(Q)', 'S(Q)', 'F(Q)', 'G(r)', 'PDFgui')
+        self.multipleFmtChoices = {}
         #GSASIIpath.IPyBreak_base()
         
         wx.Frame.__init__(self, None, title='Automatic Integration',
@@ -491,7 +519,7 @@ class AutoIntFrame(wx.Frame):
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s):'))
-        for dfmt in self.fmtlist:
+        for dfmt in sorted(self.fmtlist):
             sizer.Add((6,2)) # add a bit of extra space
             fmt = dfmt[1:]
             if fmt not in self.params['outsel']: self.params['outsel'][fmt] = False
@@ -757,7 +785,8 @@ class AutoIntFrame(wx.Frame):
             outputSelect = self.params['outsel']
             PDFformats = self.PDFformats
             fmtlist = self.fmtlist
-            outputModes = (outputSelect,PDFformats,fmtlist,outdir)
+            outputModes = (outputSelect,PDFformats,fmtlist,outdir,
+                               self.multipleFmtChoices)
             if PDFobj:
                 PDFdict = PDFobj.data
             else:
@@ -785,9 +814,8 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
     :param tuple calcModes:
     :param tuple outputModes:
     '''
-    GSASIIpath.IPyBreak()
     (TableMode,ComputePDF,SeparateDir,optPDF) = calcModes
-    (outputSelect,PDFformats,fmtlist,outdir) = outputModes            
+    (outputSelect,PDFformats,fmtlist,outdir,multipleFmtChoices) = outputModes
     gpxout = G2sc.G2Project(filename=os.path.splitext(newImage)[0]+'.gpx')
     print('creating',gpxout.filename)
     # looped because a file can contain multiple images
@@ -806,6 +834,9 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
         for dfmt in fmtlist:
             fmt = dfmt[1:]
             if not outputSelect[fmt]: continue
+            hint = ''
+            if fmt in multipleFmtChoices:
+                hint = multipleFmtChoices[fmt]
             if SeparateDir:
                 savedir = os.path.join(outdir,fmt)
             else:
@@ -816,7 +847,7 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
                 fname = h.name[5:].replace(' ','_')
                 try:
                     fil = os.path.join(savedir,fname)
-                    print('Wrote',h.Export(fil,dfmt))
+                    print('Wrote',h.Export(fil,dfmt,hint))
                 except Exception as msg:
                     print('Failed to write {} as {}. Error msg\n{}'
                               .format(fname,dfmt,msg))

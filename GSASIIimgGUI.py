@@ -2939,12 +2939,20 @@ class AutoIntFrame(wx.Frame):
         lblsizr.Add(sizer,0,wx.EXPAND)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s):'))
-        for dfmt in self.fmtlist:
+        # format choice selection
+        usedfmt = []
+        self.multipleFmtChoices = {}
+        for dfmt in sorted(self.fmtlist[0]):
             sizer.Add((6,2)) # add a bit of extra space
             fmt = dfmt[1:]
             self.params[fmt] = False
-            btn = G2G.G2CheckBox(mnpnl,dfmt,self.params,fmt)
-            sizer.Add(btn)
+            if fmt in usedfmt: # is extension used more than once
+                self.multipleFmtChoices[fmt] = None
+            else:
+                usedfmt.append(fmt)
+                btn = G2G.G2CheckBox(mnpnl,dfmt,self.params,fmt,
+                                     OnChange=self.TestInput)
+                sizer.Add(btn)
         lblsizr.Add(sizer)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Separate dir for each format: '))
@@ -3009,6 +3017,29 @@ class AutoIntFrame(wx.Frame):
         self.CenterOnParent()
         self.Show()
         showPDFctrls(None)
+        
+    def TestInput(self,event):
+        for fmt in self.multipleFmtChoices:
+            if not self.params[fmt]: continue
+            if self.multipleFmtChoices[fmt]: continue
+            choices = []
+            for f,l in zip(self.fmtlist[0],self.fmtlist[1]): 
+                if f[1:] == fmt: choices.append(l)
+            if len(choices) < 2:
+                print('Error: why no choices in TestInput?')
+                return
+            # select the format here
+            dlg = G2G.G2SingleChoiceDialog(self,
+                        'There is more than one format with a '+
+                        '.{} output. Choose the one to use'.format(fmt),
+                        'Choose output format',choices)
+            dlg.clb.SetSelection(0)  # force a selection
+            if dlg.ShowModal() == wx.ID_OK and dlg.GetSelection() >= 0:
+                self.multipleFmtChoices[fmt] = choices[dlg.GetSelection()]
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
 
     def checkPDFprm(self,ShowContents=False):
         '''Read in the PDF (.pdfprm) parameter file and check for problems.
@@ -3195,14 +3226,18 @@ class AutoIntFrame(wx.Frame):
                 fileroot += "_" 
             fileroot += namenum
             # loop over selected formats
-            for dfmt in self.fmtlist:
-                if not self.params[dfmt[1:]]: continue
+            for fmt in self.params:
+                if not self.params[fmt]: continue
+                if '.'+fmt not in self.fmtlist[0]: continue
                 if self.params['SeparateDir']:
-                    subdir = dfmt[1:]
+                    subdir = fmt
                 else:
                     subdir = ''
+                hint = ''
+                if self.multipleFmtChoices.get(fmt):
+                    hint = self.multipleFmtChoices.get(fmt)
                 fil = os.path.join(self.params['outdir'],subdir,fileroot)
-                G2IO.ExportPowder(G2frame,treename,fil+'.x',dfmt) # dummy extension (.x) is replaced before write)
+                G2IO.ExportPowder(G2frame,treename,fil+'.x','.'+fmt,hint=hint) # dummy extension (.x) is replaced before write)
                 
     def EnableButtons(self,flag):
         '''Relabels and enable/disables the buttons at window bottom when auto-integration is running
@@ -3274,7 +3309,7 @@ class AutoIntFrame(wx.Frame):
                 del self.ImageMasks['Thresholds']   
         # make sure all output directories exist
         if self.params['SeparateDir']:
-            for dfmt in self.fmtlist:
+            for dfmt in self.fmtlist[0]:
                 if not self.params[dfmt[1:]]: continue
                 dir = os.path.join(self.params['outdir'],dfmt[1:])
                 if not os.path.exists(dir): os.makedirs(dir)

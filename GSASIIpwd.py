@@ -2285,6 +2285,8 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     Bank = int(Inst['Bank'][1])
     Sample = PWDdata['Sample Parameters']
     Scale = Sample['Scale'][0]
+    if 'X' in Inst['Type'][1]:
+        Scale *= 2.
     Limits = PWDdata['Limits'][1]
     Ibeg = np.searchsorted(Data[0],Limits[0])
     Ifin = np.searchsorted(Data[0],Limits[1])+1
@@ -2453,7 +2455,7 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
                     fl.write('  > RECIPROCAL_SPACE_FIT :: 1 %d 1\n'%lines)
                     fl.write('  > RECIPROCAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(lines,Files[File][1]))
                     fl.write('  > REAL_SPACE_FIT :: 1 %d 1\n'%(3*lines//2))
-                    fl.write('  > REAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(3*lines//2,Files[File][1]))
+                    fl.write('  > REAL_SPACE_PARAMETERS :: 1 %d %.4f\n'%(3*lines//2,1./Files[File][1]))
     fl.write('\n')
     fl.write('BRAGG ::\n')
     fl.write('  > BRAGG_SHAPE :: %s\n'%gsasType)

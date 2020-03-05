@@ -2118,10 +2118,10 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         difC = inst['difC'][1]
         if useSamBrd[0]:
             if 'ellipsoidal' not in Size[0]:    #take the isotropic term only
-                Xsb = 1.e-4*difC/(2.*Size[1][0])
+                Xsb = 1.e-4*difC/Size[1][0]
         if useSamBrd[1]:
             if 'generalized' not in Mustrain[0]:    #take the isotropic term only
-                Ysb = 1.e-6*difC*Mustrain[1][0]/2.
+                Ysb = 1.e-6*difC*Mustrain[1][0]
         prms = ['Bank',
                 'difC','difA','Zero','2-theta',
                 'alpha','beta-0','beta-1',
@@ -2134,7 +2134,7 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         fl.write('%19.11f%19.11f%19.11f%19.11f\n'%(inst[prms[1]][1],inst[prms[2]][1],inst[prms[3]][1],inst[prms[4]][1]))
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[5]][1],inst[prms[6]][1],inst[prms[7]][1]))
         fl.write('%12.6e%14.6e%14.6e\n'%(inst[prms[8]][1],inst[prms[9]][1],inst[prms[10]][1]))    
-        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Xsb,inst[prms[13]][1]+Ysb,0.0,0.0))
+        fl.write('%12.6e%14.6e%14.6e%14.6e%14.6e\n'%(inst[prms[11]][1],inst[prms[12]][1]+Ysb,inst[prms[13]][1]+Xsb,0.0,0.0))
         fl.close()
     else:
         if useSamBrd[0]:

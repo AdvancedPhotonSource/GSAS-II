@@ -169,26 +169,36 @@ def getsvnProxy():
         proxycmds = []
         fp = open(proxyinfo,'r')
         host = fp.readline().strip()
+        # allow file to begin with comments
+        while host.startswith('#'):
+            host = fp.readline().strip()
         port = fp.readline().strip()
+        etc = []
+        line = fp.readline()
+        while line:
+            etc.append(line.strip())
+            line = fp.readline()
         fp.close()
-        setsvnProxy(host,port)
+        setsvnProxy(host,port,etc)
         if not host.strip(): return '',''
-        return host,port
-    return '',''
+        return host,port,etc
+    return '','',''
 
-def setsvnProxy(host,port):
+def setsvnProxy(host,port,etc=[]):
     '''Sets the svn commands needed to use a proxy
     '''
     global proxycmds
     proxycmds = []
     host = host.strip()
     port = port.strip()
-    if not host: return
-    proxycmds.append('--config-option')
-    proxycmds.append('servers:global:http-proxy-host='+host)
+    if host: 
+        proxycmds.append('--config-option')
+        proxycmds.append('servers:global:http-proxy-host='+host)
     if port:
         proxycmds.append('--config-option')
         proxycmds.append('servers:global:http-proxy-port='+port)
+    for item in etc:
+        proxycmds.append(item)
         
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
@@ -205,7 +215,7 @@ def whichsvn():
     is_exe = lambda fpath: os.path.isfile(fpath) and os.access(fpath, os.X_OK)
     svnprog = 'svn'
     if sys.platform.startswith('win'): svnprog += '.exe'
-    host,port = getsvnProxy()
+    host,port,etc = getsvnProxy()
     if GetConfigValue('debug') and host:
         print('DBG_Using proxy host {} port {}'.format(host,port))
     # add likely places to find subversion when installed with GSAS-II
@@ -332,6 +342,10 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
     if svnVersionNumber() >= 1.6:
         cmd += ['--non-interactive', '--trust-server-cert']
     if proxycmds: cmd += proxycmds
+    # if GetConfigValue('debug'):
+    #     s = 'subversion command:\n  '
+    #     for i in cmd: s += i + ' '
+    #     print(s)
     s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = MakeByte2str(s.communicate())
     if err:
@@ -428,6 +442,7 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None,verbose=True):
     if svnVersionNumber() >= 1.6:
         cmd += ['--trust-server-cert']
     if proxycmds: cmd += proxycmds
+    #if verbose or GetConfigValue('debug'):
     if verbose:
         s = 'subversion command:\n  '
         for i in cmd: s += i + ' '

@@ -2122,11 +2122,16 @@ class GSASII(wx.Frame):
     def EditProxyInfo(self,event):
         '''Edit the proxy information used by subversion
         '''
-        h,p = host,port = GSASIIpath.getsvnProxy()
+        h,p,e = host,port,etc = GSASIIpath.getsvnProxy()
+        if e:
+            proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
+            G2G.G2MessageBox(self,'File {} has manually-'.format(proxyinfo)+
+                'entered information. Please edit this by hand',
+                                 'Unable to edit')
+            return
         dlg = G2G.MultiStringDialog(self,'Enter proxy values',
                                         ['Proxy address','proxy port'],
                                         [host,port],size=300)
-        #dlg.SetSize((300,-1))
         if dlg.Show():
             h,p = dlg.GetValues()
         dlg.Destroy()

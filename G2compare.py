@@ -277,7 +277,8 @@ class MakeTopWindow(wx.Frame):
         oldmenu = self.MenuBar.Replace(self.modeMenuPos,modeMenu,self.getMode())
         wx.CallAfter(oldmenu.Destroy)
         if self.getMode() == "Histogram":
-            pass
+            item = modeMenu.Append(wx.ID_ANY,'Prince test')
+            self.Bind(wx.EVT_MENU, self.onHistPrinceTest, id=item.GetId())
         elif self.getMode() == "Phase":
             pass
         elif self.getMode() == "Project":
@@ -567,7 +568,7 @@ class MakeTopWindow(wx.Frame):
             items.append(item)
             item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
         if len(items) < 2:
-            G2G.G2MessageBox(self,'F-test requires two more more projects','Need more projects')
+            G2G.G2MessageBox(self,'F-test requires two projects','Need more projects')
             return
         elif len(items) == 2:
             s0 = items[0]
@@ -665,7 +666,79 @@ class MakeTopWindow(wx.Frame):
             msg += "The constrained model is statistically preferred to the relaxed model."
         msg += postmsg
         G2G.G2MessageBox(self,msg,'F-test result')
-    
+        
+    def onHistPrinceTest(self,event):
+        '''Compare two histograms (selected here if more than two are present)
+        using the statistical test proposed by Ted Prince in 
+        Acta Cryst. B35 1099-1100. (1982). Also see Int. Tables Vol. C 
+        (1st Ed.) chapter 8.4, 618-621 (1995).
+        '''
+        items = []
+        item, cookie = self.GPXtree.GetFirstChild(self.root)
+        while item:
+            items.append(item)
+            item, cookie = self.GPXtree.GetNextChild(self.root, cookie)
+
+        if len(items) < 2:
+            G2G.G2MessageBox(self,'Prince test requires two histograms','Need more')
+            return
+        elif len(items) == 2:
+            s0,s1 = items
+        else:
+            # need to make selection here
+            sel = []
+            for i in items:
+                sel.append(self.GPXtree.GetItemText(i))
+            dlg = G2G.G2SingleChoiceDialog(self,'Select one refinement',
+                                             'Choose refinement',sel)
+            if dlg.ShowModal() == wx.ID_OK:
+                s0 = dlg.GetSelection()
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+            inds = list(range(len(items)))
+            del sel[s0]
+            del inds[s0]
+            dlg = G2G.G2SingleChoiceDialog(self,'Select comparison refinement',
+                                             'Choose refinement',sel)
+            if dlg.ShowModal() == wx.ID_OK:
+                s1 = dlg.GetSelection()
+                s1 = inds[s1]
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        model0 = self.GPXtree.GetItemPyData(s0)
+        data0 = model0[1]
+        model1 = self.GPXtree.GetItemPyData(s1)
+        data1 = model1[1]
+        if len(data0[0]) != len(data1[0]):
+            G2G.G2MessageBox(self,'Unable to test: differing numbers of data points','Comparison not valid')
+            return
+        if max(abs((data0[0]-data1[0])/data0[0])) > 0.01:
+            G2G.G2MessageBox(self,'Unable to use test: "X" values differ','Comparison not valid')
+            return
+        X = data0[3] - data1[3]
+        #Z = np.sqrt(data0[3]) * (data0[1] - (data0[3] + data1[3])/2)
+        X = (data0[3] - data1[3]) / np.sqrt(data0[1])
+        Z = (data0[1] - (data0[3] + data1[3])/2) / np.sqrt(data0[1])
+        lam = np.sum(X*Z) / np.sum(X)
+        sig = np.sqrt(
+            (np.sum(Z*Z) - lam*lam*np.sum(X*X)) / 
+            ((len(data0[0]) - 1) * np.sum(X*X))
+            )
+            
+    0 the x-postions (two-theta in degrees),
+    1 the intensity values (Yobs),
+    2 the weights for each Yobs value
+    3 the computed intensity values (Ycalc)
+    4 the background values
+    5 Yobs-Ycalc
+        
+        GSASIIpath.IPyBreak_base()
+                
+#======================================================================    
 if __name__ == '__main__':
     #if sys.platform == "darwin": 
     #    application = G2App(0) # create the GUI framework

@@ -1069,7 +1069,7 @@ class EnumSelector(wx.ComboBox):
 
     :param wx.Panel parent: the parent to the :class:`~wxpython.ComboBox` (usually a
       frame or panel)
-    :param dict dct: a dict (or list) to contain the value set
+    :param dct: a dict or list to contain the value set
       for the :class:`~wxpython.ComboBox`.
     :param item: the dict key (or list index) where ``dct[item]`` will 
       be set to the value selected in the :class:`~wxpython.ComboBox`. Also, dct[item]
@@ -1093,10 +1093,13 @@ class EnumSelector(wx.ComboBox):
       
       The default for :data:`values` is to use the same list as
       specified for :data:`choices`.
+    :param function onChange: an optional routine that will be called
+      when the  
+      :class:`~wxpython.ComboBox` can be specified.
     :param (other): additional keyword arguments accepted by
       :class:`~wxpython.ComboBox` can be specified.
     '''
-    def __init__(self,parent,dct,item,choices,values=None,**kw):
+    def __init__(self,parent,dct,item,choices,values=None,OnChange=None,**kw):
         if values is None:
             values = choices
         if dct[item] in values:
@@ -1112,6 +1115,7 @@ class EnumSelector(wx.ComboBox):
         self.values = values
         self.dct = dct
         self.item = item
+        self.OnChange = OnChange
         self.Bind(wx.EVT_COMBOBOX, self.onSelection)
     def onSelection(self,event):
         # respond to a selection by setting the enum value in the CIF dictionary
@@ -1119,6 +1123,7 @@ class EnumSelector(wx.ComboBox):
             self.dct[self.item] = self.values[self.choices.index(self.GetValue())]
         else:
             self.dct[self.item] = self.values[0] # unknown
+        if self.OnChange: self.OnChange(event)
 
 ################################################################################
 class G2ChoiceButton(wx.Choice):
@@ -4706,6 +4711,7 @@ def GetConfigValsDocs():
             key = None
     return d
 
+inhibitSave = False
 def SaveConfigVars(vars,parent=None):
     '''Write the current config variable values to config.py
 
@@ -4715,6 +4721,11 @@ def SaveConfigVars(vars,parent=None):
       of error message if no file can be written.
     :returns: True if unable to write the file, None otherwise
     '''
+    if inhibitSave:
+        if GSASIIpath.GetConfigValue('debug'):
+            print('inhibitSave prevents saving configuration')
+        return
+
     # try to write to where an old config file is located
     try:
         import config
@@ -4877,6 +4888,8 @@ class SelectConfigSetting(wx.Dialog):
         'Set config variables to match the current settings'
         GSASIIpath.SetConfigValue(self.vars)
         self.EndModal(wx.ID_OK)
+        global inhibitSave
+        if event is not None: inhibitSave = True
         import GSASIImpsubs as G2mp
         G2mp.ResetMP()
         
@@ -4884,6 +4897,8 @@ class SelectConfigSetting(wx.Dialog):
         '''Write the config variables to config.py and then set them
         as the current settings
         '''
+        global inhibitSave
+        inhibitSave = False
         if not SaveConfigVars(self.vars,parent=self):
             self.OnApplyChanges() # force a reload of the config settings
         else:
@@ -4962,6 +4977,13 @@ class SelectConfigSetting(wx.Dialog):
                 self.colSel = wx.ComboBox(self,value=self.vars[var][1],choices=colorList,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 self.colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
+                self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            elif var == 'Image_calibrant':
+                import ImageCalibrants as calFile
+                calList = sorted([m for m in calFile.Calibrants.keys()],
+                                     key=lambda s: s.lower())
+                self.colSel = EnumSelector(self,self.vars[var],1,calList,
+                                               OnChange=self.OnChange)       
                 self.varsizer.Add(self.colSel, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
             else:
                 self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,

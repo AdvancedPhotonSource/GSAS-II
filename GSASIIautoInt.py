@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#GSAS-II autointegration routines
+########### SVN repository information ###################
+# $Date: $
+# $Author: $
+# $Revision: $
+# $URL: $
+# $Id: $
+########### SVN repository information ###################
 '''
 *GSASIIautoint: autointegration routines*
 ---------------------------------------------

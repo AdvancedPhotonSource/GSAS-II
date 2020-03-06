@@ -1336,6 +1336,10 @@ def UpdateImageControls(G2frame,data,masks,useTA=None,useMask=None,IntegrateOnly
         calibSizer = wx.FlexGridSizer(0,3,5,5)
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
         comboSizer.Add(wx.StaticText(parent=G2frame.dataWindow,label=' Calibrant '),0,WACV)
+        if (GSASIIpath.GetConfigValue('Image_calibrant') and
+                    GSASIIpath.GetConfigValue('Image_calibrant') in calList and
+                    not data['calibrant']):
+            data['calibrant'] = GSASIIpath.GetConfigValue('Image_calibrant')
         calSel = wx.ComboBox(parent=G2frame.dataWindow,value=data['calibrant'],choices=calList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)

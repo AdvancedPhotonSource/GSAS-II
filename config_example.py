@@ -126,9 +126,11 @@ Default is 30 seconds
 '''
 
 Autoscale_ParmNames = ['userComment2',r'extraInputs\1\extraInputs','Ion_Chamber_I0',]
-DefaultAutoScale = "userComment2"
 '''Gives the possible selection of incident monitor names as found in an image metadata file.
-DefaultAutoScale must be one of the AutoScale_ParmNames
+Used in AutoIntegration
+'''
+DefaultAutoScale = "userComment2"
+'''DefaultAutoScale selects one of the AutoScale_ParmNames.
 Used in AutoIntegration
 '''
 Main_Size = '(700,450)'
@@ -202,4 +204,21 @@ PDF_Rmax = 100.
 
 previous_GPX_files = []
 '''A list of previously used .gpx files
+'''
+
+Image_calibrant = ''
+''' Specifies a default calibrant material for images. Will be applied for 
+newly-read images, but if changed the specified material will be saved.
+'''
+
+Image_2theta_min = 5.0
+''' Specifies a default 2-theta minimum used for calibration and integration
+as the Inner 2-theta value. Will be applied for 
+newly-read images, but if changed the new value will be saved.
+'''
+
+Image_2theta_max = 50.0
+''' Specifies a default 2-theta maximum used for calibration and integration
+as the Outer 2-theta value. Will be applied for 
+newly-read images, but if changed the new value will be saved.
 '''

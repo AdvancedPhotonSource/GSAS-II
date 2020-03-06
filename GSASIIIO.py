@@ -344,6 +344,16 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['DetDepthRef'] = False
         Data['calibrant'] = ''
         Data['IOtth'] = [5.0,50.0]
+        if GSASIIpath.GetConfigValue('Image_2theta_min'):
+            try:
+                Data['IOtth'][0] = float(GSASIIpath.GetConfigValue('Image_2theta_min'))
+            except:
+                pass
+        if GSASIIpath.GetConfigValue('Image_2theta_max'):
+            try:
+                Data['IOtth'][1] = float(GSASIIpath.GetConfigValue('Image_2theta_max'))
+            except:
+                pass
         Data['LRazimuth'] = [0.,180.]
         Data['azmthOff'] = 0.0
         Data['outChannels'] = 2500

@@ -2210,6 +2210,8 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     newPhase = copy.deepcopy(Phase)
     newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
     newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans)
+    GB = G2lat.cell2Gmat( newPhase['General']['Cell'][1:7])[0]
+    RMCPdict['Rmax'] = np.min(np.sqrt(np.array([1./G2lat.calc_rDsq2(H,GB) for H in [[1,0,0],[0,1,0],[0,0,1]]])))/2.
     newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
     Natm = np.core.defchararray.count(np.array(Atcodes),'+')    #no. atoms in original unit cell
     Natm = np.count_nonzero(Natm-1)

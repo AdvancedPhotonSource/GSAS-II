@@ -5413,14 +5413,20 @@ freshStart     = False      #make TRUE for a restart
                     if 'PDF1' in label:
                         ifNeut = True
                     Names = files[label][0][:-1].split(',')
+                    Xmax = 100.
+                    if 'XFQ' in label:
+                        Xmax = RMCPdict.get('Rmax',100.)
                     for line in files[label][1:]:
                         items = line.split(',')
+                        if 'XFQ' in label and float(items[0]) > Xmax:
+                            break
                         X.append(float(items[0]))
                         Yobs.append(float(items[1]))
                         Ycalc.append(float(items[2]))
                     Yobs = np.array([X,Yobs])
                     Ycalc = np.array([X,Ycalc])
                     if 'G(R)' in Labels[label][1]:
+                            
                         Ysave.append(Yobs)
                         Ymin = Ysave[0][1][0]
                     if 'bragg' in label: 
@@ -5459,7 +5465,10 @@ freshStart     = False      #make TRUE for a restart
                     if 'Q' in label:
                         XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                     else:
-                        XY = [[X.T,(DX*Y.T)] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
+                        if ifNeut:
+                            XY = [[X.T,(DX*Y.T)] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
+                        else:
+                            XY = [[X.T,(DX*Y.T)*X.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]                            
                     Names = [name for name in Names if 'Va' not in name]
                     if 'G(R)' in Labels[label][1]:
                         if ifNeut:
@@ -5469,7 +5478,11 @@ freshStart     = False      #make TRUE for a restart
                         sumAtm = 0
                         BLtables = G2elem.GetBLtable(generalData)
                         AtNum = generalData['NoAtoms']
-                        for atm in AtNum: sumAtm += AtNum[atm]
+                        if ifNeut:
+                            for atm in AtNum: sumAtm += AtNum[atm]
+                        else:
+                            for atm in AtNum:
+                                sumAtm += AtNum[atm]*G2elem.GetFFtable([atm,])[atm]['Z']
                         bfac = {}
                         bcorr = []
                         for atm in AtNum:
@@ -5479,7 +5492,7 @@ freshStart     = False      #make TRUE for a restart
                                 else:   #resonant scatters (unlikely!)
                                     bfac[atm] = AtNum[atm]/sumAtm
                             else:
-                                bfac[atm] = G2elem.GetFFtable([atm,])[atm]['Z']*AtNum[atm]/sumAtm
+                                bfac[atm] = 10.*G2elem.GetFFtable([atm,])[atm]['Z']*AtNum[atm]/sumAtm
                         for name in Names:
                             if '-' in name:
                                 at1,at2 = name.strip().split('-')

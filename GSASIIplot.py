@@ -8321,7 +8321,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 elif key == '-':
                     G2frame.tau -= 0.05
                 G2frame.tau %= 1.   #force 0-1 range; makes loop
-                G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
+                G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.4f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
                 SetDrawAtomsText(data['Drawing']['Atoms'])
                 G2phG.FindBondsDraw(data)           #rebuild bonds & polygons

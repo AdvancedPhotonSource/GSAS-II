@@ -5401,8 +5401,7 @@ freshStart     = False      #make TRUE for a restart
                 '_SQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q) for '],
                 '_SQ2.csv':[r'$\mathsf{Q,\AA^{-1}}$','S(Q)','RMCP S(Q)-2 for '],
                 '_FQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP F(Q) for '],
-                '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','G(R)','RMCP x-ray G(R) for '],
-#                '_XFQ1.csv':[r'$\mathsf{Q,\AA^{-1}}$','F(Q)','RMCP x-ray F(Q) for '],
+                '_FT_XFQ1.csv':[r'$\mathsf{R,\AA}$','g(R)','RMCP x-ray g(R) for '],
                 '_bragg.csv':[r'$\mathsf{TOF,\mu s}$','Normalized Intensity','RMCP bragg for ']}
             Ysave = []
             for label in Labels:
@@ -5421,13 +5420,12 @@ freshStart     = False      #make TRUE for a restart
                         if 'XFQ' in label and float(items[0]) > Xmax:
                             break
                         X.append(float(items[0]))
-                        Yobs.append(float(items[1]))
-                        Ycalc.append(float(items[2]))
+                        Yobs.append(float(items[2]))
+                        Ycalc.append(float(items[1]))
                     Yobs = np.array([X,Yobs])
                     Ycalc = np.array([X,Ycalc])
-                    if 'G(R)' in Labels[label][1]:
-                            
-                        Ysave.append(Yobs)
+                    if '(R)' in Labels[label][1]:
+                        Ysave.append(Ycalc)
                         Ymin = Ysave[0][1][0]
                     if 'bragg' in label: 
                         Ydiff = np.array([X,(Yobs-Ycalc)[1]])
@@ -5470,11 +5468,13 @@ freshStart     = False      #make TRUE for a restart
                         else:
                             XY = [[X.T,(DX*Y.T)*X.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]                            
                     Names = [name for name in Names if 'Va' not in name]
+                    ylabel = Labels[label][1]
                     if 'G(R)' in Labels[label][1]:
                         if ifNeut:
                             title = 'Neutron '+Labels[label][2]+pName
                         else:
-                            title = 'X-ray '+Labels[label][2]+pName
+                            title = 'X-ray '+Labels[label][2].replace('G','g')+pName
+                            ylabel = 'g(R)'
                         sumAtm = 0
                         BLtables = G2elem.GetBLtable(generalData)
                         AtNum = generalData['NoAtoms']
@@ -5507,11 +5507,11 @@ freshStart     = False      #make TRUE for a restart
                             xy[1] += Ymin
                         Xmax = np.searchsorted(Ysave[0][0],XY[0][0][-1])
                         G2plt.PlotXY(G2frame,XY2=XY,XY=[Ysave[0][:,0:Xmax],],labelX=Labels[label][0],
-                            labelY=Labels[label][1],newPlot=True,Title=title,
-                            lines=False,names=[r'   $G(R)_{obs}$',]+Names[1:])
+                            labelY=ylabel,newPlot=True,Title=title,
+                            lines=False,names=[r'   $G(R)_{calc}$',]+Names[1:])
                     else:                        
                         G2plt.PlotXY(G2frame,XY,labelX=Labels[label][0],
-                            labelY=Labels[label][1],newPlot=True,Title=Labels[label][2]+pName,
+                            labelY=ylabel,newPlot=True,Title=Labels[label][2]+pName,
                             lines=True,names=Names[1:])
 #chi**2 plot
             X = []

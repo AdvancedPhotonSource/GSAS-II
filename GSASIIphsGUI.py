@@ -2552,34 +2552,41 @@ def UpdatePhaseData(G2frame,Item,data):
                 generalData['Compare']['Tatoms'] = tatmsel.GetStringSelection()
                 
             def OnCompPlots(event):
-                Bonds = generalData['Compare']['Bonds']
-                Tilts = generalData['Compare']['Tilts']
-                Vects = generalData['Compare']['Vects']
+                pName = generalData['Name']
                 Oatoms = generalData['Compare']['Oatoms']
                 Tatoms = generalData['Compare']['Tatoms']
-                dVects = generalData['Compare']['dVects']
+                bName = '%s-%s'%(Oatoms,Tatoms)
+                try:
+                    Bonds = generalData['Compare']['Bonds'][bName]
+                except KeyError:
+                    print('need to do Compare first for %s polyhedra plots'%bName)
+                    return
+                Tilts = generalData['Compare']['Tilts'][bName]
+                Vects = generalData['Compare']['Vects'][bName]
+                dVects = generalData['Compare']['dVects'][bName]
                 if len(Bonds['Obonds']):
                     print(' Octahedra:')
                     Bonds['Obonds'] = np.array(Bonds['Obonds'])
                     Bmean = np.mean(Bonds['Obonds'])
                     Bstd = np.std(Bonds['Obonds'])
                     title = '%s-%s Octahedral bond lengths'%(Oatoms,Tatoms)                    
-                    G2plt.PlotBarGraph(G2frame,Bonds['Obonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Oct-Bond')
+                    G2plt.PlotBarGraph(G2frame,Bonds['Obonds'],Xname=r'$Bond, \AA$',Title=title,
+                        PlotName='Oct %s Bond for %s'%(bName,pName))
                     Tilts['Otilts'] = np.array(Tilts['Otilts'])
                     Tmean = np.mean(Tilts['Otilts'])
                     Tstd = np.std(Tilts['Otilts'])                    
                     G2plt.PlotBarGraph(G2frame,Tilts['Otilts'],Xname='Tilts, deg',
-                        Title='Octahedral %s tilts'%Oatoms,PlotName='Oct-Tilts')
+                        Title='Octahedral %s tilts'%Oatoms,PlotName='Oct %s Tilts for %s'%(bName,pName))
                     dVects['Ovec'] = np.reshape(np.array(dVects['Ovec']),(-1,3))
                     for ix,aX in enumerate(['X','Y','Z']):                        
                         G2plt.PlotBarGraph(G2frame,dVects['Ovec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
-                            Title='%s Octahedral distortion'%Oatoms,PlotName='Oct %s-Delta'%aX)
+                            Title='%s Octahedral distortion'%Oatoms,PlotName='Oct %s %s-Delta for %s'%(bName,aX,pName))
                     Vects['Ovec'] = np.array(Vects['Ovec'])                    #3D plot of tilt vectors                    
                     X = Vects['Ovec'].T[0]
                     Y = Vects['Ovec'].T[1]
                     Z = Vects['Ovec'].T[2]                    
                     G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
-                        Title=r'%s Octahedral tilt vectors'%Oatoms,PlotName='Oct tilts')
+                        Title=r'%s Octahedral tilt vectors'%Oatoms,PlotName='Oct %s tilts for %s'%(bName,pName))
                     print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
                     print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
                 
@@ -2588,27 +2595,31 @@ def UpdatePhaseData(G2frame,Item,data):
                     Bonds['Tbonds'] = np.array(Bonds['Tbonds'])
                     Bmean = np.mean(Bonds['Tbonds'])
                     Bstd = np.std(Bonds['Tbonds'])
-                    title = '%s-%s Terahedral bond lengths'%(Oatoms,Tatoms)
-                    G2plt.PlotBarGraph(G2frame,Bonds['Tbonds'],Xname=r'$Bond, \AA$',Title=title,PlotName='Tet-Bond')
+                    title = '%s-%s Tetrahedral bond lengths'%(Oatoms,Tatoms)
+                    G2plt.PlotBarGraph(G2frame,Bonds['Tbonds'],Xname=r'$Bond, \AA$',Title=title,
+                        PlotName='Tet %s Bond for %s'%(bName,pName))
                     Tilts['Ttilts'] = np.array(Tilts['Ttilts'])
                     Tmean = np.mean(Tilts['Ttilts'])
                     Tstd = np.std(Tilts['Ttilts'])
                     G2plt.PlotBarGraph(G2frame,Tilts['Ttilts'],Xname='Tilts, deg',
-                        Title='Tetrahedral %s tilts'%Oatoms,PlotName='Tet-Tilts')
+                        Title='Tetrahedral %s tilts'%Oatoms,PlotName='Tet %s Tilts for %s'%(bName,pName))
                     dVects['Tvec'] = np.reshape(np.array(dVects['Tvec']),(-1,3))
                     for ix,aX in enumerate(['X','Y','Z']):
                         G2plt.PlotBarGraph(G2frame,dVects['Tvec'].T[ix],Xname=r'$%s%s, \AA$'%(GkDelta,aX),
-                            Title='%s Tetrahedral distortion'%Oatoms,PlotName='Tet %s-Delta'%aX)                
+                            Title='%s Tetrahedral distortion'%Oatoms,PlotName='Tet %s %s-Delta for %s'%(bName,aX,pName))                
                     Vects['Tvec'] = np.array(Vects['Tvec'])
                     X = Vects['Tvec'].T[0]
                     Y = Vects['Tvec'].T[1]
                     Z = Vects['Tvec'].T[2]
                     G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
-                        Title=r'%s Tetrahedral tilt vectors'%Oatoms,PlotName='Tet tilts')
+                        Title=r'%s Tetrahedral tilt vectors'%Oatoms,PlotName='Tet %s tilts for %s'%(bName,pName))
                     print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
                     print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
                 
 
+            Oatoms = generalData['Compare']['Oatoms']
+            Tatoms = generalData['Compare']['Tatoms']
+            bName = '%s-%s'%(Oatoms,Tatoms)
             atTypes = generalData['AtomTypes']
             compSizer = wx.BoxSizer(wx.VERTICAL)
             compSizer.Add(wx.StaticText(General,label=' Compare polyhedra to ideal octahedra/tetrahedra:'),0,WACV)
@@ -2626,10 +2637,13 @@ def UpdatePhaseData(G2frame,Item,data):
             tatmsel.Bind(wx.EVT_COMBOBOX,OnTatmOsel)
             atmselSizer.Add(tatmsel,0,WACV)
             
-            if len(generalData['Compare']['Bonds']['Obonds']) or len(generalData['Compare']['Bonds']['Tbonds']):
-                plotBtn = wx.Button(General,label='Show plots?')
-                plotBtn.Bind(wx.EVT_BUTTON,OnCompPlots)
-                atmselSizer.Add(plotBtn)
+            try:
+                if len(generalData['Compare']['Bonds'][bName]['Obonds']) or len(generalData['Compare']['Bonds'][bName]['Tbonds']):
+                    plotBtn = wx.Button(General,label='Show plots?')
+                    plotBtn.Bind(wx.EVT_BUTTON,OnCompPlots)
+                    atmselSizer.Add(plotBtn)
+            except KeyError:
+                pass
             compSizer.Add(atmselSizer,0,WACV)
             return compSizer
             
@@ -2808,9 +2822,10 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atNames = [atm[ct-1] for atm in data['Atoms']]
-        if not generalData['Compare']['Oatoms']:
+        if not generalData['Compare']['Oatoms'] or not generalData['Compare']['Tatoms']:
             G2frame.ErrorDialog('Compare atom selection error','Select atoms for polygon comparison first')
             return
+        bName = '%s-%s'%(generalData['Compare']['Oatoms'],generalData['Compare']['Tatoms'])
         DisAglCtls = generalData.get('DisAglCtls',{})
         dlg = G2G.DisAglDialog(G2frame,DisAglCtls,generalData)
         if dlg.ShowModal() == wx.ID_OK:
@@ -2821,13 +2836,13 @@ def UpdatePhaseData(G2frame,Item,data):
         pgbar = wx.ProgressDialog('Process polyhedron compare for %d atoms'%Natm,'Atoms done=',Natm+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         Tilts = generalData['Compare']['Tilts'] 
-        Tilts.update({'Otilts':[],'Ttilts':[]})
+        Tilts.update({bName:{'Otilts':[],'Ttilts':[]}})
         Bonds = generalData['Compare']['Bonds']
-        Bonds.update({'Obonds':[],'Tbonds':[]})
+        Bonds.update({bName:{'Obonds':[],'Tbonds':[]}})
         Vects = generalData['Compare']['Vects']
-        Vects.update({'Ovec':[],'Tvec':[]})
+        Vects.update({bName:{'Ovec':[],'Tvec':[]}})
         dVects = generalData['Compare']['dVects']
-        dVects.update({'Ovec':[],'Tvec':[]})
+        dVects.update({bName:{'Ovec':[],'Tvec':[]}})
         Oatoms = generalData['Compare']['Oatoms']
         nOct = 0
         nTet = 0
@@ -2837,17 +2852,17 @@ def UpdatePhaseData(G2frame,Item,data):
                 results = G2mth.FindAllNeighbors(data,atom[ct-1],atNames)[0]      #slow step
                 if len(results) == 4:
                     bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindTetrahedron(results)
-                    Bonds['Tbonds'].append(bond)
-                    Tilts['Ttilts'].append(A)
-                    Vects['Tvec'].append(V)
-                    dVects['Tvec'].append(dVec)
+                    Bonds[bName]['Tbonds'].append(bond)
+                    Tilts[bName]['Ttilts'].append(A)
+                    Vects[bName]['Tvec'].append(V)
+                    dVects[bName]['Tvec'].append(dVec)
                     nTet += 1
                 elif len(results) == 6:
                     bond,std,meanDisp,stdDisp,A,V,dVec = G2mth.FindOctahedron(results)
-                    Bonds['Obonds'].append(bond)
-                    Tilts['Otilts'].append(A)
-                    Vects['Ovec'].append(V)
-                    dVects['Ovec'].append(dVec)
+                    Bonds[bName]['Obonds'].append(bond)
+                    Tilts[bName]['Otilts'].append(A)
+                    Vects[bName]['Ovec'].append(V)
+                    dVects[bName]['Ovec'].append(dVec)
                     nOct += 1
                 else:
                     print('%s is something else with %d vertices'%(atom[ct-1],len(results)))

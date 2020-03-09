@@ -1218,13 +1218,15 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
     #make linear interpolators; outside limits give NaN
     H0 = []
-    for h0msk,h2msk in zip(H0msk,H2msk):
+    problemEntries = []
+    for i,(h0msk,h2msk) in enumerate(zip(H0msk,H2msk)):
         try:
             h0int = scint.interp1d(h2msk.compressed(),h0msk.compressed(),bounds_error=False)
             #do interpolation on all points - fills in the empty bins; leaves others the same
             h0 = h0int(H2[:-1])
             H0.append(h0)
         except ValueError:
+            problemEntries.append(i)
             H0.append(np.zeros(numChans,order='F',dtype=np.float32))
     H0 = np.nan_to_num(np.array(H0))        
     if 'log(q)' in data.get('binType',''):
@@ -1248,6 +1250,12 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4]))
     G2fil.G2Print ("Elapsed time:","%8.3fs"%(time.time()-tbeg))
     G2fil.G2Print ('Integration complete')
+    if problemEntries:
+        msg = ""
+        for i in problemEntries:
+            if msg: msg += ', '
+            msg += "{:.2f}".format((H1[i+1]+H1[i])/2.)
+        print('\nWarning, integrations have no pixels at these azimuth(s)\n\t',msg,'\n')
     if returnN:     #As requested by Steven Weigand
         return H0,H1,H2,NST,CancelPressed
     else:

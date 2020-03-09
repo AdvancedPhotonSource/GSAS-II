@@ -780,7 +780,7 @@ class BondDialog(wx.Dialog):
             neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
         bNames = ['',]
         if neigh:
-            bNames = [item[0]+' d=%.3f'%(item[1]) for item in neigh[0]]
+            bNames = [item[0]+' d=%.3f'%(item[2]) for item in neigh[0]]
         targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=bNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)

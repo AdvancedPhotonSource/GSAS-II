@@ -33,7 +33,7 @@ except ImportError: # expected in scriptable w/o matplotlib and/or wx
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
 import GSASIIspc as G2spc
-import GSASIImath as G2mth
+#import GSASIImath as G2mth
 import GSASIIfiles as G2fil
 
 # trig functions in degrees
@@ -1217,10 +1217,16 @@ def ImageIntegrate(image,data,masks,blkSize=128,returnN=False,useTA=None,useMask
     H2msk = [ma.array(H2[:-1],mask=np.logical_not(nst)) for nst in NST]
     H0msk = [ma.array(np.divide(h0,nst),mask=np.logical_not(nst)) for nst,h0 in zip(NST,H0)]
     #make linear interpolators; outside limits give NaN
-    H0int = [scint.interp1d(h2msk.compressed(),h0msk.compressed(),bounds_error=False) for h0msk,h2msk in zip(H0msk,H2msk)]
-    #do interpolation on all points - fills in the empty bins; leaves others the same
-    H0 = np.array([h0int(H2[:-1]) for h0int in H0int])
-    H0 = np.nan_to_num(H0)
+    H0 = []
+    for h0msk,h2msk in zip(H0msk,H2msk):
+        try:
+            h0int = scint.interp1d(h2msk.compressed(),h0msk.compressed(),bounds_error=False)
+            #do interpolation on all points - fills in the empty bins; leaves others the same
+            h0 = h0int(H2[:-1])
+            H0.append(h0)
+        except ValueError:
+            H0.append(np.zeros(numChans,order='F',dtype=np.float32))
+    H0 = np.nan_to_num(np.array(H0))        
     if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
     elif 'q' == data.get('binType','').lower():

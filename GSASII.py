@@ -24,7 +24,7 @@ which creates the GSAS-II GUI and finally the event loop is started.
 '''
 
 import sys
-import os
+#import os
 import platform
 import wx
 import GSASIIpath

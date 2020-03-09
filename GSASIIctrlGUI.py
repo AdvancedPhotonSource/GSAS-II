@@ -2445,35 +2445,64 @@ class MultiStringDialog(wx.Dialog):
     :param str prompts: strings to tell use what they are inputting
     :param str values: default input values, if any
     :param int size: length of the input box in pixels
+    :param bool addRows: if True, users can add rows to the table 
+      (default is False)
+    :param str hlp: if supplied, a help button is added to the dialog that
+      can be used to display the supplied help text in this variable.
     '''
-    def __init__(self,parent,title,prompts,values=[],size=-1):
-        
+    def __init__(self,parent,title,prompts,values=[],size=-1,
+                     addRows=False,hlp=None):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
                            pos=wx.DefaultPosition,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.values = values
-        self.prompts = prompts
+        self.values = list(values)
+        self.prompts = list(prompts)
+        self.addRows = addRows
+        self.size = size
+        self.hlp = hlp
         self.CenterOnParent()
+        self.Paint()
+
+    def Paint(self):
+        if self.GetSizer():
+            self.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
+        if self.hlp:
+            btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hlp = HelpButton(self,self.hlp)
+            btnsizer.Add((-1,-1),1, wx.EXPAND, 1)
+            btnsizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
+            mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER|wx.EXPAND)
         promptSizer = wx.FlexGridSizer(0,2,5,5)
+        promptSizer.AddGrowableCol(1,1)
         self.Indx = {}
-        for prompt,value in zip(prompts,values):
-            promptSizer.Add(wx.StaticText(self,-1,prompt),0,WACV)
-            valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(size,-1))
+        for prompt,value in zip(self.prompts,self.values):
+            promptSizer.Add(wx.StaticText(self,-1,prompt),0,WACV,0)
+            valItem = wx.TextCtrl(self,-1,value=value,style=wx.TE_PROCESS_ENTER,size=(self.size,-1))
             self.Indx[valItem.GetId()] = prompt
             valItem.Bind(wx.EVT_TEXT,self.newValue)
             promptSizer.Add(valItem,1,WACV|wx.EXPAND,1)
         mainSizer.Add(promptSizer,1,wx.ALL|wx.EXPAND,1)
-        btnsizer = wx.StdDialogButtonSizer()
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         OKbtn = wx.Button(self, wx.ID_OK)
         OKbtn.SetDefault()
-        btnsizer.AddButton(OKbtn)
+        btnsizer.Add((1,1),1,wx.EXPAND,1)
+        btnsizer.Add(OKbtn)
         btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
-        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        btnsizer.Add(btn)
+        btnsizer.Add((1,1),1,wx.EXPAND,1)
+        if self.addRows:
+            btn = wx.Button(self, wx.ID_ANY,'+',style=wx.BU_EXACTFIT)
+            btn.Bind(wx.EVT_BUTTON,self.onExpand)
+            btnsizer.Add(btn,0,wx.ALIGN_RIGHT)
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER|wx.EXPAND)
         self.SetSizer(mainSizer)
         self.Fit()
+
+    def onExpand(self,event):
+        self.values.append('')
+        self.prompts.append('item '+str(len(self.values)))
+        self.Paint()
         
     def newValue(self,event):
         Obj = event.GetEventObject()

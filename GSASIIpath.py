@@ -163,26 +163,27 @@ def MakeByte2str(arg):
 def getsvnProxy():
     '''Loads a proxy for subversion from the file created by bootstrap.py
     '''
-    proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
-    if os.path.exists(proxyinfo):
-        global proxycmds
-        proxycmds = []
-        fp = open(proxyinfo,'r')
+    global proxycmds
+    proxycmds = []
+    proxyinfo = os.path.join(os.path.expanduser('~/.G2local/'),"proxyinfo.txt")
+    if not os.path.exists(proxyinfo):
+        proxyinfo = os.path.join(path2GSAS2,"proxyinfo.txt")
+    if not os.path.exists(proxyinfo):
+        return '','',''
+    fp = open(proxyinfo,'r')
+    host = fp.readline().strip()
+    # allow file to begin with comments
+    while host.startswith('#'):
         host = fp.readline().strip()
-        # allow file to begin with comments
-        while host.startswith('#'):
-            host = fp.readline().strip()
-        port = fp.readline().strip()
-        etc = []
+    port = fp.readline().strip()
+    etc = []
+    line = fp.readline()
+    while line:
+        etc.append(line.strip())
         line = fp.readline()
-        while line:
-            etc.append(line.strip())
-            line = fp.readline()
-        fp.close()
-        setsvnProxy(host,port,etc)
-        if not host.strip(): return '',''
-        return host,port,etc
-    return '','',''
+    fp.close()
+    setsvnProxy(host,port,etc)
+    return host,port,etc
 
 def setsvnProxy(host,port,etc=[]):
     '''Sets the svn commands needed to use a proxy
@@ -194,9 +195,9 @@ def setsvnProxy(host,port,etc=[]):
     if host: 
         proxycmds.append('--config-option')
         proxycmds.append('servers:global:http-proxy-host='+host)
-    if port:
-        proxycmds.append('--config-option')
-        proxycmds.append('servers:global:http-proxy-port='+port)
+        if port:
+            proxycmds.append('--config-option')
+            proxycmds.append('servers:global:http-proxy-port='+port)
     for item in etc:
         proxycmds.append(item)
         

@@ -2123,31 +2123,76 @@ class GSASII(wx.Frame):
         '''Edit the proxy information used by subversion
         '''
         h,p,e = host,port,etc = GSASIIpath.getsvnProxy()
-        if e:
-            proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
-            G2G.G2MessageBox(self,'File {} has manually-'.format(proxyinfo)+
-                'entered information. Please edit this by hand',
-                                 'Unable to edit')
-            return
+        labels = ['Proxy address','proxy port']
+        values = [host,port]
+        i = 1
+        for item in etc:
+            i += 1
+            labels.append('extra svn arg #'+str(i))
+            values.append(item)
+        msg = '''This dialog allows customization of the subversion (svn) 
+        command. If a proxy server is needed, the address/host and port 
+        can be added supplied here. This will generate command-line options 
+
+        --config-option servers:global:http-proxy-host=*host* 
+        --config-option servers:global:http-proxy-port=*port*
+
+        Additional subversion command line options can be supplied here
+        by pressing the '+' button. As examples of options that might be of 
+        value, use two extra lines to add:
+
+        --config-dir
+        DIR
+
+        to specify an alternate configuration location. 
+
+        Or, use four extra lines to add
+
+        --config-option
+        servers:global:http-proxy-username=*account*
+        --config-option
+        servers:global:http-proxy-password=*password*
+
+        to specify a proxy user name and password.
+
+        Note that strings marked *value* are items that will be configured 
+        by the user. See http://svnbook.red-bean.com for more information on
+        subversion. 
+        '''
         dlg = G2G.MultiStringDialog(self,'Enter proxy values',
-                                        ['Proxy address','proxy port'],
-                                        [host,port],size=300)
+                            labels,values,size=300,addRows=True,hlp=msg)
         if dlg.Show():
-            h,p = dlg.GetValues()
+            values = dlg.GetValues()
+            h,p = values[:2]
+            e = values[2:]
         dlg.Destroy()
-        if h != host or p != port:
-            proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
-            GSASIIpath.setsvnProxy(h,p)
-            if not h.strip():
-                os.remove(proxyinfo)
+        if h != host or p != port or etc != e:
+            localproxy = proxyinfo = os.path.join(
+                os.path.expanduser('~/.G2local/'),
+                "proxyinfo.txt")
+            if not os.path.exists(proxyinfo):
+                proxyinfo = os.path.join(GSASIIpath.path2GSAS2,"proxyinfo.txt")
+            GSASIIpath.setsvnProxy(h,p,e)
+            if not h.strip() and not e:
+                if os.path.exists(localproxy): os.remove(localproxy)
+                if os.path.exists(proxyinfo): os.remove(proxyinfo)
                 return
             try:
                 fp = open(proxyinfo,'w')
+            except:
+                fp = open(localproxy,'w')
+                proxyinfo = localproxy
+            try:
                 fp.write(h.strip()+'\n')
                 fp.write(p.strip()+'\n')
+                for i in e:
+                    if i.strip():
+                        fp.write(i.strip()+'\n')
                 fp.close()
             except Exception as err:
                 print('Error writing file {}:\n{}'.format(proxyinfo,err))
+            print('File {} written'.format(proxyinfo))
+                
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
         '''

@@ -32,7 +32,7 @@ plotting routine               action
 :func:`PlotCalib`             CW or TOF peak calibration
 :func:`PlotXY`                Simple plot of xy data
 :func:`PlotXYZ`               Simple contour plot of xyz data
-:func:`PlotXYZvect`           Scatter Plot for 3D cartesian vectors
+:func:`PlotXYZvect`           Quiver Plot for 3D cartesian vectors
 :func:`Plot3Dxyz`             Surface Plot for 3D vectors
 :func:`PlotAAProb`            Protein "quality" plot 
 :func:`PlotStrain`            Plot of strain data, used for diagnostic purposes
@@ -5172,13 +5172,16 @@ def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title='',zrange=Non
 ##### PlotXYZvect
 ################################################################################
         
-def PlotXYZvect(G2frame,X,Y,Z,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
+def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotName=None):
+    ''' To plot a quiver of quaternion vectors colored by the rotation
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param list X,Y,Z: list of X,Y,Z arrays
+    :param list R: a list of rotations (0-90) for each X,Y,Z in degrees
+    :param str labelX,labelY,labelZ: labels for X,Y,Z-axes
+    :param str Title: plot title
+    :param str PlotName: plot tab name
+    '''
     
-#    def OnPageChanged(event):
-#        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
-#        if PlotText == PlotName:
-#            PlotXYZvect(G2frame,X,Y,Z,labelX,labelY,labelZ,Title,PlotText)        
-        
     def OnMotion(event):
         G2frame.G2plotNB.status.SetStatusText('',1)
     
@@ -5187,14 +5190,18 @@ def PlotXYZvect(G2frame,X,Y,Z,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotN
     G2frame.G2plotNB.Delete(PlotName)       #A cluge: to avoid AccessExceptions on replot
     new,plotNum,Page,Plot,lim = G2frame.G2plotNB.FindPlotTab(PlotName,'3d')
     if new:
-#        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     G2frame.G2plotNB.status.SetStatusText('',1)
     Page.Choice = None
     np.seterr(all='ignore')
-    Plot.scatter(X,Y,Z,marker='x')
+    mpl.rcParams['image.cmap'] = G2frame.ContourColor
+    mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
+    X0 = Y0 = Z0 = np.zeros_like(X)
+    icolor = R/90.
+    Plot.quiver(X0,Y0,Z0,X,Y,Z,color=mcolors.cmap(icolor),arrow_length_ratio=0.05)
     xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
     XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+    XYZlim = [-1.,1.]
     Plot.set_xlim3d(XYZlim)
     Plot.set_ylim3d(XYZlim)
     Plot.set_zlim3d(XYZlim)
@@ -5203,6 +5210,7 @@ def PlotXYZvect(G2frame,X,Y,Z,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',PlotN
     Plot.set_ylabel(labelY,fontsize=14)
     Plot.set_zlabel(labelZ,fontsize=14)
     Plot.set_title(Title)
+    Page.figure.colorbar(mcolors,shrink=0.75,label='Rotation',boundaries=range(91))
     Page.canvas.draw()
         
 ################################################################################

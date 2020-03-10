@@ -2584,8 +2584,9 @@ def UpdatePhaseData(G2frame,Item,data):
                     Vects['Ovec'] = np.array(Vects['Ovec'])                    #3D plot of tilt vectors                    
                     X = Vects['Ovec'].T[0]
                     Y = Vects['Ovec'].T[1]
-                    Z = Vects['Ovec'].T[2]                    
-                    G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
+                    Z = Vects['Ovec'].T[2]
+                    R = Tilts['Otilts']
+                    G2plt.PlotXYZvect(G2frame,X,Y,Z,R,r'X-axis',r'Y-axis',r'Z-axis',
                         Title=r'%s Octahedral tilt vectors'%Oatoms,PlotName='Oct %s tilts for %s'%(bName,pName))
                     print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
                     print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))
@@ -2611,7 +2612,8 @@ def UpdatePhaseData(G2frame,Item,data):
                     X = Vects['Tvec'].T[0]
                     Y = Vects['Tvec'].T[1]
                     Z = Vects['Tvec'].T[2]
-                    G2plt.PlotXYZvect(G2frame,X,Y,Z,r'X-axis',r'Y-axis',r'Z-axis',
+                    R = Tilts['Ttilts']
+                    G2plt.PlotXYZvect(G2frame,X,Y,Z,R,r'X-axis',r'Y-axis',r'Z-axis',
                         Title=r'%s Tetrahedral tilt vectors'%Oatoms,PlotName='Tet %s tilts for %s'%(bName,pName))
                     print(' %s-%s bond distance: %.3f(%d)'%(Oatoms,Tatoms,Bmean,Bstd*1000))
                     print(' %s tilt angle: %.2f(%d)'%(Oatoms,Tmean,Tstd*100))

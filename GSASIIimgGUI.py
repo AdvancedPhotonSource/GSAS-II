@@ -99,6 +99,10 @@ def GetImageZ(G2frame,data,newRange=False):
                 darkImage = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag,FormatName=dformatName)
                 if darkImg is not None:                
                     sumImg += np.array(darkImage*darkScale,dtype='int32')
+            else:
+                print('Warning: resetting dark image (not found: {})'.format(
+                    darkImg))
+                data['dark image'][0] = darkImg = ''
     if 'background image' in data:
         backImg,backScale = data['background image']            
         if backImg:     #ignores any transmission effect in the background image

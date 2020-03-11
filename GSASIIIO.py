@@ -1428,7 +1428,7 @@ class ExportBaseclass(object):
                     'Project does not contain any powder data.')
                 return True
             elif len(self.powderDict) == 1:
-                self.histnam = self.powderDict.values()
+                self.histnam = list(self.powderDict.values())
             elif self.multiple:
                 choices = sorted(self.powderDict.values())
                 hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)

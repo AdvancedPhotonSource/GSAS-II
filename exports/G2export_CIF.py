@@ -1416,17 +1416,22 @@ class ExportCIF(G2IO.ExportBaseclass):
                             '  '+str(self.Phases[phasenam]['pId'])+
                             '  '+datablockidDict[phasenam]
                             )
-            else:
+            elif len(self.Phases) == 1:
                 # single phase in this histogram
-                pfx = '0:'+str(hId)+':'
+                # get the phase number here
+                pId = self.Phases[list(self.Phases.keys())[0]]['pId']
+                pfx = str(pId)+':'+str(hId)+':'
                 WriteCIFitem(self.fp, '_refine_ls_R_F_factor      ','%.5f'%(histblk[pfx+'Rf']/100.))
                 WriteCIFitem(self.fp, '_refine_ls_R_Fsqd_factor   ','%.5f'%(histblk[pfx+'Rf^2']/100.))
-
-            WriteCIFitem(self.fp, '_pd_proc_ls_prof_R_factor   ','%.5f'%(histblk['R']/100.))
-            WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_factor  ','%.5f'%(histblk['wR']/100.))
-            WriteCIFitem(self.fp, '_gsas_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
-            WriteCIFitem(self.fp, '_gsas_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
-            WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_expected','%.5f'%(histblk['wRmin']/100.))
+                
+            try:
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_R_factor   ','%.5f'%(histblk['R']/100.))
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_factor  ','%.5f'%(histblk['wR']/100.))
+                WriteCIFitem(self.fp, '_gsas_proc_ls_prof_R_B_factor ','%.5f'%(histblk['Rb']/100.))
+                WriteCIFitem(self.fp, '_gsas_proc_ls_prof_wR_B_factor','%.5f'%(histblk['wRb']/100.))
+                WriteCIFitem(self.fp, '_pd_proc_ls_prof_wR_expected','%.5f'%(histblk['wRmin']/100.))
+            except KeyError:
+                pass
 
             if histblk['Instrument Parameters'][0]['Type'][1][1] == 'X':
                 WriteCIFitem(self.fp, '_diffrn_radiation_probe','x-ray')

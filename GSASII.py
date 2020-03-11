@@ -71,9 +71,9 @@ if __name__ == '__main__':
             sys.exit()
         print('Updating...')
         GSASIIpath.svnUpdateProcess()
-    GSASIIpath.InvokeDebugOpts()
     import GSASIIdataGUI as G2gd    
     G2gd.GSASIImain(application) # start the GUI
     if sys.platform == "darwin": 
         wx.CallLater(100,application.ClearStartup)
+    GSASIIpath.InvokeDebugOpts()
     application.MainLoop()

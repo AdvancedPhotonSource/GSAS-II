@@ -5,10 +5,7 @@ The modules here are tools that provide programs that can be run
 independently of the main GSAS-II program.
 Both are under development.
 
-.. automodule:: G2AutoInt
-    :members: 
-
-.. automodule:: GSASIIautoInt
+.. automodule:: GSASIIIntPDFtool.py
     :members: 
 
 .. automodule:: G2compare

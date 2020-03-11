@@ -3903,27 +3903,32 @@ class GSASII(wx.Frame):
         File/Open Project menu button
         '''
         def SaveOld():
+            '''See if we should save current project and continue 
+            to read another.
+            returns True if the project load should continue
+            '''
             if self.dataWindow:
                 self.dataWindow.ClearData()
-            dlg = wx.MessageDialog(
-                self,
-                'Do you want to overwrite the current project? '+
-                'Any unsaved changes in current project will be lost. Press OK to continue.',
-                'Overwrite?',  wx.OK | wx.CANCEL)
+            dlg = wx.MessageDialog(self,
+                    'Do you want to save and replace the current project?\n(Use No to read without saving or Cancel to continue with current project)',
+                    'Save & Overwrite?',
+                    wx.YES|wx.NO|wx.CANCEL)
             try:
                 result = dlg.ShowModal()
-                if result == wx.ID_OK:
-                    #if GSASIIpath.GetConfigValue('debug'): print('DBG: Starting cleanup')
-                    self.GPXtree.DeleteChildren(self.root)
-                    #if GSASIIpath.GetConfigValue('debug'): print('DBG: DeleteChildren done')
-                    self.GSASprojectfile = ''
-                    self.HKL = []
-                    if self.G2plotNB.plotList:
-                        self.G2plotNB.clear()
-                    #if GSASIIpath.GetConfigValue('debug'): print('DBG: cleanup done')
             finally:
                 dlg.Destroy()
-            return result
+            if result == wx.ID_NO:
+                result = True
+            elif result == wx.ID_CANCEL:
+                return False
+            else:
+                if not self.OnFileSave(None): return False
+            self.GPXtree.DeleteChildren(self.root)
+            self.GSASprojectfile = ''
+            self.HKL = []
+            if self.G2plotNB.plotList:
+                self.G2plotNB.clear()
+            return True
         
         def GetGPX():
             if self.LastGPXdir:
@@ -3942,10 +3947,8 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
             
         self.EnablePlot = False
-        result = wx.ID_OK
         if self.GPXtree.GetChildrenCount(self.root,False):
-            result = SaveOld()
-        if result != wx.ID_OK: return
+            if not SaveOld(): return
 
         if not filename:
             GetGPX()
@@ -4020,7 +4023,10 @@ class GSASII(wx.Frame):
         File/New Project menu button. User is given option to save
         the project.
         '''
-        dlg = wx.MessageDialog(self, 'Save current project?', ' ', wx.YES | wx.NO | wx.CANCEL)
+        dlg = wx.MessageDialog(self,
+                    'Do you want to save the current project and start with an empty one?\n(Use No to clear without saving or Cancel to continue with current project)',
+                    'Save & Clear?',
+                    wx.YES | wx.NO | wx.CANCEL)
         try:
             result = dlg.ShowModal()
             if result == wx.ID_OK:

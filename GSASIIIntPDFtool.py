@@ -932,7 +932,7 @@ def ProcessImage(newImage,imgprms,mskprms,xydata,PDFdict,InterpVals,calcModes,ou
             for i,h in enumerate(hists):
                 fname = h.name[5:].replace(' ','_')
                 #if len(hists) > 1:
-                GSASIIpath.IPyBreak_base()
+                #GSASIIpath.IPyBreak_base()
                 try:
                     fil = os.path.join(savedir,fname)
                     print('Wrote',h.Export(fil,dfmt,hint))

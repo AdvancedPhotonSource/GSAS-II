@@ -729,12 +729,12 @@ class MakeTopWindow(wx.Frame):
             ((len(data0[0]) - 1) * np.sum(X*X))
             )
             
-    0 the x-postions (two-theta in degrees),
-    1 the intensity values (Yobs),
-    2 the weights for each Yobs value
-    3 the computed intensity values (Ycalc)
-    4 the background values
-    5 Yobs-Ycalc
+#    0 the x-postions (two-theta in degrees),
+#    1 the intensity values (Yobs),
+#    2 the weights for each Yobs value
+#    3 the computed intensity values (Ycalc)
+#    4 the background values
+#    5 Yobs-Ycalc
         
         GSASIIpath.IPyBreak_base()
                 

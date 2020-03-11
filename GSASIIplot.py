@@ -5198,7 +5198,7 @@ def PlotXYZvect(G2frame,X,Y,Z,R,labelX=r'X',labelY=r'Y',labelZ=r'Z',Title='',Plo
     mcolors = mpl.cm.ScalarMappable()       #wants only default as defined in previous line!!
     X0 = Y0 = Z0 = np.zeros_like(X)
     icolor = R/90.
-    Plot.quiver(X0,Y0,Z0,X,Y,Z,color=mcolors.cmap(icolor),arrow_length_ratio=0.05)
+    Plot.quiver(X0,Y0,Z0,X,Y,Z,color=mcolors.cmap(icolor),arrow_length_ratio=0.0)
     xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
     XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
     XYZlim = [-1.,1.]

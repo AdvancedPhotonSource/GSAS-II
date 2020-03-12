@@ -12,7 +12,7 @@
 -----------------------------------
 
 At present this module defines one dict, ``ramachandranDist``,
-which contains arrays for All and specific amino acids
+which contains arrays for All and specific amino acids.
 
 '''
 

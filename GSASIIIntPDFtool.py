@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 #GSAS-II autointegration routines
 ########### SVN repository information ###################
-# $Date: $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
-*GSASIIautoint: autointegration routines*
+.. _GSASIIIntPDFtool:
+
+*GSASIIIntPDFtool: autointegration routines*
 ---------------------------------------------
 
 Independent-running GSAS-II based auto-integration program with minimal
@@ -17,7 +19,7 @@ GUI, no visualization but intended to implement significant levels of
 parallelization.
 '''
 # Autointegration from 
-# $Id: GSASIIimgGUI.py 3926 2019-04-23 18:11:07Z toby $
+# $Id$
 # hacked for stand-alone use
 #
 # idea: select image file type & set filter from that
@@ -36,7 +38,7 @@ import wx.grid as wg
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetBinaryPath(True)
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIctrlGUI as G2G
 import GSASIIobj as G2obj

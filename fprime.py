@@ -11,7 +11,7 @@ import numpy as np
 import sys
 import matplotlib as mpl
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 3765 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 

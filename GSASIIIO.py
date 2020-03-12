@@ -17,13 +17,16 @@ Includes support for image reading.
 
 Also includes base classes for data import routines.
 
-This module needs some work to separate wx from non-wx routines
+This module needs some work to separate wx from non-wx routines. GUI 
+routines should probably move to GSASIIctrlGUI.
 '''
-# If this is being used for GSASIIscriptable, don't depend on wx
+
 from __future__ import division, print_function
+# If this is being used for GSASIIscriptable, don't depend on wx
 try:
     import wx
 except ImportError:
+    # this may not be needed for sphinx anymore
     class Placeholder(object):
         def __init__(self):
             self.Dialog = object

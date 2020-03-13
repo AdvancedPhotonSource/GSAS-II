@@ -5316,6 +5316,8 @@ tutorialIndex = (
      '''Big box modelling for real and reciprocal space diffraction data for SrTiO3'''],
     ['RMCProfile-III', 'RMCProfile-III.htm','RMC Modeling with RMCProfile-III',
      '''Combined x-ray/neutron big box modelling for real and reciprocal space diffraction data for GaPO4'''],
+    ['RMCProfile-IV', 'RMCProfile-IV.htm','RMC Modeling with RMCProfile-IV',
+     '''x-ray big box modelling with potential energy restraints for real and reciprocal space diffraction data for GaPO4'''],
 
     ['Stacking Fault Modeling'],
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond',

@@ -5379,7 +5379,7 @@ def PlotStrain(G2frame,data,newPlot=False):
 ##### PlotBarGraph
 ################################################################################
             
-def PlotBarGraph(G2frame,Xarray,Xname='',Title='',PlotName=None):
+def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False):
     'Needs a description'
     
     def OnPageChanged(event):
@@ -5404,13 +5404,19 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Title='',PlotName=None):
         G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
-    nBins= max(10,len(Xarray)//10)
-    Bins,Dbins = np.histogram(Xarray,nBins)
-    wid = Dbins[1]-Dbins[0]
+    if ifBinned:
+        Dbins,Bins = Xarray
+        nBins = len(Dbins)
+        wid = Dbins[1]-Dbins[0]
+    else:
+        nBins= max(10,len(Xarray)//10)
+        Bins,Dbins = np.histogram(Xarray,nBins)
+        wid = Dbins[1]-Dbins[0]
+        Dbins = Dbins[:-1]
     Plot.set_title(Title)
     Plot.set_xlabel(Xname,fontsize=14)
-    Plot.set_ylabel(r'$Number$',fontsize=14)
-    Plot.bar(Dbins[:-1],Bins,width=wid,align='edge',facecolor='red',edgecolor='black')
+    Plot.set_ylabel(Yname,fontsize=14)
+    Plot.bar(Dbins,Bins,width=wid,align='edge',facecolor='red',edgecolor='black')
     Page.canvas.draw()
 
 ################################################################################

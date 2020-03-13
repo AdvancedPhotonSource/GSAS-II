@@ -5361,7 +5361,15 @@ freshStart     = False      #make TRUE for a restart
                     os.remove(pName+'_bondplot_%d.ppm'%i)
                     i += 1
                 else:
-                    break                
+                    break
+            i = 1
+            while True:
+                if os.path.isfile(pName+'_anglehist_%d.csv'%i):
+                    os.remove(pName+'_anglehist_%d.csv'%i)
+                    i += 1
+                else:
+                    break
+                
             G2frame.OnFileSave(event)
             print (' GSAS-II project saved')
             import subprocess as sb
@@ -5478,6 +5486,7 @@ freshStart     = False      #make TRUE for a restart
                     DX = X[1]-X[0]  #should be 0.02
                     Partials = np.array(Partials).T
                     if 'Q' in label:
+                        continue            #skip these partials
                         XY = [[X.T,Y.T] for iy,Y in enumerate(Partials) if 'Va' not in Names[iy+1]]
                     else:
                         if ifNeut:
@@ -5490,6 +5499,7 @@ freshStart     = False      #make TRUE for a restart
                         if ifNeut:
                             title = 'Neutron '+Labels[label][2]+pName
                         else:
+                            continue        #skip for now - x-ray partials are missing header record
                             title = 'X-ray '+Labels[label][2].replace('G','g')+pName
                             ylabel = 'g(R)'
                         sumAtm = 0
@@ -5545,6 +5555,79 @@ freshStart     = False      #make TRUE for a restart
                 G2plt.PlotXY(G2frame,XY,labelX='no. generated',
                     labelY=r'$\mathsf{\chi^2}$',newPlot=True,Title='RMCP Chi^2 for '+pName,
                     lines=True,names=Names[3:])
+
+#get atoms from rmc6f file 
+            rmc6fName = pName+'.rmc6f'
+            rmc6f = open(rmc6fName,'r')
+            rmc6fAtoms = []
+            while True:
+                line = rmc6f.readline()
+                if 'Number of atoms:' in line:
+                    Natm = int(line.split(':')[1])
+                if 'Atoms:' in line:
+                    break
+            for iAtm in range(Natm):
+                line = rmc6f.readline().split()
+                rmc6fAtoms.append([line[1],float(line[3]),float(line[4]),float(line[5])])
+            rmc6f.close()
+#alt bond histograms - from rmc6 & bond files
+               
+            bondName = pName+'.bonds'
+            if os.path.exists(os.path.join(path,bondName)):                
+                nBond = len(RMCPdict['Potentials']['Stretch'])
+                bondList = []
+                bonds = open(bondName,'r')
+                while True:
+                    line = bonds.readline()
+                    if '............' in line:
+                        break       #positions at start of 1st bond list
+                for iBond in range(nBond):
+                    bondList.append([])
+                    Bonds = RMCPdict['Potentials']['Stretch'][iBond]
+                    for iAtm in range(Natm):     #same as in rmc6f above
+                        line = bonds.readline().split('::')
+                        if Bonds[0] in line[0]:
+                            items = line[1].replace(';','').split()[:-1:2]
+                            items = np.array([int(item) for item in items])
+                            bondList[iBond].append([iAtm,items])
+                bonds.close()
+                for iBond in range(nBond):
+                    Bonds = RMCPdict['Potentials']['Stretch'][iBond]
+                    title = '%s-%s'%(Bonds[0],Bonds[1])
+                    bondDist = G2pwd.GetRMCBonds(generalData,RMCPdict,rmc6fAtoms,bondList[iBond])
+                    print('%s mean %.3f(%d)'%(title,np.mean(bondDist),int(1000*np.std(bondDist))))
+                    G2plt.PlotBarGraph(G2frame,bondDist,Xname=r'$Bond, \AA$',Title=title+' from Potential Energy Restraint',
+                        PlotName='%s Bond for %s'%(title,pName))
+                
+#alt angle histograms - from rmc6 & triplets files
+            tripName = pName+'.triplets'
+            if os.path.exists(os.path.join(path,tripName)):
+                nAng = len(RMCPdict['Potentials']['Angles'])
+                tripList = []
+                triples = open(tripName,'r')
+                while True:
+                    line = triples.readline()
+                    if '............' in line:
+                        break       #positions at start of 1st triple list
+                for iAng in range(nAng):
+                    tripList.append([])
+                    Angles = RMCPdict['Potentials']['Angles'][iAng]
+                    for iAtm in range(Natm):     #same as in rmc6f above
+                        line = triples.readline().split('::')
+                        if Angles[1] in line[0]:
+                            items = line[1].replace(';','').split()[:-1:2]
+                            items = np.array([int(item) for item in items]).reshape((-1,2))
+                            tripList[iAng].append([iAtm,items])
+                        line = triples.readline()       #to skip a line
+                triples.close()
+                for iAng in range(nAng):
+                    Angles = RMCPdict['Potentials']['Angles'][iAng]
+                    angles = G2pwd.GetRMCAngles(generalData,RMCPdict,rmc6fAtoms,tripList[iAng])
+                    title = '%s-%s-%s'%(Angles[0],Angles[1],Angles[2])
+                    print('%s mean %.2f(%d)'%(title,np.mean(angles),int(100*np.std(angles))))
+                    G2plt.PlotBarGraph(G2frame,angles,Xname=r'$Angle, \AA$',Title=title+' from Potential Energy Restraint',
+                        PlotName='%s Angle for %s'%(title,pName))
+                                
 #bond odf plots                
             nPot = len(RMCPdict['Potentials']['Stretch'])
             for iPot in range(nPot):
@@ -5558,7 +5641,7 @@ freshStart     = False      #make TRUE for a restart
                         odfData = np.fromfile(OutFile,sep=' ')
                         numx,numy = odfData[:2]
                         G2plt.Plot3dXYZ(G2frame,int(numx),int(numy),odfData[2:],
-                            newPlot=False,Title='Bond %s-%s'%(bond[0],bond[1]),Centro=True)  
+                            newPlot=False,Title='Number of %s-%s Bonds'%(bond[0],bond[1]),Centro=True)  
                     OutFile.close()
         
             

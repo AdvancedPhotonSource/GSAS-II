@@ -2382,7 +2382,7 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
         if len(RMCPdict['Potentials']['Angles']):
             fl.write('  > ANGLE_SEARCH :: %.1f%%\n'%RMCPdict['Potentials']['Angle search'])
             for angle in RMCPdict['Potentials']['Angles']:
-                fl.write('  > ANGLE :: %s %s %s %.2f eV %.2f deg %.2f Ang %.2f Ang\n'%
+                fl.write('  > ANGLE :: %s %s %s %.2f eV %.2f deg %.2f %.2f Ang\n'%
                     (angle[1],angle[0],angle[2],angle[6],angle[3],angle[4],angle[5]))
     if RMCPdict['useBVS']:
         fl.write('BVS ::\n')
@@ -2502,6 +2502,49 @@ def MakePDB(G2frame,Name,Phase,Atseq,Supercell):
                         nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1]))
     fl.close()
     return fname
+
+def GetRMCBonds(general,RMCPdict,Atoms,bondList):
+    bondDist = []
+    Cell = general['Cell'][1:7]
+    Supercell =  RMCPdict['SuperCell']
+    Trans = np.eye(3)*np.array(Supercell)
+    Cell = G2lat.TransformCell(Cell,Trans)[:6]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    indices = (-1,0,1)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+    for bonds in bondList:
+        Oxyz = np.array(Atoms[bonds[0]][1:])
+        Txyz = np.array([Atoms[tgt-1][1:] for tgt in bonds[1]])        
+        Dx = np.array([Txyz-Oxyz+unit for unit in Units])
+        Dx = np.sqrt(np.sum(np.inner(Dx,Amat)**2,axis=2))
+        for dx in Dx.T:
+            bondDist.append(np.min(dx))
+    return np.array(bondDist)
+    
+def GetRMCAngles(general,RMCPdict,Atoms,angleList):
+    bondAngles = []
+    Cell = general['Cell'][1:7]
+    Supercell =  RMCPdict['SuperCell']
+    Trans = np.eye(3)*np.array(Supercell)
+    Cell = G2lat.TransformCell(Cell,Trans)[:6]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    indices = (-1,0,1)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+    for angle in angleList:
+        Oxyz = np.array(Atoms[angle[0]][1:])
+        TAxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[0]])        
+        TBxyz = np.array([Atoms[tgt-1][1:] for tgt in angle[1].T[1]])        
+        DAxV = np.inner(np.array([TAxyz-Oxyz+unit for unit in Units]),Amat)
+        DAx = np.sqrt(np.sum(DAxV**2,axis=2))
+        DBxV = np.inner(np.array([TBxyz-Oxyz+unit for unit in Units]),Amat)
+        DBx = np.sqrt(np.sum(DBxV**2,axis=2))
+        iDAx = np.argmin(DAx,axis=0)
+        iDBx = np.argmin(DBx,axis=0)
+        for i,[iA,iB] in enumerate(zip(iDAx,iDBx)):
+            DAv = DAxV[iA,i]/DAx[iA,i]
+            DBv = DBxV[iB,i]/DBx[iB,i]
+            bondAngles.append(npacosd(np.sum(DAv*DBv)))
+    return np.array(bondAngles)
     
 ################################################################################
 #### Reflectometry calculations

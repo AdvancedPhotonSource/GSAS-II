@@ -508,6 +508,8 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRenameData, id=item.GetId())
         item = parent.Append(wx.ID_ANY,'Delete tree items','Delete selected data items from data tree')
         self.Bind(wx.EVT_MENU, self.OnDataDelete, id=item.GetId())
+        item = parent.Append(wx.ID_ANY,'Delete plots','Delete selected plots')
+        self.Bind(wx.EVT_MENU, self.OnPlotDelete, id=item.GetId())
         expandmenu = wx.Menu()
         item = parent.AppendSubMenu(expandmenu,'Expand tree items',  
             'Expand items of type in GSAS-II data tree')
@@ -3867,6 +3869,22 @@ class GSASII(wx.Frame):
                             self.G2plotNB.Delete('3D Structure Factors')
             finally:
                 dlg.Destroy()
+                
+    def OnPlotDelete(self,event):
+        '''Delete one or more plots from plot window. Called by the
+        Data/DeletePlots menu
+        '''
+        plotNames = self.G2plotNB.plotList
+        if len(plotNames):
+            dlg = G2G.G2MultiChoiceDialog(self, 'Which plots to delete?', 'Delete plots', plotNames, wx.CHOICEDLG_STYLE)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetSelections()
+                    result.sort(reverse=True)
+                    for i in result: 
+                        self.G2plotNB.Delete(plotNames[i])
+            finally:
+                dlg.Destroy()
 
     def OnFileReopen(self, event):
         files = GSASIIpath.GetConfigValue('previous_GPX_files')
@@ -6416,11 +6434,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
             
-#    def OnReOrgSelSeq(event):
-#        'Reorder the columns -- probably not fully implemented'
-#        G2G.GetItemOrder(G2frame,VaryListChanges,vallookup,posdict)    
-#        UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
-
     def OnSaveSelSeqCSV(event):
         'export the selected columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True)

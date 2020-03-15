@@ -275,11 +275,13 @@ Histograms      \               (dict of dicts) The key for the outer dict is
 \           Babinet             (dict) For protein crystallography. Dictionary with two
                                 entries, 'BabA', 'BabU'
 \           Extinction          (list of float, bool) Extinction parameter 
+\           Flack               (list of [float, bool]) Flack parameter & refine flag
 \           HStrain             (list of two lists) Hydrostatic strain. The first is
                                 a list of the HStrain parameters (1, 2, 3, 4, or 6
                                 depending on unit cell), the second is a list of boolean
                                 refinement parameters (same length)
 \           Histogram           (str) The name of the associated histogram 
+\           Layer Disp          (list of [float, bool]) Layer displacement in beam direction & refine flag
 \           LeBail              (bool) Flag for LeBail extraction 
 \           Mustrain            (list) Microstrain parameters, in order:
     
@@ -1584,6 +1586,7 @@ def CompileVarDesc():
         'Eg$' : 'Secondary type I extinction',
         'Flack' : 'Flack parameter',
         'TwinFr' : 'Twin fraction',
+        'Layer Disp'  : 'Layer displacement along beam',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
         'Displace([XY])' : ('Debye-Scherrer sample displacement \\1',0.1),

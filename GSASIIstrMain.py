@@ -145,7 +145,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         try:
             covMatrix = result[1]*Rvals['GOF']**2
             sig = np.sqrt(np.diag(covMatrix))
-            Lastshft = result[2]['Xvec']
+            Lastshft = result[2].get('Xvec',None)
             if Lastshft is None:
                 Rvals['Max shft/sig'] = 0.0
             else:

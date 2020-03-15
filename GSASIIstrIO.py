@@ -2502,8 +2502,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+name] = hapData['HStrain'][0][i]
                     HSvals.append(hapDict[pfx+name])
                     if hapData['HStrain'][1][i]:
-#                    if hapData['HStrain'][1][i] and not hapDict[pfx+'LeBail']:
                         hapVary.append(pfx+name)
+                if 'Layer Disp' in hapData:
+                    hapDict[pfx+'LayerDisp'] = hapData['Layer Disp'][0]
+                    if hapData['Layer Disp'][1]:
+                        hapVary.append(pfx+'LayerDisp')
                 controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
@@ -2578,6 +2581,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
+                    if 'Layer Disp' in hapData:
+                        pFile.write(' Layer Displacement: %10.3f Refine? %s\n'%(hapData['Layer Disp'][0],hapData['Layer Disp'][1]))
                     if Phases[phase]['General']['Type'] != 'magnetic':
                         if hapData['Babinet']['BabA'][0]:
                             PrintBabinet(hapData['Babinet'])
@@ -2977,6 +2982,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     hapData['HStrain'][0][i] = parmDict[pfx+name]
                     if pfx+name in sigDict:
                         SizeMuStrSig[pfx+'HStrain'][name] = sigDict[pfx+name]
+                if 'Layer Disp' in hapData:
+                    hapData['Layer Disp'][0] = parmDict[pfx+'LayerDisp']
+                    if pfx+'LayerDisp' in sigDict:
+                        SizeMuStrSig[pfx+'LayerDisp'] = sigDict[pfx+'LayerDisp']
                 if Phases[phase]['General']['Type'] != 'magnetic':
                     for name in ['BabA','BabU']:
                         hapData['Babinet'][name][0] = parmDict[pfx+name]
@@ -3060,6 +3069,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     PrintSizeAndSig(hapData['Size'],SizeMuStrSig[pfx+'Size'])
                     PrintMuStrainAndSig(hapData['Mustrain'],SizeMuStrSig[pfx+'Mustrain'],SGData)
                     PrintHStrainAndSig(hapData['HStrain'],SizeMuStrSig[pfx+'HStrain'],SGData)
+                    if pfx+'LayerDisp' in SizeMuStrSig:
+                        pFile.write(' Layer displacement : %10.3f, sig %10.3f\n'%(hapData['Layer Disp'][0],SizeMuStrSig[pfx+'LayerDisp']))            
                     if Phases[phase]['General']['Type'] != 'magnetic' and not parmDict[pfx+'LeBail']:
                         if len(BabSig):
                             PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)

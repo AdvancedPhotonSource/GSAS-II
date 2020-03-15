@@ -262,22 +262,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         G2plt.PlotSizeStrainPO(G2frame,data,item)
         wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
-    def OnHstrainRef(event):
-        Obj = event.GetEventObject()
-        hist,pid = Indx[Obj.GetId()]
-        UseList[G2frame.hist]['HStrain'][1][pid] = Obj.GetValue()
-        
-    def OnHstrainVal(event):
-        event.Skip()
-        Obj = event.GetEventObject()
-        hist,pid = Indx[Obj.GetId()]
-        try:
-            strain = float(Obj.GetValue())
-            UseList[G2frame.hist]['HStrain'][0][pid] = strain
-        except ValueError:
-            pass
-        Obj.SetValue("%.3g"%(UseList[G2frame.hist]['HStrain'][0][pid]))          #reset in case of error
-
     def OnPOAxis(event):
         event.Skip()
         Obj = event.GetEventObject()
@@ -476,6 +460,23 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         return dataSizer
 
     def HstrainSizer():
+        
+        def OnHstrainRef(event):
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            UseList[G2frame.hist]['HStrain'][1][pid] = Obj.GetValue()
+            
+        def OnHstrainVal(event):
+            event.Skip()
+            Obj = event.GetEventObject()
+            hist,pid = Indx[Obj.GetId()]
+            try:
+                strain = float(Obj.GetValue())
+                UseList[G2frame.hist]['HStrain'][0][pid] = strain
+            except ValueError:
+                pass
+            Obj.SetValue("%.3g"%(UseList[G2frame.hist]['HStrain'][0][pid]))          #reset in case of error
+        
         hstrainSizer = wx.FlexGridSizer(0,6,5,5)
         Hsnames = G2spc.HStrainNames(SGData)
         parms = zip(Hsnames,UseList[G2frame.hist]['HStrain'][0],UseList[G2frame.hist]['HStrain'][1],range(len(Hsnames)))
@@ -688,6 +689,20 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         flackVal = G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Flack'],0,nDig=(10,3),typeHint=float)
         flackSizer.Add(flackVal,0,WACV)
         return flackSizer
+        
+    def DispSizer():
+        
+        def OnDispRef(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['Layer Disp'][1] = Obj.GetValue()
+                
+        dispSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dispRef = wx.CheckBox(DData,wx.ID_ANY,label=' Layer displacement (\xb5m): ')
+        dispRef.SetValue(UseList[G2frame.hist]['Layer Disp'][1])
+        dispRef.Bind(wx.EVT_CHECKBOX, OnDispRef)
+        dispSizer.Add(dispRef,0,WACV|wx.LEFT,5)
+        dispSizer.Add(G2G.ValidatedTxtCtrl(DData,UseList[G2frame.hist]['Layer Disp'],0,nDig=(10,2),typeHint=float),0,WACV)
+        return dispSizer
         
     def twinSizer():
         
@@ -902,7 +917,8 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             G2frame.ErrorDialog('Missing data error',
                     G2frame.hist+' not in GSAS-II data tree')
             return
-        if 'Use' not in UseList[G2frame.hist]:      #patch
+#patch
+        if 'Use' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Use'] = True
         if 'LeBail' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['LeBail'] = False
@@ -912,6 +928,13 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         if 'Fix FXU' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Fix FXU'] = ' '
+        if 'Flack' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['Flack'] = [0.0,False]
+        if 'Twins' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
+        if 'Layer Disp' not in UseList[G2frame.hist]:
+            UseList[G2frame.hist]['Layer Disp'] = [0.0,False]
+#end patch
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
         useBox = wx.BoxSizer(wx.HORIZONTAL)
         useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+G2frame.hist+' ?')
@@ -1002,6 +1025,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             
             bottomSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Hydrostatic/elastic strain:'))
             bottomSizer.Add(HstrainSizer())
+            bottomSizer.Add(DispSizer())
                 
             poSizer = wx.BoxSizer(wx.VERTICAL)
             POData = UseList[G2frame.hist]['Pref.Ori.']
@@ -1028,12 +1052,6 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             if generalData['Type'] != 'magnetic': 
                 bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
         elif G2frame.hist[:4] == 'HKLF':
-#patch
-            if 'Flack' not in UseList[G2frame.hist]:
-                UseList[G2frame.hist]['Flack'] = [0.0,False]
-            if 'Twins' not in UseList[G2frame.hist]:
-                UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
-#end patch
             bottomSizer.Add(ExtSizer('HKLF'),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
             if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:

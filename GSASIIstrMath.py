@@ -2867,7 +2867,7 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         
     return sigDict,gamDict
         
-def GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict):
+def GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
     if im:
         h,k,l,m = refl[:4]
@@ -2884,13 +2884,13 @@ def GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict):
             pos -= const*(4.*parmDict[hfx+'Shift']*cosd(pos/2.0)+ \
                 parmDict[hfx+'Transparency']*sind(pos)*100.0)            #trans(=1/mueff) in cm
         else:               #Debye-Scherrer - simple but maybe not right
-            pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
+            pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+(parmDict[hfx+'DisplaceY']+parmDict[phfx+'LayerDisp'])*sind(pos))
     elif 'T' in calcControls[hfx+'histType']:
         pos = parmDict[hfx+'difC']*d+parmDict[hfx+'difA']*d**2+parmDict[hfx+'difB']/d+parmDict[hfx+'Zero']
         #do I need sample position effects - maybe?
     return pos
 
-def GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict):
+def GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
     dpr = 180./np.pi
     if im:
@@ -3241,7 +3241,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5+im] = GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5+im] = GetReflPos(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5+im]/2.)**2*cosd(refl[5+im]/2.))           #Lorentz correction
                 refl[6+im:8+im] = GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[11+im:15+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
@@ -3293,7 +3293,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
+                refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)         #corrected reflection position - #TODO - what about tabluated offset?
                 Lorenz = sind(abs(parmDict[hfx+'2-theta'])/2)*refl[4+im]**4                                                #TOF Lorentz correction
 #                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
@@ -3535,20 +3535,20 @@ def getPowderProfileDervMP(args):
                 except: # ValueError:
                     pass
             if 'C' in calcControls[hfx+'histType']:
-                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict)
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
                     hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'Z':[1.0,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],phfx+'Extinction':[dFdEx,'int'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],phfx+'Extinction':[dFdEx,'int'],phfx+'LayerDisp':[dpdY,'pos']}
                 if 'Bragg' in calcControls[hfx+'instType']:
                     names.update({hfx+'SurfRoughA':[dFdAb[0],'int'],
                         hfx+'SurfRoughB':[dFdAb[1],'int'],})
                 else:
                     names.update({hfx+'Absorption':[dFdAb,'int'],})
             else:   #'T'OF
-                dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)
+                dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,phfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'difC':[dpdDC,'pos'],hfx+'difA':[dpdDA,'pos'],hfx+'difB':[dpdDB,'pos'],
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],hfx+'Z':[1.0,'gam'],
@@ -3614,6 +3614,7 @@ def getPowderProfileDervMP(args):
                     depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
                     if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
+#TODO: need Layer Disp deriv here
             for i,name in enumerate([pfx+'mV0',pfx+'mV1',pfx+'mV2']):
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dpdV[i]*dervDict['pos']

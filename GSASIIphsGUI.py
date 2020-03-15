@@ -8629,7 +8629,7 @@ freshStart     = False      #make TRUE for a restart
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU','Layer Disp']
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = sourceDict[name]        #force copy
@@ -8649,10 +8649,10 @@ freshStart     = False      #make TRUE for a restart
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Fix FXU']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Fix FXU','Layer Disp']
         babNames = ['BabA','BabU']
         for name in copyNames:
-            if name in ['Scale','Extinction','HStrain','Flack','Twins']:
+            if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                     copyDict[name] = {name:[sourceDict[name][:2]]}
                     for item in ['Eg','Es','Ep']:
@@ -8689,7 +8689,7 @@ freshStart     = False      #make TRUE for a restart
                 for sel in dlg.GetSelections():
                     item = keyList[sel]
                     for name in copyNames:
-                        if name in ['Scale','Extinction','HStrain','Flack','Twins']:
+                        if name in ['Scale','Extinction','HStrain','Flack','Twins','Layer Disp']:
                             if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                                 data['Histograms'][item][name][:2] = copy.deepcopy(sourceDict[name][:2])
                                 for itm in ['Eg','Es','Ep']:
@@ -8732,7 +8732,7 @@ freshStart     = False      #make TRUE for a restart
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack','Twins','Fix FXU']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','LeBail','newLeBail','Fix FXU','Layer Disp']
         dlg = G2G.G2MultiChoiceDialog(G2frame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
         selectedItems = []
@@ -8788,7 +8788,8 @@ freshStart     = False      #make TRUE for a restart
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
                                 NShkl*[0.01,],NShkl*[False,]],
-                            'HStrain':[NDij*[0.0,],NDij*[False,]],                          
+                            'HStrain':[NDij*[0.0,],NDij*[False,]],
+                            'Layer Disp':[0.0,False],                         
                             'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},'Fix FXU':' '}
                         refList = G2frame.GPXtree.GetItemPyData(G2gd.GetGPXtreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = {}                       
@@ -10472,7 +10473,7 @@ freshStart     = False      #make TRUE for a restart
                 if 'Bragg' in Sample['Type']:
                     pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
                         Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
-                else:               #Debye-Scherrer - simple but maybe not right
+                else:               #Debye-Scherrer - simple but maybe not right - +Layer Disp from DData?
                     pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
                 indx = np.searchsorted(xdata[0],pos)
                 try:

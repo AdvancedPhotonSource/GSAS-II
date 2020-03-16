@@ -2507,6 +2507,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+'LayerDisp'] = hapData['Layer Disp'][0]
                     if hapData['Layer Disp'][1]:
                         hapVary.append(pfx+'LayerDisp')
+                else:
+                    hapDict[pfx+'LayerDisp'] = 0.0
                 controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]

@@ -2226,6 +2226,47 @@ def ReadDIFFaX(DIFFaXfile):
                 Layer['Stacking'][2] += ' '+stack
     return Layer
 
+def postURL(URL,postdict):
+    '''Posts a set of values as from a web form. If access fails to an http 
+    site the access is retried with https
+    :param str URL: the URL to post; typically something 
+       like 'http://www.../dir/page?'
+    :param dict postdict: contains keywords and values, such
+       as {'centrosymmetry': '0', 'crystalsystem': '0', ...}
+    :returns: a string with the response from the web server or None
+       if access fails.
+    '''
+    try:
+        import requests # delay this until now, since rarely needed
+    except:
+        # this import seems to fail with the Anaconda pythonw on
+        # macs; it should not!
+        print('Warning: failed to import requests. Python config error')
+        return None
+        
+    repeat = True
+    while repeat:
+        r = None
+        repeat = False
+        try:
+            r = requests.get(URL,params=postdict)
+            if r.status_code == 200:
+                print('request OK')
+                page = r.text
+                return page # success
+            else:
+                print('request to {} failed. Reason={}'.format(URL,r.reason))
+        except Exception as msg:     #ConnectionError?
+            print('connection error - not on internet?')
+            if GSASIIpath.GetConfigValue('debug'): print(msg)
+        finally:
+            if r: r.close()
+        if URL.startswith('http:'):
+            repeat = True
+            URL = URL.replace('http:','https:')
+    else:
+        return None
+
 if __name__ == '__main__':
     import GSASIIdataGUI
     application = GSASIIdataGUI.GSASIImain(0)

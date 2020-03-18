@@ -15,13 +15,13 @@ from the GSAS version of SUBGROUPS & k-SUBGROUPSMAG web page on the Bilbao Cryst
 # $Id$
 ########### SVN repository information ###################
 from __future__ import division, print_function
-import requests
 import numpy as np
 import numpy.linalg as nl
 import GSASIIspc as G2spc
+import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
+submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 
@@ -82,22 +82,11 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    try:
-        r = requests.get(submagSite,params=postdict)
-    except:     #ConnectionError?
-        page = ''
-        print('connection error - not on internet')
+    page = G2IO.postURL(submagSite,postdict)
+    if not page:
+        print('connection error - not on internet?')
         return None,None
-    if r.status_code == 200:
-        print('request OK')
-        page = r.text
-        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    else:
-        page = ''
-        print('request failed. Reason=',r.reason)
-        return None,None
-    r.close()
-    
+    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
     result = page.replace('&','\n')
     result = result.split('\n')
     SPGPs = []
@@ -210,22 +199,11 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    try:
-        r = requests.get(submagSite,params=postdict)
-    except:     #ConnectionError?
-        page = ''
-        print('connection error - not on internet')
+    page = G2IO.postURL(submagSite,postdict)
+    if not page:
+        print('connection error - not on internet?')
         return None,None
-    if r.status_code == 200:
-        print('request OK')
-        page = r.text
-        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    else:
-        page = ''
-        print('request failed. Reason=',r.reason)
-        return None,None
-    r.close()
-
+    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
     result = page.replace('&','\n')
     result = result.split('\n')
     start = 0
@@ -282,21 +260,11 @@ def subBilbaoCheckLattice(spgNum,cell,tol=5):
     cellstr = '+'.join(['{:.5f}'.format(i) for i in cell])
     datastr = "sgr={:}&cell={:}&tol={:}&submit=Show".format(
         str(int(spgNum)),cellstr,str(int(tol)))
-    try:
-        r = requests.get(psSite,params=datastr)
-    except:     #ConnectionError?
-        page = ''
-        print('connection error - not on internet')
+    page = G2IO.postURL(psSite,datastr)
+    if not page:
+        print('connection error - not on internet?')
         return None
-    if r.status_code == 200:
-        print('request OK')
-        page = r.text
-        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    else:
-        page = ''
-        print('request failed. Reason=',r.reason)
-        return None
-    r.close()
+    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
     return page
 
 def parseBilbaoCheckLattice(page):

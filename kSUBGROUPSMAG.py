@@ -15,12 +15,12 @@ from the k-SUBGROUPSMAG web page on the Bilbao Crystallographic server
 # $Id$
 ########### SVN repository information ###################
 from __future__ import division, print_function
-import requests
 try:
     import HTMLParser as HTML
 except ImportError: 
     import html.parser as HTML # Python 3
 import GSASIIspc as G2spc
+import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
 submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_k.pl'
@@ -139,22 +139,11 @@ def GetNonStdSubgroupsmag(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['km%d%s'%(j,i)] = k
-    try:
-        r = requests.get(submagSite,params=postdict)
-    except:     #ConnectionError?
-        page = ''
-        print('connection error - not on internet')
+    page = G2IO.postURL(submagSite,postdict)
+    if not page:
+        print('connection error - not on internet?')
         return None,None
-    if r.status_code == 200:
-        print('request OK')
-        page = r.text
-        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    else:
-        page = ''
-        print('request failed. Reason=',r.reason)
-        return None,None
-    r.close()
-
+    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
     p = TableParser()
     p.feed(page)
     nItms = len(p.MVs)
@@ -212,22 +201,10 @@ def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
             break
         for i,k in zip(('x','y','z'),kvec[3*j-3:3*j]):
             postdict['knm%d%s'%(j,i)] = k
-    try:
-        r = requests.get(submagSite,params=postdict)
-    except:     #ConnectionError?
-        page = ''
-        print('connection error - not on internet')
-        return None
-    if r.status_code == 200:
-        print('request OK')
-        page = r.text
-        page = page.replace('<font style= "text-decoration: overline;">','<font>-')
-    else:
-        page = ''
-        print('request failed. Reason=',r.reason)
-        return None
-    r.close()
-
+    if not page:
+        print('connection error - not on internet?')
+        return None,None
+    page = page.replace('<font style= "text-decoration: overline;">','<font>-')
     p = TableParser()
     p.feed(page)
     nItms = len(p.MVs)

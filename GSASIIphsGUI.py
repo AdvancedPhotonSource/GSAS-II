@@ -11053,8 +11053,8 @@ freshStart     = False      #make TRUE for a restart
             UpdateGeneral()
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataMenu)
+            G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
             G2ddG.UpdateDData(G2frame,DData,data)
-            wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist='',Start=True)            
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.AtomsMenu)
             FillAtomsGrid(Atoms)
@@ -11073,27 +11073,27 @@ freshStart     = False      #make TRUE for a restart
             UpdateRMC()
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DataDrawOptions)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
             UpdateDrawOptions()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.DrawAtomsMenu)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
             UpdateDrawAtoms()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.RigidBodiesMenu)
             FillRigidBodyGrid()
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MapPeaksMenu)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
             FillMapPeaksGrid()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.MCSAMenu)
+            G2plt.PlotStructure(G2frame,data,firstCall=True)
             UpdateMCSA()                        
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.TextureMenu)
+            G2plt.PlotTexture(G2frame,data,Start=True)            
             UpdateTexture()                        
-            wx.CallAfter(G2plt.PlotTexture,G2frame,data,Start=True)            
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataWindow.PawleyMenu)
             FillPawleyReflectionsGrid()

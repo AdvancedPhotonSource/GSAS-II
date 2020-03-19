@@ -8507,7 +8507,7 @@ def SelectDataTreeItem(G2frame,item,oldFocus=None):
         if len(data):
             G2frame.RefList = list(data.keys())[0]
         G2pdG.UpdateReflectionGrid(G2frame,data)
-        wx.CallAfter(G2plt.PlotPatterns,G2frame)
+        G2plt.PlotPatterns(G2frame)
     elif G2frame.GPXtree.GetItemText(item) == 'Reflection List':    #HKLF reflections
         G2frame.PatternId = G2frame.GPXtree.GetItemParent(item)
         name = G2frame.GPXtree.GetItemText(G2frame.PatternId)

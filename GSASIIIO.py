@@ -2227,8 +2227,8 @@ def ReadDIFFaX(DIFFaXfile):
     return Layer
 
 def postURL(URL,postdict):
-    '''Posts a set of values as from a web form. If access fails to an http 
-    site the access is retried with https
+    '''Posts a set of values as from a web form. If access fails to an https 
+    site the access is retried with http
     :param str URL: the URL to post; typically something 
        like 'http://www.../dir/page?'
     :param dict postdict: contains keywords and values, such
@@ -2261,9 +2261,9 @@ def postURL(URL,postdict):
             if GSASIIpath.GetConfigValue('debug'): print(msg)
         finally:
             if r: r.close()
-        if URL.startswith('http:'):
+        if URL.startswith('https:'):
             repeat = True
-            URL = URL.replace('http:','https:')
+            URL = URL.replace('https:','http:')
     else:
         return None
 

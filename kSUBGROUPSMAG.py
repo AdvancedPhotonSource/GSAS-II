@@ -23,7 +23,7 @@ import GSASIIspc as G2spc
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_k.pl'
+submagSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_k.pl'
 
 class TableParser(HTML.HTMLParser):
     def __init__(self):

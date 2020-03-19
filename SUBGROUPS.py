@@ -21,7 +21,7 @@ import GSASIIspc as G2spc
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetBinaryPath()
-submagSite = 'http://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
+submagSite = 'https://www.cryst.ehu.es/cgi-bin/cryst/programs/subgrmag1_general_GSAS.pl?'
 
 def GetNonStdSubgroups(SGData, kvec,star=False,landau=False,maximal=False):
     '''Run Bilboa's SUBGROUPS for a non-standard space group. 

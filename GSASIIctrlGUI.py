@@ -3251,6 +3251,7 @@ class SGMessageBox(wx.Dialog):
         self.table = table
         self.panel = wx.Panel(self)
         self.spins = spins
+        self.useAlt = False
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
         for line in text:
@@ -3281,8 +3282,19 @@ class SGMessageBox(wx.Dialog):
             
         def OnPrintOps(event):
             print(' Symmetry operations for %s:'%self.text[0].split(':')[1])
-            for opText in G2spc.TextOps(self.text,self.table,reverse=True):
-                print(opText.replace(' ','')) 
+            for iop,opText in enumerate(G2spc.TextOps(self.text,self.table,reverse=True)):
+                if self.useAlt:
+                    opText = opText.replace('x','x1').replace('y','x2').replace('z','x3').replace('t','x4')
+                if len(self.spins):
+                    if self.spins[iop] > 0:
+                        print('%s,+%d'%(opText.replace(' ',''),self.spins[iop]))
+                    else:
+                        print('%s,%d'%(opText.replace(' ',''),self.spins[iop]))
+                else:    
+                    print(opText.replace(' ',''))
+                    
+        def OnAlt(event):
+            self.useAlt = altBtn.GetValue()
             
         mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3292,6 +3304,9 @@ class SGMessageBox(wx.Dialog):
         printBtn = wx.Button(self.panel,label='Print Ops')
         printBtn.Bind(wx.EVT_BUTTON, OnPrintOps)
         btnsizer.Add(printBtn)
+        altBtn = wx.CheckBox(self.panel,label=' Use alt. symbols?')
+        altBtn.Bind(wx.EVT_CHECKBOX,OnAlt)
+        btnsizer.Add(altBtn,0,WACV)
         mainSizer.Add((0,10))
         mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
         self.panel.SetSizer(mainSizer)

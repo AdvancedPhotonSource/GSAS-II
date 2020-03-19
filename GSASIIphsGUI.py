@@ -2181,8 +2181,6 @@ def UpdatePhaseData(G2frame,Item,data):
             SpGrp = SGData.get('MagSpGrp',SGData['SpGrp'])
             if SGData['SGGray']:
                 SpGrp += " 1'"
-            if 'BNSlattsym' in SGData and '_' in SGData['BNSlattsym'][0]:
-                SpGrp = SGData['BNSlattsym'][0]+SpGrp[1:]
             modSizer.Add(wx.StaticText(General,label=' Superspace group: %s '%SpGrp),0,WACV)
             if not SGData['SGFixed']:
                 val = generalData['SuperSg']

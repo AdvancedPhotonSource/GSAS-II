@@ -406,6 +406,21 @@ def GSASIImain(application):
         finally:
             dlg.Destroy()
         sys.exit()
+        
+    if platform.python_version()[:3] == '2.7':
+        dlg = wx.MessageDialog(None,
+'''
+The end-of-life for python 2.7 was January 1, 2020. 
+We strongly recommend reinstalling GSAS-II from a new installation kit as
+we may not be able to offer support for operation of GSAS-II in python 2.7. 
+GSAS-II installation kits can be found at https://subversion.xray.aps.anl.gov/trac/pyGSAS
+which is easily found by searching the web for GSAS-II
+The kit will install python 3.7 and all current packages as well as the newest version of GSAS-II.''',
+            'End-Of-Life warning for Python 2.7',wx.OK)
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
             
     application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
     application.SetTopWindow(application.main)

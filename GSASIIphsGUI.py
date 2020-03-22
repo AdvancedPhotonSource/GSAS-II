@@ -4598,16 +4598,25 @@ def UpdatePhaseData(G2frame,Item,data):
         global runFile
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
-#            G2frame.runtext.SetValue('')
             UpdateRMC()
         
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
         elif G2frame.RMCchoice == 'fullrmc':
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
+            wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
+      Install it in your python according to the instructions in
+      https://bachiraoun.github.io/fullrmc/index.html. ''',
+                caption='fullrmc not installed',style=wx.ICON_INFORMATION)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4619,6 +4628,15 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add(RMCsel,0,WACV)
         mainSizer.Add((5,5),0,WACV)
         if G2frame.RMCchoice == 'fullrmc':
+            try:
+                from fullrmc import Engine
+            except ModuleNotFoundError:
+                return
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
 #            font1 = wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
             G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
@@ -4640,7 +4658,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 if lenA > 1:
                     for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
                         BVSpairs += pair
-                    BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
+                BVS = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
                 files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
                           'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
                           'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
@@ -5382,7 +5400,23 @@ freshStart     = False      #make TRUE for a restart
             
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
-            print('view fullrmc results - TBD')
+            try:
+                from fullrmc import Engine
+            except ModuleNotFoundError:
+                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
+      Install it in your python according to the instructions in
+      https://bachiraoun.github.io/fullrmc/index.html. ''',
+          caption='fullrmc not installed',style=wx.ICON_INFORMATION)
+                return
+            DIR_PATH = os.path.dirname( os.path.realpath(__file__) )
+            engineFilePath = os.path.join(DIR_PATH, "engine.rmc")
+            
+            # load
+            ENGINE = Engine(path=None)
+            result, mes = ENGINE.is_engine(engineFilePath, mes=True)
+            if result:
+                ENGINE = ENGINE.load(engineFilePath)
+                GR, SQ, CN, MD = ENGINE.constraints
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']

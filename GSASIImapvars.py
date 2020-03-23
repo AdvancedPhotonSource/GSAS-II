@@ -1335,7 +1335,7 @@ def EvaluateMultipliers(constList,*dicts):
     well as normal Python functions, such as "2*np.cos(0::Ax:2/2.)"
     
     :param list constList: a list of dicts containing constraint expressions
-    :param \*dict1: one or more dicts containing GSAS-II parameters and their values 
+    :param \*dicts: one or more dicts containing GSAS-II parameters and their values 
        can be specified
     :returns: an empty string if there were no errors, or an error message listing
        the strings that could not be converted.
@@ -1351,7 +1351,8 @@ def EvaluateMultipliers(constList,*dicts):
     # loop through multipliers in contraint expressions
     for const in constList:
         for key in const:
-            try:
+            if key.startswith('_'): continue
+            try: # is this already a float, etc? 
                 1+const[key]
                 continue
             except:

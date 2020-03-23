@@ -125,7 +125,6 @@ class ConstraintDialog(wx.Dialog):
 ################################################################################
 #####  Constraints
 ################################################################################           
-       
 def UpdateConstraints(G2frame,data):
     '''Called when Constraints tree item is selected.
     Displays the constraints in the data window

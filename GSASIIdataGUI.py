@@ -959,7 +959,10 @@ class GSASII(wx.Frame):
             self.GPXtree.Expand(sub) 
             self.GPXtree.Expand(psub)
             self.PickIdText = None
-
+            
+            # add constraints imported with phase to tree
+            #    at present, constraints are generated only in ISODISTORT_proc in the
+            #    CIF import
             if rd.Constraints:
                 sub = GetGPXtreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
                 Constraints = self.GPXtree.GetItemPyData(sub)                
@@ -969,8 +972,8 @@ class GSASII(wx.Frame):
                         #for j in i: print j,' --> ',i[j]
                         if '_Explain' not in Constraints: Constraints['_Explain'] = {}
                         Constraints['_Explain'].update(i)
-                        continue
-                    Constraints['Phase'].append(i)
+                    else:
+                        Constraints['Phase'].append(i)
         if not newPhaseList: return # somehow, no new phases
         # get a list of existing histograms
         PWDRlist = []

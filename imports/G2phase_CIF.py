@@ -33,6 +33,8 @@ import GSASIIpy3 as G2p3
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import CifFile as cif # PyCifRW from James Hester
+#debug = GSASIIpath.GetConfigValue('debug')
+debug = False
 
 class CIFPhaseReader(G2obj.ImportPhase):
     'Implements a phase importer from a possibly multi-block CIF file'
@@ -50,7 +52,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
         fp.close()
 
     def Reader(self,filename, ParentFrame=None, usedRanIdList=[], **unused):
-        self.isodistort_warnings = ''
+        isodistort_warnings = '' # errors that would prevent an isodistort analysis
         self.Phase = G2obj.SetNewPhase(Name='new phase') # create a new empty phase dict
         # make sure the ranId is really unique!
         while self.Phase['ranId'] in usedRanIdList:
@@ -360,7 +362,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             atomloop = blk.GetLoop('_atom_site_label')
             atomkeys = [i.lower() for i in atomloop.keys()]
             if not blk.get('_atom_site_type_symbol'):
-                self.isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
+                isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
             if magnetic:
                 try:
                     magmoment = '_atom_site_moment.label'
@@ -578,7 +580,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
                         matomlist.append(SSdict)
                     atomlist.append(SSdict)
             if len(atomlbllist) != len(self.Phase['Atoms']):
-                self.isodistort_warnings += '\nRepeated atom labels prevents ISODISTORT decode'
+                isodistort_warnings += '\nRepeated atom labels prevents ISODISTORT decode'
             for lbl in phasenamefields: # get a name for the phase
                 name = blk.get(lbl)
                 if name is None:
@@ -621,17 +623,40 @@ class CIFPhaseReader(G2obj.ImportPhase):
                 self.Phase['General']['SuperSg'] = SuperSg
                 if not self.Phase['General']['SGData']['SGFixed']:
                     self.Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
-            if not self.isodistort_warnings:
-                if blk.get('_iso_displacivemode_label') or blk.get('_iso_occupancymode_label'):
+            if self.ISODISTORT_test(blk):
+                if isodistort_warnings:
+                    self.warnings += isodistort_warnings
+                else:
                     self.errors = "Error while processing ISODISTORT constraints"
                     self.ISODISTORT_proc(blk,atomlbllist,ranIdlookup)
-            else:
-                self.warnings += self.isodistort_warnings
+                    self.errors = ""
             returnstat = True
         return returnstat
+        
+    def ISODISTORT_test(self,blk):
+        '''Test if there is any ISODISTORT information in CIF
 
+        At present only _iso_displacivemode... and _iso_occupancymode... are 
+        tested. 
+        '''
+        for i in ('_iso_displacivemode_label',
+                  '_iso_occupancymode_label'):
+            if blk.get(i): return True
+        return False
+        
     def ISODISTORT_proc(self,blk,atomlbllist,ranIdlookup):
-        'Process ISODISTORT items to create constraints etc.'
+        '''Process ISODISTORT items to create constraints etc.
+        Constraints are generated from information extracted from 
+        loop_'s beginning with _iso_ and are placed into 
+        self.Constraints, which contains a list of 
+        :ref:`constraints tree items <Constraint_definitions_table>`
+        and one dict. 
+        The dict contains help text for each generated ISODISTORT variable
+
+        At present only _iso_displacivemode... and _iso_occupancymode... are 
+        processed. Not yet processed: _iso_magneticmode..., 
+        _iso_rotationalmode... & _iso_strainmode...
+        '''
         varLookup = {'dx':'dAx','dy':'dAy','dz':'dAz','do':'Afrac'}
         'Maps ISODISTORT parm names to GSAS-II names'
         #----------------------------------------------------------------------
@@ -644,13 +669,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             shortmodelist = []
             for lbl in blk.get('_iso_displacivemode_label'):
                 modelist.append(lbl)
-                # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
-                # where SSSSS is the parent spacegroup, [x,y,z] is a location 
-                regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
-                # this extracts the AAAAA and BBBBB parts of the string
-                if regexp:
-                    lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
-                G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
+                ISODISTORT_shortLbl(lbl,shortmodelist) # shorten & make unique
             # read in the coordinate offset variables names and map them to G2 names/objects
             coordVarLbl = []
             G2varLbl = []
@@ -760,14 +779,7 @@ class CIFPhaseReader(G2obj.ImportPhase):
             shortmodelist = []
             for lbl in blk.get('_iso_occupancymode_label'):
                 modelist.append(lbl)
-                # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
-                # where SSSSS is the parent spacegroup, [x,y,z] is a location 
-                regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
-                # this extracts the AAAAA and BBBBB parts of the string
-                if regexp:
-                    lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
-                lbl = lbl.replace('order','o')
-                G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
+                ISODISTORT_shortLbl(lbl,shortmodelist) # shorten & make unique
             # read in the coordinate offset variables names and map them to G2 names/objects
             occVarLbl = []
             G2varLbl = []
@@ -868,71 +880,109 @@ class CIFPhaseReader(G2obj.ImportPhase):
         #----------------------------------------------------------------------
         if explaination: self.Constraints.append(explaination)
 
-        # # debug: show the mode var to mode relations
-        # for i,row in enumerate(displacivemodeInvmatrix):
-        #     l = ''
-        #     for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-        #         if k == 0: continue
-        #         if l: l += ' + '
-        #         #l += lbl+' * '+str(k)
-        #         l += G2varLbl[j]+' * '+str(k)
-        #     print str(i) + ': '+shortmodelist[i]+' = '+l
-        # print 70*'='
+        if not debug: return
 
-        # # debug: Get the ISODISTORT offset values
-        # coordVarDelta = {}
-        # for lbl,val in zip(
-        #     blk.get('_iso_deltacoordinate_label'),
-        #     blk.get('_iso_deltacoordinate_value'),):
-        #     coordVarDelta[lbl] = float(val)
-        # modeVarDelta = {}
-        # for lbl,val in zip(
-        #     blk.get('_iso_displacivemode_label'),
-        #     blk.get('_iso_displacivemode_value'),):
-        #     modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
+        # debug: show the mode var to mode relations
+        print("shortname ==> ISODISTORT full name")
+        for mode,shortmode in zip(modelist,shortmodelist):
+            print(shortmode,' ==>', mode)
+        print()
+        for i,row in enumerate(displacivemodeInvmatrix):
+            l = ''
+            for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                if k == 0: continue
+                if l: l += ' + '
+                #l += lbl+' * '+str(k)
+                l += G2varLbl[j]+' * '+str(k)
+            print( str(i) + ': '+shortmodelist[i]+' = '+l)
+        print( 70*'=')
 
-        # print 70*'='
-        # # compute the mode values from the reported coordinate deltas
-        # for i,row in enumerate(displacivemodeInvmatrix):
-        #     l = ''
-        #     sl = ''
-        #     s = 0.
-        #     for lbl,k in zip(coordVarLbl,row):
-        #         if k == 0: continue
-        #         if l: l += ' + '
-        #         l += lbl+' * '+str(k)
-        #         if sl: sl += ' + '
-        #         sl += str(coordVarDelta[lbl])+' * '+str(k)
-        #         s += coordVarDelta[lbl] * k
-        #     print 'a'+str(i)+' = '+l
-        #     print '\t= '+sl
-        #     print  modelist[i],shortmodelist[i],modeVarDelta[modelist[i]],s
-        #     print
+        # debug: Get the ISODISTORT offset values
+        coordVarDelta = {}
+        for lbl,val in zip(
+            blk.get('_iso_deltacoordinate_label'),
+            blk.get('_iso_deltacoordinate_value'),):
+            coordVarDelta[lbl] = float(val)
+        modeVarDelta = {}
+        for lbl,val in zip(
+            blk.get('_iso_displacivemode_label'),
+            blk.get('_iso_displacivemode_value'),):
+            modeVarDelta[lbl] = cif.get_number_with_esd(val)[0]
 
-        # print 70*'='
-        # # compute the coordinate displacements from the reported mode values
-        # for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
-        #     l = ''
-        #     sl = ''
-        #     s = 0.0
-        #     for j,k in enumerate(row):
-        #         if k == 0: continue
-        #         if l: l += ' + '
-        #         l += 'a'+str(j+1)+' * '+str(k)
-        #         if sl: sl += ' + '
-        #         sl += str(shortmodelist[j]) +' = '+ str(modeVarDelta[modelist[j]]) + ' * '+str(k)
-        #         s += modeVarDelta[modelist[j]] * k
-        #     print lbl+' = '+l
-        #     print '\t= '+sl
-        #     print lbl,G2varLbl[i],coordVarDelta[lbl],s
-        #     print
+        print( 70*'=')
+        # compute the mode values from the reported coordinate deltas
+        for i,row in enumerate(displacivemodeInvmatrix):
+            l = ''
+            sl = ''
+            s = 0.
+            for lbl,k in zip(coordVarLbl,row):
+                if k == 0: continue
+                if l: l += ' + '
+                l += lbl+' * '+str(k)
+                if sl: sl += ' + '
+                sl += str(coordVarDelta[lbl])+' * '+str(k)
+                s += coordVarDelta[lbl] * k
+            print('a'+str(i)+' = '+l)
+            print('\t= '+sl)
+            print(modelist[i],shortmodelist[i],modeVarDelta[modelist[i]],s)
+            print()
+
+        print( 70*'=')
+        # compute the coordinate displacements from the reported mode values
+        for i,lbl,row in zip(range(len(coordVarLbl)),coordVarLbl,displacivemodematrix):
+            l = ''
+            sl = ''
+            s = 0.0
+            for j,k in enumerate(row):
+                if k == 0: continue
+                if l: l += ' + '
+                l += 'a'+str(j+1)+' * '+str(k)
+                if sl: sl += ' + '
+                sl += str(shortmodelist[j]) +' = '+ str(modeVarDelta[modelist[j]]) + ' * '+str(k)
+                s += modeVarDelta[modelist[j]] * k
+            print( lbl+' = '+l)
+            print( '\t= '+sl)
+            print( lbl,G2varLbl[i],coordVarDelta[lbl],s)
+            print()
 
         # determine the coordinate delta values from deviations from the parent structure
-        # for atmline in self.Phase['Atoms']:
-        #     lbl = atmline[0]
-        #     x,y,z = atmline[3:6]
-        #     if lbl not in ParentCoordinates:
-        #         print lbl,x,y,z
-        #         continue
-        #     px,py,pz = ParentCoordinates[lbl]
-        #     print lbl,x,y,z,x-px,y-py,z-pz
+        for atmline in self.Phase['Atoms']:
+            lbl = atmline[0]
+            x,y,z = atmline[3:6]
+            if lbl not in ParentCoordinates:
+                print( lbl,x,y,z)
+                continue
+            px,py,pz = ParentCoordinates[lbl]
+            print( lbl,x,y,z,x-px,y-py,z-pz)
+        print('\nGenerated constraints')
+        for i in self.Constraints:
+            if type(i) is dict:
+                print('\n  constraint help')
+                for key in i:
+                    print('\t',key,i[key])
+            elif i[-1] == 'f':
+                print('\n\tNewvar',i[-3],' =')
+                for m,j in i[:-3]:
+                    print('\t\t+',m,' * ',j)
+            else:
+                print('  unexpected: ',repr(i))
+                    
+def ISODISTORT_shortLbl(lbl,shortmodelist):
+    '''Shorten model labels and remove special characters
+    '''
+    regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)\[.*?\](.*)',lbl)
+    # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)[...]BBBBB
+    # where SSSSS is the parent spacegroup, [x,y,z] is a location, etc.
+    if regexp:
+        # this extracts the AAAAA and BBBBB parts of the string
+        lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
+    else:
+        # try form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
+        regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
+        if regexp:
+            lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
+    lbl = lbl.replace('order','o')
+    lbl = lbl.replace('+','_')
+    lbl = lbl.replace('-','_')
+    G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
+                

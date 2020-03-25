@@ -248,9 +248,13 @@ _Old_Paired_data = {'blue': [(0.0, 0.89019608497619629,
     0.7921568751335144, 0.7921568751335144), (0.81818181818181823,
     0.41568627953529358, 0.41568627953529358), (0.90909090909090906,
     1.0, 1.0), (1.0, 0.69411766529083252, 0.69411766529083252)]}
-mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=256)
-mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data),lut=256)
 #This can be done on request for other colors
+mpl.cm.register_cmap('Paired',data=_Old_Paired_data,lut=256)
+try:
+    mpl.cm.register_cmap('Paired_r',data=mpl.cm._reverse_cmap_spec(_Old_Paired_data),lut=256)
+except:
+    if GSASIIpath.GetConfigValue('debug'):
+       print('MPL register_cmap for Paired_r failed')
 
 # options for publication-quality Rietveld plots
 plotOpt = {}

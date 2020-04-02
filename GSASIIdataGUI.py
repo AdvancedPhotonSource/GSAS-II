@@ -390,7 +390,7 @@ def warnNumpyVersion(application):
         dlg.Destroy()
         
 ###############################################################################
-# GUI creation
+#### GUI creation
 ###############################################################################
 def GSASIImain(application):
     '''Start up the GSAS-II GUI'''                        
@@ -440,7 +440,7 @@ The kit will install python 3.7 and all current packages as well as the newest v
     application.GetTopWindow().Show(True)
 
 ################################################################################
-# Create main frame (window) for GUI
+#### Create main frame (window) for GUI
 ################################################################################
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items.
@@ -598,11 +598,11 @@ class GSASII(wx.Frame):
             
         if seqSetting:
             for item in self.Refine:
-                item.SetText('Se&quential refine\tCtrl+R')
+                item.SetItemLabel('Se&quential refine\tCtrl+R')    #might fail on old wx
             seqMode = True
         else:
             for item in self.Refine:
-                item.SetText('&Refine\tCtrl+R')
+                item.SetItemLabel('&Refine\tCtrl+R')    #might fail on old wx
             seqMode = False
         for menu,Id in self.ExportSeq:
             menu.Enable(Id,seqMode)
@@ -5834,15 +5834,13 @@ class G2DataWindow(wx.ScrolledWindow):      #wxscroll.ScrolledPanel):
         self.PostfillDataMenu()
         
         #Phase / fullrmc & RMCprofile (Reverse Monte Carlo method) tab
-        G2G.Define_wxId('wxID_SETUPRMC','wxID_LOADRMC','wxID_SAVERMC','wxID_RUNRMC','wxID_VIEWRMC' )       
+        G2G.Define_wxId('wxID_SETUPRMC','wxID_RUNRMC','wxID_VIEWRMC' )       
         self.FRMCMenu = wx.MenuBar()
         self.PrefillDataMenu(self.FRMCMenu)
         self.FRMCMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.FRMCDataEdit = wx.Menu(title='')
         self.FRMCMenu.Append(menu=self.FRMCDataEdit, title='Operations')
         self.FRMCDataEdit.Append(G2G.wxID_SETUPRMC,'Setup RMC','Setup new fullrmc or RMCprofile file')
-        self.FRMCDataEdit.Append(G2G.wxID_LOADRMC,'Load','Load fullrmc or RMCprofile file')
-        self.FRMCDataEdit.Append(G2G.wxID_SAVERMC,'Save','Save fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_RUNRMC,'Execute','Run fullrmc or RMCprofile file')
         self.FRMCDataEdit.Append(G2G.wxID_VIEWRMC,'View','View fullrmc or RMCprofile results')
         self.PostfillDataMenu()

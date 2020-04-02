@@ -2106,11 +2106,7 @@ def calcIncident(Iparm,xdata):
 #### RMCutilities
 ################################################################################
     
-def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
-    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
-    histoName = G2frame.GPXtree.GetItemPyData(PWId)[2]
-    Size = Phase['Histograms'][histoName]['Size']
-    Mustrain = Phase['Histograms'][histoName]['Mustrain']
+def MakeInst(PWDdata,Name,Size,Mustrain,useSamBrd):
     inst = PWDdata['Instrument Parameters'][0]
     Xsb = 0.
     Ysb = 0.
@@ -2159,8 +2155,7 @@ def MakeInst(G2frame,Name,Phase,useSamBrd,PWId):
         fl.close()
     return fname
     
-def MakeBack(G2frame,Name,PWId):
-    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+def MakeBack(PWDdata,Name):
     Back = PWDdata['Background'][0]
     inst = PWDdata['Instrument Parameters'][0]
     if 'chebyschev-1' != Back[0]:
@@ -2178,7 +2173,7 @@ def MakeBack(G2frame,Name,PWId):
     fl.close()
     return fname
 
-def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
+def MakeRMC6f(PWDdata,Name,Phase,RMCPdict):
     
     def findDup(Atoms):
         Dup = []
@@ -2198,7 +2193,6 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     Meta = RMCPdict['metadata']
     Atseq = RMCPdict['atSeq']
     Supercell =  RMCPdict['SuperCell']
-    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     generalData = Phase['General']
     Dups,Fracs = findDup(Phase['Atoms'])
     Sfracs = [np.cumsum(fracs) for fracs in Fracs]
@@ -2278,8 +2272,7 @@ def MakeRMC6f(G2frame,Name,Phase,RMCPdict,PWId):
     fl.close()
     return fname,reset
 
-def MakeBragg(G2frame,Name,Phase,PWId):
-    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+def MakeBragg(PWDdata,Name,Phase):
     generalData = Phase['General']
     Vol = generalData['Cell'][7]
     Data = PWDdata['Data']
@@ -2306,7 +2299,7 @@ def MakeBragg(G2frame,Name,Phase,PWId):
     fl.close()
     return fname
 
-def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
+def MakeRMCPdat(PWDdata,Name,Phase,RMCPdict):
     Meta = RMCPdict['metadata']
     Times = RMCPdict['runTimes']
     Atseq = RMCPdict['atSeq']
@@ -2314,7 +2307,6 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     atPairs = RMCPdict['Pairs']
     Files = RMCPdict['files']
     BraggWt = RMCPdict['histogram'][1]
-    PWDdata = G2frame.GetPWDRdatafromTree(PWId)
     inst = PWDdata['Instrument Parameters'][0]
     refList = PWDdata['Reflection Lists'][Name]['RefList']
     dMin = refList[-1][4]
@@ -2467,41 +2459,79 @@ def MakeRMCPdat(G2frame,Name,Phase,RMCPdict,PWId):
     fl.write('\n')
     fl.write('END  ::\n')
     fl.close()
-    return fname    
-
-def MakePDB(G2frame,Name,Phase,Atseq,Supercell):
-    generalData = Phase['General']
-    Cell = generalData['Cell'][1:7]
-    Trans = np.eye(3)*np.array(Supercell)
-    newPhase = copy.deepcopy(Phase)
-    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
-    newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
-    Atoms = newPhase['Atoms']
-    Cell = newPhase['General']['Cell'][1:7]
-    A,B = G2lat. cell2AB(Cell)
-    fname = Name+'.pdb'
-    fl = open(fname,'w')
-    fl.write('REMARK    this file is generated using GSASII\n')
-    fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
-            Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
-    fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
-    fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
-    fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
-
-    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
-    Natm = np.count_nonzero(Natm-1)
-    nat = 0
-    for atm in Atseq:
-        for iat,atom in enumerate(Atoms):
-            if atom[1] == atm:
-                nat += 1
-                XYZ = np.inner(A,np.array(atom[3:6])-0.5)    #shift origin to middle & make Cartesian
-#ATOM      1 Ni   RMC     1     -22.113 -22.113 -22.113  1.00  0.00          ni                      
-                fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
-                        nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1]))
-    fl.close()
     return fname
+
+def MakefullrmcRun(Name,Phase,RMCPdict):
+    print(' nothing happened yet')
+    rname = Name+'-run.py'
+    rundata = ''
+    rundata += '#### fullrmc $s file; edit by hand if you so choose #####\n'&rname
+    rundata += '''
+import numpy as np
+
+# fullrmc library imports 
+from fullrmc.Globals import LOGGER, FLOAT_TYPE
+from fullrmc.Engine import Engine
+from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
+from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
+from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
+from fullrmc.Constraints.BondConstraints import BondConstraint
+from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
+from fullrmc.Constraints.ImproperAngleConstraints import ImproperAngleConstraint
+from fullrmc.Core.Collection import convert_Gr_to_gr
+from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
+from fullrmc.Core.GroupSelector import RecursiveGroupSelector
+from fullrmc.Selectors.RandomSelectors import RandomSelector
+from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
+from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
+from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutSymmetryAxisGenerator
+from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
+
+# engine file names - replace name with phase name
+engineFileName = "name_engine.rmc"
+expFileName    = "name_pdf.exp"
+pdbFileName    = "nme.pdb" 
+freshStart     = False      #make TRUE for a restart
+
+            '''
+    rfile = open(rname,'w')
+    rfile.writelines(rundata)
+    rfile.close()
+    
+
+def MakePDB(Name,Phase,RMCPdict):
+    return None
+    # generalData = Phase['General']
+    # Cell = generalData['Cell'][1:7]
+    # Trans = np.eye(3)*np.array(Supercell)
+    # newPhase = copy.deepcopy(Phase)
+    # newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+    # newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+    # newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
+    # Atoms = newPhase['Atoms']
+    # Cell = newPhase['General']['Cell'][1:7]
+    # A,B = G2lat. cell2AB(Cell)
+    # fname = Name+'.pdb'
+    # fl = open(fname,'w')
+    # fl.write('REMARK    this file is generated using GSASII\n')
+    # fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
+    #         Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+    # fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
+    # fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
+    # fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
+
+    # Natm = np.core.defchararray.count(np.array(Atcodes),'+')
+    # Natm = np.count_nonzero(Natm-1)
+    # nat = 0
+    # for atm in Atseq:
+    #     for iat,atom in enumerate(Atoms):
+    #         if atom[1] == atm:
+    #             nat += 1
+    #             XYZ = np.inner(A,np.array(atom[3:6])-0.5)    #shift origin to middle & make Cartesian
+    #             fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
+    #                     nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1]))
+    # fl.close()
+    # return fname
 
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     bondDist = []

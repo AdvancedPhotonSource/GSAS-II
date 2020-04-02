@@ -1089,85 +1089,6 @@ class AddHatomDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
-        
-class SetUpFullrmcDialog(wx.Dialog):
-    ''' Get from user the super cell size & selected histogram to make various files
-    '''
-    def __init__(self,parent,Name,Phase):
-        title = 'fullrmc setup'
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
-            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
-        self.Name = Name
-        self.Phase = Phase
-        self.SuperCell = [1,1,1]
-        self.aTypes = self.Phase['General']['AtomTypes']
-        self.atSeq = self.aTypes[:]
-#        self.histogram = ''
-#        self.metadata = {'title':'none','owner':'no one','date':str(time.ctime()),
-#                         'material':'nothing','comment':'none ','source':'nowhere'}
-        self.Draw()
-        
-    def Draw(self):
-        
-#        def OnHisto(event):
-#            self.histogram = histo.GetStringSelection()
-            
-        def OnAtSel(event):
-            Obj = event.GetEventObject()
-            itype = Indx[Obj.GetId()]
-            tid = Obj.GetSelection()
-            if itype < nTypes-1:
-                if itype == tid:
-                    tid += 1
-                self.atSeq = G2lat.SwapItems(self.atSeq,itype,tid)
-            wx.CallAfter(self.Draw)
-        
-        self.panel.Destroy()
-        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(wx.StaticText(self.panel,label=' Setup for: %s'%self.Name),0,WACV)
-        superSizer = wx.BoxSizer(wx.HORIZONTAL)
-        axes = ['X','Y','Z']
-        for i,ax in enumerate(axes):
-            superSizer.Add(wx.StaticText(self.panel,label=' %s-axis: '%ax),0,WACV)
-            superSizer.Add(G2G.ValidatedTxtCtrl(self.panel,self.SuperCell,i,min=1,max=15,size=(50,25)),0,WACV)
-        mainSizer.Add(superSizer,0,WACV)
-        nTypes = len(self.aTypes)
-        atmChoice = wx.BoxSizer(wx.HORIZONTAL)
-        atmChoice.Add(wx.StaticText(self.panel,label=' Set atom ordering: '),0,WACV)
-        Indx = {}
-        for iType in range(nTypes):
-            atChoice = self.atSeq[iType:]
-            atmSel = wx.ComboBox(self.panel,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-            atmSel.SetStringSelection(self.atSeq[iType])
-            atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
-            Indx[atmSel.GetId()] = iType
-            atmChoice.Add(atmSel,0,WACV)
-        mainSizer.Add(atmChoice,0,WACV)
-        mainSizer.Add(wx.StaticText(self.panel,label=' WARNING: this can take time - be patient'),0,WACV)
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-        OKBtn = wx.Button(self.panel,-1,"OK")
-        OKBtn.Bind(wx.EVT_BUTTON, self.OnOK)
-        btnSizer.Add(OKBtn)            
-        
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        self.panel.SetSizer(mainSizer)
-        size = np.array(self.GetSize())
-        self.panel.SetupScrolling()
-        self.panel.SetAutoLayout(1)
-        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
-        self.panel.SetSize(size)
-        
-    def GetData(self):
-        'Returns the values from the dialog'
-        return self.SuperCell,self.atSeq
-        
-    def OnOK(self,event):
-        parent = self.GetParent()
-        parent.Raise()
-        self.EndModal(wx.ID_OK)
-
 ################################################################################
 #### Phase editing routines
 ################################################################################
@@ -4603,20 +4524,12 @@ def UpdatePhaseData(G2frame,Item,data):
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
         elif G2frame.RMCchoice == 'fullrmc':
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,False)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,False)
-            wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
-      Install it in your python according to the instructions in
-      https://bachiraoun.github.io/fullrmc/index.html. ''',
-                caption='fullrmc not installed',style=wx.ICON_INFORMATION)
         if G2frame.FRMC.GetSizer():
             G2frame.FRMC.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -4631,18 +4544,22 @@ def UpdatePhaseData(G2frame,Item,data):
             try:
                 from fullrmc import Engine
             except ModuleNotFoundError:
+                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
+          Install it in your python according to the instructions in
+          https://bachiraoun.github.io/fullrmc/index.html. ''',
+                    caption='fullrmc not installed',style=wx.ICON_INFORMATION)
                 return
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence",     
+ B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
+ '''))
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SETUPRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_LOADRMC,True)
-            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_SAVERMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
-#            font1 = wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL, False, u'Consolas')
-            G2frame.runtext = wx.TextCtrl(G2frame.FRMC,style=wx.TE_MULTILINE|wx.TE_DONTWRAP,size=(850,450))
-#            G2frame.runtext.SetFont(font1)
-            mainSizer.Add(G2frame.runtext)
         elif G2frame.RMCchoice ==  'RMCProfile':
+            mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
+ Jour. Phys.: Cond. Matter 2007, 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218 
+ '''))
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' RMCProfile setup:'))
             if not data['RMC']['RMCProfile']:
                 Atypes = data['General']['AtomTypes']
@@ -5202,65 +5119,29 @@ def UpdatePhaseData(G2frame,Item,data):
     def OnSetupRMC(event):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
+        if not G2frame.GSASprojectfile:     #force a project save
+            G2frame.OnFileSaveas(event)
         if G2frame.RMCchoice == 'fullrmc':
-            dlg = SetUpFullrmcDialog(G2frame,Name=pName,Phase=data)
-            if dlg.ShowModal() == wx.ID_OK:
-                superCell,atSeq = dlg.GetData()
-#                    Progress
-                print(G2pwd.MakePDB(G2frame,pName,data,atSeq,superCell)+ ' written')
-                print('fullrmc file build completed')
-            else:
-                pass
-            dlg.Destroy()          
-            rundata = '''
-##########################################################################################
-##############################  IMPORTING USEFUL DEFINITIONS  ############################
-# standard libraries imports
-import os
-
-# external libraries imports
-import numpy as np
-
-# fullrmc library imports - these are some examples; others may be needed for your problem
-from fullrmc.Globals import LOGGER, FLOAT_TYPE
-from fullrmc.Engine import Engine
-from fullrmc.Constraints.PairDistributionConstraints import PairDistributionConstraint
-from fullrmc.Constraints.PairCorrelationConstraints import PairCorrelationConstraint
-from fullrmc.Constraints.DistanceConstraints import InterMolecularDistanceConstraint
-from fullrmc.Constraints.BondConstraints import BondConstraint
-from fullrmc.Constraints.AngleConstraints import BondsAngleConstraint
-from fullrmc.Constraints.ImproperAngleConstraints import ImproperAngleConstraint
-from fullrmc.Core.Collection import convert_Gr_to_gr
-from fullrmc.Core.MoveGenerator import MoveGeneratorCollector
-from fullrmc.Core.GroupSelector import RecursiveGroupSelector
-from fullrmc.Selectors.RandomSelectors import RandomSelector
-from fullrmc.Selectors.OrderedSelectors import DefinedOrderSelector
-from fullrmc.Generators.Translations import TranslationGenerator, TranslationAlongSymmetryAxisGenerator
-from fullrmc.Generators.Rotations import RotationGenerator, RotationAboutSymmetryAxisGenerator
-from fullrmc.Generators.Agitations import DistanceAgitationGenerator, AngleAgitationGenerator
-
-
-##########################################################################################
-#####################################  CREATE ENGINE  ####################################
-# dirname
-DIR_PATH = os.path.dirname( os.path.realpath(__file__) )
-
-# engine file names - replace name with phase name
-engineFileName = "name_engine.rmc"
-expFileName    = "name_pdf.exp"
-pdbFileName    = "nme.pdb" 
-freshStart     = False      #make TRUE for a restart
-
-            '''            
-            G2frame.runtext.SetValue(rundata)
+            print ('TBD')
+            return
+            print('set up rmcfull *.pdb & *.py files TBD')
+            G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
+            RMCPdict = data['RMC']['fullrmc']
+            print(G2pwd.MakePDB(pName,data,RMCPdict)+ ' written')
+            print(G2pwd.MakefullrmcRun(pName,data,RMCPdict)+ ' written')
+            print('fullrmc file build completed')
         else:
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['RMCProfile']
             PWId = G2gd.GetGPXtreeItemId(G2frame,G2frame.root,RMCPdict['histogram'][0])
             if PWId:
+                PWDdata = G2frame.GetPWDRdatafromTree(PWId)
+                histoName = G2frame.GPXtree.GetItemPyData(PWId)[2]
+                Size = data['Histograms'][histoName]['Size']
+                Mustrain = data['Histograms'][histoName]['Mustrain']
                 reset = False
-                print(G2pwd.MakeInst(G2frame,pName,data,RMCPdict['UseSampBrd'],PWId)+ ' written')
-                backfile = G2pwd.MakeBack(G2frame,pName,PWId)
+                print(G2pwd.MakeInst(PWDdata,pName,Size,Mustrain,RMCPdict['UseSampBrd'])+ ' written')
+                backfile = G2pwd.MakeBack(PWDdata,pName)
                 if backfile is None:
                     print(' Chebyschev-1 background not used; no .back file written')
                     wx.MessageDialog(G2frame,' Chebyschev-1 background not used; '+ \
@@ -5269,13 +5150,13 @@ freshStart     = False      #make TRUE for a restart
                     return
                 else:
                     print(backfile+ ' written')
-                print(G2pwd.MakeBragg(G2frame,pName,data,PWId)+ ' written')
+                print(G2pwd.MakeBragg(PWDdata,pName,data)+ ' written')
                 if RMCPdict['ReStart'][0]:
                     if os.path.isfile(pName+'.his6f'):
                         os.remove(pName+'.his6f')
-                    RMC6f,reset = G2pwd.MakeRMC6f(G2frame,pName,data,RMCPdict,PWId)
+                    RMC6f,reset = G2pwd.MakeRMC6f(PWDdata,pName,data,RMCPdict)
                     print(RMC6f+ ' written')
-                print(G2pwd.MakeRMCPdat(G2frame,pName,data,RMCPdict,PWId)+ ' written')
+                print(G2pwd.MakeRMCPdat(PWDdata,pName,data,RMCPdict)+ ' written')
                 print('RMCProfile file build completed')
                 RMCPdict['ReStart'] = [False,False]
                 if reset:
@@ -5286,38 +5167,6 @@ freshStart     = False      #make TRUE for a restart
                 print('RMCProfile file build failed - no histogram selected')
                 G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,False)
             
-    def OnLoadRMC(event):
-        global runFile
-        if G2frame.RMCchoice == 'fullrmc':
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run file to open', G2G.GetImportPath(G2frame), runFile,
-                wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_OPEN| wx.FD_CHANGE_DIR)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                runFile = dlg.GetPath()
-                runpy = open(runFile,'r')
-                G2frame.runtext.SetValue(runpy.read())
-                runpy.close()
-            else:
-                return
-        finally:
-            dlg.Destroy()
-        
-    def OnSaveRMC(event):
-        global runFile
-        if G2frame.RMCchoice == 'fullrmc':
-            dlg = wx.FileDialog(G2frame, 'Choose fullrmc run.py file to save',  G2G.GetImportPath(G2frame), runFile,
-                wildcard='fullrmc run.py file (*.py)|*.py',style=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                runFile = dlg.GetPath()
-                runpy = open(runFile,'w')
-                runpy.write(G2frame.runtext.GetValue())
-                runpy.close()
-            else:
-                return
-        finally:
-            dlg.Destroy()
-
     def OnRunRMC(event):
         
         generalData = data['General']
@@ -5328,6 +5177,7 @@ freshStart     = False      #make TRUE for a restart
       Machine Learning and Artificial Intelligence,
       B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111.
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
+            # TBD - remove filedialog & use defined run.py file name here
             dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
             try:
@@ -5335,7 +5185,6 @@ freshStart     = False      #make TRUE for a restart
                     import subprocess as sb
                     batch = open('fullrmc.bat','w')
                     batch.write('run '+sys.exec_prefix+'\\Scripts\\activate\n')
-                    batch.write('SET PYTHONPATH=%s\\fullrmc\n'%GSASIIpath.path2GSAS2)
                     batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
                     batch.write('pause')
                     batch.close()
@@ -5400,23 +5249,155 @@ freshStart     = False      #make TRUE for a restart
             
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
-            try:
-                from fullrmc import Engine
-            except ModuleNotFoundError:
-                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
-      Install it in your python according to the instructions in
-      https://bachiraoun.github.io/fullrmc/index.html. ''',
-          caption='fullrmc not installed',style=wx.ICON_INFORMATION)
-                return
-            DIR_PATH = os.path.dirname( os.path.realpath(__file__) )
-            engineFilePath = os.path.join(DIR_PATH, "engine.rmc")
-            
+            generalData = data['General']
+            pName = generalData['Name'].replace(' ','_')
+            from fullrmc import Engine
             # load
+            engineFilePath = pName+'.rmc'
             ENGINE = Engine(path=None)
-            result, mes = ENGINE.is_engine(engineFilePath, mes=True)
-            if result:
-                ENGINE = ENGINE.load(engineFilePath)
-                GR, SQ, CN, MD = ENGINE.constraints
+            try:
+                if engineFilePath is not None:
+                    result, mes = ENGINE.is_engine(engineFilePath, mes=True)
+                    if result:
+                        ENGINE = ENGINE.load(engineFilePath)
+                        found = False
+                        for frame in list(ENGINE.frames):
+                            ENGINE.set_used_frame(frame)
+                            FRitems = ENGINE.constraints
+                            for item in FRitems:
+                                sitem = str(type(item))
+                                if 'PairDistribution' in sitem or 'StructureFactor' in sitem or 'PairCorrelation' in sitem:
+                                    found = True
+                                    Xlab = r'$\mathsf{r,\AA}$'
+                                    Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
+                                    title = ' g(r) for '
+                                    if 'StructureFactor' in sitem:
+                                        Xlab = r'$\mathsf{Q,\AA^{-1}}$'
+                                        Ylab = 'S(Q)'
+                                        title = ' S(Q) for '
+                                    if frame != '0':
+                                        title = frame+title
+                                    dataDict= item.get_constraints_properties(frame)
+                                    X = dataDict['frames-experimental_x'][0]
+                                    Y = dataDict['frames-experimental_y'][0]
+                                    rdfDict = item.get_constraint_value()
+                                    Z = rdfDict['total']
+                                    XY = [[X,Y],[X,Z]]
+                                    Names = ['Obs','Calc']
+                                    G2plt.PlotXY(G2frame,XY,labelX=Xlab,
+                                        labelY=Ylab,newPlot=True,Title=title+pName,
+                                        lines=True,names=Names)
+                                    PXY = []
+                                    PXYT = []
+                                    Names = []
+                                    NamesT = []
+                                    for item in rdfDict:
+                                        PXYT.append([X,rdfDict[item]])
+                                        NamesT.append(item)
+                                        if 'total' in item:
+                                            PXY.append([X,rdfDict[item]])
+                                            Names.append(item)
+                                    G2plt.PlotXY(G2frame,PXYT,labelX=Xlab,
+                                        labelY=Ylab,newPlot=True,Title=' All partials of '+title+pName,
+                                        lines=True,names=NamesT)
+                                    G2plt.PlotXY(G2frame,PXY,labelX=Xlab,
+                                        labelY=Ylab,newPlot=True,Title=' Total partials of '+title+pName,
+                                        lines=True,names=Names)
+                                    
+                                else:
+                                    found = True
+                                    if 'BondConstraint' in sitem:
+                                        bonds = item.get_constraint_value()['bondsLength']
+                                        bondList = item.bondsList[:2]
+                                        atoms = ENGINE.get_original_data("allElements",frame)
+                                        bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
+                                        bondSet = list(set(bondNames))
+                                        Bonds = list(zip(bondNames,bonds))
+                                        for Bname in bondSet:
+                                            bondLens = [bond[1] for bond in Bonds if bond[0]==Bname]
+                                            G2plt.PlotBarGraph(G2frame,bondLens,Xname=r'%s $Bond,\ \AA$'%Bname,Title='%s Bond lengths for %s'%(Bname,pName),
+                                                PlotName='%s Bonds for %s'%(Bname,pName),maxBins=20)
+                                    elif 'BondsAngleConstraint' in sitem:
+                                        angles = 180.*item.get_constraint_value()['angles']/np.pi
+                                        angleList = item.anglesList[:3]
+                                        atoms = ENGINE.get_original_data("allElements",frame)
+                                        angleNames = ['%s-%s-%s'%(atoms[angleList[1][iat]],atoms[angleList[0][iat]],atoms[angleList[2][iat]]) for iat in range(angles.shape[0])]
+                                        angleSet = list(set(angleNames))
+                                        Angles = list(zip(angleNames,angles))
+                                        for Aname in angleSet:
+                                            bondAngs = [angle[1] for angle in Angles if angle[0]==Aname]
+                                            G2plt.PlotBarGraph(G2frame,bondAngs,Xname=r'%s Angle, deg'%Aname,Title='%s Bond angles for %s'%(Aname,pName),
+                                                PlotName='%s Angles for %s'%(Aname,pName),maxBins=20)
+                                    elif 'ImproperAngleConstraint' in sitem:
+                                        impangles = 180.*item.get_constraint_value()['angles']/np.pi
+                                        impangleList = item.anglesList[:4]
+                                        atoms = ENGINE.get_original_data("allElements",frame)
+                                        impangleNames = ['%s-%s-%s-%s'%(atoms[impangleList[0][iat]],atoms[impangleList[1][iat]],
+                                            atoms[impangleList[2][iat]],atoms[impangleList[3][iat]]) for iat in range(impangles.shape[0])]
+                                        impangleSet = list(set(impangleNames))
+                                        impAngles = list(zip(impangleNames,impangles))
+                                        for Aname in impangleSet:
+                                            impAngs = [angle[1] for angle in impAngles if angle[0]==Aname]
+                                            G2plt.PlotBarGraph(G2frame,impAngs,Xname=r'%s $Improper Angle, deg$'%Aname,Title='%s Improper angles for %s'%(Aname,pName),
+                                                PlotName='%s Improper Angles for %s'%(Aname,pName),maxBins=20)
+                                    elif 'AtomicCoordinationNumber' in sitem or 'InterMolecular' in sitem:
+                                        print(sitem+' not plotted')
+                                    else:
+                                        print(sitem)
+                                        item.plot(show=True)
+                                        pass
+                        if not found:
+                            print(' No saved information yet, wait until fullrms does a Save')
+            except AssertionError:
+                 print("Can't open fullrmc engine while running")
+            try:
+                logfile = open('fullrmc.log','r')
+            except FileNotFoundError:
+                logfile = open('fullrmc_0.log','r')
+            loglines = logfile.readlines()
+            logfile.close()
+            start = 0
+            while True:
+                line = loglines[start]                
+                if 'Err:' in line:
+                    break
+                else:
+                    start += 1
+            Gen = []
+            Tr = []
+            Acc = []
+            Rem = []
+            Err = []
+            start -= 1
+            while True:
+                start += 1
+                try:
+                    line = loglines[start]
+                except:
+                    break
+                if 'Err' not in line:
+                    continue
+                items = line.split(' - ')
+                try:    # could be a trashed line at end
+                    Err.append(float(items[5][:-1].split('Err:')[1]))
+                except ValueError:
+                    break
+                Gen.append(int(items[1].split('Gen:')[1]))
+                Tr.append(float(items[2].split('(')[1].split('%)')[0]))
+                Acc.append(float(items[3].split('(')[1].split('%)')[0]))
+                Rem.append(float(items[4].split('(')[1].split('%)')[0]))
+            
+            Gen = np.array(Gen)
+            Tr = np.array(Tr)
+            Acc = np.array(Acc)
+            Rem = np.array(Rem)
+            Err = np.log10(np.array(Err))
+            Names = ['Tr','Acc','Rem','Err']
+            XY = [[Gen,Tr],[Gen,Acc],[Gen,Rem],[Gen,Err]]
+            G2plt.PlotXY(G2frame,XY,labelX='no. generated',
+                labelY=r'$log_{10}(Err)\ &\ residuals,\ %$',newPlot=True,Title='fullrmc residuals for '+pName,
+                lines=True,names=Names)
+                      
         else:
             generalData = data['General']
             RMCPdict = data['RMC']['RMCProfile']
@@ -11253,8 +11234,6 @@ freshStart     = False      #make TRUE for a restart
         # fullrmc
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataWindow.FRMCMenu)
         G2frame.Bind(wx.EVT_MENU, OnSetupRMC, id=G2G.wxID_SETUPRMC)
-        G2frame.Bind(wx.EVT_MENU, OnLoadRMC, id=G2G.wxID_LOADRMC)
-        G2frame.Bind(wx.EVT_MENU, OnSaveRMC, id=G2G.wxID_SAVERMC)
         G2frame.Bind(wx.EVT_MENU, OnRunRMC, id=G2G.wxID_RUNRMC)
         G2frame.Bind(wx.EVT_MENU, OnViewRMC, id=G2G.wxID_VIEWRMC)
         # MC/SA

@@ -5383,7 +5383,7 @@ def PlotStrain(G2frame,data,newPlot=False):
 ##### PlotBarGraph
 ################################################################################
             
-def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False):
+def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,ifBinned=False,maxBins=None):
     'Needs a description'
     
     def OnPageChanged(event):
@@ -5414,6 +5414,8 @@ def PlotBarGraph(G2frame,Xarray,Xname='',Yname='Number',Title='',PlotName=None,i
         wid = Dbins[1]-Dbins[0]
     else:
         nBins= max(10,len(Xarray)//10)
+        if maxBins is not None:
+            nBins = min(nBins,maxBins)
         Bins,Dbins = np.histogram(Xarray,nBins)
         wid = Dbins[1]-Dbins[0]
         Dbins = Dbins[:-1]
@@ -8332,12 +8334,13 @@ def PlotStructure(G2frame,data,firstCall=False):
             key = str(event.key).upper()
         if key in ['+','-','=','0']:
             if generalData['Modulated']:
+                tstep = 1./36 #0.05
                 if key == '0':
                     G2frame.tau = 0.
                 elif key in ['+','=']:
-                    G2frame.tau += 0.05
+                    G2frame.tau += tstep
                 elif key == '-':
-                    G2frame.tau -= 0.05
+                    G2frame.tau -= tstep
                 G2frame.tau %= 1.   #force 0-1 range; makes loop
                 G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.4f'%(G2frame.tau),1)
                 data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          

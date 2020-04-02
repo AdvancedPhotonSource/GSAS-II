@@ -5731,8 +5731,7 @@ class OpenTutorial(wx.Dialog):
         Cancel resets to the default
         '''
         dlg = wx.DirDialog(self, "Choose a directory for tutorial downloads:",
-                           defaultPath=self.tutorialPath)#,style=wx.DD_DEFAULT_STYLE)
-                           #)
+            defaultPath=self.tutorialPath)#,style=wx.DD_DEFAULT_STYLE)
         try:
             if dlg.ShowModal() != wx.ID_OK:
                 return

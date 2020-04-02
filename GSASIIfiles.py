@@ -219,6 +219,8 @@ def SetPowderInstParms(Iparm, rd):
                     s = Iparm['INS  1PRCF 2'].split()
                     data.extend([0.0,0.0,sfloat(s[0]),sfloat(s[1]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
             elif abs(pfType) == 2:
+                print('''***WARNING gsas profile function #2 does not give valid GSAS-II diffractometer/profile coefficients ***
+                you should request GSAS-II instparm file from Instrument responsible''')
                 data.extend([sfloat(s[1]),0.0,1./sfloat(s[3])]) #alpha, beta-0, beta-1
                 data.extend([0.0,0.0,sfloat(s[1]),0.0,0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y, Z
         else:

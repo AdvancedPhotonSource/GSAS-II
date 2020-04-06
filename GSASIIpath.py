@@ -506,7 +506,10 @@ def svnUpdateProcess(version=None,projectfile=None,branch=None):
     else:
         version = str(version)
     # start the upgrade in a separate interpreter (avoids loading .pyd files)
-    proc = subprocess.Popen([sys.executable,__file__,projectfile,version])
+    ex = sys.executable
+    if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
+        if os.path.exists(ex+'w'): ex += 'w'
+    proc = subprocess.Popen([ex,__file__,projectfile,version])
     if sys.platform != "win32":
         proc.wait()
     sys.exit()
@@ -1031,6 +1034,78 @@ end tell
 '''.format(pythonapp,g2script,project)
     subprocess.Popen(["osascript","-e",script])
 
+def findConda():
+    '''Determines if GSAS-II has been installed as g2conda or gsas2full
+    with conda located relative to this file. 
+    We could also look for conda relative to the python (sys.executable)
+    image, but I don't want to muck around with python that someone else
+    installed.
+    '''
+    parent = os.path.split(path2GSAS2)[0]
+    if sys.platform != "win32":
+        activate = os.path.join(parent,'bin','activate')
+        conda = os.path.join(parent,'bin','conda')
+    else:
+        activate = os.path.join(parent,'Scripts','activate.bat')
+        conda = os.path.join(parent,'condabin','conda.bat')
+    if os.path.exists(activate) and os.path.exists(conda):
+        return conda,activate
+    else:
+        return None
+
+def runScript(cmds=[], wait=False, G2frame=None):
+    '''run a shell script of commands in an external process
+    
+    :param list cmds: a list of str's, each ietm containing a shell (cmd.exe
+      or bash) command
+    :param bool wait: if True indicates the commands should be run and then 
+      the script should return. If False, then the currently running Python 
+      will exit. Default is False
+    :param wx.Frame G2frame: provides the location of the current .gpx file
+      to be used to restart GSAS-II after running the commands, if wait 
+      is False. Default is None which prevents restarting GSAS-II regardless of
+      the value of wait.
+    '''
+    import tempfile
+    if not cmds:  #debug
+        print('nothing to do in runScript')
+        return
+    if sys.platform != "win32":
+        suffix = '.sh'
+    else:
+        suffix = '.bat'
+        
+    fp = tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False)
+    shellname = fp.name
+    for line in cmds:
+        fp.write(line)
+        fp.write('\n')
+
+    if not wait:
+        if G2frame:
+            projectfile = ''
+            if G2frame.GSASprojectfile:
+                projectfile = os.path.realpath(G2frame.GSASprojectfile)
+            main = os.path.join(path2GSAS2,'GSASII.py')
+            ex = sys.executable
+            if sys.platform == "darwin": # mac requires pythonw which is not always reported as sys.executable
+                if os.path.exists(ex+'w'): ex += 'w'
+            print ('restart using ',' '.join([ex,main,projectfile]))
+            fp.write(' '.join([ex,main,projectfile]))
+            fp.write('\n')
+    fp.close()
+
+    # start the upgrade in a separate interpreter (avoids loading .pyd files)
+    if sys.platform != "win32":
+        proc = subprocess.Popen(['bash',shellname])
+    else:
+        proc = subprocess.Popen([shellname],shell=True)
+    if wait:
+        proc.wait()
+    else:
+        if sys.platform != "win32": proc.wait()
+        sys.exit()
+    
 if __name__ == '__main__':
     '''What follows is called to update (or downdate) GSAS-II in a separate process. 
     '''

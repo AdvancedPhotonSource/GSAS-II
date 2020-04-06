@@ -406,22 +406,95 @@ def GSASIImain(application):
         finally:
             dlg.Destroy()
         sys.exit()
-        
+
     if platform.python_version()[:3] == '2.7':
-        dlg = wx.MessageDialog(None,
+        msg = '''The end-of-life for python 2.7 was January 1, 2020. 
+We strongly recommend reinstalling GSAS-II from a new installation kit as we may not be able to offer support for operation of GSAS-II in python 2.7. See instructions for details.
 '''
-The end-of-life for python 2.7 was January 1, 2020. 
-We strongly recommend reinstalling GSAS-II from a new installation kit as
-we may not be able to offer support for operation of GSAS-II in python 2.7. 
-GSAS-II installation kits can be found at https://subversion.xray.aps.anl.gov/trac/pyGSAS
-which is easily found by searching the web for GSAS-II
-The kit will install python 3.7 and all current packages as well as the newest version of GSAS-II.''',
-            'End-Of-Life warning for Python 2.7',wx.OK)
+        download = ''
+        cmds = []
+        instructions = 'https://subversion.xray.aps.anl.gov/trac/pyGSAS'
+        if sys.platform == "win32":
+            download = 'https://subversion.xray.aps.anl.gov/admin_pyGSAS/downloads/gsas2full-Latest-Windows-x86_64.exe'
+            instructions = 'https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/SingleStepWindowsIllustrated'
+        elif sys.platform == "darwin":
+            cmds = ['echo starting download, please wait...',
+                    '''echo 'curl "https://subversion.xray.aps.anl.gov/admin_pyGSAS/downloads/gsas2full-Latest-MacOSX-x86_64.sh" > /tmp/g2.sh; bash /tmp/g2.sh' ''',
+                    'curl "https://subversion.xray.aps.anl.gov/admin_pyGSAS/downloads/gsas2full-Latest-MacOSX-x86_64.sh" > /tmp/g2.sh; bash /tmp/g2.sh'
+                    ]
+            instructions = 'https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/MacSingleStepInstallerFigs'
+        elif sys.platform.startswith("linux"):
+            download = 'https://subversion.xray.aps.anl.gov/admin_pyGSAS/downloads/gsas2full-Latest-Linux-x86_64.sh'
+            instructions = 'https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/LinuxSingleStepInstaller'
+        else:
+            print(u'Unknown platform: '+sys.platform)
+        if platform.architecture()[0] != '64bit' and sys.platform == "win32":
+            msg += '''\nYou are currently using 32-bit Python. Please check if you are running 32-bit windows or 64-bit windows (use Start/Settings/System/About & look for "System type".
+            We recommend using the 64-bit installer if you have 64-bit windows.'''
+            download = ''
+        elif platform.architecture()[0] != '64bit' and sys.platform.startswith("linux"):
+            msg += '''\nYou are using 32-bit Python. We now only package for 64-bit linux.
+            If you are running 32-bit linux you will need to install Python yourself.
+            See instructions at https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallLinux'''
+            instructions = 'https://subversion.xray.aps.anl.gov/trac/pyGSAS/wiki/InstallLinux'
+        dlg = wx.Dialog(None,wx.ID_ANY,'End-Of-Life warning for Python 2.7',
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        txt = wx.StaticText(dlg,wx.ID_ANY,G2G.StripIndents(msg))
+        mainSizer.Add(txt)
+        txt.Wrap(600)
+        dlg.SetSizer(mainSizer)
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnsizer.Add((1,1),1,wx.EXPAND,1)
+        OKbtn = wx.Button(dlg, wx.ID_OK,'Continue')
+        OKbtn.SetDefault()
+        OKbtn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+        btnsizer.Add(OKbtn)
+
+        btn = wx.Button(dlg, wx.ID_ANY,'Show Instructions')
+        def openInstructions(event):
+            G2G.ShowWebPage(instructions,None)
+        btn.Bind(wx.EVT_BUTTON, openInstructions)
+        btnsizer.Add(btn)
+        if download:
+            btn = wx.Button(dlg, wx.ID_ANY,'Start Download')
+            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_YES))
+            btnsizer.Add(btn)
+        elif cmds:
+            btn = wx.Button(dlg, wx.ID_ANY,'Start Install')
+            btn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_CANCEL))
+            btnsizer.Add(btn)
+
+        #btn = wx.Button(dlg, wx.ID_CANCEL)
+        #btnsizer.AddButton(btn)
+        btnsizer.Add((1,1),1,wx.EXPAND,1)
+        #btnsizer.Realize()
+        mainSizer.Add((-1,5),1,wx.EXPAND,1)
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
+        mainSizer.Add((-1,10))
+        res = 0
         try:
-            dlg.ShowModal()
+            res = dlg.ShowModal()
         finally:
             dlg.Destroy()
-            
+        if res == wx.ID_YES:
+            G2G.ShowWebPage(download,None)
+            G2G.ShowWebPage(instructions,None)
+            wx.Sleep(1)
+            dlg = wx.MessageDialog(None,G2G.StripIndents(
+                    '''Download has been started in your browser; installation instructions will also be shown in a web page\n\nPress OK to exit GSAS-II, Cancel to continue.'''),
+                    'start install',wx.OK|wx.CANCEL)
+            if dlg.ShowModal() == wx.ID_OK:
+                sys.exit()
+        elif res == wx.ID_CANCEL:
+            dlg = wx.MessageDialog(None,G2G.StripIndents(
+                    '''Press OK to continue. Instructions will be shown in a web page. 
+                    Download and installation will start in the terminal window after you press OK. Respond to questions there.'''),
+                    'start install',wx.OK|wx.CANCEL)
+            if dlg.ShowModal() == wx.ID_OK:
+                G2G.ShowWebPage(instructions,None)
+                GSASIIpath.runScript(cmds, wait=True)    
+                sys.exit()
     application.main = GSASII(None)  # application.main is the main wx.Frame (G2frame in most places)
     application.SetTopWindow(application.main)
     # save the current package versions
@@ -489,6 +562,7 @@ class GSASII(wx.Frame):
             self.Bind(wx.EVT_MENU, self.EditProxyInfo, id=item.GetId())
         if GSASIIpath.GetConfigValue('debug'):
             def OnIPython(event):
+                G2frame = self
                 GSASIIpath.IPyBreak()
             item = parent.Append(wx.ID_ANY,"IPython Console",'')
             self.Bind(wx.EVT_MENU, OnIPython, item)

@@ -335,7 +335,7 @@ class TransformDialog(wx.Dialog):
                 A,B = G2lat.cell2AB(self.oldCell[:6])
                 self.newCell[2:5] = [A[2,2],90.,90.]
                 a,b = G2lat.cell2AB(self.newCell[:6])
-                self.Trans = np.inner(B,a).T    #correct!
+                self.Trans = np.inner(a,B)    #correct!
                 self.ifConstr = False
                 self.newSpGrp = 'P 1'
                 SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
@@ -2694,7 +2694,7 @@ def UpdatePhaseData(G2frame,Item,data):
                 break
             else:
                 phaseName = newPhase['General']['Name']
-                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans.T,Uvec,Vvec,ifMag)
+                newPhase,atCodes = G2lat.TransformPhase(data,newPhase,Trans,Uvec,Vvec,ifMag)
                 detTrans = np.abs(nl.det(Trans))
                 generalData = newPhase['General']
                 SGData = generalData['SGData']

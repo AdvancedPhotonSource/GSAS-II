@@ -4520,6 +4520,68 @@ def UpdatePhaseData(G2frame,Item,data):
         def OnRMCselect(event):
             G2frame.RMCchoice = RMCsel.GetStringSelection()
             UpdateRMC()
+            
+        def GetAtmChoice(RMCPdict):
+            
+            Indx = {}
+            def OnAtSel(event):
+                Obj = event.GetEventObject()
+                itype = Indx[Obj.GetId()]
+                tid = RMCPdict['atSeq'].index(Obj.GetStringSelection())
+                if itype < nTypes:
+                    if itype == tid:
+                        tid += 1
+                    RMCPdict['atSeq'] = G2lat.SwapItems(RMCPdict['atSeq'],itype,tid)
+                Pairs= []
+                atSeq = RMCPdict['atSeq']
+                lenA = len(atSeq)
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                    Pairs += pair
+                RMCPdict['Pairs'] = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+                if RMCPdict['useBVS']:
+                    BVSpairs = []
+                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
+                        BVSpairs += pair
+                    RMCPdict['BVS'] = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
+                wx.CallAfter(UpdateRMC)            
+            
+            def OnValSel(event):
+                Obj = event.GetEventObject()
+                itype = Indx[Obj.GetId()]
+                RMCPdict['Oxid'][itype][0] = Obj.GetStringSelection()            
+                wx.CallAfter(UpdateRMC)
+    
+            nTypes = len(RMCPdict['aTypes'])
+            atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
+            atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set atom ordering: '),0,WACV)
+            for iType in range(nTypes):
+                atChoice = RMCPdict['atSeq'][iType:]
+                atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                atmSel.SetStringSelection(RMCPdict['atSeq'][iType])
+                atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
+                Indx[atmSel.GetId()] = iType
+                atmChoice.Add(atmSel,0,WACV)
+            if RMCPdict['useBVS']:    
+                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Select valence: '),0,WACV)
+                for itype in range(nTypes):
+                    valChoice = atmdata.BVSoxid[RMCPdict['atSeq'][itype]]
+                    valSel = wx.ComboBox(G2frame.FRMC,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
+                    try:
+                        valSel.SetStringSelection(RMCPdict['Oxid'][itype][0])
+                    except IndexError:
+                        RMCPdict['Oxid'].append([RMCPdict['atSeq'][itype],0.0])
+                    valSel.Bind(wx.EVT_COMBOBOX,OnValSel)
+                    Indx[valSel.GetId()] = itype
+                    atmChoice.Add(valSel,0,WACV)
+                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' BVS weight: '),0,WACV)
+                for itype in range(nTypes):
+                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,min=0.),0,WACV)
+            atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
+            for iType in range(nTypes):
+                atId = RMCPdict['atSeq'][iType]
+                atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
+            return atmChoice
+            
         
         G2frame.GetStatusBar().SetStatusText('',1)
         if G2frame.RMCchoice == 'RMCProfile':
@@ -4541,14 +4603,14 @@ def UpdatePhaseData(G2frame,Item,data):
         mainSizer.Add(RMCsel,0,WACV)
         mainSizer.Add((5,5),0,WACV)
         if G2frame.RMCchoice == 'fullrmc':
-            try:
-                from fullrmc import Engine
-            except ModuleNotFoundError:
-                wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
-          Install it in your python according to the instructions in
-          https://bachiraoun.github.io/fullrmc/index.html. ''',
-                    caption='fullrmc not installed',style=wx.ICON_INFORMATION)
-                return
+          #   try:
+          #       from fullrmc import Engine
+          #   except ModuleNotFoundError:
+          #       wx.MessageBox(''' fullrmc is not correctly installed for use in GSAS-II
+          # Install it in your python according to the instructions in
+          # https://bachiraoun.github.io/fullrmc/index.html. ''',
+          #           caption='fullrmc not installed',style=wx.ICON_INFORMATION)
+          #       return
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with Machine Learning and Artificial Intelligence",     
  B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. doi: https://doi.org/10.1002/jcc.24304
  '''))
@@ -4556,6 +4618,75 @@ def UpdatePhaseData(G2frame,Item,data):
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_VIEWRMC,True)
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' fullrmc run.py file preparation:'),0,WACV)
+            if not data['RMC']['fullrmc']:
+                Atypes = data['General']['AtomTypes']
+                aTypes = dict(zip(Atypes,len(Atypes)*[0.10,]))
+                atSeq = list(aTypes.keys())
+                lenA = len(atSeq)
+                Pairs= []
+                for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
+                    Pairs += pair
+                Pairs = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
+                files = {'Neutron real space data; G(r): ':['',0.05,'G(r)','RMC',],
+                          'Neutron reciprocal space data; F(Q): ':['',0.05,'F(Q)','RMC',],
+                          'Neutron reciprocal space data; S(Q): ':['',0.05,'S(Q)','RMC',],
+                          'Xray real space data; G(r): ':['',0.01,'G(r)','RMC',],
+                          'Xray reciprocal space data; F(Q): ':['',0.01,'F(Q)','RMC',],}
+                data['RMC']['fullrmc'] = {'ifBox':True,'SuperCell':[1,1,1],'Box':[10.,10.,10.],'aTypes':aTypes,
+                    'atSeq':atSeq,'Pairs':Pairs,'files':files,'ReStart':[False,False],'Swaps':[],'useBVS':False,
+                    'AveCN':[],'FxCN':[],}
+            RMCPdict = data['RMC']['fullrmc']
+
+            def GetSuperSizer():
+                superSizer = wx.BoxSizer(wx.HORIZONTAL)
+                axes = ['X','Y','Z']
+                for i,ax in enumerate(axes):
+                    superSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
+                    superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
+                        i,min=1,max=20,size=(50,25)),0,WACV)
+                return superSizer
+
+            def GetBoxSizer():
+                boxSizer = wx.BoxSizer(wx.HORIZONTAL)
+                axes = ['X','Y','Z']
+                for i,ax in enumerate(axes):
+                    boxSizer.Add(wx.StaticText(G2frame.FRMC,label=' %s-axis: '%ax),0,WACV)
+                    boxSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Box'],
+                        i,min=10.,max=50.,size=(50,25)),0,WACV)
+                return boxSizer
+            
+            def OnBoxChoice(event):
+                RMCPdict['ifBox'] = not RMCPdict['ifBox']
+                UpdateRMC()
+                
+            def OnReStart(event):
+                RMCPdict['ReStart'][0] = not RMCPdict['ReStart'][0]
+#patches
+            if 'useBVS' not in RMCPdict:
+                RMCPdict['useBVS'] = False
+#end patches
+            restart = wx.CheckBox(G2frame.FRMC,label=' Restart fullrmc Engine? (will clear old result!) ')
+            restart.SetValue(RMCPdict['ReStart'][0])
+            restart.Bind(wx.EVT_CHECKBOX,OnReStart)
+            mainSizer.Add(restart,0,WACV)
+
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            if RMCPdict['ifBox']:
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Big box dimensions:'),0,WACV)                
+                lineSizer.Add(GetBoxSizer(),0,WACV)
+                boxBtn = wx.Button(G2frame.FRMC,label='Use super lattice')
+            else:
+                lineSizer.Add(wx.StaticText(G2frame.FRMC,label=' Lattice multipliers:'),0,WACV)
+                lineSizer.Add(GetSuperSizer(),0,WACV)
+                boxBtn = wx.Button(G2frame.FRMC,label='Use big box dimensions')
+            boxBtn.Bind(wx.EVT_BUTTON,OnBoxChoice)
+            lineSizer.Add(boxBtn,0,WACV)
+            mainSizer.Add(lineSizer,0,WACV)
+            
+            mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
+            
+            
+                
         elif G2frame.RMCchoice ==  'RMCProfile':
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=''' "RMCProfile: Reverse Monte Carlo for polycrystalline materials", M.G. Tucker, D.A. Keen, M.T. Dove, A.L. Goodwin and Q. Hui,
  Jour. Phys.: Cond. Matter 2007, 19, 335218. doi: https://doi.org/10.1088/0953-8984/19/33/335218 
@@ -4590,10 +4721,12 @@ def UpdatePhaseData(G2frame,Item,data):
                     'AveCN':[],'FxCN':[],'Potentials':{'Angles':[],'Angle search':10.,'Stretch':[],
                     'Stretch search':10.,'Pot. Temp.':300.,
                     }}
+                
             RMCPdict = data['RMC']['RMCProfile']
 #patches
             if 'FitScale' not in RMCPdict:
                 RMCPdict['FitScale'] = False
+                
 #end patches
                 
             def OnHisto(event):
@@ -4679,67 +4812,7 @@ def UpdatePhaseData(G2frame,Item,data):
                     superSizer.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['SuperCell'],
                         i,min=1,max=20,size=(50,25),OnLeave=SetRestart),0,WACV)
                 return superSizer
-            
-            def GetAtmChoice():
-                
-                def OnAtSel(event):
-                    Obj = event.GetEventObject()
-                    itype = Indx[Obj.GetId()]
-                    tid = RMCPdict['atSeq'].index(Obj.GetStringSelection())
-                    if itype < nTypes:
-                        if itype == tid:
-                            tid += 1
-                        RMCPdict['atSeq'] = G2lat.SwapItems(RMCPdict['atSeq'],itype,tid)
-                    Pairs= []
-                    atSeq = RMCPdict['atSeq']
-                    lenA = len(atSeq)
-                    for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i,lenA)] for i in range(lenA)]:
-                        Pairs += pair
-                    RMCPdict['Pairs'] = {pairs:[0.0,0.0,0.0] for pairs in Pairs}
-                    if RMCPdict['useBVS']:
-                        BVSpairs = []
-                        for pair in [[' %s-%s'%(atSeq[i],atSeq[j]) for j in range(i+1,lenA)] for i in range(lenA)]:
-                            BVSpairs += pair
-                        RMCPdict['BVS'] = {pairs:[0.0,0.0,0.0,0.0] for pairs in BVSpairs}
-                    wx.CallAfter(UpdateRMC)            
-                
-                def OnValSel(event):
-                    Obj = event.GetEventObject()
-                    itype = Indx[Obj.GetId()]
-                    RMCPdict['Oxid'][itype][0] = Obj.GetStringSelection()            
-                    wx.CallAfter(UpdateRMC)
-        
-                nTypes = len(RMCPdict['aTypes'])
-                atmChoice = wx.FlexGridSizer(nTypes+1,5,5)
-                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set atom ordering: '),0,WACV)
-                for iType in range(nTypes):
-                    atChoice = RMCPdict['atSeq'][iType:]
-                    atmSel = wx.ComboBox(G2frame.FRMC,choices=atChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                    atmSel.SetStringSelection(RMCPdict['atSeq'][iType])
-                    atmSel.Bind(wx.EVT_COMBOBOX,OnAtSel)
-                    Indx[atmSel.GetId()] = iType
-                    atmChoice.Add(atmSel,0,WACV)
-                if RMCPdict['useBVS']:    
-                    atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Select valence: '),0,WACV)
-                    for itype in range(nTypes):
-                        valChoice = atmdata.BVSoxid[RMCPdict['atSeq'][itype]]
-                        valSel = wx.ComboBox(G2frame.FRMC,choices=valChoice,style=wx.CB_DROPDOWN|wx.TE_READONLY)
-                        try:
-                            valSel.SetStringSelection(RMCPdict['Oxid'][itype][0])
-                        except IndexError:
-                            RMCPdict['Oxid'].append([RMCPdict['atSeq'][itype],0.0])
-                        valSel.Bind(wx.EVT_COMBOBOX,OnValSel)
-                        Indx[valSel.GetId()] = itype
-                        atmChoice.Add(valSel,0,WACV)
-                    atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' BVS weight: '),0,WACV)
-                    for itype in range(nTypes):
-                        atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['Oxid'][itype],1,min=0.),0,WACV)
-                atmChoice.Add(wx.StaticText(G2frame.FRMC,label=' Set max shift: '),0,WACV)
-                for iType in range(nTypes):
-                    atId = RMCPdict['atSeq'][iType]
-                    atmChoice.Add(G2G.ValidatedTxtCtrl(G2frame.FRMC,RMCPdict['aTypes'],atId,min=0.,max=1.),0,WACV)
-                return atmChoice
-          
+                      
             def GetPairSizer():
                 pairSizer = wx.FlexGridSizer(len(RMCPdict['Pairs'])+1,5,5)
                 pairSizer.Add((5,5),0)
@@ -4986,7 +5059,7 @@ def UpdatePhaseData(G2frame,Item,data):
             mainSizer.Add(GetSuperSizer(),0,WACV)
             
             mainSizer.Add(wx.StaticText(G2frame.FRMC,label=' NB: be sure to set cations first && anions last in atom ordering'),0,WACV)
-            mainSizer.Add(GetAtmChoice(),0,WACV)
+            mainSizer.Add(GetAtmChoice(RMCPdict),0,WACV)
             
             G2G.HorizontalLine(mainSizer,G2frame.FRMC)
             swapBox = wx.BoxSizer(wx.HORIZONTAL)
@@ -5122,13 +5195,13 @@ def UpdatePhaseData(G2frame,Item,data):
         if not G2frame.GSASprojectfile:     #force a project save
             G2frame.OnFileSaveas(event)
         if G2frame.RMCchoice == 'fullrmc':
-            print ('TBD')
-            return
-            print('set up rmcfull *.pdb & *.py files TBD')
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
             RMCPdict = data['RMC']['fullrmc']
-            print(G2pwd.MakePDB(pName,data,RMCPdict)+ ' written')
-            print(G2pwd.MakefullrmcRun(pName,data,RMCPdict)+ ' written')
+            if RMCPdict['ifBox']:
+                print(G2pwd.MakepdparserPDB(pName,data,RMCPdict)+ ' written')
+            else:
+                print(G2pwd.MakefullrmcPDB(pName,data,RMCPdict)+ ' written')
+            #print(G2pwd.MakefullrmcRun(pName,data,RMCPdict)+ ' written')
             print('fullrmc file build completed')
         else:
             G2frame.dataWindow.FRMCDataEdit.Enable(G2G.wxID_RUNRMC,True)
@@ -5172,28 +5245,44 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         pName = generalData['Name'].replace(' ','_')
         if G2frame.RMCchoice == 'fullrmc':
+            RMCPdict = data['RMC']['fullrmc']
             wx.MessageBox(''' For use of fullrmc, please cite:
       Fullrmc, a Rigid Body Reverse Monte Carlo Modeling Package Enabled with
       Machine Learning and Artificial Intelligence,
-      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111.
+      B. Aoun, Jour. Comp. Chem. 2016, 37, 1102-1111. 
       doi: https://doi.org/10.1002/jcc.24304''',caption='fullrmc',style=wx.ICON_INFORMATION)
-            # TBD - remove filedialog & use defined run.py file name here
+            rmcname = pName+'.rmc'            
+            while os.path.isdir(rmcname) and RMCPdict['ReStart']:
+                msg = wx.MessageBox(''' fullrmc will fail to restart if %s exists. You must delete %s by hand now.'''%(rmcname,rmcname),
+                    caption='fullrmc file error',style=wx.ICON_EXCLAMATION|wx.OK|wx.CANCEL)
+                if msg != wx.OK:
+                    return
+            ilog = 0
+            while True:
+                logname = 'fullrmc_%d.log'%ilog
+                if os.path.isfile(logname):
+                    os.remove(logname)
+                else:
+                    break
+                ilog += 1
+# TBD - remove filedialog & use defined run.py file name here
             dlg = wx.FileDialog(G2frame, 'Choose fullrmc python file to execute', G2G.GetImportPath(G2frame),
                 wildcard='fullrmc python file (*.py)|*.py',style=wx.FD_CHANGE_DIR)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     import subprocess as sb
                     batch = open('fullrmc.bat','w')
-                    batch.write('run '+sys.exec_prefix+'\\Scripts\\activate\n')
+                    batch.write('CALL '+sys.exec_prefix+'\\Scripts\\activate\n')
                     batch.write(sys.exec_prefix+'\\python.exe '+dlg.GetPath()+'\n')
                     batch.write('pause')
                     batch.close()
-                    sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE)
+                    RMCPdict['pid'] = sb.Popen('fullrmc.bat',creationflags=sb.CREATE_NEW_CONSOLE).pid
                 else:
                     return
             finally:
                 dlg.Destroy()
         else:
+            RMCPdict = data['RMC']['RMCProfile']
             rmcfile = G2fl.find('rmcprofile.exe',GSASIIpath.path2GSAS2)
             rmcexe = os.path.split(rmcfile)[0]
             print(rmcexe)
@@ -5249,16 +5338,29 @@ def UpdatePhaseData(G2frame,Item,data):
             
     def OnViewRMC(event):
         if G2frame.RMCchoice == 'fullrmc':
+            RMCPdict = data['RMC']['fullrmc']
             generalData = data['General']
             pName = generalData['Name'].replace(' ','_')
+            import psutil
+            pid = RMCPdict.get('pid',-1)
+            Proc = None
+            if pid and psutil.pid_exists(pid):
+                proc = psutil.Process(pid).children()
+                for child in proc:
+                    if 'conhost' in child.name():       #probably very Windows specific
+                        Proc = child
             from fullrmc import Engine
             # load
             engineFilePath = pName+'.rmc'
             ENGINE = Engine(path=None)
+            eNames = ['Total',]
+            nObs = [0,]
             try:
                 if engineFilePath is not None:
                     result, mes = ENGINE.is_engine(engineFilePath, mes=True)
                     if result:
+                        if Proc is not None:
+                            Proc.suspend()
                         ENGINE = ENGINE.load(engineFilePath)
                         found = False
                         for frame in list(ENGINE.frames):
@@ -5272,15 +5374,23 @@ def UpdatePhaseData(G2frame,Item,data):
                                     Ylab = r'$\mathsf{g(r),\AA^{-2}}$'
                                     title = ' g(r) for '
                                     if 'StructureFactor' in sitem:
+                                        eNames.append('S(Q)')
                                         Xlab = r'$\mathsf{Q,\AA^{-1}}$'
                                         Ylab = 'S(Q)'
                                         title = ' S(Q) for '
-                                    if frame != '0':
+                                    else:
+                                        eNames.append('g(r)')
                                         title = frame+title
                                     dataDict= item.get_constraints_properties(frame)
                                     X = dataDict['frames-experimental_x'][0]
                                     Y = dataDict['frames-experimental_y'][0]
+                                    nObs.append(X.shape[0])
                                     rdfDict = item.get_constraint_value()
+                                    if 'total' not in rdfDict:
+                                        print('No data yet - wait for a save')
+                                        if Proc is not None:
+                                            Proc.resume()
+                                        return
                                     Z = rdfDict['total']
                                     XY = [[X,Y],[X,Z]]
                                     Names = ['Obs','Calc']
@@ -5307,7 +5417,10 @@ def UpdatePhaseData(G2frame,Item,data):
                                 else:
                                     found = True
                                     if 'BondConstraint' in sitem:
-                                        bonds = item.get_constraint_value()['bondsLength']
+                                        try:
+                                            bonds = item.get_constraint_value()['bondsLength']
+                                        except TypeError:
+                                            break
                                         bondList = item.bondsList[:2]
                                         atoms = ENGINE.get_original_data("allElements",frame)
                                         bondNames = ['%s-%s'%(atoms[bondList[0][iat]],atoms[bondList[1][iat]]) for iat in range(bonds.shape[0])]
@@ -5346,27 +5459,43 @@ def UpdatePhaseData(G2frame,Item,data):
                                         print(sitem)
                                         item.plot(show=True)
                                         pass
+                            nObs[0] = np.sum(nObs[1:])
                         if not found:
-                            print(' No saved information yet, wait until fullrms does a Save')
+                            print(' No saved information yet, wait until fullrmc does a Save')
+                            eNames = []
+                        ENGINE.close()      #return lock on ENGINE repository & close it
+                        if Proc is not None:
+                            Proc.resume()
             except AssertionError:
                  print("Can't open fullrmc engine while running")
-            try:
-                logfile = open('fullrmc.log','r')
-            except FileNotFoundError:
-                logfile = open('fullrmc_0.log','r')
-            loglines = logfile.readlines()
-            logfile.close()
+            loglines = []
+            ilog = 0
+            while True:
+                fname = 'fullrmc_%d.log'%ilog
+                try:
+                    logfile = open(fname,'r')
+                    loglines += logfile.readlines()
+                    logfile.close()
+                except FileNotFoundError:
+                    break
+                ilog += 1
+            if not len(loglines):
+                print('no log file found')
+                return
             start = 0
             while True:
+                if start == len(loglines):
+                    print('No log info to plot')
+                    return
                 line = loglines[start]                
                 if 'Err:' in line:
                     break
                 else:
                     start += 1
             Gen = []
-            Tr = []
-            Acc = []
-            Rem = []
+            # Tr = []
+            # Acc = []
+            # Rem = []
             Err = []
             start -= 1
             while True:
@@ -5379,24 +5508,29 @@ def UpdatePhaseData(G2frame,Item,data):
                     continue
                 items = line.split(' - ')
                 try:    # could be a trashed line at end
-                    Err.append(float(items[5][:-1].split('Err:')[1]))
+                    errStr = items[5][:-1].split('Err:')[1]
+                    Err.append([float(val) for val in errStr.split(',')])
                 except ValueError:
                     break
                 Gen.append(int(items[1].split('Gen:')[1]))
-                Tr.append(float(items[2].split('(')[1].split('%)')[0]))
-                Acc.append(float(items[3].split('(')[1].split('%)')[0]))
-                Rem.append(float(items[4].split('(')[1].split('%)')[0]))
             
             Gen = np.array(Gen)
-            Tr = np.array(Tr)
-            Acc = np.array(Acc)
-            Rem = np.array(Rem)
-            Err = np.log10(np.array(Err))
-            Names = ['Tr','Acc','Rem','Err']
-            XY = [[Gen,Tr],[Gen,Acc],[Gen,Rem],[Gen,Err]]
-            G2plt.PlotXY(G2frame,XY,labelX='no. generated',
-                labelY=r'$log_{10}(Err)\ &\ residuals,\ %$',newPlot=True,Title='fullrmc residuals for '+pName,
-                lines=True,names=Names)
+            Err = np.array(Err)
+            nObs = np.array(nObs)
+            if np.any(nObs):
+                Err /= nObs[:Err.shape[1]]
+                ptstr1 = ''
+                ptstr2 = ''
+                for it,item in enumerate(eNames):
+                    ptstr1 += ' %s obs: %d'%(item,nObs[it])
+                    ptstr2 += ' %s reduced chi^2: %.5f'%(item,Err[-1][it])
+                print(ptstr1)
+                print(ptstr2)
+                Err = np.log10(Err)
+                XY = [[Gen,Erri] for Erri in Err.T]
+                G2plt.PlotXY(G2frame,XY,labelX='no. generated',
+                    labelY=r'$log_{10}$ (reduced $\mathsf{\chi^2})$',newPlot=True,Title='fullrmc residuals for '+pName,
+                    lines=True,names=eNames)
                       
         else:
             generalData = data['General']
@@ -10335,16 +10469,14 @@ def UpdatePhaseData(G2frame,Item,data):
         generalData = data['General']
         startDmin = generalData['Pawley dmin']
         genDlg = wx.Dialog(G2frame,wx.ID_ANY,'Set Pawley Parameters',
-                        style=wx.DEFAULT_DIALOG_STYLE)
+                    style=wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(genDlg,wx.ID_ANY,
-                                    'Set Pawley Extraction Parameters for phase '+
-                                    generalData.get('Name','?')))
+            'Set Pawley Extraction Parameters for phase '+generalData.get('Name','?')))
         mainSizer.Add([5,10])
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
         pawleySizer.Add(wx.StaticText(genDlg,label=' Do Pawley refinement?: '),0,WACV)
-        pawlRef = G2G.G2CheckBox(genDlg,'',generalData,'doPawley',
-                             DisablePawleyOpts)
+        pawlRef = G2G.G2CheckBox(genDlg,'',generalData,'doPawley',DisablePawleyOpts)
         pawleySizer.Add(pawlRef,0,WACV)
         mainSizer.Add(pawleySizer)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -10353,7 +10485,7 @@ def UpdatePhaseData(G2frame,Item,data):
             temp['Qmax'] = 2 * math.pi / generalData['Pawley dmin']
             pawlQVal.SetValue(temp['Qmax'])
         pawlVal = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley dmin',
-               min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
+            min=0.25,max=20.,nDig=(10,5),typeHint=float,OnLeave=d2Q)
         pawleySizer.Add(pawlVal,0,WACV)
         pawleySizer.Add(wx.StaticText(genDlg,label='   Qmax: '),0,WACV)
         temp = {'Qmax':2 * math.pi / generalData['Pawley dmin']}
@@ -10361,13 +10493,13 @@ def UpdatePhaseData(G2frame,Item,data):
             generalData['Pawley dmin'] = 2 * math.pi / temp['Qmax']
             pawlVal.SetValue(generalData['Pawley dmin'])        
         pawlQVal = G2G.ValidatedTxtCtrl(genDlg,temp,'Qmax',
-               min=0.314,max=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
+            min=0.314,max=25.,nDig=(10,5),typeHint=float,OnLeave=Q2D)
         pawleySizer.Add(pawlQVal,0,WACV)
         mainSizer.Add(pawleySizer)
         pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
         pawleySizer.Add(wx.StaticText(genDlg,label=' Pawley neg. wt.: '),0,WACV)
         pawlNegWt = G2G.ValidatedTxtCtrl(genDlg,generalData,'Pawley neg wt',
-                    min=0.,max=1.,nDig=(10,4),typeHint=float)
+            min=0.,max=1.,nDig=(10,4),typeHint=float)
         pawleySizer.Add(pawlNegWt,0,WACV)
         mainSizer.Add(pawleySizer)
 

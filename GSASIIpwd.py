@@ -2499,39 +2499,52 @@ freshStart     = False      #make TRUE for a restart
     rfile.close()
     
 
-def MakePDB(Name,Phase,RMCPdict):
-    return None
-    # generalData = Phase['General']
-    # Cell = generalData['Cell'][1:7]
-    # Trans = np.eye(3)*np.array(Supercell)
-    # newPhase = copy.deepcopy(Phase)
-    # newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
-    # newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
-    # newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
-    # Atoms = newPhase['Atoms']
-    # Cell = newPhase['General']['Cell'][1:7]
-    # A,B = G2lat. cell2AB(Cell)
-    # fname = Name+'.pdb'
-    # fl = open(fname,'w')
-    # fl.write('REMARK    this file is generated using GSASII\n')
-    # fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
-    #         Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
-    # fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
-    # fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
-    # fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
+def MakefullrmcPDB(Name,Phase,RMCPdict):
+    generalData = Phase['General']
+    Atseq = RMCPdict['atSeq']
+    Supercell = RMCPdict['SuperCell']
+    Cell = generalData['Cell'][1:7]
+    Trans = np.eye(3)*np.array(Supercell)
+    newPhase = copy.deepcopy(Phase)
+    newPhase['General']['SGData'] = G2spc.SpcGroup('P 1')[1]
+    newPhase['General']['Cell'][1:] = G2lat.TransformCell(Cell,Trans.T)
+    newPhase,Atcodes = G2lat.TransformPhase(Phase,newPhase,Trans,np.zeros(3),np.zeros(3),ifMag=False)
+    Atoms = newPhase['Atoms']
+    XYZ = np.array([atom[3:6] for atom in Atoms]).T
+    XYZptp = np.array([ma.ptp(XYZ[0]),ma.ptp(XYZ[1]),ma.ptp(XYZ[2])])/2.
+    Cell = newPhase['General']['Cell'][1:7]
+    A,B = G2lat. cell2AB(Cell)
+    fname = Name+'.pdb'
+    fl = open(fname,'w')
+    fl.write('REMARK    this file is generated using GSASII\n')
+    fl.write('REMARK    Boundary Conditions:%6.2f  0.0  0.0  0.0%7.2f  0.0  0.0  0.0%7.2f\n'%(
+             Cell[0],Cell[1],Cell[2]))
+    fl.write('CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n'%(
+            Cell[0],Cell[1],Cell[2],Cell[3],Cell[4],Cell[5]))
+    fl.write('ORIGX1      1.000000  0.000000  0.000000        0.00000\n')
+    fl.write('ORIGX2      0.000000  1.000000  0.000000        0.00000\n')
+    fl.write('ORIGX3      0.000000  0.000000  1.000000        0.00000\n')
 
-    # Natm = np.core.defchararray.count(np.array(Atcodes),'+')
-    # Natm = np.count_nonzero(Natm-1)
-    # nat = 0
-    # for atm in Atseq:
-    #     for iat,atom in enumerate(Atoms):
-    #         if atom[1] == atm:
-    #             nat += 1
-    #             XYZ = np.inner(A,np.array(atom[3:6])-0.5)    #shift origin to middle & make Cartesian
-    #             fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
-    #                     nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1]))
-    # fl.close()
-    # return fname
+    Natm = np.core.defchararray.count(np.array(Atcodes),'+')
+    Natm = np.count_nonzero(Natm-1)
+    nat = 0
+    for atm in Atseq:
+        for iat,atom in enumerate(Atoms):
+            if atom[1] == atm:
+                nat += 1
+                XYZ = np.inner(A,np.array(atom[3:6])-XYZptp)    #shift origin to middle & make Cartesian
+                fl.write('ATOM  %5d %-4s RMC%6d%12.3f%8.3f%8.3f  1.00  0.00          %-2s\n'%(       
+                        nat,atom[0],nat,XYZ[0],XYZ[1],XYZ[2],atom[1].lower()))
+    fl.close()
+    return fname
+    
+def MakepdparserPDB(Name,Phase,RMCPdict):
+    import pdbparser as pdp
+    fname = Name+'.pdb'
+    fl = open(fname,'w')
+    fl.write('REMARK    this file to be generated using pdbparser\n')
+    fl.close()
+    return fname
 
 def GetRMCBonds(general,RMCPdict,Atoms,bondList):
     bondDist = []
